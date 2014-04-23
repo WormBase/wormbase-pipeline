@@ -3,32 +3,28 @@
 use DBI;
 use strict;
 use Getopt::Long;
+use Bio::EnsEMBL::DBSQL::DBAdaptor;
 
-my ($org_id, $ena_db, $verbose); 
+my ($org_id, $ena_cred, $verbose); 
 
 &GetOptions(
-  'enadb=s'         => \$ena_db,
+  'enacred=s'       => \$ena_cred,
   'orgid=s'         => \$org_id,
   'verbose'         => \$verbose,
     );
 
 
 if (not defined $org_id or
-    not defined $ena_db) {
+    not defined $ena_cred) {
   die "Incorrect invocation\n";
 }
-
-
-my %attr   = ( PrintError => 0,
-               RaiseError => 0,
-               AutoCommit => 0 );
 
 
 ##############
 # Query ENA
 #############
 
-my $ena_dbh = &get_ena_dbh();
+my $ena_dbh = &get_ena_dbh($ena_cred);
 
 my $ena_sql =  "SELECT d.primaryacc#, b.version"
     . " FROM dbentry d, bioseq b"
@@ -41,7 +37,7 @@ my $ena_sql =  "SELECT d.primaryacc#, b.version"
     . "   AND statusid = 4)"
     . " AND d.bioseqid = b.seqid";
     
-my $ena_sth = $ena_dbh->prepare($ena_sql);
+my $ena_sth = $ena_dbh->dbc->prepare($ena_sql);
 
 print STDERR "Doing primary lookup of CDS entries in ENA ORACLE database...\n" if $verbose;
 
@@ -55,7 +51,7 @@ while ( ( my @results ) = $ena_sth->fetchrow_array ) {
 
 die $ena_sth->errstr if $ena_sth->err;
 $ena_sth->finish;
-$ena_dbh->disconnect;
+$ena_dbh->dbc->disconnect_if_idle;
 
 foreach my $acc (sort keys %results) {
   printf("%s\t%s\n", $acc, $results{$acc});
@@ -68,12 +64,28 @@ exit(0);
 
 #####################
 sub get_ena_dbh {
+  my ($cred_file) = @_;
 
-  my $dbh = DBI->connect("dbi:Oracle:$ena_db", 
-                         'ena_reader', 
-                         'reader', 
-                         \%attr)
-      or die "Can't connect to ENA database: $DBI::errstr";
+  my ($dbname, $user, $pass, $host, $port);
+
+  open(my $cfh, $cred_file) or die "Could not open $cred_file for reading\n";
+  while(<$cfh>) {
+    /^\#/ and next;
+
+    /^DBNAME:(\S+)/ and $dbname = $1;
+    /^USER:(\S+)/ and $user = $1;
+    /^PASS:(\S+)/ and $pass = $1;
+    #/^HOST:(\S+)/ and $host = $1;
+    #/^PORT:(\S+)/ and $port = $1;    
+  }
+
+  my $dbh = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
+    #-host => $host,
+    #-port => $port,
+    -user => $user,
+    -pass => $pass,
+    -dbname => $dbname,
+    -driver => 'Oracle');
 
   return $dbh;
 }

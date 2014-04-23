@@ -3,11 +3,12 @@
 use DBI;
 use strict;
 use Getopt::Long;
+use Bio::EnsEMBL::DBSQL::DBAdaptor;
 
-my ($org_id, $ena_db, $verbose); 
+my ($org_id, $ena_cred, $verbose); 
 
 &GetOptions(
-  'enadb=s'         => \$ena_db,
+  'enacred=s'       => \$ena_cred,
   'orgid=s'         => \$org_id,
   'verbose'         => \$verbose,
     );
@@ -15,21 +16,16 @@ my ($org_id, $ena_db, $verbose);
 
 if (
     not defined $org_id or
-    not defined $ena_db) {
-  die "Incorrect invocation: you must supply -enadb -uniprotdb and -orgid\n";
+    not defined $ena_cred) {
+  die "Incorrect invocation: you must supply -enacred and -orgid\n";
 }
-
-
-my %attr   = ( PrintError => 0,
-               RaiseError => 0,
-               AutoCommit => 0 );
 
 
 ##############
 # Query ENA
 #############
 
-my $ena_dbh = &get_ena_dbh();
+my $ena_dbh = &get_ena_dbh($ena_cred);
 
 # locus_tag = 84
 # standard name (wormbase transcript/CDS/pseudogene name) = 23
@@ -50,7 +46,7 @@ my $ena_sql =  "SELECT d.primaryacc#, sf.featid, fq.fqualid, fq.text"
     . " AND fq.fqualid IN (23, 84, 12)";
 
     
-my $ena_sth = $ena_dbh->prepare($ena_sql) or die "Can't prepare statement: $DBI::errstr";
+my $ena_sth = $ena_dbh->dbc->prepare($ena_sql) or die "Can't prepare statement: $DBI::errstr";
 
 print STDERR "Doing primary lookup of locus_tag entries in ENA ORACLE database...\n" if $verbose;
 
@@ -64,7 +60,7 @@ while ( my ($clone_acc, $feat_id, $qual_id, $qual_val ) = $ena_sth->fetchrow_arr
 }
 die $ena_sth->errstr if $ena_sth->err;
 $ena_sth->finish;
-$ena_dbh->disconnect;
+$ena_dbh->dbc->disconnect_if_idle;
 
 foreach my $fid (keys %feats) {
   if (exists $feats{$fid}->{"23"}) {
@@ -95,12 +91,28 @@ exit(0);
 #####################
 sub get_ena_dbh {
 
-  my $dbh = DBI->connect("dbi:Oracle:$ena_db", 
-                         'ena_reader', 
-                         'reader', 
-                         \%attr)
-      or die "Can't connect to ENA database: $DBI::errstr";
+  my ($cred_file) = @_;
+
+  my ($dbname, $user, $pass, $host, $port);
+
+  open(my $cfh, $cred_file) or die "Could not open $cred_file for reading\n";
+  while(<$cfh>) {
+    /^\#/ and next;
+
+    /^DBNAME:(\S+)/ and $dbname = $1;
+    /^USER:(\S+)/ and $user = $1;
+    /^PASS:(\S+)/ and $pass = $1;
+    #/^HOST:(\S+)/ and $host = $1;
+    #/^PORT:(\S+)/ and $port = $1;    
+  }
+
+  my $dbh = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
+    #-host => $host,
+    #-port => $port,
+    -user => $user,
+    -pass => $pass,
+    -dbname => $dbname,
+    -driver => 'Oracle');
 
   return $dbh;
 }
-
