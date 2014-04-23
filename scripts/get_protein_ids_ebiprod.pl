@@ -4,33 +4,32 @@ use DBI;
 use strict;
 use Getopt::Long;
 
-my ($org_id, $ena_db, $uniprot_db, $verbose); 
+use Bio::EnsEMBL::DBSQL::DBAdaptor;
+
+my ($org_id, $ena_cred, $uniprot_cred, $verbose); 
 
 &GetOptions(
-  'enadb=s'         => \$ena_db,
-  'uniprotdb=s'     => \$uniprot_db,
   'orgid=s'         => \$org_id,
+  'enacred=s'       => \$ena_cred,
+  'uniprotcred=s'   => \$uniprot_cred,
   'verbose'         => \$verbose,
     );
 
 
-if (not defined $uniprot_db or
-    not defined $org_id or
-    not defined $ena_db) {
-  die "Incorrect invocation: you must supply -enadb -uniprotdb and -orgid\n";
+if (not defined $org_id or
+    not defined $ena_cred or
+    not defined $uniprot_cred) {
+  die "Incorrect invocation: you must supply -orgid, -enacred and -uniprotcred\n";
 }
-
-
-my %attr   = ( PrintError => 0,
-               RaiseError => 0,
-               AutoCommit => 0 );
 
 
 ##############
 # Query ENA
 #############
 
-my $ena_dbh = &get_ena_dbh();
+#my $test_uniprot_dbh = &get_uniprot_dbh($uniprot_cred);
+
+my $ena_dbh = &get_ena_dbh($ena_cred);
 
 # locus_tag = 84
 # pseudo = 28
@@ -57,7 +56,7 @@ my $ena_sql =  "SELECT d.primaryacc#, b.version, c.PROTEIN_ACC, c.version, c.chk
     . " AND fq.fqualid   = 23";
 
     
-my $ena_sth = $ena_dbh->prepare($ena_sql) or die "Can't prepare statement: $DBI::errstr";
+my $ena_sth = $ena_dbh->dbc->prepare($ena_sql) or die "Can't prepare statement: $DBI::errstr";
 
 print STDERR "Doing primary lookup of CDS entries in ENA ORACLE database...\n" if $verbose;
 
@@ -78,13 +77,13 @@ while ( ( my @results ) = $ena_sth->fetchrow_array ) {
 }
 die $ena_sth->errstr if $ena_sth->err;
 $ena_sth->finish;
-$ena_dbh->disconnect;
+$ena_dbh->dbc->disconnect_if_idle;
 
 #################
 # query uniprot 1 - get basic protein_id info
 #################
 
-my $uniprot_dbh = &get_uniprot_dbh();
+my $uniprot_dbh = &get_uniprot_dbh($uniprot_cred);
 
 my $uniprot_sql =  "SELECT e.accession, e.name, p.protein_id "
       . "FROM sptr.dbentry e, sptr.embl_protein_id p "
@@ -95,8 +94,8 @@ my $uniprot_sql =  "SELECT e.accession, e.name, p.protein_id "
       . "AND e.tax_id = $org_id";
 
 
-my $uniprot_sth = $uniprot_dbh->prepare($uniprot_sql);
-print STDERR "Reading Uniprot database to get accessioans and ids...\n" if $verbose;
+my $uniprot_sth = $uniprot_dbh->dbc->prepare($uniprot_sql);
+print STDERR "Reading Uniprot database to get accessions and ids...\n" if $verbose;
 $uniprot_sth->execute();
 
 while( (my @results) = $uniprot_sth->fetchrow_array) {
@@ -110,13 +109,13 @@ while( (my @results) = $uniprot_sth->fetchrow_array) {
 
 die $uniprot_sth->errstr if $uniprot_sth->err;
 $uniprot_sth->finish;
-$uniprot_dbh->disconnect;
+$uniprot_dbh->dbc->disconnect_if_idle;
 
 ##################
 # query uniprot 2 - use UniParc to get Uniprot isoform identifiers
 ###################
 
-$uniprot_dbh = &get_uniprot_dbh();
+$uniprot_dbh = &get_uniprot_dbh($uniprot_cred);
 
 # dbid = 1 => ENA protein_id
 # dbid = 24 => Uniprot isoform id
@@ -126,7 +125,7 @@ $uniprot_sql = 'SELECT e.UPI, e.AC, e.DBID '
     . "AND  deleted = 'N' "
     . 'AND  dbid in (1,24)';
 
-$uniprot_sth = $uniprot_dbh->prepare($uniprot_sql);
+$uniprot_sth = $uniprot_dbh->dbc->prepare($uniprot_sql);
 print STDERR "Reading UniParc for mapping of ENA protein ids to UP isoform ids\n" if $verbose;
 $uniprot_sth->execute;
 while (my @results = $uniprot_sth->fetchrow_array) {
@@ -142,7 +141,7 @@ while (my @results = $uniprot_sth->fetchrow_array) {
 }
 die $uniprot_sth->errstr if $uniprot_sth->err;
 $uniprot_sth->finish;
-$uniprot_dbh->disconnect;
+$uniprot_dbh->dbc->disconnect_if_idle;
 
 foreach my $upi (keys %uniparc_mapping) {
   if (exists $uniparc_mapping{$upi}->{protein_id} and 
@@ -159,7 +158,7 @@ foreach my $upi (keys %uniparc_mapping) {
 # query uniprot 2 - get EC numbers
 ###################
 
-$uniprot_dbh = &get_uniprot_dbh();
+$uniprot_dbh = &get_uniprot_dbh($uniprot_cred);
 #
 # subcategory_type_id = 3 => EC number
 #
@@ -171,8 +170,8 @@ $uniprot_sql = "SELECT accession, text "
     . "AND subcategory_type_id = 3 "
     . "AND dbe.accession = ?";
 
-$uniprot_sth = $uniprot_dbh->prepare($uniprot_sql);
-print STDERR "Reading UniParc for mapping of ENA protein ids to UP isoform ids\n" if $verbose;
+$uniprot_sth = $uniprot_dbh->dbc->prepare($uniprot_sql);
+print STDERR "Reading UniParc for mapping of ENA protein ids to EC numbers\n" if $verbose;
 foreach my $entry_a (values %resultsHash) {
   foreach my $entry (@$entry_a) {
     if (exists $entry->{SWALL_AC}) {
@@ -186,7 +185,7 @@ foreach my $entry_a (values %resultsHash) {
 }
 die $uniprot_sth->errstr if $uniprot_sth->err;
 $uniprot_sth->finish;
-$uniprot_dbh->disconnect;
+$uniprot_dbh->dbc->disconnect_if_idle;
 
 ##################
 # output results
@@ -217,12 +216,29 @@ exit(0);
 
 #####################
 sub get_ena_dbh {
+  my ($cred_file) = @_;
 
-  my $dbh = DBI->connect("dbi:Oracle:$ena_db", 
-                         'ena_reader', 
-                         'reader', 
-                         \%attr)
-      or die "Can't connect to ENA database: $DBI::errstr";
+  my ($dbname, $user, $pass, $host, $port);
+
+  open(my $cfh, $cred_file) or die "Could not open $cred_file for reading\n";
+  while(<$cfh>) {
+    /^\#/ and next;
+
+    /^DBNAME:(\S+)/ and $dbname = $1;
+    /^USER:(\S+)/ and $user = $1;
+    /^PASS:(\S+)/ and $pass = $1;
+    #/^HOST:(\S+)/ and $host = $1;
+    #/^PORT:(\S+)/ and $port = $1;
+    
+  }
+
+  my $dbh = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
+    #-host => $host,
+    #-port => $port,
+    -user => $user,
+    -pass => $pass,
+    -dbname => $dbname,
+    -driver => 'Oracle');
 
   return $dbh;
 }
@@ -230,12 +246,28 @@ sub get_ena_dbh {
 
 #####################
 sub get_uniprot_dbh {
-  print STDERR "Connecting to $uniprot_db\n" if $verbose;
+  my ($cred_file) = @_;
 
-   my $dbh = DBI->connect("dbi:Oracle:$uniprot_db", 
-                         "spselect", 
-                         "spselect", 
-                          \%attr) 
-      or die "Cannot connect to Uniprot database $DBI::errstr\n";
-   return $dbh;
+  my ($sid, $host, $port, $user, $pass);
+
+  open(my $cfh, $cred_file) or die "Could not open $cred_file for reading\n";
+  while(<$cfh>) {
+    /^\#/ and next;
+
+    /^DBNAME:(\S+)/ and $sid = $1;
+    /^USER:(\S+)/ and $user = $1;
+    /^PASS:(\S+)/ and $pass = $1;
+    #/^HOST:(\S+)/ and $host = $1;
+    #/^PORT:(\S+)/ and $port = $1;
+  }
+
+  my $dbh = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
+    #-host => $host,
+    #-port => $port,
+    -user => $user,
+    -pass => $pass,
+    -dbname => $sid,
+    -driver => 'Oracle');
+
+  return $dbh;
 }
