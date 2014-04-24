@@ -4,8 +4,8 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2014-04-15 12:04:44 $
-# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2014-04-24 14:55:07 $
+# Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
 
@@ -418,7 +418,7 @@ sub main_gene_checks {
 	  else {
 	    push(@error2, "ERROR: $gene_model does not have the Gene_history populated\n");
 	  }
-	  if (defined $$Gene_ID) {
+	  if (defined $Gene_ID) {
 	    push(@error2, "ERROR: $gene_model should not contain a Gene ID under Gene\n");
 	  }
 	}
