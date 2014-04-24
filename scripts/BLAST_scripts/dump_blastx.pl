@@ -5,7 +5,7 @@
 #  and concatenate them at the end
 # 
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2014-04-01 10:37:16 $
+# Last edited on: $Date: 2014-04-24 10:28:50 $
 # 
 
 
@@ -23,14 +23,14 @@ use strict;
 use Getopt::Long;
 
 use lib $ENV{CVS_DIR};
-use LSF;
-use LSF::JobManager;
+use threads;
+use Thread::Queue;
 use Wormbase;
 use Coords_converter;
 
 
 
-my ($database,$store,$debug,$species,$test,$dumpdir, $bsub_mem);
+my ($database,$store,$debug,$species,$test,$dumpdir);
 GetOptions(
   'database=s'  => \$database,
   'store=s'     => \$store,
@@ -38,9 +38,22 @@ GetOptions(
   'species=s'   => \$species,
   'test'        => \$test,
   'dumpdir=s'   => \$dumpdir,
-  'bsubmem=s'   => \$bsub_mem,
 ) || die($usage);
 
+## create the worker threads before the log object is created and copied around
+my @workers;
+my $queue=Thread::Queue->new;
+
+sub blastx_worker{
+ while (my $string = $queue->dequeue){
+   system($string) && die(@!);
+ }
+}
+
+
+for (1..12){ # 12 methods/threads
+  push @workers,threads->create('blastx_worker');
+}
 
 my $wormbase;
 if ($store) {
@@ -50,12 +63,11 @@ if ($store) {
     -debug    => $debug,
     -test     => $test,
     -organism => $species,
-      );
+    );
 }
 
 my $log = Log_files->make_build_log($wormbase);
 $species = $wormbase->species;
-
 
 # that might work until we change logic_names
 my %logic2type = (
@@ -71,46 +83,26 @@ my %logic2type = (
   ipi_humanx     => '1',
   yeastx         => '1',
   slimswissprotx => '1',
-		 );
-
-
-$bsub_mem = "4000" if not defined $bsub_mem; 
-
-my $lsf = LSF::JobManager->new(
-  -q => $ENV{LSB_DEFAULTQUEUE},
-  -o => '/dev/null',
-  -e => '/dev/null',
-  -R => "select[mem>=$bsub_mem] rusage[mem=$bsub_mem]",
-  -M => $bsub_mem, 
-  -F => 400000);
-
+  );
 
 my $storable =  $wormbase->autoace . '/'. ref($wormbase).'.store';
 $dumpdir ||= "$ENV{PIPELINE}/dumps";
 $database ||= "worm_ensembl_${species}";
 
-my $job_count;
 my @outfiles;
 
 foreach my $db (keys %logic2type){
-  my @chroms = @{$wormbase->get_binned_chroms(-bin_size => 20)};
-  $log->write_to("bsub commands . . . . \n\n");
-  foreach my $chrom ( @chroms ) {
-    $job_count++;
-    my $outfile = "$dumpdir/${species}_$db.$job_count.ace";
-    push @outfiles,$outfile;
-    my $options="-database $database -logicname $db -outfile $outfile -store $storable -sequence $chrom";
-    $options .= ' -self' if $logic2type{$db} eq lc(ref $species);
-    my $cmd = "perl $ENV{CVS_DIR}/BLAST_scripts/blastx_dump.pl $options";
-    $lsf->submit($cmd);
-  }
+  my $outfile = "$dumpdir/${species}_$db.1.ace";
+  unlink $outfile if -e $outfile; # cleanup leftover bits
+  push @outfiles,$outfile;
+  my $options="-database $database -logicname $db -outfile $outfile -store $storable -toplevel";
+  $options .= ' -self' if $logic2type{$db} eq $species;
+  my $cmd = "perl $ENV{CVS_DIR}/BLAST_scripts/blastx_dump.pl $options";
+  $queue->enqueue($cmd);
 }
-$lsf->wait_all_children( history => 1 );
-$log->write_to("All children have completed!\n");
-for my $job ( $lsf->jobs ) {
-  $log->error("Job $job (" . $job->history->command . ") exited non zero\n") if $job->history->exit_status != 0;
-}
-$lsf->clear;   
+$queue->enqueue(undef) for 1..12; # 12 methods
+
+map {$_->join} @workers; # wait for the worker threads to finish
 
 # check that all files end with a blank line, 
 # otherwise the the job that created them was probably terminated prematurely by LSF
@@ -128,6 +120,7 @@ foreach my $file (@outfiles) {
 
 # concatenate the ace files into a big blob for later parsing with ensembl/ipi scripts
 my $outfile="$dumpdir/${species}_blastx.ace";
+unlink $outfile if -e $outfile;
 $log->write_to("Concatenating the ace files to create $outfile\n");
 
 # in case of Elegans do something else
@@ -153,6 +146,4 @@ if ($wormbase->species eq 'elegans' or
   $wormbase->run_command("cat $dumpdir/$species*x*.ace > $outfile", $log);
 }
 
-
-$log->mail();
-								    
+$log->mail();								    
