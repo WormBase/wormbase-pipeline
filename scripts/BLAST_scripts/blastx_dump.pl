@@ -1,23 +1,15 @@
 #!/usr/bin/env perl
-#
 # DESCRIPTION:
 #   script to dump single blastx logic_names from an ensembl_database
 #   it is possible to set TEST_FEATURE = one_feature_id to just use one
 #
-# WARNING:
-#   the script is a memory hog due to the huge ensembl objects being handled.
-#   therefore some shortcuts were used like the while shift(@bla) loops, to
-#   reduce the memory footprint. If you change it, DON'T use foreach and a large
-#   array of EnsEMBL objects, it invites disaster as it makes a copy of the array.
-#
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-11-29 15:02:27 $ 
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2014-04-24 12:39:28 $ 
 
 my $usage = <<USAGE;
 blastx_dump.pl options:
       -logicname LOGIC   name a logic_name from the ensembl database
       -database  DB_NAME name of the ensembl database
-      -toplevel          use the largest coordinate system for dumping (most times chromosomes)
       -test              use only wormpepX / 1 slice for speeding up testing
       -store STORABLE    use a premade storable
       -selfhits          remove selfhits from the blastx hits
@@ -26,32 +18,23 @@ blastx_dump.pl options:
       -sequence SEQUENCE only process the sequence specified
 USAGE
 
-
-
 ###################
 use lib $ENV{'WORM_PACKAGES'} . '/ensembl/ensembl/modules/';
 use lib $ENV{'WORM_SW_ROOT'} . '/lib/bioperl-live/';
-###################
+use lib $ENV{CVS_DIR};
 
 use Getopt::Long;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use IO::File;
-
-use lib $ENV{CVS_DIR};
-
 use Storable;
 use Wormbase;
 use strict;
-
-# for testing run it only on one clone
-# setting the environment variable TEST_FEATURE limits the whole thing to the specified feature
 
 my ($logicname,$test,$dbname,$toplevel,$store,$selfhits,$outfile,$debug);
 my @sequences;
 GetOptions(
     "logicname=s" => \$logicname,
     'database=s'  => \$dbname,
-    'toplevel'    => \$toplevel,
     'test'        => \$test,
     'store=s'     => \$store,
     'selfhits'    => \$selfhits,
@@ -72,29 +55,16 @@ if ($store) {
     );
 }
 
-
 my $outf = new IO::File $outfile,'w';
 
-# evil elegans hack to get the clone id/accession mapping
-my %clone2acc;
-my %acc2clone;
-if ($dbname=~/elegans/){
- $wormbase->FetchData('clone2accession',\%clone2acc);
- %acc2clone=reverse %clone2acc;
- undef %clone2acc;
-}
-
 # connect to database
-
-my $database_name = ($dbname ||'worm_ensembl_briggsae_test');
+my $database_name = ($dbname ||'worm_ensembl_'.$wormbase->species);
 my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(
         -host   => $ENV{'WORM_DBHOST'},
         -user   => 'wormro',
         -dbname => $database_name,
         -port   => $ENV{'WORM_DBPORT'},
     );
-
-    # actually it should really get a $wormbase object to get db-names and so on ...
 
 my $slice_adaptor = $db->get_SliceAdaptor();
 my $feature_adaptor = $db->get_ProteinAlignFeatureAdaptor();
@@ -106,10 +76,8 @@ if ($sequences[0]){
   foreach my $sequence(@sequences) {
     push @superlinks, $slice_adaptor->fetch_by_region('toplevel',$sequence);
   }
-} elsif ($toplevel) {
-  @superlinks = @{$slice_adaptor->fetch_all('toplevel')};
 } else {
-  @superlinks = @{$slice_adaptor->fetch_all('seqlevel')};
+  @superlinks = @{$slice_adaptor->fetch_all('toplevel')};
 }
 
 # hardcoded bits
@@ -127,7 +95,6 @@ my %logic2type = (
 		  yeastx         => 'wublastx_yeast',
 		  slimswissprotx => 'wublastx_slimSwissProt',
 		 );		 
-
 
 
 my %logic2prefix = (
@@ -155,19 +122,6 @@ my %cds2wormpep=%{&read_table()};
 while (my $link = shift @superlinks){
     print STDERR "iterating over: ",$link->seq_region_name,"\n" if $ENV{TEST};
 
-    # hack around the limitations of the clone slices
-    # by projecting them onto the toplevel overlapping genes should be fetched
-    #if (! $toplevel) {
-    #  my $seq_pairs = $link->project('toplevel');
-    #  my $parent=shift @$seq_pairs;
-    #  $link = $parent->to_Slice();
-    #}
-
-
-#######
-# split the slice into pieces ?
-#######
-
     # get all ProteinAlignFeatures on it
     my @dafs =  @{ $feature_adaptor->fetch_all_by_Slice($link,$logicname) };
     @dafs    =  ($feature_adaptor->fetch_by_dbID($ENV{TEST_FEATURE}) ) if $ENV{TEST_FEATURE}; # 5970637
@@ -175,32 +129,26 @@ while (my $link = shift @superlinks){
     my $type=$logic2type{$logicname} || die "cannot find $logicname\n";
     my $prefix=$logic2prefix{$logicname};
 
-    &clone_ace($link->seq_region_name,$type,$link->length);
+    &seq_ace($link->seq_region_name,$type,$link->length);
     
     my @features=&remove_selfhits(\@dafs,$link);
     undef @dafs;
     @features=&filter_features(\@features,$link->length);
     while (my $f= shift @features){
-#       print $outf $link->seq_region_name;
-#       printf( "  %s %d-%d (%+d)\t=> %d-%d (%+d) %s %s\n",
-#       $_->hseqname, $_->hstart, $_->hend, $_->hstrand,  $_->start,  $_->end, $_->strand,$_->p_value,$_->cigar_string)
         my $hname=$f->hseqname;
         $f->hseqname($prefix.$hname);
-        &feature2ace($f,$type); #if $f->p_value < 0.0001;
+        &feature2ace($f,$type);
     }
 
     print $outf "\n";
-#   last if $ENV{TEST};
+    last if $ENV{TEST};
 }
 
-
-
 # create the Sequence link
-sub clone_ace {
+sub seq_ace {
     my ($name,$type,$length)=@_;
     my $tmp_name=$name;
     $tmp_name=~s/\.\d+$//;
-    $name = ($acc2clone{$tmp_name}||$name); # because of clones having accession numbers in the db
     print $outf "Sequence : \"$name\"\n";
     print $outf "Homol_data \"$name:$type\" 1 $length\n\n";
     print $outf "Homol_data : \"$name:$type\"\n"
@@ -233,7 +181,7 @@ sub feature2ace {
 # p_value shorthand
 sub p_value {
     my ($p)=@_;
-    my $log = (eval($p) > 0 ? -(log(eval($p)))/log(10) : 999.9); # if e-value is zero set it to 999.9
+    my $log = ($p > 0 ? -(log($p))/log(10) : 999.9); # if e-value is zero set it to 999.9
     return $log;
 }
 
@@ -257,7 +205,7 @@ sub cigar2ace {
 
             my ($d_start);
             if ($f->strand > 0 ){ $d_start= $f->start+$aligned_pos_dna }
-            else { $d_start= -(-$f->start+$aligned_pos_dna) }
+            else { $d_start= $f->start-$aligned_pos_dna }
 
             my $align= "AlignDNAPep $d_start ".($f->hstart+$aligned_pos_pep)." ".($size/3);
 
@@ -269,7 +217,6 @@ sub cigar2ace {
             $aligned_pos_dna+=($size);
         }
     }
-
     return \@aceblocks;       
 }
 
@@ -281,18 +228,13 @@ sub _feature_flip {
     $f->end($t);
 }
 
-
 #################
-# only  for C.elegans ?
-# else we need some hack to pull the data from different flatfile(formats)
-#
 # to remove selfhits
 sub remove_selfhits {
     my ($features,$link,$wormbase)=@_;
     my (%cds2wormpep,@results);
 
-    #$wormbase->FetchData( 'cds2wormpep', \%cds2wormpep ) if $wormbase;
-    %cds2wormpep=%{&read_table()}; #unless $wormbase;
+    %cds2wormpep=%{&read_table()};
     die('cannot fetch cds2wormpep') unless %cds2wormpep;
 
     my @index=&build_search_struct($link->get_all_Genes()); # using a dirty search structure
@@ -309,7 +251,8 @@ sub remove_selfhits {
                 # kick it if it is the same
                 map {print STDERR "-- found $_\n"} keys %ids if $ENV{TEST};
                 if ($ids{$feature->hseqname} || $ids{$cds2wormpep{$feature->hseqname}}){
-                    print STDERR "kicking: ",$feature->dbID," ", $feature->hseqname," ",$feature->start," ",$feature->end," ",$feature->p_value,"\n" if $ENV{TEST};
+                    print STDERR "kicking: ",$feature->dbID," ", $feature->hseqname," ",$feature->start," ",$feature->end," ",$feature->p_value,"\n" 
+			if $ENV{TEST};
                     next FEATURE;
                 }
             }
@@ -324,8 +267,6 @@ sub remove_selfhits {
 sub build_search_struct {
     my ($genes)=@_;
     
-    # lets see what we actually need:
-    # start, end, {$_->translation->stable_id} @{$hit->get_all_Transcripts}
     my @slim_genes = map { 
         {
             start => $_->start,
@@ -333,8 +274,6 @@ sub build_search_struct {
             ids => [map {$_->translation->stable_id} @{$_->get_all_Transcripts}]
         }
     } @$genes;
-    my @sorted_genes=sort {$a->{start} <=> $b->{start} || $a->{end} <=>$b->{end}} @slim_genes
-    
 }
 
 # search in list
@@ -343,15 +282,14 @@ sub search {
     my @hits;
     foreach my $g (@{$list}){
         push(@hits,$g) if ($feature->start <= $g->{end} && $feature->end >= $g->{start});
-#       last if ($feature->start > $g->end && $feature->end > $g->end); # need to comment that if it returns crap
     }
     return @hits;
 }
 
-# remove < 75% of evalue features from 100bp windows
+# remove < 50% of evalue features from 100bp windows
 # basic idea:
 #   create bins for every 100bp and put all overlapping features into them
-#   iterate over the bins and add the best 5 within 25% of the highest bin p-value into the results
+#   iterate over the bins and add the best 5 within 50% of the highest bin p-value into the results
 sub filter_features {
     my ($_features,$length)=@_;
     my %f_features;
@@ -359,14 +297,11 @@ sub filter_features {
     # bin size
     my $size=100;
 
-    # should I bin them instead?
     my @bins;
 
     # put the feature in all bins between start and stop
     while( my $f= shift @$_features ){
         my ($_start,$_end)=sort {$a <=> $b } ($f->start,$f->end);
-#       next if $_start < 0;
-#       next if $_end > $length;
         for (my $n=int($_start/$size);$n <=int($_end/$size);$n++){
             push @{$bins[$n]},$f;
         }
@@ -379,8 +314,7 @@ sub filter_features {
         my $max_hsp=0;
         my @sorted_bin = sort {$a->p_value <=> $b->p_value} @$bin;
         $best=&p_value($sorted_bin[0]->p_value);
-#       map { $f_features{$_->dbID}=$_ if ($max_hsp++ <5)} @$bin; # <= cutoff place, lets try 25%
-        map { $f_features{$_->dbID}=$_ if (&p_value($_->p_value) > $best*0.5 && $max_hsp++ <5)} @$bin; # <= cutoff place, lets try 25%
+        map { $f_features{$_->dbID}=$_ if (&p_value($_->p_value) > $best*0.5 && $max_hsp++ <5)} @$bin; # <= cutoff place, best 5 and within 50%
     }
     
     # flatten hash into an array
@@ -406,7 +340,6 @@ sub get_latest_pep {
 sub read_table {
     my ($wormbase)=@_;
     my %mapping;
-    # evil hardcoded path. should use wormpep instead.
     my @files=&get_latest_pep;
     foreach my $f(@files){
        my $file= new IO::File $f, 'r' || die(@!);
