@@ -51,7 +51,7 @@ my %species = (
     6282   => 'Onchocerca volvulus',
     51031  => 'Necator americanus',
     1195656=> 'Pristionchus exspectatus',
-    53326  => 'Ancylostoma caylanicum',
+    53326  => 'Ancylostoma ceylanicum',
 );
 
 my %coreSpecies = (
