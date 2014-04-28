@@ -81,8 +81,7 @@ while (my ( $gene, $name_type, $name ) = $sth->fetchrow_array){
 #This is to get dead and briggsae genes that dont have names.
 $query = 'SELECT object_public_id, object_live
           FROM   primary_identifier 
-          WHERE domain_id = 1
-          ORDER BY object_public_id';
+          WHERE domain_id = 1';
 
 $sth = $db->dbh->prepare($query);
 $sth->execute();
