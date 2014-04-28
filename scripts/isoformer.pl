@@ -7,9 +7,15 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-04-15 10:12:19 $      
+# Last updated on: $Date: 2014-04-28 13:04:26 $      
 
-
+# Things isoformer gets confused by or misses:
+# - non-canonical spliced introns where the RNASeq intron is placed on the positive strand and so is missing from reverse-strand genes
+# - retained introns
+# - isoforms that start in the second (or more) exon
+# - isoforms that terminate prematurely
+# - two or more separate sites of TSL in the same intron cause multiple identical structuers to be created
+# - existing structures where the Sequence span is not the same as the span of the exons so a new structure look unique when compared to it
 
 
 use strict;                                      
@@ -117,13 +123,29 @@ my $ncRNA_name = "non_coding_transcript_isoformer";
 my %all_splices;
 my %all_TSL;
 print "Reading splice data\n";
-foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 1)) {
-#foreach my $chromosome ('CHROMOSOME_IV') {
-  if (!exists $all_splices{$chromosome}) {
-    my ($splice_data, $TSL_data) = read_splice_and_TSL_data($gff, $chromosome, $log);
-    $all_splices{$chromosome} = $splice_data;
-    $all_TSL{$chromosome} = $TSL_data;
+my $data_dir = $wormbase->wormpub . "/CURATION_DATA";
+my $dump_splices = "$data_dir/isoformer_${species}_splices.dat";
+my $dump_TSL = "$data_dir/isoformer_${species}_TSL.dat";
+
+if (-e $dump_splices && -e $dump_TSL) {
+  $wormbase->FetchData("isoformer_${species}_splices", \%all_splices, $data_dir);
+  $wormbase->FetchData("isoformer_${species}_TSL", \%all_TSL, $data_dir);
+
+} else {
+  foreach my $chromosome ($wormbase->get_chromosome_names(-mito => 1, -prefix => 1)) {
+    if (!exists $all_splices{$chromosome}) {
+      my ($splice_data, $TSL_data) = read_splice_and_TSL_data($gff, $chromosome, $log);
+      $all_splices{$chromosome} = $splice_data;
+      $all_TSL{$chromosome} = $TSL_data;
+    }
   }
+ # now dump data to file
+  open (all_splices, ">$dump_splices") or die "Can't write to $dump_splices\n";
+  print all_splices Data::Dumper->Dump([\%all_splices]);
+  close all_splices;
+  open (all_TSL, ">$dump_TSL") or die "Can't write to $dump_TSL\n";
+  print all_TSL Data::Dumper->Dump([\%all_TSL]);
+  close all_TSL;
 }
 
 if ($notsl) {%all_TSL=()} # don't use TSL data - for debugging purposes
