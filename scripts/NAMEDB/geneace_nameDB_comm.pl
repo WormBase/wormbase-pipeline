@@ -61,9 +61,8 @@ my $db = NameDB_handler->new($DB,$USER,$PASS,$wormbase->wormpub . '/DATABASES/Na
 my $query = 'SELECT pi.object_public_id, si.name_type_id, si.object_name
              FROM   primary_identifier pi,secondary_identifier si
              WHERE  pi.object_id = si.object_id 
-             AND   (secondary_identifier.name_type_id = 3 OR secondary_identifier.name_type_id = 1) 
-             AND    primary_identifier.domain_id = 1
-             ORDER BY object_public_id';
+             AND   (secondary_identifier.name_type_id = 3 OR si.name_type_id = 1) 
+             AND    primary_identifier.domain_id = 1';
 # results
 #| object_public_id | name_type_id | name
 #| WBGene00044331   |            1 | clec-25       |
