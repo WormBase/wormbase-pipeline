@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-04-29 10:41:41 $      
+# Last updated on: $Date: 2014-04-29 11:08:04 $      
 
 # Things isoformer gets confused by or misses:
 # - non-canonical spliced introns where the RNASeq intron is placed on the positive strand and so is missing from reverse-strand genes
@@ -174,6 +174,7 @@ while (1) {
       print "clear, clear all       : clear all isoformer objects\n";
       print "clear isoformer_8      : clear object isoformer_8\n";
       print "clear 8 9 10           : clear object isoformer_8, isoformer_9 and isoformer_10\n";
+      print "clean\n                : an alias for 'clear'"
       print "what                   : reports the isoformer object that are saved in the database\n";
       print "fix isoformer_1 AC3.3c : fix isoformer_1 to CDS/Transcript, creating it if necessary\n";
       print "check AC3.3c           : check if the specified object's structure looks OK\n";
@@ -183,6 +184,10 @@ while (1) {
     if ($userinput eq 'q' || $userinput eq 'quit') {last MAIN} # quit
 
     if ($userinput =~ /^clear\b/) {
+      &clear($userinput);
+      next;
+    }
+    if ($userinput =~ /^clean\b/) {
       &clear($userinput);
       next;
     }
@@ -426,7 +431,7 @@ sub get_active_region {
     } else { # try Pseudogene
       my $obj = $db->fetch(Pseudogene => "$region[0]");
       if (! defined $obj) {
-	print STDERR "Region: '$region' is an unknown way of specifying a region: not a CDS or a Pseudogene";
+	print STDERR "Region: '$region' is an unknown way of specifying a region: not a CDS or a Pseudogene\n";
 	return undef;
       }
       my $gene_obj = $obj->Gene;
