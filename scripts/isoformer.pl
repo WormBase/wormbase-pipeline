@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-04-29 09:42:50 $      
+# Last updated on: $Date: 2014-04-29 10:41:41 $      
 
 # Things isoformer gets confused by or misses:
 # - non-canonical spliced introns where the RNASeq intron is placed on the positive strand and so is missing from reverse-strand genes
@@ -1252,6 +1252,7 @@ sub make_isoform {
   print ISOFORM "CDS\n" if ($biotype eq 'CDS');
   print ISOFORM "$pseudogene_type\n" if ($pseudogene_type);
   print ISOFORM "Transcript $transcript_type\n" if ($transcript_type);
+  print ISOFORM "Evidence Curator_confirmed $personid\n" if ($species eq 'brugia'); # for Michael
 
   close ISOFORM;
 #  sleep(1); # allow time for NFS torealize there is a file there
@@ -1530,6 +1531,14 @@ sub fix {
     foreach ($subject_obj->Isoform) {
       my ($isoform, $evidence, $evidence_value1, $evidence_value2) = $_->row(0);
       print TARGET "Isoform \"", $isoform->name ,"\"";
+      print TARGET " \"", $evidence->name,"\"" if ($evidence);
+      print TARGET " \"", $evidence_value1->name,"\"" if ($evidence_value1);
+      print TARGET " \"", $evidence_value2->name,"\"" if ($evidence_value2);
+      print TARGET "\n";
+    }
+    foreach ($subject_obj->Evidence) { # for Michael
+      my ($isoform, $evidence, $evidence_value1, $evidence_value2) = $_->row(0);
+      print TARGET "Evidence \"", $isoform->name ,"\"";
       print TARGET " \"", $evidence->name,"\"" if ($evidence);
       print TARGET " \"", $evidence_value1->name,"\"" if ($evidence_value1);
       print TARGET " \"", $evidence_value2->name,"\"" if ($evidence_value2);
