@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-04-29 11:08:04 $      
+# Last updated on: $Date: 2014-04-29 11:12:38 $      
 
 # Things isoformer gets confused by or misses:
 # - non-canonical spliced introns where the RNASeq intron is placed on the positive strand and so is missing from reverse-strand genes
@@ -1291,7 +1291,8 @@ sub clear {
 #  }
 
   # get all the isoformer objects
-  if ($f[0] eq 'clear') {
+  if ($f[0] eq 'clear' || $f[0] eq 'clean') {
+    $f[0] = 'clear';
     my @CDS_objects = $db->fetch(CDS => "${CDS_name}_*");
     my @ncRNA_objects = $db->fetch(Transcript => "${ncRNA_name}_*");
     
