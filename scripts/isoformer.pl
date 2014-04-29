@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-04-29 09:32:03 $      
+# Last updated on: $Date: 2014-04-29 09:42:50 $      
 
 # Things isoformer gets confused by or misses:
 # - non-canonical spliced introns where the RNASeq intron is placed on the positive strand and so is missing from reverse-strand genes
@@ -77,9 +77,8 @@ my $log = Log_files->make_build_log($wormbase);
 
 if (! defined $species) {$species = $wormbase->species}
 
-my $USER;
+my $USER = $ENV{USER};
 if (! defined $database) {
-  $USER = $ENV{USER};
   if ($species eq 'elegans') {
     $database = "/nfs/wormpub/camace_${USER}";
   } else {
