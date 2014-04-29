@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-04-28 13:04:26 $      
+# Last updated on: $Date: 2014-04-29 09:32:03 $      
 
 # Things isoformer gets confused by or misses:
 # - non-canonical spliced introns where the RNASeq intron is placed on the positive strand and so is missing from reverse-strand genes
@@ -1187,6 +1187,8 @@ sub make_isoform {
     $personid = 'WBPerson1983';
   } elsif ($USER eq 'es9') {
     $personid = 'WBPerson2062';
+  } elsif ($USER eq 'mh6') {
+    $personid = 'WBPerson4055';
   } else {
     die "Unknown WBPerson id: $USER\n";
   }
