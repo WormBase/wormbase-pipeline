@@ -381,6 +381,9 @@ sub parse_genes_gff3_fh {
           $transcript->analysis($pseudo_ana);
           $transcript->biotype('pseudogene');
           $gene_biotypes{pseudogene}++;
+        } elsif ( $gff_type eq 'mRNA'){
+          # mRNA feature with no corresponding CDS. Barf
+          die "Transcript $tid is an mRNA, but could not get a valid CDS for it. Aborting\n";
         } else {
           $transcript->analysis($nc_ana);
           my $bt = ($gff_type =~ /RNA/) ? $gff_type : 'ncRNA';
