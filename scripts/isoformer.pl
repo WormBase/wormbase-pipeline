@@ -6,8 +6,8 @@
 #
 # This does stuff with what is in the active zone
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-05-01 14:51:50 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2014-05-01 15:26:04 $      
 
 # Things isoformer gets confused by or misses:
 # - non-canonical spliced introns where the RNASeq intron is placed on the positive strand and so is missing from reverse-strand genes
@@ -1569,7 +1569,7 @@ sub fix {
     print "\n*** Now set the Gene tag\n";
   }
   if ($target_exists) {
-    print "\n*** Now make History for $biotype $target.\n";
+    print "\n*** Now make History for $biotype $target\n";
   }
 
 }
