@@ -5,8 +5,8 @@
 # A PERL wrapper to automate the process of building the FTP sites 
 # builds wormbase & wormpep FTP sites
 # 
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2014-05-01 08:28:00 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2014-05-01 09:10:47 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -1136,6 +1136,9 @@ sub make_assembly_manifest {
       
       my $strain = $seq_col->Strain;
       my $assembly_name = $seq_col->Name;
+      unless (defined $assembly_name) {
+	$log->write_to("ERROR: The $g_species assembly appears to be unnamed so the JSON file will reflect this....this DOES have implications for the website, so best to check and patch the build if there is an official assembly name and you have time (a patch can be supplied to the web team so you don't have to re-package from scratch).\n");
+      }
       my $first_ws_rel = $seq_col->First_WS_release;
       my @labs;
       
@@ -1167,7 +1170,7 @@ sub make_assembly_manifest {
         bioproject => $bioproj,
         bioproject_description => $bioproj_desc,
         assembly_accession => $gc_acc,
-        assembly_name => $assembly_name->name,
+        assembly_name => (defined $assembly_name) ? $assembly_name->name : "$g_species Assembly unnamed",
         appeared_in => 'WS'.$first_ws_rel->name,
         is_canonical => ($is_canonical) ? JSON::true : JSON::false,
         strain => (defined $strain) ? $strain->name : "Unknown strain",
