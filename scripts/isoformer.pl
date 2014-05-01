@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-04-30 14:55:35 $      
+# Last updated on: $Date: 2014-05-01 14:51:50 $      
 
 # Things isoformer gets confused by or misses:
 # - non-canonical spliced introns where the RNASeq intron is placed on the positive strand and so is missing from reverse-strand genes
@@ -1238,7 +1238,7 @@ sub make_isoform {
   }
   $remark .= ".\"";
   print ISOFORM "$remark Curator_confirmed $personid\n";
-  print ISOFORM "$remark From_analysis RNASeq_Hillier_elegans\n";
+  print ISOFORM "$remark From_analysis RNASeq\n";
   if ($TSL_type) {
     my @ids = split ' ', $feature_id;
     foreach my $id (@ids) {
