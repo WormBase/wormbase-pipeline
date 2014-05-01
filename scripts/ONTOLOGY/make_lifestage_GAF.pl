@@ -55,7 +55,7 @@ my ($gene_info, $it, $count);
 $gene_info = &get_gene_info( $acedbpath, $wormbase, $full_name );
 $log->write_to( scalar(keys %$gene_info) . " genes read\n" ) if $verbose;
 
-$outfile ||= $wormbase->ontology . "/worm_development_association." . $wormbase->get_wormbase_version_name . ".wb";
+$outfile ||= $wormbase->ontology . "/development_association." . $wormbase->get_wormbase_version_name . ".wb";
 open(my $outfh, ">$outfile" ) or $log->log_and_die("cannot open $outfile : $!\n");
 
 $it = $db->fetch_many( -query => 'find Expr_pattern Life_stage' );

@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2014-04-30 16:18:10 $
+# Last updated on: $Date: 2014-05-01 08:28:00 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -1781,8 +1781,8 @@ phenotype_association.WSREL.wb
 phenotype_ontology.WSREL.obo
 disease_association.WSREL.wb
 disease_ontology.WSREL.obo
-worm_development_association.WSREL.wb
-worm_development_ontology.WSREL.obo
+development_association.WSREL.wb
+development_ontology.WSREL.obo
 
 []COMPARATIVE_ANALYSIS
 compara.WSREL.tar.gz
