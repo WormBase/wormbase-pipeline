@@ -8,8 +8,8 @@
 #                          ~wormpub/BUILD/autoace/release/
 #                          /nfs/WWW/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-05-15 20:35:15 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2014-05-01 12:33:28 $
 
 
 use strict;                                      
@@ -111,9 +111,9 @@ $wormbase->check_file("$acedir/release/letter.${release}", $log,
 
 if ($mail_dev) {
 # Send email
-  print "\n\nMailing to wormbase-dev . .\n";
+  print "\n\nMailing to wormbase-staff . .\n";
   
-  my $to             = $debug?$maintainers:'dev@wormbase.org';
+  my $to             = $debug?$maintainers:'staff@wormbase.org';
   my $name           = "Wormbase ${release} release";
   my $release_letter = "$repdir/letter.${release}";
   $wormbase->mail_maintainer( $name, $to, $release_letter);
@@ -177,7 +177,7 @@ This script:
 
 copies the release letter to the ftp site, website and autoace/release
 
-mails release letter to wormbase-dev
+mails release letter to wormbase-staff (dev has been deprecated)
 
 Then, when release letter is emailed it updates the symlink on the FTP
 site to make current_release point to the latest release directory.
