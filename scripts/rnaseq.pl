@@ -253,7 +253,10 @@ sub do_chromosome {
     my $library_stranded_count = 0;
 
     my $stranded_experiments1 = $RNASeq->exclude_experiments($experiments, 'strandedness', 'unknown');
-    my $stranded_experiments = $RNASeq->exclude_experiments($stranded_experiments1, 'strandedness', 'unstranded');
+    my $stranded_experiments2 = $RNASeq->exclude_experiments($stranded_experiments1, 'strandedness', 'reverse_stranded');
+    my $stranded_experiments3 = $RNASeq->exclude_experiments($stranded_experiments2, 'strandedness', 'unstranded');
+    my $stranded_experiments = $RNASeq->exclude_experiments($stranded_experiments3, 'library_layout', 'PAIRED'); # to be on the safe side, exclude all paired-end libraries as their orientations can be exotic
+    # should really also exclude experiments where the strandedness has not yet been set - should we look for ('strandedness', '')?
 
     foreach my $experiment_accession (keys %{$experiments}) {
       if (readhits($experiment_accession, $chromosome)) {
