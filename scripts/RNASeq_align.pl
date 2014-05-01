@@ -6,7 +6,7 @@
 #
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-04-02 10:31:29 $      
+# Last updated on: $Date: 2014-05-01 10:29:23 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -79,7 +79,7 @@ $RNASeq->remove_old_experiment_files($data);
 
 
 # create the LSF Group "/RNASeq/$species" which is now limited to running 15 jobs at a time
-$status = $wormbase->run_command("bgadd -L 15 /RNASeq/$species", $log); 
+$status = system("bgadd -L 15 /RNASeq/$species"); 
 
 my $lsf = LSF::JobManager->new();
 
