@@ -119,7 +119,7 @@ while( my $slice = shift @slices) {
         alias     => $transcript->stable_id(),
         display     => $transcript->stable_id(),
         gff_source  => (defined $transcript->analysis->gff_source) ?  $transcript->analysis->gff_source : "WormBase",
-        gff_type    => (defined $transcript->analysis->gff_feature ) ? $transcript->analysis->gff_feature : $transcript->biotype . '_primary_transcript',
+        gff_type    => (defined $transcript->analysis->gff_feature ) ? $transcript->analysis->gff_feature : $transcript->biotype,
       };
 
       my $translation = $transcript->translation;
