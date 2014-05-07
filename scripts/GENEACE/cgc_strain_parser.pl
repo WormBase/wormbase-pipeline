@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2014-02-07 11:59:21 $
+# Last updated on: $Date: 2014-05-07 08:35:36 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -131,7 +131,7 @@ open(INPUT, $input_file) || die "Can't open inputfile!";
 
 # setup the nameserver
 
-my $DB = $test ? 'test_wbgene_id;mcs12:3307' : 'wbgene_id;shap:3303';
+my $DB = $test ? 'test_wbgene_id;mcs11:3307' : 'wbgene_id;shap:3303';
 my $db = NameDB_handler->new($DB,$ndbUser,$ndbPass,'/nfs/WWWdev/SANGER_docs/data');
 my $geneAceDB = Ace->connect(-path => $geneace_dir) or die Ace->error;
 $db->setDomain('Variation');

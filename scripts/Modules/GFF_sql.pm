@@ -4,8 +4,8 @@
 # class to manage GFF stuff
 # by Michael Han
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2013-02-12 10:47:45 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2014-05-07 08:35:37 $
 ######
 
 package GFF_sql;
@@ -32,11 +32,11 @@ sub initialize {
     my ( $load, $chromosome ) = @_;
     $chromosome =~s/\./_/g;    
  
-    my $dsn="DBI:mysql:database=mh6;host=mcs12;port=3307";
+    my $dsn="DBI:mysql:database=mh6;host=mcs11;port=3307";
     my $user='mh6';
     my $pass='mh6';
     if ($self->{'build'}) { $dsn='DBI:mysql:database=worm_gffdb;host=farmdb1';$user='wormadmin';$pass='worms' }
-    elsif ($self->{fallback}) { $dsn='DBI:mysql:database=mh6;host=mcs12;port=3307'}
+    elsif ($self->{fallback}) { $dsn='DBI:mysql:database=mh6;host=mcs11;port=3307'}
  
 #    $self->{dbh} = DBI->connect( "DBI:mysql:database=worm_testdb;host=ecs1f",
 #        'wormadmin', 'worms' )
@@ -487,10 +487,10 @@ perl -mGFF_sql -e '$bla=GFF_sql->new();@line=$bla->get_by_source($ARGV[0],"gene"
 
 =head1 AUTHOR
 
-$Author: pad $
+$Author: mh6 $
 
 =head1 VERSION
 
-$Date: 2013-02-12 10:47:45 $
+$Date: 2014-05-07 08:35:37 $
 
 =cut

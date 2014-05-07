@@ -6,8 +6,8 @@
 #
 # simple script for creating new (sequence based) Gene objects 
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2014-01-28 14:51:29 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2014-05-07 08:35:36 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -135,7 +135,7 @@ if( $update_nameDB ) {
   my $DB;
   # Live or Test
   if ($test) {
-    $DB = 'test_wbgene_id;mcs12:3307';
+    $DB = 'test_wbgene_id;mcs11:3307';
     print "Using the TEST server $DB\n";
   }
   else {

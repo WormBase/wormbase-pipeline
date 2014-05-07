@@ -16,7 +16,7 @@ def read_common_data(file,species="autoace")
 end
 
 def read_tableMaker
-  f=File.new('con_tuti.txt','r')
+  f=File.new('blah.txt','r')
   h=Hash.new
   f.each_line{|l|
     l.gsub!('"','')
