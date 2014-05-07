@@ -1496,7 +1496,7 @@ sub full_name {
   if($param{'-short'}){
     return 'T. suis';
   } elsif($param{'-g_species'}){
-    return 'T_suis';
+    return 't_suis';
   }
   else { 
     return'Trichuris suis';
