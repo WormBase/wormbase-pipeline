@@ -14,7 +14,7 @@
 //
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2014-03-14 12:38:51 $
+// Last edited on: $Date: 2014-05-08 13:48:34 $
 //
 //
 // Additional things to consider. If classes are added or new data in the ?Gene class
@@ -334,8 +334,8 @@
 		       Transcription_factor ?Transcription_factor XREF Product_of
         Experimental_info RNAi_result ?RNAi XREF Gene #Evidence
                           Expr_pattern ?Expr_pattern XREF Gene
-                          Drives_Transgene ?Transgene XREF Driven_by_gene
-                          Transgene_product ?Transgene XREF Gene
+                          Drives_construct ?Construct XREF Driven_by_gene
+			  Transgene_product ?Construct XREF Gene
                           Regulate_expr_cluster ?Expression_cluster XREF Regulated_by_gene // Wen WS228
                           Antibody ?Antibody XREF Gene
                           Microarray_results ?Microarray_results XREF Gene
@@ -362,7 +362,6 @@
 		  Pseudo_map_position // should be added to flag those genes which have Map position tags that
 				      // were 'promoted' from Interpolated_map_position tags
         Reference ?Paper XREF Gene #Evidence
-	
         Remark ?Text #Evidence
 	Method UNIQUE ?Method
 
@@ -473,7 +472,7 @@
 			   Interactor_overlapping_CDS ?CDS XREF Interaction #Interactor_info	// CDS of the interacting gene or protein (or related sequence)
 			   Interactor_overlapping_gene ?Gene XREF Interaction #Interactor_info		// Gene (or portion of gene) involved in the interaction
 			   Interactor_overlapping_protein ?Protein XREF Interaction #Interactor_info	// Protein (or portion of protein) involved in the interaction
-			   Molecule_regulator ?Molecule XREF Interaction #Interactor_info			// Molecule that regulates a gene or protein (ported from Gene_regulation Class)
+			   Molecule_interactor ?Molecule XREF Interaction #Interactor_info			// Molecule that regulates a gene or protein (ported from Gene_regulation Class)
 			   Other_regulator ?Text #Interactor_info	// Free text describing a regulator entity or condition that does not fall into a standard WormBase category
 			   Other_regulated ?Text #Interactor_info	// Free text describing a regulated entity or condition that does not fall into a standard WormBase category
 			   Rearrangement  ?Rearrangement XREF Interactor #Interactor_info
@@ -483,6 +482,7 @@
 				 Affinity_capture_MS			      // A physical interaction detection technique
 				 Affinity_capture_RNA			      // A physical interaction detection technique
 				 Affinity_capture_Western		      // A physical interaction detection technique
+				 Chromatin_immunoprecipitation
 				 Cofractionation		      	      // A physical interaction detection technique
 				 Colocalization				      // A physical interaction detection technique
 				 Copurification				      // A physical interaction detection technique
@@ -699,15 +699,20 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 ?Clone  Evidence #Evidence
+	Species UNIQUE ?Species
+  	Reference ?Paper XREF Clone
+	Produced_by Person ?Person
+		    Author ?Author
+	Sequence ?Sequence XREF Clone
 	Remark  General_remark ?Text 
 		Y_remark ?Text
 		PCR_remark ?Text
-	Position  Map ?Map XREF Clone #Map_position
-        	  pMap UNIQUE  ?Contig XREF Clone  UNIQUE Int UNIQUE Int 
+	Position Map ?Map XREF Clone #Map_position
+        	 pMap UNIQUE  ?Contig XREF Clone  UNIQUE Int UNIQUE Int 
 						// pMap units are bands
-		  Clone_left_end ?Sequence	// filled by XREF
-		  Clone_right_end ?Sequence	// filled by XREF
-		  Pos_neg_data ?Pos_neg_data
+		 Clone_left_end ?Sequence	// filled by XREF
+		 Clone_right_end ?Sequence	// filled by XREF
+		 Pos_neg_data ?Pos_neg_data
 	Positive Positive_gene   ?Gene XREF Positive_clone
 		 Positive_variation  ?Variation XREF Positive_clone ?Author
 		 Inside_rearr    ?Rearrangement XREF Clone_inside ?Author
@@ -721,11 +726,15 @@
 		 Negative_probe  ?Clone XREF Does_not_hybridize_to ?Grid
 		 Does_not_hybridize_to ?Clone XREF Negative_probe ?Grid
         In_strain ?Strain XREF Clone
-	Species UNIQUE ?Species
-	Sequence    ?Sequence XREF Clone
+	Mutation ?Text
 	PCR_product ?PCR_product XREF Clone
+	Primer1 ?Text
+	Primer2 ?Text
+	Resistance_marker ?Text
 	Length	Seq_length UNIQUE Int 			// bp
 		Gel_length UNIQUE Float			// Kb
+		Insert UNIQUE Int
+		Backbone UNIQUE Int
 	Location ?Laboratory #Lab_Location
 	URL Text                          // to link to MRC_geneservice website ar2
 	Gridded ?Grid
@@ -746,11 +755,12 @@
 	        Flag    UNIQUE Int
 		Autopos
 	Expression_construct	Pattern ?Text	// archaic
-  	Reference ?Paper XREF Clone
+	Construct ?Construct XREF Clone
         cDNA_group Contains ?Clone XREF Contains Text
                    Contained_in ?Clone XREF Contained_in
                    Best_match UNIQUE ?Text
 	Expr_pattern ?Expr_pattern XREF Clone
+	Used_in_RNAi ?RNAi XREF Clone
         Sequence_status	Shotgun	UNIQUE DateType
 			Finished UNIQUE DateType
 			Accession_number UNIQUE ?Text
@@ -761,8 +771,10 @@
 		    cDNA
 		    Plasmid
 		    Other Text        // added to catch all clones 011017 dl
-	Transgene ?Transgene XREF Clone
-        Derived_from	?Clone
+	Vector_type ?Text
+        Derived_from ?Clone XREF Parent_of
+	Parent_of ?Clone XREF  Derived_from
+	Ligation ?Text
 
 #Lane UNIQUE Bands UNIQUE Float REPEAT // In base pairs: if you prefer to minimise the ace format
              Band_Lengths  UNIQUE Float REPEAT // in mm: if you prefer to minimise the ace format
@@ -837,12 +849,12 @@
 			       Locus_1	UNIQUE ?Locus XREF 2_point UNIQUE ?Variation XREF In_2_point
 			       Allele_1 UNIQUE ?Variation XREF 2_point
 			       Rearrangement_1 UNIQUE ?Rearrangement XREF 2_point
-                               Transgene_1 UNIQUE ?Transgene XREF 2_point
+                               //Transgene_1 UNIQUE ?Transgene XREF 2_point
 		Point_2 UNIQUE Gene_2   UNIQUE ?Gene  XREF 2_point UNIQUE ?Variation XREF In_2_point
 			       Locus_2	UNIQUE ?Locus XREF 2_point UNIQUE ?Variation XREF In_2_point
 			       Allele_2 UNIQUE ?Variation XREF 2_point
 			       Rearrangement_2 UNIQUE ?Rearrangement XREF 2_point
-                               Transgene_2 UNIQUE ?Transgene XREF 2_point
+                               //Transgene_2 UNIQUE ?Transgene XREF 2_point
 			// Point_1 and Point_2 are tag2 for the mapped loci
 			// for now to use this on a map both must be on it with Position type Map info.
 		Calculation UNIQUE Full UNIQUE Int UNIQUE Int UNIQUE Int UNIQUE Int // WT X Y XY
@@ -911,12 +923,12 @@
 				  Locus_A         UNIQUE ?Locus UNIQUE ?Variation XREF In_multi_point
 				  Allele_A        UNIQUE ?Variation
 				  Rearrangement_A UNIQUE ?Rearrangement
-                                  Transgene_A     UNIQUE ?Transgene XREF Multi_point 	
+                                  //Transgene_A     UNIQUE ?Transgene XREF Multi_point 	
 			 B UNIQUE Gene_B          UNIQUE ?Gene UNIQUE ?Variation XREF In_multi_point
 				  Locus_B         UNIQUE ?Locus UNIQUE ?Variation XREF In_multi_point
 				  Allele_B        UNIQUE ?Variation
 				  Rearrangement_B UNIQUE ?Rearrangement
-                                  Transgene_B UNIQUE ?Transgene XREF Multi_point	
+                                  //Transgene_B UNIQUE ?Transgene XREF Multi_point	
 		Gene  ?Gene  UNIQUE ?Variation XREF In_multi_point     // Connect to ?Gene model
 		Locus ?Locus UNIQUE ?Variation XREF In_multi_point     // Pair up alleles
 		Results A_non_B #Multi_counts
@@ -932,7 +944,7 @@
 		     Locus	   UNIQUE ?Locus	 XREF Multi_point UNIQUE Int #Multi_counts
 		     Allele	   UNIQUE ?Variation	 XREF Multi_point UNIQUE Int #Multi_counts
 		     Rearrangement UNIQUE ?Rearrangement XREF Multi_point UNIQUE Int #Multi_counts
-		     Transgene	   UNIQUE ?Transgene	 XREF Multi_point UNIQUE Int #Multi_counts  
+		     //Transgene	   UNIQUE ?Transgene	 XREF Multi_point UNIQUE Int #Multi_counts  
 
 ////////////////////////////////////////////////////////////////////////////////
 //			      Evidence hash
@@ -1419,7 +1431,8 @@
 			  CDS_predicted_by ?Method Float // score of method
 			  Prediction_status UNIQUE Predicted		// all CDSs must be one of these three things
 						   Partially_confirmed
-						   Confirmed
+						   Confirmed	EST_mRNA
+								RNASeq_intron
 		   Isoform #Evidence
 		   Start_not_found UNIQUE Int //UNIQUE added by MH6 WS228
 		   End_not_found
@@ -1735,7 +1748,8 @@
 		      Associated_with_operon      ?Operon XREF Associated_feature #Evidence
 		      Associated_with_Interaction ?Interaction XREF Feature_interactor
 		      Associated_with_expression_pattern	 ?Expr_pattern XREF Associated_feature #Evidence 
-		      Associated_with_Feature ?Feature XREF Associated_with_Feature #Evidence 
+		      Associated_with_Feature ?Feature XREF Associated_with_Feature #Evidence
+		      Associated_with_construct ?Construct XREF Sequence_feature
 	 Bound_by_product_of ?Gene XREF Gene_product_binds #Evidence //pad added this to show what gene it binds
 	 Transcription_factor UNIQUE ?Transcription_factor XREF Binding_site 
 	 Annotation UNIQUE ?LongText		// added for data attribution [030220 dl]
@@ -2025,7 +2039,7 @@
 				Pseudogene ?Pseudogene XREF Expr_pattern // [030801 krb]
 				Clone ?Clone XREF Expr_pattern
 				Protein ?Protein XREF Expr_pattern
-                                Protein_description Text   // stores information for Expr_patterns with unknown antigens [031105 krb]
+                                Protein_description Text   // information for Expr_patterns with unknown antigens [031105 krb]
 		Homol Homol_homol ?Homol_data XREF Expr_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info //Expr_pattern mapping [060427 ar2]
 		Expressed_in	Cell         ?Cell         XREF Expr_pattern #Qualifier
 				Cell_group   ?Cell_group   XREF Expr_pattern #Qualifier
@@ -2056,6 +2070,8 @@
 				Strain UNIQUE ?Strain
 		Reference ?Paper XREF Expr_pattern
                 Transgene ?Transgene XREF Expr_pattern
+                Variation ?Variation XREF Expr_pattern
+                Construct ?Construct XREF Expression_pattern
 		Associated_feature ?Feature XREF Associated_with_expression_pattern #Evidence
 		Antibody_info ?Antibody XREF Expr_pattern // This applies to both Western & Antibody staining
                                                           // added [031120 krb]
@@ -2422,40 +2438,80 @@
 /////////////////////////////////////////////////////////////////////////////// 
 
 ?Transgene      Evidence #Evidence
-		Public_name UNIQUE ?Text
-		Summary UNIQUE ?Text								// concise genomic description of the transgene
-                Synonym ?Text									// for alternative names
-                Promoter  Driven_by_gene ?Gene XREF Drives_transgene #Evidence			// eventually change this tag to promoter_gene
-                          Driven_by_construct  ?Text						// eventually change this tag to promoter_artificial
-                Reporter  Reporter_product ?Text						// removed multiple tags for Reporter_product
-                          Gene ?Gene XREF Transgene_product #Evidence 
-			  3_UTR  ?Gene #Evidence
-                Reporter_type  ?Text								// added for Transcriptional fusion or Translational fusion
-                Construction  Construction_summary Text
-			      Fragment ?Text							// new tag to collect the following as subtags, Fragment may be deleted later
-			      Coinjection_marker ?Text
-                              Integration_method UNIQUE ?Text					// changed from Integrated_by
-                              Laboratory ?Laboratory #Lab_Location				// changed from Location
-                              Author ?Author							// may eventually be deleted
-			      Person ?Person							// new tag ky 2011
-                Genetic_information  Extrachromosomal						// new subtag and tags
-                                     Integrated							// new subtag and collects the mapping tags
-				     Map ?Map  #Map_position  
-                                     Map_evidence #Evidence 
-                                     Mapping_data  2_point ?2_point_data			// if no data can be removed
-                                                   Multi_point ?Multi_pt_data			// if no data can be removed
-                         	     Phenotype ?Phenotype XREF Transgene #Phenotype_info
-                         	     Phenotype_not_observed ?Phenotype XREF Not_in_Transgene #Phenotype_info   
-                Used_for   Expr_pattern ?Expr_pattern XREF Transgene  
-                           Marker_for   ?Text #Evidence 
-                           Interactor ?Interaction 
-                Associated_with   Marked_rearrangement ?Rearrangement XREF By_transgene		//new tag to collect the following as subtags
-                          	  Clone ?Clone XREF Transgene Text 
-                          	  Strain ?Strain XREF Transgene 
-                Reference ?Paper XREF Transgene  
-                Species UNIQUE ?Species
+		Public_name UNIQUE ?Text     
+		Summary UNIQUE ?Text                               
+		Synonym ?Text       
+		Corresponding_variation UNIQUE ?Variation XREF Corresponding_transgene //put in to unambiguously associate the allele/transgene
+		Construction Construct   ?Construct XREF Transgene_construct
+     			     Coinjection ?Construct XREF Transgene_coinjection
+     			     Coinjection_other ?Text //for coinjection markers that are not specified as a construct
+     			     Integration_method UNIQUE ?Text     
+     			     Integrated_from ?Transgene XREF Transgene_derivation                                               
+     			     Laboratory ?Laboratory #Lab_Location    
+     			     Author ?Author
+		Construction_summary ?Text     
+		Genetic_information Extrachromosomal                
+				    Integrated 
+				    Map ?Map  #Map_position  //needed for transgenes with no granular mapping, e.g., just mapped to a LG
+				    Phenotype ?Phenotype XREF Transgene #Phenotype_info
+				    Phenotype_not_observed ?Phenotype XREF Not_in_Transgene #Phenotype_info  
+		Used_for Transgene_derivation ?Transgene XREF Integrated_from                                                   
+			 Expr_pattern ?Expr_pattern XREF Transgene  
+			 Marker_for   ?Text #Evidence 
+			 Interactor ?Interaction
+		Associated_with Marked_rearrangement ?Rearrangement XREF By_transgene
+				Strain ?Strain XREF Transgene 
+		Reference ?Paper XREF Transgene  
+		Species UNIQUE ?Species       
+		Remark ?Text #Evidence
                 Historical_gene   ?Gene #Evidence
-                Remark ?Text #Evidence								//contains a lot of construction notes
+
+
+//////////////////////////////////////////////////////////////////
+//
+// ?Construct class // any single contiguous stretch of engineered DNA sequence
+// 
+// Introduced by Karen Y. WS244 May 2014
+//
+//////////////////////////////////////////////////////////////////
+
+
+?Construct Evidence #Evidence
+	   Public_name ?Text
+	   Other_name ?Text
+	   Summary ?Text                      //genotype like [Pmyo-2::GFP]
+	   Sequence_feature ?Feature XREF Associated_with_construct
+	   Driven_by_gene ?Gene XREF Drives_construct
+	   Gene ?Gene XREF Transgene_product
+	   Fusion_reporter ?Text              //fluorescent proteins GFP, RFP, mCherry, etc.
+	   Other_reporter ?Text               //to add reporters, tags that aren-F¢t included in model-A
+	   Purification_tag ?Text             //FLAG, HA, Myc, TAP, etc.  
+	   Recombination_site ?Text           //LoxP, FRT
+	   Type_of_construct  Chimera
+			      Domain_swap
+			      Engineered mutation
+			      Fusion
+			      Complex                    // complex changes  
+			      Transcriptional_fusion
+			      Translational_fusion 
+			      Nterminal_translational_fusion
+			      Cterminal_translational_fusion
+			      Internal_coding_fusion
+	   Selection_marker ?Text              
+	   Construction_summary  ?Text        // Backbone vector, mol bio 
+	   DNA_text Text                      // for mapping, can include entire construct sequence
+	   Clone ?Clone XREF Construct
+	   Used_for Transgene_construct ?Transgene XREF Construct
+		    Transgene_coinjection ?Transgene XREF Coinjection
+		    Engineered_variation ?Variation XREF Derived_from_construct
+		    Topic_output_indicator ?WBProcess XREF Marker_construct
+		    Expression_pattern ?Expr_pattern XREF Construct 
+	   Reference ?Paper  
+	   Person ?Person
+	   Laboratory ?Laboratory #Lab_Location 
+	   Historical_gene ?Gene #Evidence 			
+	   Remark ?Text #Evidence
+
 
 
 //////////////////////////////////////////////////////////////////
@@ -2476,6 +2532,7 @@
 						  // 1st Text is DNA, 2nd is probe name
                         Sequence ?Sequence XREF RNAi  //links to a real Sequence object used in the experiment 
 						      // such as yk clone; not UNIQUE anymore
+                        Clone ?Clone XREF Used_in_RNAi
                         PCR_product ?PCR_product XREF RNAi // links to a PCR_product object used in 
 							   // the experiment; not UNIQUE anymore
         Uniquely_mapped  //boolean; if present, signifies that ?RNAi object has a unique sequence 
@@ -2786,7 +2843,8 @@
 		     Microarray_results ?Microarray_results  Text #Evidence  //refers to all experimental results included in the cluster.
 		     SAGE_tag ?SAGE_tag Text #Evidence
 		     Gene ?Gene XREF Expression_cluster Text #Evidence       //Igor: populated during build based on Microarray_results mapping
-		     Attribute_of Microarray_experiment ?Microarray_experiment  XREF Expression_cluster //Wen
+		     Attribute_of Microarray_experiment ?Microarray_experiment XREF Expression_cluster //Wen
+				  Mass_spectrometry ?Mass_spec_experiment XREF Expression_cluster
 				  RNAseq ?Analysis XREF Expression_cluster_RNAseq
                                   Tiling_array ?Analysis XREF Expression_cluster_tiling_array
                                   qPCR ?Analysis XREF Expression_cluster_qPCR //added by Wen for qPCR curation
@@ -3158,6 +3216,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 ?Variation Evidence #Evidence
+	   Variation_summary ?Text//to house final engineered construct
 	   Name Public_name	UNIQUE ?Variation_name XREF Public_name_for
 		Other_name	?Variation_name XREF Other_name_for #Evidence
                 Rearrangement	?Rearrangement  XREF Variation // some alleles are really rearrangements		
@@ -3177,7 +3236,8 @@
 					     Sequenced
 					     Pending_curation
 			    Deletion_verification Text #Evidence //[14-Mar-06 ar2] Mark Edgely of KO_alleles has developed test to confirm deletion (mt3)
-           Variation_type Allele		
+           Variation_type Engineered_allele  //construct model addition
+			  Allele		
 			  SNP            // replaces the old 'Status Text' part of ?Locus model	
 			  Confirmed_SNP
 			  Predicted_SNP
@@ -3191,6 +3251,15 @@
 		  Author  ?Author // use Person when known, else use Author
                   Person  ?Person //
 		  Analysis ?Analysis
+		  Corresponding_transgene Unique ?Transgene XREF Corresponding_variation
+		  Production_method Homologous_recombination //Homologous_recombination
+				    NHEJ //Non-homologous DNA end-joining, imprecise DNA repair
+				    MosSci
+				    TALENs
+				    CRISPR_Cas9
+				    ZFNNHEJ_repair //Zinc-finger nuclease
+				    ZFNHR_repair
+		  Expr_pattern ?Expr_pattern XREF Variation #Evidence
 		  DB_info Database ?Database ?Database_field UNIQUE ?Text //to link out to KO pages ar2 02-DEC-05
                   KO_consortium_allele   // North American knockout consortium
                   NBP_allele  // Japanese knockout consortium
@@ -3219,8 +3288,9 @@
                      Forward_genetics Text #Evidence  // Capture the basis of the experiment that isolated
                      Reverse_genetics Text #Evidence  // the allele. [040206 krb]
                      Transposon_excision ?Transposon_family
-                     Derived_from ?Variation XREF Derivative
-		     Derivative	  ?Variation XREF Derived_from
+                     Derived_from_variation ?Variation XREF Derivative
+		     Derivative ?Variation XREF Derived_from_variation
+		     Derived_from_construct ?Construct XREF Engineered_variation
            Genetics Gene_class ?Gene_class XREF Variation
 		    Mating_efficiency  Male UNIQUE ME0_Mating_not_successful #Evidence
 						   ME1_Mating_rarely_successful #Evidence
@@ -3352,6 +3422,7 @@
                       Minimum_peptide_length UNIQUE Int
                       False_discovery_rate UNIQUE Float // percentage
                       Mass_spec_peptide ?Mass_spec_peptide XREF Mass_spec_experiments     // the resulting peptide data
+                      Expression_cluster ?Expression_cluster XREF Mass_spectrometry
 
 //////////////////////////////////////////////////
 //
@@ -3450,7 +3521,7 @@
                                     Transgene ?Transgene ?Phenotype #Evidence
                                     RNAi      ?RNAi      ?Phenotype #Evidence
 				    Rearrangement  ?Rearrangement  ?Phenotype  #Evidence  //KY [110602 pad]
-	   Interaction	?Interaction	XREF	Molecule_regulator
+	   Interaction	?Interaction	XREF	Molecule_interactor
 	   Molecule_use  ?Text  #Evidence
 	   Reference ?Paper XREF Molecule
 	   Remark ?Text #Evidence
@@ -3488,6 +3559,7 @@
                                 GO_term ?GO_term #Evidence
                                 DO_term ?DO_term #Evidence
                 Picture ?Picture #Evidence
+                Marker_construct ?Construct XREF Topic_output_indicator
                 Movie ?Movie  #Evidence
                 Pathway DB_info Database ?Database ?Database_field ?Text //Can be used for any pathway db with unique accessionIDs
                 Remark ?Text #Evidence
