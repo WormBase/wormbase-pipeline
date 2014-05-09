@@ -57,6 +57,7 @@ open(my $out, ">$outfile") or $log->log_and_die("cannot open $outfile : $!\n");
 
 $it = $db->fetch_many(-query=>'find Variation (Phenotype OR Phenotype_not_observed)');
 
+
 my %g2v_via_var;
 
 while (my $obj=$it->next) {
@@ -67,7 +68,7 @@ while (my $obj=$it->next) {
   my (@affected_genes, %pheno);
   
   my $var = $obj->name;
-  
+
   @affected_genes = map { $_->name } $obj->Gene;
   next if not @affected_genes;
   
@@ -87,6 +88,11 @@ while (my $obj=$it->next) {
           foreach my $g (@affected_genes) {
             $g2v_via_var{$g}->{$key}->{$pheno}->{persons}->{$var}->{$person} = 1;
           }
+        } elsif ($thing->name eq 'Curator_confirmed') {
+          my $curator = $thing->right->name;
+          foreach my $g (@affected_genes) {
+            $g2v_via_var{$g}->{$key}->{$pheno}->{curators}->{$var}->{$curator} = 1;
+          }
         }
       }
     }
@@ -97,7 +103,7 @@ foreach my $g (sort keys %g2v_via_var) {
   next if not exists $gene_info->{$g};
   next if $gene_info->{$g}->{status} eq 'Dead';
   
-  foreach my $key (keys %{$g2v_via_var{$g}}) {
+  foreach my $key (sort keys %{$g2v_via_var{$g}}) {
     my $qual = ($key eq 'Phenotype_not_observed') ? "NOT" : "";
 
     foreach my $phen (sort keys %{$g2v_via_var{$g}->{$key}}) {
@@ -123,7 +129,8 @@ foreach my $g (sort keys %g2v_via_var) {
           $count++;
         }
       } elsif (exists $href->{persons}) {
-        # only person evidence for this association; we therefore create a line for each variation and link to that 
+        # only person evidence for this association; we are not allowed to have people as evdience in GAF.
+        # We therefore denote the variation as evidence, and add the person as WITH/FROM (fudge 1)
         foreach my $var (sort keys %{$href->{persons}}) {
           my @persons = sort keys %{$href->{persons}->{$var}};
           my $with_from = join("|", map { "WB:$_" } @persons);
@@ -142,6 +149,26 @@ foreach my $g (sort keys %g2v_via_var) {
                                    $date);
           $count++;
         }  
+      } elsif (exists $href->{curators}) {
+        # only Curator_confirmed evidence for this association. These usually come from large-scale projects
+        # like NBP. What we really need here is a project identifier in the evidence field, and to add the list
+        # of variations in the WITH/FROM. However, since we do not have project identifiers, we therefore
+        # again denote the variation as evidence and leave WITH/FROM empty (fudge 2)
+        foreach my $var (sort keys %{$href->{curators}}) {
+          &print_wormbase_GAF_line($out, 
+                                   $g, 
+                                   $gene_info->{$g}->{public_name}, 
+                                   $qual, 
+                                   $phen, 
+                                   "WB:" . $var,
+                                   "IMP", 
+                                   "",
+                                   "P",
+                                   $gene_info->{$g}->{sequence_name},
+                                   $taxid, 
+                                   $date);
+          $count++;
+        }
       }
     }      
   }
