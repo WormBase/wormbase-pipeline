@@ -426,12 +426,13 @@ sub load_genes {
   system($set_canon_cmd) and die "Could not set canonical transcripts\n";
 
   my $timestamp = strftime("%Y-%m", localtime(time));
-  
+  my $versionstamp = "${timestamp}-WormBase";
+
   $dba->dbc->do('DELETE FROM meta WHERE meta_key = "genebuild.start_date"');
-  $dba->dbc->do("INSERT INTO meta (meta_key,meta_value) VALUES (\"genebuild.start_date\",\"$timestamp\")");
+  $dba->dbc->do("INSERT INTO meta (meta_key,meta_value) VALUES (\"genebuild.start_date\",\"$versionstamp\")");
   
   $dba->dbc->do('DELETE FROM meta WHERE meta_key = "genebuild.version"');
-  $dba->dbc->do("INSERT INTO meta (meta_key,meta_value) VALUES (\"genebuild.version\",\"$timestamp\")");
+  $dba->dbc->do("INSERT INTO meta (meta_key,meta_value) VALUES (\"genebuild.version\",\"$versionstamp\")");
 
 }
 
