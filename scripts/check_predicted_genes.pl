@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2014-04-24 14:55:07 $
+# Last updated on: $Date: 2014-05-12 09:43:37 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -291,7 +291,7 @@ sub main_gene_checks {
 	#print "CDS : \"$gene_model\"\nStart_not_found 1\n\n" if $debug;
 	$start_tag_val = 1;
       }
-      unless ($incomplete) {
+      unless (($incomplete) || ($gene_model->name eq "K04G2.11")) {
 	push(@error2,"ERROR: $gene_model Start_not_found tag present\n"); 
 	print "ERROR: $gene_model Start_not_found tag present\n" if ($verbose);
       }
@@ -660,7 +660,10 @@ sub test_gene_sequence_for_errors{
 	  }
 	}
 	# look for incorrect start codons(CDS specific)
-	if (($start_codon ne 'atg') && ($method_test eq 'curated') && ($start_tag ne "present")) {
+	if ($gene_model->name eq "K04G2.11") {
+	  print "WARNING: $gene_model  intentionally utilises a novel '$start_codon' start codon......Ignoring\n" if $verbose;
+	}
+	if (($start_codon ne 'atg') && ($method_test eq 'curated') && ($start_tag ne "present") && ($gene_model->name ne "K04G2.11")) {
 	  if (($start_tag ne "present")) {
 	    push(@error1,"ERROR: $gene_model '$start_codon' is not a valid start codon. Start_not_found tag MISSING\n");
 	    print "ERROR: $gene_model '$start_codon' is not a valid start codon. Start_not_found tag MISSING\n" if $verbose;
