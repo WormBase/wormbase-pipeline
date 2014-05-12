@@ -28,7 +28,7 @@ my %protein_blast_logics = (
 
 my ($estori, $species, $debug, $verbose,
     $dbhost, $dbname, $dbuser, $dbpass, $dbport,
-    $gff_file, $seleno, 
+    $gff_file, $seleno, @gff3_sources,
     );
 
 &GetOptions('estorientations=s' => \$estori,
@@ -41,7 +41,9 @@ my ($estori, $species, $debug, $verbose,
             'dbname=s'          => \$dbname,
             'debug'             => \$debug,
             'verbose'           => \$verbose,
-            'seleno'            => \$seleno,
+            'selenocorrection'  => \$seleno,
+            'gff3source=s@'     => \@gff3_sources,
+
     );
 
 
@@ -221,7 +223,14 @@ foreach my $analysis_logic_name (@analysis_logic_names) {
     if (not $cod_ana or not $nc_ana or not $pseudo_ana) {
       die "Analyses 'wormbase', 'wormbase_non_coding' and 'wormbase_pseudogene' must be in the database to use this option\n";
     }
-    my $genes = $wb2ens->parse_genes_gff3( $gff_file, $cod_ana, $nc_ana, $pseudo_ana );
+
+    my $source_hash;
+    if (@gff3_sources) {
+      $source_hash = {};
+      map { $source_hash->{$_} = 1 } @gff3_sources;
+    }
+
+    my $genes = $wb2ens->parse_genes_gff3( $gff_file, $cod_ana, $nc_ana, $pseudo_ana, $source_hash );
     $verbose and printf STDERR "Parsed %d genes from GFF3. Writing genes to database...\n", scalar(@$genes);      
     $wb2ens->write_genes( $genes, 1 );
     
