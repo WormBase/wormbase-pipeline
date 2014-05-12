@@ -122,7 +122,7 @@ sub parse_genes_gff3_fh {
     chomp;
     next if /^\#/;
     my @l = split(/\t+/, $_);
-    
+
     next if defined $source_hash and not exists $source_hash->{$l[1]};
 
     next if (
@@ -143,7 +143,7 @@ sub parse_genes_gff3_fh {
       $l[2] ne 'pseudogenic_transcript' and 
       $l[2] ne 'CDS' and 
       $l[2] ne 'exon');
-    
+
     my ($id, $name,  %parents);
 
     foreach my $el (split(/;/, $l[8])) {
@@ -334,6 +334,7 @@ sub parse_genes_gff3_fh {
 
 
       my ($tr_st_ex, $tr_en_ex, $tr_st_off, $tr_en_off);
+      my $e_count = 1;
 
       foreach my $ex (@exons) {
         
@@ -344,6 +345,7 @@ sub parse_genes_gff3_fh {
           -strand    => ($ex->{strand} eq '+') ? 1 : -1,
           -phase     => $ex->{phase},
           -end_phase => $ex->{end_phase},
+          -stable_id => sprintf("%s.e%d", $tsid, $e_count++),
             );
 
         $transcript->add_Exon($ens_ex);
