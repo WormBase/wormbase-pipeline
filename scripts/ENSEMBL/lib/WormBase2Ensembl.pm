@@ -263,6 +263,8 @@ sub parse_genes_gff3_fh {
       my $slice = $self->slices->{$exons[0]->{seq}};
       die "Could not find slice\n" if not defined $slice;
 
+      @exons = reverse @exons if $strand eq '-';
+
       if (exists $tran->{cds}) {
         my @cds = sort { $a->{start} <=> $b->{start} } @{$tran->{cds}};
 
@@ -276,6 +278,7 @@ sub parse_genes_gff3_fh {
         #
         # match up the CDS segments with exons
         #
+        @cds = reverse @cds if $strand eq '-';
 
         foreach my $exon (@exons) {
           my ($matching_cds, @others) = grep { $_->{start} <= $exon->{end} and $_->{start} >= $exon->{start} } @cds;
@@ -287,13 +290,38 @@ sub parse_genes_gff3_fh {
             $exon->{cds_seg} = $matching_cds;
           } 
         }
+
+        # Rarely, UTRs are annotated on CDSs with non-zero start/end phases, which does not
+        # make sense. In this case, we clip off the 5' UTR
+        my $phase_5prime;
+        map { $phase_5prime = $_->{cds_seg}->{gff_phase} if exists $_->{cds_seg} and not defined $phase_5prime } @exons;
+
+        if ($phase_5prime != 0) {
+          my @keep_exons;
+          while(my $exon = shift @exons) {
+            # skip 5' exons that are wholly UTR
+            if (not exists $exon->{cds_seg}) {
+              push @keep_exons, $exon if @keep_exons;
+              next;
+            }
+
+            if ($strand eq '-' and $exon->{end} != $exon->{cds_seg}->{end}) {
+              # clip the exon back to the CDS end
+              $exon->{end} = $exon->{cds_seg}->{end};
+            } elsif ($strand eq '+' and $exon->{start} != $exon->{cds_seg}->{start}) {
+              # clip the exon forward to the CDS start
+              $exon->{start} = $exon->{cds_seg}->{start};
+            }
+            push @keep_exons, $exon;
+          }
+
+          @exons = @keep_exons;
+        }
       }
 
       #
-      # sort out phases
+      # sort out phases.
       # 
-      @exons = reverse @exons if $strand eq '-';
-
       foreach my $exon (@exons) {
 
         if (exists $exon->{cds_seg}) {
