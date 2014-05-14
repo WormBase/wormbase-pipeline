@@ -119,7 +119,7 @@ else
 
     # PERL5LIB
     setenv PERL5LIB ${WORM_PACKAGES}/bioperl/bioperl-live
-    setenv PERL5LIB ${WORM_PACKAGES}/bioperl/bioperl-run:${PERL5LIB}
+    setenv PERL5LIB ${WORM_PACKAGES}/bioperl/bioperl-run/lib:${PERL5LIB}
 
 
 endif
@@ -144,6 +144,7 @@ setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl-functgenomics/modules:${PERL5LIB
 setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl-pipeline/modules:${PERL5LIB}
 setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl-pipeline/scripts:${PERL5LIB}
 setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl-analysis/modules:${PERL5LIB}
+setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl-production/modules:${PERL5LIB}
 setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl/modules:${PERL5LIB}
 
 # used when setting up a new Ensembl Genomes db
