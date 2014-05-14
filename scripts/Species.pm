@@ -521,7 +521,7 @@ sub pep_prefix {'PP'}
 sub pepdir_prefix{'ppa'};
 sub ncbi_tax_id {'54126'};
 sub ncbi_bioproject {'PRJNA12644'};
-sub bioproject_description {  'Max Planck Institute for Developmental Biology P.pacificus genome project' }
+sub bioproject_description { 'Max Planck Institute for Developmental Biology P. pacificus genome project' }
 sub assembly_type {'contig'};
 sub wormpep_prefix {'PP'}
 sub upload_db_name {''}; # we already hold the data in the primary database, it is not downloaded
@@ -577,7 +577,7 @@ sub cds_regex_noend{qr/Bm\d+[a-z]*/}; # for getting the CDS part of a Transcript
 sub cds_regex{qr/Bm\d+[a-z]*/};
 sub ncbi_tax_id {'6279'};
 sub ncbi_bioproject {'PRJNA10729'};
-sub bioproject_description { 'University of Pittsburgh B.malayi genome project' }
+sub bioproject_description { 'University of Pittsburgh B. malayi genome project' }
 sub assembly_type {'contig'};
 sub seq_db {my $self = shift;return $self->database('brugia');}
 
@@ -624,7 +624,7 @@ sub cds_regex_noend{qr/OVOC\d+[a-z]*/}; # for getting the CDS part of a Transcri
 sub cds_regex{qr/OVOC\d+[a-z]*/};
 sub ncbi_tax_id {6282};
 sub ncbi_bioproject {'PRJEB513'};
-sub bioproject_description { 'Wellcome Trust Sanger Institute, O.volvulus project' }
+sub bioproject_description { 'Wellcome Trust Sanger Institute O. volvulus genome project' }
 sub assembly_type {'contig'};
 sub seq_db {my $self = shift;return $self->database('ovolvulus');}
 
@@ -670,7 +670,7 @@ sub full_name {
 }
 sub ncbi_tax_id {'37862'};
 sub ncbi_bioproject {'PRJNA13977'};
-sub bioproject_description { 'Genome Institute at Washington University H.bacteriophora genome project' }
+sub bioproject_description { 'Genome Institute at Washington University H. bacteriophora genome project' }
 sub chromosome_prefix {''}
 sub pep_prefix {'HB'}
 sub pepdir_prefix{'het'};
@@ -708,7 +708,7 @@ sub pep_prefix {'SR'}
 sub pepdir_prefix{'rat'};
 sub ncbi_tax_id {'34506'};
 sub ncbi_bioproject {'PRJEA62033'};
-sub bioproject_description { 'Wellcome Trust Sanger Institute S.ratti genome project' }
+sub bioproject_description { 'Wellcome Trust Sanger Institute S. ratti genome project' }
 sub assembly_type {'contig'};
 sub TSL {(
 	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
@@ -765,7 +765,7 @@ sub pep_prefix {'AS'}
 sub pepdir_prefix{'as'};
 sub ncbi_tax_id {'6253'};
 sub ncbi_bioproject {'PRJNA80881'};
-sub bioproject_description {'University of Melbourne A.suum genome project'}
+sub bioproject_description {'University of Melbourne A. suum genome project'}
 sub assembly_type {'contig'};
 sub TSL {(
 	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
@@ -805,7 +805,7 @@ sub pep_prefix {'ASD'}
 sub pepdir_prefix{'as'};
 sub ncbi_tax_id {'6253'};
 sub ncbi_bioproject {'PRJNA62057'};
-sub bioproject_description { 'University of Colorado A.suum genome project' }
+sub bioproject_description { 'University of Colorado A. suum genome project' }
 sub is_canonical{ 0 }
 sub assembly_type {'contig'};
 sub TSL {(
@@ -983,7 +983,7 @@ sub pep_prefix {'BXY'}
 sub pepdir_prefix{'bxylophilus'};
 sub ncbi_tax_id {'6326'};
 sub ncbi_bioproject {'PRJEA64437'};
-sub bioproject_description { 'Wellcome Trust Sanger Institute B.xylophilus genome project' }
+sub bioproject_description { 'Wellcome Trust Sanger Institute B. xylophilus genome project' }
 sub assembly_type {'contig'};
 
 ######################################################
@@ -1017,7 +1017,7 @@ sub pep_prefix {'PR'}
 sub pepdir_prefix{'panagrellus'};
 sub ncbi_tax_id {'6233'};
 sub ncbi_bioproject {'PRJNA186477'};
-sub bioproject_description { 'California Institute of Technology P.redivivus genome project'};
+sub bioproject_description { 'California Institute of Technology P. redivivus genome project'};
 sub assembly_type {'contig'};
 
 ######################################################
@@ -1052,7 +1052,7 @@ sub pep_prefix {'DI'}
 sub pepdir_prefix{'dimmitis'};
 sub ncbi_tax_id {'6287'};
 sub ncbi_bioproject {'PRJEB1797'};
-sub bioproject_description { 'Edinburgh University D.immitis genome project'};
+sub bioproject_description { 'Edinburgh University D. immitis genome project'};
 sub assembly_type {'contig'};
 
 ######################################################
@@ -1087,7 +1087,7 @@ sub pep_prefix {'AC'}
 sub pepdir_prefix{'acey'};
 sub ncbi_tax_id {53326};
 sub ncbi_bioproject {'PRJNA231479'};
-sub bioproject_description { 'Cornell University, Genome and transcriptome of the zoonotic hookworm Ancylostoma ceylanicum'};
+sub bioproject_description { 'Cornell University Ancylostoma ceylanicum genome project'};
 sub assembly_type {'contig'};
 
 ######################################################
@@ -1122,7 +1122,7 @@ sub pep_prefix {'PE'}
 sub pepdir_prefix{'pexspectatus'};
 sub ncbi_tax_id {1195656};
 sub ncbi_bioproject {'PRJEB6009'};
-sub bioproject_description { 'Max Planck Institite for Developmental Genetics, Tuebingen Pristionchus sequencing project'};
+sub bioproject_description { 'Max Planck Institite for Developmental Genetics P. exspectatus genome project'};
 sub assembly_type {'contig'};
 
 
@@ -1194,7 +1194,7 @@ sub pep_prefix {'LL'}
 sub pepdir_prefix{'loa'};
 sub ncbi_tax_id {'7209'};
 sub ncbi_bioproject {'PRJNA60051'};
-sub bioproject_description { 'Broad Institute L.loa genome project' }
+sub bioproject_description { 'Broad Institute L. loa genome project' }
 sub assembly_type {'contig'};
 
 ###################################
@@ -1229,7 +1229,7 @@ sub pep_prefix {'MH'}
 sub pepdir_prefix{'hap'};
 sub ncbi_tax_id {'6305'};
 sub ncbi_bioproject {'PRJNA29083'};
-sub bioproject_description { 'Center for the Biology of Nematode Parasitism (NCSU) M.hapla genome project' }
+sub bioproject_description { 'Center for the Biology of Nematode Parasitism (NCSU) M. hapla genome project' }
 sub assembly_type {'contig'};
 sub chromosome_names {
 	my @contigs;
@@ -1273,7 +1273,7 @@ sub pep_prefix {'MI'}
 sub pepdir_prefix{'inc'};
 sub ncbi_tax_id {'6306'};
 sub ncbi_bioproject {'PRJEA28837'};
-sub bioproject_description { 'INRA M.incognita genome project' }
+sub bioproject_description { 'INRA M. incognita genome project' }
 sub assembly_type {'contig'};
 sub chromosome_names {
 	my @contigs;
@@ -1316,7 +1316,7 @@ sub pep_prefix {'HC'}
 sub pepdir_prefix{'hco'};
 sub ncbi_tax_id {'6289'};
 sub ncbi_bioproject {'PRJEB506'};
-sub bioproject_description { 'Wellcome Trust Sanger Institute H.contortus genome project' }
+sub bioproject_description { 'Wellcome Trust Sanger Institute H. contortus genome project' }
 sub assembly_type {'contig'};
 sub chromosome_names {
 	my @contigs;
@@ -1360,7 +1360,7 @@ sub pep_prefix {''}
 sub pepdir_prefix{''};
 sub ncbi_tax_id {'6289'};
 sub ncbi_bioproject {'PRJNA205202'};
-sub bioproject_description { 'University of Melbourne H.contortus genome project' }
+sub bioproject_description { 'University of Melbourne H. contortus genome project' }
 sub assembly_type {'contig'};
 sub chromosome_names {
   die "chromosome_names method not implemented for this species\n";
@@ -1398,7 +1398,7 @@ sub pep_prefix {'TP'}
 sub pepdir_prefix{'tri'};
 sub ncbi_tax_id {'6334'};
 sub ncbi_bioproject {'PRJNA12603'};
-sub bioproject_description { 'Genome Institute at Washington University T.spiralis genome project' }
+sub bioproject_description { 'Genome Institute at Washington University T. spiralis genome project' }
 sub assembly_type {'contig'};
 
 sub chromosome_names {
@@ -1440,7 +1440,7 @@ sub pep_prefix {'CA'}
 sub pepdir_prefix{'can'};
 sub ncbi_tax_id {'860376'};
 sub ncbi_bioproject {'PRJNA51225'};
-sub bioproject_description { 'California Institute of Technology C.angaria genome project' }
+sub bioproject_description { 'California Institute of Technology C. angaria genome project' }
 sub assembly_type {'contig'};
 
 ######################################################
@@ -1510,6 +1510,41 @@ sub bioproject_description { 'University of Melboure T. suis (female) genome pro
 sub assembly_type {'contig'};
 sub is_canonical { 0 }
 #######################################################
+
+package Rculicivorax;
+use Carp;
+our @ISA = qw(Wormbase Species);
+
+sub _new {
+    my $class = shift;
+    my %param = %{ shift(@_) };
+
+    my $self = $class->initialize( $class->flatten_params( \%param ) );
+
+    # add stuff post object creation goes here
+
+    bless $self, $class;
+}
+sub full_name {
+    my $self = shift;
+    my %param = @_ ;
+    if($param{'-short'}){
+         return 'R. culicivorax';
+    }elsif($param{'-g_species'}){
+         return 'r_culicivorax';
+    } else { return'Romanomermis culicivorax' };
+}
+sub chromosome_prefix {'nRc.2.0.'}
+sub pep_prefix {'RC'}
+sub pepdir_prefix{'rculicivorax'};
+sub ncbi_tax_id {13658};
+sub ncbi_bioproject {'PRJEB1358'};
+sub bioproject_description { 'University of Edinburgh R. culicivorax genome project'};
+sub assembly_type {'contig'};
+
+
+
+
 #######################################################
 #######################################################
 package Testspecies;
