@@ -1,6 +1,7 @@
 
 use strict;
 use Getopt::Long;
+use Bio::EnsEMBL::Registry;
 use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use Bio::EnsEMBL::Compara::Method;
@@ -11,11 +12,7 @@ use Bio::EnsEMBL::Compara::SpeciesSet;
 my (
   @species,
   %species_data,
-  $master_dbname, 
-  $host,
-  $port,
-  $user, 
-  $pass,
+
   $compara_code,
   $collection_name,
   $createmlss,
@@ -25,33 +22,50 @@ my (
   $tax_host,
   $tax_port,
   $tax_user,
+  $tax_dbname,
+  $master_host,
+  $master_port, 
+  $master_user,
+  $master_pass, 
+  $master_dbname,
+  $sfile,
     ); 
     
 
 GetOptions(
-  "host=s" => \$host,
-  "port=s" => \$port,
-  "user=s" => \$user,
-  "pass=s" => \$pass,
+  "reg_conf=s"      => \$reg_conf,
   "masterdbname=s"  => \$master_dbname,
-  "species=s@"      => \@species,
+  "taxdbname=s"     => \$tax_dbname,
   "collectionname"  => \$collection_name,
   "comparacode=s"   => \$compara_code,
   "recreate"        => \$recreatedb,
-  "reg_conf=s"      => \$reg_conf,
   "treemlss"        => \$create_tree_mlss,
-  "taxhost=s"       => \$tax_host,
-  "taxuser=s"       => \$tax_user,
-  "taxport=s"       => \$tax_port,
+  "species=s@"      => \@species,
+  "sfile=s"         => \$sfile,
     );
 
+die("must specify registry conf file on commandline\n") unless($reg_conf);
+die("Must specify -reg_conf, -masterdbname") unless $reg_conf and $master_dbname;
+
+Bio::EnsEMBL::Registry->load_all($reg_conf);
+
+#foreach my $dbn (@{Bio::EnsEMBL::Registry->get_all_DBAdaptors}) {
+#  print $dbn->dbc->dbname, " ", $dbn->group, "\n";
+#}
+#exit(0);
 
 $collection_name = "worms" if not defined $collection_name;
 
 #
 # 0. Get species data
 #
-if (@species) {
+if (defined $sfile) {
+  open(my $fh, $sfile) or die "Could not open species file for reading\n";
+  while(<$fh>) {
+    next if /^\#/;
+    /^(\S+)/ and push @species, $1;
+  }
+} elsif (@species) {
   @species = map { split(/,/, $_) } @species;
 } else {
   if (not @species) { 
@@ -62,75 +76,52 @@ if (@species) {
   }
 }
 
+my @core_dbs;
 foreach my $species (sort @species) {
-  my $db_name = "worm_ensembl_${species}";
-  my $dbh = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
-    -host => $host,
-    -user => $user,
-    -port => $port,
-    -pass => $pass,
-    -dbname => $db_name);
 
-  if (not defined $dbh) {
-    die "Could not connect to database $db_name\n";
-  }
-
-  # properties we need for each species:
-  # - taxon_id
-  # - production_name
-  # - assembly
-  # - genebuild
-  my $taxon_id = $dbh->get_MetaContainer->get_taxonomy_id;
-  my $prod_name = $dbh->get_MetaContainer->get_production_name;
-  my $genebuild = $dbh->get_MetaContainer->get_genebuild;
-
-  my ($cs) = sort { $a->rank <=> $b->rank } @{$dbh->get_CoordSystemAdaptor->fetch_all};
-
-  $species_data{$species} = {
-    taxon_id => $taxon_id,
-    production_name => $prod_name,
-    genebuild => $genebuild,
-    assembly => $cs->version,
-    locator => "Bio::EnsEMBL::DBSQL::DBAdaptor/host=$host;port=$port;user=wormro;pass=;dbname=$db_name;disconnect_when_inactive=1",
-  };
+  my $dbh = Bio::EnsEMBL::Registry->get_DBAdaptor($species, 'core');
+  print STDERR "Got core adaptor for $species\n";
+  push @core_dbs, $dbh;
 }
 
 if ($recreatedb) { 
-  #
-  # Create database shell
-  #
+  die("When creating the db from scratch, you must give -comparacode") unless $compara_code ;
+
+  $tax_dbname = "ncbi_taxonomy" if not defined $tax_dbname;
+
   print STDERR "Re-creating database from scratch\n";
 
-  my $compara_connect = "mysql -u $user -p${pass} -h $host -P $port";
-  my $cmd = "$compara_connect -e 'DROP DATABASE IF EXISTS $master_dbname; CREATE DATABASE $master_dbname'";
-  system($cmd) and die "Could not re-create existing database\n";
-  
-  $cmd = "cat $compara_code/sql/table.sql | $compara_connect $master_dbname";
-  system($cmd) and die "Could not populate new database with compara schema\n"; 
-  
-  my $compara_dbh = Bio::EnsEMBL::Compara::DBSQL::DBAdaptor->new(
-    -dbname => $master_dbname,
-    -user => $user,
-    -pass => $pass,
-    -port => $port, 
-    -host => $host);
-  
-  #
-  # Populate method_link
-  #
-  my $ml_adp = $compara_dbh->get_MethodAdaptor();
-  my @ml_list = (Bio::EnsEMBL::Compara::Method->new(-type => "ENSEMBL_ORTHOLOGUES", -class => "Homology.homology"), 
-                 Bio::EnsEMBL::Compara::Method->new(-type => "ENSEMBL_PARALOGUES", -class => "Homology.homology"), 
-                 Bio::EnsEMBL::Compara::Method->new(-type => "PROTEIN_TREES", -class => "ProteinTree.protein_tree_node"));
-  foreach my $ml (@ml_list) {
-    $ml_adp->store($ml);
+  {
+    my $mdbh = Bio::EnsEMBL::Registry->get_DBAdaptor($master_dbname, 'compara');
+    my $taxdbh =  Bio::EnsEMBL::Registry->get_DBAdaptor($tax_dbname, 'compara');
+
+    $master_host = $mdbh->dbc->host;
+    $master_port = $mdbh->dbc->port;
+    $master_user = $mdbh->dbc->user;
+    $master_pass = $mdbh->dbc->password;
+    $master_dbname = $mdbh->dbc->dbname;
+
+    $tax_host = $taxdbh->dbc->host;
+    $tax_port = $taxdbh->dbc->port;
+    $tax_user = $taxdbh->dbc->user;
+    $tax_dbname = $taxdbh->dbc->dbname;
   }
 
+  my $compara_connect = "-u $master_user -p${master_pass} -h $master_host -P $master_port";
+  my $cmd = "mysql $compara_connect -e 'DROP DATABASE IF EXISTS $master_dbname; CREATE DATABASE $master_dbname'";
+  system($cmd) and die "Could not re-create existing database\n";
+  
+  $cmd = "cat $compara_code/sql/table.sql | mysql $compara_connect $master_dbname";
+  system($cmd) and die "Could not populate new database with compara schema\n"; 
+  
+  $cmd = "mysqlimport --local $compara_connect $master_dbname  $compara_code/sql/method_link.txt";
+  system($cmd) and die "Could not populate new database with compara schema\n"; 
+  
   #
   # Populate ncbi taxonomy tables
   #
 
-  open(my $tgt_fh, "| mysql -u $user -p$pass -h $host -P $port -D $master_dbname")
+  open(my $tgt_fh, "| mysql -u $master_user -p$master_pass -h $master_host -P $master_port -D $master_dbname")
       or die "Could not open pipe to target db $master_dbname\n";
   foreach my $table ('ncbi_taxa_node', 'ncbi_taxa_name') {
     open(my $src_fh, "mysqldump -u $tax_user -h $tax_host -P $tax_port ncbi_taxonomy $table |")
@@ -143,25 +134,16 @@ if ($recreatedb) {
 }
 
 
-my $compara_dbh = Bio::EnsEMBL::Compara::DBSQL::DBAdaptor->new(
-  -dbname => $master_dbname,
-  -user => $user,
-  -pass => $pass,
-  -port => $port, 
-  -host => $host);
+my $compara_dbh = Bio::EnsEMBL::Registry->get_DBAdaptor($master_dbname, 'compara');
 
 
 #
 # Populate genome_dbs
 #
 my @genome_dbs;
-foreach my $species (sort { $species_data{$a}->{taxon_id} <=> $species_data{$b}->{taxon_id} } keys %species_data) {
-  my $sdata = $species_data{$species};
-  my $prod_name = $sdata->{production_name};
-  my $assembly = $sdata->{assembly};
-  my $genebuild = $sdata->{genebuild};
-  my $taxid = $sdata->{taxon_id};
-  my $locator = $sdata->{locator};
+foreach my $core_db (@core_dbs) {
+
+  my $prod_name = $core_db->get_MetaContainer->get_production_name();
 
   my $gdb;
   eval {
@@ -169,21 +151,15 @@ foreach my $species (sort { $species_data{$a}->{taxon_id} <=> $species_data{$b}-
   };
   if ($@) {
     # not present; create it
-    print STDERR "Creating new GenomeDB for $species\n";
-    $gdb = Bio::EnsEMBL::Compara::GenomeDB->new(
-      -name      => $prod_name,
-      -assembly  => $assembly, 
-      -taxon_id  => $taxid,
-      -genebuild => $genebuild,
-        );
-    $gdb->locator($locator);
-
+    print STDERR "Creating new GenomeDB for $prod_name\n";
+    $gdb = Bio::EnsEMBL::Compara::GenomeDB->new(-db_adaptor => $core_db);
     $compara_dbh->get_GenomeDBAdaptor->store($gdb);
   } else {
-    print STDERR "Updating existing GenomeDB for $species\n";
+    print STDERR "Updating existing GenomeDB for $prod_name\n";
     # update the assembly and genebuild data
-    $gdb->assembly($assembly);
-    $gdb->genebuild($genebuild);
+    my $gdb_tmp =  Bio::EnsEMBL::Compara::GenomeDB->new(-db_adaptor => $core_db);
+    $gdb->assembly($gdb_tmp->assembly);
+    $gdb->genebuild($gdb_tmp->genebuild);
     $compara_dbh->get_GenomeDBAdaptor->update($gdb);
   }
   push @genome_dbs, $gdb;
@@ -203,44 +179,46 @@ $compara_dbh->get_SpeciesSetAdaptor->store($ss);
 #
 if ($create_tree_mlss) {
   # For orthologs
-  system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara worm_compara_master --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type ENSEMBL_ORTHOLOGUES --f --pw") 
+  system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara $master_dbname --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type ENSEMBL_ORTHOLOGUES --f --pw") 
       and die "Could not create MLSS for orthologs\n";
   
 # For between-species paralogues  
-  system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara worm_compara_master --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type ENSEMBL_PARALOGUES --f --pw") 
+  system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara $master_dbname --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type ENSEMBL_PARALOGUES --f --pw") 
       and die "Could not create MLSS for between-species paralogs\n"; 
   
 # For same-species paralogues
-  system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara worm_compara_master --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type ENSEMBL_PARALOGUES --f --sg") 
+  system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara $master_dbname --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type ENSEMBL_PARALOGUES --f --sg") 
       and die "Could not create MLSS for within-species paralogs\n"; 
   
 # For protein trees
-  system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara worm_compara_master --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type PROTEIN_TREES --f") 
+  system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara $master_dbname --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type PROTEIN_TREES --f") 
       and die "Could not create MLSS for protein trees\n";
 }
 
 print STDERR "Updated database\n";
 exit(0);
 
-##################################################
 __DATA__
-elegans
-briggsae
-brenneri
-remanei
-japonica
-cangaria
-csp5
-csp11
-pristionchus
-hcontortus
-brugia
-asuum
-mhapla
-heterorhabditis
-bxylophilus
-sratti
-tspiralis
-loaloa
-panagrellus
-dimmitis
+ancylostoma_ceylanicum_prjna231479
+ascaris_suum_prjna62057
+ascaris_suum_prjna80881
+brugia_malayi_prjna10729
+bursaphelenchus_xylophilus_prjea64437
+dirofilaria_immitis_prjeb1797
+haemonchus_contortus_prjeb506
+haemonchus_contortus_prjna205202
+heterorhabditis_bacteriophora_prjna13977
+loa_loa_prjna60051
+meloidogyne_hapla_prjna29083
+meloidogyne_incognita_prjea28837
+necator_americanus_prjna72135
+onchocerca_volvulus_prjeb513
+trichinella_spiralis_prjna12603
+trichuris_suis_prjna208415
+trichuris_suis_prjna208416
+caenorhabditis_elegans_prjna13758
+danio_rerio
+drosophila_melanogaster
+homo_sapiens
+mus_musculus
+saccharomyces_cerevisiae
