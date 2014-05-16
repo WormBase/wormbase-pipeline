@@ -12,7 +12,6 @@ use Bio::EnsEMBL::Compara::SpeciesSet;
 my (
   @species,
   %species_data,
-
   $compara_code,
   $collection_name,
   $createmlss,
@@ -68,12 +67,7 @@ if (defined $sfile) {
 } elsif (@species) {
   @species = map { split(/,/, $_) } @species;
 } else {
-  if (not @species) { 
-    while(<DATA>) {
-      chomp;
-      push @species, $_;
-    }
-  }
+  die "You must supply a species list as a file (-sfile) or with -species X -species Y etc\n";
 }
 
 my @core_dbs;
@@ -198,27 +192,3 @@ if ($create_tree_mlss) {
 print STDERR "Updated database\n";
 exit(0);
 
-__DATA__
-ancylostoma_ceylanicum_prjna231479
-ascaris_suum_prjna62057
-ascaris_suum_prjna80881
-brugia_malayi_prjna10729
-bursaphelenchus_xylophilus_prjea64437
-dirofilaria_immitis_prjeb1797
-haemonchus_contortus_prjeb506
-haemonchus_contortus_prjna205202
-heterorhabditis_bacteriophora_prjna13977
-loa_loa_prjna60051
-meloidogyne_hapla_prjna29083
-meloidogyne_incognita_prjea28837
-necator_americanus_prjna72135
-onchocerca_volvulus_prjeb513
-trichinella_spiralis_prjna12603
-trichuris_suis_prjna208415
-trichuris_suis_prjna208416
-caenorhabditis_elegans_prjna13758
-danio_rerio
-drosophila_melanogaster
-homo_sapiens
-mus_musculus
-saccharomyces_cerevisiae
