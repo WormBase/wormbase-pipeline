@@ -103,13 +103,13 @@ if ($recreatedb) {
 
   my $compara_connect = "-u $master_user -p${master_pass} -h $master_host -P $master_port";
   my $cmd = "mysql $compara_connect -e 'DROP DATABASE IF EXISTS $master_dbname; CREATE DATABASE $master_dbname'";
-  system($cmd) and die "Could not re-create existing database\n";
+  system($cmd) and die "Could not drop and re-create existing database\n";
   
   $cmd = "cat $compara_code/sql/table.sql | mysql $compara_connect $master_dbname";
   system($cmd) and die "Could not populate new database with compara schema\n"; 
   
   $cmd = "mysqlimport --local $compara_connect $master_dbname  $compara_code/sql/method_link.txt";
-  system($cmd) and die "Could not populate new database with compara schema\n"; 
+  system($cmd) and die "Could not populate new database with method_link entries\n"; 
   
   #
   # Populate ncbi taxonomy tables
