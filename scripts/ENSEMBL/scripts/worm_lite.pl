@@ -17,13 +17,14 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 use WormBase2Ensembl;
 
-my ( $debug, @species, @notspecies, $allspecies, $setup, $dna, $genes, $rules, $inputids, $pipeline_setup, $test, $yfile );
+my ( $debug, @species, @notspecies, $allspecies, $setup, $dna, $genes, $rules, $inputids, $meta, $pipeline_setup, $test, $yfile );
 
 GetOptions(
   'species=s@'    => \@species,
   'notspecies=s@' => \@notspecies,
   'allspecies'    => \$allspecies,
   'setup'         => \$setup,
+  'load_meta'     => \$meta,
   'load_dna'      => \$dna,
   'load_genes'    => \$genes,
   'load_pipeline' => \$pipeline_setup,
@@ -84,11 +85,19 @@ foreach my $species (@species) {
 foreach my $myspecies (@species) {
   my $myconfig = $global_config->{$myspecies};
 
-  &setupdb($myspecies, $myconfig)        if $setup;
-  &load_assembly($myspecies, $myconfig)  if $dna;
-  &load_genes($myspecies, $myconfig)     if $genes;
-  &load_rules($myspecies, $myconfig)     if $rules or $pipeline_setup;
-  &load_input_ids($myspecies, $myconfig) if $inputids or $pipeline_setup;
+  foreach my $db_property ('host', 'port', 'user', 'password') {
+    if (not $myconfig->{database}->{$db_property}) {
+      $myconfig->{database}->{$db_property} = $generic_config->{database}->{$db_property};
+    }
+  }
+
+  &setupdb($myspecies, $myconfig)         if $setup;
+  &load_meta_table($myspecies, $myconfig) if $setup or $meta;
+  &load_assembly($myspecies, $myconfig)   if $dna;
+  &load_genes($myspecies, $myconfig)      if $genes;
+  &load_rules($myspecies, $myconfig)      if $rules or $pipeline_setup;
+  &load_input_ids($myspecies, $myconfig)  if $inputids or $pipeline_setup;
+
 }  
 
 exit(0);
@@ -111,20 +120,7 @@ sub setupdb {
 
     print "loading table.sql from ensembl...\n";
     system("$mysql $db->{dbname} < " . $cvsDIR . "/ensembl/sql/table.sql" ) && die;
-
-    print "loading table.sql from ensembl-pipeline...\n";
-    system("$mysql $db->{dbname} < " . $cvsDIR . "/ensembl-pipeline/sql/table.sql" ) && die;
     
-    print "Populating meta table...\n";
-    foreach my $key (keys %$config) {
-      if ($key =~ /^meta\.(\S+)/) {
-        my $db_key = $1;
-        my $val = $config->{$key};
-        
-        system("$mysql -e 'INSERT INTO meta (meta_key,meta_value) VALUES (\"$db_key\",\"$val\");' $db->{dbname}") && die;
-      }
-    }
-
     print "Loading taxonomy...N";
     my $cmd = "perl $cvsDIR/ensembl-pipeline/scripts/load_taxonomy.pl -name \"$config->{species}\" "
         . "-taxondbhost $tax_db_host " 
@@ -443,6 +439,21 @@ sub load_rules {
   
   my $db = $config->{database};
 
+  my $mysql = "mysql -h $db->{host} -P $db->{port} -u $db->{user} --password=$db->{password}";
+
+  # check whether we need to load the pipeline tables
+  my $load_pipeline_tables = 1;
+
+  open(my $mysqlfh, "$mysql -D $db->{dbname} -e 'show tables' |") or die "Could not open Mysql command\n";
+  while(<$mysqlfh>) {
+    /^job$/ and $load_pipeline_tables = 0;
+  }
+
+  if ($load_pipeline_tables) {
+    print "loading table.sql from ensembl-pipeline...\n";
+    system("$mysql $db->{dbname} < " . $cvsDIR . "/ensembl-pipeline/sql/table.sql" ) && die("Could not load pipeline tables\n");
+  }
+
   my @conf_files;
   foreach my $path ($generic_config->{ruleconf}, $config->{ruleconf}) {
     if ($path) {
@@ -500,4 +511,26 @@ sub load_input_ids {
     system($cmd) and die "Could not successfully make input ids\n";
   }
 
+}
+
+###############################################
+sub load_meta_table {
+  my ($species, $config) = @_;
+  
+  my $db = $config->{database};
+  
+  my $mysql = "mysql -h $db->{host} -P $db->{port} -u $db->{user} --password=$db->{password} -D $db->{dbname}";
+  
+  print "Populating meta table for $db->{dbname}...\n";
+  foreach my $key (keys %$config) {
+    if ($key =~ /^meta\.(\S+)/) {
+      my $db_key = $1;
+      my $val = $config->{$key};
+      
+      system("$mysql -e 'DELETE FROM meta WHERE meta_key = \"$db_key\"'") 
+          and die "Could not delete $db_key from meta in $db->{dbname}\n";
+      system("$mysql -e 'INSERT INTO meta (meta_key,meta_value) VALUES (\"$db_key\",\"$val\");'") 
+          and die "Could not insert value for $db_key into meta\n";
+    }
+  }
 }
