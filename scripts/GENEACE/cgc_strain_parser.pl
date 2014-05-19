@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2014-05-07 08:35:36 $
+# Last updated on: $Date: 2014-05-19 08:38:47 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -382,6 +382,7 @@ if($load){
 
 print "\nThe script has run to completeion and is now going to end.  Goodnight\n\n";
 
+$log->mail('maryann.tuli@wormbase.org');
 $log->mail;
 exit(0);
 
