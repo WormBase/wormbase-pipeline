@@ -15,26 +15,26 @@ my (
 
 
 GetOptions( 
-  "host=s"      => \$host,
-  "user=s"      => \$user,
-  "pass=s"      => \$pass,
-  "port=i"      => \$port,
-  "species=s"   => \$database,
   "mhost=s"     => \$mhost,
   "mport=s"     => \$mport,
   "muser=s"     => \$muser,
   "mpass=s"     => \$mpass,
-  "mdatabase=s" => \$mdatabase,
-  "verbose",       \$verbose,
+  "mdbname=s"   => \$mdatabase,
+  "host=s"      => \$host,
+  "user=s"      => \$user,
+  "pass=s"      => \$pass,
+  "port=i"      => \$port,
+  "dbname=s"    => \$database,
+  "verbose"     => \$verbose,
     );
 
 
 my $core = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
-    -host   => $mhost, 
-    -port   => $mport, 
-    -user   => $muser, 
-    -pass   => $mpass, 
-    -dbname => $mdatabase,
+    -host   => $host, 
+    -port   => $port, 
+    -user   => $user, 
+    -pass   => $pass, 
+    -dbname => $database,
     );
     
 if (not defined $core) {
@@ -45,11 +45,11 @@ if (not defined $core) {
 # Get the production database
 
 my $prod = Bio::EnsEMBL::DBSQL::DBConnection->new(
-    -host   => $host, 
-    -port   => $port, 
-    -user   => $user, 
-    -pass   => $pass, 
-    -dbname => $database,
+    -host   => $mhost, 
+    -port   => $mport, 
+    -user   => $muser, 
+    -pass   => $mpass, 
+    -dbname => $mdatabase,
 );
 
 if (not defined $prod) {
@@ -57,7 +57,8 @@ if (not defined $prod) {
 }
 
 
-my $species = $core->species();
+my $species = $core->get_MetaContainer->get_production_name();
+
 my @analyses = @{$core->get_AnalysisAdaptor->fetch_all};
 
 my $species_prod_sql  = "SELECT species_id FROM species WHERE db_name = ?";
