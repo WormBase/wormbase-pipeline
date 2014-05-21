@@ -16,7 +16,7 @@ endif
 setenv MAX_INTRON_LENGTH $1
 setenv PIPELINE_CODE_DIR $WORM_PACKAGES/ensembl_genomes
 setenv PIPELINE_DATA_DIR /nfs/nobackup2/ensemblgenomes/wormbase/BUILD/EST-data/$SPECIES
-set path = (/nfs/panda/ensemblgenomes/external/STAR $path/)
+set path = (/nfs/panda/ensemblgenomes/external/STAR $path)
 setenv CORE_DB_NAME worm_ensembl_$SPECIES
 setenv DB_HOST  mysql-wormbase-pipelines
 setenv DB_PORT 4331
