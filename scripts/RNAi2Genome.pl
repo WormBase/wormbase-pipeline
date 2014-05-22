@@ -2,7 +2,7 @@
 
 # Version: $Version: $
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-09-30 10:39:19 $
+# Last updated on: $Date: 2014-05-22 16:29:31 $
 
 use strict;
 use warnings;
@@ -369,6 +369,7 @@ sub get_rnai_sequences {
   $tb_cmd = "Table-maker -p \"$tb_file\"\nquit\n";
   open($tace_fh, "echo '$tb_cmd' | $tace $db |");
   while(<$tace_fh>) {
+    print ;
     /^\"(\S+)\"/ and do {
       my ($rnai_id) = $1;
       if (/^\"\S+\"\s+\"(\S+)\"\s+\"(\S+)\"/) {
@@ -400,7 +401,7 @@ sub get_rnai_sequences {
   #
   my (%rnai2pcr, %pcr, %pcr_seq);
 
-  $tb_file = &query_without_dna_text();
+  $tb_file = &query_with_pcr_product();
   $tb_cmd = "Table-maker -p \"$tb_file\"\nquit\n";
 
   open($tace_fh, "echo '$tb_cmd' | $tace $db |");
@@ -495,17 +496,14 @@ EOF
 }
 
 #########################
-sub query_without_dna_text {
+sub query_with_pcr_product {
 
-  my $tmdef = "/tmp/rnai_without_dnatext.$$.def";
+  my $tmdef = "/tmp/rnai_wit_pcrprod.$$.def";
 
   open my $qfh, ">$tmdef" or 
       $log->log_and_die("Could not open $tmdef for writing\n");  
 
-  my $condition = "NOT DNA_text";
-  if ($only_unmapped) {
-    $condition .= " AND NOT Homol_homol";
-  }
+  my $condition = ($only_unmapped) ? "Condition NOT Homol_homol" : "";
 
   my $query = <<"EOF";
 
@@ -518,7 +516,7 @@ Visible
 Class 
 Class RNAi 
 From 1 
-Condition $condition
+$condition
  
 Colonne 2 
 Width 12 
