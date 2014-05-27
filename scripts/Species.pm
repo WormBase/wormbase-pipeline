@@ -919,7 +919,7 @@ sub bioproject_description { 'Genome Institute at Washington University Caenorha
 sub assembly_type {'contig'};
 
 ######################################################
-package Csp11;
+package Ctropicalis;
 use Carp;
 our @ISA = qw(Wormbase Species);
 
@@ -937,11 +937,11 @@ sub full_name {
 	my $self = shift;
 	my %param = @_ ;
 	if($param{'-short'}){
-		return 'C. species11';
+		return 'C. tropicalis';
 	}	elsif($param{'-g_species'}){
-		return 'c_sp11';
+		return 'c_tropicalis';
 	}
-	else { return'Caenorhabditis sp. 11'
+	else { return'Caenorhabditis tropicalis'
 	};
 }
 sub chromosome_prefix {'Scaffold'}

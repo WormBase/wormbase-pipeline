@@ -20,7 +20,7 @@ use Digest::MD5 qw(md5_hex);
 use Species;
 
 our @core_organisms=qw(Elegans Briggsae Remanei Brenneri Japonica Pristionchus Brugia Ovolvulus);
-our @tier3_organisms=qw(Mhapla Mincognita Heterorhabditis Hcontortus Hcontortus_gasser Cangaria Tspiralis Sratti Csp11 Asuum Bxylophilus Csp5 Loaloa Asuum_davis Panagrellus Dimmitis Namericanus Acey Tsuis_male Tsuis_female Pexspectatus Rculicivorax);
+our @tier3_organisms=qw(Mhapla Mincognita Heterorhabditis Hcontortus Hcontortus_gasser Cangaria Tspiralis Sratti Ctropicalis Asuum Bxylophilus Csp5 Loaloa Asuum_davis Panagrellus Dimmitis Namericanus Acey Tsuis_male Tsuis_female Pexspectatus Rculicivorax);
 our @provisional_organisms = qw();
 
 our @allowed_organisms=(@core_organisms, @tier3_organisms,@provisional_organisms); #class data
