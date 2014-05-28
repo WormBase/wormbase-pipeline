@@ -14,7 +14,7 @@ use Wormbase;
 
 =item Options:
 
-  -file	     file containing genes to merge <Mandatory>
+  -file	     file containing genes to split <Mandatory>
 
     FORMAT:
 
@@ -53,7 +53,6 @@ elsif (defined $debug) {$log = Log_files->make_log("NAMEDB:$file", $debug);}
 else {$log = Log_files->make_log("NAMEDB:$file");}
 my $DB;
 my $db;
-my $ecount;
 my $wormbase = Wormbase->new("-organism" =>$species);
 my $database = "/nfs/wormpub/DATABASES/geneace";
 $log->write_to("Working.........\n-----------------------------------\n\n\n1) splitting genes in file [${file}]\n\n");
@@ -79,6 +78,8 @@ elsif (defined$load) { $log->write_to("2) Output has been scheduled for auto-loa
 open (FILE,"<$file") or $log->log_and_die("can't open $file : $!\n");
 open (ACE,">$outputfile") or $log->log_and_die("cant write output: $!\n");
 my($oldgene,$newgene,$newname,$user);
+my $malformedcount=0;
+my $actualcount=0;
 my $count=0;
 while (<FILE>) {
   chomp;
@@ -96,10 +97,12 @@ while (<FILE>) {
     $user = $3;
     $newgene = $4;
     $species = $5;
+    $actualcount++;
     &split_gene;
   }
   elsif (/\w+/) {
     $log->error("ERROR: $_ is a malformed line which appears to not include all of the information required\n");
+    $malformedcount++;
   }
   else {
     next;
@@ -107,8 +110,8 @@ while (<FILE>) {
 }
 
 close(ACE);
-$log->write_to("3) $count genes in file to be merged\n\n");
-$log->write_to("4) $count genes merged\n\n");
+$log->write_to("3) $actualcount gene pairs in file to be split\n\n");
+$log->write_to("4) $count gene pairs split ($malformedcount malformed_lines)\n\n");
 &load_data if ($load);
 $log->write_to("5) Check $outputfile file and load into geneace.\n") unless ($load);
 $log->mail();
@@ -195,9 +198,9 @@ sub split_gene {
 
 sub load_data {
 # load information to $database if -load is specified
-$wormbase->load_to_database("$database", "$output", 'batch_split.pl', $log, undef, 1);
-$log->write_to("5) Loaded $output into $database\n\n");
-$wormbase->run_command("mv $output $backupsdir"."$outname". $wormbase->rundate. "\n"); #append date to filename when moving.
+$wormbase->load_to_database("$database", "$outputfile", 'batch_split.pl', $log, undef, 1);
+$log->write_to("5) Loaded $outputfile into $database\n\n");
+$wormbase->run_command("mv $outputfile $backupsdir"."$outname". $wormbase->rundate. "\n"); #append date to filename when moving.
 $log->write_to("6) Output file has been cleaned away like a good little fellow\n\n");
 print "Finished!!!!\n";
 }

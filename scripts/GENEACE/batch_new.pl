@@ -178,9 +178,9 @@ sub create_gene {
 
 sub load_data {
 # load information to $database if -load is specified
-$wormbase->load_to_database("$database", "$output", 'batch_new.pl', $log, undef, 1);
-$log->write_to("5) Loaded $output into $database\n\n");
-$wormbase->run_command("mv $output $backupsdir"."$outname". $wormbase->rundate. "\n"); #append date to filename when moving.
+$wormbase->load_to_database("$database", "$outputfile", 'batch_new.pl', $log, undef, 1);
+$log->write_to("5) Loaded $outputfile into $database\n\n");
+$wormbase->run_command("mv $outputfile $backupsdir"."$outname". $wormbase->rundate. "\n"); #append date to filename when moving.
 $log->write_to("6) Output file has been cleaned away like a good little fellow\n\n");
 print "Finished!!!!\n";
 }
