@@ -6,8 +6,8 @@
 #
 # This does stuff with what is in the active zone
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2014-05-01 15:26:04 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2014-05-28 15:17:04 $      
 
 # Things isoformer gets confused by or misses:
 # - non-canonical spliced introns where the RNASeq intron is placed on the positive strand and so is missing from reverse-strand genes
@@ -381,7 +381,7 @@ sub load_isoformer_method {
 
   my $return_status = system("xremote -remote 'parse $output'");
   if ( ( $return_status >> 8 ) != 0 ) {
-    print STDERR "WARNING - X11 connection appears to be lost\n";
+    die ("WARNING - X11 connection appears to be lost\n");
     #      &error_warning("WARNING", "X11 connection appears to be lost");
   } else {
     print "Loaded isoformer Method\n";
@@ -1263,7 +1263,7 @@ sub make_isoform {
 #  sleep(1); # allow time for NFS torealize there is a file there
   my $return_status = system("xremote -remote 'parse $output'");
   if ( ( $return_status >> 8 ) != 0 ) {
-    print STDERR "WARNING - X11 connection appears to be lost\n";
+    die("WARNING - X11 connection appears to be lost\n");
     #      &error_warning("WARNING", "X11 connection appears to be lost");
   } else {
     print "Made $name\n";
@@ -1349,7 +1349,7 @@ sub clear {
 
     my $return_status = system("xremote -remote 'parse $output'");
     if ( ( $return_status >> 8 ) != 0 ) {
-      print STDERR "WARNING - X11 connection appears to be lost\n";
+      die("WARNING - X11 connection appears to be lost\n");
     }
   }
 
@@ -1560,7 +1560,7 @@ sub fix {
 
   my $return_status = system("xremote -remote 'parse $output'");
   if ( ( $return_status >> 8 ) != 0 ) {
-    print STDERR "WARNING - X11 connection appears to be lost\n";
+    die("WARNING - X11 connection appears to be lost\n");
   }
 
   print $message;
