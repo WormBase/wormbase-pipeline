@@ -1,4 +1,4 @@
-// $Id: passwd.wrm,v 1.8 2012-10-05 12:42:05 mt3 Exp $
+// $Id: passwd.wrm,v 1.9 2014-05-30 08:37:40 mh6 Exp $
 //
 //  wspec/passwd.wrm
 //
@@ -21,6 +21,7 @@ pad
 gw3
 mt3
 edgrif
+es9
 
 // On some platforms, the unix command getLogin fails,
 // In this case, anyone will have write access if you
