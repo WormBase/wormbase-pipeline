@@ -32,15 +32,15 @@ my (
     
 
 GetOptions(
-  "reg_conf=s"      => \$reg_conf,
-  "masterdbname=s"  => \$master_dbname,
-  "taxdbname=s"     => \$tax_dbname,
-  "collectionname"  => \$collection_name,
-  "comparacode=s"   => \$compara_code,
-  "recreate"        => \$recreatedb,
-  "treemlss"        => \$create_tree_mlss,
-  "species=s@"      => \@species,
-  "sfile=s"         => \$sfile,
+  "reg_conf=s"        => \$reg_conf,
+  "masterdbname=s"    => \$master_dbname,
+  "taxdbname=s"       => \$tax_dbname,
+  "collectionname=s"  => \$collection_name,
+  "comparacode=s"     => \$compara_code,
+  "recreate"          => \$recreatedb,
+  "treemlss"          => \$create_tree_mlss,
+  "species=s@"        => \@species,
+  "sfile=s"           => \$sfile,
     );
 
 die("must specify registry conf file on commandline\n") unless($reg_conf);
