@@ -5,7 +5,7 @@
 # A script to make multiple copies of core species database for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2013-12-10 11:43:19 $
+# Last edited on: $Date: 2014-06-03 09:35:55 $
 #====================
 #perl ~/wormbase/scripts/merge_split_camaces.pl -update -gw3 -pad -species elegans -test -version $MVERSION > /nfs/wormpub/camace_orig/WSXXX -WSXXY/load_data.txt
 
@@ -21,6 +21,7 @@ use Storable;
 ##############################
 
 my $all;                   # All
+my $es9;
 my $pad;                   # Use Paul's split
 my $gw3;                   # Use Gary's split
 my $mh6;                   # Use MH6 split
@@ -50,6 +51,7 @@ my $verbose;               # Additional printout
 	      "pad"        => \$pad,
 	      "gw3"        => \$gw3,
 	      "mh6"        => \$mh6,
+	      "es9"        => \$es9,
 	      "curation"   => \$curation,
 	      "merge"      => \$merge,
 	      "split"      => \$split,
@@ -103,6 +105,7 @@ push(@databases,"orig");
 push(@databases,"pad") if ($pad || $all);
 push(@databases,"gw3") if ($gw3 || $all);
 push(@databases,"mh6") if ($mh6);
+push(@databases,"es9") if ($es9);
 push(@databases,"curation") if ($curation);
 
 # directory paths
@@ -124,7 +127,7 @@ our $directory   = $orig."/WS${WS_version}-WS${next_build}";
 $log->write_to ("OUTPUT_DIR: ".$orig."/WS${WS_version}-WS${next_build}\n\n");
 
 # what classes of data do we want to dump?
-my @classes = ('Transposon', 'Transcript', 'CDS', 'Sequence', 'Feature', 'Feature_data', 'Pseudogene', 'dna');
+my @classes = ('Transposon', 'Transposon_family', 'Transcript', 'CDS', 'Clone', 'Sequence', 'Feature', 'Feature_data', 'Pseudogene', 'dna');
 
 
 #################################################
@@ -497,7 +500,7 @@ sub load_curation_data {
   }
   # BUILD/elegans now contains a backup of the acefiles, which aren't copied over to currentDB.
   elsif ($species eq "elegans") {
-    $acefiles = $wormbase->base('elegans')."/acefiles";
+    $acefiles = $wormbase->basedir('elegans')."/elegans/acefiles";
     $log->write_to ("The BUILD has finished...using elegans/acefiles\n");
   }
   # If the species build database isn't present then you can't currently access old non-elegans ace files.
