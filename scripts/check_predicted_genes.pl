@@ -4,8 +4,8 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2014-05-12 09:43:37 $
-# Last updated by: $Author: pad $
+# Last updated on: $Date: 2014-06-04 09:56:03 $
+# Last updated by: $Author: gw3 $
 #
 # see pod documentation at end of file for more information about this script
 
@@ -217,7 +217,7 @@ sub main_gene_checks {
     $sequence_classes{$gene_model->name} = $gene_model->class;
 
     # check for duplicated sequence structures
-    if ($method_test eq 'curated') {
+    if ($method_test eq 'curated' || $method_test eq 'non_coding_transcript') {
       my ($gene_name) = ($gene_model_name =~ /($cds_regex_noend)/);
       # make a hash key out of the exon starts and ends
       my $hash_key = join(':', @exon_coord1) . ',' . join(':', @exon_coord2);
