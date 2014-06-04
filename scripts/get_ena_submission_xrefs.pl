@@ -218,7 +218,7 @@ sub lookup_from_ebi_production_dbs {
     my $cmd =  "source $ena_env &&"
         . " $ena_perl  $ENV{CVS_DIR}/get_protein_ids_ebiprod.pl"
         . "  -enacred $ena_cred" 
-        . "  -uniprodcred $uni_cred"
+        . "  -uniprotcred $uni_cred"
         . "  -orgid $ncbi_tax_id";
     
     system("$cmd > $output_file") 
