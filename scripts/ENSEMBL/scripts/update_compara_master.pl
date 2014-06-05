@@ -28,6 +28,7 @@ my (
   $master_pass, 
   $master_dbname,
   $sfile,
+  $do_dnafrags,
     ); 
     
 
@@ -41,6 +42,7 @@ GetOptions(
   "treemlss"          => \$create_tree_mlss,
   "species=s@"        => \@species,
   "sfile=s"           => \$sfile,
+  "dnafrags"          => \$do_dnafrags,
     );
 
 die("must specify registry conf file on commandline\n") unless($reg_conf);
@@ -156,6 +158,9 @@ foreach my $core_db (@core_dbs) {
     $gdb->genebuild($gdb_tmp->genebuild);
     $compara_dbh->get_GenomeDBAdaptor->update($gdb);
   }
+
+  &update_dnafrags($compara_dbh, $gdb, $core_db) if $do_dnafrags;
+
   push @genome_dbs, $gdb;
 }
 
@@ -192,3 +197,57 @@ if ($create_tree_mlss) {
 print STDERR "Updated database\n";
 exit(0);
 
+
+
+#############################
+
+sub update_dnafrags {
+  my ($compara_dba, $genome_db, $species_dba) = @_;
+
+  my $dnafrag_adaptor = $compara_dba->get_adaptor("DnaFrag");
+  my $old_dnafrags = $dnafrag_adaptor->fetch_all_by_GenomeDB_region($genome_db);
+  my $old_dnafrags_by_id;
+  foreach my $old_dnafrag (@$old_dnafrags) {
+    $old_dnafrags_by_id->{$old_dnafrag->dbID} = $old_dnafrag;
+  }
+
+  my $sql1 = qq{
+      SELECT
+        cs.name,
+        sr.name,
+        sr.length
+      FROM
+        coord_system cs,
+        seq_region sr,
+        seq_region_attrib sra,
+        attrib_type at
+      WHERE
+        sra.attrib_type_id = at.attrib_type_id
+        AND at.code = 'toplevel'
+        AND sr.seq_region_id = sra.seq_region_id
+        AND sr.coord_system_id = cs.coord_system_id
+    };
+  my $sth1 = $species_dba->dbc->prepare($sql1);
+  $sth1->execute();
+
+  while (my ($coordinate_system_name, $name, $length) = $sth1->fetchrow_array) {
+
+    #Find out if region is_reference or not
+    my $slice = $species_dba->get_SliceAdaptor->fetch_by_region($coordinate_system_name,$name);
+    my $is_reference = $slice->is_reference;
+
+    my $new_dnafrag = new Bio::EnsEMBL::Compara::DnaFrag(
+            -genome_db => $genome_db,
+            -coord_system_name => $coordinate_system_name,
+            -name => $name,
+            -length => $length,
+            -is_reference => $is_reference
+        );
+    my $dnafrag_id = $dnafrag_adaptor->update($new_dnafrag);
+    delete $old_dnafrags_by_id->{$dnafrag_id};
+  }
+
+  foreach my $deprecated_dnafrag_id (keys %$old_dnafrags_by_id) {
+    $compara_dba->dbc->do("DELETE FROM dnafrag WHERE dnafrag_id = ".$deprecated_dnafrag_id) ;
+  }
+}
