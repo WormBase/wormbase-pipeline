@@ -140,7 +140,7 @@ setenv WORM_LIB ${WORM_SW_ROOT}/lib
 
 setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl-compara/modules:${PERL5LIB}
 setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl-variation/modules:${PERL5LIB}
-setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl-functgenomics/modules:${PERL5LIB}
+setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl-funcgen/modules:${PERL5LIB}
 setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl-pipeline/modules:${PERL5LIB}
 setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl-pipeline/scripts:${PERL5LIB}
 setenv PERL5LIB ${ENSEMBL_CVS_ROOT_DIR}/ensembl-analysis/modules:${PERL5LIB}
