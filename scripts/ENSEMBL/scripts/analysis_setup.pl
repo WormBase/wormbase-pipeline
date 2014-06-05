@@ -213,21 +213,28 @@ sub parse_files {
   # add a blank key/value for any headers that have no keys
   foreach my $h (sort { $horder{$a} <=> $horder{$b} }  keys (%headers)) {
 
-    my $analysis = Bio::EnsEMBL::Pipeline::Analysis->new(-logic_name => $h);
     my $ext_ana = $db->get_AnalysisAdaptor->fetch_by_logic_name($h);
 
-    foreach my $field ('db_file',
-                       'db',
-                       'db_version',
-                       'program',
-                       'program_version',
-                       'program_file',
-                       'gff_source',
-                       'gff_feature',
-                       'module',
-                       'module_version',
-                       'parameters',
-                       'input_id_type') {
+    my @field_list = qw(db_file
+                       db
+                       db_version
+                       program
+                       program_version
+                       program_file
+                       gff_source
+                       gff_feature
+                       module
+                       module_version
+                       parameters);
+    my $analysis;
+    if ($is_pipeline_db) {
+      $analysis = Bio::EnsEMBL::Pipeline::Analysis->new(-logic_name => $h);
+      push @field_list, 'input_id_type';
+    } else {
+      $analysis = Bio::EnsEMBL::Analysis->new(-logic_name => $h);
+    }
+
+    foreach my $field (@field_list) {
 
       if (exists $config->{$h}->{$field}) {
         if (lc($config->{$h}->{$field}) ne 'null') {
@@ -270,26 +277,25 @@ sub write_into_db {
 
   my $analysis_adaptor = $db->get_AnalysisAdaptor;
   my $sql = "select analysis_id from analysis where logic_name = ?";
-  my $sth = $db->prepare($sql);
+  my $sth = $db->dbc->prepare($sql);
   ANALYSIS:foreach my $a(@$analyses){ 
     $sth->execute($a->logic_name);
     my ($analysis_id)= $sth->fetchrow;
-
+    
     if($analysis_id){
       #
       # update of an existing analysis
       #
-
-      if($a->input_id_type){
-        if ($is_pipeline_db) {
-          my $clean_sql = "DELETE from input_id_type_analysis WHERE analysis_id = $analysis_id";
-          $db->dbc->do($clean_sql);
-          my $stored_sql = "INSERT into input_id_type_analysis ".
-              "(analysis_id, input_id_type) values(?, ?)";
-          my $stored_sth = $db->dbc->prepare($stored_sql);
-          $stored_sth->execute($analysis_id, $a->input_id_type);
-          $stored_sth->finish;
-        }
+      
+      if ($is_pipeline_db and $a->input_id_type){
+        
+        my $clean_sql = "DELETE from input_id_type_analysis WHERE analysis_id = $analysis_id";
+        $db->dbc->do($clean_sql);
+        my $stored_sql = "INSERT into input_id_type_analysis ".
+            "(analysis_id, input_id_type) values(?, ?)";
+        my $stored_sth = $db->dbc->prepare($stored_sql);
+        $stored_sth->execute($analysis_id, $a->input_id_type);
+        $stored_sth->finish;
       }
       $a->dbID($analysis_id);
       $a->adaptor($analysis_adaptor);
