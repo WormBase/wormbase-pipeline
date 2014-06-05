@@ -11,71 +11,56 @@
 
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-04-04 08:46:47 $      
+# Last updated on: $Date: 2014-06-05 15:18:35 $      
 
 use strict;                                      
-use lib $ENV{'CVS_DIR'};
-use Wormbase;
 use Getopt::Long;
 use Carp;
-use Log_files;
-use Storable;
+use Bio::EnsEMBL::Registry;
+use Bio::EnsEMBL::Utils::ConfigRegistry;
+use Bio::EnsEMBL::DBSQL::DBAdaptor;
+
 
 ######################################
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($help, $project_dir);
 my (@only_species, %only_species);
 
-GetOptions ("help"       => \$help,
-            "debug=s"    => \$debug,
-	    "test"       => \$test,
-	    "verbose"    => \$verbose,
-	    "store:s"    => \$store,
-	    "onlyspecies=s@" => \@only_species,
+GetOptions ("help"           => \$help,
+	    "project_dir:s"  => \$project_dir, # usually $wormbase or $parasite
+	    "species=s@"     => \@only_species,
 	    );
-
-if ( $store ) {
-  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
-} else {
-  $wormbase = Wormbase->new( -debug   => $debug,
-                             -test    => $test,
-			     );
-}
 
 # Display help if required
 &usage("Help") if ($help);
 
-# in test mode?
-if ($test) {
-  print "In test mode\n" if ($verbose);
-
-}
-
-# establish log file.
-my $log = Log_files->make_build_log($wormbase);
+if (!defined $project_dir) {die "-project_dir is not set.\n"}
 
 ##########################
 # MAIN BODY OF SCRIPT
 ##########################
 
+# Get the Registry
+# This assumes the environment variable ENSEMBL_REGISTRY is set, this is
+#     used as the name of the configuration file to read.
+# Or, the file .ensembl_init exists in the home directory, it is
+#     used as the configuration file.
+Bio::EnsEMBL::Registry->load_all();
+
 map { $only_species{$_} = 1 } @only_species;
 
-my %tierIII = $wormbase->tier3_species_accessors;
-foreach my $t3 (keys %tierIII){
+foreach my $species (keys %only_species){
 
-  next if @only_species and not exists $only_species{$t3};
+  my $meta_container = Bio::EnsEMBL::Registry->get_adaptor($species, 'core', 'MetaContainer');
+  my $taxon_id = $meta_container->get_taxonomy_id();
 
-  my $wb = $tierIII{$t3};
-  my $species  = $wb->species;
-  my $full_species = $wb->full_name();
-  my $taxon_id = $wb->ncbi_tax_id;
-
-  print "$full_species (taxon ID: $taxon_id)\n";
+  print "$species taxon ID: $taxon_id\n";
 
   # the EST files go here
-  my $target_dir = $wb->cdna_dir;
+  my $target_dir = "$project_dir/BUILD_DATA/cDNA/$species";
+
   if (!-d $target_dir) {mkdir $target_dir, 0777}
   my $outfile = "${target_dir}/EST";
   $outfile =~ s/\s/_/g;
@@ -85,12 +70,12 @@ foreach my $t3 (keys %tierIII){
     $old_size = -s $outfile;
   }
 
-  open (OUT, ">$outfile") || $log->log_and_die("Can't open the ouput file $outfile");
+  open (OUT, ">$outfile") || die("Can't open the ouput file $outfile");
 
   # now get the EST/mRNA sequences
   my $query = 'http://www.ebi.ac.uk/ena/data/warehouse/search?query=%22mol_type=%22mRNA%22%20AND%20tax_tree(TAXON)%22&result=sequence_release&display=fasta';
   $query =~ s/TAXON/$taxon_id/;
-  open (DATA, "wget -q -O - '$query' |") || $log->log_and_die("Can't get mRNA data for $full_species\n");
+  open (DATA, "wget -q -O - '$query' |") || die("Can't get mRNA data for $species\n");
 
   my $entry_count=0;
   while(my $line = <DATA>) {
@@ -101,7 +86,7 @@ foreach my $t3 (keys %tierIII){
     print OUT $line;
   }
 
-  $log->write_to("$entry_count EST/mRNA entries found\n");
+  print "$entry_count EST/mRNA entries found\n";
 
   close(DATA);
   close (OUT);
@@ -109,21 +94,19 @@ foreach my $t3 (keys %tierIII){
   if (defined $old_size) {
     my $new_size = -s $outfile;
     if ($new_size < $old_size) {
-      $log->write_to("WARNING: the new ${full_species} file is smaller than the old file (old size: $old_size bytes, new_size: $new_size bytes).\n");
-      $log->error();
+      print "WARNING: the new ${species} file is smaller than the old file (old size: $old_size bytes, new_size: $new_size bytes).\n";
     } elsif ($new_size > $old_size) {
-      $log->write_to("The ${full_species} file has been updated (old size: $old_size bytes, new_size: $new_size bytes).\n");
+      print "The ${species} file has been updated (old size: $old_size bytes, new_size: $new_size bytes).\n";
     } else {
-      $log->write_to("The ${full_species} EST file has not changed - no updates to do.\n");
+      print "The ${species} EST file has not changed - no updates to do.\n";
     }
   } else {
-      $log->write_to("The ${full_species} EST file has been created.\n");
+      print "The ${species} EST file has been created.\n";
   }
-  $log->write_to("\n");
+  print "\n";
 }
 
-$log->mail();
-print "Finished.\n" if ($verbose);
+print "Finished.\n";
 exit(0);
 
 
