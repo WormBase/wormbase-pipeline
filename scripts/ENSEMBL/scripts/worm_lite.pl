@@ -121,6 +121,9 @@ sub setupdb {
     print "loading table.sql from ensembl...\n";
     system("$mysql $db->{dbname} < " . $cvsDIR . "/ensembl/sql/table.sql" ) && die;
     
+    print "loading table.sql from ensembl-pipeline...\n";
+    system("$mysql $db->{dbname} < " . $cvsDIR . "/ensembl-pipeline/sql/table.sql" ) && die("Could not load pipeline tables\n");
+
     print "Loading taxonomy...N";
     my $cmd = "perl $cvsDIR/ensembl-pipeline/scripts/load_taxonomy.pl -name \"$config->{species}\" "
         . "-taxondbhost $tax_db_host " 
@@ -438,21 +441,6 @@ sub load_rules {
   my ($species, $config) = @_;
   
   my $db = $config->{database};
-
-  my $mysql = "mysql -h $db->{host} -P $db->{port} -u $db->{user} --password=$db->{password}";
-
-  # check whether we need to load the pipeline tables
-  my $load_pipeline_tables = 1;
-
-  open(my $mysqlfh, "$mysql -D $db->{dbname} -e 'show tables' |") or die "Could not open Mysql command\n";
-  while(<$mysqlfh>) {
-    /^job$/ and $load_pipeline_tables = 0;
-  }
-
-  if ($load_pipeline_tables) {
-    print "loading table.sql from ensembl-pipeline...\n";
-    system("$mysql $db->{dbname} < " . $cvsDIR . "/ensembl-pipeline/sql/table.sql" ) && die("Could not load pipeline tables\n");
-  }
 
   my @conf_files;
   foreach my $path ($generic_config->{ruleconf}, $config->{ruleconf}) {
