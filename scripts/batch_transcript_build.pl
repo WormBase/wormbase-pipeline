@@ -7,7 +7,7 @@
 # wrapper script for running transcript_builder.pl
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-12-05 15:52:20 $
+# Last edited on: $Date: 2014-06-06 12:55:03 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -102,7 +102,8 @@ if (@no_run) {
     $log->write_to("$cmd\n");
     print "$cmd\n";
     $cmd = $wormbase->build_cmd($cmd);
-    my @bsub_options = (-e => "$err", 
+    my @bsub_options = (-e => "$err",
+                        -o => '/dev/null',
                         -M => "3500", 
                         -R => "\"select[mem>3500] rusage[mem=3500]\"",
                         -J => $job_name);
