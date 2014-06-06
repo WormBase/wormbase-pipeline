@@ -11,7 +11,7 @@
 
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-06-05 15:18:35 $      
+# Last updated on: $Date: 2014-06-06 09:03:36 $      
 
 use strict;                                      
 use Getopt::Long;
@@ -36,7 +36,7 @@ GetOptions ("help"           => \$help,
 # Display help if required
 &usage("Help") if ($help);
 
-if (!defined $project_dir) {die "-project_dir is not set.\n"}
+if (!defined $project_dir) {$project_dir = "/nfs/panda/ensemblgenomes/wormbase"}
 
 ##########################
 # MAIN BODY OF SCRIPT
