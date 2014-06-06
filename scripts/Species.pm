@@ -1509,41 +1509,6 @@ sub ncbi_bioproject {'PRJNA208416'};
 sub bioproject_description { 'University of Melboure T. suis (female) genome project'};
 sub assembly_type {'contig'};
 sub is_canonical { 0 }
-#######################################################
-
-package Rculicivorax;
-use Carp;
-our @ISA = qw(Wormbase Species);
-
-sub _new {
-    my $class = shift;
-    my %param = %{ shift(@_) };
-
-    my $self = $class->initialize( $class->flatten_params( \%param ) );
-
-    # add stuff post object creation goes here
-
-    bless $self, $class;
-}
-sub full_name {
-    my $self = shift;
-    my %param = @_ ;
-    if($param{'-short'}){
-         return 'R. culicivorax';
-    }elsif($param{'-g_species'}){
-         return 'r_culicivorax';
-    } else { return'Romanomermis culicivorax' };
-}
-sub chromosome_prefix {'nRc.2.0.'}
-sub pep_prefix {'RC'}
-sub pepdir_prefix{'rculicivorax'};
-sub ncbi_tax_id {13658};
-sub ncbi_bioproject {'PRJEB1358'};
-sub bioproject_description { 'University of Edinburgh R. culicivorax genome project'};
-sub assembly_type {'contig'};
-
-
-
 
 #######################################################
 #######################################################
