@@ -28,7 +28,8 @@ my (
   $master_pass, 
   $master_dbname,
   $sfile,
-  $do_dnafrags,
+  $no_dnafrags,
+  $locators,
     ); 
     
 
@@ -42,7 +43,8 @@ GetOptions(
   "treemlss"          => \$create_tree_mlss,
   "species=s@"        => \@species,
   "sfile=s"           => \$sfile,
-  "dnafrags"          => \$do_dnafrags,
+  "nodnafrags"        => \$no_dnafrags,
+  "locators"          => \$locators,
     );
 
 die("must specify registry conf file on commandline\n") unless($reg_conf);
@@ -50,12 +52,8 @@ die("Must specify -reg_conf, -masterdbname") unless $reg_conf and $master_dbname
 
 Bio::EnsEMBL::Registry->load_all($reg_conf);
 
-#foreach my $dbn (@{Bio::EnsEMBL::Registry->get_all_DBAdaptors}) {
-#  print $dbn->dbc->dbname, " ", $dbn->group, "\n";
-#}
-#exit(0);
 
-$collection_name = "worms" if not defined $collection_name;
+$collection_name = "wormbase" if not defined $collection_name;
 
 #
 # 0. Get species data
@@ -149,6 +147,11 @@ foreach my $core_db (@core_dbs) {
     # not present; create it
     print STDERR "Creating new GenomeDB for $prod_name\n";
     $gdb = Bio::EnsEMBL::Compara::GenomeDB->new(-db_adaptor => $core_db);
+    if ($locators) {
+      my $loc = sprintf("Bio::EnsEMBL::DBSQL::DBAdaptor/host=%s;port=%s;user=%s;pass=%s;dbname=%s;disconnect_when_inactive=1", $core_db->dbc->host, $core_db->dbc->port, $core_db->dbc->user, $core_db->dbc->password, $core_db->dbc->dbname);
+      $gdb->locator($loc);
+      
+    }
     $compara_dbh->get_GenomeDBAdaptor->store($gdb);
   } else {
     print STDERR "Updating existing GenomeDB for $prod_name\n";
@@ -159,7 +162,7 @@ foreach my $core_db (@core_dbs) {
     $compara_dbh->get_GenomeDBAdaptor->update($gdb);
   }
 
-  &update_dnafrags($compara_dbh, $gdb, $core_db) if $do_dnafrags;
+  &update_dnafrags($compara_dbh, $gdb, $core_db) unless $no_dnafrags;
 
   push @genome_dbs, $gdb;
 }
