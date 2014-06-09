@@ -11,7 +11,7 @@
 
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-06-09 12:06:49 $      
+# Last updated on: $Date: 2014-06-09 12:25:42 $      
 
 use strict;                                      
 use Getopt::Long;
@@ -225,7 +225,7 @@ foreach my $species (keys %only_species){
   my $nematode_net = $nematode_net_species_decode{$binomial_species_name};
 
   if (defined $nematode_net) {
-    my $query = "http://nematode.net/Data/cluster_ftp/SUMMARY/CLUSTER_SUMMARY.$nematode_net";
+    my $query = "http://nematode.net/Data/cluster_ftp/SUMMARY/CLUSTER_SUMMARY.${nematode_net}";
     system("wget -q -O ${target_dir}/Nematode.net '$query' ");
   } else {
     # make an empty file
