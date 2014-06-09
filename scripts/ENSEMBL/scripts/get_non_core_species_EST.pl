@@ -11,7 +11,7 @@
 
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-06-06 09:03:36 $      
+# Last updated on: $Date: 2014-06-09 12:06:49 $      
 
 use strict;                                      
 use Getopt::Long;
@@ -36,11 +36,114 @@ GetOptions ("help"           => \$help,
 # Display help if required
 &usage("Help") if ($help);
 
-if (!defined $project_dir) {$project_dir = "/nfs/panda/ensemblgenomes/wormbase"}
+if (!defined $project_dir) {$project_dir = "/nfs/panda/ensemblgenomes/wormbase/BUILD_DATA/cDNA/"}
 
 ##########################
 # MAIN BODY OF SCRIPT
 ##########################
+
+my %nembase_species_decode = (
+                   
+			      "Angiostrongylus cantonensis" => "AAC",
+			      "Ancylostoma braziliense" => "ABC",
+			      "Ancylostoma caninum" => "ACC",
+			      "Anisakis simplex" => "AIC",
+			      "Ascaris lumbricoides" => "ALC",
+			      "Ascaris suum" => "ASC",
+			      "Ancylostoma ceylanicum" => "AYC",
+			      "Brugia malayi" => "BMC",
+			      "Brugia pahangi" => "BPC",
+			      "Bursaphelenchus mucronatus" => "BUC",
+			      "Bursaphelenchus xylophilus" => "BXC",
+			      "Caenorhabditis brenneri" => "CBC",
+			      "Caenorhabditis elegans" => "CEC",
+			      "Caenorhabditis briggsae" => "CGC",
+			      "Caenorhabditis japonica" => "CJC",
+			      "Caenorhabditis remanei" => "CRC",
+			      "Caenorhabditis sp. 5" => "CSC",
+			      "Ditylenchus africanus" => "DAC",
+			      "Dirofilaria immitis" => "DIC",
+			      "Dictyocaulus viviparus" => "DVC",
+			      "Globodera mexicana" => "GMC",
+			      "Globodera pallida" => "GPC",
+			      "Globodera rostochiensis" => "GRC",
+			      "Heterorhabditis bacteriophora" => "HBC",
+			      "Haemonchus contortus" => "HCC",
+			      "Heterodera glycines" => "HGC",
+			      "Heterodera schachtii" => "HSC",
+			      "Loa loa" => "LLC",
+			      "Litomosoides sigmodontis" => "LSC",
+			      "Meloidogyne arenaria" => "MAC",
+			      "Meloidogyne chitwoodi" => "MCC",
+			      "Meloidogyne hapla" => "MHC",
+			      "Meloidogyne incognita" => "MIC",
+			      "Meloidogyne javanica" => "MJC",
+			      "Meloidogyne paranaensis" => "MPC",
+			      "Necator americanus" => "NAC",
+			      "Nippostrongylus brasiliensis" => "NBC",
+			      "Onchocerca ochengi" => "OCC",
+			      "Oesophagostomum dentatum" => "ODC",
+			      "Onchocerca flexuosa" => "OFC",
+			      "Ostertagia ostertagi" => "OOC",
+			      "Onchocerca volvulus" => "OVC",
+			      "Parelaphostrongylus tenuis" => "PAC",
+			      "Pratylenchus penetrans" => "PEC",
+			      "Pristionchus pacificus" => "PPC",
+			      "Panagrolaimus superbus" => "PSC",
+			      "Parastrongyloides trichosuri" => "PTC",
+			      "Pratylenchus vulnus" => "PVC",
+			      "Radopholus similis" => "RSC",
+			      "Steinernema carpocapsae" => "SCC",
+			      "Steinernema feltiae" => "SFC",
+			      "Strongyloides ratti" => "SRC",
+			      "Strongyloides stercoralis" => "SSC",
+			      "Toxocara canis" => "TCC",
+			      "Teladorsagia circumcincta" => "TDC",
+			      "Trichostrongylus vitrinus" => "TIC",
+			      "Toxascaris leonina" => "TLC",
+			      "Trichuris muris" => "TMC",
+			      "Trichinella spiralis" => "TSC",
+			      "Trichuris vulpis" => "TVC",
+			      "Wuchereria bancrofti" => "WBC",
+			      "Xiphinema index" => "XIC",
+			      "Zeldia punctata" => "ZPC",
+		     );
+
+my %nematode_net_species_decode = (
+
+				   "Ancylostoma caninum" => "030219.ancylostoma_caninum",
+				   "Ancylostoma ceylanicum" => "030325.ancylostoma_ceylanicum",
+				   "Ascaris suum" => "020516.ascaris_suum",
+				   "Brugia malayi" => "030818.brugia_malayi",
+				   "Caenorhabditis remanei" => "060510.c.remanei",
+				   "Dirofilaria immitis" => "030709.dirofilaria_immitis",
+				   "Ditylenchus africanus" => "071107.ditylenchus_africanus",
+				   "Globodera pallida" => "060810.globodera_pallida",
+				   "Globodera rostochiensis" => "071219.globodera_rostochiensis",
+				   "Heterodera glycines" => "071019.heterodera_glycines",
+				   "Heterodera schachtii" => "051230.heterodera_schachtii",
+				   "Haemonchus contortus" => "040702_haemonchus_contortus",
+				   "Meloidogyne arenaria" => "051212_meloidogyne_arenaria",
+				   "Meloidogyne chitwoodi" => "050421.meloidogyne_chitwoodi",
+				   "Meloidogyne hapla" => "050523.meloidogyne_hapla",
+				   "Meloidogyne incognita" => "050621.meloidogyne_incognita",
+				   "Meloidogyne javanica" => "060103_meloidogyne_javanica",
+				   "Meloidogyne parananesis" => "051214.meloidogyne_parananesis",
+				   "Nippostrongylus brasiliensis" => "060608.nippostrongylus_brasiliensis",
+				   "Onchocerca flexuosa" => "071212.onchocerca_flexuosa",
+				   "Ostertagia ostertagi" => "060103.ostertagia_ostertagi",
+				   "Parastrongyloides trichosuri" => "060103.parastrongyloides_trichosuri",
+				   "Pratylenchus penetrans" => "030402.pratylenchus_penetrans",
+				   "Pristionchus pacificus" => "010706.pristionchus_pacificus",
+				   "Radopholus similis" => "071114.radopholus_similis",
+				   "Strongyloides ratti" => "031211.strongyloides_ratti",
+				   "Strongyloides stercoralis" => "011025.strongyloides_stercoralis",
+				   "Toxocara canis" => "060103.toxocara_canis",
+				   "Trichinella spiralis" => "021105.trichinella_spiralis",
+				   "Trichuris muris" => "071220.trichuris_muris",
+				   "Xiphinema index" => "050325_xiphinema_index",
+				   "Zeldia punctata" => "010618.zeldia_punctata",
+				 );
 
 # Get the Registry
 # This assumes the environment variable ENSEMBL_REGISTRY is set, this is
@@ -55,11 +158,12 @@ foreach my $species (keys %only_species){
 
   my $meta_container = Bio::EnsEMBL::Registry->get_adaptor($species, 'core', 'MetaContainer');
   my $taxon_id = $meta_container->get_taxonomy_id();
+  my $binomial_species_name = $meta_container->get_scientific_name();
 
   print "$species taxon ID: $taxon_id\n";
 
   # the EST files go here
-  my $target_dir = "$project_dir/BUILD_DATA/cDNA/$species";
+  my $target_dir = "$project_dir/$species";
 
   if (!-d $target_dir) {mkdir $target_dir, 0777}
   my $outfile = "${target_dir}/EST";
@@ -104,6 +208,31 @@ foreach my $species (keys %only_species){
       print "The ${species} EST file has been created.\n";
   }
   print "\n";
+
+
+# NEMBASE4
+  my $nembase = $nembase_species_decode{$binomial_species_name};
+  if (defined $nembase) {
+    my $query = "http://www.nematodes.org/downloads/databases/NEMBASE4/${nembase}_nuc.fsa";
+    system("wget -q -O ${target_dir}/Nembase '$query' ");
+  } else {
+    # make an empty file
+    open(OUT, ">${target_dir}/Nembase");
+    close OUT;
+  }
+  
+# Nematode.net
+  my $nematode_net = $nematode_net_species_decode{$binomial_species_name};
+
+  if (defined $nematode_net) {
+    my $query = "http://nematode.net/Data/cluster_ftp/SUMMARY/CLUSTER_SUMMARY.$nematode_net";
+    system("wget -q -O ${target_dir}/Nematode.net '$query' ");
+  } else {
+    # make an empty file
+    open(OUT, ">${target_dir}/Nematode.net");
+    close OUT;
+  }
+
 }
 
 print "Finished.\n";
