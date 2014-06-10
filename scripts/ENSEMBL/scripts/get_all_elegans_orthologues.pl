@@ -12,13 +12,14 @@ use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
 
 use Getopt::Long;
 
-my ($comparadb,$dbhost,$dbuser,$dbport);
+my ($comparadb,$dbhost,$dbuser,$dbport, $verbose);
 
 GetOptions(
-	   'database=s' => \$comparadb,
-	   'dbhost=s'   => \$dbhost,
-	   'dbuser=s'   => \$dbuser,
-	   'dbport=s'   => \$dbport,
+  'database=s' => \$comparadb,
+  'dbhost=s'   => \$dbhost,
+  'dbuser=s'   => \$dbuser,
+  'dbport=s'   => \$dbport,
+  'verbose'    => \$verbose,
 ) || die("cant parse the command line parameter\n");
 
 $comparadb ||= 'worm_compara';
@@ -26,44 +27,16 @@ $dbhost    ||= $ENV{'WORM_DBHOST'};
 $dbuser    ||= 'wormro';
 $dbport    ||= $ENV{'WORM_DBPORT'};
 
-# let's be fair, that can be probably build from the WormBase.pm
-my %species = ( 
-    6239   => 'Caenorhabditis elegans',
-    6238   => 'Caenorhabditis briggsae', 
-    31234  => 'Caenorhabditis remanei',
-    135651 => 'Caenorhabditis brenneri',
-    281687 => 'Caenorhabditis japonica',
-    6279   => 'Brugia malayi',
-    54126  => 'Pristionchus pacificus',
-    6305   => 'Meloidogyne hapla',
-    6289   => 'Haemonchus contortus',
-    860376 => 'Caenorhabditis angaria',
-    6334   => 'Trichinella spiralis',
-    886184 => 'Caenorhabditis tropicalis',
-    6253   => 'Ascaris suum',
-    37862  => 'Heterorhabditis bacteriophora',
-    6326   => 'Bursephelenchus xylophilus',
-    497829 => 'Caenorhabditis sp.5',
-    34506  => 'Strongyloides ratti',
-    7209   => 'Loa loa',
-    6233   => 'Panagrellus redivivus',
-    6287   => 'Dirofilaria immitis',
-    6282   => 'Onchocerca volvulus',
-    51031  => 'Necator americanus',
-    1195656=> 'Pristionchus exspectatus',
-    53326  => 'Ancylostoma ceylanicum',
-);
+my (%species, %t3_pep);
 
-my %coreSpecies = (
-   6239   => 1,
-   6238   => 1,
-   31234  => 1,
-   135651 => 1,
-   281687 => 1,
-   54126  => 1,
-   6279   => 1,
-   6282   => 1,
-);
+my %core_species = ('caenorhabditis_elegans'  => 1,
+                    'caenorhabditis_briggsae' => 1,
+                    'caenorhabditis_remanei'  => 1,
+                    'caenorhabditis_brenneri' => 1,
+                    'caenorhabditis_japonica' => 1,
+                    'pristionchus_pacificus'  => 1,
+                    'brugia_malayi'           => 1,
+                    'onchocerca_volvulus'     => 1);
 
 my %cds2wbgene=%{&get_commondata('cds2wbgene_id')};
 
@@ -74,64 +47,114 @@ my $compara_db = new Bio::EnsEMBL::Compara::DBSQL::DBAdaptor(
     -dbname => $comparadb
 ) or die(@!);
 
+my $gdb_adaptor = $compara_db->get_GenomeDBAdaptor;
 my $member_adaptor = $compara_db->get_GeneMemberAdaptor();
 my $homology_adaptor = $compara_db->get_HomologyAdaptor();
-my @members = @{$member_adaptor->fetch_all()};
 
-while( my $member = shift @members){
+my @genome_dbs = @{$gdb_adaptor->fetch_all};
+foreach my $gdb (@genome_dbs) {
+  my $node = $compara_db->get_NCBITaxonAdaptor->fetch_node_by_genome_db_id($gdb->dbID);
+
+  my $name = $node->name;
+
+  # special cases: C. sp5 and C. sp11
+  if ($name =~ /sp\. 5 DRD-2008/) {
+    $name = "Caenorhabditis sp.5"; 
+  } elsif ($name =~ /\s+csp11$/) {
+    $name = "Caenorhabditis tropicalis";
+  }
+
+  $species{$gdb->dbID} = $name;
+
+}
+
+for(my $i=0; $i<@genome_dbs; $i++) {
+  my $gdb1 = $genome_dbs[$i];
+  next if not exists $core_species{$gdb1->name};
+ 
+  print STDERR "Processing " . $gdb1->name . "...\n" if $verbose;
+
+  my (%homols);
+
+  for(my $j=$i; $j<@genome_dbs; $j++) {
+    my $gdb2 = $genome_dbs[$j]; 
+
+    print STDERR "   Comparing to " . $gdb2->name . "...\n" if $verbose;
+
+    my $mlss;
+    if ($gdb1->dbID == $gdb2->dbID) {
+      $mlss = $compara_db->get_MethodLinkSpeciesSetAdaptor->fetch_by_method_link_type_GenomeDBs('ENSEMBL_PARALOGUES', [$gdb1]);      
+    } else {
+      $mlss = $compara_db->get_MethodLinkSpeciesSetAdaptor->fetch_by_method_link_type_GenomeDBs('ENSEMBL_ORTHOLOGUES', [$gdb1, $gdb2]);
+    }
     
-    next unless $coreSpecies{$member->taxon_id};
+    my @homologies = @{$homology_adaptor->fetch_all_by_MethodLinkSpeciesSet( $mlss )};
 
-    my @homologies = @{$homology_adaptor->fetch_all_by_Member( $member)};
-
-    my (%t3,%t2);
-
-    foreach my $homology ( @homologies) {
-        
-        next if $homology->description eq 'between_species_paralog';
-        foreach my $ma ( @{ $homology->get_all_Members } ) { # was $homology->get_all_Member_Attribute but this is not in the API any more
-            
-            foreach my $pepm ( @{ $ma->gene_member()->get_all_SeqMembers() } ) { # was $me->get_all_peptide_Members()
-
-                if ($coreSpecies{$pepm->taxon_id}){ 
-                    $t2{$pepm->stable_id} = [$pepm->taxon_id,$homology->description]
-                } else {
-		    $t3{$pepm->stable_id} = [$pepm->taxon_id,$homology->description,$pepm->sequence]
-	        }
-            }
+    foreach my $homology (@homologies) {
+      
+      my ($m1, $m2) = sort { $a->stable_id cmp $b->stable_id } @{ $homology->get_all_Members };
+      
+      if ($m1->genome_db->dbID != $gdb1->dbID) {
+        # members have been returned in the wrong order, so swap them
+        ($m2, $m1) = ($m1, $m2);
+      }        
+      
+      my $gid1 = $cds2wbgene{$m1->stable_id}?$cds2wbgene{$m1->stable_id}:$m1->stable_id;
+      my $gid2 = $cds2wbgene{$m2->stable_id}?$cds2wbgene{$m2->stable_id}:$m2->stable_id;
+      
+      my $m2pep = $m2->gene_member->get_canonical_SeqMember;
+      
+      if (exists $core_species{$gdb2->name}) {
+        if ($gdb1->dbID == $gdb2->dbID) {
+          $homols{$gid1}->{Paralog}->{$species{$gdb2->dbID}}->{$gid2} = 1;
+        } else {
+          $homols{$gid1}->{Ortholog}->{$species{$gdb2->dbID}}->{$gid2} = $species{$gdb2->dbID};
         }
-    }
-
-    my $gid=$cds2wbgene{$member->stable_id}?$cds2wbgene{$member->stable_id}:$member->stable_id;
-
-    next unless (scalar(keys %t2) + scalar(keys %t3) > 1); # the self-hit should always exist
-
-    print "Gene : \"$gid\"\n";
+      } else {
+        $homols{$gid1}->{Ortholog_other}->{$species{$gdb2->dbID}}->{$m2pep->stable_id} = 1;
+        if (not exists $t3_pep{$m2pep->stable_id}) {
+          $t3_pep{$gdb2->dbID}->{$m2pep->stable_id} = $m2pep->sequence;
+        }
+      }
+    } 
+  }
     
-    while (my ($k,$v)=each(%t2)){
-            my $sid=$cds2wbgene{$k}?$cds2wbgene{$k}:$k;
-            next if $gid eq $sid;
-            
-            if ($$v[0] != $member->taxon_id){
-                print "Ortholog $sid \"$species{$$v[0]}\" From_analysis WormBase-Compara";
-            }
-            else{
-                print "Paralog $sid \"$species{$$v[0]}\" From_analysis WormBase-Compara";
-            }
-            print " // Type $$v[1]" if $ENV{debug};
-            print "\n";
+  print "// Homologies for " . $gdb1->name . "\n\n";
+
+  foreach my $g (sort keys %homols) {
+    
+    print "\nGene : \"$g\"\n";
+    
+    foreach my $tag_group (keys %{$homols{$g}}) {
+      foreach my $spe (sort keys %{$homols{$g}->{$tag_group}}) {
+        foreach my $entity (sort keys %{$homols{$g}->{$tag_group}->{$spe}}) {
+          if ($tag_group =~ /other/) {
+            print "$tag_group \"$entity\" From_analysis WormBase-Compara\n";
+          } else {
+            print "$tag_group \"$entity\" \"$spe\" From_analysis WormBase-Compara\n";
+          }
+        }
+      }
     }
 
-    while (my ($k,$v)=each(%t3)){
-            print "Ortholog_other $k From_analysis WormBase-Compara\n";
-    }
-    print "\n";
-    
-    while (my ($k,$v)=each(%t3)){
-	    print "Protein : $k\nSpecies \"$species{$$v[0]}\"\nPeptide \"$k\"\n\n";
-            print "Peptide : \"$k\"\n$$v[2]\n\n"
-    }
-}   
+  }   
+}
+
+foreach my $gdb_id (keys %t3_pep) {
+  my $species = $species{$gdb_id};
+
+  foreach my $stable_id (keys %{$t3_pep{$gdb_id}}) {
+    my $pepseq = $t3_pep{$gdb_id}->{$stable_id};
+
+    print "\nProtein : $stable_id\n";
+    print "Species \"$species\"\n\n";
+
+    print "Peptide : \"$stable_id\"\n";
+    print "$pepseq\n\n";                  
+  }
+
+}
+
 
 #################
 # also adds the sequence name of the parent gene
