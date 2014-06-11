@@ -68,16 +68,14 @@ foreach my $gdb (@genome_dbs) {
 
 }
 
-for(my $i=0; $i<@genome_dbs; $i++) {
-  my $gdb1 = $genome_dbs[$i];
+foreach my $gdb1 (@genome_dbs) {
   next if not exists $core_species{$gdb1->name};
  
   print STDERR "Processing " . $gdb1->name . "...\n" if $verbose;
 
   my (%homols);
 
-  for(my $j=$i; $j<@genome_dbs; $j++) {
-    my $gdb2 = $genome_dbs[$j]; 
+  foreach my $gdb2 (@genome_dbs) {
 
     print STDERR "   Comparing to " . $gdb2->name . "...\n" if $verbose;
 
@@ -106,7 +104,9 @@ for(my $i=0; $i<@genome_dbs; $i++) {
       
       if (exists $core_species{$gdb2->name}) {
         if ($gdb1->dbID == $gdb2->dbID) {
+          # we need to add the connection both ways, so that that evidence gets added to both
           $homols{$gid1}->{Paralog}->{$species{$gdb2->dbID}}->{$gid2} = 1;
+          $homols{$gid2}->{Paralog}->{$species{$gdb1->dbID}}->{$gid1} = 1;
         } else {
           $homols{$gid1}->{Ortholog}->{$species{$gdb2->dbID}}->{$gid2} = $species{$gdb2->dbID};
         }
