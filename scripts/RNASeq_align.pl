@@ -6,7 +6,7 @@
 #
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-05-01 10:29:23 $      
+# Last updated on: $Date: 2014-06-11 10:38:48 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -128,11 +128,11 @@ foreach my $experiment_accession (keys %{$data}) {
   } else {
     $cmd = $wormbase->build_cmd($cmd);
     $lsf->submit(@bsub_options, $cmd);
-    sleep(10); # wait for a while between submissions so that the ENA FTP server is not overwhelmed by simultaneous requests
   }
 }
 
 if (!$runlocally) {
+  sleep(30); # wait for a while to let the bhist command have a chance of finding all the jobss
   $lsf->wait_all_children( history => 1 );
   $log->write_to("This set of jobs have completed!\n");
   for my $job ( $lsf->jobs ) {
@@ -160,6 +160,7 @@ if (!$notbuild) { # in the Build and have GTF and cufflinks done
 
 # make the ace file of RNASeq spanned introns to load into acedb
 my $splice_file = $wormbase->misc_dynamic."/RNASeq_splice_${species}.ace";
+my $old_splice_file_size = -s $splice_file;
 chdir $RNASeq->{RNASeqSRADir};
 $status = $wormbase->run_command("rm -f $splice_file", $log);
 $status = $wormbase->run_command("cat */Introns/virtual_objects.${species}.RNASeq.ace > $splice_file", $log);
@@ -211,6 +212,10 @@ close(FLAT);
 close(FEAT);
 $status = $wormbase->run_command("rm -f ${splice_file}.tmp", $log);
 
+my $splice_file_size = -s $splice_file;
+if ($old_splice_file_size < $splice_file_size * 0.9 || $old_splice_file_size > $splice_file_size * 1.1) {
+  $log->error("WARNING: old splice file size: $old_splice_file_size, new splice file size: $splice_file_size\n");
+}
 
 
 
@@ -243,7 +248,9 @@ sub make_fpkm {
   
   # open a .ace file to hold the FPKM expression levels of genes, transcripts and CDSs
   my $misc_dynamic = $wormbase->misc_dynamic;
-  open (EXPRACE, "> $misc_dynamic/RNASeq_expression_levels_${species}.ace") || $log->log_and_die("Can't open $misc_dynamic/RNASeq_expression_levels_${species}.ace\n");
+  my $expression_file = "$misc_dynamic/RNASeq_expression_levels_${species}.ace";
+  my $old_expression_file_size = -s $expression_file;
+  open (EXPRACE, "> $expression_file") || $log->log_and_die("Can't open $expression_file\n");
   
   # write a manifest file for the SPELL data for Wen and Raymond
   open (MANIFEST, "> SPELL_manifest.dat") || $log->log_and_die("Can't open SPELL_manifest.dat\n");
@@ -382,6 +389,11 @@ sub make_fpkm {
   close(MANIFEST);
   close(EXPRACE);
   
+  my $expression_file_size = -s $expression_file;
+  if ($old_expression_file_size < $expression_file_size * 0.9 || $old_expression_file_size > $expression_file_size * 1.1) {
+    $log->error("WARNING: old expression file size: $old_expression_file_size, new expression file size: $expression_file_size\n");
+  }
+
   # make a tarball
   my $out_file = "expr.rnaseq.tar.gz";
   unlink $out_file if -e $out_file;
