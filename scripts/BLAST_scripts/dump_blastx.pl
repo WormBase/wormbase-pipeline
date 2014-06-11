@@ -4,8 +4,8 @@
 #  script to submit blastx dumping scripts onto the farm
 #  and concatenate them at the end
 # 
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2014-04-24 10:28:50 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2014-06-11 19:54:44 $
 # 
 
 
@@ -95,7 +95,7 @@ foreach my $db (keys %logic2type){
   my $outfile = "$dumpdir/${species}_$db.1.ace";
   unlink $outfile if -e $outfile; # cleanup leftover bits
   push @outfiles,$outfile;
-  my $options="-database $database -logicname $db -outfile $outfile -store $storable -toplevel";
+  my $options="-database $database -logicname $db -outfile $outfile -store $storable";
   $options .= ' -self' if $logic2type{$db} eq $species;
   my $cmd = "perl $ENV{CVS_DIR}/BLAST_scripts/blastx_dump.pl $options";
   $queue->enqueue($cmd);
