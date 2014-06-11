@@ -7,8 +7,8 @@
 #
 # by Gary Williams
 #
-# Last updated by: $Author: pad $                      
-# Last updated on: $Date: 2014-01-23 13:38:37 $        
+# Last updated by: $Author: gw3 $                      
+# Last updated on: $Date: 2014-06-11 11:47:35 $        
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -79,6 +79,9 @@ if (!defined($output)){
 
 my %dummy;
 my %worm_gene2geneID_name = $wormbase->FetchData('worm_gene2geneID_name', \%dummy, $common_dir);
+
+my $old_output_file_size = -s $output;
+
 
 open (OUTDAT, ">$output") || die "Can't open $output\n";
 
@@ -178,7 +181,12 @@ foreach my $file (@files) {
   close (IN);
 }
 
-
+if (defined $old_output_file_size) {
+  my $output_file_size = -s $output;
+  if ($old_output_file_size < $output_file_size * 0.9 || $old_output_file_size > $output_file_size * 1.1) {
+    $log->error("WARNING: old output file size: $old_output_file_size, new output file size: $output_file_size\n");
+  }
+}
 
 
 
