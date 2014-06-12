@@ -148,7 +148,7 @@ foreach my $chrom (@chromosomes) {
           $check_results{$id} = {
             obj => $id,
             chr => $chr,
-            pos => ($fields[3] + $fields[4]) / 2,
+            ppos => ($fields[3] + $fields[4]) / 2,
             gpos => $rev_genes->{$id}->[0],
             interpolated => 0,
           };
