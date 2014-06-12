@@ -1,13 +1,13 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# activate.pl
+# isoformer.pl
 # 
 # by Gary Williams                         
 #
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-05-28 15:17:04 $      
+# Last updated on: $Date: 2014-06-12 12:18:13 $      
 
 # Things isoformer gets confused by or misses:
 # - non-canonical spliced introns where the RNASeq intron is placed on the positive strand and so is missing from reverse-strand genes
@@ -28,9 +28,7 @@ use Storable;
 use Ace;
 use Sequence_extract;
 use Coords_converter;
-use Tk;
-use Tk::Dialog; 
-use Tk::FileDialog;
+
 
 ######################################
 # variables and command-line options # 
@@ -430,28 +428,50 @@ sub get_active_region {
 
     } else { # try Pseudogene
       my $obj = $db->fetch(Pseudogene => "$region[0]");
-      if (! defined $obj) {
-	print STDERR "Region: '$region' is an unknown way of specifying a region: not a CDS or a Pseudogene\n";
-	return undef;
+      if (defined $obj) {
+	my $gene_obj = $obj->Gene;
+	if (defined $gene_obj) {
+	  $gene = $obj->Gene->name;
+	}
+	my $clone_start;
+	my $clone_end;
+	my $clone = $obj->Sequence;
+	my @clone_Pseudogene = $clone->Pseudogene;
+	foreach my $Pseudogene ( @clone_Pseudogene ) {
+	  next unless ($Pseudogene->name eq "$region[0]");
+	  $clone_start = $Pseudogene->right->name;
+	  $clone_end = $Pseudogene->right->right->name;
+	  last;
+	}
+	($chromosome, $start) = $coords->Coords_2chrom_coords($clone, $clone_start);
+	($chromosome, $end) = $coords->Coords_2chrom_coords($clone, $clone_end);
+	$biotype = 'Pseudogene';
+	
+      } else { # try Transcript
+	my $obj = $db->fetch(Transcript => "$region[0]");
+	if (! defined $obj) {
+	  print STDERR "Region: '$region' is an unknown way of specifying a region: not a CDS or a Pseudogene or a Transcript\n";
+	  return undef;
+	}
+	my $gene_obj = $obj->Gene;
+	if (defined $gene_obj) {
+	  $gene = $obj->Gene->name;
+	}
+	my $clone_start;
+	my $clone_end;
+	my $clone = $obj->Sequence;
+	my @clone_Transcript = $clone->Transcript;
+	foreach my $Transcript ( @clone_Transcript ) {
+	  next unless ($Transcript->name eq "$region[0]");
+	  $clone_start = $Transcript->right->name;
+	  $clone_end = $Transcript->right->right->name;
+	  last;
+	}
+	($chromosome, $start) = $coords->Coords_2chrom_coords($clone, $clone_start);
+	($chromosome, $end) = $coords->Coords_2chrom_coords($clone, $clone_end);
+	$biotype = 'Transcript';
+	
       }
-      my $gene_obj = $obj->Gene;
-      if (defined $gene_obj) {
-	$gene = $obj->Gene->name;
-      }
-      my $clone_start;
-      my $clone_end;
-      my $clone = $obj->Sequence;
-      my @clone_Pseudogene = $clone->Pseudogene;
-      foreach my $Pseudogene ( @clone_Pseudogene ) {
-	next unless ($Pseudogene->name eq "$region[0]");
-	$clone_start = $Pseudogene->right->name;
-	$clone_end = $Pseudogene->right->right->name;
-	last;
-      }
-      ($chromosome, $start) = $coords->Coords_2chrom_coords($clone, $clone_start);
-      ($chromosome, $end) = $coords->Coords_2chrom_coords($clone, $clone_end);
-      $biotype = 'Pseudogene';
-
     }
 
     if ($region[1]) {
