@@ -7,7 +7,7 @@
 # Usage : make_keysets.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2014-02-05 16:36:46 $
+# Last edited on: $Date: 2014-06-13 09:06:43 $
 
 #################################################################################
 # variables                                                                     #
@@ -138,7 +138,7 @@ if (($touched) || ($all)) {
 }
 
 # wormpep histories
-if (($history) || ($all)) {
+if ($history) {
   print "Generating wormpep_mods release files\n" if ($debug);
   my @releases;
   my $fr_dir = $wormbase->ftp_site . '/FROZEN_RELEASES/';
