@@ -11,7 +11,7 @@
 
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-06-12 09:20:45 $      
+# Last updated on: $Date: 2014-06-13 13:01:38 $      
 
 use strict;                                      
 use Getopt::Long;
@@ -123,7 +123,7 @@ foreach my $LOGIC_NAME ('embl_star', 'washu_star', 'nembase_star'){
   system("mysql --host=${DB_HOST} --port=${DB_PORT} --user=wormadmin --password=worms -e \"DROP DATABASE IF EXISTS ${HIVEDB}\"") == 0 or die "mysql drop database failed: $?";
   system("mysql --host=${DB_HOST} --port=${DB_PORT} --user=wormadmin --password=worms -e \"USE ${CORE_DB_NAME}; DELETE FROM dna_align_feature WHERE analysis_id IN (SELECT analysis_id FROM analysis WHERE logic_name = '${LOGIC_NAME}')\"") == 0 or die "mysql delete old data failed: $?";
 
-  system("perl ${PIPELINE_CODE_DIR}/ensembl-hive/scripts/init_pipeline.pl Bio::EnsEMBL::Hive::PipeConfig::EST_STAR_pipeline_conf -registry $ENV{ENSEMBL_REGISTRY} -species ${SPECIES} -ensembl_cvs_root_dir ${PIPELINE_CODE_DIR} -hive_password ${HIVE_DB_PASS} -hive_port ${HIVE_DB_PORT} -hive_host ${HIVE_DB_HOST} -hive_user ${HIVE_DB_USER} -hive_dbname ${HIVEDB} -pipeline_dir ${PIPELINE_DATA_DIR} -core_db_name ${CORE_DB_NAME} -est_file ${EST_FILE} -force 0 -logic_name ${LOGIC_NAME} -max_intron_length ${MAX_INTRON_LENGTH}") == 0 or die "$LOGIC_NAME init_pipeline failed: $?";
+  system("perl ${PIPELINE_CODE_DIR}/ensembl-hive/scripts/init_pipeline.pl Bio::EnsEMBL::Hive::PipeConfig::EST_STAR_pipeline_conf -registry $ENV{ENSEMBL_REGISTRY} -species ${SPECIES} -ensembl_cvs_root_dir ${PIPELINE_CODE_DIR} -hive_password ${HIVE_DB_PASS} -hive_port ${HIVE_DB_PORT} -hive_host ${HIVE_DB_HOST} -hive_user ${HIVE_DB_USER} -hive_dbname ${HIVEDB} -pipeline_dir ${PIPELINE_DATA_DIR} -core_db_name ${CORE_DB_NAME} -est_file ${EST_FILE} -force 0 -logic_name ${LOGIC_NAME} -max_intron_length ${MAX_INTRON_LENGTH} -load_core 1") == 0 or die "$LOGIC_NAME init_pipeline failed: $?";
 
   system("${PIPELINE_CODE_DIR}/ensembl-hive/scripts/beekeeper.pl -reg_conf $ENV{ENSEMBL_REGISTRY} -url ${HIVE_URL} -sync") == 0 or die "system $LOGIC_NAME beekeeper -sync failed: $?";
 
