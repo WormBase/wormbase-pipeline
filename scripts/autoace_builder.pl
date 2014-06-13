@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2014-04-02 11:42:05 $
+# Last edited on: $Date: 2014-06-13 09:07:05 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -544,7 +544,7 @@ sub ontologies {
 
 sub make_extras {
   my $version = $wormbase->get_wormbase_version;
-  $wormbase->run_script( "make_keysets.pl -all -history $version", $log);
+  $wormbase->run_script( "make_keysets.pl -all", $log);
   $wormbase->run_script( "genestats.pl" , $log);
 }
 
