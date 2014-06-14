@@ -227,6 +227,7 @@ foreach my $chrom (sort keys %$chr_lengths) {
   close($out_fh);
 }
 
+$db->close();
 
 $log->mail;
 exit(0);
