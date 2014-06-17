@@ -7,7 +7,7 @@
 # Script to find TSL sites from the unaligned short read data
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-03-14 11:53:31 $      
+# Last updated on: $Date: 2014-06-17 09:41:26 $      
 
 # TSL sequences from 
 # PLOS Genetics
@@ -38,6 +38,8 @@ use Log_files;
 use Storable;
 use Coords_converter;
 use Feature_mapper;
+use Modules::PWM;
+use Sequence_extract;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase, $species, $experiment_accession);
 GetOptions ("help"       => \$help,
@@ -73,12 +75,18 @@ my $status;
 my $data;
 my $coords;
 my $mapper;
+my $pwm;
+my $seq_obj;
 
 #my $database = $wormbase->database('current');
 my $database = $wormbase->autoace;
 
 $coords = Coords_converter->invoke($database, 0, $wormbase);
 $mapper = Feature_mapper->new($database, undef, $wormbase);
+$pwm = PWM->new;
+$seq_obj = Sequence_extract->invoke($database, 0, $wormbase);
+my %chromosomes;
+
 
 #OUT of sequence when trying to find flanking regions in OVOC_OM2_83, 564, 565
 #    my $is_zero_length = 1;
@@ -96,6 +104,15 @@ my $data = $RNASeq->get_transcribed_long_experiments();
 my @experiment_accessions = keys %{$data};
 if (defined $experiment_accession) {@experiment_accessions = ($experiment_accession)} # just do one experiment if it is specified
 
+
+# get the TSL sequences for this species and reduce them to just the last 8 bases
+my %TSL = $wormbase->TSL;
+my @TSL;
+foreach my $TSL_type (values %TSL) {
+  $TSL_type = substr($TSL_type, -8);
+  push @TSL, $TSL_type;
+}
+
 foreach my $experiment_accession (@experiment_accessions) {
   print "Experiment: $experiment_accession\n";
 
@@ -107,7 +124,7 @@ foreach my $experiment_accession (@experiment_accessions) {
   my $library_layout=$experiment->{'library_layout'};
   my $library_source=$experiment->{'library_source'};
   my $analysis=$experiment->{'analysis'};
-  if (!defined $analysis) {$analysis = "$experiment_accession"}
+  if (!defined $analysis) {next}
   $log->write_to("Running alignment job with experiment=$experiment_accession $library_source $library_strategy $library_selection $library_layout\n");
   
   my $RNASeqGenomeDir = $RNASeq->{RNASeqGenomeDir};
@@ -279,11 +296,22 @@ foreach my $experiment_accession (@experiment_accessions) {
     }
     
     
+    # write out evidence for matched existing Feature objects
+    print "Writing evidence for existing Features\n";
+    my $aceout = "TSL_evidence.ace";
+    open (ACE, ">$aceout") || $log->log_and_die("Can't open ace file $aceout\n");
+    foreach my $feature (keys %found) {
+      print ACE "\n\nFeature : \"$feature\"\n";
+      my $reads = $found{$feature};
+      print ACE "Defined_by_analysis $analysis $reads\n";
+      print ACE "Remark \"Defined by RNASeq data from $analysis with $reads reads\"\n";
+    }
+    close(ACE);
+    
+
     # the only data left in %results now are the matches to the genome
     # where there is no defined TSL Feature object, so these are all new
-    # TSL sites that we could define a new Feature for. This has been
-    # started, but needs more work to get the flanking sequences and the
-    # clone name.
+    # TSL sites that we could define a new Feature for.
     
     my $total_matches = keys %results; # so we can work out the no. of alignments per million (or billion?) matches
     my $full_species = $wormbase->full_name;
@@ -303,33 +331,50 @@ foreach my $experiment_accession (@experiment_accessions) {
 	  if (defined $feat_clone) {
 	    if (substr($left_flank, -2) =~ /AG/i) { # ensure it looks like a splice site
 	      foreach my $method (keys %{$results{$TSL_chrom}{$TSL_coord}{$sense}}) {
-		if ($left_flank !~ /AGTTTGAG$/i || $method ne 'SL1') { # check the splice sequence isn't in the genome next to it
-		  if (!defined $results{$TSL_chrom}{$TSL_coord}{$sense}{$method}) {next} # ignore the deleted entries
-		  my $example = $example{$TSL_chrom}{$TSL_coord}{$sense}{$method};
-		  my $ft_id = "WBsf#${TSL_chrom}#${TSL_coord}#${sense}#${method}"; # totally bogus but unique Feature ID, needs to be changed before adding to Build
-		  print NEWACE "\n\nFeature : \"$ft_id\"\n";
-		  print NEWACE "Sequence \"$feat_clone\"\n";
-		  print NEWACE "Mapping_target \"$feat_clone\"\n";
-		  print NEWACE "Flanking_sequences \"$left_flank\" \"$right_flank\"\n";
-		  print NEWACE "Species \"$full_species\"\n";
-		  print NEWACE "Description \"$method trans-splice leader acceptor site\"\n";
-		  print NEWACE "SO_term SO:0000706\n";
-		  print NEWACE "Method $method\n";
-		  my $reads =  $results{$TSL_chrom}{$TSL_coord}{$sense}{$method}; # reads
-		  print NEWACE "Defined_by_analysis $analysis $reads\n";
-		  print NEWACE "Remark \"Defined by RNASeq data (example read: $example) from $analysis with $reads reads\"\n";
-		  print NEWACE "\n\n";
-		  print NEWACE "Sequence : \"$feat_clone\"\n";
-		  print NEWACE "Feature_object \"$ft_id\" $clone_start $clone_end\n\n";
+
+		# check to see if there is a Sl1/SL2 trans-splice sequence in the genome just upstream
+		my $left_flank_end = substr($left_flank, -8);
+		if (!grep /$left_flank_end$/, @TSL) {
+
+		  # check to see if this is a splice site with a score > 1 
+		  my $chrom_seq;
+		  if (!exists $chromosomes{$TSL_chrom}) {
+		    $chrom_seq = $seq_obj->Sub_sequence($TSL_chrom);
+		    $chromosomes{$TSL_chrom} = $chrom_seq; # store the chromsomal sequence for re-use
+		  } else {
+		    $chrom_seq = $chromosomes{$TSL_chrom};
+		  }
+		  my $splice_score = $pwm->splice3($chrom_seq, $TSL_coord-1, $sense); # -1 to convert from acedb sequence pos to perl string coords	
+		  $log->write_to("splice score = $splice_score sense=$sense\n");
+		  if ($splice_score >= 1) {
 		  
-		  #$log->write_to("No existing Feature object for: chrom: $TSL_chrom pos: $TSL_coord sense: $sense type: $method, reads= $results{$TSL_chrom}{$TSL_coord}{$sense}{$method}\n");
+		    if (!defined $results{$TSL_chrom}{$TSL_coord}{$sense}{$method}) {next} # ignore the deleted entries
+		    my $example = $example{$TSL_chrom}{$TSL_coord}{$sense}{$method};
+		    my $ft_id = "WBsf#${TSL_chrom}#${TSL_coord}#${sense}#${method}"; # totally bogus but unique Feature ID, needs to be changed before adding to Build
+		    print NEWACE "\n\nFeature : \"$ft_id\"\n";
+		    print NEWACE "Sequence \"$feat_clone\"\n";
+		    print NEWACE "Mapping_target \"$feat_clone\"\n";
+		    print NEWACE "Flanking_sequences \"$left_flank\" \"$right_flank\"\n";
+		    print NEWACE "Species \"$full_species\"\n";
+		    print NEWACE "Description \"$method trans-splice leader acceptor site\"\n";
+		    print NEWACE "SO_term SO:0000706\n";
+		    print NEWACE "Method $method\n";
+		    my $reads =  $results{$TSL_chrom}{$TSL_coord}{$sense}{$method}; # reads
+		    print NEWACE "Defined_by_analysis $analysis $reads\n";
+		    print NEWACE "Remark \"Defined by RNASeq data (example read: $example) from $analysis with $reads reads\"\n";
+		    print NEWACE "\n\n";
+		    print NEWACE "Sequence : \"$feat_clone\"\n";
+		    print NEWACE "Feature_object \"$ft_id\" $clone_start $clone_end\n\n";
+		  } else {
+		    $log->write_to("Ignoring site chromosome: $TSL_chrom, position: $TSL_coord sense: $sense because the splice score is too low ($splice_score)\n");
+		    
+		  }
 		} else {
 		  $log->write_to("Ignoring site chromosome: $TSL_chrom, position: $TSL_coord sense: $sense because it is just downstream of the last 8 bases of the standard SL1 and so it probably a spurious hit and not trans-spliced\n");
 		}
 	      }
-
 	    } else {
-	      #$log->write_to("Ignoring site chromosome: $TSL_chrom, position: $TSL_coord sense: $sense because it doesn't look like a splice site\n");
+	      #$log->write_to("Ignoring site chromosome: $TSL_chrom, position: $TSL_coord sense: $sense because it doesn't look like a splice site (".substr($left_flank, -2).")\n");
 	    }
 	  } else {
 	    $log->write_to("Couldn't find flanking sequence for chromosome: $TSL_chrom, position: $TSL_coord sense: $sense\n");
@@ -345,17 +390,6 @@ foreach my $experiment_accession (@experiment_accessions) {
     #  foreach my $feature (keys %not_found) {
     #    $log->write_to("Not found: $feature\n");
     #  }
-    
-    # write out evidence for matched existing Feature objects
-    my $aceout = "TSL_evidence.ace";
-    open (ACE, ">$aceout") || $log->log_and_die("Can't open ace file $aceout\n");
-    foreach my $feature (keys %found) {
-      print ACE "\n\nFeature : \"$feature\"\n";
-      print ACE "Defined_by_analysis $analysis\n";
-      my $reads = $found{$feature}; # reads
-      print ACE "Remark \"Defined by RNASeq data from $analysis with $reads reads\"\n";
-    }
-    close(ACE);
     
     $log->write_to("TSL stuff done\n");
     
