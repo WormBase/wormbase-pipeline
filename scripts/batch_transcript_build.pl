@@ -7,7 +7,7 @@
 # wrapper script for running transcript_builder.pl
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2014-06-06 12:55:03 $
+# Last edited on: $Date: 2014-06-17 15:27:11 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -137,11 +137,7 @@ if (not $no_load) {
   
   $log->write_to("batch_dumping GFF files\n");
   $wormbase->run_script("dump_gff_batch.pl -method Coding_transcript", $log);
-  
-
-  $log->write_to("Creating Coding_transcript fasta file\n");
-  $wormbase->run_script("fasta_dumper.pl -method Coding_transcript -class Transcript -gene", $log);
-  
+    
   $log->write_to("Updating common data\n");
   $wormbase->run_script("update_Common_data.pl -worm_gene2geneID", $log);
 
