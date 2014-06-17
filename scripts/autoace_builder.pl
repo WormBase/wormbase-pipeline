@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2014-06-13 09:07:05 $
+# Last edited on: $Date: 2014-06-17 15:26:43 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -30,7 +30,7 @@ my ( $prep_blat, $run_blat,     $finish_blat );
 my ( $gff_dump,     $processGFF, $gff_split );
 my $gene_span;
 my ( $load, $big_load, $tsuser );
-my ($map_features, $remap_misc_dynamic, $map, $map_alleles, $transcripts, $intergenic, $misc_data_sets, $homol_data_sets, $nem_contigs);
+my ($map_features, $remap_misc_dynamic, $map, $map_alleles, $transcripts, $cdna_files, $misc_data_sets, $homol_data_sets, $nem_contigs);
 my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $remarks, $names, $treefam, $cluster);
 my ( $utr, $agp, $gff_munge, $gff3_munge, $extras , $ontologies, $interpolate, $check, $enaseqxrefs, $enaprotxrefs, $xrefs);
 my ( $data_check, $buildrelease, $public,$finish_build, $gffdb, $autoace, $release, $user, $kegg, $prepare_gff_munge);
@@ -64,7 +64,7 @@ GetOptions(
 	   'map_features'   => \$map_features,
            'map_alleles'    => \$map_alleles,
 	   'transcripts'    => \$transcripts,
-	   'intergenic'     => \$intergenic,
+	   'cdnafiles'      => \$cdna_files,
 	   'nem_contig'     => \$nem_contigs,
 	   'misc_data_sets' => \$misc_data_sets,
 	   'homol_data_sets'=> \$homol_data_sets,
@@ -160,7 +160,16 @@ $wormbase->run_script( 'batch_transcript_build.pl', $log) if $transcripts;
 $wormbase->run_script( 'WBGene_span.pl'                   , $log ) if $gene_span;
 &make_UTR($log)                                                    if $utr;
 
-$wormbase->run_script( 'find_intergenic.pl'               , $log ) if $intergenic;
+if ($cdna_files) {
+  my $seqdir = $wormbase->sequences;
+  $wormbase->run_script( 'find_intergenic.pl'               , $log );
+  $wormbase->run_script( "fasta_dumper.pl -classmethod Transcript:Coding_transcript -output $seqdir/mRNA_transcripts.dna", $log);
+  $wormbase->run_script( "fasta_dumper.pl -classmethod Pseudogene:Pseudogene -output $seqdir/pseudogenic_transcripts.dna", $log);
+  if ($wormbase->species eq 'elegans') {
+    my @options = "-classmethod CDS:Transposon_CDS:Transposon-mRNA -classmethod Pseudogene:Transposon_Pseudogene:Transposon-pseudogenic_transcript";
+    $wormbase->run_script( "fasta_dumper.pl @options -output $seqdir/transposon_transcripts.dna", $log);
+  }
+}
 
 ####### mapping part ##########
 &map_features                                                            if $map;
