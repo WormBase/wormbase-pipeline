@@ -3,7 +3,7 @@
 # release_letter.pl                            
 # 
 # Last updated by: $Author: klh $               
-# Last updated on: $Date: 2014-03-04 10:25:37 $
+# Last updated on: $Date: 2014-06-19 10:12:08 $
 
 # Generates a release letter at the end of build.
 #
@@ -160,18 +160,20 @@ if( $opt_l) {
   printf $rlfh "The WS$ver build directory includes:\n";
   printf $rlfh "species/ DIR              -  contains a sub dir for each WormBase species (G_SPECIES)\n";
   printf $rlfh "species/G_SPECIES DIR     -  contains a sub dir for each NCBI genome sequencing BioProject (BIOPROJECT) for the species, with the following files:\n";
-  printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.genomic.fa.gz                - Unmasked genomic DNA\n";
-  printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.genomic_masked.fa.gz         - Hard-masked (repeats replaced with Ns) genomic DNA\n";
-  printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.genomic_softmasked.fa.gz     - Soft-masked (repeats lower-cased) genomic DNA\n";
-  printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.protein.fa.gz                - Current live protein set\n";
-  printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.cds_transcripts.fa.gz        - Spliced cDNA sequence for the CDS portion of protein-coding transcripts\n";
-  printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.coding_transcripts.fa.gz     - Spliced cDNA sequence for the full-length (including UTRs) protein-coding transcripts\n";
-  printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.ncrna_transcripts.fa.gz      - Spliced cDNA sequence for non-coding RNA transcripts\n";
-  printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.intergenic_sequences.fa.gz   - DNA sequence between pairs of adjacent genes\n";
-  printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.annotations.gff[2|3].gz      - Sequence features in either GFF2 or GFF3 format\n";
-  printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.ests.fa.gz                   - ESTs and mRNA sequences extracted from the public databases\n";
-  printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.best_blastp_hits.txt.gz      - Best blastp matches to human, fly, yeast, and non-WormBase Uniprot proteins\n";
-  printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.*pep_package.tar.gz          - latest version of the [worm|brig|bren|rema|jap|ppa|brug]pep package (if updated since last release)\n";
+  printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.genomic.fa.gz                  - Unmasked genomic DNA\n";
+  printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.genomic_masked.fa.gz           - Hard-masked (repeats replaced with Ns) genomic DNA\n";
+  printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.genomic_softmasked.fa.gz       - Soft-masked (repeats lower-cased) genomic DNA\n";
+  printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.protein.fa.gz                  - Current live protein set\n";
+  printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.CDS_transcripts.fa.gz          - Spliced cDNA sequence for the CDS portion of protein-coding transcripts\n";
+  printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.mRNA_transcripts.fa.gz         - Spliced cDNA sequence for the full-length (including UTRs) mRNA for transcripts\n";
+  printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.ncrna_transcripts.fa.gz        - Spliced cDNA sequence for non-coding RNA transcripts\n";
+  printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.pseudogenic_transcripts.fa.gz  - Spliced cDNA sequence for pseudogenic transcripts\n";
+  printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.transposon_transcripts.fa.gz   - Spliced cDNA sequence for mRNAs and pseudogenes located in Transposons\n";
+  printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.intergenic_sequences.fa.gz     - DNA sequence between pairs of adjacent genes\n";
+  printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.annotations.gff[2|3].gz        - Sequence features in either GFF2 or GFF3 format\n";
+  printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.ests.fa.gz                     - ESTs and mRNA sequences extracted from the public databases\n";
+  printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.best_blastp_hits.txt.gz        - Best blastp matches to human, fly, yeast, and non-WormBase Uniprot proteins\n";
+  printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.*pep_package.tar.gz            - latest version of the [worm|brig|bren|rema|jap|ppa|brug]pep package (if updated since last release)\n";
   printf $rlfh "     - annotation/                    - contains additional annotations:\n";
   printf $rlfh "        - G_SPECIES.BIOPROJECT.WS$ver.confirmed_genes.txt.gz              - DNA sequences of all genes confirmed by EST &/or cDNA\n";
   printf $rlfh "        - G_SPECIES.BIOPROJECT.WS$ver.cDNA2orf.txt.gz                     - Latest set of ORF connections to each cDNA (EST, OST, mRNA)\n";      
