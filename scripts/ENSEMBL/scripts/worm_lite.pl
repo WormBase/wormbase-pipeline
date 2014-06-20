@@ -405,8 +405,15 @@ sub load_genes {
     push @genes, @{ $wb2ens->parse_non_coding_genes_gff2_fh( $gff_fh, $pseudo_analysis, 'Pseudogene', 'pseudogene')};
 
   } elsif (@gff3_files) {
-    open(my $gff_fh, "cat @gff3_files |") or die "Could not create GFF stream\n";
-    @genes = @{$wb2ens->parse_genes_gff3_fh( $gff_fh, $cod_analysis, $nc_analysis, $pseudo_analysis )};
+    if (scalar(@gff3_files) == 1) {
+      @genes = $wb2ens->parse_genes_gff3( $gff3_files[0], $cod_analysis, $nc_analysis, $pseudo_analysis);
+    } else {
+      open(my $gff_fh, "cat @gff3_files |") or die "Could not create GFF stream\n";
+      @genes = @{$wb2ens->parse_genes_gff3_fh( $gff_fh, $cod_analysis, $nc_analysis, $pseudo_analysis )};
+    }
+    if (scalar(@genes) == 0) {
+      die "Could not extract any genes from GFF3 file. Exiting\n";
+    }
   } else {
     die "No gff or gff3 files found - death\n";
   }
