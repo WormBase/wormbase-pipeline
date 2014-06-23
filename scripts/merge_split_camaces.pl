@@ -5,7 +5,7 @@
 # A script to make multiple copies of core species database for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2014-06-03 09:35:55 $
+# Last edited on: $Date: 2014-06-23 08:51:18 $
 #====================
 #perl ~/wormbase/scripts/merge_split_camaces.pl -update -gw3 -pad -species elegans -test -version $MVERSION > /nfs/wormpub/camace_orig/WSXXX -WSXXY/load_data.txt
 
@@ -127,7 +127,7 @@ our $directory   = $orig."/WS${WS_version}-WS${next_build}";
 $log->write_to ("OUTPUT_DIR: ".$orig."/WS${WS_version}-WS${next_build}\n\n");
 
 # what classes of data do we want to dump?
-my @classes = ('Transposon', 'Transposon_family', 'Transcript', 'CDS', 'Clone', 'Sequence', 'Feature', 'Feature_data', 'Pseudogene', 'dna');
+my @classes = ('Transposon', 'Transposon_family', 'Transcript', 'CDS', 'Clone', 'Sequence', 'Feature', 'Feature_data', 'Pseudogene', 'DNA');
 
 
 #################################################
