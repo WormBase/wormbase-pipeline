@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2014-02-03 15:27:02 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2014-06-23 08:57:32 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -23,7 +23,6 @@ use File::Path;
 # command line options                            # 
 ###################################################
 my ($help, $debug, $test, $class, @classes, $database, $ace, $verbose);
-my $weekly;
 
 GetOptions ("help"        => \$help,
             "debug=s"     => \$debug,
@@ -31,7 +30,6 @@ GetOptions ("help"        => \$help,
 	    "database=s"  => \$database,
             "ace"         => \$ace,
 	    "verbose"     => \$verbose,
-	    "weekly"      => \$weekly,
             "test"    => \$test
 	   );
 
@@ -129,14 +127,14 @@ foreach $class (@classes){
 #######################################
 
 $db->close;
+print LOG "Ended at ",`date`,"\n";
 close(LOG);
-close(ACE) if ($ace);
 
+
+close(ACE) if ($ace);
 # email everyone specified by $maintainers
 $wb->mail_maintainer("geneace_check: SANGER",$maintainers,$log);
-
 exit(0);
-
 #--------------------------------------------------------------------------------------------------------------------
 
 
@@ -152,7 +150,7 @@ sub process_gene_class{
   print LOG "\nChecking Gene class for errors:\n--------------------------------\n";
 
   #check if any genes in operons have been killed
-  &check_operons if $weekly;
+  &check_operons;
 
   # Can first check general errors by grabbing sets of genes for querying
 
@@ -189,15 +187,13 @@ sub process_gene_class{
   }
 
   # checks Genes that do not have a map position nor an interpolated_map_position but has sequence info
-  if ( $weekly ) {
-    my $query = "Find Live_genes WHERE !(Map | Interpolated_map_position) & Sequence_name & Species=\"*elegans\" & !Positive_clone=\"MTCE\" & !Made_into_transposon";
-    foreach my $gene ($db->fetch(-query=>"$query")){
-      if( $Gene_info{$gene} ) {
-	print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has neither Map nor Interpolated_map_position info but has Sequence_name\n";
-      }
-      else {
-	print LOG "$gene not in Gene_info hash\n";
-      }
+  my $query = "Find Live_genes WHERE !(Map | Interpolated_map_position) & Sequence_name & Species=\"*elegans\" & !Positive_clone=\"MTCE\" & !Made_into_transposon";
+  foreach my $gene ($db->fetch(-query=>"$query")){
+    if( $Gene_info{$gene} ) {
+      print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has neither Map nor Interpolated_map_position info but has Sequence_name\n";
+    }
+    else {
+      print LOG "$gene not in Gene_info hash\n";
     }
   }
 
