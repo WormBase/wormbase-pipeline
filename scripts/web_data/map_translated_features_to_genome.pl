@@ -248,12 +248,12 @@ sub generate_gff {
         # For GFF3, represent as a single split feature
         # 
         $group =  "ID=$motif_id";
-        $full_group = "$group;CDS=$cds;Type=$type;Range=$aarange;Exons=$exons;Protein=$protein";
+        $full_group = "$group;cds=$cds;type=$type;range=$aarange;exons=$exons;protein=$protein";
         if ($desc) {
           $desc =~ s/[\;]/\%3B/g;
           $desc =~ s/[\=]/\%2C/g;
           $desc =~ s/[\,]/\%3D/g;
-          $full_group .= qq{;Description=$desc};
+          $full_group .= qq{;description=$desc};
         }
         my ($first, @rest) = sort { $a->start <=> $b->start } @segs; 
         print_gff($this_out_fh, $refseq,GFF3_SOURCE,GFF3_METHOD,$first->start,$first->end,$score,$strand,PHASE,$full_group);
