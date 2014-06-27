@@ -5,18 +5,7 @@
 # Overloads the CDS and Transcript lines with extra info (mostly wormpep)
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-09-30 11:00:21 $
-
-#
-#    1. Brief_identification
-#    2. Locus names when available
-#    3. WormPep IDs
-#    4. Confirmed_by status
-#    5. WBGene IDs
-#    6. Genbank accesions (for region:Genomic_canonical)
-#
-# CDS "JC8.10a" ; Note "Inositol polyphosphate phosphatase, catalytic domain homologues" ; WormPep "WP:CE28239" ; Note "unc-26" ; Confirmed_by "cDNA" ; Gene "WBGene00006763"
-#
+# Last updated on: $Date: 2014-06-27 11:20:33 $
 
 use strict;                                      
 use lib $ENV{CVS_DIR};
