@@ -5,7 +5,7 @@
 # overloads Genomic_canonical lines with GenBank accesssions
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-07-22 12:05:29 $      
+# Last updated on: $Date: 2014-06-27 11:20:53 $      
 
 use strict;                                      
 use lib $ENV{CVS_DIR};
@@ -76,13 +76,13 @@ while( <$gff_in_fh> ) {
   
   if (exists $acc{$fid}) {
     if ($gff3) {
-      $f[8] .= ";Note=Clone:$fid;Genbank=$acc{$fid}";
+      $f[8] .= ";Note=Clone:$fid,Genbank=$acc{$fid}";
     } else {
       $f[8] .= " ; Note \"Clone $fid\" ; Genbank \"$acc{$fid}\"";
     }
     $changed_lines++;
     # add in a duplicate line with Genbank source
-    my $new_line_attr = ($gff3) ? "Genbank=$acc{$fid}" : "Genbank \"$acc{$fid}\"";
+    my $new_line_attr = ($gff3) ? "genbank=$acc{$fid}" : "genbank \"$acc{$fid}\"";
     print $gff_out_fh join("\t", $f[0], "Genbank", @f[2..7], $new_line_attr), "\n";
     $added_lines++;
   }
