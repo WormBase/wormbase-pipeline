@@ -5,7 +5,7 @@
 # Overloads Variation lines with extra info (consequence etc)
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2014-04-08 16:22:34 $      
+# Last updated on: $Date: 2014-06-30 10:31:08 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -141,8 +141,12 @@ while (<$gff_in_fh>) {
           }
         }
       } elsif (scalar(@types) > 1) {
-        # more than one type, so just put complex_substitution
-        $new_term = "complex_substitution";
+        if (grep { $_ eq 'Tandem_duplication' } @types) {
+          $current_els[2] = "tandem_duplication";
+        } else {
+          # more than one type, so just put complex_substitution
+          $new_term = "complex_substitution";
+        }
       }
       
       $current_els[2] = $new_term;
@@ -156,7 +160,8 @@ while (<$gff_in_fh>) {
           $cons eq 'Nonsense' or
           $cons eq 'Readthrough' or
           $cons eq 'Coding_exon') {
-        if ($current_els[2] ne 'transposable_element_insertion_site') {
+        if ($current_els[2] ne 'transposable_element_insertion_site' and 
+            $current_els[2] ne 'tandem_duplication') {
           $is_putative_change_of_function_allele = 1;
         }
       }
