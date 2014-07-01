@@ -5,7 +5,7 @@
 # A script to make multiple copies of core species database for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2014-06-23 08:51:18 $
+# Last edited on: $Date: 2014-07-01 12:29:32 $
 #====================
 #perl ~/wormbase/scripts/merge_split_camaces.pl -update -gw3 -pad -species elegans -test -version $MVERSION > /nfs/wormpub/camace_orig/WSXXX -WSXXY/load_data.txt
 
@@ -45,6 +45,7 @@ my $load_only;
 my $oldskool;              # script uses Garys new acediff.pl but you can select old acediff.
 my $nochecks;              # dont run camcheck as this can take ages.
 my $verbose;               # Additional printout
+my $names;                 # option to just dump Public_name data for given species.
 
   GetOptions (
 	      "all"        => \$all,
@@ -60,17 +61,18 @@ my $verbose;               # Additional printout
 	      "debug:s"    => \$debug,
 	      "version:s"  => \$WS_version,
 	      "store"      => \$store,
-	      "species:s"    => \$species,
+	      "species:s"  => \$species,
 	      "test"       => \$test,
 	      "email:s"    => \$email,
 	      "nodump"     => \$nodump,
 	      "nosplit"    => \$nosplit,
 	      "database:s" => \$sdatabase,
 	      "remove_only" => \$remove_only,
-	      "load_only" => \$load_only,
-	      "oldskool" => \$oldskool,
-	      "nochecksl" => \$nochecks,
-	      "verbose" => \$verbose
+	      "load_only"  => \$load_only,
+	      "oldskool"   => \$oldskool,
+	      "nochecksl"  => \$nochecks,
+	      "verbose"    => \$verbose,
+	      "names"      =>\$names,
 	     );
 
 
@@ -101,28 +103,55 @@ $log->write_to ("WS_version : $WS_version\tWS_next : $next_build\n") if ($debug)
 
 # load @databases array with user database names.
 my @databases; #array to store what splits are to be merged.
-push(@databases,"orig");
-push(@databases,"pad") if ($pad || $all);
-push(@databases,"gw3") if ($gw3 || $all);
-push(@databases,"mh6") if ($mh6);
-push(@databases,"es9") if ($es9);
-push(@databases,"curation") if ($curation);
+
+
+#Are you trying to do some work?
+unless ($split || $merge || $update || $names ) {
+    $log->log_and_die("ERROR you havent specified a main function split/merge/update!!!\n");
+  }
+
 
 # directory paths
 my $wormpub = $wormbase->wormpub;
 our $canonical;
 our $orig;
 our $root;
+
+
+#Impose a test db 
+if ($test) {
+  push(@databases,"testorig");
+  push(@databases,"testpad") if ($pad || $all);
+}
+else {
+  push(@databases,"orig");
+  push(@databases,"pad") if ($pad || $all);
+  push(@databases,"gw3") if ($gw3 || $all);
+  push(@databases,"mh6") if ($mh6);
+  push(@databases,"curation") if ($curation);
+}
+
 if ($species eq 'elegans') {
   $canonical = $wormbase->database('camace');
-  $orig = $wormpub."/camace_orig";
+  if ($test){
+    $orig = $wormpub."/camace_testorig";
+  }
+  else  {
+    $orig = $wormpub."/camace_orig";
+  }
   $root = 'camace';
 }
 else {
   $canonical = $wormbase->database($species);
-  $orig = $wormpub."/${species}_orig";
+  if ($test) {
+    $orig = $wormpub."/${species}_testorig";
+  }
+  else {
+    $orig = $wormpub."/${species}_orig";
+  }
   $root = $species;
 }
+
 our $directory   = $orig."/WS${WS_version}-WS${next_build}";
 $log->write_to ("OUTPUT_DIR: ".$orig."/WS${WS_version}-WS${next_build}\n\n");
 
@@ -217,9 +246,18 @@ if ($update) {
 if ($split) {
   $log->write_to ("Removing old split databases and Copying $canonical database to the split database locations\n");
   &split_databases unless ($nosplit);
-  
+  &create_public_name_data;
   $log->write_to ("\nPhase 3 finished. All ~wormpub split curation databases for $species can now be used\n\nCheck all TransferDB log files for \"ended SUCCESSFULLY\"\n");
   print "Phase 3 finished. All ~wormpub split curation databases for $species can now be used\n\nCheck all TransferDB log files for \"ended SUCCESSFULLY\"\n" if ($debug);
+}
+
+
+############################################################################
+## Create_public_name data only needed if not running a standard splitses ##
+############################################################################
+if ($names) {
+  $log->write_to ("Just dumping gene names for $species\n");
+  &create_public_name_data;
 }
 
 
@@ -555,18 +593,22 @@ sub load_curation_data {
 		"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_modENCODE_aggregate_transcripts.ace",
 		"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_Lamm_polysomes.ace",
 		"$acefiles/feature_Genome_sequence_error.ace",
+		"$acefiles/primaries/geneace/geneace_Operon_data.ace",
+		"$acefiles/operon_coords.ace",
 	       );
 	}
     if ($species eq "brugia") {
       push (@files,
 	    "$wormpub/CURATION_DATA/misc_brugia_cufflinks.ace",
 	    "$wormpub/CURATION_DATA/misc_tigr_homol.ace",
+	    "$acefiles/primaries/geneace/geneace_Operon_data.ace",
+	    "$acefiles/operon_coords.ace",
 	   );
     }
     push (@files,
 	  "$wormpub/BUILD_DATA/MISC_DYNAMIC/RNASeq_splice_${species}.ace",
 	  "$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_RNASeq_hits_${species}.ace",
-	  "$wormpub/BUILD_DATA/MISC_DYNAMIC/RNASeq_expression_levels_${species}.ace",
+	  #"$wormpub/BUILD_DATA/MISC_DYNAMIC/RNASeq_expression_levels_${species}.ace",
 	  "$wormpub/wormbase/autoace_config/misc_autoace_methods.ace",
 	  "$acefiles/misc_DB_remark.ace",
 	  "$acefiles/${species}_blastx.ace",
@@ -584,6 +626,7 @@ sub load_curation_data {
 	  "$acefiles/feature_transcription_end_site.ace",
 	  "$acefiles/feature_transcription_start_site.ace",
 	  "$acefiles/feature_three_prime_UTR.ace",
+	  "$acefiles/pepace.ace",
 	  "$wormpub/CURATION_DATA/PAD_DATA/elegans.public_names_ws${WS_version}.ace",
 	  "$acefiles/mass-spec-data.ace",
 	 );
@@ -780,7 +823,7 @@ sub remove_data {
 # create_public_name_data from geneace #
 ########################################
 sub create_public_name_data {
-  my $Public_names = "$wormpub/CURATION_DATA/PAD_DATA/elegans.public_names_ws${WS_version}.ace";
+  my $Public_names = "$wormpub/CURATION_DATA/PAD_DATA/${species}.public_names_ws${WS_version}.ace";
   my $refdb = "${\$wormbase->database('geneace')}";
   
   if (-e($Public_names)){
@@ -788,7 +831,7 @@ sub create_public_name_data {
     print "\nUsing $Public_names as source of Public_names\n";
   }
   else {
-    my $command = "\nnosave\nquery find Genes_elegans where Live\nfollow Public_name\nshow -a -f $Public_names\nquit\n";
+    my $command = "\nnosave\nquery find Genes_${species} where Live\nfollow Public_name\nshow -a -f $Public_names\nquit\n";
     # dump out from ACEDB
     $log->write_to ("\nCreating $Public_names as source of Public_names\n");
  print "Opening $refdb for edits\n" if ($verbose);
