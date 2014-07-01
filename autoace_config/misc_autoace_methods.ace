@@ -879,7 +879,7 @@ Method : "RNASEQ.Hillier"
 Colour RED
 CDS_colour RED
 Show_up_strand RED
-Overlap_mode Bumpable
+Overlap_mode Cluster
 Show_text
 Remark "Method for the Camace version of the Hillier RNASEQ CDS data which is all collapsed into one method."
 GFF_SO "SO:0000120" "predicted_CDS_ace2so" // protein_coding_primary_transcript, but No_span
@@ -2818,6 +2818,7 @@ Remark "RNASeq splice region. These are the regions spanned by the SRA RNASeq sh
 Colour BLACK
 Score_by_width
 Score_bounds 1.0 100.0
+Overlap_mode Bumpable
 Strand_sensitive Show_up_strand
 GFF_source "RNASeq_splice"
 GFF_feature "intron"
