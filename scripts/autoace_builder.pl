@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2014-06-17 15:26:43 $
+# Last edited on: $Date: 2014-07-03 15:23:53 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -32,7 +32,7 @@ my $gene_span;
 my ( $load, $big_load, $tsuser );
 my ($map_features, $remap_misc_dynamic, $map, $map_alleles, $transcripts, $cdna_files, $misc_data_sets, $homol_data_sets, $nem_contigs);
 my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $remarks, $names, $treefam, $cluster);
-my ( $utr, $agp, $gff_munge, $gff3_munge, $extras , $ontologies, $interpolate, $check, $enaseqxrefs, $enaprotxrefs, $xrefs);
+my ( $utr, $agp, $gff_munge, $gff3_munge, $extras , $ontologies, $interpolate, $check, $enaseqxrefs, $enagenexrefs, $enaprotxrefs, $xrefs);
 my ( $data_check, $buildrelease, $public,$finish_build, $gffdb, $autoace, $release, $user, $kegg, $prepare_gff_munge);
 
 
@@ -69,6 +69,7 @@ GetOptions(
 	   'misc_data_sets' => \$misc_data_sets,
 	   'homol_data_sets'=> \$homol_data_sets,
            'sequencexrefs'  => \$enaseqxrefs,
+           'genexrefs'      => \$enagenexrefs,
            'proteinxrefs'   => \$enaprotxrefs,
            'xrefs'          => \$xrefs,
 	   'go_term'        => \$GO_term,
@@ -137,6 +138,8 @@ $wormbase->run_script("update_Common_data.pl -clone2centre -clone2acc -clone2siz
 $wormbase->run_script( "build_dumpGFF.pl -stage $gff_dump",                $log ) if $gff_dump;
 
 $wormbase->run_script( "get_ena_submission_xrefs.pl -sequencexrefs", $log)  if $enaseqxrefs;
+$wormbase->run_script( "get_ena_submission_xrefs.pl -genexrefs", $log)  if $enagenexrefs;
+
 $wormbase->run_script( "processGFF.pl -$processGFF",                       $log ) if $processGFF;
 
 &do_assembly_stuff() if $assembly;   # dependant on clone_acc for agp
