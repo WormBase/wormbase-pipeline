@@ -51,7 +51,7 @@
 # by Gary Williams                     
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-07-02 12:29:23 $      
+# Last updated on: $Date: 2014-07-04 13:27:31 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -167,6 +167,9 @@ while (1) {
 
   # get details
   my ($method, $public_name, $desc, $TFID, $TF_gene, $TF_name, $remark) = get_details($gene_name, $TFs, $TF_genes);
+
+  # check for overlapping features
+  check_overlapping_features($method, $target_sequence, $sequence_start, $sequence_end, $sense);
   
   # get feature ID
   $feature_id = get_feature_id($feature_id);
@@ -211,6 +214,10 @@ sub usage {
 
 sub write_feature {
   my ($target_sequence, $sequence_start, $sequence_end, $left_flank, $right_flank, $method, $public_name, $desc, $TFID, $TF_gene, $TF_name, $remark, $sequence_text) = @_;
+
+  if (defined $public_name) {$public_name =~ s/,//;}
+  if (defined $desc) {$desc =~ s/,//;}
+  if (defined $remark) {$remark =~ s/,//;}
 
   print ACE "\n";
   print ACE "Feature $feature_id\n";
@@ -806,4 +813,71 @@ sub get_sequence_text {
   if (length($seq) > 100) {$seq = ''}
 
   return $seq;
+}
+##########################################################################
+# this looks in the current DB for overlapping Feature objects and
+# reports them in case the user wishes to use them as the Feature ID
+
+sub check_overlapping_features {
+
+  my ($method, $sequence, $start, $end, $sense) = @_;
+
+  my @exact_matches;
+  my @overlapping;
+
+  my $seq_obj = $db->fetch(Sequence => "$sequence");
+  if (defined $seq_obj) {
+    my @features = $seq_obj->Feature_object;
+    foreach my $ft ( @features ) {
+      my $ft_name = $ft->name;
+      my $clone_start = $ft->right->name;
+      my $clone_end = $ft->right->right->name;
+      my $ft_desc = $ft->Description;
+      if (!defined $ft_desc) {$ft_desc = ''}
+      my $ft_method = $ft->Method;
+      my $stars = '   ';
+      if ($method =~ /bind/ && $ft_method =~ /bind/) {$stars = '** '} # two stars if they are both some sort of binding method
+      if ($method eq $ft_method) {$stars = '***'} # three stars if the method is the same
+      my $len = abs($end-$start);
+      my $TF = $ft->Transcription_factor;
+      my $TransFac = '';
+      if (defined $TF) {
+	foreach my $TF_name (keys $TFs) {
+	  my $TF_id = $TFs{$TF_name};
+	  if ($TF_id eq $TF) {
+	    $TransFac = "TF: $TF_name\t";
+	  }
+	}
+      }
+      my $line = "$stars $ft_name\tMethod: $ft_method\t${TransFac}Length: $len\tDescription: $ft_desc";
+      if ($start == $clone_start && $end == $clone_end) {
+	push @exact_matches, $line;
+      } elsif ($sense eq '+' && ($start >= $clone_start && $start <= $clone_end || $end >= $clone_start && $end <= $clone_end) || 
+	       $sense eq '-' && ($start >= $clone_end && $start <= $clone_start || $end >= $clone_end && $end <= $clone_start)) {
+	push @overlapping, $line;	
+      }
+      
+
+    }
+  } else {
+    print "WARNING: Can't find Sequence $sequence in CurrentDB\n";
+  }
+  
+  if ($#exact_matches > -1) {
+    print "\nEXACT Feature matches:\n";
+    foreach my $line (@exact_matches) {
+      print "$line\n";
+    }
+    print "\n";
+  }
+  
+  if ($#overlapping > -1) {
+    print "\nOverlapping Features:\n";
+    foreach my $line (@overlapping) {
+      print "$line\n";
+    }
+    print "\n";
+  }
+
+
 }
