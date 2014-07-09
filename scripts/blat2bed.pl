@@ -29,12 +29,23 @@ while (my($k,$v)=each %hits){
 	my $blockCount = scalar @$v;
         my @blocks;
 	my $name = $k;
-        $name = $1 if $$v[0]=~/Target=([^,;=\s]+)/; # for blat
- 
+	my $targetstrand;
+	
+        if ($$v[0]=~/Target=([^,;=\s]+)\s\d+\s\d+([\+\-])/){ # for blat
+		$name = $1;
+		$targetstrand= $2;
+ 	}
 	map {my @t = split "\t";push @blocks, \@t} @$v;
 	foreach my $block( sort {$$a[3] <=> $$b[3]} @blocks){
 	  $chrom = $$block[0];
 	  $strand = $$block[6];
+	  if ($targetstrand){
+		if ($targetstrand.$strand =~/\+\+|\-\-/){
+			$strand = '+';
+		}else{
+			$strand = '-';
+		}
+	  }
 	  $start ||= $$block[3];
 	  $start = $$block[3] if $$block[3] < $start;
 	  $stop  ||= $$block[4];
