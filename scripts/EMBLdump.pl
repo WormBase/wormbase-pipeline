@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl :  makes modified EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2014-05-01 13:11:11 $
+#  Last updated on: $Date: 2014-07-10 10:11:47 $
 #  Last updated by: $Author: mh6 $
 
 use strict;
@@ -58,16 +58,16 @@ my %additional_qualifiers = (
     transl_except => ["(pos:4060..4062,aa:Sec)"],
   },
   'Bm2025a' => {
-    transl_except => ['(pos:1123..1125,aa:Sec)']
+    transl_except => ['(pos:589675..589677,aa:Sec)']
   },
   'Bm2025b' => {
-    transl_except => ['(pos:1909..1911,aa:Sec)']
+    transl_except => ['(pos:589675..589677,aa:Sec)']
   },
   'Bm2025c' => {
-    transl_except => ['(pos:2134..2136,aa:Sec)']
+    transl_except => ['(pos:589675..589677,aa:Sec)']
   },
   'Bm2025d' => {
-    transl_except => ['(pos:1789..1791,aa:Sec)']
+    transl_except => ['(pos:589675..589677,aa:Sec)']
   },
   'CBG05747a' => {
     transl_except => ['(pos:2002..2004,aa:Sec)']
@@ -541,7 +541,7 @@ sub process_feature_table {
 
       $feat->{ftype} = $new_dv;
       # we don't currently distinguish between the different
-      # ENA psedogene classes, so make them all "unknown" for now
+      # ENA pseudogene classes, so make them all "unknown" for now
       push @{$feat->{quals}}, ["/pseudogene=\"unknown\""];
     }
 
