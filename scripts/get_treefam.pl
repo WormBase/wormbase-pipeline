@@ -43,6 +43,8 @@ $log->write_to("connecting to: $dsn\n");
 my $dbh = DBI->connect($dsn,'treefam_ro')||$log->log_and_die($@);
 
 my $sth=$dbh->prepare('SELECT t.stable_id FROM member m JOIN gene_tree_member using(member_id) JOIN gene_tree_node USING(node_id) JOIN gene_tree_root t USING(root_id) WHERE source_name="ENSEMBLPEP" AND m.stable_id=? AND t.stable_id IS NOT NULL;')||$log->log_and_die($@);
+my $sth2=$dbh->prepare('SELECT t.stable_id FROM member m JOIN gene_tree_member using(member_id) JOIN gene_tree_node USING(node_id) JOIN gene_tree_root t USING(root_id) WHERE source_name="ENSEMBLPEP" AND m.stable_id like ? AND t.stable_id IS NOT NULL;')||$log->log_and_die($@);
+
 
 # actual bit that does things
 
@@ -53,6 +55,12 @@ while (my($cds,$protein_id)=each %cds2wormpep){
  $sth->execute($cds);
  while (my @id = $sth->fetchrow_array()) {
            push @ids,"$id[0]";
+ }
+ unless ($ids[0]){
+   $sth2->execute("$cds.%");
+   while (my @id = $sth2->fetchrow_array()) {
+           push @ids,"$id[0]";
+   }
  }
 
  if ($ids[0]){
