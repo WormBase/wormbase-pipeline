@@ -14,7 +14,7 @@
 //
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2014-07-04 14:22:54 $
+// Last edited on: $Date: 2014-07-11 13:41:46 $
 //
 //
 // Additional things to consider. If classes are added or new data in the ?Gene class
@@ -2484,7 +2484,7 @@
 	   Driven_by_gene ?Gene XREF Drives_construct
 	   Gene ?Gene XREF Transgene_product
 	   Fusion_reporter ?Text              //fluorescent proteins GFP, RFP, mCherry, etc.
-	   Other_reporter ?Text               //to add reporters, tags that aren%G-F�%@t included in model-A
+	   Other_reporter ?Text               //to add reporters, tags that arent included in model
 	   Purification_tag ?Text             //FLAG, HA, Myc, TAP, etc.  
 	   Recombination_site ?Text           //LoxP, FRT
 	   Type_of_construct  Chimera
@@ -3578,5 +3578,5 @@
 // WS242
 // WS243
 // WS244
-// 
+// WS245
 // 
