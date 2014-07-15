@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2014-06-17 15:43:11 $
+# Last updated on: $Date: 2014-07-15 08:53:13 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -1346,11 +1346,12 @@ sub make_geneID_list {
     my $annotation_dir = "$targetdir/species/$gspecies/$bioproj/annotation";
     my $ace_dir = $wormbase->autoace;
 
-    my $dir     = "$ace_dir";
     my $out     = "$annotation_dir/$gspecies.$bioproj.$WS_version_name.geneIDs.txt";
+    my $otherNames = "$annotation_dir/$gspecies.$bioproj.$WS_version_name.geneOtherIDs.txt";
 
     mkpath("$annotation_dir",1,0775);
     open GENEID,">$out" ||die($!);
+    open OTHERID, ">$otherNames" ||die($!);
 
     my $db = Ace->connect(-path => "$ace_dir/") || die (Ace->error);
     my $gene_it = $db->fetch_many(-query => "Find Gene; Species=\"${full_name}\"");
@@ -1361,11 +1362,14 @@ sub make_geneID_list {
                          ($gene->CGC_name||''),
                          ($gene->Sequence_name||''),
                          $gene->Status), "\n";
+      print OTHERID join("\t",$gene,$gene->Status,$gene->Sequence_name,$gene->CGC_name,$gene->Other_name),"\n";
     }
 
     close GENEID;
+    close OTHERID;
     $db->close();
     $wormbase->run_command("gzip -n -9 -f $out", $log);
+    $wormbase->run_command("gzip -n -9 -f $otherNames", $log);
   } 
 
   $runtime = $wormbase->runtime;
