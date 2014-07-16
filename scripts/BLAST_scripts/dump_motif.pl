@@ -5,7 +5,7 @@
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2014-04-02 08:56:32 $
+# Last updated on: $Date: 2014-07-16 14:16:13 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -116,6 +116,7 @@ if (-e "/software/worm") { # running on Sanger
 # get the motifs
 my %motifs;
 my %pfams;
+my %panther;
 my %cds2wormpep;
 $wormbase->FetchData('cds2wormpep',\%cds2wormpep);
 
@@ -138,6 +139,7 @@ foreach my $meth (@methods) {
     }elsif($meth=~/hmmpanther|pfscan|pirsf|prints|scanprosite|smart|tigrfam|superfamily/){
        my $prefix = uc($meth);
        $line = "Motif_homol \"$prefix:$hid\" \"$meth\" $score $start $end $hstart $hend";
+       $panther{"$prefix:$hid"}=$hid if $meth eq 'hmmpanther';
     }else { #tmhmm seg signalp ncoils
        $line = "Feature \"$meth\" $start $end $score";
     }
@@ -156,6 +158,11 @@ foreach my $prot (sort {$a cmp $b} keys %motifs) {
     foreach my $line (@{$motifs{$prot}}) {
         print ACE "$line\n";
     }
+}
+
+while(my($k,$v)= each %panther){
+   print ACE "Motif : \"$k\"\n";
+   print ACE "Database hmmpanther PantherID \"$v\"\n\n"
 }
 
     
