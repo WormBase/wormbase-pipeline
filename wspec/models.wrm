@@ -14,7 +14,7 @@
 //
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2014-07-11 13:41:46 $
+// Last edited on: $Date: 2014-07-17 08:51:10 $
 //
 //
 // Additional things to consider. If classes are added or new data in the ?Gene class
@@ -334,8 +334,8 @@
 		       Transcription_factor ?Transcription_factor XREF Product_of
         Experimental_info RNAi_result ?RNAi XREF Gene #Evidence
                           Expr_pattern ?Expr_pattern XREF Gene
-                          Drives_construct ?Construct XREF Driven_by_gene
-			  Transgene_product ?Construct XREF Gene
+                          Drives_construct ?Construct XREF Driven_by_gene #Evidence
+                          Construct_product ?Construct XREF Gene #Evidence
                           Regulate_expr_cluster ?Expression_cluster XREF Regulated_by_gene // Wen WS228
                           Antibody ?Antibody XREF Gene
                           Microarray_results ?Microarray_results XREF Gene
@@ -485,6 +485,7 @@
 				 Chromatin_immunoprecipitation           // Chris WS244
 				 Cofractionation                         // A physical interaction detection technique
 				 Colocalization                          // A physical interaction detection technique
+				 Construct
 				 Copurification                          // A physical interaction detection technique
 				 DNase_I_footprinting			 // 
 				 Fluorescence_resonance_energy_transfer  // A physical interaction detection technique
@@ -502,6 +503,7 @@
 				 Antibody                                // A regulatory interaction detection technique; Antibody name and details captured in Interactor_info hash
 				 Reporter_gene ?Text                     // A regulatory interaction detection technique
 				 Transgene                               // A regulatory interaction detection technique; Trasnsgene name and details captured in Interactor_info hash
+				 Unaffiliated_construct ?Construct
 				 In_situ Text                            // A regulatory interaction detection technique
 				 Northern Text                           // A regulatory interaction detection technique
 				 Western Text                            // A regulatory interaction detection technique
@@ -554,6 +556,7 @@
 		       Expr_pattern ?Expr_pattern		   // An expression pattern altered to indicate 
 		       Variation ?Variation XREF Interactor	   // (allele, polymorphism, etc.) involved in the interaction //removed XREF from proposal
 		       Transgene ?Transgene XREF Interactor	   // Transgene XREF Interactor that carries an interacting gene //removed XREF from proposal
+		       Construct ?Construct XREF Interactor
 		       Antibody ?Antibody XREF Interactor	   // Free text description of the antibody used to detect a regulation event //removed XREF from proposal
 		       Inferred_automatically Text                 // a script has updated this connection
 
@@ -2452,6 +2455,7 @@
 		Genetic_information Extrachromosomal                
 				    Integrated 
 				    Map ?Map  #Map_position  //needed for transgenes with no granular mapping, e.g., just mapped to a LG
+				    Map_evidence #Evidence
 				    Phenotype ?Phenotype XREF Transgene #Phenotype_info
 				    Phenotype_not_observed ?Phenotype XREF Not_in_Transgene #Phenotype_info  
 		Used_for Transgene_derivation ?Transgene XREF Integrated_from                                                   
@@ -2481,15 +2485,16 @@
 	   Other_name ?Text
 	   Summary ?Text                      //genotype like [Pmyo-2::GFP]
 	   Sequence_feature ?Feature XREF Associated_with_construct
-	   Driven_by_gene ?Gene XREF Drives_construct
-	   Gene ?Gene XREF Transgene_product
+	   Driven_by_gene ?Gene XREF Drives_construct #Evidence
+	   Gene ?Gene XREF Construct_product #Evidence
+	   3_UTR ?Gene #Evidence
 	   Fusion_reporter ?Text              //fluorescent proteins GFP, RFP, mCherry, etc.
 	   Other_reporter ?Text               //to add reporters, tags that arent included in model
 	   Purification_tag ?Text             //FLAG, HA, Myc, TAP, etc.  
 	   Recombination_site ?Text           //LoxP, FRT
 	   Type_of_construct  Chimera
 			      Domain_swap
-			      Engineered mutation
+			      Engineered_mutation
 			      Fusion
 			      Complex                    // complex changes  
 			      Transcriptional_fusion
@@ -2505,7 +2510,8 @@
 		    Transgene_coinjection ?Transgene XREF Coinjection
 		    Engineered_variation ?Variation XREF Derived_from_construct
 		    Topic_output_indicator ?WBProcess XREF Marker_construct
-		    Expression_pattern ?Expr_pattern XREF Construct 
+		    Expression_pattern ?Expr_pattern XREF Construct
+		    Interactor ?Interaction
 	   Reference ?Paper  
 	   Person ?Person
 	   Laboratory ?Laboratory #Lab_Location 
