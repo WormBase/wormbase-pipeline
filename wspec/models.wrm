@@ -14,7 +14,7 @@
 //
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2014-07-17 08:51:10 $
+// Last edited on: $Date: 2014-07-17 23:45:31 $
 //
 //
 // Additional things to consider. If classes are added or new data in the ?Gene class
@@ -503,7 +503,6 @@
 				 Antibody                                // A regulatory interaction detection technique; Antibody name and details captured in Interactor_info hash
 				 Reporter_gene ?Text                     // A regulatory interaction detection technique
 				 Transgene                               // A regulatory interaction detection technique; Trasnsgene name and details captured in Interactor_info hash
-				 Unaffiliated_construct ?Construct
 				 In_situ Text                            // A regulatory interaction detection technique
 				 Northern Text                           // A regulatory interaction detection technique
 				 Western Text                            // A regulatory interaction detection technique
@@ -533,6 +532,7 @@
 		Unaffiliated_transgene ?Transgene
 		Unaffiliated_antibody ?Antibody
 		Unaffiliated_expr_pattern ?Expr_pattern
+		Unaffiliated_construct ?Construct
 		WBProcess ?WBProcess XREF Interaction                    // WormBase biological process associated with the interaction
 		DB_info Database ?Database ?Database_field ?Text         // Any database reference to the interaction outside of WormBase, e.g. BioGRID, Interactome
 		Paper ?Paper XREF Interaction
