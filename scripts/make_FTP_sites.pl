@@ -5,8 +5,8 @@
 # A PERL wrapper to automate the process of building the FTP sites 
 # builds wormbase & wormpep FTP sites
 # 
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2014-07-15 08:53:13 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2014-07-24 08:58:23 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -352,9 +352,7 @@ sub copy_xrefs {
   my %accessors = ($wormbase->all_species_accessors);
   $accessors{elegans} = $wormbase;
 
-  foreach my $sp ('elegans','briggsae','brugia','ovolvulus') {
-    my $wb = $accessors{$sp};
-
+  foreach my $wb (values %accessors) {
     next if exists $skip_species{$wb->species};
     next if @only_species and not exists($only_species{$wb->species});
 
@@ -458,11 +456,15 @@ sub copy_dna_files{
       map { $copied_files{$_} = 1 } ($dna_file, $masked_file, $soft_file);
       
       # copy over outstanding dna files
-      foreach my $dna_file (glob("$seqdir/*.dna.gz")) {
+      foreach my $dna_file (glob("$seqdir/*.dna.gz"), glob("$seqdir/*.dna")) {
         if (not exists $copied_files{$dna_file}) {
-          my ($prefix) = $dna_file =~ /$seqdir\/(\S+)\.dna.gz/;
+          my ($prefix) = $dna_file =~ /$seqdir\/(\S+)\.dna/;
           my $target = "$dna_dir/${gspecies}.${bioproj}.${WS_version_name}.$prefix.fa.gz";
-          $wormbase->run_command("cp -f $dna_file $target", $log);
+          if ($dna_file =~ /\.gz$/) {
+            $wormbase->run_command("cp -f $dna_file $target", $log);
+          } else {
+            $wormbase->run_command("cat $dna_file | gzip -n > $target", $log);
+          }
         }
       }
       
@@ -711,7 +713,7 @@ sub copy_rna_files{
 	
     # Note that the following points to the most recent version of the file; 
     my $src_file = "$rnadir/${prefix}rna".$wb->get_wormbase_version.".rna"; 
-    my $tgt_file = "$ftprna_dir/$gspecies.$bioproj.$WS_version_name.ncrna_transcripts.fa"; #target FTP file
+    my $tgt_file = "$ftprna_dir/$gspecies.$bioproj.$WS_version_name.ncRNA_transcripts.fa"; #target FTP file
     
     if (-e $src_file and -s $src_file) {
       $wormbase->run_command("gzip -n -9 -c $src_file > ${tgt_file}.gz",$log);
@@ -967,7 +969,7 @@ sub copy_wormpep_files {
     }
 
     if (-e $source_cdnafile) {
-      my $target_cdnafile = "$tgt/$gspecies.$bioproj.${WS_version_name}.cds_transcripts.fa.gz";
+      my $target_cdnafile = "$tgt/$gspecies.$bioproj.${WS_version_name}.CDS_transcripts.fa.gz";
       open(my $source_cdna_fh, $source_cdnafile);
       open(my $target_cdna_fh, "| gzip -n -9 -c > $target_cdnafile");
       while(<$source_cdna_fh>) {
@@ -984,16 +986,6 @@ sub copy_wormpep_files {
       close($target_cdna_fh) or $log->log_and_die("Could not successfully close $target_cdnafile\n");
     } else {
       $log->error("ERROR: Could not find transcript file for $gspecies ($source_cdnafile)\n");
-    }
-
-    # Copy over the file created by transcript_builder.pl that is the Transcript version of the above cds file
-    my $coding_transcripts_fa = $wb->sequences."/coding_transcripts.dna.gz";
-    my $target_transcript_fa = "$tgt/$gspecies.$bioproj.$WS_version_name.coding_transcripts.fa.gz";
-
-    if (-e $coding_transcripts_fa){
-      $wb->run_command("scp $coding_transcripts_fa $target_transcript_fa", $log);
-    } else {
-      $log->error("ERROR: Could not find transcript file for $gspecies $coding_transcripts_fa");
     }
   }
 
@@ -1017,7 +1009,7 @@ sub copy_wormpep_files {
     my $src_cdna_file = $wb->sequences . "/$t3.cdna.fas";
 
     my $tgt_pep_file = "$tgt/$gspecies.$bioproj.$WS_version_name.protein.fa.gz";
-    my $tgt_cdna_file = "$tgt/$gspecies.$bioproj.$WS_version_name.cds_transcripts.fa.gz";
+    my $tgt_cdna_file = "$tgt/$gspecies.$bioproj.$WS_version_name.CDS_transcripts.fa.gz";
 
     if (-e $src_pep_file) {
       $wb->run_command("gzip -n -9 -c $src_pep_file > $tgt_pep_file", $log);
@@ -1721,7 +1713,6 @@ __DATA__
 GSPECIES.BIOPROJ.WSREL.affy_oligo_mapping.txt.gz
 GSPECIES.BIOPROJ.WSREL.agil_oligo_mapping.txt.gz
 GSPECIES.BIOPROJ.WSREL.pcr_product2gene.txt.gz
-GSPECIES.BIOPROJ.WSREL.geneIDs.txt.gz
 GSPECIES.BIOPROJ.WSREL.gsc_oligo_mapping.txt.gz
 GSPECIES.BIOPROJ.WSREL.cdna2orf.txt.gz
 GSPECIES.BIOPROJ.WSREL.confirmed_genes.fa.gz
@@ -1732,37 +1723,32 @@ GSPECIES.BIOPROJ.WSREL.TSS.wig.tar.gz
 [elegans]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.assembly.agp.gz
 GSPECIES.BIOPROJ.WSREL.wormpep_package.tar.gz
+GSPECIES.BIOPROJ.WSREL.transposon_transcripts.fa.gz
 
-[elegans,briggsae]species/GSPECIES/BIOPROJ
-GSPECIES.BIOPROJ.WSREL.xrefs.txt.gz
-
-# tierII specific stuff
 [TIER2]species/GSPECIES/BIOPROJ/annotation
 GSPECIES.BIOPROJ.WSREL.geneIDs.txt.gz
 
-[TIER2:pristionchus,ovolvulus]species/GSPECIES/BIOPROJ/annotation
-GSPECIES.BIOPROJ.WSREL.SRA_gene_expression.tar.gz
-
 [TIER2]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.best_blastp_hits.txt.gz
-GSPECIES.BIOPROJ.WSREL.intergenic_sequences.fa.gz
-GSPECIES.BIOPROJ.WSREL.annotations.gff3.gz
 GSPECIES.BIOPROJ.WSREL.annotations.gff2.gz
-GSPECIES.BIOPROJ.WSREL.ncrna_transcripts.fa.gz
-GSPECIES.BIOPROJ.WSREL.coding_transcripts.fa.gz
+GSPECIES.BIOPROJ.WSREL.ncRNA_transcripts.fa.gz
+GSPECIES.BIOPROJ.WSREL.mRNA_transcripts.fa.gz
+GSPECIES.BIOPROJ.WSREL.pseudogenic_transcripts.fa.gz
+GSPECIES.BIOPROJ.WSREL.intergenic_sequences.fa.gz
+GSPECIES.BIOPROJ.WSREL.xrefs.txt.gz
 
-[TIER3]species/GSPECIES/BIOPROJ
-GSPECIES.BIOPROJ.WSREL.annotations.gff3.gz
+[TIER2:pristionchus,ovolvulus]species/GSPECIES/BIOPROJ/annotation
+GSPECIES.BIOPROJ.WSREL.SRA_gene_expression.tar.gz
 
 # for all species
 [ALL]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.genomic.fa.gz
 GSPECIES.BIOPROJ.WSREL.genomic_masked.fa.gz
 GSPECIES.BIOPROJ.WSREL.genomic_softmasked.fa.gz
-
-[ALL:mincognita]species/GSPECIES/BIOPROJ
+GSPECIES.BIOPROJ.WSREL.annotations.gff3.gz
 GSPECIES.BIOPROJ.WSREL.protein.fa.gz
-GSPECIES.BIOPROJ.WSREL.cds_transcripts.fa.gz
+GSPECIES.BIOPROJ.WSREL.CDS_transcripts.fa.gz
+
 
 []acedb
 files_in_tar
