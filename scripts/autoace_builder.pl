@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2014-07-03 15:23:53 $
+# Last edited on: $Date: 2014-07-25 14:26:46 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -210,7 +210,7 @@ if ($prepare_gff_munge) {
     $wormbase->run_script( 'landmark_genes2gff.pl', $log);
     $wormbase->run_script( 'landmark_genes2gff.pl -gff3', $log);
     $wormbase->run_script( 'web_data/interpolate_gmap2pmap.pl', $log);
-    $wormbase->run_script( 'web_data/interpolate_gmap2pmap.pl -gff3', $log);
+    $wormbase->run_script( 'web_data/interpolate_gmap2pmap.pl -gff3 -balancers', $log);
   }
   $wormbase->run_script( 'web_data/map_translated_features_to_genome.pl', $log);
   $wormbase->run_script( 'web_data/map_translated_features_to_genome.pl -gff3', $log);
