@@ -10,7 +10,7 @@ use Bio::SeqIO;
 use Wormbase;
 use Log_files;
 
-my ($acedb, $test, $debug, $store, $gff3, $wormbase);
+my ($acedb, $test, $debug, $store, $gff3, $wormbase, $balancers);
 
 GetOptions (
   'test'       => \$test,
@@ -18,6 +18,7 @@ GetOptions (
   'store=s'    => \$store,
   'database=s' => \$acedb,
   'gff3'       => \$gff3,
+  'balancers'  => \$balancers,
     );
 
 
@@ -42,6 +43,10 @@ my $chr_prefix = $wormbase->chromosome_prefix;
 my $chr_lengths = fetch_chromosome_lengths();
 my $markers = fetch_markers();
 my $to_map  = fetch_genes_lacking_pmap_coords();
+
+if ($balancers) {
+  $balancers = &fetch_balancers();
+}
 
 ##################################################################
 # sorting gmap positions of marker loci from left tip to right tip
@@ -87,7 +92,7 @@ foreach my $chrom (sort keys %$chr_lengths) {
     my $maximal_right_gmap = $right->{gmap};
     
     # Interpolate all the desired features into intervals
-    my $leftmost_marker;
+    my ($leftmost_marker, %all_gene_pos);
     foreach my $feature (sort { $a->{gmap} <=> $b->{gmap} } @{$to_map->{$chrom}},@{$markers->{$chrom}}) {
       my ($position,$fpmap_center,$fpmap_lower,$fpmap_upper,$lname,$lgmap,$lpmap,$rname,$rgmap,$rpmap);
       my $fname = $feature->{name};
@@ -186,7 +191,7 @@ foreach my $chrom (sort keys %$chr_lengths) {
                              $position,$chrom,
                              $lname || '-',$fname,$rname || '-',
                              $lpmap || '-',$fpmap_center,$rpmap || '-',
-                             $lgmap || '-',$fgmap,$rgmap || '-')) if $debug;
+                             $lgmap || '-',$fgmap,$rgmap || '-')) if 0;
       
       # Generate the GFF file
       my ($status,$source);
@@ -219,11 +224,67 @@ foreach my $chrom (sort keys %$chr_lengths) {
       } else {
         print $out_fh "\tID=gmap:$public;gmap=$public;status=$status;Note=$fgmap cM (+/- $ferror cM)\n";
       }
+
+      $all_gene_pos{$fname->name} = {
+        start => $fpmap_lower,
+        end   => $fpmap_upper,
+      }
     }
+
+    if ($balancers and exists $balancers->{$chrom}) {
+      foreach my $bal (@{$balancers->{$chrom}}) {
+        my @br = @{$bal->{balanced}};
+
+        foreach my $this_br (@br) {
+          next if $this_br->{chr} ne $chrom;
+
+          if (exists $this_br->{start} and not exists $this_br->{end}) {
+            foreach my $gene (@{$this_br->{genes}}) {
+              if (not exists $this_br->{end} or $all_gene_pos{$gene}->{end} > $this_br->{end}) {
+                $this_br->{end} = $all_gene_pos{$gene}->{end};
+              }
+            }
+          } elsif (exists $this_br->{end} and not exists $this_br->{start}) {
+            foreach my $gene (@{$this_br->{genes}}) {
+              if (not exists $this_br->{start} or $all_gene_pos{$gene}->{start} < $this_br->{start}) {
+                $this_br->{start} = $all_gene_pos{$gene}->{start};
+              }
+            }
+          } elsif (not exists $this_br->{start} and not exists $this_br->{end}) {
+            my @genes = @{$this_br->{genes}};
+            if (scalar(@genes) != 2) {
+              warn "When no end-limits are defined (" . $bal->{name} . "), expecting 2 genes to define the limits. Got " . scalar(@genes) . "\n";
+              next;
+            }
+            my ($g1_pos, $g2_pos) = ($all_gene_pos{$genes[0]}, $all_gene_pos{$genes[1]});
+            if ($g1_pos->{start} > $g2_pos->{start}) {
+              ($g1_pos, $g2_pos) = ($g2_pos, $g1_pos);
+            }
+            $this_br->{start} = $g1_pos->{start};
+            $this_br->{end}   = $g2_pos->{end};
+          } else {
+            # should not happen
+          }
+
+          print $out_fh join("\t", $chr_prefix . $chrom, "Balanced_by_balancer", "biological_region", $this_br->{start}, $this_br->{end}, ".", ".", ".");
+          if (not $gff3) {
+            printf $out_fh "\tBalancer \"%s\" ; Balancer_type \"%s\"\n", $bal->{name}, $bal->{type};
+          } else {
+            printf $out_fh "\tbalancer=Rearrangement:%s;balancer_type=%s", $bal->{name}, $bal->{type};
+            if (@{$bal->{notes}}) {
+              my $nstr = join(",", @{$bal->{notes}});
+              print $out_fh ";Note=$nstr";
+            }
+            print $out_fh "\n";
+          }
+        }
+      }
+    }
+    
   } else {
     $log->write_to("No markers for $chrom - nothing to do\n");
   }
-
+  
   close($out_fh);
 }
 
@@ -240,23 +301,25 @@ exit(0);
 # Genes that only have three-factor data will not have a calculated position.
 ########################################################
 sub fetch_genes_lacking_pmap_coords {
-  my $genes = {};
+  my $genes_by_chr = {};
   $log->write_to("Fetching genes lacking physical map coordinates...\n");
   my @genes = $db->fetch(-query=>qq{find Gene where Species="Caenorhabditis elegans" AND !Sequence_name});
   foreach (@genes) {
     my ($chrom,undef,$position,undef,$error) = eval{$_->Map(1)->row} or next;
     next unless $position;
     $position ||= '0.0000';
-    push(@{$genes->{$chrom}},{ name   => $_,
-			       chrom  => $chrom,
-			       gmap   => $position,
-			       error  => $error,
-			       upper  => $position + $error,
-			       lower  => $position - $error,
-			       type   => 'uncloned',
-			     });
+    my $gh = { 
+      name   => $_,
+      chrom  => $chrom,
+      gmap   => $position,
+      error  => $error,
+      upper  => $position + $error,
+      lower  => $position - $error,
+      type   => 'uncloned',
+    };
+    push @{$genes_by_chr->{$chrom}}, $gh;
   }
-  return $genes;
+  return $genes_by_chr;
 }
 
 ########################################################
@@ -340,6 +403,82 @@ sub fetch_chromosome_lengths {
   }
 
   return \%chr_lengths;
+}
+
+
+
+########################################################
+# Fetch balancer data
+########################################################
+
+sub fetch_balancers {
+  $log->write_to("Fetching balancer data\n");
+
+  my %balancers;
+  
+  my @rearrangements = $db->fetch(-query => "FIND Rearrangement WHERE Balances");
+  foreach my $rarr (@rearrangements) {
+    my $b = {
+      name => $rarr->name,
+      type => (defined $rarr->Type) ? $rarr->Type->name : "Undefined_type",
+      #other_name => $rarr->Other_name->name,
+      notes => [],
+    };
+
+    my @rem;
+    foreach my $remark ($rarr->Remark) {
+      my $rem = $remark->name;
+      $rem =~ s/;/\%3B/g;
+      $rem =~ s/=/\%3D/g;
+      $rem =~ s/&/\%26/g;
+      $rem =~ s/,/\%2C/g;
+
+      if ($rem =~ /^\S+:/ or $rem =~ /^\S+ \S+:/) {
+        push @{$b->{notes}}, $rem;
+      }
+    }
+
+    my @rows = $rarr->at('Balances');
+    my (@balanced_regions, %chrs_involved);
+    foreach my $row (@rows) {
+      my $chr = $row->name;
+      my $br = { chr => $chr };
+      $chrs_involved{$chr} = 1;
+
+      my (@genes, $chr_end);
+
+      foreach my $col ($row->col) {
+        if ($col->name eq 'Gene') {
+          foreach my $g ($col->col) {
+            push @genes, $g->name;
+          }
+        } else {
+          $chr_end = $col->name;
+        }
+      }
+
+      if (defined $chr_end) {
+        if ($chr_end =~ /From_left_end/) {
+          $br->{start} = 1;
+        } elsif ($chr_end =~ /To_right_end/) {
+          $br->{end} = $chr_lengths->{$br->{chr}};
+        }
+      }
+      if (@genes) {
+        $br->{genes} = \@genes;
+      }
+    
+      push @balanced_regions, $br;
+    }
+
+    $b->{balanced} = \@balanced_regions;
+
+    foreach my $chr (keys %chrs_involved) {
+      push @{$balancers{$chr}}, $b; 
+    }
+  }
+
+  return \%balancers;
 }
 
 1;
