@@ -45,7 +45,7 @@ if ( $store ) {
 
 my (%ace_genes, %server_genes, %all_gene_ids);
 
-
+my @exceptions = ('C05G5.6', 'T22C1.13', 'F22D3.9', 'C54G10.6', 'C11H1.12', 'T01B6.12'); 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
@@ -61,6 +61,7 @@ my $TABLE = $wormbase->table_maker_query($acedb, $def);
 
 
 while( <$TABLE> ){
+  my $testname;
   next if (/>/ or /\/\// );
   s/\"//g;  # remove "
   my($gene, $cds, $transcript, $pseudo) = split(/\s/);  
@@ -72,7 +73,9 @@ while( <$TABLE> ){
   my $seq_name = ($cds or $transcript or $pseudo);
   $seq_name =~ s/[a-z]$//; #remove isoform indication
   if( $ace_genes{$gene}->{name} and ($ace_genes{$gene}->{name} ne $seq_name) ) {
-    unless ($ace_genes{"$gene"}->{'name'} eq 'C05G5.6') {
+    $testname = $ace_genes{"$gene"}->{'name'};
+    unless ($exceptions['$testname']) {
+#    unless ($ace_genes{"$gene"}->{'name'} eq 'C05G5.6') {
       $log->write_to("$gene has multiple sequence names ".$ace_genes{"$gene"}->{'name'}." and $seq_name\n");
     }
     next;
