@@ -7,12 +7,19 @@
 #===============================================================================
 
 use strict;
+use Wormbase;
+use Log_files;
 use IO::File;
 use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
 
 use Getopt::Long;
 
-my ($comparadb,$dbhost,$dbuser,$dbport, $verbose);
+my ($verbose,$new,$debug,$test,$store,$outfile,$other);
+
+my $comparadb = 'worm_compara';
+my $dbhost    = $ENV{'WORM_DBHOST'};
+my $dbuser    = 'wormro';
+my $dbport    = $ENV{'WORM_DBPORT'};
 
 GetOptions(
   'database=s' => \$comparadb,
@@ -20,12 +27,13 @@ GetOptions(
   'dbuser=s'   => \$dbuser,
   'dbport=s'   => \$dbport,
   'verbose'    => \$verbose,
+  'debug=s'    => \$debug,
+  'test'       => \$test,
+  'store=s'    => \$store,
+  'outfile=s'  => \$outfile,
+  'other=s'    => \$other, # Ortholog_other
 ) || die("cant parse the command line parameter\n");
 
-$comparadb ||= 'worm_compara';
-$dbhost    ||= $ENV{'WORM_DBHOST'};
-$dbuser    ||= 'wormro';
-$dbport    ||= $ENV{'WORM_DBPORT'};
 
 my (%species, %t3_pep);
 
@@ -39,6 +47,25 @@ my %core_species = ('caenorhabditis_elegans'  => 1,
                     'onchocerca_volvulus'     => 1);
 
 my %cds2wbgene=%{&get_commondata('cds2wbgene_id')};
+
+my $wormbase;
+
+if ($store){
+ $wormbase = Storable::retrieve($store)
+      or croak("cannot restore wormbase from $store"); 
+}else{
+ $wormbase = Wormbase->new(
+    -test    => $test,
+    -debug   => $debug,
+ )
+}
+
+$outfile ||= $wormbase->acefiles . '/compara.ace';
+$other ||= $wormbase->acefiles . '/compara_other.ace';
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
+
 
 my $compara_db = new Bio::EnsEMBL::Compara::DBSQL::DBAdaptor(
     -host   => $dbhost,
@@ -68,16 +95,19 @@ foreach my $gdb (@genome_dbs) {
 
 }
 
+my $outfh = IO::File->new($outfile,'w')||die(@!);
+my $otherfh = IO::File->new($other,'w')||die(@!);
+
 foreach my $gdb1 (@genome_dbs) {
-  next if not exists $core_species{$gdb1->name};
+#   next if not exists $core_species{$gdb1->name};
  
-  print STDERR "Processing " . $gdb1->name . "...\n" if $verbose;
+  $log->write_to("Processing " . $gdb1->name . "...\n") if $verbose;
 
   my (%homols);
 
   foreach my $gdb2 (@genome_dbs) {
 
-    print STDERR "   Comparing to " . $gdb2->name . "...\n" if $verbose;
+    $log->write_to("   Comparing to " . $gdb2->name . "...\n") if $verbose;
 
     my $mlss;
     if ($gdb1->dbID == $gdb2->dbID) {
@@ -99,18 +129,22 @@ foreach my $gdb1 (@genome_dbs) {
       
       my $gid1 = $cds2wbgene{$m1->stable_id}?$cds2wbgene{$m1->stable_id}:$m1->stable_id;
       my $gid2 = $cds2wbgene{$m2->stable_id}?$cds2wbgene{$m2->stable_id}:$m2->stable_id;
-      
+
+      $gid1 = $gdb1->taxon_id().':'.$gid1 if not exists $core_species{$gdb1->name};
+      $gid2 = $gdb2->taxon_id().':'.$gid2 if not exists $core_species{$gdb2->name};
+     
       my $m2pep = $m2->gene_member->get_canonical_SeqMember;
       
-      if (exists $core_species{$gdb2->name}) {
-        if ($gdb1->dbID == $gdb2->dbID) {
+
+      if ($gdb1->dbID == $gdb2->dbID) {
           # we need to add the connection both ways, so that that evidence gets added to both
           $homols{$gid1}->{Paralog}->{$species{$gdb2->dbID}}->{$gid2} = 1;
           $homols{$gid2}->{Paralog}->{$species{$gdb1->dbID}}->{$gid1} = 1;
-        } else {
-          $homols{$gid1}->{Ortholog}->{$species{$gdb2->dbID}}->{$gid2} = $species{$gdb2->dbID};
-        }
       } else {
+          $homols{$gid1}->{Ortholog}->{$species{$gdb2->dbID}}->{$gid2} = $species{$gdb2->dbID};
+      }
+
+      unless (exists $core_species{$gdb2->name}) {
         $homols{$gid1}->{Ortholog_other}->{$species{$gdb2->dbID}}->{$m2pep->stable_id} = 1;
         if (not exists $t3_pep{$m2pep->stable_id}) {
           $t3_pep{$gdb2->dbID}->{$m2pep->stable_id} = $m2pep->sequence;
@@ -119,42 +153,28 @@ foreach my $gdb1 (@genome_dbs) {
     } 
   }
     
-  print "// Homologies for " . $gdb1->name . "\n\n";
+  print $outfh "// Homologies for " . $gdb1->name . "\n\n";
 
   foreach my $g (sort keys %homols) {
     
-    print "\nGene : \"$g\"\n";
+    print $outfh "\nGene : \"$g\"\n";
     
     foreach my $tag_group (keys %{$homols{$g}}) {
       foreach my $spe (sort keys %{$homols{$g}->{$tag_group}}) {
         foreach my $entity (sort keys %{$homols{$g}->{$tag_group}->{$spe}}) {
           if ($tag_group =~ /other/) {
-            print "$tag_group \"$entity\" From_analysis WormBase-Compara\n";
+            print $otherfh "Gene : \"$g\"\n";
+            print $otherfh "$tag_group \"$entity\" From_analysis WormBase-Compara\n\n";
           } else {
-            print "$tag_group \"$entity\" \"$spe\" From_analysis WormBase-Compara\n";
+            print $outfh "$tag_group \"$entity\" \"$spe\" From_analysis WormBase-Compara\n";
           }
         }
       }
     }
-
   }   
 }
 
-foreach my $gdb_id (keys %t3_pep) {
-  my $species = $species{$gdb_id};
-
-  foreach my $stable_id (keys %{$t3_pep{$gdb_id}}) {
-    my $pepseq = $t3_pep{$gdb_id}->{$stable_id};
-
-    print "\nProtein : $stable_id\n";
-    print "Species \"$species\"\n\n";
-
-    print "Peptide : \"$stable_id\"\n";
-    print "$pepseq\n\n";                  
-  }
-
-}
-
+$log->mail;
 
 #################
 # also adds the sequence name of the parent gene
