@@ -5,7 +5,7 @@
 # A script to make multiple copies of core species database for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2014-07-01 12:29:32 $
+# Last edited on: $Date: 2014-08-04 14:55:14 $
 #====================
 #perl ~/wormbase/scripts/merge_split_camaces.pl -update -gw3 -pad -species elegans -test -version $MVERSION > /nfs/wormpub/camace_orig/WSXXX -WSXXY/load_data.txt
 
@@ -465,10 +465,11 @@ sub split_databases {
       $wormbase->run_command("mkdir $split_db", $log) && die "Failed to create $split_db dir\n" unless (-e $split_db);
       $wormbase->run_command("mkdir $split_db/database", $log) && die "Failed to create a database dir\n" unless (-e $split_db."/database");
       $wormbase->run_command("cp -r $wormpub/wormbase/wspec $split_db/", $log) && die "Failed to copy the wspec dir\n" unless (-e $split_db."/wspec");
+      $wormbase->run_command("cp -rf $wormpub/wormbase/wspec/models.wrm $split_db/wspec/models.wrm", $log) && die "Failed to force copy the models fileir\n";
       $wormbase->run_command("chmod g+w $split_db/wspec/*", $log);
       $wormbase->run_command("cp -r $wormpub/wormbase/wgf $split_db/", $log) && die "Failed to copy the wgf dir\n" unless (-e $split_db."/wgf");
     }
-    my $command = "y\nquit\n";
+    my $command = "y\nsave\nquit\n";
     print "Opening $split_db for edits\n" if ($verbose);
     open (TACE, "| $tace $split_db -tsuser $tsuser") || die "Couldn't open $split_db\n";
     print TACE $command;
@@ -494,7 +495,7 @@ sub split_databases {
   $log->write_to ("loading curation data into $orig\n");
   print "loading curation data into $orig\n" if ($debug);
   &load_curation_data($orig); #this loads all curation data into $orig (also removes bogus gene predictions)
- 
+  &remove_data_light($orig);  #removes bad datapoints created by the curation data load.
   # Create the rest of the curation databases.
   shift @databases; #remove orig from database array
   $log->write_to ("@databases\n") if ($debug);
@@ -818,6 +819,28 @@ sub remove_data {
   close TACE;
 }
 
+#############################
+#(3d) remove bad data.      #
+#############################
+sub remove_data_light {
+  my $sub_db = shift;
+  my $db_path = $sub_db;
+  $log->write_to ("Removing bad data from $db_path\n");
+  my $command;
+  $command  = "query find All_genes where !method AND !source_exons\n";
+  $command .= "kill\n";
+  $command .= "y\n";
+  $command .= "clear\n";
+  #Save the database.
+  $command .= "save\n";
+  $command .= "quit\n";
+
+  my $tsuser = "remove_data_light";
+  print "Opening $db_path for edits\n" if ($verbose);
+  open (TACE, "| $tace $db_path -tsuser $tsuser") || die "Couldn't open $db_path\n";
+  print TACE $command;
+  close TACE;
+}
 
 ########################################
 # create_public_name_data from geneace #
