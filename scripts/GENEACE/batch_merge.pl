@@ -57,14 +57,16 @@ e.g. perl batch_merge.pl -file merger.txt
 
 =cut
 
-my ($USER, $test, $file, $debug, $load, $old);
+my ($USER, $test, $file, $debug, $load, $old, $ns, $PASS);
 GetOptions(
 	   'user:s'     => \$USER,
+	   'pass:s'     => \$PASS,
 	   'test'       => \$test,
 	   'file:s'     => \$file,
 	   'debug:s'    => \$debug,
 	   'load'       => \$load,
 	   'old'        => \$old,
+	   'ns'         => \$ns,
 	  ) or die;
 
 
@@ -76,13 +78,23 @@ else {$log = Log_files->make_log("NAMEDB:$file");}
 my $DB;
 my $db;
 my $ecount;
+if ($test) {
+    $DB = 'test_wbgene_id;mcs11;3307';
+  } else {
+    $DB = 'wbgene_id;shap;3303';
+}
 my $wormbase = Wormbase->new("-organism" =>$species);
 my $database = "/nfs/wormpub/DATABASES/geneace";
 $log->write_to("Working.........\n-----------------------------------\n\n\n1) killing genes in file [${file}]\n\n");
 $log->write_to("TEST mode is ON!\n\n") if $test;
 
-my $ace = Ace->connect('-path', $database) or $log->log_and_die("cant open $database: $!\n");
+if ($ns) {
+$log->write_to("Contacting NameServer.....\n");
+$db = NameDB_handler->new($DB,$USER,$PASS,'/nfs/WWWdev/SANGER_docs/data/');
+$db->setDomain('Gene');
+}
 
+my $ace = Ace->connect('-path', $database) or $log->log_and_die("cant open $database: $!\n");
 
 my $outdir = $database."/NAMEDB_Files/";
 my $backupsdir = $outdir."BACKUPS/";
@@ -290,8 +302,17 @@ sub merge_gene {
     if ($ok) {
       print ACE $output;
       $count++;
+      if ($ns) {
+	#nameserver merge
+	$log->write_to("NS->merge $livegene $deadgene\n");
+	if (my $ids = $db->merge_genes($livegene, $deadgene)){
+	  $log->write_to("Merge complete, $deadgene is DEAD and has been merged into gene $livegene\n");
+	}
+	else {
+	  $log->write_to("ERROR: Failed to merge $deadgene into $livegene\n");
+	}
+      }
     }
-
   } elsif (!defined($livegene && $deadgene && $user)) {
     $log->write_to("Warning: additional blank line in input file has been ignored\n");
   } else {
