@@ -5,8 +5,8 @@
 # This script has been written to automatically change the Public_name
 # of all NameServerIDs specified in a text file.
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2014-05-07 08:35:36 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2014-08-04 09:56:40 $
 #
 
 use lib $ENV{'CVS_DIR'};
@@ -34,7 +34,8 @@ use Getopt::Long;
   -species   can be used to specify non elegans
   -test      use the test nameserver  <Optional 4 testing>
   -user      username                 <Mandatory>
-  -pass  password                 <Mandatory>
+  -pass      password                 <Mandatory>
+  -cgc       thes also adds the name as a cgc name in the nameserver
 
 e.g. perl pname_update.pl -user blah -pass blah -species elegans -test -file variation_name_data
 
@@ -47,7 +48,7 @@ e.g. perl pname_update.pl -user blah -pass blah -species elegans -test -file var
 my $PASS;
 my $USER;
 my $DOMAIN;
-my ($debug, $test, $store, $species, $file);
+my ($debug, $test, $store, $species, $file,$cgc);
 
 GetOptions (
 	    "file=s"     => \$file,
@@ -58,6 +59,7 @@ GetOptions (
 	    "domain=s"   => \$DOMAIN,
 	    "user:s"	 => \$USER,
 	    "pass:s"	 => \$PASS,
+	    "cgc"        => \$cgc
 	   );
 
 
@@ -97,7 +99,7 @@ while (<DATA>) {
   if ($_ =~/(WB\S+\d{8})\s+(\S+)\s+(\S+)/)	{
     $log->write_to ("\nProcessing $_\n");
     if (&check_name_exists($2)) {
-      &addname($1,$3)
+      &addname($1,$3,$cgc)
     }
     else {
       $log->write_to ("ERROR: ID $1 has a different Public name to that supplied $2\n");
@@ -128,6 +130,12 @@ sub check_name_exists {
 sub addname {
   my $ID = shift;
   my $NEW = shift;
+  my $CGC = shift;
   $db->addName($ID,'Public_name'=>$NEW);
   $log->write_to ("$NEW added to $ID\n");
+  if ($CGC) {
+    $db->addName($ID,'CGC'=>$NEW);
+    $log->write_to ("$NEW also added to $ID as CGC_name\n");
+}
+ 
 }
