@@ -6,7 +6,7 @@
 # 19.02.02 Kerstin Jekosch
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2013-08-16 15:11:12 $
+# Last edited on: $Date: 2014-08-04 14:38:21 $
 
 use strict;
 use Getopt::Long;
@@ -49,9 +49,13 @@ my $test_file = $wormbase->blat."/virtual_objects.".$wormbase->species.".blat.ES
 $log->write_to("Loading BLAT data into $dbdir\n");
 # has the build finished?? script needs to look at ~wormpub/BUILD/autoace/BLAT, if it doesnt exist use current_db/BLAT!!
 if (!-e $test_file){
-  $log->write_to("The build must have finished you are now going to use " .$wormbase->database('current')."/BLAT\n\n");
-  $blat_dir = ($wormbase->database('current')."/BLAT");
-  $acefiles = ($wormbase->database('current')."/acefiles");
+  $blat_dir = ($wormbase->basedir('elegans')."/elegans/BLAT");
+  $acefiles = ($wormbase->basedir('elegans')."/elegans/acefiles");
+  $log->write_to("The build must have finished you are now going to use $blat_dir\n\n");
+  my $test_file2 = $blat_dir."/virtual_objects.".$wormbase->species.".blat.EST.".$wormbase->species.".ace";
+  unless (-e $test_file2) {
+    $log->log_and_die("Could find any BLAT data as $test_file and $test_file2 don't exist....abort\n");
+  }
 }  
 elsif (-e $test_file){
   $log->write_to("The build is still there..... \n\n");
