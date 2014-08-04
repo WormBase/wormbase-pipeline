@@ -19,12 +19,13 @@ use Log_files;
   -species   what species these are for - default = elegans
   -test      use the test nameserver
   -force     bypass CGC name validation check eg to add Cbr-cyp-33E1; use with care!
+  -type      allows you to specify Sequence names to add (defaults to CGC if not speciefied)
 
 e.g. perl batch_addname.pl -u fred -p secret -file genenames.txt -species briggsae
 
 =cut
 
-my ($USER,$PASS, $test, $file, $species, $force);
+my ($USER,$PASS, $test, $file, $species, $force, $type);
 GetOptions(
 	   'user:s'     => \$USER,
 	   'password:s' => \$PASS,
@@ -32,9 +33,15 @@ GetOptions(
 	   'file:s'     => \$file,
 	   'species:s'  => \$species,
 	   'force'      => \$force,
+	   'type:s'     => \$type,
 	  ) or die;
 
 $species = 'elegans' unless $species;
+$type = 'CGC' unless $type;
+
+if (($type ne "CGC") && ($type ne "Sequence")) {
+  die "can't open $file : $!\n$type is not a valid type (CGC/Sequence)";
+}
 
 my $log = Log_files->make_log("NAMEDB:$file", $USER);
 my $DB;
@@ -60,7 +67,7 @@ my $count=0;
 while(<FILE>) {
     eval{
 	my($id,$name) = split;
-	my $success = $db->$method($id,$name,'CGC',$species);
+	my $success = $db->$method($id,$name,$type,$species);
 	my $msg = defined $success ? 'ok' : 'FAILED';
 	$log->write_to("$id\t$name\t$msg\n");
     };
