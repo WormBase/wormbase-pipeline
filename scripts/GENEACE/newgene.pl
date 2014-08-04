@@ -6,8 +6,8 @@
 #
 # simple script for creating new (sequence based) Gene objects 
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2014-05-07 08:35:36 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2014-08-04 14:46:09 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -39,23 +39,25 @@ my $debug;
 my $store;
 my ($USER,$PASS,); # provide your mysql username and password to request new WBGeneIDs
 my $sneak;       # option to store the ID::Gene data in a pseudo .ace format.
+my $outdir;      # specify your own output directory for the files to load.
 
-GetOptions ("input=s"   => \$input,
-            "seq=s"     => \$seq,
-	    "cgc=s"     => \$cgc,
-	    "who=i"     => \$who,
-	    "id=s"      => \$id,
-	    "email"     => \$email,
-	    "load"      => \$load,
-	    "verbose"   => \$verbose,
-	    "test"      => \$test,
-	    "namedb"    => \$update_nameDB,
-	    "species=s" => \$species,
-	    "debug=s"   => \$debug,
-	    "store:s"   => \$store,   #
+GetOptions ("input=s"     => \$input,
+            "seq=s"       => \$seq,
+	    "cgc=s"       => \$cgc,
+	    "who=i"       => \$who,
+	    "id=s"        => \$id,
+	    "email"       => \$email,
+	    "load"        => \$load,
+	    "verbose"     => \$verbose,
+	    "test"        => \$test,
+	    "namedb"      => \$update_nameDB,
+	    "species=s"   => \$species,
+	    "debug=s"     => \$debug,
+	    "store:s"     => \$store,   #
 	    "user:s"      => \$USER,
 	    "password:s"  => \$PASS,
 	    "pseudoace:s" => \$sneak,
+	    "out:s"       => \$outdir,
 	    );
 
 my $wormbase;
@@ -161,8 +163,9 @@ $database = glob("~wormpub/DATABASES/TEST_DATABASES/geneace") if $test;
 my $db = Ace->connect(-path  => $database,
 		      -program =>$tace) || do { $log->write_to("tace Connection failure\n");
 						print "Connection failure: ",Ace->error; die();};
-
-my $outdir = $database."/NAMEDB_Files/";
+unless ($outdir) {
+  $outdir = $database."/NAMEDB_Files/";
+}
 my $backupsdir = $outdir."BACKUPS/";
 my $outname;
 if (defined$id){
