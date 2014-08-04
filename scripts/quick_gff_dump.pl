@@ -5,7 +5,7 @@
 # A script to quickly dump features from a given sequence, allowing the user to specify a method if required
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2014-03-04 15:19:31 $
+# Last edited on: $Date: 2014-08-04 14:51:59 $
 #====================
 
 use strict;
@@ -85,7 +85,7 @@ The clone/chromosome/scaffnew you want data for.
 
 =over 4
 
-=item -version
+=item -version <2 or 3>
 
 standard gff2 or gff3
 
@@ -121,7 +121,7 @@ database you are using.
 
 =over 4
 
-=item quick_gff_dump.pl -database ~/wormpub/ovolvulus_curation -sequence OVOC_MITOCHONDRIAL -method curated -version 3 -file my_mito_output.gff3
+=item quick_gff_dump.pl -database /nfs/wormpub/ovolvulus_curation -sequence OVOC_MITOCHONDRIAL -method curated -version 3 -file my_mito_output.gff3
 
 Dumps the curated CDS features from the Mitochondrial genome of O. volvulus
 
