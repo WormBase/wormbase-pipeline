@@ -4,8 +4,8 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2014-06-04 09:56:03 $
-# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2014-08-04 14:49:05 $
+# Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
 
@@ -18,7 +18,7 @@ use Getopt::Long;
 use Log_files;
 use Storable;
 
-my ($verbose, $db_path, $basic, $test1, $debug, $store, $test,$build,$species,$incomplete,$nogenome);
+my ($verbose, $db_path, $basic, $test1, $debug, $store, $test,$build,$species,$incomplete,$nogenome,$nosmall);
 
 GetOptions ("verbose"    => \$verbose, # prints screen output and checks the CDS class instead of All_genes.
 	    "database=s" => \$db_path, # Path to the database you want to check.
@@ -31,6 +31,7 @@ GetOptions ("verbose"    => \$verbose, # prints screen output and checks the CDS
 	    "species:s"   => \$species,  # used to hold briggsae/brenneri/remanei for some checks.
 	    "incomplete" => \$incomplete, # used to avoid start/end not found warnings
 	    "nogenome"  => \$nogenome, # for testing annotations when you don't have the genome loaded.
+	    "nosmall"   => \$nosmall,  # don't warn about small predictions //not utilised yet
 	   );
 
 my $wormbase;
@@ -199,7 +200,7 @@ sub main_gene_checks {
       }
     }
     unless ($gene_model_name =~ /$cds_regex/) {
-      push(@error1,"warning $gene_model_name invalid\n") if (($method_test !~ /history|tRNA|Transposon/) && ($gene_model_name !~ /\S+.t\d+/));
+      push(@error1,"warning $gene_model_name invalid\n") if (($method_test !~ /history|tRNA|Transposon|miRNA_primary_transcript/) && ($gene_model_name !~ /\S+.t\d+/));
     }
     my @exon_coord1 = sort by_number ($gene_model->get('Source_exons',1));
     my @exon_coord2 = sort by_number ($gene_model->get('Source_exons',2));
