@@ -45,8 +45,8 @@ if ($labs){
   my @laboratories = $db->fetch(-query => 'find Laboratory *;CGC');
   my $outf = IO::File->new(">$dir/Laboratory.txt")||die(@!);
   foreach my $l (sort @laboratories){
-     my $rep = $l->Representative?$l->Representative->Standard_name : '';
-     printf $outf "\"%s\"\t\"%s\"\t\"%s\"\t\"%s\"\n",$l,$l->Allele_designation,$rep,$l->Mail;
+     # my $rep = $l->Representative?$l->Representative->Standard_name : '';
+     printf $outf "\"%s\"\t\"%s\"\t\"%s\"\t\"%s\"\n",$l,$l->Allele_designation,join(',',map {$_->Standard_name} $l->Representative),$l->Mail;
   }
   $outf->close;
   diff('Laboratory');
