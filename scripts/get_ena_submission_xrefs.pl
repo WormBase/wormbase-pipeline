@@ -49,6 +49,8 @@ my ($ggenus, $gspecies) = $wb->full_name =~ /^(\S+)\s+(\S+)/;
 $ncbi_tax_id = $wb->ncbi_tax_id;
 $svacefile = $wb->acefiles . "/EBI_sequence_xrefs.ace" if not defined $svacefile;
 $pidacefile = $wb->acefiles . "/EBI_pid_xrefs.ace" if not defined $pidacefile;
+$gidacefile = $wb->acefiles . "/EBI_gene_xrefs.ace" if not defined $gidacefile;
+
 $pid_table_file = $wb->acefiles . "/EBI_protein_ids.txt" if not defined $pid_table_file;
 $sv_table_file = $wb->acefiles . "/EBI_sequence_versions.txt" if not defined $sv_table_file;
 $gid_table_file = $wb->acefiles . "/EBI_gene_ids.txt" if not defined $gid_table_file;
