@@ -102,7 +102,7 @@ while (<FILE>) {
     #Captured string ($4) - brugia
     $createdcount++;
     $newname = $1;
-    $user = $2;
+    $user = "WBPerson$2";
     $newgene = $3;
     $species = $4;
     &create_gene;
