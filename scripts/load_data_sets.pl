@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-12-04 09:10:22 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2014-08-06 10:34:07 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -95,6 +95,8 @@ sub parse_misc_elegans_files {
                        $wormbase->misc_static.'/eggNOG.ace' 	                => 'eggNOG_groups',
 		      );
 
+  map {$files_to_load{$_} => 'tier 3 stubs'} glob($wormbase->misc_static.'/TIER3STUBS/*ace.gz');
+  
   $log->write_to("Loading files to ".$wormbase->autoace."\n==================================\n");
   foreach my $file (sort keys %files_to_load) {
     $log->write_to("\tloading $file -tsuser $files_to_load{$file}\n");
