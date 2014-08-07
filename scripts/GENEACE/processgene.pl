@@ -22,29 +22,35 @@ my @acefile_values;
 my $i;
 
 # read in input file
-open ( INFILE, "<$genenamefile" ) or die ( "Couldn't open file
-$genenamefile: $!\n" );
-
+open ( INFILE, "<$genenamefile" ) or die ( "Couldn't open file $genenamefile: $!\n" );
 # load $genenamefile into array line by line
-@acefile_values = <INFILE>;
+while(<INFILE>){
+  chomp;
+  push @acefile_values, $_;
+}
 close INFILE;
 
 # open output file
 open (OUTFILE,  ">$output");
-
 for $i ( 0 .. $#acefile_values ) {
   # get first line of acefile values array
-  #print $acefile_values[ $i ];
   # split first line of array into scalars
-  ( $WBGene, $genename, $person_id ) = split( / / , $acefile_values[ $i ]);
+  ( $WBGene, $genename, $person_id ) = split( /\s+/ , $acefile_values[ $i ]);
   # print these values out.
-  print ( "WBGene $WBGene, Gene name $genename, Person $person_id" );
+  #print ( "WBGene $WBGene, Gene name $genename, Person $person_id" );
 
   # check format of input file (WBGeneID, genename, person_evidence)
   $WBGene =~ ( m/WBGene\w+/ ) or die;
   $genename =~ ( m/\w+\-\d+/ ) or die;
-  $person_id =~ ( m/WBPerson\d+/ ) or die;
-  chomp $person_id;
+  if (defined $person_id) {
+    unless ( $person_id =~ ( m/WBPerson\d+/ )) {
+      print "bad or Person ID \"$person_id\"";
+      undef $person_id;
+    }
+  }
+  else {
+    print "No person defined for $acefile_values[ $i ]\n";
+  }
   
   # Add WBGeneID to file
   print ( OUTFILE "Gene : $WBGene\n" );
@@ -56,8 +62,12 @@ for $i ( 0 .. $#acefile_values ) {
   print ( OUTFILE "History Version_change 2 now WBPerson2970 CGC_name $genename\n");
   
   # Add CGC_name and person_evidence
-  print ( OUTFILE "CGC_name $genename Person_evidence $person_id\n");
-  
+  unless (defined $person_id) {
+    print ( OUTFILE "CGC_name $genename\n");
+  }
+  else {
+    print ( OUTFILE "CGC_name $genename Person_evidence $person_id\n");
+  }
   # Add Public_name
   print (OUTFILE "Public_name $genename\n");
   
