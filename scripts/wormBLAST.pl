@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2014-04-22 09:24:40 $
+# Last edited on: $Date: 2014-08-07 13:59:09 $
 #
 # it depends on:
 #    wormpep + history
@@ -34,8 +34,10 @@ use YAML;
 
 my ( $species, $update_dna, $clean_blasts, $update_analysis, $update_genes);
 my ( $run_brig, $copy, $WS_version, $cleanup);
-my ( $debug, $test, $store, $wormbase, $log, $WP_version,$yfile_name, $no_blats, $no_genblast);
+my ( $debug, $test, $store, $wormbase, $log, $WP_version,$yfile_name);
 my $errors = 0;    # for tracking global error - needs to be initialised to 0
+my $do_blats = 0;
+my $do_genblasts = 1;
 
 GetOptions(
   'update_dna'      => \$update_dna,
@@ -50,8 +52,9 @@ GetOptions(
   'clean_blasts'    => \$clean_blasts,
   'copy'            => \$copy,
   'yfile=s'         => \$yfile_name,
-  'noblat'          => \$no_blats,
-  'nogenblast'      => \$no_genblast,
+  'blats!'          => \$do_blats,
+  'genblasts!'      => \$do_genblasts,
+
 	  )
   || die('cant parse the command line parameter');
 
@@ -82,12 +85,20 @@ else {
 			   );
 }
 
+
 $species ||= $wormbase->species;
 # establish log file. Can't use make_build_log if the BUILD/autoace directory has been moved to DATABASES
 if (-e $wormbase->autoace){
    $log = Log_files->make_build_log($wormbase);
 }else{
    $log = Log_files->make_log("/tmp/wormBLAST.$$",$wormbase->debug);
+}
+
+#
+# Never do genblasts for C.ele, O.vol and B.mal
+#
+if ($species eq 'elegans' or $species eq 'ovolvulus' or $species eq 'brugia') {
+  $do_genblasts = 0;
 }
 
 $WS_version ||= $wormbase->get_wormbase_version;
@@ -482,10 +493,10 @@ sub update_dna {
   $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/blastp_rule.conf", $log );
   $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/protein_rule.conf", $log );
 
-  if (not $no_blats) {
+  if ($do_blats) {
     $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/blat_rule.conf", $log );
   }
-  if ($species ne 'elegans' and not $no_genblast) {
+  if ($do_genblasts) {
     $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/genblast_rule.conf", $log );
   }
 
@@ -744,12 +755,12 @@ sub update_analysis {
                            $config->{database}->{host},
                            $config->{database}->{port},
                            $config->{database}->{dbname});
-  if (not $no_blats) {
+  if ($do_blats) {
     $wormbase->run_script( "BLAST_scripts/ensembl_blat.pl $db_options -species $species -version $WS_version", $log );    
   }  
 
   # update genBlastG stuff - not done for elegans as it projects elegans proteins onto a non-elegans genome
-  if ($species ne 'elegans' and not $no_genblast) {
+  if ($do_genblasts) {
     $wormbase->run_script( "BLAST_scripts/ensembl_genblast.pl $db_options -species $species -version $WS_version", $log );
   }
 }
