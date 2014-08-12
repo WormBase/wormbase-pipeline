@@ -4,7 +4,7 @@
 use IO::File;
 use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
 
-my %cds2wbgeneid = %{slurp('~mh6/project/DATABASES/WS238/COMMON_DATA/cds2wbgene_id.dat')};
+my %cds2wbgeneid = %{slurp('~mh6/ebi_home/project/DATABASES/WS238/COMMON_DATA/cds2wbgene_id.dat')};
 
 my %worms = (
      'Caenorhabditis elegans' => 6239,
@@ -20,7 +20,7 @@ my $comparadb= new Bio::EnsEMBL::Compara::DBSQL::DBAdaptor(
     -port     => 4401,
     -user     => 'treefam_ro',
     -dbname   => 'treefam_production_9_69',
-    -pass     => 'treefam',
+    -pass     => 'treefam_ro',
 );
 
 my $memberAdaptor=$comparadb->get_adaptor('Member');
@@ -41,7 +41,8 @@ foreach my $taxId(values %worms){
         print "processing: ",$member->stable_id , "\n" if $ENV{DEBUG};
         foreach my $homology ( @{$homologies} , @$paralogies ) {
           foreach my $ma ( @{ $homology->get_all_Member_Attribute } ) {
-            my ( $me, $at ) = @{$ma};
+            my ( $m, $at ) = @{$ma};
+            my $me = $m->gene_member(); 
             print "-",$me->stable_id,"\n" if $ENV{DEBUG};
             if ($taxID2tierII{$me->genome_db->taxon_id}){
                my $realID = $cds2wbgeneid{$me->stable_id};
