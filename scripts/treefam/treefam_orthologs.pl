@@ -41,11 +41,13 @@ foreach my $taxId(values %worms){
         print "processing: ",$member->stable_id , "\n" if $ENV{DEBUG};
         foreach my $homology ( @{$homologies} , @$paralogies ) {
           foreach my $ma ( @{ $homology->get_all_Member_Attribute } ) {
-            my ( $m, $at ) = @{$ma};
-            my $me = $m->gene_member(); 
+            my ( $me, $at ) = @{$ma};
+
             print "-",$me->stable_id,"\n" if $ENV{DEBUG};
             if ($taxID2tierII{$me->genome_db->taxon_id}){
                my $realID = $cds2wbgeneid{$me->stable_id};
+               $me->stable_id=~/(.*)\.\d/;
+               $realID||=$cds2wbgeneid{$1};
                next if $realID eq $cds2wbgeneid{$member->stable_id};
                next unless $realID;
                if ($me->genome_db->taxon_id == $taxId){
