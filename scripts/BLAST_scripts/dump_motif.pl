@@ -4,8 +4,8 @@
 #
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2014-07-16 14:16:13 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2014-08-18 08:58:32 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -160,6 +160,7 @@ foreach my $prot (sort {$a cmp $b} keys %motifs) {
     }
 }
 
+print ACE "\n";
 while(my($k,$v)= each %panther){
    print ACE "Motif : \"$k\"\n";
    print ACE "Database hmmpanther PantherID \"$v\"\n\n"
