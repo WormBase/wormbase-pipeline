@@ -127,8 +127,8 @@ foreach my $gdb1 (@genome_dbs) {
         ($m2, $m1) = ($m1, $m2);
       }        
       
-      my $gid1 = $cds2wbgene{$m1->stable_id}?$cds2wbgene{$m1->stable_id}:$m1->stable_id;
-      my $gid2 = $cds2wbgene{$m2->stable_id}?$cds2wbgene{$m2->stable_id}:$m2->stable_id;
+      my $gid1 = $cds2wbgene{$m1->stable_id}?$cds2wbgene{$m1->stable_id}:$m1->gene_member->stable_id;
+      my $gid2 = $cds2wbgene{$m2->stable_id}?$cds2wbgene{$m2->stable_id}:$m2->gene_member->stable_id;
 
       $gid1 = $gdb1->taxon_id().':'.$gid1 if not exists $core_species{$gdb1->name};
       $gid2 = $gdb2->taxon_id().':'.$gid2 if not exists $core_species{$gdb2->name};
