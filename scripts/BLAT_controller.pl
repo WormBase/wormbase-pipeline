@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-12-03 15:34:05 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2014-08-21 11:54:06 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -153,7 +153,7 @@ if( $mask ) {
         }
         
         my $sfile = "$source_path/$mt";
-        my $tfile = "$source_path/${mt}.masked";
+        my $tfile = "$target_path/${mt}.masked";
         
         if (not -e $sfile) {
           $log->error("Could not find file $sfile in BLAT preparation\n");
