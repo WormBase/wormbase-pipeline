@@ -4,8 +4,8 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2014-08-04 14:49:05 $
-# Last updated by: $Author: pad $
+# Last updated on: $Date: 2014-08-26 09:25:13 $
+# Last updated by: $Author: gw3 $
 #
 # see pod documentation at end of file for more information about this script
 
@@ -123,14 +123,17 @@ else {
       #my @no_lab = $db->fetch (-query => "FIND $qclass where !From_laboratory");
       #splice @bad_genes,0,0,@no_lab;
     }
+    my @no_CDS = $db->fetch (-query => "FIND CDS where !CDS");
+    splice @bad_genes,0,0,@no_CDS;
+
 
     my %h = map {($_,1)} @bad_genes;
     my @bad_genesuniq = keys %h;
 
     $Bcount = @bad_genesuniq;
     if ($Bcount ne '0') {
-      $log->write_to("Error: $Bcount models have a quicktest issue (No method/Source_exons/S_parent/Species), please check\n");
-      print "Error: $Bcount models have a quicktest issue (No method/Source_exons/S_parent/Species), please check\n" if ($debug);
+      $log->write_to("Error: $Bcount models have a quicktest issue (No method/Source_exons/S_parent/Species/CDS), please check\n");
+      print "Error: $Bcount models have a quicktest issue (No method/Source_exons/S_parent/Species/CDS), please check\n" if ($debug);
       foreach $bad_genes(@bad_genesuniq) {
 	$log->write_to("Error: $bad_genes has one of the above issues\n"); #if ($verbose);
 	print "Error: $bad_genes has one of the above issues\n" if ($debug);
