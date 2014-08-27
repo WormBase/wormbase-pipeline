@@ -120,8 +120,8 @@ if ($run_clustal) {
       
       my @bsub_options = (-o => "$cmd_out",
                           -J => $job_name, 
-                          -M => 3700,
-                          -R => "select[mem>=3700] rusage[mem=3700]");
+                          -M => 5900,
+                          -R => "select[mem>=5900] rusage[mem=5900]");
       
       my $cmd = "clustal_runner.pl" 
           . " -batchid $batch_idx"
