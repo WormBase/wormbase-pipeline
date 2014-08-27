@@ -5,7 +5,7 @@
 # Overloads PCR_product mapping lines with extra info (Lab of clone etc)
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-07-22 15:20:23 $      
+# Last updated on: $Date: 2014-08-27 21:50:10 $      
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -15,17 +15,18 @@ use Getopt::Long;
 use strict;
 use Ace;
 
-my ($debug,$test,$species,$store,$wormbase);
+my ($debug,$test,$species,$store,$wormbase,$database);
 my ($infile,$outfile,$gff3, $changed_lines);
 
 GetOptions(
-  'debug=s'   => \$debug,
-  'test'      => \$test,
-  'species:s' => \$species,
-  'store:s'   => \$store,
-  'infile:s'  => \$infile,
-  'outfile:s' => \$outfile,
-  'gff3'      => \$gff3,
+  'debug=s'    => \$debug,
+  'test'       => \$test,
+  'species:s'  => \$species,
+  'store:s'    => \$store,
+  'infile:s'   => \$infile,
+  'outfile:s'  => \$outfile,
+  'gff3'       => \$gff3,
+  'database:s' => \$database,
 )||die(@!);
 
 if ($store) {
@@ -37,6 +38,7 @@ if ($store) {
 			     );
 }
 
+$database = $wormbase->autoace if not defined $database;
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
@@ -88,7 +90,7 @@ sub get_amplified_info {
   my %amplified;
 
   my $def_file = &write_amplified_def_file();
-  my $table = $wormbase->table_maker_query($wormbase->autoace, $def_file);
+  my $table = $wormbase->table_maker_query($database, $def_file);
   while(<$table>) {
     s/\"//g; 
     next if (/acedb/ or /\/\//);
@@ -108,7 +110,7 @@ sub get_clone_info {
   my %clone_acc;
 
   my $def_file = &write_clone_def_file();
-  my $table = $wormbase->table_maker_query($wormbase->autoace, $def_file);
+  my $table = $wormbase->table_maker_query($database, $def_file);
   while(<$table>) {
     s/\"//g; 
     next if (/acedb/ or /\/\//);

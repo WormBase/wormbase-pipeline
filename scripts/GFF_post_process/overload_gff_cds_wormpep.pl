@@ -5,7 +5,7 @@
 # Overloads the CDS and Transcript lines with extra info (mostly wormpep)
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2014-06-27 11:20:33 $
+# Last updated on: $Date: 2014-08-27 21:50:10 $
 
 use strict;                                      
 use lib $ENV{CVS_DIR};
@@ -15,7 +15,7 @@ use Carp;
 use Log_files;
 use Storable;
 
-my ($debug, $test, $store, $wormbase, $species);
+my ($debug, $test, $store, $wormbase, $species, $database);
 my ($infile, $outfile, $gff3, $changed_lines, %already_done_cds);
 
 GetOptions (
@@ -26,6 +26,7 @@ GetOptions (
   "infile:s"   => \$infile,
   "outfile:s"  => \$outfile,
   "gff3"       => \$gff3,
+  "database:s" => \$database,
     );
 
 
@@ -37,6 +38,9 @@ if ( $store ) {
                              -organism => $species
 			     );
 }
+
+$database = $wormbase->autoace if not defined $database;
+my $species_full = $wormbase->full_name;
 my $log = Log_files->make_build_log($wormbase);
 
 if (not defined $infile or not defined $outfile) { 
@@ -139,7 +143,7 @@ exit(0);
 ##############################################################
 
 sub get_data {
-  my $db = Ace->connect('-path' => $wormbase->autoace) 
+  my $db = Ace->connect('-path' => $database) 
       or $log->log_and_die("cant open Ace connection to db\n".Ace->error."\n");
 
   my %cds2cgc = $wormbase->FetchData('cds2cgc');
@@ -152,7 +156,7 @@ sub get_data {
 
   $log->write_to("Fetching CDS info\n");
 
-  my $query = "find CDS where Corresponding_protein AND Method = \"curated\"";
+  my $query = "find CDS where Corresponding_protein AND Method = \"curated\" AND Species = \"$species_full\"";
   my $cds = $db->fetch_many('-query' => $query);
   while(my $cds = $cds->next) {
     my @coding_transcripts = $cds->Corresponding_transcript;

@@ -5,7 +5,7 @@
 # Overloads operon lines with Gene info
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-11-06 15:40:06 $
+# Last updated on: $Date: 2014-08-27 21:50:10 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -15,7 +15,7 @@ use Getopt::Long;
 use strict;
 use Ace;
 
-my ($debug,$test,$species,$store,$wormbase);
+my ($debug,$test,$species,$store,$wormbase,$database);
 my ($gff3,$infile,$outfile, $changed_lines);
 
 GetOptions(
@@ -26,6 +26,7 @@ GetOptions(
   'infile:s'      => \$infile,
   'outfile:s'     => \$outfile,
   'gff3'          => \$gff3,
+  'database:s'    => \$database,
     );
 
 if ($store) {
@@ -37,7 +38,7 @@ if ($store) {
 			     );
 }
 
-# establish log file.
+$database = $wormbase->autoace if not defined $database;
 my $log = Log_files->make_build_log($wormbase);
 
 if (not defined $infile or not defined $outfile) { 
@@ -86,7 +87,7 @@ exit(0);
 sub get_operon_data {
   
   my %operon_genes;
-  my $db = Ace->connect(-path => $wormbase->autoace);
+  my $db = Ace->connect(-path => $database);
   my $cursor = $db->fetch_many(-query => 'Find Operon where Canonical_parent AND Contains_gene');
   while (my $operon = $cursor->next){
     foreach my $gene ($operon->Contains_gene) {

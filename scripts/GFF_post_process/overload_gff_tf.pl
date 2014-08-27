@@ -5,7 +5,7 @@
 # overloads GFF TF_binding_site lines with info about the TF itself
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-07-22 15:19:07 $      
+# Last updated on: $Date: 2014-08-27 21:50:10 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -20,7 +20,7 @@ use strict;
 # variables and command-line options # 
 ######################################
 
-my ( $debug, $test, $verbose, $store, $wormbase, $species );
+my ( $debug, $test, $verbose, $store, $wormbase, $species, $database );
 my ( $infile, $outfile, $gff3, %TF, $changed_lines);
 
 GetOptions (
@@ -31,6 +31,7 @@ GetOptions (
   "gff3"       => \$gff3,
   "infile:s"   => \$infile,
   "outfile:s"  => \$outfile,
+  "database:s" => \$database,
     );
 
 if ( $store ) {
@@ -42,7 +43,7 @@ if ( $store ) {
 			     );
 }
 
-my $database = $wormbase->autoace;
+$database = $wormbase->autoace if not defined $database;
 $species = $wormbase->species;
 
 my $log = Log_files->make_build_log($wormbase);

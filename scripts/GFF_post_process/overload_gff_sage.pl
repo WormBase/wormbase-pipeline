@@ -5,7 +5,7 @@
 # Overloads the SAGE_tag GFF lines with additional info
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-07-22 15:37:33 $      
+# Last updated on: $Date: 2014-08-27 21:50:10 $      
 #
 
 use lib $ENV{CVS_DIR};
@@ -16,7 +16,7 @@ use Wormbase;
 use Log_files;
 use Getopt::Long;
 
-my ($help, $debug, $test, $store, $wormbase );
+my ($help, $debug, $test, $store, $wormbase, $database );
 my ($gff3, $infile, $outfile, $changed_lines);
 
 GetOptions (
@@ -26,6 +26,7 @@ GetOptions (
   "gff3"         => \$gff3,
   "infile:s"     => \$infile,
   "outfile:s"    => \$outfile,
+  "database:s"   => \$database,
     );
 
 if ( $store ) {
@@ -36,6 +37,7 @@ if ( $store ) {
 			     );
 }
 
+$database = $wormbase->autoace if not defined $database;
 my $log = Log_files->make_build_log($wormbase);
 if (not defined $infile or not defined $outfile) { 
   $log->log_and_die("You must define -infile and -outfile\n");
@@ -112,7 +114,7 @@ exit(0);
 sub markup {
   my ($hashr) = @_;
 
-  my $db = Ace->connect( -path => $wormbase->autoace );
+  my $db = Ace->connect( -path => $database );
   
   foreach my $tag (keys %$hashr) {
     my $r = $db->fetch(SAGE_tag => $tag);

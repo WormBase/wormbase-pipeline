@@ -5,7 +5,7 @@
 # Adds species to each non-native BLAT match
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-07-22 14:49:24 $
+# Last updated on: $Date: 2014-08-27 21:50:10 $
 
 use strict;
 use lib $ENV{CVS_DIR};
@@ -19,17 +19,18 @@ use Storable;
 # variables and command-line options #
 ######################################
 
-my (  $debug, $test, $store, $wormbase, $species );
+my (  $debug, $test, $store, $wormbase, $species, $database );
 my ( $gff3, $infile, $outfile, $changed_lines );
 
 GetOptions(
-    'debug=s'   => \$debug,
-    'test'      => \$test,
-    'store:s'   => \$store,
-    'species:s' => \$species,
-    'infile:s'  => \$infile,
-    'outfile:s' => \$outfile,
-    'gff3'      => \$gff3,
+    'debug=s'    => \$debug,
+    'test'       => \$test,
+    'store:s'    => \$store,
+    'species:s'  => \$species,
+    'infile:s'   => \$infile,
+    'outfile:s'  => \$outfile,
+    'database:s' => \$database, 
+    'gff3'       => \$gff3,
 );
 
 if ($store) {
@@ -42,6 +43,8 @@ else {
 	-organism => $species,
     );
 }
+
+$database = $wormbase->autoace if not defined $database;
 
 my $log = Log_files->make_build_log($wormbase);
 
@@ -113,7 +116,6 @@ exit(0);
 #####################################
 sub get_species_data {
 
-  my $ace_dir = $wormbase->autoace;
   my $tace = $wormbase->tace;
 
   ###################################
@@ -127,7 +129,7 @@ sub get_species_data {
   my (%species, $id, $db );
   
   print "Finding BLAT_WASHU data\n";
-  open( TACE, "echo '$cmd1' | $tace $ace_dir |" );
+  open( TACE, "echo '$cmd1' | $tace $database |" );
   while (<TACE>) {
     chomp;
     next if (/acedb\>/);
@@ -142,7 +144,7 @@ sub get_species_data {
   close TACE;
 
   print "Finding BLAT_NEMBASE data\n";
-  open( TACE, "echo '$cmd2' | $tace $ace_dir |" );
+  open( TACE, "echo '$cmd2' | $tace $database |" );
   while (<TACE>) {
     chomp;
     next if (/acedb\>/);
@@ -157,7 +159,7 @@ sub get_species_data {
   close TACE;
   
   print "Finding BLAT_NEMATODE data\n";
-  open( TACE, "echo '$cmd3' | $tace $ace_dir |" );
+  open( TACE, "echo '$cmd3' | $tace $database |" );
   while (<TACE>) {
     chomp;
     next if (/acedb\>/);

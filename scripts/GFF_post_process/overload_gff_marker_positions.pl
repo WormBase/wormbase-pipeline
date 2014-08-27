@@ -5,7 +5,7 @@
 # Adds interpolated map positions and other information to gene and allele lines
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2014-01-13 13:29:54 $
+# Last updated on: $Date: 2014-08-27 21:50:10 $
 
 
 use strict;                                      
@@ -17,17 +17,18 @@ use Storable;
 use Ace;
 use File::Copy;
 
-my ($help, $debug, $test, $store, $wormbase, $species);
+my ($help, $debug, $test, $store, $wormbase, $species, $database);
 my ( $gff3, $infile, $outfile, $changed_lines);
 
 GetOptions (
-  "debug=s"   => \$debug,
-  "test"      => \$test,
-  "store:s"   => \$store,
-  "species:s" => \$species,
-  "gff3"      => \$gff3,
-  "infile:s"  => \$infile,
-  "outfile:s" => \$outfile,
+  "debug=s"    => \$debug,
+  "test"       => \$test,
+  "store:s"    => \$store,
+  "species:s"  => \$species,
+  "gff3"       => \$gff3,
+  "infile:s"   => \$infile,
+  "outfile:s"  => \$outfile,
+  "database:s" => \$database,
     );
 
 if ( $store ) {
@@ -39,7 +40,7 @@ if ( $store ) {
 			     );
 }
 
-# establish log file.
+$database = $wormbase->autoace if not defined $database;
 my $log = Log_files->make_build_log($wormbase);
 
 if (not defined $infile or not defined $outfile) { 
@@ -102,12 +103,12 @@ exit(0);
 
 #######################
 sub get_map_data {
-  my $db = Ace->connect('-path' => $wormbase->autoace) 
+  my $db = Ace->connect('-path' => $database) 
       or $log->log_and_die("cant open Ace connection to db\n".Ace->error."\n");
   
   $log->write_to("Getting interpolated map position for variations\n");
   
-  my $tmfh = $wormbase->table_maker_query($wormbase->autoace, &write_interpolated_map_position_query());
+  my $tmfh = $wormbase->table_maker_query($database, &write_interpolated_map_position_query());
   while (<$tmfh>) {
     chomp;
     s/\"//g; 

@@ -5,7 +5,7 @@
 # Overloads mass_spec_genome lines with extra info (peptide match etc)
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2013-07-22 15:15:15 $      
+# Last updated on: $Date: 2014-08-27 21:50:10 $      
 
 use strict;                                      
 use lib $ENV{CVS_DIR};
@@ -15,7 +15,7 @@ use Carp;
 use Log_files;
 use Storable;
 
-my ($help, $debug, $test, $store, $wormbase);
+my ($help, $debug, $test, $store, $wormbase, $database);
 my ( $gff3,$infile,$outfile,$changed_lines);
 
 GetOptions (
@@ -25,6 +25,7 @@ GetOptions (
   "gff3"       => \$gff3,
   "infile:s"   => \$infile,
   "outfile:s"  => \$outfile,
+  "database:s" => \$database,
 	    );
 
 if ( $store ) {
@@ -34,6 +35,8 @@ if ( $store ) {
                              -test    => $test,
 			     );
 }
+
+$database = $wormbase->autoace if not defined $database;
 
 my $log = Log_files->make_build_log($wormbase);
 
@@ -47,7 +50,7 @@ my $tace = $wormbase->tace;
 my $matches = &get_protein_match_data();
 my $protein_history_aref = &get_protein_history();   
 
-my $db = Ace->connect (-path => $wormbase->autoace, 
+my $db = Ace->connect (-path => $database, 
                        -program => $tace) || die "cannot connect to database at $wormbase->database('current')\n";
 
 open(my $gff_in_fh, $infile) or $log->log_and_die("Could not open $infile for reading\n");
@@ -130,7 +133,7 @@ exit(0);
 ##############################################################
 
 sub get_protein_match_data {
-  my $ace_dir = $wormbase->autoace;
+  my $ace_dir = $database;
   my $tace    = $wormbase->tace;
 
   my $cmd1 = "Query Find Mass_spec_peptide\nshow -a\nquit";

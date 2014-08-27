@@ -6,7 +6,7 @@
 # and supplementing the "raw" GFF dumped from Ace with additional attributes
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2014-01-06 16:06:11 $
+# Last updated on: $Date: 2014-08-27 21:50:10 $
 #
 # Usage GFF_post_process [-options]
 
@@ -28,7 +28,7 @@ use Log_files;
 ##################################################
 # Script variables and command-line options      #
 ##################################################
-my ($debug, $test, $verbose, $store, $wormbase, $gff3, $species);
+my ($debug, $test, $verbose, $store, $wormbase, $gff3, $species, $database);
 my ($working_dir, $force);
 
 my ($all, 
@@ -86,6 +86,7 @@ GetOptions (
   "verbose"     => \$verbose,
   "store:s"     => \$store,
   "species:s"   => \$species,
+  "database:s"  => \$database,
     );
 
 if ( $store ) {
@@ -334,6 +335,7 @@ sub run_munging_script {
 
   my $cmd = "$script -infile $processed_gff_file -outfile $outfile";
   $cmd .= " -gff3" if $gff3;
+  $cmd .= " -database $database" if defined $database;
 
   my $fail = $wormbase->run_script($cmd, $log);
 
