@@ -3,7 +3,7 @@
 # release_letter.pl                            
 # 
 # Last updated by: $Author: gw3 $               
-# Last updated on: $Date: 2014-08-29 10:12:11 $
+# Last updated on: $Date: 2014-08-29 13:02:52 $
 
 # Generates a release letter at the end of build.
 #
@@ -271,7 +271,7 @@ if( $opt_l) {
   printf $rlfh "Quick installation guide for UNIX/Linux systems\n";
   printf $rlfh "-----------------------------------------------\n\n";
   printf $rlfh "1. Create a new directory to contain your copy of WormBase,\n\te.g. /users/yourname/wormbase\n\n";
-  printf $rlfh "2. Unpack and untar all of the database.*.tar.gz files into\n\tthis directory. You will need approximately 2-3 Gb of disk space.\n\n";
+  printf $rlfh "2. Unpack and untar all of the database.*.tar.gz files into\n\tthis directory. You will need approximately 50-60 Gb of disk space.\n\n";
   printf $rlfh "3. Obtain and install a suitable acedb binary for your system\n\t(available from www.acedb.org).\n\n";
   printf $rlfh "4. Use the acedb 'xace' program to open your database, e.g.\n\ttype 'xace /users/yourname/wormbase' at the command prompt.\n\n";
   printf $rlfh "5. See the acedb website for more information about acedb and\n\tusing xace.\n\n";
