@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2014-08-26 09:25:13 $
+# Last updated on: $Date: 2014-08-29 15:21:47 $
 # Last updated by: $Author: gw3 $
 #
 # see pod documentation at end of file for more information about this script
@@ -322,7 +322,7 @@ sub main_gene_checks {
 	push(@error3, "ERROR: $gene_model [$gene_model_name] requires an Isoform\n") unless (defined $Isoform);
       }
       if ($gene_model_name =~  (/S+\d$/)) {
-	push(@error3, "ERROR: $gene_model [$gene_model_name] requires an Isoform\n") if (defined $Isoform);
+	push(@error3, "ERROR: $gene_model [$gene_model_name] has Isoform tag set but no isoform letter in sequence name\n") if (defined $Isoform);
       }
     }
 
