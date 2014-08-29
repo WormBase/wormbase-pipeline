@@ -2,8 +2,8 @@
 #
 # release_letter.pl                            
 # 
-# Last updated by: $Author: klh $               
-# Last updated on: $Date: 2014-06-19 10:12:08 $
+# Last updated by: $Author: gw3 $               
+# Last updated on: $Date: 2014-08-29 10:12:11 $
 
 # Generates a release letter at the end of build.
 #
@@ -187,8 +187,8 @@ if( $opt_l) {
   printf $rlfh "acedb DIR                -  Everything needed to generate a local copy of the The Primary database\n";
   printf $rlfh "     - database.WS$ver.*.tar.gz   - compressed acedb database for new release\n";
   printf $rlfh "     - models.wrm.WS$ver          - the latest database schema (also in above database files)\n";
-  printf $rlfh "     - WS$ver-WS$old_ver.dbcomp   - log file reporting difference from last release\n";
-  printf $rlfh "     - *Non_C_elegans_BLASTX/          - This directory contains the blastx data for non-elegans species\n";
+  printf $rlfh "     - WS$ver-WS$old_ver.dbcomp        - log file reporting difference from last release\n";
+  printf $rlfh "     - *Non_C_elegans_BLASTX/     - This directory contains the blastx data for non-elegans species\n";
   printf $rlfh "                                                    (reduces the size of the main database)\n";
   printf $rlfh "COMPARATIVE_ANALYSIS DIR - comparative analysis files\n";
   printf $rlfh "     - compara.WS$ver.tar.bz2     - gene-tree and alignment GFF files\n";
@@ -196,7 +196,7 @@ if( $opt_l) {
   printf $rlfh "ONTOLOGY DIR             - gene_associations, obo files for (phenotype GO anatomy) and associated association files\n";
   printf $rlfh "\n\n";
   printf $rlfh "Release notes on the web:\n";
-  printf  $rlfh "-------------------------\n";
+  printf $rlfh "-------------------------\n";
   printf $rlfh "http://www.wormbase.org/about/release_schedule\n\n\n";
   
   printf $rlfh "-=====================================================================================-\n";
