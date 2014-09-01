@@ -3,7 +3,7 @@
 # map_operons.pl
 
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2013-03-14 14:44:11 $
+# Last edited on: $Date: 2014-09-01 09:41:12 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -86,7 +86,7 @@ open (OUT,">$acefile") or $log->log_and_die("cant open $acefile : $!\n");
 my $db = Ace->connect(-path => $wb->autoace) or $log->log_and_die("cant connect to ".$wb->autoace." :".Ace->error."\n");
 my @operons = $db->fetch('Operon' => $opprefix.'*');
 foreach my $operon(@operons) {
-  next if ($operon->Method eq "history");
+  next if ($operon->Method eq "history_operon");
   my @genes = map($_->name, $operon->Contains_gene);
   my ($op_start, $op_end, $op_strand, $op_chrom);
   foreach my $gene (@genes) {
