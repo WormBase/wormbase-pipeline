@@ -22,7 +22,7 @@
 #(TF)                             Transcription_factor UNIQUE ?Transcription_factor XREF Binding_site 
 #(Caltech)                        Associated_with_expression_pattern         ?Expr_pattern XREF Associated_feature #Evidence
 #(date tagged remark)             Remark ?Text #Evidence
-#(enhancer, silencer, promoter, TF_binding_site) Method UNIQUE ?Method
+#(enhancer, silencer, promoter, TF_binding_site, binding_site) Method UNIQUE ?Method
 #
 #Feature : ""
 #Sequence 
@@ -43,6 +43,7 @@
 #        "SO:0005836" // regulatory_region
 #        "SO:0000167" // promoter 
 #        "SO:0000334" // nc_conserved_region
+#        "SO:0000409" // binding_site
 #Defined_by_paper 
 #Public_name 
 
@@ -51,7 +52,7 @@
 # by Gary Williams                     
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-07-04 13:27:31 $      
+# Last updated on: $Date: 2014-09-02 13:00:37 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -134,6 +135,7 @@ my %so_term = (
 	       regulatory_region   => "SO:0005836", # A region of sequence that is involved in the control of a biological process.
 	       promoter            => "SO:0000167", # A regulatory_region composed of the TSS(s) and binding sites for TF_complexes of the basal transcription machinery.
 	       nc_conserved_region => "SO:0000334", # Non-coding region of sequence similarity by descent from a common ancestor.
+	       binding_site        => "SO:0000409", # A biological_region of sequence that, in the molecule, interacts selectively and non-covalently with other molecules.
 	      );
 
 print "get transcription factors\n";
@@ -326,7 +328,7 @@ sub get_method {
 
   my $candidate = "enhancer";
   my $method;
-  my @methods = ('enhancer', 'silencer', 'TF_binding_site', 'regulatory_region', 'nc_conserved_region');
+  my @methods = ('enhancer', 'silencer', 'TF_binding_site', 'regulatory_region', 'nc_conserved_region', 'binding_site');
 
   do {
     print "Method [$candidate] (",join ', ',@methods,") > ";
@@ -453,7 +455,9 @@ sub get_desc {
 
   my $candidate;
   if ($method eq 'TF_binding_site') {
-    $candidate = "This is a $TF_name binding site for $gene_name.";
+    $candidate = "This is a $TF_name transcription factor binding site for $gene_name.";
+  } elsif ($method eq 'binding_site') {
+    $candidate = "This is the '$public_name' binding site for $gene_name.";
   } elsif ($method eq 'enhancer') {
     $candidate = "This is the '$public_name' enhancer region for $gene_name.";
   } elsif ($method eq 'silencer') {
