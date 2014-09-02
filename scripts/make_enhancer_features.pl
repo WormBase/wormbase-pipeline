@@ -52,7 +52,7 @@
 # by Gary Williams                     
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-09-02 13:00:37 $      
+# Last updated on: $Date: 2014-09-02 14:09:14 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -151,7 +151,7 @@ my ($chromosome, $gene_start, $gene_sense) = get_gene_start($gene_id, $gene_name
 
 
 
-open (ACE, "> $output.ace") || die "Can't open $output.ace\n";
+open (ACE, "> $output") || die "Can't open $output\n";
 
 while (1) {
   print "\n\nNext Feature.\n\n";
@@ -539,7 +539,7 @@ sub get_TFs {
 
 
   #load TF details from table maker query
-  my $table = $wormbase->table_maker_query($wormbase->autoace, &write_def_file);
+  my $table = $wormbase->table_maker_query($currentdb, &write_def_file);
   while(<$table>) {
     s/\"//g; #"
     next if (/acedb/ or /\/\//);
