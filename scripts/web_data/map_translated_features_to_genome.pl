@@ -76,18 +76,24 @@ else {
 }
 
 $acedb ||= $wormbase->autoace;
-$dbh = Ace->connect(-path => $acedb );
 $species = $wormbase->species;
 
 my $log = Log_files->make_build_log($wormbase);
 
+$log->write_to("Connecting to database...\n");
+$dbh = Ace->connect(-path => $acedb );
+
+
+
 my $reg = "Bio::EnsEMBL::Registry";
+$log->write_to("Loading registry...\n");
 $reg->load_all($ens_regconf);
 my $ens_tadap = $reg->get_adaptor($species, 'Core', 'Transcript'); 
 
 my ($iterator, @test_genes);
 if (@testgene) {
   foreach my $gid (@testgene) {
+    $log->write_to("Fetching $gid\n");
     my ($g) = $dbh->fetch(-query => 'Find Gene WHERE Sequence_name = "' .$gid .'"');
     push @test_genes, $g;
   }
@@ -110,7 +116,6 @@ if ($out_file) {
     open $outfh, ">$out_file" or $log->log_and_die("Could not open $out_file for writing\n");
   }
 }
-
 
 while (my $gene = &get_next_gene) {
   my (%seen, $id);
@@ -248,24 +253,24 @@ sub generate_gff {
         # For GFF3, represent as a single split feature
         # 
         $group =  "ID=$motif_id";
-        $full_group = "$group;cds=$cds;type=$type;range=$aarange;exons=$exons;protein=$protein";
+        $full_group = "$group;cds=$cds;predictiontype=$type;range=$aarange;exons=$exons;protein=$protein";
         if ($desc) {
           $desc =~ s/[\;]/\%3B/g;
           $desc =~ s/[\=]/\%2C/g;
           $desc =~ s/[\,]/\%3D/g;
-          $full_group .= qq{;description=$desc};
+          $full_group .= qq{;Note=$desc};
         }
         my ($first, @rest) = sort { $a->start <=> $b->start } @segs; 
         print_gff($this_out_fh, $refseq,GFF3_SOURCE,GFF3_METHOD,$first->start,$first->end,$score,$strand,PHASE,$full_group);
         foreach my $seg (@rest) {
-          print_gff($this_out_fh, $refseq,GFF3_SOURCE,GFF3_METHOD,$first->start,$first->end,$score,$strand,PHASE,$group);
+          print_gff($this_out_fh, $refseq,GFF3_SOURCE,GFF3_METHOD,$seg->start,$seg->end,$score,$strand,PHASE,$group);
         }
       } else {
         $group = qq(Motif "$motif_name");
         $full_group = join(" ; ", 
                            $group,
                            qq{Note "CDS=$cds"},
-                           qq{Note "Type=$type"}, 
+                           qq{Note "Predictiontype=$type"}, 
                            qq{Note "Range=$aarange"},
                            qq{Note "Exons=$exons"},
                            qq{Note "Protein=$protein"});
