@@ -25,7 +25,7 @@ use constant TOP_METHOD   => 'Motif';
 
 # for GFF3, we will not have a span and parts, but single split feature
 use constant GFF3_SOURCE  => 'translated_feature';
-use constant GFF3_METHOD  => 'sequence_motif'; # not ideal, but a SO term
+use constant GFF3_METHOD  => 'polypeptide_motif'; # not ideal, but a SO term
 
 use constant OUT_FILE_SUFFIX => 'proteinmotifs';
 
