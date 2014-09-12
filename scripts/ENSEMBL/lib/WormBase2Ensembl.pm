@@ -1635,6 +1635,7 @@ sub _create_gene {
   $gene->analysis($analysis);
   $gene->biotype( $biotype ) if defined $biotype;
   $gene->stable_id($name);
+  $gene->source("WormBase");
   foreach my $transcript (@$transcripts) {
     $transcript->analysis($analysis) if not $transcript->analysis;
     $gene->add_Transcript($transcript);
@@ -1787,7 +1788,8 @@ sub _create_pseudo_transcripts {
     }
     $transcript->stable_id($transcript_id);
     $transcript->biotype($biotype) if defined $biotype;
-    
+    $transcript->source("WormBase");
+
     if ( !$genes{$gene_name} ) {
       $genes{$gene_name} = [];
       push( @{ $genes{$gene_name} }, $transcript );
