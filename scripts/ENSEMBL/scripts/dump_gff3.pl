@@ -11,21 +11,17 @@ use IO::File;
 use Domain2Interpro;
 use Getopt::Long;
 
-use LSF RaiseError => 0, PrintError => 1, PrintOutput => 1;
-use LSF::JobManager;
-
-
 my ($dbname, $dbuser, $dbpass, $dbport, $dbhost, $debug,
     @dump_slice, $num_jobs, $out_file, $slim, $out_fh);
 
 my $dumpdir = ".";
 
 GetOptions(
-  'dbhost=s'     => \$dbhost,
+  'host=s'     => \$dbhost,
+  'port=s'     => \$dbport,
+  'user=s'     => \$dbuser,
+  'pass=s'     => \$dbpass,
   'dbname=s'     => \$dbname,
-  'dbuser=s'     => \$dbuser,
-  'dbpass=s'     => \$dbpass,
-  'dbport=s'     => \$dbport,
   'slice=s@'     => \@dump_slice,
   'submit=i'     => \$num_jobs,
   'dumpdir=s'    => \$dumpdir,
@@ -204,7 +200,6 @@ while( my $slice = shift @slices) {
     $debug and print STDERR " Fetching and processing protein alignments...\n";
 
     my @logics = &get_feature_logics($ensdb, "protein_align_feature", $slice);
-    print "LOGICS = @logics\n";
 
     foreach my $logic (@logics) {
       my $ana = $ensdb->get_AnalysisAdaptor->fetch_by_logic_name($logic);
@@ -340,6 +335,8 @@ close($out_fh) if defined $out_file;
 
 sub submit_and_collate {
 
+  eval "use LSF::JobManager";
+  
   if (not defined $out_file) {
     $out_file = "$dumpdir/collated_dump.gff3";
   }
@@ -456,7 +453,6 @@ sub get_info {
     # get all protein_features on the transcript
     my $features=$transcript->translation->get_all_ProteinFeatures();
     # get logic_name and hit_id
-    
     my %plain_features;
     my $rest_features;
     map {
@@ -476,14 +472,7 @@ sub get_info {
     } @$features;
     my @interpros=$mapper->get_mapping(\%plain_features);
     map {$info.=sprintf( "position:%d-%d method:%s accession:%s description:%s %%0A", $_->[1], $_->[2],
-                         'InterPro', $_->[0] , $_->[7]) if $_->[1]} @interpros;
-    
-    #while ( my $pfeature = shift @$rest_features ) {
-    #  my $logic_name = $pfeature->analysis()->logic_name();
-    #  my $p_value = (defined $pfeature->p_value) ? $pfeature->p_value : 0;
-    #  $info.=sprintf( "position:%d-%d %s method:%s accession:%s %%0A", $pfeature->start(), $pfeature->end(), 
-    #                  $p_value,$logic_name, $pfeature->display_id());
-    #}
+                         'InterPro', $_->[0] , $_->[7]) if $_->[1]} @interpros;    
   }
   return $info;
 }
