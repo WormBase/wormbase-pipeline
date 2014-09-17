@@ -3,7 +3,7 @@
 // This file is read only when starting a new database or when you select 
 // "Read Models" or "Add Update File" from the main menus.
 // 
-// Explination about class/objectcount limits
+// Explanation about class/object count limits
 // -----------------------------------------------------------------------------
 // Every single object specified in this file is represented in acedb by a key, 
 // this key is an unsigned int (32 bits), the top 8 bits are the class and the 
@@ -14,7 +14,7 @@
 //
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2014-07-17 23:45:31 $
+// Last edited on: $Date: 2014-09-17 08:41:37 $
 //
 //
 // Additional things to consider. If classes are added or new data in the ?Gene class
@@ -312,6 +312,7 @@
                                          Detailed_description ?Text #Evidence            // Erich [020322 krb]
                                          Concise_description ?Text #Evidence             // Erich [020523 krb]
                                          Other_description ?Text #Evidence               // Carol [050202 dl]
+                                         Automated_description ?Text #Evidence           // Ranjana [140917 pad]
                                          Sequence_features ?Text #Evidence               // Carol [050202 dl]
                                          Functional_pathway ?Text #Evidence              // Carol [050202 dl]
                                          Functional_physical_interaction ?Text #Evidence // Carol [050202 dl]
@@ -947,6 +948,8 @@
 		     Locus UNIQUE ?Locus XREF Multi_point UNIQUE Int #Multi_counts
 		     Allele UNIQUE ?Variation XREF Multi_point UNIQUE Int #Multi_counts
 		     Rearrangement UNIQUE ?Rearrangement XREF Multi_point UNIQUE Int #Multi_counts
+		     Transgene UNIQUE ?Transgene XREF Multi_point UNIQUE Int #Multi_counts
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //			      Evidence hash
@@ -1398,7 +1401,7 @@
 ?Sequence_collection Origin Evidence #Evidence
 			    Name ?Text // name that the author gave this collection
 			    Species UNIQUE ?Species
-			    Strain UNIQUE ?Strain
+			    Strain ?Strain
 			    Laboratory ?Laboratory
 			    DB_info Database ?Database ?Database_field ?Text
 		     History First_WS_release Int // first WormBase release this assembly was used
@@ -1546,7 +1549,9 @@
                             RNA_pseudogene #Evidence    //Pseudogene of a ncRNA loci
                             Transposon_pseudogene #Evidence //Pseudogene of Transposon origins
 	        Attributes Transcribed #Evidence
-			   Fragment #Evidence 
+			   Fragment #Evidence
+			   SubType UNIQUE processed_pseudogene #Evidence
+					  unprocessed_pseudogene #Evidence 
 		Properties Isoform #Evidence
                 Visible Gene UNIQUE ?Gene XREF Corresponding_pseudogene         // when Pseudogene is live
                         Gene_history UNIQUE ?Gene XREF Corresponding_pseudogene_history // when Pseudogene is dead
@@ -2059,6 +2064,7 @@
 		   Microarray ?Microarray_experiment
 		   Tiling_array ?Analysis
 		   EPIC ?Text 
+		   Cis-regulatory_element Text
 	      Expression_cluster ?Expression_cluster XREF Expr_pattern //added by Wen.for localizome
 	      Pattern ?Text
 	      Picture ?Picture XREF Expr_pattern
@@ -2084,8 +2090,10 @@
 //Qualifer hash will be used for Expr_pattern curation to specify the reliability of data.
                                                                                                  
 #Qualifier Certain Text
-           Uncertain Text    //For faint or variable expression
-           Partial Text      //For expression of unidentified cell in a cell group
+           Uncertain Text             //For faint or variable expression
+           Partial Text               //For expression of unidentified cell in a cell group
+           Anatomy_term ?Anatomy_term //combines life stage with anatomy term in expr pattern annotation
+           Life_stage  ?Life_stage    //combines life stage with anatomy term in expr pattern annotation
                                                                                                  
                                                                                                  
 
@@ -2456,6 +2464,7 @@
 				    Integrated 
 				    Map ?Map  #Map_position  //needed for transgenes with no granular mapping, e.g., just mapped to a LG
 				    Map_evidence #Evidence
+				    Mapping_data  Multi_point ?Multi_pt_data
 				    Phenotype ?Phenotype XREF Transgene #Phenotype_info
 				    Phenotype_not_observed ?Phenotype XREF Not_in_Transgene #Phenotype_info  
 		Used_for Transgene_derivation ?Transgene XREF Integrated_from                                                   
@@ -3192,7 +3201,7 @@
                       Allele_designation UNIQUE Text
                       Alleles ?Variation
                       Gene_classes ?Gene_class XREF Designating_laboratory
-                      Former_gene_classes ?Gene_class XREF Former_designating_laboratory
+                      Former_gene_classes ?Gene_class
 	      Staff   Registered_lab_members ?Person XREF Laboratory   // for people with WormBase Person IDs
         	      Past_lab_members ?Person XREF Old_laboratory     // for anyone who has left the field, or the circle of life
 	      Remark ?Text #Evidence
