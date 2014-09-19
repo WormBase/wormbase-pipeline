@@ -14,7 +14,7 @@
 //
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2014-09-17 09:24:01 $
+// Last edited on: $Date: 2014-09-19 15:19:04 $
 //
 //
 // Additional things to consider. If classes are added or new data in the ?Gene class
@@ -2064,7 +2064,7 @@
 		   Microarray ?Microarray_experiment
 		   Tiling_array ?Analysis
 		   EPIC ?Text 
-		   Cis-regulatory_element Text
+		   Cis_regulatory_element Text
 	      Expression_cluster ?Expression_cluster XREF Expr_pattern //added by Wen.for localizome
 	      Pattern ?Text
 	      Picture ?Picture XREF Expr_pattern
@@ -3594,4 +3594,5 @@
 // WS243
 // WS244
 // WS245
+// WS246
 // 
