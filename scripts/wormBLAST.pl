@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2014-08-07 13:59:09 $
+# Last edited on: $Date: 2014-09-19 08:54:56 $
 #
 # it depends on:
 #    wormpep + history
@@ -545,6 +545,8 @@ sub update_proteins {
   $raw_dbh->do('DELETE FROM meta WHERE meta_key = "genebuild.start_date"')  or die $raw_dbh->errstr;
   
   $raw_dbh->do('DELETE FROM xref')  or die $raw_dbh->errstr;
+  $raw_dbh->do('DELETE FROM object_xref')  or die $raw_dbh->errstr;
+  $raw_dbh->do('DELETE FROM ontology_xref')  or die $raw_dbh->errstr;
 
   # load new ones
   
