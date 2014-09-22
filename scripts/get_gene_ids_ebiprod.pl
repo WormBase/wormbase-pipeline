@@ -5,11 +5,12 @@ use strict;
 use Getopt::Long;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 
-my ($org_id, $ena_cred, $verbose); 
+my ($org_id, $bioproject_id, $ena_cred, $verbose); 
 
 &GetOptions(
   'enacred=s'       => \$ena_cred,
   'orgid=s'         => \$org_id,
+  'bioprojectid=s'  => \$bioproject_id,
   'verbose'         => \$verbose,
     );
 
@@ -27,8 +28,9 @@ if (
 
 my $ena_dbh = &get_ena_dbh($ena_cred);
 
-# locus_tag = 84
-# standard name (wormbase transcript/CDS/pseudogene name) = 23
+# /locus_tag = 84
+# /standard name (wormbase transcript/CDS/pseudogene name) = 23
+# /gene = 12
 my $ena_sql =  "SELECT d.primaryacc#, sf.featid, fq.fqualid, fq.text"
     . " FROM dbentry d, cv_dataclass dc,  bioseq b, seqfeature sf, feature_qualifiers fq"
     . " WHERE d.primaryacc# IN ("
@@ -36,10 +38,9 @@ my $ena_sql =  "SELECT d.primaryacc#, sf.featid, fq.fqualid, fq.text"
     . "   FROM dbentry" 
     . "   JOIN sourcefeature USING (bioseqid)"
     . "   WHERE organism = $org_id"
-    . "   AND project# = 1"
+    . "   AND study_id = '$bioproject_id'"
     . "   AND statusid = 4)"
     . " AND d.dataclass = dc.dataclass"
-    . " AND dc.description = 'Standard'"
     . " AND d.bioseqid = b.seqid"
     . " AND b.seqid = sf.bioseqid"
     . " AND sf.featid  = fq.featid"

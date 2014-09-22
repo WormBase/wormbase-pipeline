@@ -5,11 +5,12 @@ use strict;
 use Getopt::Long;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 
-my ($org_id, $ena_cred, $verbose); 
+my ($org_id, $bioproject_id, $ena_cred, $verbose); 
 
 &GetOptions(
   'enacred=s'       => \$ena_cred,
   'orgid=s'         => \$org_id,
+  'bioprojectid=s'  => \$bioproject_id, 
   'verbose'         => \$verbose,
     );
 
@@ -33,7 +34,7 @@ my $ena_sql =  "SELECT d.primaryacc#, b.version"
     . "   FROM dbentry" 
     . "   JOIN sourcefeature USING (bioseqid)"
     . "   WHERE organism = $org_id"
-    . "   AND project# = 1"
+    . "   AND study_id = '$bioproject_id'"
     . "   AND statusid = 4)"
     . " AND d.bioseqid = b.seqid";
     

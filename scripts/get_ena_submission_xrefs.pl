@@ -9,7 +9,8 @@ use lib $ENV{CVS_DIR};
 use Wormbase;
 use Log_files;
 
-my ($debug, $test, $store, $species, $wb, $svacefile, $pidacefile, $noload, $ncbi_tax_id, $pid_table_file,$sv_table_file, $gid_table_file, $gidacefile,
+my ($debug, $test, $store, $species, $wb, 
+    $svacefile, $pidacefile, $noload, $ncbi_tax_id, $bioproject_id, $pid_table_file,$sv_table_file, $gid_table_file, $gidacefile,
     %cds_xrefs, %pep_xrefs, $generate_tables, $sequence_xrefs, $protein_xrefs, $gene_xrefs);
 
 
@@ -47,6 +48,7 @@ my $log = Log_files->make_build_log($wb);
 my ($ggenus, $gspecies) = $wb->full_name =~ /^(\S+)\s+(\S+)/;
 
 $ncbi_tax_id = $wb->ncbi_tax_id;
+$bioproject_id = $wb->ncbi_bioproject;
 $svacefile = $wb->acefiles . "/EBI_sequence_xrefs.ace" if not defined $svacefile;
 $pidacefile = $wb->acefiles . "/EBI_pid_xrefs.ace" if not defined $pidacefile;
 $gidacefile = $wb->acefiles . "/EBI_gene_xrefs.ace" if not defined $gidacefile;
@@ -221,7 +223,8 @@ sub lookup_from_ebi_production_dbs {
         . " $ena_perl  $ENV{CVS_DIR}/get_protein_ids_ebiprod.pl"
         . "  -enacred $ena_cred" 
         . "  -uniprotcred $uni_cred"
-        . "  -orgid $ncbi_tax_id";
+        . "  -orgid $ncbi_tax_id"
+        . "  -bioprojectid $bioproject_id";
     
     system("$cmd > $output_file") 
         and $log->log_and_die("Could not successfully run '$cmd'\n");
@@ -231,7 +234,8 @@ sub lookup_from_ebi_production_dbs {
     my $cmd =  "source $ena_env &&"
         . " $ena_perl  $ENV{CVS_DIR}/get_sequence_versions_ebiprod.pl"
         . "  -enacred $ena_cred"
-        . "  -orgid $ncbi_tax_id";
+        . "  -orgid $ncbi_tax_id"
+        . "  -bioprojectid $bioproject_id";
     
     system("$cmd > $output_file") 
         and $log->log_and_die("Could not successfully run '$cmd'\n");
@@ -240,7 +244,8 @@ sub lookup_from_ebi_production_dbs {
     my $cmd =  "source $ena_env &&"
         . " $ena_perl  $ENV{CVS_DIR}/get_gene_ids_ebiprod.pl"
         . "  -enacred $ena_cred"
-        . "  -orgid $ncbi_tax_id";
+        . "  -orgid $ncbi_tax_id"
+        . "  -bioprojectid $bioproject_id";
     
     system("$cmd > $output_file") 
         and $log->log_and_die("Could not successfully run '$cmd'\n");

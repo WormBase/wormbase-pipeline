@@ -6,10 +6,11 @@ use Getopt::Long;
 
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 
-my ($org_id, $ena_cred, $uniprot_cred, $verbose); 
+my ($org_id, $ena_cred, $uniprot_cred, $bioproject_id, $verbose); 
 
 &GetOptions(
   'orgid=s'         => \$org_id,
+  'bioprojectid=s'  => \$bioproject_id, 
   'enacred=s'       => \$ena_cred,
   'uniprotcred=s'   => \$uniprot_cred,
   'verbose'         => \$verbose,
@@ -37,6 +38,7 @@ my $ena_dbh = &get_ena_dbh($ena_cred);
 # standard name = 23
 # gene = 12
 # Get most info for each PID with a /locus_tag + featID was gene (#12)
+# statusid = 4 => public/active records only (i.e. not supressed)
 my $ena_sql =  "SELECT d.primaryacc#, b.version, c.PROTEIN_ACC, c.version, c.chksum, fq.text, c.featid, d.project#, d.statusid"
     . " FROM cdsfeature c, dbentry d, bioseq b, feature_qualifiers fq"
     . " WHERE d.primaryacc# IN ("
@@ -44,7 +46,7 @@ my $ena_sql =  "SELECT d.primaryacc#, b.version, c.PROTEIN_ACC, c.version, c.chk
     . "   FROM dbentry" 
     . "   JOIN sourcefeature USING (bioseqid)"
     . "   WHERE organism = $org_id"
-    . "   AND project# = 1"
+    . "   AND study_id = '$bioproject_id'"
     . "   AND statusid = 4)"
     . " AND c.bioseqid = d.bioseqid"
     . " AND d.bioseqid = b.seqid"
