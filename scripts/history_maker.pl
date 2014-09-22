@@ -32,6 +32,7 @@ my $species;
 my $display_by_clones;
 my $addevidence;
 my $ncRNA;
+my $nonRNA;
 my $cds_standard;
 my $brugia;
 my $cleangene;
@@ -41,6 +42,7 @@ my $v;
 GetOptions (
 	    "addevidence"       => \$addevidence,
 	    "ncrna"             => \$ncRNA,
+	    "non"               => \$nonRNA,
 	    "anomaly"           => \$anomaly,
 	    "blast=s"           => \$blast,
 	    "blesser"           => \$blesser,
@@ -172,6 +174,7 @@ my $form_gene2;                 # gene variable from blesser form
 my $form_gene3;                 # gene variable from evidence form
 my $form_gene4;                 # gene variable from clean_gene form
 my $form_rna;                   # gene variable from ncRNA work form
+my $form_nonRNA;                # gene variable from non_coding_transcript form
 my $clone_form;                 # cds variable for clone form
 my $clone_form_sug;             # cds variable for clone form
 my $anomaly_clone;		# clone variable from anomaly form
@@ -226,6 +229,7 @@ $gui_height += 110 if $blesser;
 $gui_height += 110 if $clone;
 $gui_height += 130 if $addevidence;
 $gui_height += 50 if ($cleangene or $ncRNA);
+$gui_height += 80 if ($nonRNA);
 $gui_height += 300 if $anomaly;
 $main_gui->geometry("${gui_width}x$gui_height");
 
@@ -585,6 +589,68 @@ if ($ncRNA) {
 
 
 
+################ start add non_coding_transcript tags ##############
+
+my $nonrnawork;
+if ($nonRNA) {
+  my $nonrna_data = $RightLabel->Frame( -background => "#DF013A",
+				       -height     => "400",
+				       -width      => "600",
+				       -label      => "Populate standard non_coding_transcript  tags",
+				       -relief     => "raised",
+				       -borderwidth => 5,
+				       )->pack( -pady => "5",
+						-fill => "x"
+						);
+  # Reference database label
+  my $db_lbl = $nonrna_data->Label( -text => "Source: $cdatabase",
+				      -background => '#DF013A',
+				      -foreground => 'whitesmoke'
+				    )->pack( -pady => '3'
+					   );
+
+  # CDS entry widgets
+  my $nonRNA_lbl = $nonrna_data->Label( -text => ' RNA ID',
+				       -background => '#DF013A', #was LightGreen
+				       -foreground => 'whitesmoke'
+				       )->pack(-pady => '6',
+					       -padx => '6',
+					       -side => 'left',
+					       );
+
+  $nonrnawork = $nonrna_data->Entry( -width => '10',
+				       -background => 'whitesmoke',
+				       -textvariable=> \$form_nonRNA,
+				       )->pack(-side => 'left',
+					       -pady => '5',
+					       -padx => '5'
+					       );
+
+  # make Return and Enter submit 
+  $nonrnawork->bind("<Return>",[ \&add_nonrna_data]);
+  $nonrnawork->bind("<KP_Enter>",[ \&add_nonrna_data]);
+  
+
+  # Add Evidence button
+  my $data = $nonrna_data->Button( -text => "Populate Tags",
+				     -command => [\&add_nonrna_data]
+				     )->pack(-side => 'left',
+					     -pady => '2',
+					     -padx => '6',
+					     -anchor => "w"
+					     );
+  # Clear CDS entry button
+  my $clear_nonRNAdata = $nonrna_data->Button( -text => "Clear",
+					  -command => [\&clear_nonRNAdata]
+					  )->pack(-side => 'right',
+						  -pady => '2',
+						  -padx => '6',
+						  -anchor => "e"
+						  );
+}
+
+######### end add non_coding_transcript tags ##############
+
 
 
 ###### clean gene
@@ -920,7 +986,7 @@ $user = &check_user unless $user;
 # initial aceperl connection to databases
 my $db = Ace->connect(-path => $rdatabase) unless $design;
 my $cdb;
-if ($cleangene || $ncRNA){$cdb = Ace->connect(-path => $cdatabase) unless $design;}
+if ($cleangene || $ncRNA || $nonRNA){$cdb = Ace->connect(-path => $cdatabase) unless $design;}
 
 # create GUI
 MainLoop();
@@ -1006,6 +1072,36 @@ sub add_ncrna_data
       &clear_data;
     }
   }
+
+###################
+sub add_nonrna_data
+  {
+    my ($day, $mon, $yr)  = (localtime)[3,4,5];
+    my $date = sprintf("%02d%02d%02d",$yr-100, $mon+1, $day);
+    my $refgene = $form_nonRNA;
+    return unless $refgene;
+    &generate_message("CHECK", "Please save your database before clicking OK\n");
+    $cdb->close();
+    $cdb = Ace->connect(-path => $cdatabase);
+    my $obj = $cdb->fetch(Transcript => "$refgene");
+    return &error_warning("Invalid Transcript","$refgene is not a valid Transcript name") unless ($obj);
+    my $method = $obj->Method->name;
+    my $output = $session_file."non_coding_RNA".$refgene;
+
+    open (RNA,">$output") or die "cant open $output\n";
+    # add the Evidence to the CDS
+    print RNA "\nTranscript : \"$refgene\"\nTranscript ncRNA\nBrief_identification \"non-coding Transcript Isoform\"\nDB_remark \"C. elegans probable non-coding RNA\"\nMethod non_coding_transcript\nRemark \"[$date $user] Created this non_coding_transcript Isoform based on data being available that cannot be incorporated into a coding Isoform.\" Curator_confirmed $person\n\n";
+    close RNA;
+    my $return_status = system("xremote -remote 'parse $output'");
+    if ( ( $return_status >> 8 ) != 0 ) {
+      &error_warning("WARNING", "X11 connection appears to be lost");
+    } 
+    else {
+      &confirm_message("Success", "Added Tags to $form_nonRNA");
+      &clear_nonRNAdata;
+    }
+  }
+
 
 
 ################
@@ -1306,6 +1402,10 @@ sub clear_evi
 sub clear_data
   {
     $rnawork->delete(0,'end');
+  }
+sub clear_nonRNAdata
+  {
+    $nonrnawork->delete(0,'end');
   }
 sub clear_gen
   {
