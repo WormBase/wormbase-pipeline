@@ -553,8 +553,8 @@ sub reset_probably_matching_cds
 =cut
 
 sub list_of_matched_genes {
-  my $self = shift;
-  
+  my ($self, $cds2gene) = @_;
+
   my %genes;
   #print "Checking probably_matching_cds for ",$self->name,"\n";
   my @matches = @{$self->probably_matching_cds};
@@ -562,15 +562,12 @@ sub list_of_matched_genes {
   foreach my $match (@matches ) {
     my $gene;
     my $cds = $match->[0];
-    # +++ should really use Species->seq_name_regex here to get the sequence-name of the gene
-    # briggsae
-    if ($cds->name =~ /^CBG/) { # briggsae
-      ($gene) = ($cds->name =~ /^(^CBG\d{5})/);
-    } else { # assume elegans
-      ($gene) = ($cds->name =~ /^(^[A-Z0-9_cel]+\.[1-9]\d?\d?)/);
+
+    if (exists $cds2gene->{$cds->name}) {
+      $genes{$cds2gene->{$cds->name}} = 1;
     }
-    $genes{$gene} = 1;
   }
+
   return keys %genes;
 }
 

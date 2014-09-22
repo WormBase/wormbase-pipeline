@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-10-08 12:47:19 $
+# Last updated on: $Date: 2014-09-22 15:58:09 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -382,7 +382,7 @@ foreach my $chrom ( @chromosomes ) {
       }
     }
     # now check how many genes the cDNA overlaps - we only want those that overlap one
-    my @matching_genes = $cdna->list_of_matched_genes;
+    my @matching_genes = $cdna->list_of_matched_genes(\%cds2gene);
     if (scalar(@matching_genes) > 1 and $cdna->coverage < $COVERAGE_THRESHOLD) { 
       if ($verbose) {
         $log->write_to("TB: $round : cDNA " . 
@@ -443,7 +443,7 @@ foreach my $chrom ( @chromosomes ) {
     # CDS in a gene that matches the same number of CDS introns with
     # no mismatches
 
-    my @matching_genes = $cdna->list_of_matched_genes;
+    my @matching_genes = $cdna->list_of_matched_genes(\%cds2gene);
     if (scalar(@matching_genes) == 1) { 
       my @best_cds = &get_best_CDS_matches($cdna); # get those CDSs for this cDNA that have the most introns matching
       foreach my $cds (@best_cds) {
@@ -495,7 +495,7 @@ foreach my $chrom ( @chromosomes ) {
       }
     }
     # now check how many genes the cDNA overlaps - we only want those that overlap one
-    my @matching_genes = $cdna->list_of_matched_genes; 
+    my @matching_genes = $cdna->list_of_matched_genes(\%cds2gene); 
     if (scalar(@matching_genes) == 1) { # just one matching gene
       foreach my $cds_match (@{$cdna->probably_matching_cds}) {
 	my $cds = $cds_match->[0];
