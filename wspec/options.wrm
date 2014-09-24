@@ -127,6 +127,7 @@ _VPhenotype	   -V
 _VRNAi             -V
 _VSK_map	   -V
 _VTransgene        -V
+_VConstruct        -V
 
 // microarray related
 
