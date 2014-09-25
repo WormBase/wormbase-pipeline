@@ -5,7 +5,7 @@
 # Overloads Variation lines with extra info (consequence etc)
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2014-06-30 10:31:08 $      
+# Last updated on: $Date: 2014-09-25 09:23:29 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -117,7 +117,7 @@ while (<$gff_in_fh>) {
         push @new_els, ['Insertion', $insert];
       }
     }
-    
+
     if ($current_els[2] eq 'sequence_alteration') {
       # general term used when set contains a mixture of substitutions and indels.
       # Try to make it more specific here
@@ -139,10 +139,14 @@ while (<$gff_in_fh>) {
           } else {
             $new_term = 'substitution';
           }
+        } elsif ($tp eq 'Tandem_duplication') {
+          $new_term = 'tandem_duplication';
         }
       } elsif (scalar(@types) > 1) {
         if (grep { $_ eq 'Tandem_duplication' } @types) {
-          $current_els[2] = "tandem_duplication";
+          # some tandem duplications are assoiated with micro-insertions/deletions at the flanks, 
+          # so will have multiple Type_of_mutation. We still want to classify them as tandem_duplications
+          $new_term = "tandem_duplication";
         } else {
           # more than one type, so just put complex_substitution
           $new_term = "complex_substitution";
