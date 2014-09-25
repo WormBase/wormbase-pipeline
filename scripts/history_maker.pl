@@ -1090,7 +1090,7 @@ sub add_nonrna_data
 
     open (RNA,">$output") or die "cant open $output\n";
     # add the Evidence to the CDS
-    print RNA "\nTranscript : \"$refgene\"\nTranscript ncRNA\nBrief_identification \"non-coding Transcript Isoform\"\nDB_remark \"C. elegans probable non-coding RNA\"\nMethod non_coding_transcript\nRemark \"[$date $user] Created this non_coding_transcript Isoform based on data being available that cannot be incorporated into a coding Isoform.\" Curator_confirmed $person\n\n";
+    print RNA "\nTranscript : \"$refgene\"\nTranscript ncRNA\nBrief_identification \"non-coding Transcript Isoform\"\nDB_remark \"C. elegans probable non-coding RNA\"\nMethod non_coding_transcript\nIsoform Curator_confirmed $person\nRemark \"[$date $user] Created this non_coding_transcript Isoform based on data being available that cannot be incorporated into a coding Isoform.\" Curator_confirmed $person\n\n";
     close RNA;
     my $return_status = system("xremote -remote 'parse $output'");
     if ( ( $return_status >> 8 ) != 0 ) {
