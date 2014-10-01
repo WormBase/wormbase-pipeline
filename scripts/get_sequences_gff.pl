@@ -14,8 +14,8 @@
 # script map_tags.pl
 
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2009-01-30 09:35:24 $      
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2014-10-01 15:48:24 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -534,7 +534,7 @@ sub get_clone_len {
   my $clonelen = $clonesize{$clone};
 
   if (! defined $clonelen) {
-    if ($clone =~ /SUPERLINK/ || $clone =~ /CHROMOSOME/) {
+    if ($clone =~ /CHROMOSOME/) {
       # get the Superlink lengths from the Coords_converter data
       $clonelen = $coords->Superlink_length($clone);
     } else {

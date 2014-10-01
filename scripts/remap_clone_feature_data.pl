@@ -8,8 +8,8 @@
 # Feature_data and converts any coordinates that have changed between
 # releases
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2012-11-20 16:08:24 $      
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2014-10-01 15:48:24 $      
 
 use strict;                                     
 use lib $ENV{'CVS_DIR'};
@@ -165,8 +165,6 @@ while (my $line = <IN>) {
     # get the superlink or clone length
     if ($clone =~ /CHROMOSOME/) {
       $clone_length = &get_chrom_length($clone);
-    } elsif ($clone =~ /SUPERLINK/) {
-      $clone_length = $autoace_converter->Superlink_length($clone);
     } else {
       $clone_length = $clonesize{$clone};
     }    
