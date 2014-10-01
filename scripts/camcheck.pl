@@ -7,7 +7,7 @@
 # Usage: camcheck.pl
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2013-12-13 15:57:43 $
+# Last updated on: $Date: 2014-10-01 15:43:11 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -390,7 +390,7 @@ __END__
 
 camcheck.pl performs a number of integrity/consistency checks against
 the camace database. The script is based on an iterative loop across
-all Genome_sequences and SUPERLINK* objects.
+all Genome_sequences objects.
 
 =back
 

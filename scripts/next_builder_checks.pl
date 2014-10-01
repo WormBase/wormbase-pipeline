@@ -6,8 +6,8 @@
 # A simple script to send a check list to the person who will be performing the next
 # build to check the current build
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2014-02-11 17:07:42 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2014-10-01 15:43:11 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -632,7 +632,7 @@ sub classes_to_check {
 #Feature_object	 "WBsf017332" 30455 30456
 #Homol_data	 "AC3:RNAi" 1 38951
 #Homol_data	 "AC3:SAGE" 1 38951
-#Source	 "SUPERLINK_CB_V"
+#Source	 "CHROMOSOME_V"
 #Overlap_right	 "F15H10" 38848
 #Overlap_left	 "K07C5"
 #Clone_left_end	 "AC3" 1

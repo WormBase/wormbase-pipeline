@@ -6,8 +6,8 @@
 #
 # This takes the BUILD_DATA/MISC_DYNAMIC/fosmids.ace file and converts any coordinates that have changed between releases
 #
-# Last updated by: $Author: klh $     
-# Last updated on: $Date: 2012-11-16 10:47:11 $      
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2014-10-01 15:43:11 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -87,7 +87,7 @@ my $assembly_mapper = Remap_Sequence_Change->new($version - 1, $version, $wormba
 #
 
 
-#Sequence : "SUPERLINK_RW5"
+#Sequence : "CHROMOSOME_V"
 #Genomic_non_canonical "WRM0638bH09" 4298005   4332968
 # 
 #Sequence : "WRM0638bH09"

@@ -2640,7 +2640,7 @@ sub check_user
 #
 #  to drive FMAP display 
 #
-#  xremote -remote 'gif seqget SUPERLINK_CB_II -coords 111000 112000; seqdisplay'
+#  xremote -remote 'gif seqget CHROMOSOME_II -coords 111000 112000; seqdisplay'
 #
 #
 
