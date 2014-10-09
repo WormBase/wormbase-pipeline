@@ -7,7 +7,7 @@
 # Methods for running the RNAseq pipeline and other useful things like searching the ENA warehouse
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-03-19 10:44:32 $      
+# Last updated on: $Date: 2014-10-09 12:39:28 $      
 
 =pod
 
@@ -252,8 +252,14 @@ sub get_experiments_from_run_data {
   my %experiment_data;
   
   foreach my $run (keys %{$run_hashref}) {
+    my $run_count = 0;
     my $expt = $run_hashref->{$run}{'experiment_accession'};
+    if (exists $experiment_data{$expt}) { # get the count of the number of times this experiment has been seen before == the number of runs for this experiment seen already
+      $run_count = $experiment_data{$expt}{'run_count'}
+    }
+    $run_count++;
     $experiment_data{$expt} = $run_hashref->{$run};
+    $experiment_data{$expt}{'run_count'} = $run_count;
   }
 
   return \%experiment_data;
