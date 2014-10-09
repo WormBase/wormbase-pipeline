@@ -8,7 +8,7 @@
 #
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-02-06 14:09:21 $      
+# Last updated on: $Date: 2014-10-09 12:41:45 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -73,6 +73,7 @@ sub stats {
   my %centers;
   my %instruments;
   my %layout;
+  my $run_count=0;
   
   foreach my $experiment (keys %{$expts}) {
     my $study_accession = $expts->{$experiment}{study_accession};
@@ -84,6 +85,9 @@ sub stats {
     my $library_layout = $expts->{$experiment}{library_layout};
     my $center_name  = $expts->{$experiment}{center_name};
     my $instrument_platform = $expts->{$experiment}{instrument_platform};
+    
+    $run_count += $expts->{$experiment}{run_count};
+    
     
     $studies{$study_accession}=1;
     $categories{$library_source}{$library_strategy}{$library_selection}++;
@@ -98,6 +102,7 @@ sub stats {
   $log->write_to("Studies:\t$no_studies\n");
   my $no_experiments = keys %{$expts};
   $log->write_to("Experiments:\t$no_experiments\n");
+  $log->write_to("Runs:\t\t$run_count\n");
   my $paired_end = $layout{PAIRED};
   $log->write_to("Paired-end:\t$paired_end\n");
   my $single_end = $layout{SINGLE};
