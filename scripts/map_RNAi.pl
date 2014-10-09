@@ -1,12 +1,13 @@
-#!/nfs/team71/worm/mh6/bin/perl
-# map_RNAi.pl
-# Add information to RNAi objects based on overlaps in GFF files
+#!/usr/bin/env perl
 #
-# by Kerstin Jekosch
+# map_RNAi.pl
+#
+# Associate RNA experiments with Transcripts/Genes based
+# on genomic location
 #
 # Version: $Version: $
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-12-05 16:56:07 $
+# Last updated on: $Date: 2014-10-09 09:23:38 $
 
 use strict;
 use warnings;
@@ -56,7 +57,6 @@ my $to_search_against = {
 
   Transcript => [ ['Coding_transcript',     'Coding_transcript',     'exon'],
                   ['Non_coding_transcript', 'Non_coding_transcript', 'exon'],
-                  ['ncRNA',                 'ncRNA',                 'exon'],
                   ['Pseudogene',            'Pseudogene',            'exon'] ],
   
   Pseudogene => [ ['Pseudogene', 'Pseudogene', 'exon'] ],
