@@ -7,7 +7,7 @@
 #
 # Version: $Version: $
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2014-10-09 09:23:38 $
+# Last updated on: $Date: 2014-10-09 16:03:15 $
 
 use strict;
 use warnings;
@@ -158,10 +158,9 @@ foreach my $rnai (keys %results) {
 # produce output files #
 ########################
 my %tran2gene = $wormbase->FetchData('worm_gene2geneID_name');
-&getGO_term_info;
 open($ace_fh, ">$acefile") or $log->log_and_die("Could not open $acefile for reading\n");
 
-my (%rnai_go, %gene2rnai, %assoc_counts);
+my (%gene2rnai, %assoc_counts);
 
 foreach my $rnai ( keys %results ) {
   my %genes;
@@ -201,14 +200,6 @@ foreach my $gene ( keys %gene2rnai) {
       $assoc_counts{$type}++;
 
       print $ace_fh "Experimental_info RNAi_result \"$rnai\" Inferred_automatically \"RNAi_${type}\"\n";
-      
-      if ($type eq 'primary' and exists $rnai_go{$rnai}){
-        foreach my $phen (keys %{$rnai_go{$rnai}}) {
-          foreach (@{$rnai_go{$rnai}->{$phen}}) {
-            print $ace_fh "GO_term $_ IMP Inferred_automatically \"($phen|$rnai)\"\n";
-          }
-        }
-      }
     }
   }
 }
@@ -262,69 +253,5 @@ sub get_RNAi_from_gff {
     }
   }
 }
-
-#########################################
-sub getGO_term_info {
-  my $tmpdef = &write_TM_def;
-  my $tm_query = $wormbase->table_maker_query($database,$tmpdef);
-  while(<$tm_query>) {
-    s/\"//g;  #remove "
-    next if (/acedb/ or /\/\// or /^\s*$/);
-    my ($rnai, $phen, $go) = split("\t",$_);
-    push(@{$rnai_go{$rnai}->{$phen}},$go);
-  }
-  unlink $tmpdef;
-}
-
-
-###############################################
-sub write_TM_def {
-  my $def = '/tmp/inheritGO.def';
-  open my $tmpdefh,">$def" or $log->log_and_die("cant write $def: $!\n");
-  my $txt = <<END;
-
-Sortcolumn 1
-
-Colonne 1
-Width 12
-Optional
-Visible
-Class
-Class RNAi
-From 1
-
-Colonne 2
-Width 12
-Mandatory
-Visible
-Class
-Class Phenotype
-From 1
-Tag Phenotype
-
-Colonne 3
-Width 12
-Mandatory
-Visible
-Class
-Class GO_term
-From 2
-Tag GO_term
-
-Colonne 4
-Width 12
-Null
-Visible
-Show_Tag
-Right_of 2
-Tag  HERE  # Not
-
-END
-
-  print $tmpdefh $txt;
-  close($tmpdefh);
-  return $def;
-}
-############################################
 
 __END__
