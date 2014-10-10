@@ -18,11 +18,11 @@ use Wormbase;
 
     FORMAT:
     WBGene00001234
-    Remark "Removed"
+    Remark : "Removed"
     WBPerson1983
 
     WBGene00001235
-    Remark "Killed"
+    Remark : "Killed"
     WBPerson1849 
 
     The blank line between entries is ESSENTIAL
