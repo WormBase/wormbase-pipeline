@@ -6,8 +6,8 @@
 #
 # Builds a wormpep data set from the current autoace database
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2013-12-05 11:00:41 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2014-10-17 14:00:44 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -382,10 +382,10 @@ sub write_final_pep {
     print PEP ">$cds\t$PEP_PREFIX".&pad($cds2id{$cds});
     print PEP "\t".$cds_info{$cds}->{'gene'} if $cds_info{$cds}->{'gene'};
     print PEP "\tlocus:".$cds_info{$cds}->{'cgc'} if $cds_info{$cds}->{'cgc'};
-    print PEP "\t".$cds_info{$cds}->{'brief'} if $cds_info{$cds}->{'brief'};
     print PEP "\tstatus:".$cds_info{$cds}->{'status'} if $cds_info{$cds}->{'status'};
     print PEP "\tUniProt:".$cds_info{$cds}->{'unip'} if $cds_info{$cds}->{'unip'};
     print PEP "\tprotein_id:".$cds_info{$cds}->{'pid'} if $cds_info{$cds}->{'pid'} ;
+    print PEP "\t".$cds_info{$cds}->{'brief'} if $cds_info{$cds}->{'brief'};
     print "$cds\n";
     print PEP "\n".$wormbase->format_sequence( $cds2aa{$cds} )."\n";
   }
