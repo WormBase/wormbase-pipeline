@@ -350,9 +350,11 @@ sub get_phys {
   my %map;
 
   my $db = Ace->connect( -path => $database );
-  #push @genes, $db->find('find Gene * where Map AND SMap AND NOT Pseudo_map_position');
 
-  foreach my $gene ($db->find('find Gene * where Map AND SMap')) {
+  #push @genes, $db->find('find Gene * where Map AND SMap AND NOT Pseudo_map_position');
+  my @genes = $db->find('find Gene * where Map AND SMap');
+
+  while(my $gene = shift @genes) {
     if ( !defined $gene->Map(2) ) {
       print STDERR "cannot find genetic map position for $gene ...\n";
       next;
