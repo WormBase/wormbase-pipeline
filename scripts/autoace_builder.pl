@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2014-10-21 15:45:12 $
+# Last edited on: $Date: 2014-10-22 15:31:15 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -547,9 +547,10 @@ sub ontologies {
   $wormbase->run_script( "ONTOLOGY/update_GO_terms.pl", $log); 
   $wormbase->run_script( "ONTOLOGY/make_anatomy_GAF.pl", $log);
   $wormbase->run_script( "ONTOLOGY/make_phenotype_GAF.pl", $log);
-  $wormbase->run_script( "ONTOLOGY/make_GO_GAF.pl -rnai -gene", $log);
   $wormbase->run_script( "ONTOLOGY/make_disease_GAF.pl", $log);
   $wormbase->run_script( "ONTOLOGY/make_lifestage_GAF.pl", $log);
+  $wormbase->run_script( "ONTOLOGY/make_GO_GAF.pl", $log);
+  $wormbase->run_script( "ONTOLOGY/make_phenotype_GO_GAF.pl -rnai -variation", $log);
   $wormbase->run_script( "ONTOLOGY/get_easy_phenotypes.pl", $log);
 
 }
