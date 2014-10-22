@@ -6,8 +6,8 @@
 #
 # Usage : make_keysets.pl [-options]
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2014-06-13 09:06:43 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2014-10-22 14:23:27 $
 
 #################################################################################
 # variables                                                                     #
@@ -30,14 +30,12 @@ use Socket;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
 
-use vars qw/ $all $rnai $expr $history $pcr $go $touched $noload $debug $help /;
+use vars qw/ $all $rnai $history $pcr $touched $noload $debug $help /;
 
 GetOptions (
 	    "all"       => \$all,
 	    "rnai"      => \$rnai,
-	    "expr"      => \$expr,
 	    "pcr"       => \$pcr,
-	    "go"        => \$go,
 	    "touched"   => \$touched,
 	    "history=s" => \$history,
 	    "noload"    => \$noload,
@@ -95,18 +93,6 @@ if (($rnai) || ($all)) {
     print "...hasta luego\n\n" if ($debug);
 }
 
-
-## commented out, as Expr_patterns are connected to genes
-# CDS with Expr_pattern
-#if (($expr) || ($all)) {
-#    print "Tace query for CDS_with_Expr_pattern\t" if ($debug);
-#    my $command ="nosave\nquery find elegans_CDS where Expr_pattern\nlist -a\nquit\n";
-#    &tace_it($command,'CDS_with_Expr_pattern');
-#    print "....load into db\t" if ($debug);
-#    &load_it('CDS_with_Expr_pattern','keyset_lists') unless ($noload);
-#    print "...hasta luego\n\n" if ($debug);
-#}
-
 # CDS with PCR_product
 if (($pcr) || ($all)) {
     print "Tace query for CDS_with_PCR_product\t" if ($debug);
@@ -114,16 +100,6 @@ if (($pcr) || ($all)) {
     &tace_it($command,'CDS_with_PCR_product');
     print "....load into db\t" if ($debug);
     &load_it('CDS_with_PCR_product','keyset_lists') unless ($noload);
-    print "...hasta luego\n\n" if ($debug);
-}
-
-# CDS with GO_term
-if (($go) || ($all)) {
-    print "Tace query for CDS_with_GO_term\t" if ($debug);
-    my $command ="nosave\nquery find elegans_CDS where GO_term\nlist -a\nquit\n";
-    &tace_it($command,'CDS_with_GO_term');
-    print "....load into db\t" if ( ($debug) && (!$noload) );
-    &load_it('CDS_with_GO_term','keyset_lists') unless ($noload);
     print "...hasta luego\n\n" if ($debug);
 }
 
@@ -258,19 +234,11 @@ make_keysets.pl OPTIONAL arguments:
 
 =over 4
 
-=item -expr,
-
-=back 
-
-CDS sequences with expression patterns
-
 =item B<-all,> Make all of the following keysets
 
 =item B<-rnai,> CDS sequences with RNAi experimental data
 
 =item B<-pcr,> CDS sequences which are amplified within PCR_product objects
-
-=item B<-go,> CDS sequences with inferred GO_terms
 
 =item B<-touched,> CDS sequences with partial/full transcript evidence
 
