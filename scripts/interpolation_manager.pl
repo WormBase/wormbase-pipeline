@@ -34,7 +34,7 @@ GetOptions(
 
 if ($store) { 
   $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n"); 
-  $flags = "-store";
+  $flags = "-store $store";
 }
 else { 
   $wb = Wormbase->new(-debug => $debug, 
