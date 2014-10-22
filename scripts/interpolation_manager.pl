@@ -63,7 +63,7 @@ my $myid   = $mother->id;
 
 push @bsub_opts, (-w => "ended($myid)");
 foreach my $i ($wb->get_chromosome_names(-prefix => 1)) {
-  my $cmd2 = $wb->build_cmd_line("interpolate_gff.pl -chrom $i -all $flags");
+  my $cmd2 = $wb->build_cmd_line("interpolate_gff.pl -chrom $i -all $flags",$store);
   $lsf->submit( @bsub_opts, $cmd2);
 }
 
