@@ -34,7 +34,6 @@ GetOptions(
 
 if ($store) { 
   $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n"); 
-  $flags = "-store $store";
 }
 else { 
   $wb = Wormbase->new(-debug => $debug, 
@@ -57,7 +56,7 @@ my $fix_acefile    = "$acedir/genetic_map_fixes.ace";
 my $pseudo_acefile = "$acedir/pseudo_map_positions.ace";
 
 my $prep_flags = ($fix) ? "$flags -preparefix -fixacefile $fix_acefile" : "$flags -preparenofix";
-my $cmd = $wb->build_cmd_line("interpolate_gff.pl $prep_flags");
+my $cmd = $wb->build_cmd_line("interpolate_gff.pl $prep_flags",$store);
 
 my $mother = $lsf->submit(@bsub_opts, $cmd);
 my $myid   = $mother->id;
