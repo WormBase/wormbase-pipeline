@@ -96,7 +96,7 @@ unless ( $noload ) {
   }
   if ($pseudo and -e $pseudo_acefile) {
     $wb->load_to_database($wb->autoace,
-                          $fix_acefile,
+                          $pseudo_acefile,
                           "pseudo_map_posn",
                           $log, 
                           0, # no backup
