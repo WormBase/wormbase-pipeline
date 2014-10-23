@@ -139,8 +139,8 @@ CHROMLOOP: foreach my $chrom ( @chromosomes ) {
   else {
     # for large chromosomes, ask for a memory limit of 3.5 Gb
     my $job_name = "worm_".$wormbase->species."_gffbatch";
-    my @bsub_options = scalar(@chromosomes) <= 50 ? (-M => "3500", 
-						    -R => "\"select[mem>3500] rusage[mem=3500]\"",
+    my @bsub_options = scalar(@chromosomes) <= 50 ? (-M => "4500", 
+						    -R => "\"select[mem>4500] rusage[mem=4500]\"",
 						   ) : (-M => "500", 
                                                        -R => "\"select[mem>=500] rusage[mem=500]\"");
     my $out = scalar(@chromosomes) <= 50 
@@ -196,8 +196,8 @@ if ($rerun_if_failed) {
   ##################################################################
   # now try re-runnning any commands that failed
   $lsf = LSF::JobManager->new();
-  my @bsub_options = scalar(@chromosomes) <= 50 ? (-M => "3500", 
-                                                   -R => "\"select[mem>3500] rusage[mem=3500]\""
+  my @bsub_options = scalar(@chromosomes) <= 50 ? (-M => "4500", 
+                                                   -R => "\"select[mem>4500] rusage[mem=4500]\""
       ) : ();
   
   my $out = "$scratch_dir/wormpubGFFdump.rerun.lsfout";
