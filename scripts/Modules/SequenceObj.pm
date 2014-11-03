@@ -560,7 +560,6 @@ sub list_of_matched_genes {
   my @matches = @{$self->probably_matching_cds};
   if (! @matches) {return ()}
   foreach my $match (@matches ) {
-    my $gene;
     my $cds = $match->[0];
 
     if (exists $cds2gene->{$cds->name}) {
@@ -572,6 +571,27 @@ sub list_of_matched_genes {
 }
 
 
+
+sub list_of_matched_genes_by_seqname {
+  my ($self, $seq_name_regexp) = @_;
+
+  my %genes;
+  my @matches = @{$self->probably_matching_cds};
+
+  return () if not @matches;
+
+  foreach my $match (@matches) {
+    my $cds = $match->[0];
+
+    my ($gene) = ($cds =~ /($seq_name_regexp)/);
+  
+    if (defined $gene) {
+      $genes{$gene} = 1;
+    }
+  }
+
+  return keys %genes;
+}
 
 
 =head2 _exon_that_end
