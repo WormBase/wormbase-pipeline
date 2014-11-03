@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2014-11-03 14:21:14 $
+# Last updated on: $Date: 2014-11-03 18:49:20 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -712,7 +712,7 @@ sub make_orthologylists{
 
        my $ftp_dir = "$targetdir/species/$gspecies/$bioproj/annotation";
        mkpath($ftprna_dir,1,0775);
-       my $ofile = "$ftp_dir/$gspecies.$bioproj".$wb->get_wormbase_version.'.orthologs.txt';
+       my $ofile = "$ftp_dir/$gspecies.$bioproj.WS".$wormbase->get_wormbase_version.'.orthologs.txt';
        $wormbase->run_script("dump_ortholog_flatfile.pl -out $ofile -species \"${\$wb->full_name}\"",$log);
        if (-e $ofile and -s $ofile){
          $wormbase->run_command("touch $ofile && gzip -9 -n $ofile", $log);
