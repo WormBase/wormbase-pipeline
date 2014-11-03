@@ -5,8 +5,8 @@
 # A PERL wrapper to automate the process of building the FTP sites 
 # builds wormbase & wormpep FTP sites
 # 
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2014-07-24 08:58:23 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2014-11-03 14:21:14 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -107,6 +107,7 @@ my $dump_ko;
 my $md5;
 my $go_public;
 my $compara;
+my $orthology_lists; # flatfiles of the orthologies fro CalTech
 my $assembly_manifest;
 my (%skip_species, @skip_species, @only_species, %only_species, $WS_version, $WS_version_name);
 
@@ -143,6 +144,7 @@ GetOptions ("help"          => \$help,
 	    "all"            => \$all,
             "allnopublic"    => \$all_nopublic,
             "wbversion=s"    => \$WS_version,
+            'orthologylists=s'=> \$orthology_lists,
     );
 
 
@@ -163,9 +165,9 @@ map { $skip_species{$_} = 1 } @skip_species;
 map { $only_species{$_} = 1 } @only_species;
 
 if ($all) {
-  $compara=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$blastx=$dump_ko=$md5=$assembly_manifest=$go_public=1;
+  $compara=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$blastx=$dump_ko=$md5=$assembly_manifest=$go_public=$orthology_lists=1;
 } elsif ($all_nopublic) {
-  $compara=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$blastx=$dump_ko=$md5=$assembly_manifest=1;
+  $compara=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$blastx=$dump_ko=$md5=$assembly_manifest=$orthology_lists=1;
 }
 
 if (not $WS_version) {
@@ -231,6 +233,8 @@ close FTP_LOCK;
 &make_pcr_list if ($pcr);             # make file of PCR products -> WBGene IDs, CDS, CGC name
 
 &extract_ko if ($dump_ko);
+
+&make_orthologylists if ($orthology_lists);
 
 &make_gbrowse_gff if ($gbrowse_gff);
 
@@ -685,6 +689,36 @@ sub copy_compara {
   $log->write_to("$runtime: Finished copying comparative results\n\n");
 }
 
+############################################
+# create orthology lists
+############################################
+
+sub make_orthologylists{
+  my $runtime = $wormbase->runtime;
+  $log->write_to("$runtime: copying rna files\n");
+
+  # run through all possible organisms
+  my %accessors = ($wormbase->species_accessors);
+  $accessors{elegans} = $wormbase;
+
+  foreach my $wb (values %accessors) {
+       next if exists $skip_species{$wb->species};
+       next if @only_species and not exists $only_species{$wb->species};
+
+       my $gspecies = $wb->full_name('-g_species' => 1);
+       my $bioproj = $wb->ncbi_bioproject;
+       my $prefix = $wb->pepdir_prefix;
+       my $rnadir = $wb->wormrna;
+
+       my $ftp_dir = "$targetdir/species/$gspecies/$bioproj/annotation";
+       mkpath($ftprna_dir,1,0775);
+       my $ofile = "$ftp_dir/$gspecies.$bioproj".$wb->get_wormbase_version.'.orthologs.txt';
+       $wormbase->run_script("dump_ortholog_flatfile.pl -out $ofile -species \"${\$wb->full_name}\"",$log);
+       if (-e $ofile and -s $ofile){
+         $wormbase->run_command("touch $ofile && gzip -9 -n $ofile", $log);
+       }
+  }
+} 
 
 ############################################
 # copy across ncRNA files

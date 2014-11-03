@@ -26,7 +26,7 @@ if ( $store ) {
                              );
 }
 my $log = Log_files->make_build_log($wormbase);
-my $outfh = IO::File->new($out)||die(@!);
+my $outfh = IO::File->new($out,'w')||die(@!);
 
 $log->write_to("Dumping orthologs for ${\$wormbase->species} to $out\n");
 
