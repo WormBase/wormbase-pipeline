@@ -4,8 +4,8 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2014-08-29 15:21:47 $
-# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2014-11-04 10:40:35 $
+# Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
 
@@ -228,8 +228,10 @@ sub main_gene_checks {
       if (exists $sequence_structures{$gene_name}{$hash_key}) {
 	my $other_isoform = $sequence_structures{$gene_name}{$hash_key};
 	my $class = $gene_model->class;
-	push(@error1, "ERROR: $class $gene_model has the same structure as $other_isoform\n");
-	print "ERROR: $class $gene_model has the same structure as $other_isoform\n";
+	unless ($gene_model =~ (/F59A3.6/)) {
+	  push(@error1, "ERROR: $class $gene_model has the same structure as $other_isoform\n");
+	  print "ERROR: $class $gene_model has the same structure as $other_isoform\n";
+	}
       }
       $sequence_structures{$gene_name}{$hash_key} = $gene_model->name;
     }
