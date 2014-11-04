@@ -15,7 +15,7 @@
 # 8  Uniprot accession
 #
 # 
-#  Last updated on: $Date: 2012-08-16 16:32:29 $
+#  Last updated on: $Date: 2014-11-04 12:35:01 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -33,6 +33,7 @@ my ($test,
     $database,
     $wormbase,
     $outfile,
+    $no_header,
     );
 
 GetOptions (
@@ -42,6 +43,7 @@ GetOptions (
   "species:s"       => \$species,
   "database:s"      => \$database,
   "outfile:s"       => \$outfile,
+  "noheader"        => \$no_header,
     );
 
 
@@ -62,6 +64,7 @@ my $log = Log_files->make_build_log($wormbase);
 $species = $wormbase->species;
 my $tace = $wormbase->tace;
 my $full_species_name = $wormbase->full_name;
+my $wormbase_version = $wormbase->get_wormbase_version_name;
 my $dbdir = ($database) ? $database : $wormbase->autoace;
 $outfile = $wormbase->acefiles . "/DBXREFs.txt" if not defined $outfile;
 
@@ -135,9 +138,11 @@ while (<TACE>) {
   }      
 }
 close TACE;
-$query;
+unlink $query;
 
 open($out_fh, ">$outfile") or $log->log_and_die("Could not open $outfile for writing\n");
+
+&write_header($out_fh) unless $no_header;
 
 foreach my $g (sort keys %gene) {
   foreach my $wbgeneid (keys %{$gene{$g}}) {
@@ -196,6 +201,32 @@ close($out_fh) or $log->log_and_die("Could not cleanly close output file\n");
 
 $log->mail();
 exit(0);
+
+##########################################
+sub write_header {
+  my ($out_fh) = @_;
+
+  my $header = <<"HERE";
+//
+// WormBase $full_species_name XREFs for $wormbase_version
+//
+// Columns (tab separated) are:
+//    1. WormBase Gene sequence name
+//    2. WormBase Gene accession
+//    3. WormBase Gene public name
+//    4. WormBase Transcript sequence name
+//    5. WormPep protein accession
+//    6. INSDC parent sequence accession
+//    7. INSDC protein_id
+//    8. UniProt accession
+//
+// Missing or not applicable data (e.g. protein identifiers for non-coding RNAs) is denoted by a "."
+//
+HERE
+
+  print $out_fh $header;
+
+}
 
 ##########################################
 sub generate_coding_query {
