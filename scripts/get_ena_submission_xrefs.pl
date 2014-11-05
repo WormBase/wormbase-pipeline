@@ -11,10 +11,10 @@ use Log_files;
 
 my ($debug, $test, $store, $species, $wb, 
     $svacefile, $pidacefile, $noload, $ncbi_tax_id, $bioproject_id, $pid_table_file,$sv_table_file, $gid_table_file, $gidacefile,
-    %cds_xrefs, %pep_xrefs, $generate_tables, $sequence_xrefs, $protein_xrefs, $gene_xrefs);
+    %cds_xrefs, %pep_xrefs, $generate_tables, $sequence_xrefs, $protein_xrefs, $gene_xrefs, $common_data_dir);
 
 
-&GetOptions ("debug=s"        => \$debug,
+&GetOptions ("debug:s"        => \$debug,
              "test"           => \$test,
              "store:s"        => \$store,
              "species:s"      => \$species,
@@ -29,6 +29,7 @@ my ($debug, $test, $store, $species, $wb,
              'sequencexrefs'  => \$sequence_xrefs,
              'proteinxrefs'   => \$protein_xrefs,
              'genexrefs'      => \$gene_xrefs,
+             'commondata:s'   => \$common_data_dir,
     );
 
 
@@ -49,6 +50,7 @@ my ($ggenus, $gspecies) = $wb->full_name =~ /^(\S+)\s+(\S+)/;
 
 $ncbi_tax_id = $wb->ncbi_tax_id;
 $bioproject_id = $wb->ncbi_bioproject;
+$common_data_dir = $wb->common_data if not defined $common_data_dir;
 $svacefile = $wb->acefiles . "/EBI_sequence_xrefs.ace" if not defined $svacefile;
 $pidacefile = $wb->acefiles . "/EBI_pid_xrefs.ace" if not defined $pidacefile;
 $gidacefile = $wb->acefiles . "/EBI_gene_xrefs.ace" if not defined $gidacefile;
@@ -67,7 +69,8 @@ if ($generate_tables) {
 
 
 if ($sequence_xrefs) {
-  my %accession2clone   = $wb->FetchData('accession2clone');
+  my %accession2clone;
+  $wb->FetchData('accession2clone', \%accession2clone, $common_data_dir);
     
   open(my $vtable_fh, $sv_table_file) 
       or $log->log_and_die("Could not open $sv_table_file for reading\n");
@@ -105,7 +108,8 @@ if ($gene_xrefs) {
   open(my $acefh, ">$gidacefile")
       or $log->log_and_die("Could not open $gidacefile for writing\n");
 
-  my %tran2gene   = $wb->FetchData('worm_gene2geneID_name');
+  my %tran2gene;
+  $wb->FetchData('worm_gene2geneID_name', \%tran2gene, $common_data_dir);
   
   while(<$gtable_fh>) {
     my ($tran_name, $clone_acc, $locus_name, $locus_tag) = /^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/;
@@ -127,8 +131,9 @@ if ($gene_xrefs) {
 
 
 if ($protein_xrefs) {
-  my %accession2clone   = $wb->FetchData('accession2clone');
-  my %cds2wormpep = $wb->FetchData('cds2wormpep');
+  my ( %accession2clone, %cds2wormpep);
+  $wb->FetchData('accession2clone', \%accession2clone, $common_data_dir);
+  $wb->FetchData('cds2wormpep', \%cds2wormpep, $common_data_dir);
 
   open(my $table_fh, $pid_table_file)
       or $log->log_and_die("Could not open $pid_table_file for reading\n");
