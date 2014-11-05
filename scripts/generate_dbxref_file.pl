@@ -15,7 +15,7 @@
 # 8  Uniprot accession
 #
 # 
-#  Last updated on: $Date: 2014-11-04 12:35:01 $
+#  Last updated on: $Date: 2014-11-05 14:02:02 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -213,7 +213,7 @@ sub write_header {
 // Columns (tab separated) are:
 //    1. WormBase Gene sequence name
 //    2. WormBase Gene accession
-//    3. WormBase Gene public name
+//    3. WormBase Gene CGC name
 //    4. WormBase Transcript sequence name
 //    5. WormPep protein accession
 //    6. INSDC parent sequence accession
