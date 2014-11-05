@@ -76,7 +76,7 @@ else
 
     setenv CVS_DIR $WORMPUB/wormbase-pipeline/scripts 
 
-    setenv PIPELINE /nfs/nobackup2/ensemblgenomes/wormbase/BUILD/pipeline
+    setenv PIPELINE /gpfs/nobackup/ensembl_genomes/wormbase/BUILD/pipeline
     
     setenv LSB_DEFAULTQUEUE production-rh6
 
