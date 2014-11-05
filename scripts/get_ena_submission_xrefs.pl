@@ -114,6 +114,7 @@ if ($gene_xrefs) {
       my $gene = $tran2gene{$tran_name}; 
       print $acefh "\nGene : \"$gene\"\n";
       print $acefh "Other_name \"$locus_tag\" Accession_evidence \"NDB\" \"$clone_acc\"\n";
+      print $acefh "Database \"NDB\" \"locus_tag\" \"$locus_tag\"\n";
     }
   }
   close($acefh) or $log->log_and_die("Could not close $gidacefile after writing (probably disk full)\n");
