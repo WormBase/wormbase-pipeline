@@ -2,7 +2,7 @@
 #
 
 # Last updated by: $Author: klh $                      
-# Last updated on: $Date: 2014-02-05 15:57:41 $        
+# Last updated on: $Date: 2014-11-11 17:07:38 $        
 
 use strict;
 use Getopt::Long;
@@ -22,7 +22,7 @@ my ($ftp_user, $ftp_pass, $ftp_host,
     $cl_ftp_user, $cl_ftp_pass, $cl_ftp_host, $cl_ftp_dir,
     );
 
-my ($help, $debug, $test, $verbose, $species, $comment, @clones);
+my ($help, $debug, $test, $verbose, $species, $comment, $ws_version, @clones);
 
 my $ftp_dir = "clone";
 
@@ -37,6 +37,7 @@ GetOptions (
   "ftpdir=s"     => \$cl_ftp_dir,
   "ftppass=s"    => \$cl_ftp_pass,
   "clones=s@"    => \@clones,
+  "wsversion=s"  => \$ws_version,
   "comment=s"    => \$comment,
     );
 
@@ -47,13 +48,14 @@ my $wormbase = Wormbase->new(
 );
 
 $species = $wormbase->species;
+$ws_version = $wormbase->get_wormbase_version_name if not defined $ws_version;
 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
 my ($current_date, $current_time) = &get_current_timestamp();
 my $submit_repo = $wormbase->submit_repos;
-my $ws_version = $wormbase->get_wormbase_version_name;
+
 my $submit_log_prefix = sprintf("%s/submit_logs/submitted_to_ENA", $submit_repo);
 
 my $login_details_file = $wormbase->wormpub . "/ebi_resources/EBIFTP.s";
