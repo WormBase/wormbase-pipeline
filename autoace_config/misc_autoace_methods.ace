@@ -187,6 +187,7 @@ Method : "Coding_transcript"
 Colour DARKGREEN
 Show_up_strand
 Width 1.5
+EMBL_feature "mRNA"
 GFF_source "Coding_transcript"
 GFF_feature "protein_coding_primary_transcript"
 GFF_SO "SO:0000234" "coding_transcript_ace2so" // mRNA
@@ -258,6 +259,7 @@ Show_up_strand
 Bumpable	
 Show_text
 Remark "SO:0000253"
+EMBL_feature "tRNA"
 GFF_source "tRNA"
 GFF_feature "tRNA"
 GFF_SO "SO:0000253" "nc_transcript_ace2so" // tRNA
@@ -342,8 +344,19 @@ Show_up_strand
 Width 2.000000
 Show_text 
 EMBL_feature "miRNA"
-Remark "SO:0000647
-GFF_source "miRNA_precursor"
+Remark "SO:0000647"
+GFF_source "miRNA_primary_transcript"
+GFF_feature "miRNA_primary_transcript"
+GFF_SO "SO:0000647" "nc_transcript_ace2so" // miRNA_primary_transcript
+
+Method : "pre_miRNA"
+Colour GREEN
+Show_up_strand 
+Width 2.000000
+Show_text 
+EMBL_feature "miRNA"
+Remark "SO:0001244"
+GFF_source "pre_miRNA"
 GFF_feature "pre_miRNA"
 GFF_SO "SO:0001244" "nc_transcript_ace2so" // pre_miRNA
 
@@ -352,7 +365,7 @@ Colour GREEN
 Show_up_strand 
 Width 2.000000
 Show_text 
-EMBL_feature "misc_RNA"
+EMBL_feature "stRNA"
 Remark "SO:0000649"
 GFF_source "stRNA"
 GFF_feature "stRNA"
@@ -374,7 +387,7 @@ Colour GREEN
 Show_up_strand 
 Width 2.000000
 Show_text 
-EMBL_feature "misc_RNA"
+EMBL_feature "lincRNA"
 Remark "large intervening non-coding RNA (SO:0001463)"
 GFF_source "lincRNA"
 GFF_feature "lincRNA"
