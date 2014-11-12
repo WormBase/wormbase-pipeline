@@ -7,7 +7,7 @@
 # Methods for running the RNAseq pipeline and other useful things like searching the ENA warehouse
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-10-09 12:39:28 $      
+# Last updated on: $Date: 2014-11-12 15:33:06 $      
 
 =pod
 
@@ -37,7 +37,7 @@
   # write new data to the INI config files
   @new_study_accessions = $self->find_new_studies($study_ini, $studies);
   $ini = $self->add_new_studies($study_ini, $studies, @new_study_accessions);
-  $self->add_new_experiments($study_accession, $study_accession)
+  $self->add_new_experiments_in_study($study_accession, $study_accession)
   @studies_changed = $self->update_study_config_data();
   $self->add_param_to_experiment_config( $experiment_accession, $param, $value)
 
@@ -97,7 +97,7 @@ sub new {
   $self->{'check'} = shift;      # true if existing GTF and cufflinks data should be left untouched (for checkpointing and restarting)
 
   # set up useful paths etc.
-  $self->{'RNASeqBase'}      = "/nfs/nobackup2/ensembl_genomes/wormbase/BUILD/RNASeq/" . $self->{wormbase}->{species};
+  $self->{'RNASeqBase'}      = "/gpfs/nobackup/ensembl_genomes/wormbase/BUILD/RNASeq/" . $self->{wormbase}->{species};
   $self->{'RNASeqSRADir'}    = $self->RNASeqBase . "/SRA";
   $self->{'RNASeqGenomeDir'} = $self->RNASeqBase . "/Genome";
   $self->{'Software'}        = "/nfs/panda/ensemblgenomes/wormbase/software/packages";
@@ -110,7 +110,7 @@ sub new {
 sub RNASeqBase        { my $self = shift; return $self->{'RNASeqBase'}; }
 sub RNASeqSRADir      { my $self = shift; return $self->{'RNASeqSRADir'}; }
 sub RNASeqGenomeDir   { my $self = shift; return $self->{'RNASeqGenomeDir'}; }
-sub new_genome             { my $self = shift; return $self->{'new_genome'}; }
+sub new_genome        { my $self = shift; return $self->{'new_genome'}; }
 sub check             { my $self = shift; return $self->{'check'}; }
 
 
@@ -226,6 +226,8 @@ sub read_accession {
       my $field_count = 0;
       foreach my $field_name (@fields) {
 	$data{$f[0]}{$field_name} = $f[$field_count];
+	# debug Study IDs
+	if ($field_name eq 'secondary_study_accession' && $f[$field_count] !~ /^(D|E|S)RP/) {print "Have a secondary_study_accession field in read_accession('$accession') = $f[$field_count]\n"}
 	$field_count++;
       }
     }
@@ -330,12 +332,17 @@ sub find_studies_search {
   my $pubmed=0;
   my @xmlstring = split /\n/, $xmlstring;
   foreach my $line (@xmlstring) {
-    if ($line =~ /<PRIMARY_ID>(\S+)<\/PRIMARY_ID>/) {
-      $primary_id = $1;
+#    if ($line =~ /<PRIMARY_ID>(\S+)<\/PRIMARY_ID>/) {
+#      $primary_id = $1;
 
       # the following are for PROJECT sections
-    } elsif ($line =~ /<SECONDARY_ID>(\S+)<\/SECONDARY_ID>/) {
+#    } els
+    if ($line =~ /<SECONDARY_ID>(\S+)<\/SECONDARY_ID>/) {
+      $primary_id = $1;
       $data->{$primary_id}{secondary_id} = $1;
+      # Study ID debug
+      if ($data->{$primary_id}{secondary_id} !~ /^(D|S|E)RP/) {print "Have a secondary_id field in find_studies_search() = ",$data->{$primary_id}{secondary_id},"\n"}
+
     } elsif ($line =~ /<TITLE>(.+?)<\/TITLE>/) {
       $data->{$primary_id}{title} = $1;
     } elsif ($line =~ /<DESCRIPTION>(.+?)<\/DESCRIPTION>/) {
@@ -426,10 +433,13 @@ sub find_experiments_search {
   foreach my $line (@xmlstring) {
     if ($line =~ /<PRIMARY_ID>(\S+)<\/PRIMARY_ID>/ && !$in_study) {
       $primary_id = $1;
-    } elsif ($line =~ /<STUDY_REF accession=\"(\S+)\"/) {
-      $study_id=$1;
-      $data->{$primary_id}{study_accession} = $1;
+    } elsif ($line =~ /<STUDY_REF /) { # the study accession should be somewhere in this line
       $in_study=1;
+      if ($line =~ /accession=\"(\S+)\"/) {
+	$study_id=$1;
+	$data->{$primary_id}{study_accession} = $1;
+	if ($study_id !~ /^(D|E|S)RP/) {print "Have an unusual STUDY_REF accession field in find_experiments_search() = $study_id\n"}
+      }
     } elsif ($line =~ /<\/STUDY_REF>/) {
       $in_study=0;
     } elsif ($line =~ /<TITLE>(.+?)<\/TITLE>/) {
@@ -509,7 +519,7 @@ sub add_new_studies {
     }
     $ini->RewriteConfig;
     # now write out the experiments details for each new study
-    $self->add_new_experiments($study_accession, $study_accession);
+    $self->add_new_experiments_in_study($study_accession, $study_accession);
   }
 
   return $ini;
@@ -518,48 +528,201 @@ sub add_new_studies {
 
 =head2 
 
-    Title   :   add_new_experiments
-    Usage   :   $self->add_new_experiments($study_accession, $search_accession)
+    Title   :   get_study_config_file
+    Usage   :   my $ini = $self->get_study_config_file($study_accession);
+    Function:   opens (creates if necessary) the config file holding the experiments details of a study
+    Returns :   config INI handle
+    Args    :   study accession
+
+=cut
+
+sub get_study_config_file {
+
+  my ($self, $study_accession) = @_;
+
+  my $path = $self->{wormbase}->misc_dynamic . "/SHORT_READS/" . $self->{wormbase}->{species} . "/${study_accession}.ini";
+  if (!-e $path) {system("touch $path")}
+  my $ini = Config::IniFiles->new( -file => $path, -allowempty => 1 );
+  return $ini;
+
+}
+
+=head2 
+
+    Title   :   add_new_experiments_in_study
+    Usage   :   $self->add_new_experiments_in_study($study_accession)
     Function:   Updates the 'experiments' INI object for a study and writes the study's 'experiments' INI file
     Returns :   updates Experiments ini file
-    Args    :   Accession of the new Study (used to name INI file), Accession to search for in ENA e.g. Study_accession or Experiment_accession (used to get experiment data)
+    Args    :   Accession of the new Study (used to name INI file) to search for in ENA to get Experiment data
 
 =cut
 
 
-sub add_new_experiments {
-  my ($self, $study_accession, $search_accession) = @_;
+sub add_new_experiments_in_study {
+  my ($self, $study_accession) = @_;
+  print "\n";
+
   my $taxon = $self->{wormbase}->ncbi_tax_id;
   if (! defined $taxon) {die("RNASeq: taxon ID not given in find_studies()\n")};
 
-  my $path = $self->{wormbase}->misc_dynamic . "/SHORT_READS/" . $self->{wormbase}->{species} . "/${study_accession}.ini";
-  if (!-e $path) {system("touch $path")}
-  
-  my $ini = Config::IniFiles->new( -file => $path, -allowempty => 1 );
+  my $runs_in_this_study = $self->read_accession($study_accession);
+  my $experiments = $self->get_experiments_from_run_data($runs_in_this_study);
 
-  my $study = $self->read_accession($study_accession);
-  my $experiments = $self->get_experiments_from_run_data($study);
+  foreach my $experiment_accession (keys %{$experiments}) {
+    # no , don't do the following. We now want to store everything under the Study ID, not the Project ID
+    # if we are using a secondary accession as the Study name for the file, then use the primary study accession instead
+    #if ($experiments->{$experiment_accession}{study_accession} ne $study_accession) {$study_accession = $experiments->{$experiment_accession}{study_accession}}
 
-  foreach my $experiment (keys %{$experiments}) {
+    my $ini = $self->get_study_config_file($study_accession);
+
     # make sure that this experiment was done in this species - some Studies have multiple species in
-    if ($experiments->{$experiment}{tax_id} ne $taxon) {
+    if ($experiments->{$experiment_accession}{tax_id} ne $taxon) {
       if ($taxon == 6238) { # C. briggsae has some libraries with the AF16 strain taxon_id so search for this as well
-	 if ($experiments->{$experiment}{tax_id} ne '473542') {next}
+	 if ($experiments->{$experiment_accession}{tax_id} ne '473542') {next}
        } else {
 	 next;
        }
     } 
-    print "Adding new Experiment $experiment to Study $study_accession\n";
-    $ini->AddSection ($experiment);
-    $ini->newval($experiment, 'quality', 'phred');   # assume that all new experiments used phred quality format - this can be manually edited in the INI file
-    # if we are using a SRP* secondary accession as the Study name for the file, then force it to be stored in the Experiment data
-    if ($experiments->{$experiment}{study_accession} ne $study_accession) {$experiments->{$experiment}{study_accession} = $study_accession}
-    foreach my $param (keys %{$experiments->{$experiment}}) {
-      my $value = $experiments->{$experiment}{$param};
-      $ini->newval($experiment, $param, $value);
+
+    print "Adding new Experiment $experiment_accession to Study $study_accession\n";
+    $ini->AddSection ($experiment_accession);
+    $ini->newval($experiment_accession, 'quality', 'phred');   # assume that all new experiments used phred quality format - this can be manually edited in the INI file
+
+    foreach my $param (keys %{$experiments->{$experiment_accession}}) {
+      my $value = $experiments->{$experiment_accession}{$param};
+      $ini->newval($experiment_accession, $param, $value);
+    }
+    $ini->RewriteConfig;
+  }
+}
+
+=head2 
+
+    Title   :   add_one_new_experiment_to_config
+    Usage   :   $self->add_one_new_experiment_to_config($study_accession, $experiment_accession);
+    Function:   Updates the 'experiments' INI object for a study and writes the study's 'experiments' INI file
+    Returns :   updates Experiments ini file
+    Args    :   Accession of the new Study (used to name INI file), experiment accession
+
+=cut
+
+
+sub add_one_new_experiment_to_config {
+  my ($self, $study_accession, $experiment_accession) = @_;
+
+  my $taxon = $self->{wormbase}->ncbi_tax_id;
+  if (! defined $taxon) {die("RNASeq: taxon ID not given in find_studies()\n")};
+
+  my $runs_in_this_study = $self->read_accession($study_accession);
+  my $experiments = $self->get_experiments_from_run_data($runs_in_this_study);
+
+  # no , don't do the following. We now want to store everything under the Study ID, not the Project ID
+  # if we are using a secondary accession as the Study name for the file, then use the primary study accession instead
+  #if ($experiments->{$experiment_accession}{study_accession} ne $study_accession) {$study_accession = $experiments->{$experiment_accession}{study_accession}}
+
+  my $ini = $self->get_study_config_file($study_accession);
+
+  # make sure that this experiment was done in this species - some Studies have multiple species in
+  if ($experiments->{$experiment_accession}{tax_id} ne $taxon) {
+    if ($taxon == 6238) { # C. briggsae has some libraries with the AF16 strain taxon_id so search for this as well
+      if ($experiments->{$experiment_accession}{tax_id} ne '473542') {return}
+    } else {
+      return;
+    }
+  } 
+
+  print "Adding new Experiment $experiment_accession to Study $study_accession\n";
+  $ini->AddSection ($experiment_accession);
+  $ini->newval($experiment_accession, 'quality', 'phred');   # assume that all new experiments used phred quality format - this can be manually edited in the INI file
+
+  foreach my $param (keys %{$experiments->{$experiment_accession}}) {
+    my $value = $experiments->{$experiment_accession}{$param};
+    $ini->newval($experiment_accession, $param, $value);
+  }
+
+  $ini->RewriteConfig;
+}
+
+
+
+=head2 
+
+    Title   :   update_experiment_config_record
+    Usage   :   $ini = $self->read_experiments_from_study_config($study_accession, $experiment_accession, %expt_config)
+    Function:   Updates an existing experiment config record adding new parameters, unless the config parameter 'locked' is set. Changed config parameters are reported to STDOUT but not altered.
+    Returns :   updates Experiments ini file
+    Args    :   Accession of the new Study (used to name INI file), Experiment_accession to update, hash of existing experiment parameter/value pairs
+
+=cut
+
+sub update_experiment_config_record {
+  my ($self, $study_accession, $experiment_accession, %expt_config) = @_;
+
+  my $changed_study_id = 0;
+
+  # we just want to add anything that may have been added to the
+  # experiment record, unless it has known problems that have been
+  # manually corrected, in which case we should have put a keyword
+  # 'locked' in the record.
+
+  if (exists $expt_config{locked}) {return}
+
+  # anything that has changed probably needs to be manually looked at,
+  # so it is reported to STDOUT and not changed
+  
+  my $taxon = $self->{wormbase}->ncbi_tax_id;
+  if (! defined $taxon) {die("RNASeq: taxon ID not given in find_studies()\n")};
+
+  my $runs_in_this_study = $self->read_accession($study_accession);
+  my $experiments = $self->get_experiments_from_run_data($runs_in_this_study);
+
+  # if we are using a secondary accession as the Study name for the file, then use the primary study accession instead
+  if ($experiments->{$experiment_accession}{study_accession} ne $study_accession) {
+    print "In update_experiment_config_record() :\nExpt $experiment_accession has different study accession (",$experiments->{$experiment_accession}{study_accession},") to original ($study_accession)\n";
+    $changed_study_id = 1;
+    $study_accession = $experiments->{$experiment_accession}{study_accession}
+  }
+  my $ini = $self->get_study_config_file($study_accession);
+
+  # make sure that this experiment was done in this species - some Studies have multiple species in
+  if ($experiments->{$experiment_accession}{tax_id} ne $taxon) {
+    if ($taxon == 6238) { # C. briggsae has some libraries with the AF16 strain taxon_id so search for this as well
+      if ($experiments->{$experiment_accession}{tax_id} ne '473542') {return}
+    } else {
+      return;
+    }
+  } 
+  
+  $ini->AddSection ($experiment_accession);
+  
+  if ($changed_study_id) { # the existing experiment record may be using the old secondary ID, so write it all out
+    foreach my $param (keys %{$experiments->{$experiment_accession}}) {
+      my $value = $experiments->{$experiment_accession}{$param};
+      $ini->newval($experiment_accession, $param, $value);
+    }
+    
+  } else { # be selective in what we write
+    foreach my $param (keys %{$experiments->{$experiment_accession}}) {
+      my $value = $experiments->{$experiment_accession}{$param};
+      if (!exists $expt_config{$param}) {
+	print "Updating Experiment $experiment_accession to Study $study_accession: adding '$param = $value\n";
+	$ini->newval($experiment_accession, $param, $value);
+      } else {
+	my $old_value = $expt_config{$param};
+	if ($old_value ne $value) {
+	  if ($param eq 'library_selection' || $param eq 'library_strategy') {
+	    print "Changed value '$param = $value' found for Experiment $experiment_accession in Study $study_accession - old value: '$param = $old_value'\n";
+	  } else {
+	    $ini->newval($experiment_accession, $param, $value);
+	  }
+	}
+      }
     }
   }
+  
   $ini->RewriteConfig;
+  
+
 }
 
 =head2 
@@ -647,6 +810,7 @@ sub get_all_experiments {
     Title   :   update_study_config_data
     Usage   :   @studies_changed = $self->update_study_config_data()
     Function:   queries the ENA and updates the study and experiment config files if it finds new studies
+                this is now deprecated as it pulls out too much Project data insstead of Study data
     Returns :   array of accessions of studies changed
     Args    :   
 
@@ -683,25 +847,39 @@ sub update_experiment_config_data {
   my $config_experiments = $self->get_all_experiments();
 
   my @new_experiment_accessions;
+  my @existing_experiment_accessions;
 
   foreach my $experiment (keys %{$ena_experiments}) {
     if (!exists $config_experiments->{$experiment}) {
       push @new_experiment_accessions, $experiment;
+    } else {
+      push @existing_experiment_accessions, $experiment;
     }
   }
 
+  my $study_ini = $self->read_all_studies_config();
   foreach my $experiment_accession (@new_experiment_accessions) {
     # store study details in INI file
     my $study_accession = $ena_experiments->{$experiment_accession}{study_accession};
     my $study_title = $ena_experiments->{$experiment_accession}{study_title};
-    my $study_ini = $self->read_all_studies_config();
     $study_ini->AddSection ($study_accession);
     $study_ini->newval($study_accession, 'study_title', $study_title);
     $study_ini->RewriteConfig;
     print "Added Study $study_accession to Study.ini\n";
 
     # get full experiment details from ENA and store experiment details in INI file
-    $self->add_new_experiments($study_accession, $experiment_accession);
+    $self->add_one_new_experiment_to_config($study_accession, $experiment_accession);
+  }
+
+  foreach my $experiment_accession (@existing_experiment_accessions) {
+    # we don't want to change Study INI record, 
+    # we just want to add anything that may have been added or changed
+    # to the experiment record, unless it has known problems that have
+    # been manually corrected in which case we should have put a
+    # keyword 'locked' in the record.
+    # get full experiment details from ENA and store experiment details in INI file
+    my $study_accession = $ena_experiments->{$experiment_accession}{study_accession};
+    $self->update_experiment_config_record($study_accession, $experiment_accession, %{$config_experiments->{$experiment_accession}});
   }
 
   return @new_experiment_accessions;
@@ -1022,7 +1200,7 @@ sub get_SRX_file {
       } else {
 	$log->log_and_die("Didn't get file $file from the SRA in sample: $experiment_accession.\nFrom EBI report line $line\n");
       }
-      $status = $self->{wormbase}->run_command("gunzip $file", $log);
+      $status = $self->{wormbase}->run_command("gunzip -f $file", $log);
       if ($status != 0) {$log->log_and_die("gunzip of fastq file $file failed for $experiment_accession\n");}
     }
   }
