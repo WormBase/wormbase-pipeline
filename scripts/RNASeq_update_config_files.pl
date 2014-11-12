@@ -18,7 +18,7 @@
 # This appears to catch all new details.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-02-06 14:08:06 $      
+# Last updated on: $Date: 2014-11-12 15:38:21 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -66,7 +66,7 @@ my $RNASeq = RNASeq->new($wormbase, $log);
 
 # get studies and then get the experiment details
 
-my @studies_changed = $RNASeq->update_study_config_data;
+#my @studies_changed = $RNASeq->update_study_config_data;
 
 # we may have missed some experiments if we didn't find their study in
 # the first search, so do the search the other way round as well -
@@ -74,10 +74,10 @@ my @studies_changed = $RNASeq->update_study_config_data;
 
 my @new_experiments = $RNASeq->update_experiment_config_data;
 
-$log->write_to("\nStudies changed\n");
-foreach my $study (@studies_changed) {
-  $log->write_to("$study\n");
-}
+#$log->write_to("\nStudies changed\n");
+#foreach my $study (@studies_changed) {
+#  $log->write_to("$study\n");
+#}
 
 $log->write_to("\nNew experiments\n");
 foreach my $experiment (@new_experiments) {
