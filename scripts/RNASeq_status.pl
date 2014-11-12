@@ -8,7 +8,7 @@
 #
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-10-09 12:41:45 $      
+# Last updated on: $Date: 2014-11-12 15:36:23 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -26,11 +26,12 @@ GetOptions ("help"       => \$help,
             "test"       => \$test,
             "verbose"    => \$verbose,
             "store:s"    => \$store,
+	    "species:s"  => \$species,
 );
 
 
 
-$species = 'elegans';
+$species = 'elegans' if !defined $species;
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
@@ -68,8 +69,10 @@ sub stats {
   my $RNASeq = RNASeq->new($wb, $log);
 
   my $expts = $RNASeq->get_all_experiments();
-  my %studies;
+  my %total_studies;
   my %categories;
+  my %runs;
+  my %studies;
   my %centers;
   my %instruments;
   my %layout;
@@ -89,17 +92,19 @@ sub stats {
     $run_count += $expts->{$experiment}{run_count};
     
     
-    $studies{$study_accession}=1;
-    $categories{$library_source}{$library_strategy}{$library_selection}++;
+    $total_studies{$study_accession}=1;
+    $categories{$library_source}{$library_strategy}{$library_selection}++; # experiment count for each category
+    $runs{$library_source}{$library_strategy}{$library_selection} +=  $expts->{$experiment}{run_count}; # run counts for each category
+    $studies{$library_source}{$library_strategy}{$library_selection}{$study_accession} = 1; # unique hash for each study in each category
     $centers{$center_name}++;
     $instruments{$instrument_platform}++;
     $layout{$library_layout}++;
     
   }
   
-  $log->write_to("\n\n$spec RNASeq Experiment stats:\n\n");
-  my $no_studies = keys %studies;
-  $log->write_to("Studies:\t$no_studies\n");
+  $log->write_to("\n\n$spec Total RNASeq Experiment stats:\n\n");
+  my $total_no_studies = keys %total_studies;
+  $log->write_to("Studies:\t$total_no_studies\n");
   my $no_experiments = keys %{$expts};
   $log->write_to("Experiments:\t$no_experiments\n");
   $log->write_to("Runs:\t\t$run_count\n");
@@ -111,19 +116,44 @@ sub stats {
   my $centers = join ', ', @centers;
   $log->write_to("Centres:\t$centers\n");
   
-  $log->write_to("\n\n");
+  my %trans_studies = ();
+  my $trans_expts = 0;
+  my $trans_runs = 0;
+  $log->write_to("\nTRANSCRIPTOMIC Experiment stats:\n\n");
+  foreach my $strategy (keys  %{$studies{'TRANSCRIPTOMIC'}}) {
+    foreach my $selection (keys  %{$studies{'TRANSCRIPTOMIC'}{$strategy}}) {
+      foreach my $study (keys  %{$studies{'TRANSCRIPTOMIC'}{$strategy}{$selection}}) {
+	$trans_studies{$study} = 1;
+      }
+    }
+  }
+  foreach my $strategy (keys  %{$categories{'TRANSCRIPTOMIC'}}) {
+    foreach my $selection (keys  %{$categories{'TRANSCRIPTOMIC'}{$strategy}}) {
+      $trans_expts += $categories{'TRANSCRIPTOMIC'}{$strategy}{$selection};
+      $trans_runs += $runs{'TRANSCRIPTOMIC'}{$strategy}{$selection};
+    }
+  }
+  my $trans_no_studies = keys %trans_studies;
+  $log->write_to("TRANSCRIPTOMIC Studies:\t$trans_no_studies\n");
+  $log->write_to("TRANSCRIPTOMIC Expts:\t$trans_expts\n");
+  $log->write_to("TRANSCRIPTOMIC Runs:\t$trans_runs\n");
   
-  my $string = sprintf("%-15s %-9s %-19s %s", "Source", "Strategy", "Selection", "Count");
+
+  $log->write_to("\n\n");
+  $log->write_to("Expt categories (some Studies will be counted more than once if they have Expts in more than one category)\n");
+  my $string = sprintf("%-15s %-9s %-19s %-7s %-7s %-7s", "Source", "Strategy", "Selection", "Studies", "Expts", "Runs");
   $log->write_to("$string\n");
-  $string = sprintf("%-15s %-9s %-19s %-5s", "------", "--------", "---------", "-----");
+  $string = sprintf("%-15s %-9s %-19s %-7s %-7s %-7s", "------", "--------", "---------", "-------", "-----", "----");
   $log->write_to("$string\n");
   
   foreach my $source (keys %categories) {
     foreach my $strategy (keys %{$categories{$source}}) {
       foreach my $selection (keys %{$categories{$source}{$strategy}}) {
 	
-	my $count = $categories{$source}{$strategy}{$selection};
-	$string = sprintf("%-15s %-9s %-19s %-d", $source, $strategy, $selection, $count);
+	my $studies = keys %{$studies{$source}{$strategy}{$selection}};
+	my $no_expts = $categories{$source}{$strategy}{$selection};
+	my $runs = $runs{$source}{$strategy}{$selection};
+	$string = sprintf("%-15s %-9s %-18s %6s %6s %6s", $source, $strategy, $selection, $studies, $no_expts, $runs);
 	$log->write_to("$string\n");
       }
     }
