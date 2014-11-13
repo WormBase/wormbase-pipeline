@@ -15,7 +15,7 @@
 # 8  Uniprot accession
 #
 # 
-#  Last updated on: $Date: 2014-11-05 14:02:02 $
+#  Last updated on: $Date: 2014-11-13 13:48:43 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -23,7 +23,6 @@ use Getopt::Long;
 use Storable;
 
 use lib $ENV{'CVS_DIR'};
-use Bio::SeqIO;
 use Wormbase;
 
 my ($test,
@@ -129,13 +128,16 @@ open (TACE, "echo '$command' | $tace $dbdir |");
 while (<TACE>) {
   chomp; s/\"//g;
   
-  my ($wbgene, $sequence_name, $cgc_name) = split(/\t/, $_);
+  my ($wbgene, $sequence_name, $cgc_name, $locus_tag) = split(/\t/, $_);
   next if $wbgene !~ /^WBGene/;
 
   $gene{$sequence_name}->{$wbgene} = 1;
   if ($cgc_name) {
     $wbgene{$wbgene}->{cgc} = $cgc_name;
-  }      
+  }
+  if ($locus_tag) {
+    $wbgene{$wbgene}->{locus_tag} = $locus_tag;
+  }
 }
 close TACE;
 unlink $query;
@@ -147,13 +149,16 @@ open($out_fh, ">$outfile") or $log->log_and_die("Could not open $outfile for wri
 foreach my $g (sort keys %gene) {
   foreach my $wbgeneid (keys %{$gene{$g}}) {
     my $cgc_name = (exists $wbgene{$wbgeneid}->{cgc}) ? $wbgene{$wbgeneid}->{cgc} : ".";
+    my $locus_tag = (exists $wbgene{$wbgeneid}->{locus_tag}) ? $wbgene{$wbgeneid}->{locus_tag} : ".";
     foreach my $trans (keys %{$wbgene{$wbgeneid}->{transcript}}) {
-      my ($cds, $pepid, $uniprot, @pid_list);
+      my @pid_list;
+      my ($cds, $pepid, $uniprot) = (".", ".", ".");
       
       if (exists $transcds{$trans}) {
         # coding
         $cds = $transcds{$trans};        
         $pepid = $cds{$cds}->{protein};
+        $uniprot = $cds{$cds}->{uniprot}  if exists $cds{$cds}->{uniprot};
         
         if (exists $cds{$cds}->{pid}) {
           foreach my $str (keys %{$cds{$cds}->{pid}}) {
@@ -163,12 +168,8 @@ foreach my $g (sort keys %gene) {
         } else {
           @pid_list = (['.', '.']);
         }
-        
-        $uniprot = (exists $cds{$cds}->{uniprot}) ? $cds{$cds}->{uniprot} : ".";
-
       } else {
-        ($uniprot, $pepid) = (".",".");
-        my ($pid, $clone) = (".", ".", ".");
+        my ($pid, $clone) = (".", ".");
 
         if (exists $wbgene{$wbgeneid}->{sequence}) {
           $clone = $wbgene{$wbgeneid}->{sequence};
@@ -184,12 +185,14 @@ foreach my $g (sort keys %gene) {
       foreach my $pidpair (@pid_list) {
         my ($clone, $pid) = @$pidpair;
         
-        print $out_fh join("\t", $g, 
+        print $out_fh join("\t", 
+                           $g, 
                            $wbgeneid, 
                            $cgc_name, 
                            $trans,
                            $pepid,
                            $clone,
+                           $locus_tag,
                            $pid, 
                            $uniprot), "\n";
       }
@@ -217,8 +220,9 @@ sub write_header {
 //    4. WormBase Transcript sequence name
 //    5. WormPep protein accession
 //    6. INSDC parent sequence accession
-//    7. INSDC protein_id
-//    8. UniProt accession
+//    7. INSDC locus_tag id
+//    8. INSDC protein_id
+//    9. UniProt accession
 //
 // Missing or not applicable data (e.g. protein identifiers for non-coding RNAs) is denoted by a "."
 //
@@ -435,6 +439,35 @@ Class
 Class Gene_name 
 From 1 
 Tag CGC_name 
+
+Colonne 4 
+Width 12 
+Optional 
+Hidden 
+Class 
+Class Database 
+From 1 
+Tag Database 
+Condition NDB
+ 
+Colonne 5 
+Width 12 
+Optional 
+Hidden 
+Class 
+Class Database_field 
+Right_of 4 
+Tag  HERE  
+Condition locus_tag
+ 
+Colonne 6 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Accession_number 
+Right_of 5 
+Tag  HERE  
  
 EOF
 
