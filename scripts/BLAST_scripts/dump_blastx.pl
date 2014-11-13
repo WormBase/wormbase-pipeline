@@ -5,7 +5,7 @@
 # and concatenate them at the end
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2014-11-13 13:45:38 $
+# Last edited on: $Date: 2014-11-13 15:36:55 $
 #
 
 my $usage = <<USAGE;
@@ -123,28 +123,33 @@ foreach my $file (@outfiles) {
   }
 }
 
-# concatenate the ace files into a big blob for later parsing with ensembl/ipi scripts
-my $outfile="$dumpdir/${species}_blastx.ace";
-$log->write_to("Concatenating the ace files to create $outfile\n");
-
-# in case of Elegans do something else
-if ($wormbase->species eq 'elegans' or
-    $wormbase->species eq 'briggsae'){
-  my @files = glob("$dumpdir/$species*x.*.ace");
-  # the following will trigger the generation of SL_coords and clone_coords files if they do not exists
-  Coords_converter->invoke($wormbase->orgdb, undef, $wormbase);
-  open(my $out_fh, ">$outfile") or $log->log_and_die("Could not open $outfile for writing\n");
-  foreach my $file (@files ){
-    $log->write_to("\tcat $file\n");
-    open(my $conv_fh, "perl $ENV{CVS_DIR}/BLAST_scripts/convert_chromblast2clone.pl -species $species $file |")
-      or $log->log_and_die("Could not open convert_chromblast2clone command\n");
-    while(<$conv_fh>) {
-      print $out_fh $_;
+if (! $log->report_errors ) {
+  # concatenate the ace files into a big blob for later parsing with ensembl/ipi scripts
+  my $outfile="$dumpdir/${species}_blastx.ace";
+  $wormbase->run_command("rm -f $outfile", $log);
+  $log->write_to("Concatenating the ace files to create $outfile\n");
+  
+  # in case of Elegans do something else
+  if ($wormbase->species eq 'elegans' or
+      $wormbase->species eq 'briggsae'){
+    my @files = glob("$dumpdir/$species*x.*.ace");
+    # the following will trigger the generation of SL_coords and clone_coords files if they do not exists
+    Coords_converter->invoke($wormbase->orgdb, undef, $wormbase);
+    open(my $out_fh, ">$outfile") or $log->log_and_die("Could not open $outfile for writing\n");
+    foreach my $file (@files ){
+      $log->write_to("\tcat $file\n");
+      open(my $conv_fh, "perl $ENV{CVS_DIR}/BLAST_scripts/convert_chromblast2clone.pl -species $species $file |")
+	or $log->log_and_die("Could not open convert_chromblast2clone command\n");
+      while(<$conv_fh>) {
+	print $out_fh $_;
+      }
     }
+    close($out_fh) or $log->log_and_die("Could not close $outfile after writing\n");
+  } else {
+    $wormbase->run_command("cat $dumpdir/$species*x*.ace > $outfile", $log);
   }
-  close($out_fh) or $log->log_and_die("Could not close $outfile after writing\n");
 } else {
-  $wormbase->run_command("cat $dumpdir/$species*x*.ace > $outfile", $log);
+  $log->write_to("\n\nERROR FOUND WHEN PRODUCING OUTPUT FILES.\nNO RESULTS FILE WILL BE PRODUCED\n\n");
 }
 
 $log->mail();
