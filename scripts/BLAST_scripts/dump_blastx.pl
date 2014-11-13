@@ -5,7 +5,7 @@
 # and concatenate them at the end
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2014-11-13 09:53:23 $
+# Last edited on: $Date: 2014-11-13 13:45:38 $
 #
 
 my $usage = <<USAGE;
@@ -71,7 +71,7 @@ my %logic2type = (
 		  slimswissprotx => '1',
 		 );
 
-$bsub_mem = "16000" if not defined $bsub_mem;
+$bsub_mem = "4000" if not defined $bsub_mem;
 
 my $lsf = LSF::JobManager->new(
 			       -q => $ENV{LSB_DEFAULTQUEUE},
