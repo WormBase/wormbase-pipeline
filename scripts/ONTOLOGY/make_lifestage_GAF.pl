@@ -117,7 +117,7 @@ while (my $g = $it->next) {
                                $gene_info->{$g}->{public_name}, 
                                "",
                                $ls, 
-                               "",
+                               "WB_REF:",
                                "IEA", 
                                $with_from,
                                "L",  
