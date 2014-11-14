@@ -5,7 +5,7 @@
 # and concatenate them at the end
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2014-11-13 15:36:55 $
+# Last edited on: $Date: 2014-11-14 09:24:30 $
 #
 
 my $usage = <<USAGE;
@@ -16,7 +16,7 @@ dump_blastx.pl options:
   -species SPECIES_NAME which species you want to dump (a.e. elegans, briggsae,....)
   -test if you want to use TEST_BUILD instead of BUILD
   -dumpdir DIRECTORY_NAME id you want to dump it to a different directory
-
+  -rerun INT rerun jobs if output files (e.g. brugia_remapepx.50.ace, brugia_brugpepx.208.ace) failed and need to be repeated with '-rerun 50,208'
 USAGE
  
 use strict;
@@ -29,15 +29,16 @@ use Wormbase;
 use Coords_converter;
 
 
-my ($database,$store,$debug,$species,$test,$dumpdir, $bsub_mem);
+my ($database,$store,$debug,$species,$test,$dumpdir, $bsub_mem, $rerun);
 GetOptions(
 	   'database=s' => \$database,
-	   'store=s' => \$store,
-	   'debug=s' => \$debug,
-	   'species=s' => \$species,
-	   'test' => \$test,
-	   'dumpdir=s' => \$dumpdir,
-	   'bsubmem=s' => \$bsub_mem,
+	   'store=s'    => \$store,
+	   'debug=s'    => \$debug,
+	   'species=s'  => \$species,
+	   'test'       => \$test,
+	   'dumpdir=s'  => \$dumpdir,
+	   'bsubmem=s'  => \$bsub_mem,
+	   'rerun=s'    => \$rerun, 
 	  ) || die($usage);
 
 my $wormbase;
@@ -54,6 +55,7 @@ if ($store) {
 
 my $log = Log_files->make_build_log($wormbase);
 $species = $wormbase->species;
+my @rerun = split /,/, $rerun if (defined $rerun);
 
 # that might work until we change logic_names
 my %logic2type = (
@@ -98,7 +100,9 @@ foreach my $db (keys %logic2type){
     my $options="-database $database -logicname $db -outfile $outfile -store $storable -sequence $chrom";
     $options .= ' -self' if $logic2type{$db} eq lc(ref $species);
     my $cmd = "perl $ENV{CVS_DIR}/BLAST_scripts/blastx_dump.pl $options";
-    $lsf->submit($cmd);
+    if (!defined $rerun || grep /^$job_count$/, @rerun) {
+      $lsf->submit($cmd);
+    }
   }
 }
 
@@ -110,7 +114,7 @@ for my $job ( $lsf->jobs ) {
 $lsf->clear;
 
 # check that all files end with a blank line,
-# otherwise the the job that created them was probably terminated prematurely by LSF
+# otherwise the job that created them was probably terminated prematurely by LSF
 $log->write_to("\nTesting output ace files to see if they completed\n");
 foreach my $file (@outfiles) {
   $log->write_to("$file ");
@@ -123,10 +127,11 @@ foreach my $file (@outfiles) {
   }
 }
 
+my $outfile="$dumpdir/${species}_blastx.ace";
+$wormbase->run_command("rm -f $outfile", $log); # ensure we don't have a results file left over from previous Builds
+
 if (! $log->report_errors ) {
   # concatenate the ace files into a big blob for later parsing with ensembl/ipi scripts
-  my $outfile="$dumpdir/${species}_blastx.ace";
-  $wormbase->run_command("rm -f $outfile", $log);
   $log->write_to("Concatenating the ace files to create $outfile\n");
   
   # in case of Elegans do something else
