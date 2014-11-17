@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2014-11-03 18:49:20 $
+# Last updated on: $Date: 2014-11-17 14:42:11 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -661,6 +661,7 @@ sub copy_compara {
     $log->write_to("Warning: no clustal results found ($clust_src)\n");
   }
 
+
   my @compara_tar_args;
 
   my $acedir = $wormbase->acefiles;
@@ -684,6 +685,9 @@ sub copy_compara {
   } else {
     $log->write_to("Warning: no compara results moved to FTP site\n");
   }
+
+  my $cactus=$wormbase->misc_static . '/core_worms.hal';
+  $wormbase->run_command("cp $cactus $targetdir/COMPARATIVE_ANALYSIS/");
     
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying comparative results\n\n");
