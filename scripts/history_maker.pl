@@ -31,8 +31,10 @@ my $lab;
 my $species;
 my $display_by_clones;
 my $addevidence;
+my $addrem;
 my $ncRNA;
 my $nonRNA;
+my $pseudo;
 my $cds_standard;
 my $brugia;
 my $cleangene;
@@ -41,8 +43,10 @@ my $v;
 
 GetOptions (
 	    "addevidence"       => \$addevidence,
+	    "remark"            => \$addrem,
 	    "ncrna"             => \$ncRNA,
 	    "non"               => \$nonRNA,
+	    "pseudo"            => \$pseudo,
 	    "anomaly"           => \$anomaly,
 	    "blast=s"           => \$blast,
 	    "blesser"           => \$blesser,
@@ -119,6 +123,7 @@ if (defined $brugia) {
   $addevidence = "1";
   $clone = "1";
   $cleangene = "1";
+  $addrem = "1";
 }
 elsif (defined $v) {
   $version = $v;
@@ -173,8 +178,10 @@ my $form_gene;			# gene variable from blesser form
 my $form_gene2;                 # gene variable from blesser form
 my $form_gene3;                 # gene variable from evidence form
 my $form_gene4;                 # gene variable from clean_gene form
-my $form_rna;                   # gene variable from ncRNA work form
+my $form_gene_rem;              # gene variable from remark form
+my $form_rna;                   # gene variable from ncRNAwork form
 my $form_nonRNA;                # gene variable from non_coding_transcript form
+my $form_pseudo;                # pseudogene variable from Pseudogene form
 my $clone_form;                 # cds variable for clone form
 my $clone_form_sug;             # cds variable for clone form
 my $anomaly_clone;		# clone variable from anomaly form
@@ -229,7 +236,8 @@ $gui_height += 110 if $blesser;
 $gui_height += 110 if $clone;
 $gui_height += 130 if $addevidence;
 $gui_height += 50 if ($cleangene or $ncRNA);
-$gui_height += 80 if ($nonRNA);
+$gui_height += 130 if ($pseudo);
+$gui_height += 80 if ($nonRNA or $addrem);
 $gui_height += 300 if $anomaly;
 $main_gui->geometry("${gui_width}x$gui_height");
 
@@ -523,6 +531,67 @@ if ($addevidence) {
 ######### end add evidence
 
 
+# addremark stub to a CDS
+###########################################################
+
+my $remwork;
+if ($addrem) {
+  my $gene_rem = $LeftLabel->Frame( -background => "Darkgreen",
+				       -height     => "400",
+				       -width      => "600",
+				       -label      => "Create a Remark stub",
+				       -relief     => "raised",
+				       -borderwidth => 5,
+				       )->pack( -pady => "5", #modified
+						-fill => "x"
+						);
+  # Reference database label
+  my $db_lbl = $gene_rem->Label( -text => "Source: $cdatabase",
+				      -background => 'Darkgreen',
+				      -foreground => 'whitesmoke'
+				    )->pack( -pady => '3'
+					   );
+
+  # CDS entry widgets
+  my $CDS_lbl = $gene_rem->Label( -text => ' MOD  ID',
+				       -background => 'Darkgreen', #was LightGreen
+				       -foreground => 'whitesmoke'
+				       )->pack(-pady => '6',
+					       -padx => '6',
+					       -side => 'left',
+					       );
+
+  $remwork = $gene_rem->Entry( -width => '10',
+				       -background => 'whitesmoke',
+				       -textvariable=> \$form_gene_rem,
+				       )->pack(-side => 'left',
+					       -pady => '5',
+					       -padx => '5'
+					       );
+
+  # make Return and Enter submit CDS 
+  $remwork->bind("<Return>",[ \&add_rem]);
+  $remwork->bind("<KP_Enter>",[ \&bless_rem]);
+  
+
+  # Add Remark button
+  my $remark = $gene_rem->Button( -text => " Add Remark",
+				     -command => [\&add_rem]
+				     )->pack(-side => 'left',
+					     -pady => '2',
+					     -padx => '6',
+					     -anchor => "w"
+					     );
+  # Clear CDS entry button
+  my $clear_rem = $gene_rem->Button( -text => "Clear",
+					  -command => [\&clear_rem]
+					  )->pack(-side => 'right',
+						  -pady => '2',
+						  -padx => '6',
+						  -anchor => "e"
+						  );
+}
+######### end add remark stub
 
 ################ start add ncRNA tags ##############
 
@@ -585,6 +654,72 @@ if ($ncRNA) {
 }
 
 ######### end add ncRNA tags ##############
+
+################ start add Pseudogene tags ##############
+
+my $pseudowork;
+if ($pseudo) {
+  my $pseudo_data = $LeftLabel->Frame( -background => "#ffcc00",
+				       -height     => "400",
+				       -width      => "600",
+				       -label      => "Populate standard Pseudogene tags",
+				       -relief     => "raised",
+				       -borderwidth => 5,
+				       )->pack( -pady => "5",
+						-fill => "x"
+						);
+  # Reference database label
+  my $db_lbl = $pseudo_data->Label( -text => "Source: $cdatabase",
+				      -background => '#ffcc00',
+				      -foreground => 'whitesmoke'
+				    )->pack( -pady => '3'
+					   );
+
+  # Pseudogene entry widgets
+  my $pseudo_lbl = $pseudo_data->Label( -text => ' Pseudo ID',
+				       -background => '#ffcc00', #was LightGreen
+				       -foreground => 'whitesmoke'
+				       )->pack(-pady => '6',
+					       -padx => '6',
+					       -side => 'left',
+					       );
+
+  $pseudowork = $pseudo_data->Entry( -width => '10',
+				       -background => 'whitesmoke',
+				       -textvariable=> \$form_pseudo,
+				       )->pack(-side => 'left',
+					       -pady => '5',
+					       -padx => '5'
+					       );
+
+  # make Return and Enter submit 
+  $pseudowork->bind("<Return>",[ \&add_pseudo_data]);
+  $pseudowork->bind("<KP_Enter>",[ \&add_pseudo_data]);
+  
+
+  # Add Evidence button
+  my $data = $pseudo_data->Button( -text => "Populate Tags",
+				     -command => [\&add_pseudo_data]
+				     )->pack(-side => 'left',
+					     -pady => '2',
+					     -padx => '6',
+					     -anchor => "w"
+					     );
+  # Clear Pseudogene entry button
+  my $clear_data = $pseudo_data->Button( -text => "Clear",
+					  -command => [\&clear_pseudo_data]
+					  )->pack(-side => 'right',
+						  -pady => '2',
+						  -padx => '6',
+						  -anchor => "e"
+						  );
+}
+
+######### end add Pseudogene tags ##############
+
+
+
+
 
 
 
@@ -1044,6 +1179,42 @@ sub add_evidence
     }
   }
 
+################
+
+sub add_rem 
+  {
+    my ($day, $mon, $yr)  = (localtime)[3,4,5];
+    my $date = sprintf("%02d%02d%02d",$yr-100, $mon+1, $day);
+    my $CLASS;
+    my $refgene = $form_gene_rem;
+    return unless $refgene;
+    my $obj = $cdb->fetch(CDS       => "$refgene");
+    $obj ||= $cdb->fetch(Transcript => "$refgene");
+    $obj ||= $cdb->fetch(Pseudogene => "$refgene");
+    return &error_warning("Invalid ID","$refgene is not a valid model name") unless $obj;
+    if (defined $obj) {$CLASS = "${\$obj->class}"}
+    my $method = $obj->Method->name;
+
+    my $output = $session_file.$refgene;
+    
+    open (REM,">$output") or die "cant open $output\n";
+    # add the Evidence to the CDS
+
+
+    print REM "\n$CLASS : \"$refgene\"\n";
+    if (defined $person){ print REM "Remark \"[$date $user]\" Curator_confirmed $person\n";}
+    
+    close REM;
+    my $return_status = system("xremote -remote 'parse $output'");
+    if ( ( $return_status >> 8 ) != 0 ) {
+      &error_warning("WARNING", "X11 connection appears to be lost");
+    } 
+    else {
+      &confirm_message("Success", "Added Remark stub to $form_gene_rem");
+      &clear_rem;
+    }
+  }
+
 ###################
 sub add_ncrna_data
   {
@@ -1074,6 +1245,40 @@ sub add_ncrna_data
   }
 
 ###################
+
+###################
+sub add_pseudo_data
+  {
+    my ($day, $mon, $yr)  = (localtime)[3,4,5];
+    my $date = sprintf("%02d%02d%02d",$yr-100, $mon+1, $day);
+    my $refgene = $form_pseudo;
+    return unless $refgene;
+    &generate_message("CHECK", "Please save your database before clicking OK\n");
+    $cdb->close();
+    $cdb = Ace->connect(-path => $cdatabase);
+    my $obj = $cdb->fetch(Pseudogene => "$refgene");
+    return &error_warning("Invalid Pseudogene","$refgene is not a valid Pseudogene name") unless ($obj);
+    my $method = $obj->Method->name;
+    my $output = $session_file."Pseudogene".$refgene;
+
+    open (PSG,">$output") or die "cant open $output\n";
+    # add the Evidence to the CDS
+    print PSG "\nPseudogene : \"$refgene\"\nCoding_pseudogene\nDB_remark \"C. elegans predicted pseudogene\"\nMethod Pseudogene\nRemark \"[$date $user] This locus is defined as a Pseudogene as there are multiple gene modelling anomalies preventing a well structured coding sequence being annotated.\" Curator_confirmed $person\n\n";
+    close PSG;
+    my $return_status = system("xremote -remote 'parse $output'");
+    if ( ( $return_status >> 8 ) != 0 ) {
+      &error_warning("WARNING", "X11 connection appears to be lost");
+    } 
+    else {
+      &confirm_message("Success", "Added Tags to $form_pseudo");
+      &clear_pseudo_data;
+    }
+  }
+
+###################
+
+
+
 sub add_nonrna_data
   {
     my ($day, $mon, $yr)  = (localtime)[3,4,5];
@@ -1399,9 +1604,17 @@ sub clear_evi
   {
     $cdswork->delete(0,'end');
   }
+sub clear_rem
+  {
+    $remwork->delete(0,'end');
+  }
 sub clear_data
   {
     $rnawork->delete(0,'end');
+  }
+sub clear_pseudo_data
+  {
+    $pseudowork->delete(0,'end');
   }
 sub clear_nonRNAdata
   {
@@ -1476,6 +1689,8 @@ sub make_history
     my $transcript_type_value1;
     my $transcript_type_value2;
     my $pseudogene_type;
+    my ($day, $mon, $yr)  = (localtime)[3,4,5];
+    my $date = sprintf("%02d%02d%02d",$yr-100, $mon+1, $day);
 
     #print "enter CDS to make history object \n";
     my $cds = $form_cds;
@@ -1581,6 +1796,7 @@ sub make_history
     print HIS "Species \"$species\"\n" if $species;
     print HIS "Evidence Curator_confirmed $person\n" if $person;
     print HIS "Evidence\n" if (!defined $person);
+    print HIS "Remark \"[$date $user] Automatically generated history object\"\n";
     print HIS "Method $new_method\n";
     print HIS "Brief_identification \"$brief_identification\"\n" if ($brief_identification);
     print "written Sequence, From_laboratory, Gene_history etc.\n";
