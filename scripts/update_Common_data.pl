@@ -1,11 +1,11 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/usr/bin/env perl
 #
 # update_Common_data.pl
 # 
 # by Anthony Rogers et al
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2013-07-25 15:32:54 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2014-11-20 11:29:49 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -31,6 +31,7 @@ my $all;               # performs all of the below options:
 my $debug;
 my $species;
 my $verbose;
+my $database;
      
 my $clone2accession;   # Hash: %clone2accession     Key: Genomic_canonical                 Value: GenBank/EMBL accession
                        # Hash: %accession2clone     Key: GenBank/EMBL accession            Value: Genomic_canonical
@@ -88,6 +89,7 @@ GetOptions (
 	    "pseudo2cgc"         => \$pseudo2cgc,
 	    "species:s"		 => \$species,
 	    "verbose"            => \$verbose,
+            "database:s"         => \$database,
 	   );
 
 my $wormbase;
@@ -135,9 +137,9 @@ my %Table_defs = (
 # Set up database paths                  #
 ##########################################
 
-my $data_dir   = $wormbase->common_data;
-my $wquery_dir = $wormbase->autoace."/wquery";
-my $ace_dir    = $wormbase->autoace;
+my $data_dir   = (defined $database) ? "$database/COMMON_DATA" : $wormbase->common_data;
+my $wquery_dir = (defined $database) ? "$database/wquery" : $wormbase->autoace."/wquery";
+my $ace_dir    = (defined $database) ? $database : $wormbase->autoace;
 
 
 $log->write_to("Updating COMMON_DATA in $data_dir\n");
@@ -182,6 +184,7 @@ if ($all) {
         -J => $job_name);
     }
     my $cmd = "update_Common_data.pl -${arg}";
+    $cmd .= " -database $database" if defined $database;
     if ($arg eq 'clone2seq') {
       if ($species eq 'elegans') {$cmd .= ' all'} # write out sequence hash for all species in main build
       else {$cmd .= " $species"}                  # else write only the current species .fa file
@@ -255,12 +258,11 @@ sub write_cds2protein_id {
   open (TACE, "echo '$command' | $tace $ace_dir |");
   while (<TACE>) {
       chomp;
-      s/\"//g;
       next if ($_ eq "");
-      next if (/acedb\>/);
-      last if (/\/\//);
+      next if (/^acedb\>/);
+      next if (/^\/\//);
 
-      if (/(\S+)\s+(\S+)\s+(\d+)/) {
+      if (/\"(\S+)\"\s+\"(\S+)\"\s+(\d+)/) {
 	  my $protein_id = "$2".".$3";
 	  my $gene = $1;
 	  $cds2protein_id{"$gene"}       = $protein_id;
@@ -297,11 +299,10 @@ sub write_clone2accession  {
   open (TACE, "echo '$command' | $tace $ace_dir |");
   while (<TACE>) {
       chomp;
-      s/\"//g;
       next if ($_ eq "");
-      next if (/acedb\>/);
-      last if (/\/\//);
-      if (/(\S+)\s+(\S+)/) {
+      next if (/^acedb\>/);
+      next if (/^\/\//);
+      if (/\"(\S+)\"\s+\"(\S+)\"/) {
 	  $clone2accession{$1} = $2;
 	  $accession2clone{$2} = $1;
       }
@@ -334,11 +335,10 @@ sub write_clone2centre{
   open (TACE, "echo '$command' | $tace $ace_dir |");
   while (<TACE>) {
       chomp;
-      s/\"//g;
       next if ($_ eq "");
-      next if (/acedb\>/);
-      last if (/\/\//);
-      if (/(\S+)\s+(\S+)/) {
+      next if (/^acedb\>/);
+      next if (/^\/\//);
+      if (/\"(\S+)\"\s+\"(\S+)\"/) {
 	  $clone2centre{$1} = $2;
       }
   }
@@ -365,10 +365,10 @@ sub write_clones2sv  {
     open (TACE, "echo '$command' | $tace $ace_dir |");
     while (<TACE>) {
 	chomp;
-	s/\"//g;
 	next if ($_ eq "");
-	next if (/acedb\>/);
-	if (/^(\S+)\s+(\S+)\.(\d+)/) {
+	next if (/^acedb\>/);
+        next if /^\/\//;
+	if (/^\"(\S+)\"\s+\"(\S+)\.(\d+)\"/) {
 	    $clone2sv{$1} = $3;
 	}
     }
@@ -396,10 +396,11 @@ sub write_clone2type  {
     open (TACE, "echo '$command' | $tace $ace_dir |");
     while (<TACE>) {
 	chomp;
-	s/\"//g;
 	next if ($_ eq "");
 	next if (/acedb\>/);
-	if (/^(\S+)\s+(\S+)/) {
+        next if /^\/\//;
+
+	if (/^\"(\S+)\"\s+\"(\S+)\"/) {
 	    $clone2type{$1} = $2;
 	}
     }
@@ -433,13 +434,14 @@ sub write_clonesize  {
 	  open (TACE, "echo '$command' | $tace $ace_dir |");
   }
   while (<TACE>) {
-      chomp;
-      s/\"//g;
-      next if ($_ eq "");
-      next if (/acedb\>/);
-      if (/(\S+)\s+(\d+)/) {
-	  $clonesize{$1} = $2;
-      }
+    chomp;
+    s/\"//g;
+    next if ($_ eq "");
+    next if (/acedb\>/);
+    next if /^\/\//;
+    if (/^(\S+)\s+(\d+)$/) {
+      $clonesize{$1} = $2;
+    }
   }
   close TACE;
 
@@ -477,15 +479,17 @@ sub write_cds2wormpep  {
   my %wormpep2cds;
   while (<TACE>) {
     chomp;
-    s/\"//g;
     next if ($_ eq "");
-    next if (/acedb\>/);
-    my @data = split;
-    my $gene = $data[0];
-    my $pep = $data[1];
-    $pep =~ s/\w+://;
-    $cds2wormpep{$gene} = $pep;
-    $wormpep2cds{$pep} .= "$gene ";
+    next if (/^acedb\>/);
+    next if /^\/\//;
+    
+    if (/\"(\S+)\"\s+\"(\S+)\"/) {
+      my $gene = $1;
+      my $pep = $2;
+      $pep =~ s/\w+://;
+      $cds2wormpep{$gene} = $pep;
+      $wormpep2cds{$pep} .= "$gene ";
+    }
   }
 
   unlink $fname;
@@ -522,7 +526,7 @@ sub write_cds2status  {
 	s/\"//g;
 	next if ($_ eq "");
 	next if (/acedb\>/);
-	last if (/\/\//);
+	next if (/^\/\//);
 
 	@f = split /\t/;
 	next unless ( $f[1] or $f[2] or $f[3] ); # this will be the case if update is done when no data available
@@ -554,11 +558,11 @@ sub write_cds2cgc {
 
   while (<TACE>) {
       chomp;
-      s/\"//g;
       next if ($_ eq "");
       next if (/acedb\>/);
-
-      if (/^\S+\s+(\S+)\s+(\S+)/) {
+      next if /^\/\//;
+      
+      if (/^\S+\s+\"(\S+)\"\s+\"(\S+)\"/) {
 	  $cds2cgc{$2} = $1;
       }
   }
@@ -584,11 +588,11 @@ sub write_rna2cgc {
 
   while (<TACE>) {
       chomp;
-      s/\"//g;
       next if ($_ eq "");
       next if (/acedb\>/);
+      next if /^\/\//;
 
-      if (/^\S+\s+(\S+)\s+(\S+)/) {
+      if (/^\S+\s+\"(\S+)\"\s+\"(\S+)\"/) {
 	  $rna2cgc{$2} = $1;
       }
   }
@@ -614,11 +618,11 @@ sub write_pseudo2cgc {
 
   while (<TACE>) {
       chomp;
-      s/\"//g;
       next if ($_ eq "");
       next if (/acedb\>/);
+      next if /^\/\//;
 
-      if (/^\S+\s+(\S+)\s+(\S+)/) {
+      if (/^\S+\s+\"(\S+)\"\s+\"(\S+)\"/) {
 	  $pseudo2cgc{$2} = $1;
       }
   }
@@ -645,11 +649,11 @@ sub write_rna2BriefID {
 
   while (<TACE>) {
       chomp;
-      s/\"//g;
       next if ($_ eq "");
       next if (/acedb\>/);
+      next if /^\/\//;
 
-      if (/^(\S+)\s+(.+)/) {
+      if (/^\"(\S+)\"\s+\"(.+)\"/) {
 	  $rna2BriefID{$1} = $2;
       }
   }
@@ -678,11 +682,10 @@ sub write_Feature  {
   open (TACE, "echo '$command' | $tace $ace_dir |");
   while (<TACE>) {
       chomp;
-      s/\"//g;
       next if ($_ eq "");
       next if (/acedb\>/);
-      last if (/\/\//);
-      if (/^(\S+)\s+(\S+)/) {
+      next if (/^\/\//);
+      if (/^\"(\S+)\"\s+\"(\S+)\"/) {
 	push @{$est2feature{$1}}, $2; # make a list of features defined by this EST
       }
   }
@@ -713,7 +716,7 @@ sub write_EST  {
     chomp;
     next if ($_ eq "");    # shortcut at empty lines
     next if (/acedb\>/);
-    last if (/\/\//);      # end when you get to the end
+    next if (/^\/\//);      # end when you get to the end
     s/\"//g;               # remove speech marks
     @f = split (/\t/);
     
@@ -844,7 +847,7 @@ sub write_clones2seq  {
 	chomp;
 	next if ($_ eq "");
 	next if (/acedb\>/);
-	next if (/\/\//);
+	next if (/^\/\//);
 	
 	if (/^>(\S+)/) {
       
@@ -896,7 +899,7 @@ sub write_genes2lab  {
       chomp;
       next if ($_ eq "");
       next if (/acedb\>/);
-      last if (/\/\//);
+      next if (/^\/\//);
       if (/^\"(\S+)\"\s+\"(\S+)\"/) {
 	$genes2lab{$1} = $2;
       }
@@ -931,7 +934,7 @@ sub write_worm_gene2cgc  {
     s/\"//g;
     next if ($_ eq "");
     next if (/acedb\>/);
-    last if (/\/\//);
+    next if (/^\/\//);
 
     # split the line into various fields
     my ($gene,$cds,$transcript,$pseudogene,$cgc_name) = split(/\t/, $_) ;
@@ -982,7 +985,7 @@ sub write_worm_gene2geneID  {
       s/\"//g;
       next if ($_ eq "");
       next if (/acedb\>/);
-      last if (/\/\//);
+      next if (/^\/\//);
       
       # split the line into various fields
       my ($gene,$cds,$transcript,$pseudogene) = split(/\t/, $_) ;
@@ -1021,7 +1024,7 @@ sub write_Gene_id{
   while( <TACE> ) {
     next if ($_ eq "");
     next if (/acedb\>/);
-    last if (/\/\//);
+    next if (/^\/\//);
     
     s/\"//g;
     my ($cds,$gene) = split;
@@ -1063,7 +1066,7 @@ sub write_worm_gene2class  {
       chomp;
       next if ($_ eq "");
       next if (/acedb\>/);
-      last if (/\/\//);
+      next if (/^\/\//);
       
       # get rid of quote marks
       s/\"//g;
@@ -1098,7 +1101,7 @@ sub write_clone2dbid {
     s/\"//g;
     next if ($_ eq "");
     next if (/acedb\>/);
-    last if (/\/\//);
+    next if (/^\/\//);
     if (/(\S+)\s+(\S+)/) {
       $clone2dbid{$1} = $2;
     } elsif (/^(\S+)/) {
