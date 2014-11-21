@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl 
 # 
-#  Last updated on: $Date: 2014-11-13 13:55:25 $
+#  Last updated on: $Date: 2014-11-21 13:04:05 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -38,46 +38,7 @@ my %species_info = (
     brugia   => 'FR3',
   },
 
-  genome_project_accs => { },
 );    
-
-#
-# Yuk. The below is a selenoprotein, the only one
-# currently in elegans or briggsae. Since we do not store
-# in the database the information required to populate the
-# the transl_exep qualifier, we need to hard-code it here. 
-# Like I said: yuk.
-#
-
-my %additional_qualifiers = (
-
-  "C06G3.7a" => { 
-    transl_except => ["(pos:4060..4062,aa:Sec)"],
-  },
-  "C06G3.7b" => { 
-    transl_except => ["(pos:4060..4062,aa:Sec)"],
-  },
-  'Bm2025a' => {
-    transl_except => ['(pos:589675..589677,aa:Sec)']
-  },
-  'Bm2025b' => {
-    transl_except => ['(pos:589675..589677,aa:Sec)']
-  },
-  'Bm2025c' => {
-    transl_except => ['(pos:589675..589677,aa:Sec)']
-  },
-  'Bm2025d' => {
-    transl_except => ['(pos:589675..589677,aa:Sec)']
-  },
-  'CBG05747a' => {
-    transl_except => ['(pos:2002..2004,aa:Sec)']
-  },
-  'CBG05747b' => {
-    transl_except => ['(pos:1903..1905,aa:Sec)']
-  },
-);
-
-
 
 my ($test,
     $debug,
@@ -94,11 +55,14 @@ my ($test,
     $database,
     $quicktest,
     $private,
-    $keep_redundant,
     $exclude_multis,
-    %clone2type, %clone2acc, %cds2cgc, %rnagenes, %clone2dbid, %pseudo2cgc, $multi_gene_loci,
+    $sequencelevel,
+    $agp_file,
+    $clone2type, $gene2cgcname, $gene2gseqname, $trans2gene, $clone2dbid, $multi_gene_loci, $seleno_prots,
     $cds2proteinid_db, $cds2status_db, $trans2dbremark_db, $decorations_db,
     $cds2status_h, $cds2proteinid_h,  $trans2dbremark_h, $trans2type_h, $trans2briefid_h,
+    $agp_segs,
+    %additional_qualifiers,
     );
 
 GetOptions (
@@ -119,9 +83,9 @@ GetOptions (
   "moddumpfile:s"   => \$mod_dump_file,
   "rawdumpfile:s"   => \$raw_dump_file,
   "quicktest"       => \$quicktest,
-  "keepredundant"   => \$keep_redundant,
   "excludemultis"   => \$exclude_multis,
-
+  "sequencelevel"   => \$sequencelevel,
+  "agpfile=s"       => \$agp_file,
     );
 
 
@@ -165,7 +129,7 @@ if ($dump_raw) {
 
   if (not defined $raw_dump_file) {    
     $raw_dump_file = "/tmp/EMBLdump.$$";
-    $log->write_to("You are raw embl dumping from $dbdir to $raw_dump_file wihch will be delted\n\n");
+    $log->write_to("You are raw embl dumping from $dbdir to $raw_dump_file which will be delted\n\n");
     $delete_raw_dump_file = 1;
   } else {
     $log->write_to("You are raw embl dumping from $dbdir to $raw_dump_file which will be retained\n\n");
@@ -176,9 +140,13 @@ if ($dump_raw) {
     $command .= "query find Sequence $single\ngif EMBL $raw_dump_file\n";# find sequence and dump
     $command .= "quit\n";# say you don't want to save and exit
   } else {
-    $command .= "query find Sequence Genomic_canonical AND Species=\"${\$wormbase->full_name}\"";
+    $command .= "query find Sequence EMBL_dump_info AND Species=\"${\$wormbase->full_name}\"";
     if ($species eq 'elegans') {
-      $command .= " AND (From_laboratory = \"HX\" OR From_Laboratory = \"RW\")";
+      if ($sequencelevel) {
+        $command .= " AND Source";
+      } else {
+        $command .= " AND NOT Source"
+      }
     }
     $command .= "\ngif EMBL $raw_dump_file\n";# find sequence and dump
     $command .= "quit\n";# say you don't want to save and exit
@@ -206,23 +174,31 @@ if ($dump_modified) {
                       " (either with -dumpraw or -rawdumpfile <file>\n");
   }
 
-  $wormbase->FetchData('clone2type', \%clone2type, "$dbdir/COMMON_DATA");
-  $wormbase->FetchData('cds2cgc', \%cds2cgc, "$dbdir/COMMON_DATA");
-  $wormbase->FetchData('rna2cgc', \%rnagenes, "$dbdir/COMMON_DATA");
-  $wormbase->FetchData('clone2dbid', \%clone2dbid, "$dbdir/COMMON_DATA");
-  $wormbase->FetchData('pseudo2cgc', \%pseudo2cgc, "$dbdir/COMMON_DATA");
+  if ($agp_file) {
+    $agp_segs = &read_agp_files( $agp_file );
+  }
 
-  $multi_gene_loci = &get_multi_gene_loci(\%cds2cgc, \%rnagenes, \%pseudo2cgc);
+  $trans2gene = &fetch_transcript2gene($dbdir);
 
-  $trans2type_h = &fetch_transcript2type($dbdir);
-  $trans2briefid_h = &fetch_transcript2briefid($dbdir);
+  $clone2type = &fetch_clone2type($dbdir);
+  $clone2dbid = &fetch_clone2dbid($dbdir);
+  ($gene2cgcname, $gene2gseqname) = &fetch_gene2names($dbdir);
 
-  # Some information is not yet available in autoace (too early in the build)
-  # By default, pull cds2status, trans2dbremark and protein_ids from current_DB,
-  # however, allow command-line override when necessary
-  $cds2status_h = &fetch_cds2status($cds2status_db);
-  $cds2proteinid_h = &fetch_cds2proteinid($cds2proteinid_db);
-  $trans2dbremark_h = &fetch_trans2dbremark($trans2dbremark_db);
+  if (not $sequencelevel) {
+    $multi_gene_loci = &get_multi_gene_loci($gene2gseqname);
+    
+    $trans2type_h = &fetch_transcript2type($dbdir);
+    $trans2briefid_h = &fetch_transcript2briefid($dbdir);
+    
+    # Some information is not yet available in autoace (too early in the build)
+    # By default, pull cds2status, trans2dbremark and protein_ids from current_DB,
+    # however, allow command-line override when necessary
+    $cds2status_h = &fetch_cds2status($cds2status_db);
+    $cds2proteinid_h = &fetch_cds2proteinid($cds2proteinid_db);
+    $trans2dbremark_h = &fetch_trans2dbremark($trans2dbremark_db);
+    
+    $seleno_prots = &fetch_selenoproteins($dbdir);
+  }
 
   if (not defined $mod_dump_file) {
     $mod_dump_file = "/tmp/EMBL_dump.$$.mod.embl";
@@ -232,21 +208,17 @@ if ($dump_modified) {
     $log->write_to("You are MODIFIED embl dumping to $mod_dump_file which will be retained\n");
   }
 
-  my $span_hash = &get_locs_for_multi_span_objects($raw_dump_file);
-  
   open(my $out_fh, ">$mod_dump_file") or $log->log_and_die("Could not open $mod_dump_file for writing\n");
   open(my $raw_fh, $raw_dump_file) or $log->log_and_die("Could not open $raw_dump_file for reading\n");
   
-  my ($clone, $seqlen, $idline_suffix, @accs, @features, $written_header);
+  my ($seqname, $chromosome, $seqlen, $idline_suffix, @accs, @features, $written_header, $written_version_tag);
   
   while (<$raw_fh>) {
     
     # Store the necessary default ID line elements ready for use in the new style EMBL ID lines.
     if(/^ID\s+(\S+)\s+\S+\s+\S+\s+\S+\s+(\d+)\s+\S+/){
-      ($clone, $seqlen) = ($1, $2);
-      $idline_suffix = sprintf("SV XXX; linear; genomic DNA; %s; INV; $seqlen BP.", 
-                               ($species ne 'elegans') ? "CON" : "STD");
-      
+      ($seqname, $seqlen) = ($1, $2);
+      $idline_suffix = sprintf("SV XXX; linear; genomic DNA; %s; INV; $seqlen BP.", ($sequencelevel) ? "STD" : "CON");;
       @accs = ();
       @features = ();
       $written_header = 0;
@@ -283,18 +255,13 @@ if ($dump_modified) {
       for(my $i=1; $i < @accs; $i++) {
         print $out_fh " $accs[$i];";
       }
-      if (exists $species_info{genome_project_accs}->{$species}) {
-        foreach my $acc (@{$species_info{genome_project_accs}->{$species}}) {
-          print $out_fh " $acc;";
-        }
-      }
       print $out_fh "\nXX\n";
       
       #
       # AC *
       #
-      if ($clone2dbid{$clone}) {
-        print $out_fh "AC * $clone2dbid{$clone}\n";
+      if ($clone2dbid->{$seqname}) {
+        print $out_fh "AC * $clone2dbid->{$seqname}\n";
         print $out_fh "XX\n";
       }
       
@@ -310,20 +277,22 @@ if ($dump_modified) {
       my $de_line;
       
       if ($species eq 'elegans') {
-        if (!defined($clone2type{$clone})){
-          $de_line =  "$full_species_name clone $clone";
-          $log->write_to("WARNING: no clone type for $_");
-        } elsif (lc($clone2type{$clone}) eq "other") {
-          $de_line = "$full_species_name clone $clone";
-        } elsif (lc($clone2type{$clone}) eq "yac") {
-          $de_line = "$full_species_name YAC $clone";
+        if ($seqname =~ /CHROMOSOME_(\S+)/) {
+          $chromosome = $1;
+          $de_line = "$full_species_name chromosome $chromosome";
+        } elsif (!defined($clone2type->{$seqname})){
+          $de_line =  "$full_species_name clone $seqname";
+        } elsif (lc($clone2type->{$seqname}) eq "other") {
+          $de_line = "$full_species_name clone $seqname";
+        } elsif (lc($clone2type->{$seqname}) eq "yac") {
+          $de_line = "$full_species_name YAC $seqname";
         } else {
-          $de_line = "$full_species_name $clone2type{$clone} $clone";
+          $de_line = "$full_species_name $clone2type->{$seqname} $seqname";
         }
       } elsif ($species eq 'briggsae') {
-        $de_line = "$full_species_name AF16 supercontig from assembly CB4, $clone";
+        $de_line = "$full_species_name AF16 supercontig from assembly CB4, $seqname";
       } elsif ($species eq 'brugia'){
-        $de_line = "$full_species_name FR3 supercontig from assembly B_malayi-3.0 $clone"
+        $de_line = "$full_species_name FR3 supercontig from assembly B_malayi-3.0 $seqname"
       }
       
       print $out_fh "DE   $de_line\n";
@@ -365,7 +334,7 @@ if ($dump_modified) {
         if (defined $primary_RA) {
           print $out_fh $primary_RA;
         } else {
-          print $out_fh "RA   ;\n";
+          print $out_fh "RA   Howe, K.L.;\n";
         }
         print $out_fh "RT   ;\n";
         print $out_fh $primary_RL if defined $primary_RL;
@@ -380,22 +349,12 @@ if ($dump_modified) {
     #
     # Comments
     #
-    if (/^CC   For a graphical/) {
-      while(<$raw_fh>) {
-        last if /^XX/;
-        
-        if ($species eq 'elegans') {
-          printf $out_fh "CC   Annotated features correspond to WormBase release %s.\n", $wormbase->get_wormbase_version_name;
-          if ($exclude_multis) {
-            print $out_fh "CC   Features spanning 2 or more clones excluded in this round.\n";
-          }
-          print $out_fh "XX\n";
-          print $out_fh  "CC   For a graphical representation of this sequence and its analysis\n";
-          print $out_fh  "CC   see:- http://www.wormbase.org/species/c_elegans/clone/$clone\n";
-          print $out_fh  "XX\n";
-        }
+    if (/^CC   / and not $sequencelevel) {
+      if (not $written_version_tag) {
+        printf $out_fh "CC   Annotated features correspond to WormBase release %s.\n", $wormbase->get_wormbase_version_name;
+        print $out_fh "XX\n";
+        $written_version_tag = 1;
       }
-      next;
     }
     
     #
@@ -425,15 +384,32 @@ if ($dump_modified) {
     }
     
     if (/^SQ/) {
-      &process_feature_table($out_fh, $clone, $span_hash, @features);
-      if ($species eq 'elegans') {
+      &process_feature_table($out_fh, $seqname, @features);
+      if ($sequencelevel) {
         print $out_fh $_;
+      } elsif (defined $agp_segs) {
+        $log->log_and_die("Could not finf AGP segs for $seqname\n") 
+            if not exists $agp_segs->{$seqname};
+
+        my $con_string = &make_con_from_segs(@{$agp_segs->{$seqname}});
+
+        my $sbreak = $Text::Wrap::break;
+        my $scols  = $Text::Wrap::columns;
+        $Text::Wrap::break = '(?<=[,])';
+        $Text::Wrap::columns = 76;
+        my $wrapped = wrap('', '', $con_string);
+        $Text::Wrap::break = $sbreak;
+        $Text::Wrap::break = $scols;
+
+        foreach my $line (split(/\n/, $wrapped)) {
+          print $out_fh "CO   $line\n";
+        }
       }
       next;
     }
     
     if ($written_header and 
-        (/^\S/ or $species eq 'elegans')) {
+        (/^\S/ or $sequencelevel)) {
       print $out_fh $_;
     }
   }
@@ -470,7 +446,11 @@ exit(0);
 
 ############################
 sub process_feature_table {
-  my ($out_fh, $clone, $spans, @feats) = @_;
+  my ($out_fh, $seqname, @feats) = @_;
+
+  if ($sequencelevel) {
+    @feats = grep { $_->{ftype} eq 'source' } @feats;
+  }
 
   foreach my $feat (@feats) {
 
@@ -479,13 +459,19 @@ sub process_feature_table {
       printf $out_fh "FT   %16s/db_xref=\"taxon:%d\"\n", " ", $species_info{taxon_id}->{$species};
       printf $out_fh "FT   %16s/strain=\"%s\"\n", " ", $species_info{strain}->{$species};
       printf $out_fh "FT   %16s/mol_type=\"genomic DNA\"\n", " ";
+      if ($seqname =~ /CHROMOSOME_(\S+)/) {
+        printf $out_fh "FT   %16s/chromosome=\"$1\"\n", " ";
+      } elsif ($seqname =~ /chr(\S+)/) {
+        printf $out_fh "FT   %16s/chromosome=\"$1\"\n", " ";
+      }
+
       foreach my $tag (@{$feat->{quals}}) {
         foreach my $ln (@$tag) {
           printf $out_fh "FT   %16s%s\n", " ", $ln;
         }
       }
       if ($species eq 'briggsae' ||$species eq 'brugia') {
-        printf $out_fh "FT   %16s/note=\"supercontig %s\"\n", " ", $clone;
+        printf $out_fh "FT   %16s/note=\"supercontig %s\"\n", " ", $seqname;
       }
       next;
     } elsif ($feat->{ftype} =~ /RNA$/) {
@@ -522,7 +508,9 @@ sub process_feature_table {
         $rna_class = 'other';
       } elsif ($mod_dir eq 'tRNA' or  
                $mod_dir eq 'rRNA' or
-               $mod_dir eq 'misc_RNA') {
+               $mod_dir eq 'misc_RNA' or
+               $mod_dir eq 'precursor_RNA' or
+               $mod_dir eq 'prim_transcript') {
         # no class, do nothing
       } else {
         # for all other RNA types, pass them through as
@@ -572,6 +560,8 @@ sub process_feature_table {
     
     my (%revised_quals,
         $wb_isoform_name,
+        $wb_geneid,
+        $gseq_name,
         $gene_qual, 
         $locus_tag_qual, 
         $standard_name_qual, 
@@ -581,6 +571,16 @@ sub process_feature_table {
       if ($qual->[0] =~ /^\/standard_name=\"(\S+)\"/) {
         $wb_isoform_name = $1;
         $standard_name_qual = $qual;        
+        $feat->{wb_isoform_name} = $wb_isoform_name;
+        if (not exists $trans2gene->{$wb_isoform_name}) {
+          $log->log_and_die("Could not find WBGene id for $wb_isoform_name\n");
+        }
+        $wb_geneid = $trans2gene->{$wb_isoform_name};
+
+        if (not exists $gene2gseqname->{$wb_geneid}) {
+          $log->log_and_die("Could not find gseqname for $wb_geneid\n");
+        }
+        $gseq_name =  $gene2gseqname->{$wb_geneid};
       } elsif ($qual->[0] =~ /\/product=/ or
                $qual->[0] =~ /\/gene=/ or
                $qual->[0] =~ /\/protein_id=/ or
@@ -595,59 +595,80 @@ sub process_feature_table {
     #
     # /product
     #
+    my $prod_name = "";
     if ($feat->{ftype} eq 'CDS') {
       if ($feat->{is_pseudo}) {
-        $product_qual = sprintf("/product=\"Pseudogenic transcript %s\"", $wb_isoform_name);
+        $prod_name = "Pseudogenic transcript $wb_isoform_name";
       } else {
-        my ($isoform_suf, $prod_name);
-        if ($wb_isoform_name =~ /^(\S+)([a-z])$/) {
-          $prod_name = $1;
-          $isoform_suf = $2;
+        my $isoform_suf;
+        if ($wb_isoform_name =~ /^$gseq_name(.+)$/) {
+          $isoform_suf = $1;
+        }
+        if (exists $gene2cgcname->{$wb_geneid}) {
+          $prod_name = uc($gene2cgcname->{$wb_geneid});
+        } else {
+          $prod_name = $gseq_name;
+        }       
+        if (defined $isoform_suf) {
+          $prod_name .= ", isoform $isoform_suf";
+        }
+      }
+    } elsif ($feat->{ftype} eq 'mRNA') {
+      my $isoform_suf;
+      if ($wb_isoform_name =~ /^$gseq_name(.+)$/) {
+        $isoform_suf = $1;
+        $isoform_suf =~ s/^\.//;
+      }
+      if ($gene2cgcname->{$wb_geneid}) {
+        $prod_name = uc($gene2cgcname->{$wb_geneid});
+      }
+      $prod_name .= " primary transcript";
+      if ($isoform_suf) {
+        $prod_name .= " $isoform_suf";
+      }
+      
+    } elsif ($feat->{ftype} eq 'misc_RNA') {
+      if ($gene2cgcname->{$wb_geneid}) {
+        $prod_name = $gene2cgcname->{$wb_geneid};
+      } else {
+        $prod_name = $gseq_name;
+      }
+      $prod_name = "Non-coding transcript of $prod_name";
+    } elsif ($feat->{ftype} =~ /RNA/ or $feat->{ftype} eq 'prim_transcript') {
+      my $pname = ($gene2cgcname->{$wb_geneid}) ? $gene2cgcname->{$wb_geneid} : $wb_isoform_name;
+
+      if ($feat->{ftype} eq 'precursor_RNA') {
+        $prod_name = "microRNA $pname precursor";
+      } elsif ($feat->{ftype} eq 'prim_transcript') {
+        $prod_name = "microRNA $pname primary transcript";
+      } elsif (($feat->{ftype} eq 'tRNA' or $feat->{ftype} eq 'rRNA') and not $feat->{is_pseudo}) {
+        if ($trans2briefid_h->{$wb_isoform_name}) {
+          $prod_name = $trans2briefid_h->{$wb_isoform_name};
         } else {
           $prod_name = $wb_isoform_name;
         }
-        if (exists $cds2cgc{$wb_isoform_name}) {
-          $prod_name = uc($cds2cgc{$wb_isoform_name});
+      } elsif (exists $feat->{rna_class} and $feat->{rna_class} eq 'miRNA') {
+        $prod_name = "microRNA $pname";
+        if ($wb_isoform_name =~ /([ab])$/) {
+          $prod_name .= " ($1)";
         }
-        
-        $product_qual = sprintf("/product=\"Protein %s%s\"",
-                                $prod_name,
-                                defined $isoform_suf ? ", isoform $isoform_suf" : "");
-      }
-    } elsif ($feat->{ftype} eq 'misc_RNA') {
-      my $prod_name;
-      if ($rnagenes{$wb_isoform_name}) {
-        $prod_name = $rnagenes{$wb_isoform_name};
       } else {
-        $prod_name = $wb_isoform_name;
-        $prod_name =~ s/[a-z]$//; 
-      }
-      $product_qual = "/product=\"Non-coding transcript of $prod_name\"";
-    } elsif ($feat->{ftype} =~ /RNA/) {
-      if (($feat->{ftype} eq 'tRNA' or $feat->{ftype} eq 'rRNA') and $trans2briefid_h->{$wb_isoform_name}) {
-        my $bid = $trans2briefid_h->{$wb_isoform_name};
-        $product_qual = "/product=\"$bid\"";
-      } else {
-        if ($rnagenes{$wb_isoform_name}) {
-          $product_qual = "/product=\"RNA transcript $rnagenes{$wb_isoform_name}\"";
-        } else {
-          $product_qual = "/product=\"RNA transcript $wb_isoform_name\"";
-        }
+        $prod_name = "RNA transcript $pname";
       }
     }
-    $product_qual = [$product_qual];
+    $product_qual = ["/product=\"$prod_name\""] if $prod_name;
 
     #
     # /protein_id and prediction_status notes
     #
     if ($feat->{ftype} eq 'CDS') {
       if (exists $cds2proteinid_h->{$wb_isoform_name} and
-          exists $cds2proteinid_h->{$wb_isoform_name}->{$clone} 
+          exists $cds2proteinid_h->{$wb_isoform_name}->{$seqname} 
           
           # dont include protein-ids for multi-clone objects; they cause trouble
           #not exists $spans->{$wb_isoform_name}) {
           ) {
-        my $pid = $cds2proteinid_h->{$wb_isoform_name}->{$clone};
+        my $pid = $cds2proteinid_h->{$wb_isoform_name}->{$seqname};
         push @{$revised_quals{protein_id}}, ["/protein_id=\"$pid\""];
       }
 
@@ -670,20 +691,10 @@ sub process_feature_table {
     # /gene
     #
     my $gene_qual_val;
-    if ($cds2cgc{$wb_isoform_name}) {
-      $gene_qual_val = $cds2cgc{$wb_isoform_name};
-    } elsif ($rnagenes{$wb_isoform_name}) {
-      $gene_qual_val = $rnagenes{$wb_isoform_name};
-    } elsif ($pseudo2cgc{$wb_isoform_name}) {
-      $gene_qual_val = $pseudo2cgc{$wb_isoform_name}
+    if ($gene2cgcname->{$wb_geneid}) {
+      $gene_qual_val = $gene2cgcname->{$wb_geneid};
     } else {
-      if ($wb_isoform_name =~ /^(\S+\.\d+)[a-z]?/) {
-        $gene_qual_val = $1;
-      } elsif (($species eq 'briggsae' || $species eq 'brugia') and $wb_isoform_name =~ /^(\S+\d+)[a-z]$/) {
-        $gene_qual_val = $1;
-      } else {
-        $gene_qual_val = $wb_isoform_name;
-      }
+      $gene_qual_val = $gseq_name;
     }
     $gene_qual = ["/gene=\"$gene_qual_val\""];
 
@@ -695,16 +706,12 @@ sub process_feature_table {
     # we cannot reliably use the gene sequence name as the locus tag, because
     # the /gene and /locus_tag qualifiers must be consistent across features
     # (i.e. two features with the same /locus_tag must also have the same /gene)
-    # For these then, we just treat them as two separate gene, and use the isoform
-    # id to construct the locus_tag
-    #
-    my $lt = $wb_isoform_name;
-    if ($lt =~ /^(\S+\.\d+)[a-z]?/) {
-      $lt = $1;
-    }
-    $locus_tag_qual = [];
+    # For these then, we just treat them as two separate gene, and use the thing
+    # we put in the gene qualifier as the locus_tag suffix
+
+    my $lt = $gseq_name;
     if (exists $multi_gene_loci->{$lt}) {
-      $lt = $wb_isoform_name;
+      $lt = $gene_qual_val;
     }
     if ($species eq 'briggsae' and $lt =~ /CBG(\S+)/) {
       $lt = "CBG_$1";
@@ -713,13 +720,14 @@ sub process_feature_table {
     } elsif ($species eq 'brugia'){
       $lt = "BM_${lt}";
     }
-    push @{$locus_tag_qual}, sprintf("/locus_tag=\"%s\"", $lt);
+    $locus_tag_qual = [sprintf("/locus_tag=\"%s\"", $lt)];
 
    
     #
     # Other qualifiers
     #
-    
+    &add_additional_qualifiers( $feat );
+
     if ($additional_qualifiers{$wb_isoform_name}) {
       foreach my $qk (keys %{$additional_qualifiers{$wb_isoform_name}}) {
         foreach my $qual (@{$additional_qualifiers{$wb_isoform_name}->{$qk}}) {
@@ -751,16 +759,15 @@ sub process_feature_table {
     } elsif ($feat->{ftype} eq 'ncRNA' and 
              $feat->{rna_class} eq 'other') { 
       
+      # We can only have one note for ncRNA features
       if ($feat->{rna_note}) {
         push @{$revised_quals{note}}, ["/note=\"$feat->{rna_note}\""];
-      } 
-      if (exists $trans2type_h->{$wb_isoform_name} and 
+      } elsif (exists $trans2type_h->{$wb_isoform_name} and 
           exists $trans2type_h->{$wb_isoform_name}->{note} and
           $trans2type_h->{$wb_isoform_name}->{note} ) {
         my $type_rna_note = $trans2type_h->{$wb_isoform_name}->{note};
         push @{$revised_quals{note}}, ["/note=\"$type_rna_note\""];
-      }
-      if ($trans2briefid_h->{$wb_isoform_name} and 
+      } elsif ($trans2briefid_h->{$wb_isoform_name} and 
           $trans2briefid_h->{$wb_isoform_name} ne "ncRNA") {
         my $bid_rna_note = $trans2briefid_h->{$wb_isoform_name};
         push @{$revised_quals{note}}, ["/note=\"$bid_rna_note\""];
@@ -771,17 +778,6 @@ sub process_feature_table {
     #
     # Finally, print them all out in a consistent sensible order
     #
-
-    if (exists $spans->{$wb_isoform_name} and 
-        not exists $spans->{$wb_isoform_name}->{$clone}) {
-      # this feature is annotated on multiple clones, 
-      # and this is not the clone we have chosen to 
-      # place it on
-      if ($debug) {
-        $log->write_to("Discarding duplicate feat: $wb_isoform_name will not be placed on $clone\n");
-      }
-      next;
-    }
 
     printf $out_fh "FT   %-16s%s\n", $feat->{ftype}, $feat->{location}->[0];
     for(my $i=1; $i < @{$feat->{location}}; $i++) {
@@ -813,236 +809,69 @@ sub process_feature_table {
 }
 
 ###########################
-# this method obtains a list of multi-span objects, i.e. objects
-# that span multiple clones. Since ENA no longer accept these
-# annotations on multiple clones, we need to choose one clone
-# to attach them to, and do this by selecting the clone where
-# most of the object lies, using a series of rules
-#
-# Additionally, when sequence has ben updayted and there are mutual 
-# dependencies between clones (i.e. clone X refers to clone Y and vice 
-# versa), this can cause problems because clone X will be referring to 
-# the "new" version of clone Y which has not been loaded yet. We therefore 
-# provide the option of excluding all multi-clone features for one round
-# of submissions. A second submission round will therefore be required to
-# process the clones with foreign references
+sub add_additional_qualifiers {
+  my ($feat) = @_;
 
-sub get_locs_for_multi_span_objects {
-  my $file = shift;
+  my $wb_isoform_name = $feat->{wb_isoform_name};
 
-  my ($clone, $acc, $type, $loc, $obj_name, %locs, %best_obj_locs);
-
-  open(my $fh, $file) or $log->log_and_die("Could not open $file for reading\n");
-  while(<$fh>) {
-    /^ID\s+(\S+)/ and do {
-      $clone = $1;
-      $acc = "";
-      next;
-    };
-
-    /^AC\s+(\S+);/ and do {
-      $acc = $1 if not $acc;
-    };
-
-    /^FT   (\S+)\s+(\S+)$/ and do {
-      ($type, $loc) = ($1, $2);
-      while(<$fh>) {
-        last if /^FT\s+\//;
-        /FT\s+(\S+)/ and $loc .= $1;
-      }
-    };
-      
-    /^FT\s+\/standard_name=\"(\S+)\"/ and do {
-      $obj_name = $1;
-      
-      push @{$locs{"$type:$obj_name"}}, {
-        clone => $clone,
-        acc   => $acc,
-        location => $loc,
-      };
-
-      next;
-    }
-  }
-
-  foreach my $obj (keys %locs) {
-    my @locs = @{$locs{$obj}};
-    my ($obj_name) = $obj =~ /:(\S+)/;
-
-    next if scalar(@locs) == 1;
-
-    $best_obj_locs{$obj_name} = {};
-
-    next if $exclude_multis;
+  #
+  # Selenoproteins
+  #
+  if (exists $seleno_prots->{$wb_isoform_name}) {
     
-    foreach my $loc (@locs) {
-      my ($local_extent, $foreign_extents) = &parse_location($loc->{location});
-      $loc->{local_extent} = $local_extent;
-      $loc->{foreign_extents} = $foreign_extents;
-    }
+    my ($strand, @exons) = &parse_location($feat->{location});
     
-    @locs = grep { $_->{local_extent} > 0 } @locs;
-    @locs = sort { $b->{local_extent} <=> $a->{local_extent} } @locs;
-
-    my $best_loc = 0;
-    for(my $i=0; $i < @locs; $i++) {
-      my $loc = $locs[$i];
-      my $clone = $loc->{clone};
-
-      if ($obj_name =~ /$clone/) {
-        # sequence name of object matches clone name, 
-        # so this is the best choice for this obj
-        $best_loc = $i;
-        last;
+    my $cds_cdna_len = $seleno_prots->{$wb_isoform_name}->{cds_cdna_length};
+    foreach my $seleno_pos_start (@{$seleno_prots->{$wb_isoform_name}->{selenos}}) {
+      if ($strand < 0) {
+        $seleno_pos_start = $cds_cdna_len - $seleno_pos_start - 1;
       }
-    }
+      my $seleno_pos_end = $seleno_pos_start + 2;
 
-
-    my @best_locs = ($keep_redundant) ? @locs : ($locs[$best_loc]);
-
-    foreach my $loc (@best_locs) {    
-      my $clone = $loc->{clone};
-      $best_obj_locs{$obj_name}->{$clone} = 1;
-    }
-
-  }
-
-  return \%best_obj_locs;
-}
-  
-
-##################################
-# read_gff_annotation
-#
-# This method scans the GFF files for CDS features
-# spanning clones in different orientations. AceDB
-# will not include these in the dumps, so we need
-# to add them in by hand (which of course begs the
-# the question of why we need Acedb at all for the
-# EMBL dumping...)
-##################################
-sub read_gff_annotation {
-  my @types = ('curated');
-
-  my (%additional_feats_by_clone);
-
-  my $cc = Coords_converter->invoke($wormbase->autoace, 0, $wormbase);
-
-  foreach my $chr ($wormbase->get_chromosome_names(-prefix => 1)) {
-    my $gff_fh = $wormbase->open_GFF_file($chr, "curated", $log);
-      
-    my %trans;
-
-    while(<$gff_fh>) {
-      next if (/^\#/);
-      my @data = split(/\t+/, $_);
-      
-      if ($data[2] eq 'exon') {
-        my ($class, $obj_name) = ($data[8] =~ /(\S+)\s+\"(\S+)\"/);
-
-        push @{$trans{$obj_name}->{exons}}, [$data[3], $data[4]];
-        $trans{$obj_name}->{chr} = $chr;
-        $trans{$obj_name}->{strand} = $data[6];
-
-        $trans{$obj_name}->{start} = $data[3]
-            if not exists $trans{$obj_name}->{start} or $trans{$obj_name}->{start} > $data[3];
-        
-        $trans{$obj_name}->{end} = $data[4]
-            if not exists $trans{$obj_name}->{end} or $trans{$obj_name}->{end} < $data[4];
-        
-      }      
-    }
-
-    CDS: foreach my $cds (keys %trans) {
-      my ($seq) = $cc->LocateSpan($trans{$cds}->{chr},
-                                  $trans{$cds}->{start},
-                                  $trans{$cds}->{end});
-      
-      if (not $cc->isa_clone($seq)) {
-        # this CDS crosses boundaries, do break it down to constituent exons
-        my (@exons, @mapped_exons, %strands);
-
-        @exons = @{$trans{$cds}->{exons}};
-        if ($trans{$cds}->{strand} eq '+') {
-          @exons = sort { $a->[0] <=> $b->[0] } @exons;
-        } else {
-          @exons = sort { $b->[0] <=> $a->[0] } @exons;
-        }
-
-        foreach my $ex (@exons) {
-          my ($ex_seq, $ex_st, $ex_en) = $cc->LocateSpan($trans{$cds}->{chr},
-                                                         @$ex);
-          if ($ex_en > $ex_st) {
-            push @mapped_exons, {
-              clone => $ex_seq,
-              start => $ex_st,
-              end   => $ex_en,
-              strand => 1,
-            }; 
-          } else {
-            push @mapped_exons, {
-              clone => $ex_seq,
-              start => $ex_en,
-              end   => $ex_st,
-              strand => -1,
-            }; 
-          }
+      my $cur_cdna_pos = 0;
+      my @segs;
+      foreach my $ex (@exons) {
+        for(my $gen_pos = $ex->{start}; $gen_pos <= $ex->{end}; $gen_pos++) {
+          $cur_cdna_pos++;
           
-          if (not $cc->isa_clone($ex_seq)) {
-            # This gene has an exon crossing a supercontig boundary. Complicated. Messy. Ignore
-            $log->write_to("Gene $cds has an exon crossing a supercontig boundary; ignoring it\n");
-            next CDS;
-          }
-        }
-
-        map { $strands{$_->{strand}} = 1 } @mapped_exons;
-        
-        if (scalar(keys %strands) > 1) {
-          # this gene spans across neighbouring sctgs that are in different orientations. 
-          # Acedb does (not) currently include these in the raw dump, so we will have to
-          # insert them ourselves. 
-          my $parent_clone = $mapped_exons[0]->{clone};
-
-          my @join_els; 
-          foreach my $ex (@mapped_exons) {
-            if ($ex->{strand} < 0) {
-              if ($ex->{clone} eq $parent_clone) {
-                push @join_els, sprintf("complement(%d..%d)", $ex->{start}, $ex->{end});
-              } else {
-                push @join_els, sprintf("complement(%s:%d..%d)", $clone2acc{$ex->{clone}}, $ex->{start}, $ex->{end});
-              }
+          if ($cur_cdna_pos >= $seleno_pos_start and $cur_cdna_pos <= $seleno_pos_end) {
+            if (not @segs or $segs[-1]->{end} + 1 < $cur_cdna_pos) {
+              push @segs, {
+                start => $gen_pos,
+                end   => $gen_pos,
+              };
             } else {
-              if ($ex->{clone} eq $parent_clone) {
-                push @join_els, sprintf("%d..%d", $ex->{start}, $ex->{end});
-              } else {
-                push @join_els, sprintf("%s:%d..%d", $ex->{clone}, $ex->{start}, $ex->{end});
-              }
+              $segs[-1]->{end} = $gen_pos,
             }
           }
-          my $join_str = sprintf("join(%s)", join(", ", @join_els));
-          my @loc_lines =split(/\n/, wrap('','',$join_str));
-          map { s/\s+//g } @loc_lines;
-
-          my $feat = {
-            location => \@loc_lines,
-            ftype    => 'CDS',
-            quals    => [["/standard_name=\"$cds\""]],
-            clone    => $parent_clone,            
-          };
-
-          push @{$additional_feats_by_clone{$parent_clone}}, $feat;
         }
       }
+      @segs = map { sprintf("%d..%d", $_->{start}, $_->{end}) }@segs;
+      my $pos_str = (scalar(@segs) > 1) ? "join(" . join(",", @segs) . ")" : $segs[0];
+
+      # transl_except => ["(pos:4060..4062,aa:Sec)"],      
+      push @{$additional_qualifiers{$wb_isoform_name}->{transl_except}},  "(pos:$pos_str,aa:Sec)";
     }
   }
-
-  return \%additional_feats_by_clone;
 }
+
 
 
 ##########################
 sub parse_location {
-  my ($loc_string) = @_;
+  my ($loc_line_arr) = @_;
+
+  my $loc_string = "";
+  foreach my $line (@$loc_line_arr) {
+    if ($line =~ /(\S+)/)  {
+      $loc_string .= $1;
+    }
+  }
+
+  my $strand = 1;
+  if ($loc_string =~ /complement/) {
+    $strand = -1;
+  }
 
   while(1) {
     if ($loc_string =~ /^[^\(]*(complement|join)\(.+\)[^\)]*$/) {
@@ -1051,54 +880,41 @@ sub parse_location {
       last;
     }
   }
-  
-  my @comps = split(/,/, $loc_string);
-  my @local_components = grep { $_ =~ /^\d+\.\.\d+$/ } @comps;
 
-  my (%remote_len);
-  my $locallen = 0;
-  foreach (@comps) {
-    /^(\d+)\.\.(\d+)/ and do {
-      $locallen += ($2 - $1 + 1);
-      next;
-    };
-    /^(\S+):(\d+)\.\.(\d+)/ and do {
-      $remote_len{$1} += ($3 - $2 + 1);
-      next;
-    };
+  my @exons;
+  foreach my $comp (split(/,/, $loc_string)) {
+    my ($st, $en) = $comp =~ /^(\d+)\.\.(\d+)$/;
+
+    push @exons, {
+      start => $st,
+      end   => $en,
+    }
   }
-  return ($locallen, \%remote_len);
+
+  return ($strand, @exons);
 }
 
 ##########################
 sub get_multi_gene_loci {
-  my @hashes = @_;
+  my ($gene2gseqname) = @_;
 
-  my (%locus2gene, %multi_gene_loci);
-  foreach my $h (@hashes) {
-    foreach my $iso (keys %$h) {
-      my $locus_id = $iso;
-      if ($iso =~ /^(\S+\d)[a-z]$/) {
-        $locus_id = $1;
-      }
+  # multi gene loci: when two or more transcripts have
+  # the same sequence name, but multiple genes
 
-      $locus2gene{$locus_id}->{$h->{$iso}} = 1;
+  my (%multi_gene_loci, %gseqnames);
+
+  foreach my $wbg (sort keys %{$gene2gseqname}) {
+    my $gseqname = $gene2gseqname->{$wbg};
+
+    $gseqnames{$gseqname}->{$wbg} = 1;
+  }
+
+  foreach my $gseqname (keys %gseqnames) {
+    if (scalar(keys %{$gseqnames{$gseqname}}) > 1) {
+      $multi_gene_loci{$gseqname} = 1;
     }
   }
 
-  foreach my $locus_id (keys %locus2gene) {
-    if (scalar(keys %{$locus2gene{$locus_id}}) > 1) {
-      # pathological case: multiple gene at same
-      # "locus". In these cases, we could choose to
-      # (a) omit the locus_tag, or 
-      # (b) use the locus_id as the gene_name (so that it
-      # matches /locus_tag) and pass through the gene 
-      # name as a note. Pass back a structure that allows
-      # both of these possibilities. 
-      $multi_gene_loci{$locus_id} = 1;
-    }
-  }
-  
   return \%multi_gene_loci;
 }
 
@@ -1110,7 +926,7 @@ sub get_references {
       [ 
         "RX   PUBMED; 9851916.",
         "RG   Caenorhabditis elegans Sequencing Consortium",
-        "RA   ;",
+        "RA   Sulson J.E., Waterston R.;",
         "RT   \"Genome sequence of the nematode C. elegans: a platform for investigating",
         "RT   biology\";",
         "RL   Science 282(5396):2012-2018(1998).",
@@ -1178,6 +994,277 @@ sub get_references {
   return $primary_references{$species};
 }
 
+
+###################################
+sub stage_dump_to_submissions_repository {
+  my ($dump_file) = @_;
+
+  my (%records, $current_lines, $cosmid);
+
+  my $submit_repo = $wormbase->submit_repos;
+
+  open(my $dfg, $dump_file) or $log->log_and_die("Could not open $dump_file for reading\n");
+
+  while(<$dfg>) {
+    /^ID/ and do {
+      $current_lines = [];
+    };
+
+    /^DE\s+/ and do {
+      if (/^DE\s+.+\s+(\S+)$/) {
+        $cosmid = $1;
+      } else {
+        $log->log_and_die("Could not parse contig name from DE line: $_\n");
+      }
+
+      foreach my $line (@$current_lines) {
+        push @{$records{$cosmid}->{embl}}, $line;
+      }
+      $current_lines = $records{$cosmid}->{embl};
+    };
+    
+    if (/^\s+(.+)$/) {
+      my $seq = $1;
+      $seq =~ s/\s+//g;
+      $records{$cosmid}->{seq} .= uc($seq);
+    }
+    
+    push @$current_lines, $_;
+  }
+  
+  foreach my $cosmid (sort keys %records) {
+    my $hash = $wormbase->submit_repos_hash_from_sequence_name($cosmid);
+    
+    next if not exists $records{$cosmid}->{seq};
+    
+    my $seq_file  = "$submit_repo/$hash/$cosmid/$cosmid.fasta";      
+    if (not -e $seq_file) {
+      $log->log_and_die("Could not find the FASTA file for $cosmid ($seq_file)");
+    }
+    
+    my $sio = Bio::SeqIO->new(-format => 'fasta',
+                              -file   => $seq_file);
+    my $seqobj = $sio->next_seq;
+    
+    if (uc($seqobj->seq) ne $records{$cosmid}->{seq}) {
+      # sequence has changed
+      my $newseqobj = Bio::PrimarySeq->new(-id => $cosmid,
+                                           -seq => $records{$cosmid}->{seq});
+      my $sioout = Bio::SeqIO->new(-format => 'fasta',
+                                   -file   => ">$seq_file");
+      $sioout->write_seq($newseqobj);
+      $sioout->close();
+    }
+  }
+  
+  foreach my $cosmid (sort keys %records) {
+     my $hash = $wormbase->submit_repos_hash_from_sequence_name($cosmid);
+      
+     my $embl_file = "$submit_repo/$hash/$cosmid/$cosmid.embl";
+     if (not -e $embl_file) {
+       $log->log_and_die("Could not find the EMBL file for $cosmid ($embl_file)");
+     }
+       
+     open my $emblfh, ">$embl_file" or $log->log_and_die("Could not open $embl_file for writing\n");
+     foreach my $ln (@{$records{$cosmid}->{embl}}) {
+       print $emblfh $ln;
+     }
+     close($emblfh);
+  }
+
+
+  my $modified_count = 0;
+
+  open(my $gitcmd, "cd $submit_repo && git ls-files -m |")
+      or $log->write_to("Warning: could not run git command to get list of locally modified files\n");
+  while(<$gitcmd>) {
+    /^(\S+)/ and do {
+      $log->write_to("   $1 locally modified\n");
+      $modified_count++;
+    };
+  }
+
+  return $modified_count;
+}
+
+
+##############################################
+sub read_agp_files {
+  my @f = @_;
+
+  my %segs;
+
+  foreach my $f (@f) {
+    my $fh;
+    if ($f =~ /\.gz$/) {
+      open($fh, "gunzip -c $f |") or $log->log_and_die("Could not open zipped agp file $f for reading\n");
+    } else {
+      open($fh, $f) or $log->log_and_die("Could not open agp file $f for reading\n");
+    }
+    while(<$fh>) {
+      my @l = split(/\t/, $_);
+
+      # Grr, having to deal with that CHROMOSOME prefix again...
+      if ($species eq 'elegans' and grep { $l[0] eq $_ } ('I','II','III','IV','V','X')) {
+        $l[0] = "CHROMOSOME_$l[0]";
+      }
+
+      my $seg =  {
+        chr       => $l[0],
+        start     => $l[1], 
+        end       => $l[2],
+        type      => ($l[4] eq 'N') ? 'gap' : 'seq',
+      };
+
+      if ($seg->{type} eq 'seq') {
+        $seg->{ctg_acc} = $l[5];
+        $seg->{ctg_start} = $l[6];
+        $seg->{ctg_end} = $l[7];
+        $seg->{ctg_ori} = $l[8];
+      };
+
+      push @{$segs{$l[0]}}, $seg;
+    }
+  }
+
+  return \%segs;
+}
+
+##############################################
+sub make_con_from_segs {
+  my @segs = @_;
+
+  my @components;
+  foreach my $seg (@segs) {
+    if ($seg->{type} eq 'gap') {
+      push @components, sprintf("gap(%d)", $seg->{end} - $seg->{start} + 1);
+    } else {
+      my $reg = sprintf("%s:%d..%d", $seg->{ctg_acc}, $seg->{ctg_start}, $seg->{ctg_end});
+      if ($seg->{ctg_ori} eq '-') {
+        $reg = "complement($reg)";
+      }
+      push @components, $reg;
+    }
+  }
+  return "join(" . join(",", @components) . ")";
+}
+
+##############################################
+## Database fetching methods.
+##############################################
+
+################################
+sub fetch_clone2type {
+  my ($db) = @_;
+
+  my %clone2type;
+  $wormbase->FetchData('clone2type', \%clone2type, "$db/COMMON_DATA");
+  
+  return \%clone2type;
+}
+
+################################
+sub fetch_clone2dbid {
+  my ($db) = @_;
+
+  my %clone2dbid;
+  $wormbase->FetchData('clone2dbid', \%clone2dbid, "$db/COMMON_DATA");
+
+  return \%clone2dbid;
+}
+
+################################
+sub fetch_transcript2gene {
+  my ($db) = @_;
+
+  my (%transcript2gene);
+
+  $wormbase->FetchData('worm_gene2geneID_name', \%transcript2gene, "$db/COMMON_DATA");
+  return \%transcript2gene;
+}
+
+
+#####################
+sub fetch_selenoproteins {
+  my ($ref_db) = @_;
+  
+  my %selenos;
+  
+  if ($quicktest) {
+    return \%selenos;
+  }
+
+  my $db = Ace->connect(-path => $ref_db);
+  my $iter = $db->fetch_many(-query => "Find CDS WHERE Genetic_code = \"Selenocysteine\"");
+  while(my $cds = $iter->next) {
+    my $pep_seq = $cds->asPeptide;
+
+    $pep_seq =~ s/>\S+\n//;
+    $pep_seq =~ s/\n//g; 
+    # EMBL feature includes implicit STOP feature
+    $pep_seq .= "*";
+    my $pep_len = length($pep_seq);
+    my $cds_len = $pep_len * 3;
+
+    $selenos{$cds->name} = {
+      cds_cdna_length => $cds_len,
+      selenos    => [],
+    };
+    
+    while ($pep_seq =~ /U/g) {
+      my $match_pos = pos($pep_seq);
+      
+      # assumption: selenoproteins will always have a complete CDS
+      # (so that we can trivially convert to CDS coords)
+      my $cds_cdna_end = $match_pos * 3;
+      my $cds_cdna_start = $cds_cdna_end - 2;
+
+      push @{$selenos{$cds->name}->{selenos}}, $cds_cdna_start;
+    }
+  }
+
+  $db->close();
+
+  return \%selenos;
+}
+
+
+################################
+sub fetch_gene2names {
+  my ($db) = @_;
+
+  my (%gene2cgc, %gene2gseqname);
+  
+  if (not $quicktest and -d $db) {
+
+    $log->write_to("You are using $db to get gene names\n");
+
+    my $query = &get_gene_name_query();
+    my $command = "Table-maker -p $query\nquit\n";
+    open(TACE, "echo '$command' | $tace $db |");
+    while(<TACE>) {
+      chomp;
+      s/\"//g;
+      next if /^acedb/;
+      next if /^\/\//;
+      next if not /\S/;
+
+      my ($gene, $cgc_name, $gseqname) = split(/\t/, $_);
+
+      $log->log_and_die("Could not get gseqname for $gene\n") if not $gseqname;
+      
+      if (defined $gene) {
+        $gene2cgc{$gene} = $cgc_name if $cgc_name;
+        $gene2gseqname{$gene} = $gseqname if $gseqname;
+      }
+    }
+    unlink $query;
+  }
+
+  return (\%gene2cgc, \%gene2gseqname);
+}
+
+
 #######################
 sub fetch_cds2status {
   my ($ref_db)= @_;
@@ -1190,7 +1277,7 @@ sub fetch_cds2status {
 
   if (-d $ref_db) {
 
-    $log->write_to("You are using $ref_db to get CDS status\n\n");
+    $log->write_to("You are using $ref_db to get CDS status\n");
     
     my $query = &get_status_query();
     my $command = "Table-maker -p $query\nquit\n";
@@ -1226,7 +1313,7 @@ sub fetch_cds2proteinid {
   }
 
   if (-d $ref_db) {
-    $log->write_to("You are using $ref_db to get CDS protein_id\n\n");
+    $log->write_to("You are using $ref_db to get CDS protein_id\n");
     
     my $query = &get_protein_id_query();
     my $command = "Table-maker -p $query\nquit\n";
@@ -1235,8 +1322,8 @@ sub fetch_cds2proteinid {
       chomp;
       s/\"//g;
       if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\d+)$/) {
-        my ($cds, $clone, $protein_id, $version) = ($1, $2, $3, $4);
-        $cds2proteinid{$cds}->{$clone} = "${protein_id}.${version}";
+        my ($cds, $seqname, $protein_id, $version) = ($1, $2, $3, $4);
+        $cds2proteinid{$cds}->{$seqname} = "${protein_id}.${version}";
       }   
     }
     close(TACE);
@@ -1249,7 +1336,6 @@ sub fetch_cds2proteinid {
   }
 
   return \%cds2proteinid;
-
 }
 
 #######################
@@ -1263,7 +1349,7 @@ sub fetch_trans2dbremark {
   }
 
   if (-d $ref_db) {
-    $log->write_to("You are using $ref_db to get CDS/Transcript db_remarks\n\n");
+    $log->write_to("You are using $ref_db to get CDS/Transcript db_remarks\n");
     
     my @qfiles;
     foreach my $class ("CDS", "Transcript") {
@@ -1299,7 +1385,7 @@ sub fetch_transcript2type {
   my %tran2type;
 
   if (not $quicktest and -d $ref_db) {
-    $log->write_to("You are using $ref_db to get Transcript types\n\n");
+    $log->write_to("You are using $ref_db to get Transcript types\n");
     
     my $query = &get_ncrna_type_query();
     my $command = "Table-maker -p $query\nquit\n";
@@ -1331,7 +1417,7 @@ sub fetch_transcript2briefid {
   my %tran2briefid;
 
   if (not $quicktest and -d $ref_db) {
-    $log->write_to("You are using $ref_db to get CDS/Transcript Brief_identification\n\n");
+    $log->write_to("You are using $ref_db to get CDS/Transcript Brief_identification\n");
     
     foreach my $class ("CDS", "Transcript", "Pseudogene") {
       my $query = &get_brief_id_query($class);
@@ -1577,6 +1663,7 @@ Visible
 Class 
 Class Transcript 
 From 1 
+$condition
  
 Colonne 2 
 Width 12 
@@ -1611,99 +1698,59 @@ EOF
 }
 
 
-###################################
-sub stage_dump_to_submissions_repository {
-  my ($dump_file) = @_;
+##########################
+sub get_gene_name_query {
 
-  my (%records, $current_lines, $cosmid);
+  my $tmdef = "/tmp/gname_tmquery.$$.def";
+  open my $qfh, ">$tmdef" or 
+      $log->log_and_die("Could not open $tmdef for writing\n");  
 
-  my $submit_repo = $wormbase->submit_repos;
 
-  open(my $dfg, $dump_file) or $log->log_and_die("Could not open $dump_file for reading\n");
-
-  while(<$dfg>) {
-    /^ID/ and do {
-      $current_lines = [];
-    };
-
-    /^DE\s+/ and do {
-      if (/^DE\s+.+\s+(\S+)$/) {
-        $cosmid = $1;
-      } else {
-        $log->log_and_die("Could not parse contig name from DE line: $_\n");
-      }
-
-      foreach my $line (@$current_lines) {
-        push @{$records{$cosmid}->{embl}}, $line;
-      }
-      $current_lines = $records{$cosmid}->{embl};
-    };
-    
-    if (/^\s+(.+)$/) {
-      my $seq = $1;
-      $seq =~ s/\s+//g;
-      $records{$cosmid}->{seq} .= uc($seq);
-    }
-    
-    push @$current_lines, $_;
+  my $condition = "Condition Live AND Species = \"$full_species_name\"";
+  if ($single) {
+    $condition .= " AND Sequence = \"$single\"";
+  } else {
+    $condition .= " AND Sequence";
   }
+
+  my $gname_query = <<"EOF";
+
+Sortcolumn 1
+
+Colonne 1 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Gene 
+From 1 
+$condition
+ 
+Colonne 2 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Gene_name 
+From 1 
+Tag CGC_name 
+ 
+Colonne 3 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Gene_name 
+From 1 
+Tag Sequence_name 
+
+EOF
+ 
+  print $qfh $gname_query;
+  close($qfh);
+
+  return $tmdef;
   
-  # only do sequences for C.elegans, because we do not do the
-  # submission of primary sequence records for other species
-  if ($species eq 'elegans') {
-    foreach my $cosmid (sort keys %records) {
-      my $hash = $wormbase->submit_repos_hash_from_sequence_name($cosmid);
-      
-      my $seq_file  = "$submit_repo/$hash/$cosmid/$cosmid.fasta";
-      
-      if (not -e $seq_file) {
-        $log->log_and_die("Could not find the FASTA file for $cosmid ($seq_file)");
-      }
-      
-      my $sio = Bio::SeqIO->new(-format => 'fasta',
-                                -file   => $seq_file);
-      my $seqobj = $sio->next_seq;
-      
-      if (uc($seqobj->seq) ne $records{$cosmid}->{seq}) {
-        # sequence has changed
-        my $newseqobj = Bio::PrimarySeq->new(-id => $cosmid,
-                                             -seq => $records{$cosmid}->{seq});
-        my $sioout = Bio::SeqIO->new(-format => 'fasta',
-                                     -file   => ">$seq_file");
-        $sioout->write_seq($newseqobj);
-        $sioout->close();
-      }
-    }
-  }
-  
-  foreach my $cosmid (sort keys %records) {
-     my $hash = $wormbase->submit_repos_hash_from_sequence_name($cosmid);
-      
-     my $embl_file = "$submit_repo/$hash/$cosmid/$cosmid.embl";
-     if (not -e $embl_file) {
-       $log->log_and_die("Could not find the EMBL file for $cosmid ($embl_file)");
-     }
-       
-     open my $emblfh, ">$embl_file" or $log->log_and_die("Could not open $embl_file for writing\n");
-     foreach my $ln (@{$records{$cosmid}->{embl}}) {
-       print $emblfh $ln;
-     }
-     close($emblfh);
-  }
-
-
-  my $modified_count = 0;
-
-  open(my $gitcmd, "cd $submit_repo && git ls-files -m |")
-      or $log->write_to("Warning: could not run git command to get list of locally modified files\n");
-  while(<$gitcmd>) {
-    /^(\S+)/ and do {
-      $log->write_to("   $1 locally modified\n");
-      $modified_count++;
-    };
-  }
-
-  return $modified_count;
 }
 
 
