@@ -26,9 +26,12 @@ use Test::More qw(no_plan);
 use FindBin;
 
 my ($species);
-GetOptions( 'species=s'=>\$species,);
+my $yfile="$FindBin::Bin/../etc/ensembl_lite.conf";
+GetOptions( 'species=s'=>\$species,
+	    'yfile=s'  => \$yfile,
+);
 
-my $config = ( YAML::LoadFile("$FindBin::Bin/../etc/ensembl_lite.conf") )->{$species};
+my $config = ( YAML::LoadFile($yfile) )->{$species};
 
 my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(
         -host   => $config->{database}->{host},
@@ -50,8 +53,8 @@ foreach my $slice(@slices){
 	foreach my $gene (@{$slice->get_all_Genes}){
 		ok($gene,"Gene ".$gene->stable_id());
 		foreach my $trans (@{$gene->get_all_Transcripts()}) {
-			my $protein=$trans->translate()->seq;
 			ok($trans,'- Transcript '.$trans->stable_id());
+			my $protein=$trans->translate()->seq;
 		       	ok(length($protein)>0,'-- minimum one AA '.$trans->stable_id());
 		       	ok($table->is_start_codon(substr($trans->translateable_seq,0,3)),'-- translation start of '.$trans->stable_id());
 			ok($table->is_ter_codon(substr($trans->translateable_seq,-3,3)),'-- translation stop of '.$trans->stable_id());
