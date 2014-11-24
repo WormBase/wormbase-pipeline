@@ -703,11 +703,11 @@ sub full_name {
 	else { return'Strongyloides ratti'
 	};
 }
-sub chromosome_prefix {'RATTI_contig_'}
-sub pep_prefix {'SR'}
-sub pepdir_prefix{'rat'};
+sub chromosome_prefix {''}
+sub pep_prefix {''}
+sub pepdir_prefix{''};
 sub ncbi_tax_id {'34506'};
-sub ncbi_bioproject {'PRJEA62033'};
+sub ncbi_bioproject {'PRJEB125'};
 sub bioproject_description { 'Wellcome Trust Sanger Institute S. ratti genome project' }
 sub assembly_type {'contig'};
 sub TSL {(
