@@ -4,8 +4,8 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2014-11-04 10:40:35 $
-# Last updated by: $Author: pad $
+# Last updated on: $Date: 2014-11-25 15:03:53 $
+# Last updated by: $Author: mh6 $
 #
 # see pod documentation at end of file for more information about this script
 
@@ -18,7 +18,7 @@ use Getopt::Long;
 use Log_files;
 use Storable;
 
-my ($verbose, $db_path, $basic, $test1, $debug, $store, $test,$build,$species,$incomplete,$nogenome,$nosmall);
+my ($verbose, $db_path, $basic, $test1, $debug, $store, $test,$build,$species,$incomplete,$nogenome);
 
 GetOptions ("verbose"    => \$verbose, # prints screen output and checks the CDS class instead of All_genes.
 	    "database=s" => \$db_path, # Path to the database you want to check.
@@ -31,7 +31,6 @@ GetOptions ("verbose"    => \$verbose, # prints screen output and checks the CDS
 	    "species:s"   => \$species,  # used to hold briggsae/brenneri/remanei for some checks.
 	    "incomplete" => \$incomplete, # used to avoid start/end not found warnings
 	    "nogenome"  => \$nogenome, # for testing annotations when you don't have the genome loaded.
-	    "nosmall"   => \$nosmall,  # don't warn about small predictions //not utilised yet
 	   );
 
 my $wormbase;
