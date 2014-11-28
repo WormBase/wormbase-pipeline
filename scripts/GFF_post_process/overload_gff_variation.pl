@@ -5,7 +5,7 @@
 # Overloads Variation lines with extra info (consequence etc)
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2014-09-25 09:23:29 $      
+# Last updated on: $Date: 2014-11-28 14:30:09 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -114,7 +114,7 @@ while (<$gff_in_fh>) {
         push @new_els, ['Substitution', join("/", uc($substitution[0]), uc($substitution[1]))];
       } elsif ($type eq 'Insertion' and defined $variation->Insertion) {
         my ($insert) = $variation->Insertion->row;
-        push @new_els, ['Insertion', $insert];
+        push @new_els, ['Insertion', uc($insert)];
       }
     }
 
