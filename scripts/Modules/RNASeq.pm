@@ -7,7 +7,7 @@
 # Methods for running the RNAseq pipeline and other useful things like searching the ENA warehouse
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-11-12 15:33:06 $      
+# Last updated on: $Date: 2014-12-01 16:51:51 $      
 
 =pod
 
@@ -1191,9 +1191,16 @@ sub get_SRX_file {
     foreach my $address (@addresses) {
       my $file = basename($address);
 
+      # if the full URL is not gven, make a plausible one to use
+      if ($address !~ /ftp.sra.ebi.ac.uk/) {
+	my ($dirbit) = ($file =~ /^(\S\S\S\d\d\d)/);
+	my ($base) = ($file =~ /(\S+)[\.\_]/);
+	$address = "ftp.sra.ebi.ac.uk/vol1/fastq/$dirbit/$base/$file";
+      }
+
       # use FTP to fetch the file
       $status = $self->{wormbase}->run_command("/sw/arch/bin/wget -q $address", $log);
-      if ($status != 0) {$log->log_and_die("FTP fetch of fastq file $file failed for $experiment_accession\n");}
+      if ($status != 0) {$log->log_and_die("FTP fetch of fastq file $file failed for $experiment_accession:\n/sw/arch/bin/wget -q $address\n");}
       
       if (-s $file) {
 	$count++;
