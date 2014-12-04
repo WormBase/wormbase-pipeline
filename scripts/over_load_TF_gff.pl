@@ -2,9 +2,10 @@
 #
 # This is to add information of the Transcription Factor name and ID to TF_binding_site Features
 # These GFF lines have a Type column of 'TF_binding_site'
+# It also adds the Feature Public_name to lines where this exists.
 #
-# Last updated by: $Author: klh $     
-# Last updated on: $Date: 2012-07-20 20:08:01 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2014-12-04 10:15:46 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -61,18 +62,22 @@ my $log = Log_files->make_build_log($wormbase);
 ##########################
 
 my %TF;
+my %PN;
 
 
-#load TF details from table maker query
+#load TF and Public_name details from table maker query
 my $table = $wormbase->table_maker_query($wormbase->autoace, &write_def_file);
 while(<$table>) {
   s/\"//g; #"
   next if (/acedb/ or /\/\//);
   chomp;
-  my ($feature, $tf_id, $tf_name) = split(/\t/,$_);
-  if (defined $feature) {
+  my ($feature, $tf_id, $tf_name, $public_name) = split(/\t/,$_);
+  if (defined $feature && $tf_id ne '') {
     $TF{$feature}->{'id'} = $tf_id;
     $TF{$feature}->{'name'} = $tf_name;
+  }
+  if (defined $feature && $public_name ne '') {
+    $PN{$feature} = $public_name;
   }
 }
 
@@ -111,6 +116,10 @@ foreach my $file (@gff_files) {
       my $id = $TF{$feature}{'id'};
       my $name = $TF{$feature}{'name'};
       print NEW " ; TF_ID \"$id\" ; TF_name \"$name\"";
+    }
+    if (defined $feature && exists $PN{$feature}) {
+      my $public_name = $PN{$feature};
+      print NEW " ; Public_name \"$public_name\"";
     }
     print NEW "\n";
   }
@@ -194,7 +203,6 @@ Visible
 Class 
 Class Feature 
 From 1 
-Condition Transcription_factor
  
 Colonne 2 
 Subtitle TF 
@@ -215,7 +223,14 @@ Text
 From 2 
 Tag Name 
  
- 
+Colonne 4 
+Width 80 
+Optional 
+Visible 
+Class 
+Class Text 
+From 1 
+Tag Public_name 
 
 // End of these definitions
 END
