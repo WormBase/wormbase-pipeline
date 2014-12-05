@@ -14,7 +14,7 @@
 //
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2014-09-19 15:19:04 $
+// Last edited on: $Date: 2014-12-05 16:56:57 $
 //
 //
 // Additional things to consider. If classes are added or new data in the ?Gene class
@@ -218,7 +218,7 @@
 
 ///////////////////////////////////////
 //
-// Gene_class class
+// ?Gene_class class
 // Used for grouping genes into families
 //
 ///////////////////////////////////////
@@ -304,6 +304,8 @@
                   In_cluster ?Gene_cluster XREF Contains_gene // linking to Clusters in locus class
 		  RNASeq_FPKM ?Life_stage Float #Evidence
                   GO_term ?GO_term XREF Gene ?GO_code #Evidence
+		  GO_annotation ?GO_annotation XREF Gene
+		  Not_GO_annotation ?GO_annotation XREF Not_gene
                   Contained_in_operon ?Operon XREF Contains_gene
                   Ortholog ?Gene XREF Ortholog ?Species #Evidence
 		  Paralog ?Gene XREF Paralog ?Species #Evidence
@@ -331,6 +333,7 @@
 		       Corresponding_transposon ?Transposon XREF Gene #Evidence
                        Other_sequence ?Sequence XREF Gene #Evidence  // for linking to mRNAs etc. that correspond to a gene		   
 		       Associated_feature ?Feature XREF Associated_with_gene #Evidence
+		       Associated_transcription_factor ?Transcription_factor XREF Associated_with_gene #Evidence 
 		       Gene_product_binds ?Feature XREF Bound_by_product_of
 		       Transcription_factor ?Transcription_factor XREF Product_of
         Experimental_info RNAi_result ?RNAi XREF Gene #Evidence
@@ -369,7 +372,7 @@
 
 ////////////////////////////
 //
-// Gene_cluster class
+// ?Gene_cluster class
 //
 ////////////////////////////
 
@@ -423,13 +426,12 @@
 
 //////////////////////////////////////////////////////////////////////////////////////
 //
-//   New Interaction class Proposal, 1-30-2012
-//   See: http://wiki.wormbase.org/index.php/WormBase_Model:Interaction for details
-//   This unifies Physical and genetic interactions into a single class.
-//   Chris Grove & Kimberly Van Auken
+// ?Interaction class Proposal, 1-30-2012
+// See: http://wiki.wormbase.org/index.php/WormBase_Model:Interaction for details
+// This unifies Physical and genetic interactions into a single class.
+// Chris Grove & Kimberly Van Auken
 //   
 //////////////////////////////////////////////////////////////////////////////////////
-
 				   
 ?Interaction	Interaction_type Physical
 				 Predicted
@@ -562,7 +564,10 @@
 		       Inferred_automatically Text                 // a script has updated this connection
 
 ///////////////////////////////////
-
+//
+// ?Balancer class
+//
+///////////////////////////////////
 
 ?Balancer From_left_end
           To_right_end
@@ -685,7 +690,9 @@
 			    Inferred_from_GPS
 
 ////////////////////////////////////////////////////////////////////////////////
+//
 // ?Lab_Location class
+//
 ////////////////////////////////////////////////////////////////////////////////
 
 ?Lab_Location	Freezer	Text
@@ -788,6 +795,12 @@
              Band_Lengths UNIQUE Float REPEAT // in mm: if you prefer to minimise the ace format
              Band Float Text    // if you wish to comment single band value
 
+////////////////
+//
+// ?Grid class
+//
+////////////////
+
 ?Grid	Title	?Text
 	Layout	Columns	UNIQUE Int
 		Lines_at UNIQUE Int UNIQUE Int	// x, y spacing
@@ -804,6 +817,12 @@
 	View ?View
 	Row Int #Grid_row
 
+////////////////////
+//
+// ?Grid_data class
+//
+////////////////////
+
 ?Grid_data	Experiment  Mapper ?Author
 			    Laboratory ?Laboratory
 			    Date UNIQUE DateType
@@ -815,6 +834,11 @@
 			  Default_negative
 		// if set then all non-explicit elements on Grid score -ve
 
+////////////////////
+//
+// ?Grid_row class
+//
+////////////////////
 
 ?Grid_row UNIQUE Clone UNIQUE ?Clone XREF Gridded REPEAT
 		 Mixed #Mixed_grid_row
@@ -828,7 +852,7 @@
 
 ///////////////////////////////
 //
-//  Species class
+// ?Species class
 //
 ///////////////////////////////
 
@@ -845,6 +869,12 @@
 //  Map data classes
 //
 ///////////////////////////////
+
+////////////////////
+//
+// ?2_point_data class
+//
+////////////////////
 
 ?2_point_data   Evidence #Evidence
 		Genotype UNIQUE Text
@@ -897,6 +927,11 @@
 	// code uses Point_1, Point_2, Calculation and all its subtags, all the Calc subtags,
 	// and most of the Simple_distance subtags.
 
+////////////////////
+//
+// ?Pos_neg_data class
+//
+////////////////////
 
 ?Pos_neg_data	Evidence #Evidence
 		Genotype UNIQUE Text
@@ -919,6 +954,11 @@
 		Remark ?Text #Evidence
 	// code uses Item_1, Item_2, Positive and Negative
 
+////////////////////////
+//
+// ?Multi_pt_data class
+//
+////////////////////////
 
 ?Multi_pt_data	Evidence #Evidence
 		Genotype UNIQUE Text
@@ -943,6 +983,11 @@
 	// code uses all the Results subtags, and the #Multi_counts structure
 	// There is acedb magic associated with the #?Multi_counts usage.
 
+////////////////////////
+//
+// ?Multi_counts class
+//
+////////////////////////
 
 ?Multi_counts UNIQUE Gene UNIQUE ?Gene XREF Multi_point UNIQUE Int #Multi_counts
 		     Locus UNIQUE ?Locus XREF Multi_point UNIQUE Int #Multi_counts
@@ -976,6 +1021,57 @@
 	  Mass_spec_evidence ?Mass_spec_peptide
 	  Sequence_evidence ?Sequence				      // for sequence data that hasn't been submitted to a public resource
 	  Remark ?Text
+
+
+
+////////////////////////////////////////////////////////
+//
+// ?GO_annotation class
+//
+///////////////////////////////////////////////////////
+
+
+?GO_annotation  Gene_rel UNIQUE ?Gene XREF GO_annotation UNIQUE ?GO_term XREF GO_annotation #Annotation_relation
+		Not_Gene_rel UNIQUE ?Gene XREF Not_GO_annotation UNIQUE ?GO_term XREF Not_GO_annotation #Annotation_relation
+		Gene ?Gene
+		Not_gene ?Gene
+		GO_term ?GO_term
+		Not_GO_term ?GO_term
+                Annotation_made_with Interacting_gene ?Gene
+				     Interacting_protein ?Text ?Protein
+                                     Inferred_GO_term ?GO_term
+                                     Motif ?Motif
+                                     RNAi_result ?RNAi
+                                     Variation ?Variation
+                                     Phenotype ?Phenotype
+                                     Database ?Database ?Database_field ?Text
+                Annotation_extension Life_stage_relation ?Text ?Life_stage
+                                     Gene_relation ?Text ?Gene
+                                     Protein_relation ?Text ?Protein
+                                     Molecule_relation ?Text ?Molecule
+                                     Anatomy_relation ?Text ?Anatomy_term
+                                     GO_term_relation ?Text ?GO_term
+                Annotation_isoform ?Text ?Protein
+                Interacting_strain ?Strain
+                Interacting_species ?Species
+                Reference ?Paper XREF GO_annotation
+                GO_reference ?Database ?Database_field ?Text
+                Contributed_by ?Analysis
+	        Date_last_updated UNIQUE DateType
+
+
+#Annotation_relation  UNIQUE involved_in UNIQUE ?GO_code
+                             enables UNIQUE ?GO_code
+                             contributes_to UNIQUE ?GO_code
+                             part_of UNIQUE ?GO_code
+                             colocalizes_with UNIQUE ?GO_code
+			     Not_involved_in UNIQUE ?GO_code
+                             Not_enables UNIQUE ?GO_code
+                             Not_contributes_to UNIQUE ?GO_code
+                             Not_part_of UNIQUE ?GO_code
+                             Not_colocalizes_with UNIQUE ?GO_code
+
+
 
 ////////////////////////////////////////////////////////
 //
@@ -1012,11 +1108,13 @@
 		       Homology_group ?Homology_group XREF GO_term // added [031120 krb]
 		       Expr_pattern ?Expr_pattern XREF GO_term
 		       Picture ?Picture XREF Cellular_component
+		       GO_annotation ?GO_annotation XREF GO_term
+                       Not_GO_annotation ?GO_annotation XREF Not_GO_term
  	 Version UNIQUE Text UNIQUE Text // Lincoln, to store version number of GO - only on 3 parent_terms [krb 031028]
 
 ///////////////////////////////////////////////////////////////
 //
-// GO_code class - 030224 krb
+// ?GO_code class - 030224 krb
 //
 ///////////////////////////////////////////////////////////////
 
@@ -1050,11 +1148,13 @@
          Descendent ?SO_term XREF Ancestor
 
 
-// Ace2SO class: gives a mapping from Acedb objects to their SO terms.
+///////////////////////////////////////////////////////////////
+// ?Ace2SO class: gives a mapping from Acedb objects to their SO terms.
 //
 // SO_subpart_tags    - Tag pointing to subpart of this object, e.g. "Source_exon".
 // SO_parent_obj_tag  - Tag pointing to semantic parent of this object, e.g. "Gene"
 // SO_children        - this object has child objects which refer to it.
+///////////////////////////////////////////////////////////////
 
 ?Ace2SO Description UNIQUE Text
         SO_subparts Exons UNIQUE ?SO_Term
@@ -1099,7 +1199,7 @@
 	 Version UNIQUE Text
 
 //////////////////////////////////////////////////////////
-// AO_code class -  Raymond Lee 040203
+// ?AO_code class -  Raymond Lee 040203
 // Evidence codes only relevant to the Anatomy_term Class
 //////////////////////////////////////////////////////////
 
@@ -1126,6 +1226,9 @@
  	X_position UNIQUE Text
  	Y_position UNIQUE Text	
 
+///////////////////
+// ?Neurodata class
+///////////////////
 
 ?Neurodata      Send Text UNIQUE Int #Neuro_location   // Text=series,Int=count
                 Send_joint Text UNIQUE Int #Neuro_location   // "joint" indicates polyadic synapse
@@ -1134,9 +1237,16 @@
                 Gap_junction Text UNIQUE Int #Neuro_location
                 Evidence #Evidence
 
+////////////////////////////
+// ?Neurodata_location class
+////////////////////////////
+
 ?Neuro_location	Section Int Int Text  //Int1=first EM section where the connection was
                                                       //found,Int2=last section,Text=remark
 
+////////////////////////////
+// ?Reconstruction class
+////////////////////////////
 
 ?Reconstruction Cell ?Cell
                 Anatomy_term ?Anatomy_term //[2006-04-21 ar2] Raymond
@@ -1145,9 +1255,16 @@
 		Remark ?Text #Evidence
 		Description ?LongText
 
+///////////////////////
+// ?ReconCellInfo class
+///////////////////////
+
 ?ReconCellInfo	Birth UNIQUE Float
 	 	Timepoint Float #Timepoint
 
+//////////////////
+// ?Timepoint class
+//////////////////
 ?Timepoint XYZ UNIQUE Float UNIQUE Float UNIQUE Float
 
 
@@ -1394,8 +1511,10 @@
 
 
 ///////////////////////////////////////////////////////////////////////////
-// Sequence_collection class
+//
+// ?Sequence_collection class
 // holds a collection of sequences and some descriptions
+//
 ///////////////////////////////////////////////////////////////////////////
 
 ?Sequence_collection Origin Evidence #Evidence
@@ -1720,7 +1839,7 @@
 
 ///////////////////////////////////////////////////////////////////////////
 //
-// Feature class
+// ?Feature class
 //
 ///////////////////////////////////////////////////////////////////////////
 
@@ -1742,7 +1861,6 @@
 	 Defined_by Defined_by_sequence ?Sequence XREF Defines_feature #Evidence
 		    Defined_by_paper ?Paper XREF Feature #Evidence
 		    Defined_by_person ?Person
-		    Defined_by_author ?Author
 		    Defined_by_analysis ?Analysis Int
 	 Score Float Text #Evidence // this would be a log score as indicated by the analysis used in gff dump
 	 Associations Associated_with_gene ?Gene XREF Associated_feature #Evidence // richard
@@ -1759,14 +1877,13 @@
 		      Associated_with_construct ?Construct XREF Sequence_feature
 	 Bound_by_product_of ?Gene XREF Gene_product_binds #Evidence //pad added this to show what gene it binds
 	 Transcription_factor UNIQUE ?Transcription_factor XREF Binding_site 
-	 Annotation UNIQUE ?LongText // added for data attribution [030220 dl]
 	 Confidential_remark ?Text //pad
 	 Remark ?Text #Evidence
          Method UNIQUE ?Method
 
 ///////////////////////////////////////////////////////////////////////////
 //
-// Feature_data class
+// ?Feature_data class
 //
 ///////////////////////////////////////////////////////////////////////////
 
@@ -1782,7 +1899,7 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////
 //
-// Transcription_factor class This describes a type of transcription factor (and Pol II)
+// ?Transcription_factor class This describes a type of transcription factor (and Pol II)
 // Gary W. 14/10/2010
 //
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -1790,13 +1907,15 @@
 ?Transcription_factor	Name UNIQUE Text
 			Species UNIQUE ?Species
 			Position_matrix ?Position_Matrix XREF Transcription_factor #Evidence
-			Product_of ?Gene XREF Transcription_factor 
+			Product_of ?Gene XREF Transcription_factor
+			Associated_with_gene ?Gene XREF Associated_transcription_factor #Evidence
+			Type Text #Evidence 
 			Remark Text #Evidence
 			Binding_site ?Feature XREF Transcription_factor 
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //
-// Position_Matrix class
+// ?Position_Matrix class
 // General data model for known or inferred binding sites of transcription factors to DNA, 
 // accomodating either a straight position-frequency matrix (PFM), or a position-specific 
 // weight matrix 
@@ -1815,12 +1934,12 @@
                   Sites_used UNIQUE Int
 		  Derived_from_matrix ?Position_Matrix                  
 		  Bound_by_gene_product ?Gene XREF Product_binds_matrix #Evidence
-		  Transcription_factor UNIQUE ?Transcription_factor XREF Position_matrix #Evidence //gw3
+		  Transcription_factor ?Transcription_factor XREF Position_matrix #Evidence //gw3
                   Remark ?Text #Evidence
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //
-// Oligo class
+// ?Oligo class
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1856,11 +1975,11 @@
 		Remark ?Text
 
 
-/////////////////////////////////
+//////////////////
 //
 // ?Protein class
 //
-/////////////////////////////////
+//////////////////
 
 ?Protein  Peptide UNIQUE ?Peptide UNIQUE Int UNIQUE Int // Length + checksum
           Display View ?View
@@ -1891,11 +2010,15 @@
 	  Remark ?Text #Evidence
 
 
-// A tiny class to support ?Protein.  The Remark should explain a bit more about what the Database_field object
+// ?Database_field - A tiny class to support ?Protein.  
+// The Remark should explain a bit more about what the Database_field object
 // refers to - could be culled if class numbers get close to the max allowed.
 
 ?Database_field Remark Text
 
+////////////////
+// ?Motif class
+////////////////
 
 ?Motif	Match_sequence UNIQUE Text	// Text is the DNA or protein sequence
 	Num_mismatch UNIQUE Int		// Allowed number of mismatches when matching
@@ -1925,7 +2048,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// Accession_number class
+// ?Accession_number class
 //
 // Small class to track primarily EMBL/GenBank accessions.
 //
@@ -1939,7 +2062,7 @@
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// Database class.  This is to be used in the construction of cgi URLs
+// ?Database class.  This is to be used in the construction of cgi URLs
 // an RNAi object would have a Database connection  . .
 // Database Phenobank GeneID 512754
 //                    RNAID 3004316 
@@ -1959,7 +2082,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //		
-// Method class
+// ?Method class
 //
 // Used a lot by acedb code for displaying data (on the FMap) and dumping data (via GFF)
 //
@@ -2034,7 +2157,7 @@
 
 ///////////////////////////////////
 //
-//  Expr_pattern class
+//  ?Expr_pattern class
 //
 ///////////////////////////////////
 
@@ -2066,10 +2189,12 @@
 		   EPIC ?Text 
 		   Cis_regulatory_element Text
 	      Expression_cluster ?Expression_cluster XREF Expr_pattern //added by Wen.for localizome
+	      Microarray_results ?Microarray_results XREF Expr_Pattern
 	      Pattern ?Text
 	      Picture ?Picture XREF Expr_pattern
 	      MovieURL Text //Added by wen for link to movie URLs. 
 	      Movie ?Movie XREF Expr_pattern  //Added by Wen to curate Expr_pattern video
+	      Species UNIQUE ?Species
               Remark ?Text #Evidence
 	      DB_info ?Database ?Database_field Text
               Experiment Laboratory ?Laboratory
@@ -2098,7 +2223,8 @@
                                                                                                  
 
 
-// NEW Expr_profile and SK_map Classes added at request of Raymond [010912 krb]
+// ?Expr_profile class 
+// ?SK_map class added at request of Raymond [010912 krb]
 // more tweaks added [010927 krb]
 
 ?Expr_profile SMap S_parent UNIQUE PCR_product UNIQUE ?PCR_product XREF Expr_profile
@@ -2122,7 +2248,7 @@
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Antibody class model
+// ?Antibody class model
 //
 // Summary records the whole description extracted from paper
 // Other_name holds the antibody's name appeared in the paper, such as MH27
@@ -2183,6 +2309,7 @@
          Depict  Expr_pattern ?Expr_pattern XREF Picture
                  Anatomy ?Anatomy_term XREF Picture
 	         Cellular_component ?GO_term XREF Picture
+		 WBProcess ?WBProcess XREF Picture 
          Acknowledgment Template UNIQUE Text
                         Publication_year UNIQUE Text
                         Article_URL UNIQUE ?Database UNIQUE ?Database_field UNIQUE ?Text
@@ -2196,7 +2323,8 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
 //
 //
-//   Cell class and things
+// ?Cell class
+// ?Cell_group class
 //
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -2343,7 +2471,7 @@
 		Picture ?Picture XREF Anatomy
 		WBProcess ?WBProcess XREF Anatomy_term
 
-// Anatomy_function Class for Raymond 
+// ?Anatomy_function class for Raymond 
 // allow the connection between ?Anatomy_term, ?Phenotype (proxy of biological function), and
 // ?Gene and still give some information about the experiment itself.
 //name shall be "WBbtf0001"
@@ -2364,8 +2492,11 @@
                        Unnecessary Text
                        Remark Text
 
-
-
+///////////////////
+//
+// ?Life_stage class
+//
+///////////////////
 ?Life_stage	Contains Cell ?Cell XREF Life_stage
 			 Cell_group ?Cell_group XREF Life_stage
                          Anatomy_term ?Anatomy_term XREF Life_stage
@@ -2386,9 +2517,10 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-//      The Tree Classes from Richard Bruskiewich with a few fields commented out
-//       species Class not put in because we already have a different one in the worm database
-//
+// ?Tree class from Richard Bruskiewich with a few fields commented out
+// species Class not put in because we already have a different one in the worm database
+// ?TreeNode class
+// 
 ///////////////////////////////////////////////////////////////////////////////
 
 ?Tree    Description UNIQUE ?Text		// Used as graph display title if present
@@ -2434,7 +2566,7 @@
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// Jade model for Lincoln/Jean added by rd 000307
+// ?Jade class - model for Lincoln/Jean added by rd 000307
 ///////////////////////////////////////////////////////////////////////////////
 
 ?Jade Display Text Text Text UNIQUE Text 
@@ -2442,7 +2574,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Transgene class from Wen Chen 12/00
+// ?Transgene class from Wen Chen 12/00
 // Reorganised by Karen/Wen May 2011
 //
 /////////////////////////////////////////////////////////////////////////////// 
@@ -2476,7 +2608,6 @@
 		Reference ?Paper XREF Transgene  
 		Species UNIQUE ?Species       
 		Remark ?Text #Evidence
-                Historical_gene   ?Gene #Evidence
 
 
 
@@ -2531,9 +2662,7 @@
 //////////////////////////////////////////////////////////////////
 //
 // ?RNAi class
-// 
 // Initially from Lincoln Stein December, 2000
-//
 // Heavily modified by Igor November, 2004
 //
 //////////////////////////////////////////////////////////////////
@@ -2660,6 +2789,8 @@
 
 ///////////////////////////////////////////////
 // ?Phenotype class
+// ?Phenotype_name class
+// ?Phenotype_Assay class
 ///////////////////////////////////////////////
 
 ?Phenotype Description UNIQUE ?Text #Evidence
@@ -2745,7 +2876,7 @@
 
 /////////////////////////////////////////////////////////////////////
 //
-//?Microarray class - Igor [030815 krb]
+// ?Microarray class - Igor [030815 krb]
 //
 /////////////////////////////////////////////////////////////////////
 
@@ -2773,6 +2904,7 @@
 			Pseudogene ?Pseudogene XREF Microarray_results #Evidence   // should be mapped during the build
 			Microarray ?Microarray
                         Results ?Microarray_experiment UNIQUE #Microarray_data
+			Expr_Pattern ?Expr_pattern XREF Microarray_results
                         Range Min UNIQUE Float UNIQUE ?Microarray_experiment  // mix observed ratio or frequency in all experiments and corresponding experiment
                               Max UNIQUE Float UNIQUE ?Microarray_experiment  // max observed ratio or frequency in all experiments and corresponding experiment 
                         Remark ?Text #Evidence
@@ -2863,9 +2995,9 @@
                                   Tiling_array ?Analysis XREF Expression_cluster_tiling_array
                                   qPCR ?Analysis XREF Expression_cluster_qPCR //added by Wen for qPCR curation
 				  Expr_pattern ?Expr_pattern XREF Expression_cluster #Evidence          // Wen originally for Localizome
-                     Regulation   Regulated_by_gene ?Gene                    // Wen WS228
+                     Regulation   Regulated_by_gene ?Gene XREF Regulate_expr_cluster // Wen WS228
                                   Regulated_by_treatment Text                // Wen WS228
-                                  Regulated_by_molecule ?Molecule            // Wen WS228
+                                  Regulated_by_molecule ?Molecule XREF Regulate_expr_cluster            // Wen WS228
                      Associated_with  Life_stage ?Life_stage                 // Wen WS228
                                       GO_term ?GO_term                       // Wen WS228
                                       Anatomy_term ?Anatomy_term XREF Expression_cluster #Evidence //Describes microarray experiments involving expression profiling in a particular tissue or cell Igor Dec 06
@@ -2874,9 +3006,10 @@
      
 
 //////////////////////////////////////////////////////////////////
-//      SAGE_tag class
-//      contains sequence and mapping information for a tag
+// ?SAGE_tag class
+// contains sequence and mapping information for a tag
 //////////////////////////////////////////////////////////////////
+
 ?SAGE_tag       Evidence #Evidence
                 Homol Homol_homol ?Homol_data XREF SAGE_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
                 Tag_sequence UNIQUE Text         // tag sequence including the restriction site
@@ -2914,8 +3047,8 @@
 
 
 ///////////////////////////////////////////////////////
-//      SAGE_experiment model
-//      connects to condition and paper objects
+// ?SAGE_experiment model
+// connects to condition and paper objects
 ///////////////////////////////////////////////////////
 
 ?SAGE_experiment Sample UNIQUE ?Condition XREF SAGE_experiment
@@ -2936,7 +3069,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //
-// ?3d_data - 14042004
+// ?3d_data class - 14042004
 // A protein structure class which will store data from the NESGC
 //
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -3017,7 +3150,7 @@
 
 #Address  Street_address Text           // multiple lines including town, state, zip/postcode, whatever
           Country UNIQUE Text
-          Institution UNIQUE Text    
+          Institution Text              // Removed the unique from this to allow multiple affiliations.   
           Email Text                    // multiple emails allowed
           Main_phone Text               // phone number for the institution, I presume
           Lab_phone Text
@@ -3052,7 +3185,7 @@
 
 ///////////////////////
 //
-// Person_name class - krb 030210
+// ?Person_name class - krb 030210
 // Simple way of searching for peoples full name (using Standard_name field of ?Person Class) or just surname.
 //
 ///////////////////////
@@ -3064,9 +3197,9 @@
 
 
 
-//////////////////
-// Author class //
-//////////////////
+///////////////////
+// ?Author class //
+///////////////////
 
 ?Author Full_name Text
         Also_known_as Text
@@ -3173,6 +3306,7 @@
 		 Picture ?Picture XREF Reference
 		 Movie ?Movie XREF Reference
 		 DO_term ?DO_term #Evidence
+		 GO_annotation ?GO_annotation XREF Reference
        Curation_pipeline Phenotype2GO
        Keyword ?Keyword
        Remark ?Text #Evidence
@@ -3182,9 +3316,9 @@
 	     Person ?Person
 
 
-///////////////////////
-// Laboratory class  //
-///////////////////////
+////////////////////////
+// ?Laboratory class  //
+////////////////////////
 
 ?Laboratory   Address Mail Text
                       Phone Text
@@ -3208,8 +3342,8 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 //
-// ?Gene_regulation class - Wen 05082003//
-// ?Gene_regulation class - retired Feb 2013 (WS237 models)
+// ?Gene_regulation model - Wen 05082003//
+// ?Gene_regulation model - retired Feb 2013 (WS237 models)
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -3225,7 +3359,7 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 //
-//Variation class
+// ?Variation class
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -3239,7 +3373,7 @@
 			    Source_location UNIQUE Int UNIQUE ?Sequence UNIQUE Int UNIQUE Int UNIQUE #Evidence //source data, <WSversion> ?Sequence pos1 pos2 Evidence(Paper/person etc. remarks)
 			    CGH_deleted_probes UNIQUE Text UNIQUE Text
 			    CGH_flanking_probes UNIQUE text UNIQUE text
-			    Type_of_mutation Substitution UNIQUE Text Text #Evidence // wild type and mutant sequence
+			    Type_of_mutation Substitution UNIQUE Text UNIQUE Text #Evidence // wild type and mutant sequence
 					     Insertion UNIQUE Text #Evidence
 					     Deletion UNIQUE Text #Evidence  
 					     Inversion #Evidence
@@ -3264,7 +3398,7 @@
 		  Author ?Author // use Person when known, else use Author
                   Person ?Person //
 		  Analysis ?Analysis
-		  Corresponding_transgene Unique ?Transgene XREF Corresponding_variation
+		  Corresponding_transgene UNIQUE ?Transgene XREF Corresponding_variation
 		  Production_method Homologous_recombination //Homologous_recombination
 				    NHEJ //Non-homologous DNA end-joining, imprecise DNA repair
 				    MosSci
@@ -3370,7 +3504,7 @@
 
 
 ///////////////////////////////////
-// Structure_data model for Payan
+// ?Structure_data class for Payan
 ///////////////////////////////////
 
 ?Structure_data Evidence #Evidence //Contains Date_last_updated                                    
@@ -3404,7 +3538,7 @@
 
 //////////////////////////////////////////////////
 //
-// Mass_spec_experiment class
+// ?Mass_spec_experiment class
 //
 //////////////////////////////////////////////////
 
@@ -3437,11 +3571,11 @@
                       Mass_spec_peptide ?Mass_spec_peptide XREF Mass_spec_experiments     // the resulting peptide data
                       Expression_cluster ?Expression_cluster XREF Mass_spectrometry       // Wen WS244
 
-//////////////////////////////////////////////////
+//////////////////////////////
 //
-// The Mass_spec_peptide class
+// ?Mass_spec_peptide class
 //
-//////////////////////////////////////////////////
+//////////////////////////////
 
 ?Mass_spec_peptide  Peptide UNIQUE Text                 // the deduced peptide sequence
                     Protein_seq UNIQUE ?Protein         // the protein object of this Mass_spec_peptide
@@ -3477,6 +3611,17 @@
 		   Subproject ?Analysis XREF Project
              Description ?Text
 	     Sample ?Condition XREF Analysis
+	     Independent_variable Life_stage
+                                  Sex
+                                  Food
+                                  Exposure_time
+                                  Species
+                                  Strain
+                                  Preparation
+                                  Temperature
+                                  Genotype
+                                  Tissue
+                                  Treatment
 	     Expression_cluster_RNAseq ?Expression_cluster XREF RNAseq
 	     Expression_cluster_tiling_array ?Expression_cluster XREF Tiling_array
 	     Expression_cluster_qPCR ?Expression_cluster XREF qPCR  //added by Wen for qPCR curation
@@ -3488,7 +3633,7 @@
 
 //////////////////////////////////
 //
-//?Condition class
+// ?Condition class
 //
 //////////////////////////////////
 
@@ -3518,7 +3663,7 @@
 
 //////////////////////////////////////////////////
 //
-// Molecule class Model - Proposed by Karen Yook WS217
+// ?Molecule class Model - Proposed by Karen Yook WS217
 // Connects to: #Phenotype_info
 //
 //////////////////////////////////////////////////	
@@ -3542,7 +3687,7 @@
 
 //////////////////////////////////////////////////
 //
-// WBProcess class Model - Proposed by Karen Yook WS225
+// ?WBProcess class Model - Proposed by Karen Yook WS225
 // Connects to: ?Gene
 //              ?Expression_cluster
 //              ?Interaction
@@ -3571,7 +3716,7 @@
                 Associated_with Phenotype ?Phenotype XREF WBProcess #Evidence
                                 GO_term ?GO_term #Evidence
                                 DO_term ?DO_term #Evidence
-                Picture ?Picture #Evidence
+                Picture ?Picture XREF WBProcess #Evidence
                 Marker_construct ?Construct XREF Topic_output_indicator
                 Movie ?Movie #Evidence
                 Pathway DB_info Database ?Database ?Database_field ?Text //Can be used for any pathway db with unique accessionIDs
@@ -3595,4 +3740,5 @@
 // WS244
 // WS245
 // WS246
-// 
+// WS247
+//
