@@ -7,7 +7,7 @@
 # Methods for running the RNAseq pipeline and other useful things like searching the ENA warehouse
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-12-01 16:51:51 $      
+# Last updated on: $Date: 2014-12-05 09:51:03 $      
 
 =pod
 
@@ -1231,10 +1231,15 @@ sub get_SRX_file {
 #  $log->write_to("Get the SRA files for $experiment_accession\n");
 #  my $failed = 1;
 #  while ($failed) {
-#    my $cmd = "~gw3/.aspera/connect/bin/ascp -k 1 -l 300M -QTr -i /net/nas17b/vol_homes/homes/gw3/.aspera/connect/etc/asperaweb_id_dsa.putty anonftp\@ftp-private.ncbi.nlm.nih.gov:/sra/sra-instant/reads/ByExp/litesra/SRX/SRX${dirbit}/$experiment_accession ./";
+#    my $cmd = "~gw3/.aspera/connect/bin/ascp -i /net/nas17b/vol_homes/homes/gw3/.aspera/connect/etc/asperaweb_id_dsa.openssh -k 1 -T -l200m anonftp\@ftp.ncbi.nlm.nih.gov:/sra/sra-instant/reads/ByRun/sra/SRR/SRR150/SRR1503645/SRR1503645.sra  /."
+# used to be this but doesn't seem to work any more    my $cmd = "~gw3/.aspera/connect/bin/ascp -k 1 -l 300M -QTr -i /net/nas17b/vol_homes/homes/gw3/.aspera/connect/etc/asperaweb_id_dsa.putty anonftp\@ftp-private.ncbi.nlm.nih.gov:/sra/sra-instant/reads/ByExp/litesra/SRX/SRX${dirbit}/$experiment_accession ./";
 #    print "cmd = $cmd\n";
 #    my $return_status = system($cmd);
-#    if ( ( $return_status >> 8 ) == 0 )  {$failed=0}
+#    if ( ( $return_status >> 8 ) == 0 )  {
+#       $failed=0;
+#       $cmd = "$WORM_PACKAGES/sratoolkit/bin/fastq-dump --origfmt SRR304976.sra --outdir /tmp"
+#       my $return_status = system($cmd);
+#    }
 #  }
 }
 
@@ -1583,6 +1588,10 @@ sub get_introns {
     # get the clone that this intron is on
     my ($clone, $clone_start, $clone_end) = $coords->LocateSpan($chrom, $start, $end);
     
+    # 2014-12-05 while we are converting elegans over to not using SUPERLINKS, simply use the chromosome coords if this si a SUPERLINK
+    if ($clone =~ /SUPERLINK/) {
+      ($clone, $clone_start, $clone_end) = ($chrom, $start, $end);
+    }
     
     if (not exists $seqlength{$clone}) {
       $seqlength{$clone} = $coords->Superlink_length($clone);
