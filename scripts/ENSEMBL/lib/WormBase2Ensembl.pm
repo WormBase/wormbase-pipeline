@@ -159,6 +159,7 @@ sub parse_genes_gff3_fh {
     }
 
     if ($l[2] eq 'gene') {
+      die "Every gene feature must have the Name attribute defined\n" if not $name;
       $gene_names{$id} = $name;
       next;
     }
@@ -228,13 +229,21 @@ sub parse_genes_gff3_fh {
         );
 
     my (%gene_biotypes);
+    my $tcount = 1;
 
-    TRAN: foreach my $tid (@tids) {
+    TRAN: foreach my $tid (sort @tids) {
 
       my $tran = $transcripts{$tid};
       my $gff_source = $tran->{source};
       my $gff_type = $tran->{type};
-      my $tsid = (exists $tran->{name}) ? $tran->{name} : $tid;
+      my $tsid;
+      if ($tran->{name}) {
+        $tsid = $tran->{name};
+      } elsif (scalar(@tids) > 1) {
+        $tsid = sprintf("%s.%d", $sid, $tcount++);
+      } else {
+        $tsid = $sid;
+      }
 
       if (not exists $tran->{exons}) {
         # For some single-exon features, e.g. ncRNAs, exons are not compulsory in the GFF3. 
