@@ -123,9 +123,18 @@ sub setupdb {
     
     print "loading table.sql from ensembl-pipeline...\n";
     system("$mysql $db->{dbname} < " . $cvsDIR . "/ensembl-pipeline/sql/table.sql" ) && die("Could not load pipeline tables\n");
+    
+    my $species_lookup_params;
+    if (exists $config->{taxon_id}) {
+      $species_lookup_params = "-taxon_id $config->{taxon_id}";
+    } elsif (exists $config->{species}) {
+      $species_lookup_params = "-name \"$config->{species}\"";
+    } else {
+      die "Either taxon_id or species must be defined for $species to load the taxonomy\n";
+    }
 
     print "Loading taxonomy...N";
-    my $cmd = "perl $cvsDIR/ensembl-pipeline/scripts/load_taxonomy.pl -name \"$config->{species}\" "
+    my $cmd = "perl $cvsDIR/ensembl-pipeline/scripts/load_taxonomy.pl $species_lookup_params "
         . "-taxondbhost $tax_db_host " 
         . "-taxondbport $tax_db_port "
         . "-taxondbname $tax_db_name "
