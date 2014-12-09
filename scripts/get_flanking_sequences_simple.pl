@@ -12,11 +12,11 @@ my ($flank_len,
             'gff3'          => \$gff3,
     );
 
-$flank_len = 30 if not defined $flank_len;
+$flank_len = 40 if not defined $flank_len;
 
 my $genome_fasta = shift;
 my $genome_h = &read_genome_fasta($genome_fasta);
-print STDERR "Read fasta\n";
+
 while(<>) {
   /^#/ and do {
     print;
@@ -25,100 +25,91 @@ while(<>) {
   chomp;
   my @l = split(/\t+/, $_);
 
-  my ($seq, $start, $end, $strand) = ($l[0], $l[3], $l[4], $l[6]);
-  $seq =~ s/^CHROMOSOME_//;
+  my ($chr, $gffstart, $gffend, $strand) = ($l[0], $l[3], $l[4], $l[6]);
+  $chr =~ s/^CHROMOSOME_//;
 
-  die "Sequence '$seq' was not found in fasta file\n" 
-      if not exists $genome_h->{$seq};
-
-  my $reference = substr($genome_h->{$seq}, $start - 1, $end - $start + 1);
-
-  my $left_end = $start - 1;
-  my $right_start = $end + 1;
+  my ($lflank, $rflank);
+  my ($reached_end, $reached_start);
+  
+  my ($lflank_end, $rflank_start) = ($gffstart - 1, $gffend + 1);
   if ($between_bases) {
-    $reference = "";
-
     if ($gff3) {
-      die "For between-base features in GFF3, start should be equal to end, but $seq/$start-$end are not\n"
-          if $start != $end;
-      
-      $left_end = $start;
-      $right_start = $start + 1;
-    } else {
-      die "For between-base features in GFF2, start should be equal to end - 1, but $seq/$start-$end are not\n"
-          if $start + 1 != $end;
-      $left_end = $start;
-      $right_start = $end;
+      $lflank_end = $gffstart;
+      $rflank_start = $lflank_end + 1;
+    } else { 
+      $lflank_end++;
+      $rflank_start--;
     }
   }
-  
-  my ($left_flank, $right_flank); 
 
-  if ($right_start > length($genome_h->{$seq})) {
-    $right_flank = ">";
+
+  if ($rflank_start > length($genome_h->{$chr})) {
+    $rflank = ">";
   }
   
-  if ($left_end < 1) {
-    $left_flank = "<";
+  if ($lflank_end < 1) {
+    $lflank = "<";
   }
 
-  my $left_flank_len = $flank_len;
-  my $right_flank_len = $flank_len;
+  my $lflank_len = $flank_len;
+  my $rflank_len = $flank_len;
   
-  while(not defined $left_flank or not defined $right_flank) {
-    my ($lcoord, $rcoord);
+  ITER: while(1) {
+    my $lpos = $lflank_end - $lflank_len + 1;
+    if ($lpos < 1) {
+      $lpos = 1;
+      $lflank_len = $lflank_end;
+      $reached_start = 1;
+    }
+    my $rpos = $rflank_start;
+    if ($rpos + $rflank_len - 1 > length($genome_h->{$chr})) {
+      $rflank_len = length($genome_h->{$chr}) - $rpos;
+      $reached_end = 1;
+    }
 
-    $lcoord =  $left_end - $left_flank_len;
-    if ($lcoord < 1) {
-      $lcoord = 1;
-      $left_flank_len = $left_end;
-    }
-    $rcoord =  $right_start - 1;
-    if ($rcoord + $right_flank_len > length($genome_h->{$seq})) {
-      $right_flank_len = length($genome_h->{$seq}) - $right_start + 1;
-    }
+    $lflank = substr($genome_h->{$chr}, $lpos - 1, $lflank_len);
+    $rflank = substr($genome_h->{$chr}, $rpos - 1, $rflank_len);
     
-    if (not defined $left_flank) {
-      my $left = substr($genome_h->{$seq}, $lcoord, $left_flank_len);
-      my $lidx = index($genome_h->{$seq}, $left);
-      
-      if ($lidx == $lcoord) {
-        $left_flank = $left;
+    if (not $reached_start) {
+      my $matches = scalar(&matches($genome_h->{$chr}, $lflank));
+      if ($matches == 1) {
+        $reached_start = 1;
       } else {
-        $left_flank_len += 10;
+        $lflank_len *= 2;
+        next ITER;
       }
     }
-    
-    if (not defined $right_flank) {
-      my $right = substr($genome_h->{$seq}, $rcoord, $right_flank_len);
-      my $ridx = rindex($genome_h->{$seq}, $right);
-      
-      if ($ridx == $rcoord) {
-        $right_flank = $right;
+    if (not $reached_end) {
+      my $matches = scalar(&matches($genome_h->{$chr}, $rflank));
+      if ($matches == 1) {
+        $reached_end = 1;
       } else {
-        $right_flank_len += 10;
+        $rflank_len *= 2;
+        next ITER;
       }
-    }  
+    }
+
+    last;
   }
-  
+
   if ($strand eq '-') {
-    ($left_flank, $right_flank) = ($right_flank, $left_flank);
+    ($lflank, $rflank) = ($rflank, $lflank);
     
-    $left_flank =~ tr/ACGTN/TGCAN/;
-    $right_flank =~ tr/ACGTN/TGCAN/;
+    $lflank =~ tr/ACGTN/TGCAN/;
+    $rflank =~ tr/ACGTN/TGCAN/;
     
-    $left_flank = join("", reverse(split(//,$left_flank)));
-    $right_flank = join("", reverse(split(//,$right_flank)));
+    $lflank = join("", reverse(split(//,$lflank)));
+    $rflank = join("", reverse(split(//,$rflank)));
   } 
   
   if ($gff3) {
     $l[8] .= ";" if $l[8];
-    $l[8] .= "leftflank=$left_flank;rightflank=$right_flank;reference=$reference\n";
+    $l[8] .= "leftflank=$lflank;rightflank=$rflank\n";
   } else {
     $l[8] .= " ; " if $l[8];
-    $l[8] .= "LeftFlank \"$left_flank\" ; RightFlank \"$right_flank\" ; Reference \"$reference\"\n";
+    $l[8] .= "LeftFlank \"$lflank\" ; RightFlank \"$rflank\"\n"
   }
-  print STDERR "cannot get flanks for ($seq, $start, $end, $strand), will use empty strings instead\n" unless ($left_flank && $right_flank);
+  print STDERR "cannot get flanks for ($chr, $gffstart, $gffend, $strand), will use empty strings instead\n" unless ($lflank && $rflank);
   print join("\t", @l);
 }
 
@@ -148,4 +139,19 @@ sub read_genome_fasta {
   }
 
   return \%genome_ref;
+}
+
+
+sub matches {
+  my ($seq, $flank) = @_;
+
+  my @matches;
+
+  my $pos = -1;
+  while (($pos = index($seq, $flank, $pos)) > -1) {
+    push @matches, $pos;
+    $pos++;
+  }
+
+  return @matches;
 }
