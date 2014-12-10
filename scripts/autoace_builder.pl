@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2014-10-22 15:31:15 $
+# Last edited on: $Date: 2014-12-10 16:21:18 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -31,9 +31,9 @@ my ( $gff_dump,     $processGFF, $gff_split );
 my $gene_span;
 my ( $load, $big_load, $tsuser );
 my ($map_features, $remap_misc_dynamic, $map, $map_alleles, $transcripts, $cdna_files, $misc_data_sets, $homol_data_sets, $nem_contigs);
-my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $remarks, $names, $treefam, $cluster);
+my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $remarks, $names, $treefam);
 my ( $utr, $agp, $gff_munge, $gff3_munge, $extras , $ontologies, $interpolate, $check, $enaseqxrefs, $enagenexrefs, $enaprotxrefs, $xrefs);
-my ( $data_check, $buildrelease, $public,$finish_build, $gffdb, $autoace, $release, $user, $kegg, $prepare_gff_munge);
+my ( $data_check, $buildrelease, $public,$finish_build, $gffdb, $autoace, $release, $user, $kegg, $prepare_gff_munge, $post_merge);
 
 
 GetOptions(
@@ -81,7 +81,6 @@ GetOptions(
 	   'remarks'        => \$remarks,
 	   'names'          => \$names,
 	   'treefam'        => \$treefam,
-	   'cluster'        => \$cluster,
 	   'utr'            => \$utr,
 	   'interpolation'  => \$interpolate,
 	   'agp'            => \$agp,
@@ -101,6 +100,7 @@ GetOptions(
 	   'species:s'      => \$species,
 	   'user:s'         => \$user,
 	   'kegg'           => \$kegg,
+           'postmerge'      => \$post_merge,
 	  )||die(@!);
 
 
@@ -195,7 +195,6 @@ $wormbase->run_script( 'make_wormpep.pl -all -final'                  , $log) if
 $wormbase->run_script( 'write_DB_remark.pl'                      , $log) if $remarks;
 $wormbase->run_script( 'molecular_names_for_genes.pl'            , $log) if $names;
 $wormbase->run_script( 'get_treefam.pl'                          , $log) if $treefam;
-$wormbase->run_script( 'cluster_gene_connection.pl'              , $log) if $cluster;
 $wormbase->run_script( 'inherit_GO_terms.pl -motif ', $log ) if $GO_term;
 $wormbase->run_script( 'KEGG.pl', $log )                                 if $kegg;
 
@@ -257,6 +256,8 @@ if ($gff_munge or $gff3_munge) {
 if ($xrefs) {
     $wormbase->run_script( 'generate_dbxref_file.pl', $log);
 }
+
+&post_merge_steps                                                        if $post_merge;
 
 &ontologies								 if $ontologies;
 &make_extras                                                             if $extras;
@@ -541,6 +542,11 @@ sub make_UTR {
   
   $wormbase->run_script("make_UTR_GFF.pl", $log);
   $wormbase->run_script("make_UTR_GFF.pl -gff3", $log);
+}
+
+sub post_merge_steps {
+  $wormbase->run_script("cluster_gene_connection.pl", $log);
+  $wormbase->run_script("tier3_stubs.pl", $log);
 }
 
 sub ontologies {
