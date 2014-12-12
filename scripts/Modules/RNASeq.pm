@@ -7,7 +7,7 @@
 # Methods for running the RNAseq pipeline and other useful things like searching the ENA warehouse
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-12-05 09:51:03 $      
+# Last updated on: $Date: 2014-12-12 13:03:16 $      
 
 =pod
 
@@ -1151,6 +1151,8 @@ sub get_SRX_file {
   # transfers we continue to recommend the use of ftp."
   # See: http://www.ebi.ac.uk/ena/about/sra_data_download
   # See: https://www.ebi.ac.uk/ena/about/browser
+  #
+  # Aspera doesn't work from the LSF farm.
 
 # get page like:
 #experiment_accession	run_accession	fastq_ftp
@@ -1200,15 +1202,29 @@ sub get_SRX_file {
 
       # use FTP to fetch the file
       $status = $self->{wormbase}->run_command("/sw/arch/bin/wget -q $address", $log);
-      if ($status != 0) {$log->log_and_die("FTP fetch of fastq file $file failed for $experiment_accession:\n/sw/arch/bin/wget -q $address\n");}
-      
-      if (-s $file) {
-	$count++;
+      if ($status == 0) {
+	if (-s $file) {
+	  $count++;
+	  $status = $self->{wormbase}->run_command("gunzip -f $file", $log);
+	  if ($status != 0) {$log->log_and_die("gunzip of fastq file $file failed for $experiment_accession\n");}
+	}
       } else {
-	$log->log_and_die("Didn't get file $file from the SRA in sample: $experiment_accession.\nFrom EBI report line $line\n");
+	$log->write_to("FTP fetch of fastq file $file failed for $experiment_accession:\n/sw/arch/bin/wget -q $address\n");
+	
+	# Attempt to get it from the NCBI
+      	$log->write_to("Trying FTP from NCBI...\n");
+	my ($dirbit) = ($run_accession =~ /^(\S\S\S\d\d\d)/);
+	$address = "ftp://ftp-trace.ncbi.nih.gov/sra/sra-instant/reads/ByRun/sra/SRR/$dirbit/${run_accession}/${run_accession}.sra";
+	$status = $self->{wormbase}->run_command("/sw/arch/bin/wget -q $address", $log);
+	if ($status != 0) {$log->log_and_die("FTP fetch of fastq file $file from NCBI failed for ${experiment_accession}:\n/sw/arch/bin/wget -q $address\n");}
+	my $cmd = "$ENV{WORM_PACKAGES}/sratoolkit/bin/fastq-dump --origfmt ${run_accession}.sra --outdir .";
+	my $status = $self->{wormbase}->run_command($cmd, $log);
+	if ($status != 0) {$log->log_and_die("unpack of .sra file ${run_accession}.sra from NCBI failed for ${experiment_accession}:\n/sw/arch/bin/wget -q $address\n");}
+	if (-s "${run_accession}.fastq") {
+	  $status = $self->{wormbase}->run_command("rm -rf ${run_accession}.sra", $log);
+	  $count++;
+	}
       }
-      $status = $self->{wormbase}->run_command("gunzip -f $file", $log);
-      if ($status != 0) {$log->log_and_die("gunzip of fastq file $file failed for $experiment_accession\n");}
     }
   }
   close(ENTRY);
@@ -1223,6 +1239,7 @@ sub get_SRX_file {
   return $failed;
 
 # the following is for downloading the files using Aspera from the NCBI
+# This doesnt work on the EBI LSF farm
 #  # get the name of the subdirectory in the SRA
 #  my ($dirbit) = ($experiment_accession =~ /SRX(\d\d\d)/);
 #
