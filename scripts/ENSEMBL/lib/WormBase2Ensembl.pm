@@ -130,6 +130,7 @@ sub parse_genes_gff3_fh {
       $l[2] ne 'rRNA' and 
       $l[2] ne 'tRNA' and 
       $l[2] ne 'miRNA' and 
+      $l[2] ne 'pre_miRNA' and 
       $l[2] ne 'scRNA' and
       $l[2] ne 'snoRNA' and 
       $l[2] ne 'snRNA' and 
@@ -192,6 +193,7 @@ sub parse_genes_gff3_fh {
              $l[2] eq 'rRNA' or
              $l[2] eq 'tRNA' or
              $l[2] eq 'miRNA' or
+             $l[2] eq 'pre_miRNA' or
              $l[2] eq 'scRNA' or
              $l[2] eq 'snoRNA' or
              $l[2] eq 'ncRNA' or
@@ -423,6 +425,12 @@ sub parse_genes_gff3_fh {
         } elsif ( $gff_type eq 'mRNA'){
           # mRNA feature with no corresponding CDS. Barf
           die "Transcript $tid is an mRNA, but could not get a valid CDS for it. Aborting\n";
+        } elsif ( $gff_type eq 'pre_miRNA' or
+                  $gff_type eq 'miRNA' or
+                  $gff_type eq 'miRNA_primary_transcript') {
+          $transcript->analysis($nc_ana);
+          $transcript->biotype($gff_type);
+          $gene_biotypes{"miRNA"}++;
         } else {
           $transcript->analysis($nc_ana);
           my $bt = ($gff_type =~ /RNA/) ? $gff_type : 'ncRNA';
