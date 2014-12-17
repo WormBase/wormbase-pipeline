@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl 
 # 
-#  Last updated on: $Date: 2014-11-21 13:04:05 $
+#  Last updated on: $Date: 2014-12-17 10:33:57 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -318,17 +318,11 @@ if ($dump_modified) {
       }
 
       my $ref_count = 1;
-
-      my @refs = @{&get_references()};
-      for(my $i=0; $i < @refs; $i++) {
-        printf $out_fh "RN   [%d]\n", $ref_count++;
-        print $out_fh "RP   1-$seqlen\n";
-        map { print $out_fh "$_\n" } @{$refs[$i]};
-        print $out_fh "XX\n";
-      }
       
       if ($species eq 'elegans') {
-        printf $out_fh "RN   [%d]\n", $ref_count;
+        # elegans is a special case, because every clone has a different primary
+        # author.
+        printf $out_fh "RN   [%d]\n", $ref_count++;
         printf $out_fh "RP   1-%d\n", $seqlen;
         print $out_fh "RG   WormBase Consortium\n";
         if (defined $primary_RA) {
@@ -343,6 +337,15 @@ if ($dump_modified) {
         print $out_fh "RL   St. Louis, MO 63110, USA. E-mail: help\@wormbase.org\n";
         print $out_fh "XX\n";
       }
+
+      my @refs = @{&get_references()};
+      for(my $i=0; $i < @refs; $i++) {
+        printf $out_fh "RN   [%d]\n", $ref_count++;
+        print $out_fh "RP   1-$seqlen\n";
+        map { print $out_fh "$_\n" } @{$refs[$i]};
+        print $out_fh "XX\n";
+      }
+
       next;
     }
     
@@ -388,18 +391,20 @@ if ($dump_modified) {
       if ($sequencelevel) {
         print $out_fh $_;
       } elsif (defined $agp_segs) {
-        $log->log_and_die("Could not finf AGP segs for $seqname\n") 
+        $log->log_and_die("Could not find AGP segs for $seqname\n") 
             if not exists $agp_segs->{$seqname};
 
         my $con_string = &make_con_from_segs(@{$agp_segs->{$seqname}});
 
         my $sbreak = $Text::Wrap::break;
         my $scols  = $Text::Wrap::columns;
+
         $Text::Wrap::break = '(?<=[,])';
         $Text::Wrap::columns = 76;
         my $wrapped = wrap('', '', $con_string);
-        $Text::Wrap::break = $sbreak;
-        $Text::Wrap::break = $scols;
+
+        $Text::Wrap::break   = $sbreak;
+        $Text::Wrap::columns = $scols;
 
         foreach my $line (split(/\n/, $wrapped)) {
           print $out_fh "CO   $line\n";
