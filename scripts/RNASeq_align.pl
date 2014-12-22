@@ -6,7 +6,7 @@
 #
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-06-11 10:38:48 $      
+# Last updated on: $Date: 2014-12-22 15:21:25 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -18,6 +18,7 @@ use Wormbase;
 use Getopt::Long;
 use Log_files;
 use Storable;
+
 
 my ($help, $debug, $test, $verbose, $store, $wormbase, $species, $new_genome, $check, $runlocally, $notbuild);
 GetOptions ("help"       => \$help,
@@ -96,11 +97,11 @@ foreach my $experiment_accession (keys %{$data}) {
     next;    
   }
   
-  # for elegans and briggsae, request 6 Gb memory as 'samtools sort' can take at least 4.5Gb and probably more sometimes
+  # for elegans and briggsae, request 8 Gb memory as 'samtools sort' can take at least 4.5Gb and probably more sometimes
   # for the others, ask for 6 Gb of memory
   my $memory = "6000";
   if ($species ne 'elegans' && $species ne 'briggsae') {
-    $memory = "6000";
+    $memory = "8000";
   }
   
   my $job_name = "worm_".$wormbase->species."_RNASeq";
@@ -229,6 +230,7 @@ sub make_fpkm {
   # now write out a table of what has worked
   # and make the expresssion tarball for Wen to put into SPELL
   # and write out .ace files for the FPKM expression levels of genes, transcripts, pseudogenes and CDSs
+  # and (for each gene) get a median expression value for each main life stage, plus an overall median value
   
   $log->write_to("\nResults\n");
   $log->write_to("-------\n\n");
@@ -236,7 +238,8 @@ sub make_fpkm {
   chdir $RNASeq->{RNASeqSRADir};
   
   # get the a hashref of the Life_stages etc. of the Condition objects
-  my ($life_stage, $condition_species, $sex, $strain, $condition_reference, $tissue) = get_condition_details($database);
+  my ($life_stage, $condition_species, $sex, $strain, $condition_reference, $tissue, $treatment, $food, $exposure, $temperature, $genotype) = get_condition_details($database);
+
   my %life_stages = %{$life_stage};
   my ($sra_study, $sra_experiment, $condition, $analysis_reference) = get_analysis_details($database);
   my %condition_of_analysis = %{$condition};
@@ -246,6 +249,10 @@ sub make_fpkm {
   my %CDSs = get_CDSs();
   my %Pseudogenes = get_Pseudogenes();
   
+  # get the conditions which look like reasonable control experiments
+  my %controls = get_controls($life_stage, $condition_species, $sex, $strain, $tissue, $treatment, $food, $exposure, $temperature, $genotype);
+  my %controls_fpkm=(); # holds the values of all control fpkm values for each gene gene (key=gene, key=life_Stage, value=list of fpkm values)
+
   # open a .ace file to hold the FPKM expression levels of genes, transcripts and CDSs
   my $misc_dynamic = $wormbase->misc_dynamic;
   my $expression_file = "$misc_dynamic/RNASeq_expression_levels_${species}.ace";
@@ -290,6 +297,7 @@ sub make_fpkm {
     my %CDS_SRX;
     my %Pseudogene_SRX;
     
+
     # Wen says: "Gary, the file is good, I just wonder what should we do
     # with the "0" values. SPELL data are all log2 transformed. That is
     # how they are stored in mysql and on the website there are also
@@ -330,6 +338,12 @@ sub make_fpkm {
 	if (defined $life_stage) {
 	  print EXPRACE "\nGene : \"$gene_id\"\n";
 	  print EXPRACE "RNASeq_FPKM  \"$life_stage\"  \"$gene_expr\"  From_analysis \"$analysis\"\n";
+	}
+
+	# if this looks like a control experiment, note the fpkm
+	if (exists $controls{$condition_of_analysis}) {
+	  my $ls =  $controls{$condition_of_analysis};
+	  push @{$controls_fpkm{$gene_id}{$ls}}, $gene_expr;
 	}
       }
       
@@ -385,7 +399,25 @@ sub make_fpkm {
     
   } # foreach SRX
   $log->write_to("\n");
-  
+
+  # write out the median values of the controls
+  my @total_values=();
+  foreach my $gene_id (keys %controls_fpkm) {
+    foreach my $life_stage (keys %{$controls_fpkm{$gene_id}}) {
+      my @fpkm_values = @{$controls_fpkm{$gene_id}{$life_stage}};
+      my $median_value = median(@fpkm_values);
+      my $median_analysis = "RNASeq.$species.$life_stage.control_median";
+      print EXPRACE "\nGene : \"$gene_id\"\n";
+      print EXPRACE "RNASeq_FPKM  \"$life_stage\"  \"$median_value\"  From_analysis \"$median_analysis\"\n";
+      push (@total_values, @fpkm_values);
+    }
+    # now get the median across all life stages
+    my $median_value = median(@total_values);
+    my $total_median_analysis = "RNASeq.$species.all_stages.control_median";
+    print EXPRACE "\nGene : \"$gene_id\"\n";
+    print EXPRACE "RNASeq_FPKM  \"WBls:0000002\"  \"$median_value\"  From_analysis \"$total_median_analysis\"\n"; # all life stages
+  }
+
   close(MANIFEST);
   close(EXPRACE);
   
@@ -438,7 +470,7 @@ sub make_fpkm {
   return (\%sra_study, \%sra_experiment, \%condition, \%analysis_reference);
 }
 ############################################################################
-#  my ($life_stage, $condition_species, $sex, $strain, $condition_reference) = get_condition_details($database);
+#  my ($life_stage, $condition_species, $sex, $strain, $condition_reference $tissue, $treatment, $food, $exposure, $temperature, $genotype) = get_condition_details($database);
 sub get_condition_details {
 
   my ($database) = @_;
@@ -449,6 +481,12 @@ sub get_condition_details {
   my %strain;
   my %condition_reference;
   my %tissue;
+  my %treatment;
+  my %food;
+  my %exposure;
+  my %temperature;
+  my %genotype;
+
 
   my $table_def = &write_life_stage_def;
   my $table_query = $wormbase->table_maker_query($database, $table_def);
@@ -457,24 +495,30 @@ sub get_condition_details {
     s/\"//g;  #remove "
     next if (/acedb/ or /\/\//);
     my @data = split(/\t/,$_);
-    my ($condition, $life_stage, $condition_species, $strain, $condition_reference, $sex, $tissue) = @data;
+    my ($condition, $life_stage, $condition_species, $strain, $condition_reference, $sex, $tissue, $treatment, $food, $exposure, $temperature, $genotype) = @data;
 
     if (!defined $condition) {next;}
 
     $life_stage{$condition} = $life_stage; # multiple life-stages get overwritten leaving just the last one
     $condition_species{$condition} = $condition_species;
-    $sex{$condition} = $sex;
     $strain{$condition} = $strain; if (defined $strain{$condition} && $strain{$condition} eq '') {$strain{$condition} = undef}
     $condition_reference{$condition} = $condition_reference;
+    $sex{$condition} = $sex;
     $tissue{$condition} = $tissue;
+    $treatment{$condition} = $treatment;
+    $food{$condition} =  $food;
+    $exposure{$condition} = $exposure;
+    $temperature{$condition} = $temperature;
+    $genotype{$condition} = $genotype;
+    
   }
 
-  return (\%life_stage, \%condition_species, \%sex, \%strain, \%condition_reference, \%tissue);
+  return (\%life_stage, \%condition_species, \%sex, \%strain, \%condition_reference, \%tissue, \%treatment, \%food, \%exposure, \%temperature, \%genotype);
 }
 ############################################################################
 # this will write out an acedb tablemaker defn to a temp file
 ############################################################################
-#  my ($life_stage, $condition_species, $strain, $condition_reference) = get_condition_details($database);
+#  my ($condition, $life_stage, $condition_species, $strain, $condition_reference, $sex, $tissue, $treatment, $food, $exposure, $temperature, $genotype) = get_condition_details($database);
 sub write_life_stage_def {
   my $def = "/tmp/Life_stages_$$.def";
   open TMP,">$def" or $log->log_and_die("cant write $def: $!\n");
@@ -550,6 +594,55 @@ Visible
 Next_Tag 
 From 1 
 Tag Tissue 
+
+Colonne 8 
+Subtitle Treatment
+Width 12 
+Optional 
+Visible 
+Next_Tag 
+From 1 
+Tag Treatment 
+ 
+
+Colonne 9 
+Subtitle Food
+Width 12 
+Optional 
+Visible 
+Next_Tag
+From 1 
+Tag Food 
+ 
+
+Colonne 10 
+Subtitle Exposure_time 
+Width 12 
+Optional 
+Visible 
+Next_Tag 
+From 1 
+Tag Exposure_time 
+ 
+
+Colonne 11 
+Subtitle Temperature
+Width 12 
+Optional 
+Visible 
+Next_Tag 
+From 1 
+Tag Temperature
+ 
+
+Colonne 12 
+Subtitle Genotype
+Width 12 
+Optional 
+Visible 
+Next_Tag 
+From 1 
+Tag Genotype
  
 END2
 
@@ -812,3 +905,135 @@ sub do_analysis_check {
 }
 
 ############################################################################
+# return the median value of a list of values
+sub median
+{
+    my @vals = sort {$a <=> $b} @_;
+    my $len = @vals;
+    if($len%2) #odd?
+    {
+        return $vals[int($len/2)];
+    }
+    else #even
+    {
+        return ($vals[int($len/2)-1] + $vals[int($len/2)])/2;
+    }
+}
+############################################################################
+
+# get a hash keyed by the condition object name of those condition
+# objects which look like reasonable controls (except for the
+# life_stages), with a value of a life_stage.
+# The life-stages for elegans are simplified to the major stages.
+
+sub get_controls {
+  my ($life_stage, $condition_species, $sex, $strain, $tissue, $treatment, $food, $exposure, $temperature, $genotype) = @_;
+  my %controls;
+
+  my %default_strain = (
+			'elegans'   => 'N2',
+			'brenneri'  => 'PB2801',
+			'briggsae'  => 'AF16',
+			'brugia'    => 'FR3',
+			'japonica'  => 'DF5081',
+			'ovolvulus' => 'O_volvulus_Cameroon_isolate',
+			'remanei'   => 'SB146',
+			'pristionchus'   => 'PS312',
+		       );
+
+  my @Embryo = ('WBls:0000003', 'WBls:0000004', 'WBls:0000005',
+  'WBls:0000006', 'WBls:0000007', 'WBls:0000008', 'WBls:0000009',
+  'WBls:0000010', 'WBls:0000011', 'WBls:0000012', 'WBls:0000013',
+  'WBls:0000014', 'WBls:0000015', 'WBls:0000016', 'WBls:0000017',
+  'WBls:0000018', 'WBls:0000019', 'WBls:0000020', 'WBls:0000021',
+  'WBls:0000071', 'WBls:0000072', 'WBls:0000669');
+
+  my @L1 = ('WBls:0000024', 'WBls:0000025', 'WBls:0000026',
+  'WBls:0000042', 'WBls:0000043', 'WBls:0000044', 'WBls:0000045');
+
+  my @L2 = ('WBls:0000027', 'WBls:0000028', 'WBls:0000029',
+  'WBls:0000030', 'WBls:0000031', 'WBls:0000046', 'WBls:0000047',
+  'WBls:0000048', 'WBls:0000053', 'WBls:0000054', 'WBls:0000055');
+
+  my @L3 = ('WBls:0000035', 'WBls:0000036', 'WBls:0000037',
+  'WBls:0000049');
+
+  my @L4 = ('WBls:0000038', 'WBls:0000039', 'WBls:0000040',
+  'WBls:0000050', 'WBls:0000073');
+
+  my @Dauer = ('WBls:0000032', 'WBls:0000033', 'WBls:0000034',
+  'WBls:0000051', 'WBls:0000052');
+
+  my @Adult = ('WBls:0000041', 'WBls:0000056', 'WBls:0000057',
+  'WBls:0000058', 'WBls:0000060', 'WBls:0000061', 'WBls:0000062',
+  'WBls:0000063', 'WBls:0000064', 'WBls:0000065', 'WBls:0000066',
+  'WBls:0000067', 'WBls:0000068', 'WBls:0000069', 'WBls:0000070',
+  'WBls:0000074', 'WBls:0000670', 'WBls:0000671', 'WBls:0000672',
+  'WBls:0000673', 'WBls:0000674', 'WBls:0000675', 'WBls:0000676');
+
+  # mixed, postembryonic, larva, nematode life stage
+  my @Mixed = ('WBls:0000002', 'WBls:0000022', 'WBls:0000023',
+  'WBls:0000075');
+
+  foreach my $condition (keys %{$life_stage}) {
+    my $ls = $life_stage->{$condition};
+    my $sp = $condition_species->{$condition};
+    my $sx = $sex->{$condition};
+    my $st = $strain->{$condition};
+    my $ts = $tissue->{$condition};
+    my $tr = $treatment->{$condition};
+    my $fd = $food->{$condition};
+    my $ex = $exposure->{$condition};
+    my $tp = $temperature->{$condition};
+    my $gt = $genotype->{$condition};
+
+    # does this look like a control?
+    if ($sx ne 'Hermaphrodite' && $sp eq 'Cenorhabditis elegans') {next} # in elegans we only want hermaphrodites
+    if ($st ne '' && $st ne $default_strain{$species}) {next}
+    if ($ts ne '' && $ts ne 'WBbt:0007833') {next} # whole organism
+    if ($tr ne '' && $tr !~ /control/i) {next}
+    if ($fd ne '' && $fd !~ /control/i && $fd !~ /fed/i) {next}
+    if ($ex ne '' && $ex !~ /control/i) {next}
+    if ($tp ne '') {next}
+    if ($gt ne '' && $gt !~ /wildtype/i && $gt !~ /control/i) {next}
+
+    # can we simplify the life-stage?
+    # if it is not elegans, just accept whatever life_stage we have
+    if ($sp eq 'Cenorhabditis elegans') {
+      # want to simplify to:
+      # Embryo
+      if (grep /^$ls$/, @Embryo) {
+	$ls = $Embryo[0];
+      # L1
+      } elsif (grep /^$ls$/, @L1) {
+	$ls = $L1[0];
+      # L2
+      } elsif (grep /^$ls$/, @L2) {
+	$ls = $L2[0];
+      # L3
+      } elsif (grep /^$ls$/, @L3) {
+	$ls = $L3[0];
+      # L4
+      } elsif (grep /^$ls$/, @L4) {
+	$ls = $L4[0];
+      # Dauer
+      } elsif (grep /^$ls$/, @Dauer) {
+	$ls = $Dauer[0];
+      # Adult 
+      } elsif (grep /^$ls$/, @Adult) {
+	$ls = $Adult[0];
+      # mixed stages
+      } elsif (grep /^$ls$/, @Mixed) {
+	$ls = $Mixed[0];
+      } else {
+	$ls = $Mixed[0]; # default is Mixed
+      }
+    }
+
+    $controls{$condition} = $ls;
+
+  }
+
+
+  return %controls;
+}
