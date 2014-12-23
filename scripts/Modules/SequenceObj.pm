@@ -583,7 +583,7 @@ sub list_of_matched_genes_by_seqname {
 
   foreach my $match (@matches) {
     my $cds = $match->[0];
-    my ($gene) = ($cds =~ /($seq_name_regexp)/);
+    my ($gene) = ($cds->name =~ /($seq_name_regexp)/);
   
     if (defined $gene) {
       $genes{$gene} = 1;
