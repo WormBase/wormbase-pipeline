@@ -17,9 +17,10 @@ Width 12
 Optional 
 Visible 
 Class 
-Class cDNA_Sequence 
+Class Sequence 
 From 1 
- 
+Condition EST_5 OR EST_3
+
 Colonne 2 
 Width 20 
 Mandatory 
