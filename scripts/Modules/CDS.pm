@@ -110,8 +110,8 @@ sub map_introns_cDNA {
   
   # check strandedness
   if( $SequenceObj::debug ) { # class data
-    ( print "CDS::map_introns_cDNA\t", $self->name," has no strand\n" and return 0 ) unless $self->strand;
-    ( print "CDS::map_introns_cDNA\t", $cdna->name," has no strand\n" and return 0 ) unless $cdna->strand;
+    ( print STDERR "CDS::map_introns_cDNA\t", $self->name," has no strand\n" and return 0 ) unless $self->strand;
+    ( print STDERR "CDS::map_introns_cDNA\t", $cdna->name," has no strand\n" and return 0 ) unless $cdna->strand;
   }
   
   if ($self->strand ne $cdna->strand) {
@@ -154,8 +154,8 @@ sub map_cDNA
 
     # check strandedness
     if( $SequenceObj::debug ) { # class data
-      ( print "CDS::map_cDNA\t", $self->name," has no strand\n" and return 0 ) unless $self->strand;
-      ( print "CDS::map_cDNA\t", $cdna->name," has no strand\n" and return 0 ) unless $cdna->strand;
+      ( print STDERR "CDS::map_cDNA\t", $self->name," has no strand\n" and return 0 ) unless $self->strand;
+      ( print STDERR "CDS::map_cDNA\t", $cdna->name," has no strand\n" and return 0 ) unless $cdna->strand;
     }
     return 0 if $self->strand ne $cdna->strand;
 
@@ -163,7 +163,7 @@ sub map_cDNA
     foreach my $transcript ( $self->transcripts ) {
       if ($transcript->map_cDNA( $cdna ) == 1) { 
 	$matches_me = 1;
-        print "CDS::map_cDNA\tExtended existing transcript for " . $self->name . " with " . $cdna->name . "\n" if $SequenceObj::debug;
+        print STDERR "CDS::map_cDNA\tExtended existing transcript for " . $self->name . " with " . $cdna->name . "\n" if $SequenceObj::debug;
       }
     }
 
@@ -181,7 +181,7 @@ sub map_cDNA
 	if( $self->check_exon_match( $cdna ) ) {
 	  # check reciprocal CDS -> cdna
 	  if( $cdna->check_exon_match( $self )) {
-            print "CDS::map_cDNA\tTranscript::map_cDNA: Creating new transcript for " . $self->name . " with " . $cdna->name . "\n" if $SequenceObj::debug;
+            print STDERR "CDS::map_cDNA\tTranscript::map_cDNA: Creating new transcript for " . $self->name . " with " . $cdna->name . "\n" if $SequenceObj::debug;
 	    # if this cdna matches the CDS but not the existing transcripts create a new one
 	    # append .x to indicate multiple transcripts for same CDS.
 	    my $transcript_count = scalar($self->transcripts);
