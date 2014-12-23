@@ -57,7 +57,7 @@ Internal methods are usually preceded with a _
 package Coords_converter;
 
 use strict;
-use lib $ENV{'CVS_DIR'};
+use lib $ENV{CVS_DIR};
 
 use Carp;
 use Wormbase;
@@ -111,460 +111,62 @@ sub invoke {
     warn "\nno coordinate info was present - extracting new data\n";
     $refresh = 1;
   }
-  
-  ##########################
-  #
-  # elegans
-  #
-  ##########################
-  
-  if ($species eq "elegans") {
-    
-    if ( $refresh ) {
-      print "refreshing coordinates for $database\n";
-      my $tace = $wormbase->tace;
-      
-      my @command;
-      $command[0] = "find sequence CHROM*\nshow -a Subsequence -f ${SL_coords_file}\n";
-      $command[1] = "clear\nfind sequence SUPER*\nshow -a Subsequence -f ${clone_coords_file}\n";
-      
-      open (ACE,"| $tace $database") or croak "cant open $database\n";
-      foreach (@command) {
-        print ACE $_ ;
-      }
-      close(ACE);
-      
-      open( FH, "$clone_coords_file") or die "cant open $clone_coords_file for reading\t$!\n ";
-      open( NEW,">$clone_coords_file.bk" ) or die "cant write to $clone_coords_file.bk\t$!\n";
-      while (<FH>) {
-        print NEW unless /\./;
-      }
-      close NEW;
-      close FH;
-      
-      system("mv -f $clone_coords_file.bk $clone_coords_file") and croak "cant mv $clone_coords_file.bk\n" ;
-      system("chmod 777 $clone_coords_file") and carp "cant chmod on $clone_coords_file - This could cause problems in future" ;
-      
-    }
-    
-    # now read and load the data
-    &_read_data_file($database, $species, $self);
-    
-    # elegans mitochondrion is a special case
-    # mitochondrial chromosome doesn't have 3 levels of sequence ( Chromosome, SLink, clone ) so
-    # a fake clone covering the entire chromosome and MTCE superlink is made
-    $self->{'CLONE2CHROM'}->{'MTCE'} = "CHROMOSOME_MtDNA";
-    $self->{'SUPERLINK'}->{"MTCE"}->{'MTCE'} = $self->{'CHROMOSOME_MtDNA'}->{'SUPERLINK'}->{'MTCE'};
-    $self->{'CLONE2SUPERLINK'}->{'MTCE'} = 'MTCE';
-    $self->{'SUPERLINK2CHROM'}->{"MTCE"} = "CHROMOSOME_MtDNA";
-    
-    %{$self->{'single_chrom'}} = (
-                                  "I"   => "CHROMOSOME_I",
-                                  "II"  => "CHROMOSOME_II",
-                                  "III" => "CHROMOSOME_III",
-                                  "IV"  => "CHROMOSOME_IV",
-                                  "V"   => "CHROMOSOME_V",
-                                  "X"   => "CHROMOSOME_X",
-                                  "M"   => "CHROMOSOME_MtDNA",
-                                  "MtDNA" => "CHROMOSOME_MtDNA"
-                                  );
-    
-    ##########################
-    #
-    # brenneri
-    #
-    ##########################
-    
-  } elsif ($species eq 'brenneri') {
-    # read data from the Supercontig* Sequence:Subsequence tags in
-    # the acedb database
-    
-    if ( $refresh ) {
-      print "refreshing coordinates for $database\n";
-      my $tace = $wormbase->tace;
-      
-      my $command = "find sequence ".$wormbase->chromosome_prefix."*\nshow -a DNA -f ${SL_coords_file}\n";
-      
-      open (ACE,"| $tace $database") or croak "cant open $database\n";
-      print ACE $command ;
-      close(ACE);
-      
-      # convert the GAP name into a unique gap name
-      my %data;
-      my $supercontig;
-      open (SL, "< $SL_coords_file") or croak "cant open $SL_coords_file\t$!";
-      while(my $line = <SL>) {
-        $line =~ s/\"//g;
-        if ($line =~ /Sequence\s+:\s+(\S+)/) {
-          $supercontig = $1;
-        } elsif ($line =~ /DNA\s+(\S+)\s+(\d+)/) {
-          my $contig = $1;
-          my $pos1 = $2;
-          push @{$data{$supercontig}}, [($contig, $pos1)];
-        }
-      }
-      close (SL);
-      
-      my $prev_pos;
-      my $prev_contig = "";
-      open (SLB, "> $SL_coords_file") or croak "cant open $SL_coords_file\t$!";
-      # now sort by start position and write out again including the gap information
-      foreach my $supercontig (keys %data) {
-        print SLB "\nSequence : \"$supercontig\"\n";
-        print SLB "Subsequence \"$supercontig\" 1 ".$data{$supercontig}->[0]->[1]."\n";
-      }
-      
-      close (SLB);
-      system("cp $SL_coords_file $clone_coords_file") and croak "cant cp $SL_coords_file\n" ;
-    }
-    
-    # now read and load the data
-    &_read_data_file($database, $species, $self);
-    
-    
-    ##########################
-    #
-    # briggsae
-    #
-    ##########################
-    
-  } elsif ($species eq 'briggsae') {
-    
-    # read data from the chr* Sequence:Subsequence tags in the acedb
-    # database
-    
-    if ( $refresh ) {
-      print "refreshing coordinates for $database\n";
-      my $tace = $wormbase->tace;
-      
-      my $command = "find sequence chr*\nshow -a Subsequence -f ${SL_coords_file}\n";
-      
-      open (ACE,"| $tace $database") or croak "cant open $database\n";
-      print ACE $command ;
-      close(ACE);
-      
-      # convert the GAP name into a unique gap name
-      my $supercontig;
-      my $prev_contig = "";
-      open (SL, "< $SL_coords_file") or croak "cant open $SL_coords_file\t$!";
-      open (SLB, "> $SL_coords_file.bak") or croak "cant open $SL_coords_file.bak\t$!";
-      while(my $line = <SL>) {
-        if ($line =~ /Sequence\s+:\s+\"(\S+)\"/) {
-          $supercontig = $1;
-          print SLB $line;
-          $prev_contig = "";
-        } elsif ($line =~ /Subsequence\s+\"(\S+)\"\s+(\d+)\s+(\d+)/) {
-          my $contig = $1;
-          my $pos1 = $2;
-          my $pos2 = $3;
-          if ($contig =~ /^GAP/) {$contig = "$prev_contig.$contig";}
-          print SLB "Subsequence \"$contig\" $pos1 $pos2\n";
-          $prev_contig = $contig;
-        }
-      }
-      close (SLB);
-      close (SL);
-      system("mv $SL_coords_file.bak $SL_coords_file") and croak "cant cp $SL_coords_file.bak\n" ;
-      system("cp $SL_coords_file $clone_coords_file") and croak "cant cp $SL_coords_file\n" ;
-    }
-    
-    # now read and load the data
-    &_read_data_file($database, $species, $self);
-    
-    ##########################
-    #
-    # remanei
-    #
-    ##########################
-    
-  } elsif ($species eq 'remanei'){
-    
-    # read data from the Supercontig* Sequence:Subsequence tags in
-    # the acedb database
-    
-    if ( $refresh ) {
-      print "refreshing coordinates for $database\n";
-      my $tace = $wormbase->tace;
-      
-      my $command = "find sequence Crem_Contig*\nshow -a DNA -f ${SL_coords_file}\n";
-      
-      open (ACE,"| $tace $database") or croak "cant open $database\n";
-      print ACE $command ;
-      close(ACE);
-      
-      # convert the GAP name into a unique gap name
-      my %data;
-      my $supercontig;
-      open (SL, "< $SL_coords_file") or croak "cant open $SL_coords_file\t$!";
-      while(my $line = <SL>) {
-        $line =~ s/\"//g;
-        if ($line =~ /Sequence\s+:\s+(\S+)/) {
-          $supercontig = $1;
-        } elsif ($line =~ /DNA\s+(\S+)\s+(\d+)/) {
-          my $contig = $1;
-          my $pos1 = $2;
-          push @{$data{$supercontig}}, [($contig, $pos1)];
-        }
-      }
-      close (SL);
-      
-      my $prev_pos;
-      my $prev_contig = "";
-      open (SLB, "> $SL_coords_file") or croak "cant open $SL_coords_file\t$!";
-      # now sort by start position and write out again including the gap information
-      foreach my $supercontig (keys %data) {
-        print SLB "\nSequence : \"$supercontig\"\n";
-        print SLB "Subsequence \"$supercontig\" 1 ".$data{$supercontig}->[0]->[1]."\n";
-      }
-      
-      close (SLB);
-      system("cp $SL_coords_file $clone_coords_file") and croak "cant cp $SL_coords_file\n" ;
-    }
-    
-    # now read and load the data
-    &_read_data_file($database, $species, $self);
-    
-    ##########################
-    #
-    # pristionchus
-    #
-    ##########################
-    
-  }elsif ($species eq 'pristionchus'){
-    
-    # read data from the Supercontig* Sequence:Subsequence tags in
-    # the acedb database
-    
-    if ( $refresh ) {
-      print "refreshing coordinates for $database\n";
-      my $tace = $wormbase->tace;
-      
-      my $command = "find sequence Ppa_Contig*\nshow -a DNA -f ${SL_coords_file}\n";
-      
-      open (ACE,"| $tace $database") or croak "cant open $database\n";
-      print ACE $command ;
-      close(ACE);
-      
-      # convert the GAP name into a unique gap name
-      my %data;
-      my $supercontig;
-      open (SL, "< $SL_coords_file") or croak "cant open $SL_coords_file\t$!";
-      while(my $line = <SL>) {
-        if ($line =~ /Sequence\s+:\s+\"(\S+)\"/) {
-          $supercontig = $1;
-        } elsif ($line =~ /DNA\s+\"(\S+)\"\s+(\d+)/) {
-          my $contig = $1;
-          my $pos1 = $2;
-          push @{$data{$supercontig}}, [($contig, $pos1)];
-        }
-      }
-      close (SL);
-      
-      my $prev_pos;
-      my $prev_contig = "";
-      open (SLB, "> $SL_coords_file") or croak "cant open $SL_coords_file\t$!";
-      # now sort by start position and write out again including the gap information
-      foreach my $supercontig (keys %data) {
-        print SLB "\nSequence : \"$supercontig\"\n";
-        print SLB "Subsequence \"$supercontig\" 1 ".$data{$supercontig}->[0]->[1]. "\n";
-      }
-      close (SLB);
-      system("cp $SL_coords_file $clone_coords_file") and croak "cant cp $SL_coords_file\n" ;
-    }
-    
-    # now read and load the data
-    &_read_data_file($database, $species, $self);
 
-    ##########################
-    #
-    # haemonchus
-    #
-    #########################
-  } elsif ($species eq 'haemonchus') {
+  if ($refresh) {
+    my $db = Ace->connect(-path => $database);
     
-    carp "Do not know how to read in coordinate data for $species\n";
-    
-    # now read and load the data
-    # &_read_data_file($database, $species, $self);
-    
-    return undef;
-    
-    ##########################
-    #
-    # japonica
-    #
-    ##########################
-  } elsif ($species eq 'japonica') { # read data from the Supercontig* Sequence:Subsequence tags in
-    # the acedb database
-    
-    if ( $refresh ) {
-      print "refreshing coordinates for $database\n";
-      my $tace = $wormbase->tace;
-      
-      my $command = "find sequence ".$wormbase->chromosome_prefix."*\nshow -a DNA -f ${SL_coords_file}\n";
-      
-      open (ACE,"| $tace $database") or croak "cant open $database\n";
-      print ACE $command ;
-      close(ACE);
-      
-      # convert the GAP name into a unique gap name
-      my %data;
-      my $supercontig;
-      open (SL, "< $SL_coords_file") or croak "cant open $SL_coords_file\t$!";
-      while(my $line = <SL>) {
-        $line =~ s/\"//g;
-        if ($line =~ /Sequence\s+:\s+(\S+)/) {
-          $supercontig = $1;
-        } elsif ($line =~ /DNA\s+(\S+)\s+(\d+)/) {
-          my $contig = $1;
-          my $pos1 = $2;
-          push @{$data{$supercontig}}, [($contig, $pos1)];
-        }
-      }
-      close (SL);
-      
-      my $prev_pos;
-      my $prev_contig = "";
-      open (SLB, "> $SL_coords_file") or croak "cant open $SL_coords_file\t$!";
-      # now sort by start position and write out again including the gap information
-      foreach my $supercontig (keys %data) {
-        print SLB "\nSequence : \"$supercontig\"\n";
-        print SLB "Subsequence \"$supercontig\" 1 ".$data{$supercontig}->[0]->[1]."\n";
-      }
-      
-      close (SLB);
-      system("cp $SL_coords_file $clone_coords_file") and croak "cant cp $SL_coords_file\n" ;
-    }
-    
-    # now read and load the data
-    &_read_data_file($database, $species, $self);
+    my $ncbi_bioproj = $wormbase->ncbi_bioproject;
 
-    ##########################
-    #
-    # brugia
-    #
-    ##########################
-  } elsif ($species eq 'brugia') {
-      
-    # the acedb database
-    
-    if ( $refresh ) {
-      print "refreshing coordinates for $database\n";
-      my $tace = $wormbase->tace;
-      my $command = "find Species Brugia malayi\nFollow Assembly\nFollow Sequences\nshow -a DNA -f ${SL_coords_file}\n"; 
- 
-      open (ACE,"| $tace $database") or croak "cant open $database\n";
-      print ACE $command ;
-      close(ACE);
-      
-      # convert the GAP name into a unique gap name
-      my %data;
-      my $supercontig;
-      open (SL, "< $SL_coords_file") or croak "cant open $SL_coords_file\t$!";
-      while(my $line = <SL>) {
-        $line =~ s/\"//g;
-        if ($line =~ /Sequence\s+:\s+(\S+)/) {
-          $supercontig = $1;
-        } elsif ($line =~ /DNA\s+(\S+)\s+(\d+)/) {
-          my $contig = $1;
-          my $pos1 = $2;
-          push @{$data{$supercontig}}, [($contig, $pos1)];
-        }
-      }
-      close (SL);
-      
-      my $prev_pos;
-      my $prev_contig = "";
-      open (SLB, "> $SL_coords_file") or croak "cant open $SL_coords_file\t$!";
-      # now sort by start position and write out again including the gap information
-      foreach my $supercontig (keys %data) {
-        print SLB "\nSequence : \"$supercontig\"\n";
-        print SLB "Subsequence \"$supercontig\" 1 ".$data{$supercontig}->[0]->[1]."\n";
-      }
-      
-      close (SLB);
-      system("cp $SL_coords_file $clone_coords_file") and croak "cant cp $SL_coords_file\n" ;
-    }
-    
-    # now read and load the data
-    &_read_data_file($database, $species, $self);
-
-  } elsif ($species eq 'ovolvulus') {
-      
-    ##########################
-    #
-    # ovolvulus
-    #
-    ##########################
-
-    # the acedb database
-    
-    if ( $refresh ) {
-      print "refreshing coordinates for $database\n";
-      my $tace = $wormbase->tace;
-      my $command = "find Species Onchocerca volvulus\nFollow Assembly\nFollow Sequences\nshow -a Subsequence -f ${SL_coords_file}\n";
+    my $spe_obj = $db->fetch(Species => $wormbase->full_name);
+    my @assemblies = $spe_obj->Assembly;
+    my @relevant_assembly;
+    foreach my $assembly (@assemblies) {
+      foreach my $dbxref ($assembly->Database) {
+        next if $dbxref->name ne "NCBI_BioProject";
+        my $bp = $dbxref->right->right->name;
         
-      open (ACE,"| $tace $database") or croak "cant open $database\n";
-      print ACE $command ;
-      close(ACE);
-
-      system("cp $SL_coords_file $clone_coords_file") and croak "cant cp $SL_coords_file\n" ;
-    }
-    
-    # now read and load the data
-    &_read_data_file($database, $species, $self);
-
-  } else {
-  
-    ##########################
-    #
-    # unknown species
-    #
-    ##########################
-
-    if ( $refresh ) {
-      print "refreshing coordinates for $database\n";
-      my $tace = $wormbase->tace;
-      
-      my $command = "find sequence ".$wormbase->chromosome_prefix."*\nshow -a DNA -f ${SL_coords_file}\n";
-      
-      open (ACE,"| $tace $database") or croak "cant open $database\n";
-      print ACE $command ;
-      close(ACE);
-      
-      # convert the GAP name into a unique gap name
-      my %data;
-      my $supercontig;
-      open (SL, "< $SL_coords_file") or croak "cant open $SL_coords_file\t$!";
-      while(my $line = <SL>) {
-        $line =~ s/\"//g;
-        if ($line =~ /Sequence\s+:\s+(\S+)/) {
-          $supercontig = $1;
-        } elsif ($line =~ /DNA\s+(\S+)\s+(\d+)/) {
-          my $contig = $1;
-          my $pos1 = $2;
-          push @{$data{$supercontig}}, [($contig, $pos1)];
+        if ($bp eq $ncbi_bioproj) {
+          push @relevant_assembly, $assembly;
         }
       }
-      close (SL);
-      
-      my $prev_pos;
-      my $prev_contig = "";
-      open (SLB, "> $SL_coords_file") or croak "cant open $SL_coords_file\t$!";
-      # now sort by start position and write out again including the gap information
-      foreach my $supercontig (keys %data) {
-        print SLB "\nSequence : \"$supercontig\"\n";
-        print SLB "Subsequence \"$supercontig\" 1 ".$data{$supercontig}->[0]->[1]."\n";
-      }
-      
-      close (SLB);
-      system("cp $SL_coords_file $clone_coords_file") and croak "cant cp $SL_coords_file\n" ;
+    }
+
+    if (scalar(@relevant_assembly) != 1) {
+      die "Bad data when trying to refresh Coords_converter data\n";
     }
     
-    # now read and load the data
-    &_read_data_file($database, $species, $self);
+    open(my $sl_coords, ">$SL_coords_file") or die "Could not open $SL_coords_file for writing\n";
+
+    foreach my $seq ($relevant_assembly[0]->Sequences) {
+      print $sl_coords "\nSequence : \"", $seq->name, "\"\n";
+      my @segs;
+
+      my @subseqs = $seq->Subsequence;
+      if (scalar(@subseqs) <= 1) { 
+        my $seqobj;
+        if (not @subseqs) {
+          $seqobj = $seq->fetch;
+        } else {
+          $seqobj = $subseqs[0]->fetch;
+        }
+        my $seq_len = $seqobj->at('DNA')->right->right;
+
+        push @segs, [$seqobj->name, 1, $seq_len];
+      } else {
+        foreach my $subseq (@subseqs) {
+          push @segs, [$subseq->name, $subseq->right->name, $subseq->right->right->name];
+        }
+      }
+
+      foreach my $seg (sort { $a->[1] <=> $b->[1] } @segs) {
+        printf $sl_coords "Subsequence    \"%s\" %d %d\n", @$seg;
+      }
+    }
+    close($sl_coords);
+    system("cp $SL_coords_file $clone_coords_file") and croak "cant cp $SL_coords_file\n";    
   }
-  
+
+  &_read_data_file($database, $species, $self);
   
   bless( $self, $class);
   return $self;
@@ -589,94 +191,53 @@ sub _read_data_file {
   
   my $parent;
   
-  if ($species eq 'elegans') {
-    open (SL,"<$database/SL_coords") or croak "cant open superlink coordinate file ";
-    while (<SL>) {
-      if (/Sequence.*(CHROMOSOME_\w+)/) {
-	$parent = $1;
-        
-      } elsif( ( /Subsequence\s+\"(SUPERLINK_\w+)\"\s+(\d+)\s+(\d+)/ ) or ( /Subsequence\s+\"(MTCE+)\"\s+(\d+)\s+(\d+)/) )  {
-	$self->{$parent}->{'SUPERLINK'}->{$1} = [$2,$3];
-	$self->{'SUPERLINK2CHROM'}->{$1} = "$parent";
-	$self->{'LENGTH'}->{$1} = $3 - $2 + 1; # length of the superlink
-	if (! exists $self->{'LENGTH'}->{$parent} || # length of the chromosome
-            $self->{'LENGTH'}->{$parent} < $3) {
-          $self->{'LENGTH'}->{$parent} = $3;
-	}
-      }
-    }
-    close (SL);
-
-    undef $parent;
-    open (CLONE,"<$database/clone_coords") or croak "cant open clone coordinate file $database/clone_coords\t$!";
-    while(<CLONE>) {
-      if (/Sequence.*\"(SUPERLINK_\w+)/) {
-	$parent = $1;
-      } elsif( /Subsequence\s+\"(\w+)\"\s+(\d+)\s+(\d+)/ ){
-	$self->{'SUPERLINK'}->{"$parent"}->{"$1"} = [$2,$3];
-	$self->{'CLONE2CHROM'}->{"$1"} = $self->{'SUPERLINK2CHROM'}->{$parent};
-	$self->{'CLONE2SUPERLINK'}->{"$1"} = $parent;
-	$self->{'SENSE'}->{$1} = '+'; # elegans clones are always in the forward sense
-	$self->{'LENGTH'}->{$1} = $3 - $2 + 1;
-      }
-    }
-    close (CLONE);
-    
-  } else {			# non-elegans species
-    #print "species = $species reading $database/clone_coords\n";
-
-    # In non-elegans species there is no superlink, there is just
-    # contig and supercontig.  Supercontigs will eventually become
-    # synonymous with chromosomes, so we treat them as such here.  We
-    # also create dummy superlinks that are the same size as the
-    # supercontigs. This makes it easy to re-use the subroutines that
-    # were written for elegans and which expect there to be a
-    # superlink layer in the data.
-
-    # The SL_coords and clone_coords files are duplicates of each
-    # other in non-elegans sepcies, so only read from one of them
-
-    my $supercontig;
-    my $contig;
-    open (CLONE,"<$database/clone_coords") or croak "cant open clone coordinate file $database/clone_coords\t$!";
-    while(<CLONE>) {
-      if (/Sequence\s+:\s+\"(\S+)\"/) {
-	$supercontig = $1;
-        
-      } elsif (/Subsequence\s+\"(\S+)\"\s+(\d+)\s+(\d+)/) {
-	$contig = $1;
-        
-	# some species (e.g. briggsae) have the contigs in a mixture of orientations
-	my $sense = '+';
-	my ($x, $y) = ($2, $3);
-	if( $y < $x ) {
-          $sense = "-";
-          swap($self, \$x, \$y);
-          #print "reverse sense found for $species $supercontig contig $contig\n";
-	}
-	$self->{'SENSE'}->{$contig} = $sense; # store the sense of the contig
-	$self->{'LENGTH'}->{$contig} = $y - $x + 1; # store the length of the contig
-        
-	# we wish to store the end of the dummy superlink as being the length of the supercontig
-	# so get the largest contig position in the supercontig
-	if (! exists $self->{$supercontig}->{'SUPERLINK'}->{$supercontig} ||
-            $self->{$supercontig}->{'SUPERLINK'}->{$supercontig}->[1] < $y) {
-          $self->{$supercontig}->{'SUPERLINK'}->{$supercontig} = [1,$y]; # a dummy superlink is the supercontig
-          $self->{'LENGTH'}->{$supercontig} = $y; # store the length of the supercontig
-	}
-	$self->{'SUPERLINK2CHROM'}->{$supercontig} = $supercontig; # the dummy superlink is the supercontig
-        $self->{'SUPERLINK'}->{$supercontig}->{$contig} = [$x,$y]; # the superlink of a contig is the supercontig
-	$self->{'CLONE2CHROM'}->{$contig} = $supercontig;
-	$self->{'CLONE2SUPERLINK'}->{$contig} = $supercontig;
-      }
-    }
-    close (CLONE);
-  }
+  # In all species (now including elegans) there is no superlink, there is just
+  # contig and supercontig (or chromosome/supercontig).  Supercontigs will 
+  # eventually becomesynonymous with chromosomes, so we treat them as such here.  
+  # We also create dummy superlinks that are the same size as the
+  # supercontigs. This makes it easy to re-use the subroutines that
+  # were written for elegans and which expect there to be a
+  # superlink layer in the data.
   
+  # The SL_coords and clone_coords files are duplicates of each
+  # other in non-elegans sepcies, so only read from one of them
+
+  my $supercontig;
+  my $contig;
+  open (CLONE,"<$database/clone_coords") or croak "cant open clone coordinate file $database/clone_coords\t$!";
+  while(<CLONE>) {
+    if (/Sequence\s+:\s+\"(\S+)\"/) {
+      $supercontig = $1;
+      
+    } elsif (/Subsequence\s+\"(\S+)\"\s+(\d+)\s+(\d+)/) {
+      $contig = $1;
+      
+      # some species (e.g. briggsae) have the contigs in a mixture of orientations
+      my $sense = '+';
+      my ($x, $y) = ($2, $3);
+      if( $y < $x ) {
+        $sense = "-";
+        swap($self, \$x, \$y);
+        #print "reverse sense found for $species $supercontig contig $contig\n";
+      }
+      $self->{'SENSE'}->{$contig} = $sense; # store the sense of the contig
+      $self->{'LENGTH'}->{$contig} = $y - $x + 1; # store the length of the contig
+      
+      # we wish to store the end of the dummy superlink as being the length of the supercontig
+      # so get the largest contig position in the supercontig
+      if (! exists $self->{$supercontig}->{'SUPERLINK'}->{$supercontig} ||
+          $self->{$supercontig}->{'SUPERLINK'}->{$supercontig}->[1] < $y) {
+        $self->{$supercontig}->{'SUPERLINK'}->{$supercontig} = [1,$y]; # a dummy superlink is the supercontig
+        $self->{'LENGTH'}->{$supercontig} = $y; # store the length of the supercontig
+      }
+      $self->{'SUPERLINK2CHROM'}->{$supercontig} = $supercontig; # the dummy superlink is the supercontig
+      $self->{'SUPERLINK'}->{$supercontig}->{$contig} = [$x,$y]; # the superlink of a contig is the supercontig
+      $self->{'CLONE2CHROM'}->{$contig} = $supercontig;
+      $self->{'CLONE2SUPERLINK'}->{$contig} = $supercontig;
+    }
+  }
+  close (CLONE);
 }
-
-
-
 
 
 =head2 GetSuperlinkFromCoord
@@ -929,10 +490,6 @@ sub LocateSpan {
   my $chrom = shift;
   my $x = shift;
   my $y = shift;
-  
-  if ($self->{species} eq 'elegans' && $self->{'single_chrom'}->{$chrom}) {
-    $chrom = $self->{'single_chrom'}->{$chrom};
-  }
   
   # if a clone is passed (handles negative coords eg AH6, -500, 12000)
   unless( $self->isa_chromosome($chrom) || # test if $chrom is a chromosome
