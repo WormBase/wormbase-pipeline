@@ -289,23 +289,24 @@ sub check_exon_match
       
       # do cDNA and gene share exon start position
       if ( $self->{'exons'}->{"$cExonStart"} ) {
-	if ($self->{'exons'}->{"$cExonStart"} == $cdna->{'exons'}->{"$cExonStart"} ) {
+	if ($cdna->{'exons'}->{"$cExonStart"} and
+            $self->{'exons'}->{"$cExonStart"} == $cdna->{'exons'}->{"$cExonStart"} ) {
 	  #exact match
-	  print "SequenceObj::check_exon_match\tExact Match\n" if $debug;
+	  print STDERR "SequenceObj::check_exon_match\tExact Match\n" if $debug;
 	  $exon->[2] = 1;
 	}
 	#is this final gene exon
 	elsif ( $cExonStart == $self->last_exon->[0] ) {
 	  if( $cdna->exon_data->{"$cExonStart"} > $self->last_exon->[1] ) {
-	    print "SequenceObj::check_exon_match\tMatch - last SeqObj exon\n" if $debug ;
+	    print STDERR "SequenceObj::check_exon_match\tMatch - last SeqObj exon\n" if $debug ;
 	    $exon->[2] = 2;
 	  }
 	  elsif ( $cdna->exon_data->{"$cExonStart"} == $cdna->end ) {
-	    print "SequenceObj::check_exon_match\tMatch - cDNA final exon ends in final gene exon\n"  if $debug;
+	    print STDERR "SequenceObj::check_exon_match\tMatch - cDNA final exon ends in final gene exon\n"  if $debug;
 	    $exon->[2] = 7;
 	  }
 	  else {
-	    print "SequenceObj::check_exon_match\tMISS : cDNA splices in last SeqObj exon\n" if $debug ;
+	    print STDERR "SequenceObj::check_exon_match\tMISS : cDNA splices in last SeqObj exon\n" if $debug ;
 	    return 0;
 	  }
 	}
@@ -313,10 +314,10 @@ sub check_exon_match
 	elsif ( $cExonStart == $cdna->last_exon->[0] ) {
 	  # . . must terminate within gene exon
 	  if ( $cdna->{'exons'}->{"$cExonStart"} > $self->{'exons'}->{"$cExonStart"} ) {
-	    print "SequenceObj::check_exon_match\tMISS - ",$cdna->name," $cExonStart => ",$cdna->{'exons'}->{$cExonStart}," extends over gene exon boundary\n" if $debug ;
+	    print STDERR "SequenceObj::check_exon_match\tMISS - ",$cdna->name," $cExonStart => ",$cdna->{'exons'}->{$cExonStart}," extends over gene exon boundary\n" if $debug ;
 	    return 0;
 	  } else {
-	    print "SequenceObj::check_exon_match\tMatch - last cDNA exon\n" if $debug ;
+	    print STDERR "SequenceObj::check_exon_match\tMatch - last cDNA exon\n" if $debug ;
 	    $exon->[2] = 3;
 	  }
 	}
@@ -331,34 +332,34 @@ sub check_exon_match
 	
 	if ( $gExonS == $self->first_exon->[0] ) { #is this the 1st gene exon 
 	  if ( $cExonStart == $cdna->first_exon->[0] ) { # also cDNA start so always match
-	    print "SequenceObj::check_exon_match\tMatch - 1st exons end in same place\n" if $debug ;
+	    print STDERR "SequenceObj::check_exon_match\tMatch - 1st exons end in same place\n" if $debug ;
 	    $exon->[2] = 4;
 	  }
 	  elsif ( $cExonStart < $self->first_exon->[0] ) { # cDNA exon overlap 1st gene exon
-	    print "SequenceObj::check_exon_match\tMatch - cDNA exon covers 1st gene exon\n" if $debug ;
+	    print STDERR "SequenceObj::check_exon_match\tMatch - cDNA exon covers 1st gene exon\n" if $debug ;
 	    $exon->[2] = 5;
 	    # extends 5'
 	  }
 	  else {
-	    print "SequenceObj::check_exon_match\tMISS - cDNA exon splices in gene exon\n" if $debug ;
-	    print "SequenceObj::check_exon_match\t\t",$cdna->name," $cExonStart => ",$cdna->exon_data->{$cExonStart},"\n" if $debug ;
-	    print "SequenceObj::check_exon_match\t\t",$self->name," $gExonS => ",$self->exon_data->{$gExonS},"\n"  if $debug;
+	    print STDERR "SequenceObj::check_exon_match\tMISS - cDNA exon splices in gene exon\n" if $debug ;
+	    print STDERR "SequenceObj::check_exon_match\t\t",$cdna->name," $cExonStart => ",$cdna->exon_data->{$cExonStart},"\n" if $debug ;
+	    print STDERR "SequenceObj::check_exon_match\t\t",$self->name," $gExonS => ",$self->exon_data->{$gExonS},"\n"  if $debug;
 	    return 0;
 	  }
 	}
 	# exon matched is not 1st of SeqObj
 	elsif ( ($cExonStart == $cdna->first_exon->[0] ) and # start of cDNA
 		($cExonStart >$gExonS ) ) { # . . . is in SeqObj exon
-	  print "SequenceObj::check_exon_match\tMatch - 1st exon of cDNA starts in exon of SeqObj\n" if $debug ;
+	  print STDERR "SequenceObj::check_exon_match\tMatch - 1st exon of cDNA starts in exon of SeqObj\n" if $debug ;
 	  $exon->[2] = 6;
 	} 
 	else {
-	  print "SequenceObj::check_exon_match\tMISS - exon ",$cdna->name," : $cExonStart => ",$cdna->exon_data->{$cExonStart}," overlaps start of gene exon : $gExonS => ",$self->exon_data->{$gExonS},"\n"  if $debug;
+	  print STDERR "SequenceObj::check_exon_match\tMISS - exon ",$cdna->name," : $cExonStart => ",$cdna->exon_data->{$cExonStart}," overlaps start of gene exon : $gExonS => ",$self->exon_data->{$gExonS},"\n"  if $debug;
 	  return 0;
 	}
       }# cDNA_wholelyInExon
       elsif ( $self->_cDNA_wholelyInExon($cdna) ) {
-	print "SequenceObj::check_exon_match\tMatch cDNA contained in exon\n"  if $debug;
+	print STDERR "SequenceObj::check_exon_match\tMatch cDNA contained in exon\n"  if $debug;
 	$exon->[2] = 7;
       }
       # single exon gene contained in cDNA
@@ -366,15 +367,15 @@ sub check_exon_match
 	     ( $cdna->exon_data->{$cExonStart} > $self->last_exon->[1] ) and
 	     ( scalar keys %{$self->exon_data} == 1 ) # single exon gene
 	   ) {
-	print "SequenceObj::check_exon_match\tMatch single exon gene contained in cDNA\n"  if $debug;
+	print STDERR "SequenceObj::check_exon_match\tMatch single exon gene contained in cDNA\n"  if $debug;
 	$exon->[2] = 13;
       }
       # cDNA exon overlaps gene 1st exon start and terminate therein
       elsif( ( $cExonStart == $cdna->last_exon->[0] ) and #  last exon of cDNA
 	     ( $cExonStart < $self->first_exon->[0] ) and 
-	     ( $cdna->last_exon->[1] > $self->first_exon->[0] and $self->first_exon->[0] <$self->first_exon->[1] )
+             ( $cdna->last_exon->[1] > $self->first_exon->[0] and $self->first_exon->[0] <$self->first_exon->[1] )
 	   ) {
-	print "SequenceObj::check_exon_match\tcDNA final exon overlaps first exon of gene and end therein\n" if $debug ;
+	print STDERR "SequenceObj::check_exon_match\tcDNA final exon overlaps first exon of gene and ends therein\n" if $debug ;
 	$exon->[2] = 8;
       }
       # cDNA exon starts in final gene exon and continues past end
@@ -385,26 +386,26 @@ sub check_exon_match
 	# cdna has intron 3' of CDS end so final exon doesn't overlap. Needs to be added as exon rather than just extending.
 	if( $cExonStart > $self->end ) {
 	  # UTR exon
-	  print "SequenceObj::check_exon_match\tMATCH : final cDNA exon overlaps gene end and cDNA has further splicing\n" if $debug;
+	  print STDERR "SequenceObj::check_exon_match\tMATCH : final cDNA exon overlaps gene end and cDNA has further splicing\n" if $debug;
 	  $exon->[2] = 14;
 	}
 	else{
-	  print "SequenceObj::check_exon_match\tMATCH : final cDNA exon starts in final gene exon and continues past end\n"  if $debug;
+	  print STDERR "SequenceObj::check_exon_match\tMATCH : final cDNA exon starts in final gene exon and continues past end\n"  if $debug;
 	  $exon->[2] = 9;
 	}
       }
       # exon lies outside of CDS ( but other parts of cDNA overlap it )
       elsif( $exon->[1] < $self->start ) {
-	print "SequenceObj::check_exon_match\tMATCH : 5\'UTR exon\n" if $debug ;
+	print STDERR "SequenceObj::check_exon_match\tMATCH : 5\'UTR exon\n" if $debug ;
 	$exon->[2] = 10;
       }
       elsif( $exon->[0] > $self->end ) {
-	print "SequenceObj::check_exon_match\tMATCH : 3\'UTR exon\n"  if $debug;
+	print STDERR "SequenceObj::check_exon_match\tMATCH : 3\'UTR exon\n"  if $debug;
 	$exon->[2] = 11;
       }
       else {
 	# doesnt match
-	print "SequenceObj::check_exon_match\t" . $cdna->name . " doesnt match " . $self->name ."\n" if $debug;
+	print STDERR "SequenceObj::check_exon_match\t" . $cdna->name . " doesnt match " . $self->name ."\n" if $debug;
 	return 0;
       }
     }
@@ -427,7 +428,7 @@ sub check_intron_match {
   my $cdna = shift;
   
   if ($debug) {
-    printf("SequenceObj::check_intron_match - comparing introns of %s and %s\n", $self->name, $cdna->name);
+    printf(STDERR "SequenceObj::check_intron_match - comparing introns of %s and %s\n", $self->name, $cdna->name);
   }
 
   # check if cDNA introns fit with CDS introns
@@ -439,7 +440,7 @@ sub check_intron_match {
     if ( $self->{introns}->{$intron_start} ) { # does CDS intron start exist?
       if ($self->{introns}->{$intron_start} == $cdna->{introns}->{$intron_start} ) { # do intron ends match
 	#exact match
-	printf("SequenceObj::check_intron_match\tExact Intron Match: %s %s\n", $self->name, $cdna->name) if $debug;
+	printf(STDERR "SequenceObj::check_intron_match\tExact Intron Match: %s %s\n", $self->name, $cdna->name) if $debug;
 	$these_introns++; # count the number of contiguous introns
 	if ($these_introns > $max_cdna_contiguous_introns) {$max_cdna_contiguous_introns = $these_introns}
       } else {
@@ -465,7 +466,7 @@ sub check_intron_match {
     if ( $cdna->{'introns'}->{"$intron_start"} ) { # does cDNA intron start exist?
       if ($cdna->{'introns'}->{"$intron_start"} == $self->{'introns'}->{"$intron_start"} ) { # do intron ends match
 	#exact match
-	print "SequenceObj::check_intron_match\tExact Intron Match\n" if $debug;
+	print STDERR "SequenceObj::check_intron_match\tExact Intron Match\n" if $debug;
 	$these_introns++; # count the number of contiguous introns
 	if ($these_introns > $max_cds_contiguous_introns) {$max_cds_contiguous_introns = $these_introns}
       } else {
@@ -582,7 +583,6 @@ sub list_of_matched_genes_by_seqname {
 
   foreach my $match (@matches) {
     my $cds = $match->[0];
-
     my ($gene) = ($cds =~ /($seq_name_regexp)/);
   
     if (defined $gene) {
@@ -1084,12 +1084,12 @@ sub check_features {
   if (my $SL = $cdna->SL ) {
     if ( $self->SL ) {
       unless( $SL->[0] == $self->SL->[0] ) { #same SL
-        print "SequenceObj::check_features FAIL: ". $self->name . " " . $cdna->name . " : Conficting SLs\n" if $debug;
+        print STDERR "SequenceObj::check_features FAIL: ". $self->name . " " . $cdna->name . " : Conficting SLs\n" if $debug;
         return 0;
       }
     } else { 
       if ( $SL->[1] > $self->start ) {
-        print "SequenceObj::check_features FAIL: ". $self->name . " " . $cdna->name . " : Splice leader of cdna within transcript\n" if $debug;
+        print STDERR "SequenceObj::check_features FAIL: ". $self->name . " " . $cdna->name . " : Splice leader of cdna within transcript\n" if $debug;
         return 0;
       }
     }
@@ -1102,7 +1102,7 @@ sub check_features {
   # the EST to match a transcript that has already been created using TSL data,
   # but do not (later) extend using it
   if ( $self->SL and $cdna->start < $self->start and $self->start - $cdna->start >= 10) {
-    print "SequenceObj::check_features FAIL: ". $self->name . " " . $cdna->name . " : transcript has an SL, and cdna starts before it\n" if $debug;
+    print STDERR "SequenceObj::check_features FAIL: ". $self->name . " " . $cdna->name . " : transcript has an SL, and cdna starts before it\n" if $debug;
     return 0;
   }
   
@@ -1111,12 +1111,12 @@ sub check_features {
   if ( $polyA_site = $cdna->polyA_site ) {
     if ( $self->polyA_site ) {
       unless( $polyA_site->[0] == $self->polyA_site->[0] ) {
-        print "SequenceObj::check_features FAIL: ". $self->name . " " . $cdna->name . " : conflicting polyA sites\n" if $debug;
+        print STDERR "SequenceObj::check_features FAIL: ". $self->name . " " . $cdna->name . " : conflicting polyA sites\n" if $debug;
         return 0;
       }
     } else {
       if ( $polyA_site->[0] < $self->end ) {
-        print "SequenceObj::check_features FAIL: ". $self->name . " " . $cdna->name . " : polyA site of cdna within transcript\n" if $debug;
+        print STDERR "SequenceObj::check_features FAIL: ". $self->name . " " . $cdna->name . " : polyA site of cdna within transcript\n" if $debug;
         return 0;
       }
     }
@@ -1127,13 +1127,13 @@ sub check_features {
   if ( $polyA_sig = $cdna->polyA_signal ) {
     if ( $self->polyA_signal ) {
       unless( $cdna->polyA_signal->[0] == $self->polyA_signal->[0] ) {
-        print "SequenceObj::check_features FAIL: ". $self->name . " " . $cdna->name . " : conflicting polyA signals\n" if $debug;
+        print STDERR "SequenceObj::check_features FAIL: ". $self->name . " " . $cdna->name . " : conflicting polyA signals\n" if $debug;
         return 0;
       }
     } else {
       if ( $cdna->polyA_signal->[0] +  2500 > $self->end) {
         # NOT SURE ABOUT THIS ONE!
-        print "SequenceObj::check_features FAIL: ". $self->name . " " . $cdna->name . " : polyA signal of cdna is too far past end of transcript\n" if $debug;    
+        print STDERR "SequenceObj::check_features FAIL: ". $self->name . " " . $cdna->name . " : polyA signal of cdna is too far past end of transcript\n" if $debug;    
         return 0;
       }
     }
@@ -1146,7 +1146,7 @@ sub check_features {
   # the EST to match a transcript that has already been created using polyA data,
   # but do not (later) extend using it
   if ( $self->polyA_site and $cdna->end > $self->end and $cdna->end - $self->end >= 10) {
-    print "SequenceObj::check_features: ". $self->name . " " . $cdna->name . " : transcript has a polyA site and cdna goes past the end of it\n" if $debug;
+    print STDERR "SequenceObj::check_features: ". $self->name . " " . $cdna->name . " : transcript has a polyA site and cdna goes past the end of it\n" if $debug;
     return 0;
   }
   return 1;
