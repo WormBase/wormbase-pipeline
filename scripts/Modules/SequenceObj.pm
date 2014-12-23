@@ -373,7 +373,7 @@ sub check_exon_match
       # cDNA exon overlaps gene 1st exon start and terminate therein
       elsif( ( $cExonStart == $cdna->last_exon->[0] ) and #  last exon of cDNA
 	     ( $cExonStart < $self->first_exon->[0] ) and 
-             ( $cdna->last_exon->[1] > $self->first_exon->[0] and $self->first_exon->[0] <$self->first_exon->[1] )
+             ( $cdna->last_exon->[1] > $self->first_exon->[0] and $cdna->last_exon->[1] <$self->first_exon->[1] )
 	   ) {
 	print STDERR "SequenceObj::check_exon_match\tcDNA final exon overlaps first exon of gene and ends therein\n" if $debug ;
 	$exon->[2] = 8;
