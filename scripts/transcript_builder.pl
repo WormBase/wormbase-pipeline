@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2014-11-03 13:28:51 $
+# Last updated on: $Date: 2014-12-23 13:14:17 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -25,7 +25,7 @@ use Storable;
 my ($debug, $store, $help, $verbose, $really_verbose, @test_est,
     $database, $test, @chromosomes, $chunk_total, $chunk_id,
     $gff_dir, $transcript_dir, $ace_fname, $problem_fname,
-    $test_cds, $wormbase, $species, $detailed_debug);
+    @test_cds, $wormbase, $species, $detailed_debug);
 
 my $gap = 15;			# $gap is the gap allowed in an EST alignment before it is considered a "real" intron
 my $COVERAGE_THRESHOLD = 95.0;  # the alignment score threshold below which any cDNAs that overlap two genes will not be considered.
@@ -44,7 +44,7 @@ GetOptions ( "debug:s"      => \$debug,
 	     "chromosome:s"     => \@chromosomes,
              "chunktotal:s"     => \$chunk_total,
              "chunkid:s"        => \$chunk_id,
-	     "cds:s"            => \$test_cds, # only use the specified CDS object - for debugging
+	     "cds=s@"           => \@test_cds, # only use the specified CDS object - for debugging
 	     "store:s"          => \$store,
 	     "species:s"        => \$species,
              "gffdir:s"         => \$gff_dir,
@@ -157,7 +157,7 @@ foreach my $chrom ( @chromosomes ) {
     #  GENE STRUCTURE
     if ( $data[1] eq "curated" ) {
       $data[9] =~ s/\"//g;
-      next if( defined $test_cds and ($data[9] ne $test_cds)) ;
+      next if @test_cds and not grep { $data[9] eq $_ } @test_cds;
       if ( $data[2] eq "CDS" ) {
     	# GENE SPAN
     	$genes_span{$data[9]} = [($data[3], $data[4], $data[6])];
@@ -186,7 +186,10 @@ foreach my $chrom ( @chromosomes ) {
 
       $data[9] =~ s/\"//g;
       $data[9] =~ s/Sequence:// ;
+      next if @test_est and not grep { $_ eq $data[9] } @test_est;
+
       $cDNA{$data[9]}{$data[3]} = $data[4];
+
       # keep min max span of cDNA
       if ( !(defined($cDNA_span{$data[9]}[0])) or ($cDNA_span{$data[9]}[0] > $data[3]) ) {
     	$cDNA_span{$data[9]}[0] = $data[3];
