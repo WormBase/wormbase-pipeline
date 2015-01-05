@@ -7,8 +7,8 @@
 # Script to convert cgc strain file into ace file for geneace
 # Page download and update upload to geneace has been automated [ck1]
 
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2014-05-19 08:38:47 $
+# Last updated by: $Author: mt3 $
+# Last updated on: $Date: 2015-01-05 13:26:49 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -73,7 +73,7 @@ $path = $geneace_dir."/STRAIN_INFO" if not defined $path;
 ##########################
 
 my $input_file = "$path/cgc_strain_list_$rundate";
-system("wget --no-check-certificate -O $input_file http://www.cbs.umn.edu/sites/default/files/public/files/celelist2.txt") && die "Unable to download strain data file from CGC website\n\n";
+system("wget --no-check-certificate -O $input_file https://www.cbs.umn.edu//sites/default/files/public/downloads/celelist2.docx") && die "Unable to download strain data file from CGC website\n\n";
 
 ############################################
 # get hash to convert CGC name to Gene ID
