@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2014-10-10 11:36:23 $      
+# Last updated on: $Date: 2015-01-05 15:56:23 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -308,16 +308,13 @@ sub get_lab {
 
   if ($clone =~ /CHROMOSOME/) {return "HX/RW";}
   if ($clone =~ /cTel/i) {return "HX";}
-  if ($clone =~ /^SUPERLINK_RW/) {return "RW";}
-  if ($clone =~ /^SUPERLINK_CB/) {return "HX";}
 
   my $sequence_obj = $ace->fetch(Sequence => $clone);
   my $source = $sequence_obj->Source;
 
   if ($source =~ /CHROMOSOME/) {return "HX/RW";}
   if ($source =~ /cTel/i) {return "HX";}
-  if ($source =~ /^SUPERLINK_RW/) {return "RW";}
-  if ($source =~ /^SUPERLINK_CB/) {return "HX";}
+
 
   return "HX/RW";
 }

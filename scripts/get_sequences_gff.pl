@@ -15,7 +15,7 @@
 
 #
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2014-10-10 11:36:23 $      
+# Last updated on: $Date: 2015-01-05 15:56:23 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -534,7 +534,7 @@ sub get_clone_len {
   my $clonelen = $clonesize{$clone};
 
   if (! defined $clonelen) {
-    if ($clone =~ /SUPERLINK/ || $clone =~ /CHROMOSOME/) {
+    if ($clone =~ /CHROMOSOME/) {
       # get the Superlink lengths from the Coords_converter data
       $clonelen = $coords->Superlink_length($clone);
     } else {

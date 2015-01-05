@@ -7,7 +7,7 @@
 # This takes a BUILD_DATA/MISC_DYNAMIC/*mass_spec*.ace file and converts any coordinates that have changed between releases
 #
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2014-10-10 11:36:23 $      
+# Last updated on: $Date: 2015-01-05 15:56:23 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -192,8 +192,6 @@ foreach my $clone_id (keys %clones_seen) {
   # get the superlink or clone length
   if ($clone_id =~ /CHROMOSOME/) {
     $clone_length = &get_chrom_length($clone_id);
-  } elsif ($clone_id =~ /SUPERLINK/) {
-    $clone_length = $autoace_converter->Superlink_length($clone_id);
   } else {
     $clone_length = $clonesize{$clone_id};
   }
