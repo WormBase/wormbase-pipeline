@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2015-01-06 12:27:04 $
+# Last updated on: $Date: 2015-01-06 13:35:51 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -38,7 +38,7 @@ GetOptions ('help'              => \$help,
             'ndbuser=s'         => \$ndbUser,
             'ndbpass=s'         => \$ndbPass,
             'path=s'            => \$path,
-            'cgcfile=s'         => \$cgc_file,
+            'cgcfile=s'         => \$input_file,
        );
 
 
