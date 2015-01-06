@@ -7,8 +7,8 @@
 # Script to convert cgc strain file into ace file for geneace
 # Page download and update upload to geneace has been automated [ck1]
 
-# Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2015-01-05 13:54:23 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2015-01-06 12:27:04 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -28,7 +28,7 @@ use Getopt::Long;
 # check user is wormpub
 #######################
 
-my ($help, $debug, $test, $verbose, $store, $load, $wormbase,$ndbUser,$ndbPass, $path);
+my ($help, $debug, $test, $verbose, $store, $load, $wormbase,$ndbUser,$ndbPass, $path, $input_file);
 GetOptions ('help'              => \$help,
             'debug=s'           => \$debug,
             'test'              => \$test,
@@ -38,6 +38,7 @@ GetOptions ('help'              => \$help,
             'ndbuser=s'         => \$ndbUser,
             'ndbpass=s'         => \$ndbPass,
             'path=s'            => \$path,
+            'cgcfile=s'         => \$cgc_file,
        );
 
 
@@ -67,13 +68,7 @@ my $tace        = $wormbase->tace;
 my $rundate     = $wormbase->rundate;
 
 $path = $geneace_dir."/STRAIN_INFO" if not defined $path;
-
-##########################
-# Download CGC strain list
-##########################
-
-my $input_file = "$path/cgc_strain_list_$rundate";
-system("wget --no-check-certificate -O $input_file http://www.cbs.umn.edu/sites/default/files/public/files/celelist2.txt") && die "Unable to download strain data file from CGC website\n\n";
+$input_file = "$path/cgc_strain_list_$rundate" if not defined $input_file;
 
 ############################################
 # get hash to convert CGC name to Gene ID
