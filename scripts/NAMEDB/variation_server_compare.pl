@@ -81,7 +81,7 @@ while (my ( $var, $name, $live ) = $sth->fetchrow_array){
 
 my %ids = map { $_ => 1 } (keys %server_ids, keys %ace_ids);
 
-foreach my $var (keys %ids) {
+foreach my $var (sort keys %ids) {
   if (exists $server_ids{$var} and not exists $ace_ids{$var}) {
     if ($server_ids{$var}->{status} eq 'Live') {
       $log->error(sprintf("%s (%s in server) missing from Acedb\n", 
