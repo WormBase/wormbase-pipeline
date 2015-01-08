@@ -6,7 +6,7 @@
 #
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-12-22 15:21:25 $      
+# Last updated on: $Date: 2015-01-08 11:10:47 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -401,8 +401,8 @@ sub make_fpkm {
   $log->write_to("\n");
 
   # write out the median values of the controls
-  my @total_values=();
   foreach my $gene_id (keys %controls_fpkm) {
+    my @total_values=();
     foreach my $life_stage (keys %{$controls_fpkm{$gene_id}}) {
       my @fpkm_values = @{$controls_fpkm{$gene_id}{$life_stage}};
       my $median_value = median(@fpkm_values);
