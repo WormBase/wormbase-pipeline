@@ -6,7 +6,7 @@
 #
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2015-01-08 11:10:47 $      
+# Last updated on: $Date: 2015-01-08 11:52:13 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -999,7 +999,7 @@ sub get_controls {
 
     # can we simplify the life-stage?
     # if it is not elegans, just accept whatever life_stage we have
-    if ($sp eq 'Cenorhabditis elegans') {
+    if ($sp eq 'Caenorhabditis elegans') {
       # want to simplify to:
       # Embryo
       if (grep /^$ls$/, @Embryo) {
