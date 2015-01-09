@@ -185,8 +185,8 @@ if ($create_tree_mlss) {
       and die "Could not create MLSS for orthologs\n";
   
 # For between-species paralogues  
-  system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara $master_dbname --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type ENSEMBL_PARALOGUES --f --pw") 
-      and die "Could not create MLSS for between-species paralogs\n"; 
+  #system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara $master_dbname --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type ENSEMBL_PARALOGUES --f --pw") 
+  #    and die "Could not create MLSS for between-species paralogs\n"; 
   
 # For same-species paralogues
   system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara $master_dbname --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type ENSEMBL_PARALOGUES --f --sg") 
