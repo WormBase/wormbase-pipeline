@@ -6,7 +6,7 @@
 #
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2015-01-09 11:56:54 $      
+# Last updated on: $Date: 2015-01-09 12:23:58 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -468,7 +468,7 @@ sub make_fpkm {
     # now get the mean and median across all life stages
     my $median_value = median(@total_values);
     my $mean_value = mean(@total_values);
-    my $Ntotal = scalar @total_values;
+    $Ntotal = scalar @total_values;
 
     my $total_median_analysis = "RNASeq.$species.all_stages.control_median";
     print EXPRACE "\nGene : \"$gene_id\"\n";
