@@ -6,7 +6,7 @@
 #
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2015-01-08 17:27:14 $      
+# Last updated on: $Date: 2015-01-09 11:09:02 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -231,7 +231,20 @@ sub make_fpkm {
   # and make the expresssion tarball for Wen to put into SPELL
   # and write out .ace files for the FPKM expression levels of genes, transcripts, pseudogenes and CDSs
   # and (for each gene) get a mean and median expression value for each main life stage, plus an overall mean and median value
-  
+
+  my %life_stage_names = (
+			  'WBls:0000003' => 'Embryo',
+			  'WBls:0000024' => 'L1',
+			  'WBls:0000027' => 'L2',
+			  'WBls:0000035' => 'L3',
+			  'WBls:0000038' => 'L4',
+			  'WBls:0000032' => 'Dauer',
+			  'WBls:0000041' => 'Adult',
+			  'WBls:0000002' => 'Mixed stages',
+			 );
+ 
+
+
   $log->write_to("\nResults\n");
   $log->write_to("-------\n\n");
   
@@ -403,6 +416,7 @@ sub make_fpkm {
   # write out the mean and median values of the controls
   my %seen_control_life_stage=(); # only want to write out Analysis & Condituion objects for the controls once
   my $full_name = $wormbase->full_name;
+  my $Ntotal;
 
   foreach my $gene_id (keys %controls_fpkm) {
     my @total_values=();
@@ -420,10 +434,14 @@ sub make_fpkm {
       
       # write out Analysis and Condition objects for the median FPKM control values
       if (!exists $seen_control_life_stage{$life_stage}) {
+	my $lsn ='';
+	if (exists $life_stage_names{$life_stage}) {$lsn = "(".$life_stage_names{$life_stage}.")"};
+	my $N = length @fpkm_values;
+
 	print EXPRACE "\n";
 	print EXPRACE "Analysis : \"RNASeq.$species.$life_stage.control_median\"\n";
-	print EXPRACE "Title \"Median FPKM value of $species $life_stage control samples\"\n";
-	print EXPRACE "Description \"This is the median value of the RNASeq FPKM expression values for this gene in this life-stage of this species of all samples in the SRA that are wildtype controls that do not appear to have undergone any experimental conditions or treatment that would affect gene expression.\"\n";
+	print EXPRACE "Title \"Median FPKM value of $species $life_stage $lsn control samples\"\n";
+	print EXPRACE "Description \"This is the median value of the N=$N RNASeq FPKM expression values for this gene in this life-stage $lsn of this species of all samples in the SRA that are wildtype controls that do not appear to have undergone any experimental conditions or treatment that would affect gene expression.\"\n";
 	print EXPRACE "Species_in_analysis \"$full_name\"\n";
 	print EXPRACE "Project \"RNASeq.$species\"\n";
 	print EXPRACE "Sample \"RNASeq.$species.$life_stage.control_median\"\n";
@@ -434,8 +452,8 @@ sub make_fpkm {
 	
 	print EXPRACE "\n";
 	print EXPRACE "Analysis : \"RNASeq.$species.$life_stage.control_mean\"\n";
-	print EXPRACE "Title \"Mean FPKM value of $species $life_stage control samples\"\n";
-	print EXPRACE "Description \"This is the mean value of the RNASeq FPKM expression values for this gene in this life-stage of this species of all samples in the SRA that are wildtype controls that do not appear to have undergone any experimental conditions or treatment that would affect gene expression.\"\n";
+	print EXPRACE "Title \"Mean FPKM value of $species $life_stage $lsn control samples\"\n";
+	print EXPRACE "Description \"This is the mean value of the N=$N RNASeq FPKM expression values for this gene in this life-stage $lsn of this species of all samples in the SRA that are wildtype controls that do not appear to have undergone any experimental conditions or treatment that would affect gene expression.\"\n";
 	print EXPRACE "Species_in_analysis \"$full_name\"\n";
 	print EXPRACE "Project \"RNASeq.$species\"\n";
 	print EXPRACE "Sample \"RNASeq.$species.$life_stage.control_mean\"\n";
@@ -450,6 +468,8 @@ sub make_fpkm {
     # now get the mean and median across all life stages
     my $median_value = median(@total_values);
     my $mean_value = mean(@total_values);
+    my $Ntotal = length @total_values;
+
     my $total_median_analysis = "RNASeq.$species.all_stages.control_median";
     print EXPRACE "\nGene : \"$gene_id\"\n";
     print EXPRACE "RNASeq_FPKM  \"WBls:0000002\"  \"$median_value\"  From_analysis \"$total_median_analysis\"\n"; # all life stages
@@ -463,7 +483,7 @@ sub make_fpkm {
   print EXPRACE "\n";
   print EXPRACE "Analysis : \"RNASeq.$species.all_stages.control_median\"\n";
   print EXPRACE "Title \"Median FPKM value of all $species control samples\"\n";
-  print EXPRACE "Description \"This is the median value of the RNASeq FPKM expression values for this gene in all life-stage of this species of all samples in the SRA that are wildtype controls that do not appear to have undergone any experimental conditions or treatment that would affect gene expression.\"\n";
+  print EXPRACE "Description \"This is the median value of the N=$Ntotal RNASeq FPKM expression values for this gene in all life-stage of this species of all samples in the SRA that are wildtype controls that do not appear to have undergone any experimental conditions or treatment that would affect gene expression.\"\n";
   print EXPRACE "Species_in_analysis \"$full_name\"\n";
   print EXPRACE "Project \"RNASeq.$species\"\n";
   print EXPRACE "Sample \"RNASeq.$species.all_stages.control_median\"\n";
@@ -474,7 +494,7 @@ sub make_fpkm {
   print EXPRACE "\n";
   print EXPRACE "Analysis : \"RNASeq.$species.all_stages.control_mean\"\n";
   print EXPRACE "Title \"Mean FPKM value of all $species control samples\"\n";
-  print EXPRACE "Description \"This is the mean value of the RNASeq FPKM expression values for this gene in all life-stage of this species of all samples in the SRA that are wildtype controls that do not appear to have undergone any experimental conditions or treatment that would affect gene expression.\"\n";
+  print EXPRACE "Description \"This is the mean value of the N=$Ntotal RNASeq FPKM expression values for this gene in all life-stage of this species of all samples in the SRA that are wildtype controls that do not appear to have undergone any experimental conditions or treatment that would affect gene expression.\"\n";
   print EXPRACE "Species_in_analysis \"$full_name\"\n";
   print EXPRACE "Project \"RNASeq.$species\"\n";
   print EXPRACE "Sample \"RNASeq.$species.all_stages.control_mean\"\n";
