@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2015-01-06 13:35:51 $
+# Last updated on: $Date: 2015-01-12 16:44:22 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -187,6 +187,14 @@ while(<INPUT>){
     my $allele = $2;
     print STDERR "simple combination: $genotype\n" if $verbose;
     &check_details($gene,$allele,$strain,$species);
+    $genotype =~ s/$reg_exp//;
+  }
+
+  # find transposon insertions
+  $reg_exp=qr/([a-z]+(Is|Si|Ti)\d+)/;
+  while($genotype =~ m/$reg_exp/) {
+    my $allele = $1;
+    &check_details(undef, $allele, $strain, $species);
     $genotype =~ s/$reg_exp//;
   }
 
@@ -436,7 +444,7 @@ sub check_details {
   print DELETE_STRAIN  "-D Variation \"$variationId\"\n";  
 
   # if the gene name corresponds to a valid Gene object, add a Gene->Allele and Strain->Gene connections
-  if(defined($Gene_info{$gene}{'Gene'})){
+  if(defined $gene and defined($Gene_info{$gene}{'Gene'})){
     print GENE2ALLELE "Gene : $Gene_info{$gene}{'Gene'}\n";
     print GENE2ALLELE "Allele $variationId Inferred_automatically \"From strain object: $strain\"\n\n";
 
@@ -446,7 +454,7 @@ sub check_details {
 
   # otherwise we might need to make a new Gene object (to be checked by curator)
   # Only want to consider gene names which look sensible (i.e. can't do much with 'let-?')
-  elsif($gene =~ m/^(\w|\-)+\d+$/){
+  elsif(defined $gene and $gene =~ m/^(\w|\-)+\d+$/){
 
     print NEWGENES "Gene : WBGene\n";
     print NEWGENES "Evidence Inferred_automatically \"Gene name parsed from strain object: $strain\"\n";
