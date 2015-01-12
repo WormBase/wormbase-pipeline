@@ -5,8 +5,8 @@
 # A PERL wrapper to automate the process of building the FTP sites 
 # builds wormbase & wormpep FTP sites
 # 
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2014-11-17 14:42:11 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2015-01-12 17:12:02 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -711,11 +711,10 @@ sub make_orthologylists{
 
        my $gspecies = $wb->full_name('-g_species' => 1);
        my $bioproj = $wb->ncbi_bioproject;
-       my $prefix = $wb->pepdir_prefix;
-       my $rnadir = $wb->wormrna;
 
        my $ftp_dir = "$targetdir/species/$gspecies/$bioproj/annotation";
-       mkpath($ftprna_dir,1,0775);
+       mkpath($ftp_dir,1,0775);
+
        my $ofile = "$ftp_dir/$gspecies.$bioproj.WS".$wormbase->get_wormbase_version.'.orthologs.txt';
        $wormbase->run_script("dump_ortholog_flatfile.pl -out $ofile -species \"${\$wb->full_name}\"",$log);
        if (-e $ofile and -s $ofile){
