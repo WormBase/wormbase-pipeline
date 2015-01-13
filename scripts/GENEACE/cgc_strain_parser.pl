@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2015-01-12 16:44:22 $
+# Last updated on: $Date: 2015-01-13 15:29:57 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -191,7 +191,7 @@ while(<INPUT>){
   }
 
   # find transposon insertions
-  $reg_exp=qr/([a-z]+(Is|Si|Ti)\d+)/;
+  $reg_exp=qr/([a-z]+(Si|Ti)\d+)/;
   while($genotype =~ m/$reg_exp/) {
     my $allele = $1;
     &check_details(undef, $allele, $strain, $species);
