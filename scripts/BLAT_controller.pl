@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2014-08-21 11:54:06 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2015-01-13 11:05:33 $
 
 
 use lib $ENV{'CVS_DIR'};
@@ -120,7 +120,9 @@ if( $mask ) {
     $cmd .= " -debug $debug" if $debug;
 
     my @bsub_opts = (-J => "BLAT_mask_${species}_${moltype}",
-                     -o => "$lsfdir/BLAT_mask_${species}_${moltype}.lsfout");
+                     -o => "$lsfdir/BLAT_mask_${species}_${moltype}.lsfout",
+                     -R => "select[mem>1000] rusage[mem=1000]",
+		     -M => "1000");
 
 
     $lsf->submit(@bsub_opts, $cmd);    
