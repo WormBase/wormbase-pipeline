@@ -4,8 +4,8 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2014-11-25 15:03:53 $
-# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2015-01-13 14:54:58 $
+# Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
 
@@ -202,7 +202,7 @@ sub main_gene_checks {
       }
     }
     unless ($gene_model_name =~ /$cds_regex/) {
-      push(@error1,"warning $gene_model_name invalid\n") if (($method_test !~ /history|tRNA|Transposon|miRNA_primary_transcript/) && ($gene_model_name !~ /\S+.t\d+/));
+      push(@error1,"warning $gene_model_name invalid\n") if (($method_test !~ /history|tRNA|Transposon|pre_miRNA|miRNA_primary_transcript/) && ($gene_model_name !~ /\S+.t\d+/));
     }
     my @exon_coord1 = sort by_number ($gene_model->get('Source_exons',1));
     my @exon_coord2 = sort by_number ($gene_model->get('Source_exons',2));
@@ -476,7 +476,7 @@ sub main_gene_checks {
     elsif ($sequence_name =~ /(\w+\.\d+)[a-z]$/) {
       my $base = $1;
       if (exists $sequence_names{$base}) {
-	if ($sequence_names{$base} eq 'miRNA_primary_transcript' && (($sequence_names{"${base}a"} && $sequence_names{"${base}a"} eq 'miRNA') || ($sequence_names{"${base}b"} && $sequence_names{"${base}b"} eq 'miRNA'))) {
+	if (($sequence_names{$base} eq 'miRNA_primary_transcript' || $sequence_names{$base} eq 'pre_miRNA') && (($sequence_names{"${base}a"} && $sequence_names{"${base}a"} eq 'miRNA') || ($sequence_names{"${base}b"} && $sequence_names{"${base}b"} eq 'miRNA'))) {
 	  next;
 	} 
 	# ignore the primary and mature miRNA forms
