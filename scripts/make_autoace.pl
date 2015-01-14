@@ -7,8 +7,8 @@
 #
 # This makes the autoace database from its composite sources.
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-10-08 12:57:54 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2015-01-14 09:53:41 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -115,9 +115,6 @@ if($wormbase->species eq 'elegans') {
 
 	# Read in the physical map and make all maps
 	&physical_map_stuff() if( $all or $pmap );
-
-	# Make the chromosomal links
-	&makechromlink() if ( $all or $chromlink );
 
 	#check new build
 	&check_make_autoace if ( $all or $check );
@@ -328,28 +325,6 @@ sub physical_map_stuff{
   &DbWrite($command,$giface,$dbpath,"MakeMaps");
 
   $log->write_to( $wormbase->runtime. ": finished\n\n");
-}
-
-
-#############################
-# Make chromosomal links    #
-#############################
-
-sub makechromlink {
-
-  $log->write_to( $wormbase->runtime. ": starting makechromlink subroutine\n");
-  my $chromlink_file = $wormbase->acefiles."/chromlinks.ace";
-
-  $wormbase->run_script("makeChromLinks.pl -out $chromlink_file", $log);
-
-  if (-z "$chromlink_file") {
-    $log->log_and_die( "*Makechromlink: $chromlink_file has ZERO size\n");
-    return;
-  } 
-  else {
-    $wormbase->load_to_database( $dbpath, $chromlink_file, "make_autoace", $log );
-  }
-  $log->write_to( $wormbase->runtime. ": Finished.\n\n");
 }
 
 
