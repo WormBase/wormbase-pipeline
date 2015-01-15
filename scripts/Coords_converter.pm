@@ -154,7 +154,8 @@ sub invoke {
         push @segs, [$seqobj->name, 1, $seq_len];
       } else {
         foreach my $subseq (@subseqs) {
-          push @segs, [$subseq->name, $subseq->right->name, $subseq->right->right->name];
+	  #The Superlinks are still connected to their parent sequence but not mapped so need to exclude.
+          push @segs, [$subseq->name, $subseq->right->name, $subseq->right->right->name] unless ($subseq->name =~ /^SUPER/);
         }
       }
 
