@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2014-01-23 13:38:37 $
+# Last updated on: $Date: 2015-01-16 12:06:49 $
 
 #
 #    1. Brief_identification
@@ -131,7 +131,7 @@ foreach my $file (@gff_files) {
 	
       #skip header lines of file
     
-      unless  (/^\S+\s+(curated|ncRNA|snlRNA|tRNAscan-SE-1\.\d+)\s+(\w+primary_transcript|CDS|tRNA)/ ||
+      unless  (/^\S+\s+(curated|ncRNA|7kncRNA|snlRNA|tRNAscan-SE-1\.\d+)\s+(\w+primary_transcript|CDS|tRNA)/ ||
                /^\S+\s+(rRNA)\s+(\w+_primary_transcript)/ ||
                /^\S+\s+(curated_miRNA)\s+(miRNA_primary_transcript)/ ||
                /^\S+\s+(\w+_mature_transcript)\s+(snRNA|snoRNA|tRNA|scRNA|miRNA|stRNA|lincRNA|asRNA|piRNA)/) {
