@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl 
 # 
-#  Last updated on: $Date: 2014-12-17 10:33:57 $
+#  Last updated on: $Date: 2015-01-16 16:50:34 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -639,13 +639,13 @@ sub process_feature_table {
         $prod_name = $gseq_name;
       }
       $prod_name = "Non-coding transcript of $prod_name";
-    } elsif ($feat->{ftype} =~ /RNA/ or $feat->{ftype} eq 'prim_transcript') {
+    } elsif ($feat->{ftype} =~ /RNA/) {
+      # note that prim_transcript will not match this, but this is fine
+      # because prim_transcript features are not allowed to have a product
       my $pname = ($gene2cgcname->{$wb_geneid}) ? $gene2cgcname->{$wb_geneid} : $wb_isoform_name;
 
       if ($feat->{ftype} eq 'precursor_RNA') {
         $prod_name = "microRNA $pname precursor";
-      } elsif ($feat->{ftype} eq 'prim_transcript') {
-        $prod_name = "microRNA $pname primary transcript";
       } elsif (($feat->{ftype} eq 'tRNA' or $feat->{ftype} eq 'rRNA') and not $feat->{is_pseudo}) {
         if ($trans2briefid_h->{$wb_isoform_name}) {
           $prod_name = $trans2briefid_h->{$wb_isoform_name};
