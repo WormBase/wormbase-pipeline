@@ -19,7 +19,7 @@ Visible
 Class 
 Class Sequence 
 From 1
-Condition Genomic_canonical 
+Condition Genomic_canonical OR Subsequence
  
 Colonne 2 
 Width 20 
