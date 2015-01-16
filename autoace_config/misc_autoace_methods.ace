@@ -242,6 +242,17 @@ GFF_source "ncRNA"
 GFF_feature "ncRNA"
 GFF_SO "SO:0000655" "nc_transcript_ace2so" // ncRNA
 
+Method : "7kncRNA" 
+Colour RED
+Show_up_strand	
+Width 2.000000
+Show_text
+EMBL_feature "ncRNA"
+GFF_source "ncRNA"
+GFF_feature "ncRNA"
+GFF_SO "SO:0000655" "nc_transcript_ace2so" // ncRNA
+
+
 Method : "rRNA" 
 Colour GREEN
 Show_up_strand 
@@ -327,7 +338,7 @@ GFF_source "snoRNA"
 GFF_feature "snoRNA"
 GFF_SO "SO:0000275" "nc_transcript_ace2so" // snoRNA
 
-Method : "miRNA" 
+Method : "miRNA" //Small, ~22-nt, RNA molecule that is the endogenous transcript of a miRNA gene
 Colour GREEN
 Show_up_strand 
 Width 2.000000
@@ -338,7 +349,7 @@ GFF_source "miRNA_mature" //expanded to be more descriptive
 GFF_feature "miRNA" //Changed inline with SO:0000276
 GFF_SO "SO:0000276" "nc_transcript_ace2so" // miRNA
 
-Method : "miRNA_primary_transcript"
+Method : "miRNA_primary_transcript" // A primary transcript encoding a micro RNA.
 Colour GREEN
 Show_up_strand 
 Width 2.000000
@@ -349,7 +360,7 @@ GFF_source "miRNA_primary_transcript"
 GFF_feature "miRNA_primary_transcript"
 GFF_SO "SO:0000647" "nc_transcript_ace2so" // miRNA_primary_transcript
 
-Method : "pre_miRNA"
+Method : "pre_miRNA" //The 60-70 nucleotide region remain after Drosha processing of the primary transcript, that folds back upon itself to form a hairpin structure.
 Colour GREEN
 Show_up_strand 
 Width 2.000000
@@ -3528,6 +3539,9 @@ Method : "RNA"
 Right_priority 2.6
 
 Method : "ncRNA"
+Right_priority 2.6
+
+Method : "7kncRNA"
 Right_priority 2.6
 
 Method : "rRNA"
