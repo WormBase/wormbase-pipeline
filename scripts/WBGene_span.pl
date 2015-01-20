@@ -7,7 +7,7 @@
 # Creates SMapped Gene spans for Gene objects
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2015-01-16 12:06:49 $
+# Last edited on: $Date: 2015-01-20 16:27:26 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -52,7 +52,7 @@ my %worm_gene2geneID_name = $wormbase->FetchData('worm_gene2geneID_name');
 
 my (%gene_coords, %gene_span);
 
-my  @methods = qw(Coding_transcript Non_coding_transcript Pseudogene ncRNA 7kncRNA tRNA miRNA miRNA_primary_transcript snRNA snlRNA snoRNA rRNA scRNA stRNA lincRNA asRNA piRNA Transposon_CDS Transposon_Pseudogene);
+my  @methods = qw(Coding_transcript Non_coding_transcript Pseudogene ncRNA 7kncRNA tRNA miRNA pre_miRNA miRNA_primary_transcript snRNA snlRNA snoRNA rRNA scRNA stRNA lincRNA asRNA piRNA Transposon_CDS Transposon_Pseudogene);
   
 foreach my $method (@methods) {
   print "checking $method \n" if $debug;
@@ -67,6 +67,7 @@ foreach my $method (@methods) {
            or ( $data[1] eq 'snRNA' )
 	   or ( $data[1] eq 'miRNA_mature' )
            or ( $data[1] eq 'miRNA_precursor' )
+	   or ( $data[1] eq 'pre_miRNA' )
            or ( $data[1] eq 'rRNA' )
            or ( $data[1] eq 'scRNA' )
            or ( $data[1] eq 'stRNA' )
