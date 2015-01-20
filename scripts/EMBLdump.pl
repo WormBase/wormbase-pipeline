@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl 
 # 
-#  Last updated on: $Date: 2015-01-16 16:50:34 $
+#  Last updated on: $Date: 2015-01-20 16:20:02 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -55,7 +55,6 @@ my ($test,
     $database,
     $quicktest,
     $private,
-    $exclude_multis,
     $sequencelevel,
     $agp_file,
     $clone2type, $gene2cgcname, $gene2gseqname, $trans2gene, $clone2dbid, $multi_gene_loci, $seleno_prots,
@@ -83,7 +82,6 @@ GetOptions (
   "moddumpfile:s"   => \$mod_dump_file,
   "rawdumpfile:s"   => \$raw_dump_file,
   "quicktest"       => \$quicktest,
-  "excludemultis"   => \$exclude_multis,
   "sequencelevel"   => \$sequencelevel,
   "agpfile=s"       => \$agp_file,
     );
@@ -1012,20 +1010,18 @@ sub stage_dump_to_submissions_repository {
 
   while(<$dfg>) {
     /^ID/ and do {
+      $cosmid = undef;
       $current_lines = [];
     };
 
-    /^DE\s+/ and do {
-      if (/^DE\s+.+\s+(\S+)$/) {
+    /^DE\s+.+\s+(\S+)$/ and do {
+      if (not defined $cosmid ) {
         $cosmid = $1;
-      } else {
-        $log->log_and_die("Could not parse contig name from DE line: $_\n");
+        foreach my $line (@$current_lines) {
+          push @{$records{$cosmid}->{embl}}, $line;
+        }
+        $current_lines = $records{$cosmid}->{embl};
       }
-
-      foreach my $line (@$current_lines) {
-        push @{$records{$cosmid}->{embl}}, $line;
-      }
-      $current_lines = $records{$cosmid}->{embl};
     };
     
     if (/^\s+(.+)$/) {
@@ -1037,11 +1033,11 @@ sub stage_dump_to_submissions_repository {
     push @$current_lines, $_;
   }
   
-  foreach my $cosmid (sort keys %records) {
-    my $hash = $wormbase->submit_repos_hash_from_sequence_name($cosmid);
-    
+  foreach my $cosmid (sort keys %records) {    
     next if not exists $records{$cosmid}->{seq};
     
+    my $hash = $wormbase->submit_repos_hash_from_sequence_name($cosmid); 
+
     my $seq_file  = "$submit_repo/$hash/$cosmid/$cosmid.fasta";      
     if (not -e $seq_file) {
       $log->log_and_die("Could not find the FASTA file for $cosmid ($seq_file)");
@@ -1063,7 +1059,9 @@ sub stage_dump_to_submissions_repository {
   }
   
   foreach my $cosmid (sort keys %records) {
-     my $hash = $wormbase->submit_repos_hash_from_sequence_name($cosmid);
+     my $hash = ($species eq 'elegans' and not $sequencelevel) 
+         ? "0"
+         : $wormbase->submit_repos_hash_from_sequence_name($cosmid);
       
      my $embl_file = "$submit_repo/$hash/$cosmid/$cosmid.embl";
      if (not -e $embl_file) {
