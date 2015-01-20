@@ -119,17 +119,6 @@ foreach my $schild (@schild_list) {
   }
 }
 
-# Finally, move the Genomic_canonical tags
-my $seqs_it = $db->fetch_many(-query => "Find Sequence Genomic_canonical AND Species = \"$full_name\"");
-while( my $seq = $seqs_it->next()) {
-  print $acefh "\nSequence \"$seq\"\n";
-  print $acefh "-D Genomic_canonical\n";
-}
-foreach my $tl_seq (keys %tl_seqs) {
-  print $acefh "\nSequence : \"$tl_seq\"\n";
-  print $acefh "Genomic_canonical\n";
-}
-
 if ($acefile) {
   close($acefh) or die "Could not close $acefile after writing\n";
   $wormbase->load_to_database($database, $acefile, "move_to_toplevel") unless $noload;
