@@ -152,7 +152,7 @@ if ($protein_xrefs) {
     next unless (defined $pid);
     $log->write_to("Potential New Protein: $_\n") if $uniprot_ac eq 'UNDEFINED';
     
-    next unless $accession2clone{$cloneacc}; #data includes some mRNAs
+    next unless exists $cds2wormpep{$cds}; # just ENA is slightly out of date w.r.t. our latest annotation
     
     push @{$cds_xrefs{$cds}->{Protein_id}}, [$accession2clone{$cloneacc}, $pid, $version];
     
