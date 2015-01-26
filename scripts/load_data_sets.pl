@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last updated by: $Author: klh $     
-# Last updated on: $Date: 2014-12-09 16:03:42 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2015-01-26 11:15:25 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -93,6 +93,7 @@ sub parse_misc_elegans_files {
 		       #$wormbase->misc_dynamic.'/RNASeq_splice_elegans.ace'     => 'RNASeq_splice',
                        $wormbase->misc_static.'/homology_groups.ace' 	        => 'homol_groups',
                        $wormbase->misc_static.'/eggNOG.ace' 	                => 'eggNOG_groups',
+		       $wormbase->misc_static.'/TF-modENCODE2014.ace'           => 'TF-modENCODE2014',
 		      );
 
   $log->write_to("Loading files to ".$wormbase->autoace."\n==================================\n");
