@@ -947,7 +947,7 @@ sub full_name {
 sub chromosome_prefix {'Scaffold'}
 sub pep_prefix {'CTR'}
 sub pepdir_prefix{'ctrop'};
-sub ncbi_tax_id {'886184'};
+sub ncbi_tax_id {'1094322'};
 sub ncbi_bioproject {'PRJNA53597'};
 sub bioproject_description { 'Genome Institute at Washington University Caenorhabditis sp. 11 genome project' }
 sub assembly_type {'contig'};
