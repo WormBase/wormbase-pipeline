@@ -7,8 +7,8 @@
 #
 # by Gary Williams
 #
-# Last updated by: $Author: pad $                      
-# Last updated on: $Date: 2015-01-16 12:06:49 $        
+# Last updated by: $Author: gw3 $                      
+# Last updated on: $Date: 2015-01-26 14:27:11 $        
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -103,11 +103,13 @@ open (OUTDAT, ">$output") || die "Can't open $output\n";
 #	tRNA
 #);
 
-my @files = glob("$gffdir/*{Coding_transcript.gff,Non_coding_transcript.gff,miRNA_primary_transcript.gff,7kncRNA.gff,ncRNA.gff,rRNA.gff,asRNA,lincRNA,scRNA.gff,piRNA.gff,snlRNA.gff,snoRNA.gff,snRNA.gff,stRNA.gff,tRNA.gff}");
+my @files = glob("$gffdir/*{_Coding_transcript.gff,_Non_coding_transcript.gff,_pre_miRNA.gff,_miRNA_primary_transcript.gff,_7kncRNA.gff,_ncRNA.gff,_rRNA.gff,_asRNA,_lincRNA,_scRNA.gff,_piRNA.gff,_snlRNA.gff,_snoRNA.gff,_snRNA.gff,_stRNA.gff,_tRNA.gff}");
 
 foreach my $file (@files) {
   open (IN, "<$file") || $log->log_and_die("Can't open $file\n");
+  my $count=0;
   while (my $line = <IN>) {
+    $count++;
     chomp $line;
     next if ($line =~ /^#/);
     next if ($line =~ /^\s*$/);
@@ -128,19 +130,22 @@ foreach my $file (@files) {
       $line[1] = 'WormBase';
       my $cds_regex = $wormbase->cds_regex_noend;
       my ($sequence_name) = ($transcript_id =~ /($cds_regex)/);
+
+#      if ($transcript_id eq "F53G12.15") {print "linecount=$count, have F53G12.15, file = $file line=$line\n";}
+#      if ($transcript_id eq "Y65B4BL.10") {print "linecount=$count, have Y65B4BL.10, file = $file line=$line\n";}
+
       if (!defined $sequence_name) {$sequence_name = $transcript_id}# the tRNAs (e.g. C06G1.t2) are not changed correctly
       my $gene_id = $worm_gene2geneID_name{$sequence_name};
       if (!defined $gene_id) {$log->log_and_die ("Can't find gene_id $sequence_name for: $line\n")}
       $line[8] = "gene_id \"$gene_id\"; transcript_id \"$transcript_id\"";
       $line = join "\t", @line;
       print OUTDAT "$line\n";
-
     }
   }
   close (IN);
 }
 
-
+#print "Now doing Pseudogenes\n";
 # now do the Pseudogenes - these don't have Transcripts
     
 @files = glob("$gffdir/*Pseudogene.gff");
