@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl 
 # 
-#  Last updated on: $Date: 2015-01-20 16:20:02 $
+#  Last updated on: $Date: 2015-01-27 11:20:43 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -209,7 +209,7 @@ if ($dump_modified) {
   open(my $out_fh, ">$mod_dump_file") or $log->log_and_die("Could not open $mod_dump_file for writing\n");
   open(my $raw_fh, $raw_dump_file) or $log->log_and_die("Could not open $raw_dump_file for reading\n");
   
-  my ($seqname, $chromosome, $seqlen, $idline_suffix, @accs, @features, $written_header, $written_version_tag);
+  my ($seqname, $chromosome, $seqlen, $idline_suffix, @accs, @features, $written_header, %written_version_tag);
   
   while (<$raw_fh>) {
     
@@ -351,10 +351,10 @@ if ($dump_modified) {
     # Comments
     #
     if (/^CC   / and not $sequencelevel) {
-      if (not $written_version_tag) {
+      if (not $written_version_tag{$seqname}) {
         printf $out_fh "CC   Annotated features correspond to WormBase release %s.\n", $wormbase->get_wormbase_version_name;
         print $out_fh "XX\n";
-        $written_version_tag = 1;
+        $written_version_tag{$seqname} = 1;
       }
     }
     
