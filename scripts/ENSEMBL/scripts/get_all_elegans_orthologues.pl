@@ -81,7 +81,7 @@ my $outfh = IO::File->new($outfile,'w')||die(@!);
 
 foreach my $gdb1 (sort { $a->name cmp $b->name } @genome_dbs) {
 
-  if (not grep { $gdb1->name eq $_ } @species) {
+  if (@species and not grep { $gdb1->name eq $_ } @species) {
     $log->write_to("Skipping " . $gdb1->name . "\n") if $verbose;
     next;
   }
