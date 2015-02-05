@@ -36,30 +36,35 @@ sub dump_ace_by_production_name{
 
     print "Gene : \"$geneName\"\nPublic_name \"$publicName\"\nSpecies \"$species\"\n";
     print "Database EnsEMBL ENSEMBL_geneID \"$geneName\"\n";
-    dbxref('UniProt','UniProt_AC',@{$gene->get_all_xrefs('Uniprot/%')});
-    dbxref('UniProt','UniProtACC',@{$gene->get_all_xrefs('Uniprot/%')});
-    dbxref('ZFIN','acc',@{ $gene->get_all_xrefs('ZFIN%')});
-    dbxref('SGD','acc',@{ $gene->get_all_xrefs('SGD%')});
-    dbxref('MGI','acc',@{ $gene->get_all_xrefs('MGI%')});
-    dbxref('FLYBASE','FlyBase_gn',@{ $gene->get_all_xrefs('FlybaseCGID_gene')});
-    dbxref('FLYBASE','FlyBase_ID',@{ $gene->get_all_xrefs('flybase_gene_id')});
-    dbxref('HGNC','symbol',@{ $gene->get_all_xrefs('HGNC%')});
-    dbxrefP('OMIM','gene',map{$_->primary_id}@{ $gene->get_all_xrefs('MIM_GENE')});
-    dbxrefP('OMIM','disease',map{$_->primary_id}@{ $gene->get_all_xrefs('MIM_DISEASE')});
+    dbxrefS('UniProt','UniProt_AC',@{$gene->get_all_xrefs('Uniprot/%')});
+    dbxrefS('UniProt','UniProtACC',@{$gene->get_all_xrefs('Uniprot/%')});
+    dbxrefS('ZFIN','acc',@{ $gene->get_all_xrefs('ZFIN%')});
+    dbxrefS('SGD','acc',@{ $gene->get_all_xrefs('SGD%')});
+    dbxrefS('MGI','acc',@{ $gene->get_all_xrefs('MGI%')});
+    dbxrefS('FLYBASE','FlyBase_gn',@{ $gene->get_all_xrefs('FlybaseCGID_gene')});
+    dbxrefS('FLYBASE','FlyBase_ID',@{ $gene->get_all_xrefs('flybase_gene_id')});
+    dbxrefS('HGNC','symbol',@{ $gene->get_all_xrefs('HGNC%')});
+    dbxrefP('OMIM','gene',@{ $gene->get_all_xrefs('MIM_GENE')});
+    dbxrefP('OMIM','disease',@{ $gene->get_all_xrefs('MIM_DISEASE')});
     print "\n";
   }	
 }
 
 # display_id xref printing
-sub dbxref{
+sub dbxrefS{
   my ($db,$ac,@xrefs)=@_;
-  &dbxrefP($db,$ac,map{$_->display_id}@xrefs);
+  my %seen; 
+  map {  my $p = $_->info_type eq 'PROJECTED'?'_projected':'';
+         printf "Database $db $ac$p \"%s\"\n",$_->display_id unless $seen{$_->display_id} 
+   } @xrefs;
 }
 
-# shorthand for xref printing
+# display_id xref printing
 sub dbxrefP{
   my ($db,$ac,@xrefs)=@_;
-  my %seen;
-  map {print "Database $db $ac \"$_\"\n" unless $seen{$_}} @xrefs;
+  my %seen; 
+  map {  my $p = $_->info_type eq 'PROJECTED'?'_projected':'';
+         printf "Database $db $ac$p \"%s\"\n",$_->primary_id unless $seen{$_->primary_id} 
+  } @xrefs;
 }
 
