@@ -54,8 +54,8 @@ sub dump_ace_by_production_name{
 sub dbxrefS{
   my ($db,$ac,@xrefs)=@_;
   my %seen; 
-  map {  my $p = $_->info_type eq 'PROJECTED'?'_projected':'';
-         printf "Database $db $ac$p \"%s\"\n",$_->display_id unless $seen{$_->display_id} 
+  map {  my $p = $_->info_type eq 'PROJECTION'?'projected_':'';
+         printf "Database $db $p$ac \"%s\"\n",$_->display_id unless $seen{$_->display_id} 
    } @xrefs;
 }
 
@@ -63,8 +63,8 @@ sub dbxrefS{
 sub dbxrefP{
   my ($db,$ac,@xrefs)=@_;
   my %seen; 
-  map {  my $p = $_->info_type eq 'PROJECTED'?'_projected':'';
-         printf "Database $db $ac$p \"%s\"\n",$_->primary_id unless $seen{$_->primary_id} 
+  map {  my $p = $_->info_type eq 'PROJECTION'?'projected_':'';
+         printf "Database $db $p$ac \"%s\"\n",$_->primary_id unless $seen{$_->primary_id} 
   } @xrefs;
 }
 
