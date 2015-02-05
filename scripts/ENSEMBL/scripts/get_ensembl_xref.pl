@@ -33,19 +33,21 @@ sub dump_ace_by_production_name{
 
     my $publicName = $gene->display_xref ? $gene->display_xref->display_id : $gene->stable_id;
     my $geneName = $gene->stable_id;
+    my @xrefs = @{ $gene->get_all_xrefs};
 
     print "Gene : \"$geneName\"\nPublic_name \"$publicName\"\nSpecies \"$species\"\n";
+    map {print "Other_name \"$_\" Inferred_automatically \"uniprot_xrefs_from_ensembl\"\n"} grep {$_->dbname eq 'Uniprot_gn_gene_name'} @xrefs;
     print "Database EnsEMBL ENSEMBL_geneID \"$geneName\"\n";
-    dbxrefS('UniProt','UniProt_AC',@{$gene->get_all_xrefs('Uniprot/%')});
-    dbxrefS('UniProt','UniProtACC',@{$gene->get_all_xrefs('Uniprot/%')});
-    dbxrefS('ZFIN','acc',@{ $gene->get_all_xrefs('ZFIN%')});
-    dbxrefS('SGD','acc',@{ $gene->get_all_xrefs('SGD%')});
-    dbxrefS('MGI','acc',@{ $gene->get_all_xrefs('MGI%')});
-    dbxrefS('FLYBASE','FlyBase_gn',@{ $gene->get_all_xrefs('FlybaseCGID_gene')});
-    dbxrefS('FLYBASE','FlyBase_ID',@{ $gene->get_all_xrefs('flybase_gene_id')});
-    dbxrefS('HGNC','symbol',@{ $gene->get_all_xrefs('HGNC%')});
-    dbxrefP('OMIM','gene',@{ $gene->get_all_xrefs('MIM_GENE')});
-    dbxrefP('OMIM','disease',@{ $gene->get_all_xrefs('MIM_DISEASE')});
+    dbxrefS('UniProt','UniProt_AC',grep {$_->dbname =~ /^Uniprot\//} @xrefs);
+    dbxrefS('UniProt','UniProtACC',grep {$_->dbname =~ /^Uniprot\//} @xrefs);
+    dbxrefS('ZFIN','acc',grep {$_->dbname =~ /^ZFIN/} @xrefs);
+    dbxrefS('SGD','acc',grep {$_->dbname =~ /^SGD/} @xrefs);
+    dbxrefS('MGI','acc',grep {$_->dbname =~ /^MGI/} @xrefs);
+    dbxrefS('FLYBASE','FlyBase_gn',grep {$_->dbname eq 'FlybaseCGID_gene'} @xrefs);
+    dbxrefS('FLYBASE','FlyBase_ID',grep {$_->dbname eq 'flybase_gene_id'} @xrefs);
+    dbxrefS('HGNC','symbol',grep{$_->dbname =~ /^HGNC/} @xrefs);
+    dbxrefP('OMIM','gene',grep{$_->dbname eq 'MIM_GENE'} @xrefs);
+    dbxrefP('OMIM','disease',grep{$_->dbname eq 'MIM_DISEASE'} @xrefs);
     print "\n";
   }	
 }
