@@ -26,6 +26,7 @@ my %core_accessors = $wormbase->species_accessors;
 $core_accessors{$wormbase->species} = $wormbase;
 my @core = map {$_->full_name} values %core_accessors;
 my %non_core_accessors = $wormbase->tier3_species_accessors;
+my @noncore = map {$_->full_name} values %non_core_accessors;
 
 my @productionNames;
 foreach my $accessor (values (%core_accessors),values(%non_core_accessors)){
@@ -66,14 +67,18 @@ my @genome_dbs = @{$genomeDB_adaptor->fetch_all};
 
 my %species;
 my %wbspecies;
+my %gdb2taxonid;
 foreach my $gdb(@genome_dbs){
     my $gdbtaxon = $gdb->taxon->binomial||($gdb->taxon->name=~/(\w+\s+\w+)/g)[0];
+    $gdbtaxon='Caenorhabditis tropicalis' if $gdb->taxon_id == 886184; # csp11 hack
     if (grep {$gdbtaxon eq $_} @others){
       $species{$gdb->dbID} = $gdbtaxon;
     }elsif(grep {$gdb->name eq $_} @productionNames){
       $species{$gdb->dbID} = $gdbtaxon;
       $wbspecies{$gdb->dbID} = $gdbtaxon;
     }
+    $gdb2taxonid{$gdb->dbID}=$gdb->taxon_id;
+    $gdb2taxonid{$gdb->dbID}=1094322 if $gdb->taxon_id == 886184; # csp11 hack
 }
 
 foreach my $gdb1 (@genome_dbs) {
@@ -100,13 +105,13 @@ foreach my $gdb1 (@genome_dbs) {
       
        my ($gid1, $gid2);
        if (grep {$species{$gdb1->dbID} eq $_} @core) {
-        $gid1 =  $m1->gene_member->stable_id=~/WBGene\d+/ ? $m1->gene_member->stable_id:$cds2wbgene->{$m1->gene_member->stable_id};
+         $gid1 =  $m1->gene_member->stable_id=~/WBGene\d+/ ? $m1->gene_member->stable_id:$cds2wbgene->{$m1->gene_member->stable_id};
         unless ($gid1){
          $log->write_to("skipping ${\$m1->gene_member->stable_id} (doesn't exist in current version)\n");
          next;
         }
        }else{
-        $gid1 = sprintf('%s:%s',$gdb1->taxon_id,$m1->gene_member->stable_id);
+        $gid1 = sprintf('%s:%s',$gdb2taxonid{$gdb1->dbID},$m1->gene_member->stable_id);
        } 
 
        if (grep {$species{$gdb2->dbID} eq $_} @core) {
@@ -116,7 +121,7 @@ foreach my $gdb1 (@genome_dbs) {
             next;
           }
        } elsif(grep{ $species{$gdb2->dbID} eq $_ } @noncore){
-          $gid2 = sprintf('%s:%s',$gdb2->taxon_id,$m2->gene_member->stable_id);
+          $gid2 = sprintf('%s:%s',$gdb2taxonid{$gdb2->dbID},$m2->gene_member->stable_id);
        } else{
           $gid2 = $m2->gene_member->stable_id;
        }
