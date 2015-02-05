@@ -11,22 +11,27 @@ use Getopt::Long;
 use Wormbase;
 use Log_files;
 
-my ($outfile,$debug);
+my ($outfile,$debug,$allwb);
 GetOptions(
    'outfile=s' => \$outfile,
    'debug=s'   => \$debug,
+   'allwb'     => \$allwb,
 )||die(@!);
 
 my $wormbase=Wormbase->new(-debug => $debug);
 
 $outfile||=$wormbase->acefiles . '/parasiteCompara.ace';
 my $ofh = new IO::File $outfile,'w';
+die("cannot open file $outfile") unless $ofh;
 
 my %core_accessors = $wormbase->species_accessors;
 $core_accessors{$wormbase->species} = $wormbase;
 my @core = map {$_->full_name} values %core_accessors;
 my %non_core_accessors = $wormbase->tier3_species_accessors;
+
 my @noncore = map {$_->full_name} values %non_core_accessors;
+my %taxon2bp;
+map {$taxon2bp{$_->ncbi_tax_id} = $_->ncbi_bioproject } values %non_core_accessors;
 
 my @productionNames;
 foreach my $accessor (values (%core_accessors),values(%non_core_accessors)){
@@ -35,6 +40,7 @@ foreach my $accessor (values (%core_accessors),values(%non_core_accessors)){
    $long_name =~ s/\s/_/;
    push @productionNames, $long_name;
    $long_name.='_'. lc $accessor->ncbi_bioproject;
+   push @productionNames, $long_name;
 }
 
 my @others = ('Danio rerio','Drosophila melanogaster','Mus musculus','Homo sapiens','Saccharomyces cerevisiae');
@@ -82,12 +88,16 @@ foreach my $gdb(@genome_dbs){
 }
 
 foreach my $gdb1 (@genome_dbs) {
-     next unless $wbspecies{$gdb1->dbID}; # skip non-wormbase species
+     if ($allwb){
+        next unless $wbspecies{$gdb1->dbID}; # skip non-wormbase species
+     }else{
+        next unless grep {$_ eq $species{$gdb1->dbID}} @core; # skip non-core species
+     }
 
      my %homols;
 
      foreach my $gdb2 (@genome_dbs) {
-      next unless $species{$gdb2->dbID}; # skip all the ones we don't like
+      next unless grep {$_ eq $species{$gdb2->dbID}} @others; # skip all the ones we don't like
 
       my $mlss;
       if ($gdb1->dbID == $gdb2->dbID) {
@@ -111,7 +121,7 @@ foreach my $gdb1 (@genome_dbs) {
          next;
         }
        }else{
-        $gid1 = sprintf('%s:%s',$gdb2taxonid{$gdb1->dbID},$m1->gene_member->stable_id);
+        $gid1 = sprintf('%s:%s',$taxon2bp{$gdb2taxonid{$gdb1->dbID}},$m1->gene_member->stable_id);
        } 
 
        if (grep {$species{$gdb2->dbID} eq $_} @core) {
@@ -121,7 +131,7 @@ foreach my $gdb1 (@genome_dbs) {
             next;
           }
        } elsif(grep{ $species{$gdb2->dbID} eq $_ } @noncore){
-          $gid2 = sprintf('%s:%s',$gdb2taxonid{$gdb2->dbID},$m2->gene_member->stable_id);
+          $gid2 = sprintf('%s:%s',$tax2bp{$gdb2taxonid{$gdb2->dbID}},$m2->gene_member->stable_id);
        } else{
           $gid2 = $m2->gene_member->stable_id;
        }
