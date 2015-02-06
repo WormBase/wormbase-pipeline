@@ -223,7 +223,7 @@ sub print_alignment {
   print $aligner $aln;
   
   #my $calign = _postprocess($alignString);
-
+  $alignString=~s/CLUSTAL.*multiple sequence alignment/MUSCLE (v3.8.31) multiple sequence alignment/;
   return "<table border='0'>$header</table><pre>$alignString</pre>";
 }
 
