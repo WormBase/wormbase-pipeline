@@ -6,12 +6,14 @@ require 'rubygems'
 require 'yaml'
 require 'hpricot'
 
+$DEBUG = false
+
 # Hashes
 @@gene2species = Hash.new
 @@gene2id      = Hash.new
 
 def read_common_data(file,species="autoace")
-  eval File.new("/homes/mh6/project/BUILD/#{species}/COMMON_DATA/#{file}",'r').read
+  eval File.new("/home/mh6/ebi_home/project/BUILD/#{species}/COMMON_DATA/#{file}",'r').read
   return $VAR1
 end
 
@@ -22,7 +24,7 @@ def read_tableMaker
     l.gsub!('"','')
     l.chomp!
     f=l.split(/\s+/)
-    h[f[1]]=f[0]
+    h[f[1]]=f[0] # proteinID to ensembl geneID
   }
   return h
 end
@@ -40,7 +42,7 @@ end
 @@prot2id = Hash.new
 
 def fix_name(name)
-  puts "fixing #{name}" if $DEBUG
+  puts "//fixing #{name}" if $DEBUG
   if (@@gen2seq[name])
     return name
   elsif (@@seq2gene[name])
@@ -57,6 +59,7 @@ def fix_name(name)
 end
 
 def fix_prot(name)
+  puts "//fixing #{name}" if $DEBUG
   if (@@prot2up[name])
     return @@prot2up[name]
   else
@@ -72,9 +75,20 @@ def xml2ace(a,b)
       b.each{|c|
         cname=fix_prot(@@prot2id[c.attributes['id']])
         next if cname.nil?
-        puts "Ortholog_other #{cname} From_analysis Inparanoid_8"
+        puts "Ortholog #{cname} \"#{@@gene2species[c.attributes['id']]}\" From_analysis Inparanoid_8"
       }
       puts ""
+    }
+    b.each{|c|
+         cname=fix_prot(@@prot2id[c.attributes['id']])
+         next if cname.nil?
+   	 puts "Gene : \"#{cname}\""
+         a.each{|p|
+            pname=fix_name(@@gene2id[p.attributes['id']])
+            next if pname.nil?
+            puts "Ortholog #{pname} \"#{@@gene2species[p.attributes['id']]}\" From_analysis Inparanoid_8"
+         }
+         puts ""
     }
 end
 
@@ -115,14 +129,14 @@ species.each{|s|
       geneId.sub!('CRE_','CRE')
       geneId.sub!('CAEBREN_','CBN')
       geneId.sub!(/\/\S+/,'')
-      @@gene2id[g.attributes['id']]=geneId
-      @@prot2id[g.attributes['id']]=g.attributes['protId']
+      @@gene2id[g.attributes['id']]=geneId # factually wrong, is internal-id to public gene-id
+      @@prot2id[g.attributes['id']]=g.attributes['protId'] # factually wrong, is internal-id to public protein-id
 
      }
 }
 
 doc.search('orthologGroup').each{|c|
-	genes = c.search('//geneRef')
+       genes = c.search('//geneRef')
        # split into C.elegans
 
        # mapper
