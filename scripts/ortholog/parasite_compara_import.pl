@@ -32,6 +32,7 @@ my %non_core_accessors = $wormbase->tier3_species_accessors;
 my @noncore = map {$_->full_name} values %non_core_accessors;
 my %taxon2bp;
 map {$taxon2bp{$_->ncbi_tax_id} = $_->ncbi_bioproject } values %non_core_accessors;
+$taxon2bp{1094322}='PRJNA53597';
 
 my @productionNames;
 foreach my $accessor (values (%core_accessors),values(%non_core_accessors)){
