@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 # creates gene stubs from the core database on mysql-ps-prod-1
-# currently: fish, fly, mouse, human, yeast but you can pass others as commandline
+# currently: fish, fly, mouse, human, yeast. but you can pass others as commandline
 
 use lib $ENV{CVS_DIR};
 use 5.010;
@@ -27,7 +27,7 @@ sub dump_ace_by_production_name{
   my $gene_adaptor = Bio::EnsEMBL::Registry->get_adaptor($prodName,'core','Gene');
   my $meta_adaptor = Bio::EnsEMBL::Registry->get_adaptor($prodName,'core','MetaContainer');
 
-  my $species = (($meta_adaptor->single_value_by_key('species.scientific_name'))=~/(\w+\s+\w+)/g)[0];
+  my $species = (($meta_adaptor->single_value_by_key('species.scientific_name'))=~/(\w+\s+\w+)/g)[0]; # yeast special case
   
   my @genes=  @{$gene_adaptor->fetch_all_by_biotype('protein_coding')};
   while( my $gene = shift @genes) {
@@ -39,21 +39,28 @@ sub dump_ace_by_production_name{
     print "Database EnsEMBL ENSEMBL_geneID \"$geneName\"\n";
 
     my @xrefs =  (@{ $gene->get_all_xrefs},$gene->display_xref); # because some of the displayxrefs are not in the objext xref table :-(
+    my %skip; # skip othernames that come from the same xref
+    $skip{$gene->display_xref->dbID}=1 if $gene->display_xref;
     my %seen; # like wsb2
     while (my $x = shift @xrefs){
       next if $seen{$x->dbID};
       $seen{$x->dbID}=1;
       given($x->dbname){
-         when(/^Uniprot\//){dbxrefS('UniProt','UniProt_AC',$x)}
+         when(/^Uniprot\//){dbxrefP('UniProt','UniProt_AC',$x)}
          when('ZFIN_ID'){dbxrefP('ZFIN','primary_acc',$x)}
-         when('SGD_GENE'){dbxrefS('SGD','acc',$x)}
-         when('MGI'){dbxrefS('MGI','acc',$x)}
+         when('SGD_GENE'){dbxrefS('SGD','SGD_acc',$x)}
+         when('MGI'){dbxrefS('MGI','MGI_acc',$x)         }
          when('FlybaseCGID_gene'){dbxrefS('FLYBASE','FlyBase_gn',$x)}
          when('flybase_gene_id'){dbxrefS('FLYBASE','FlyBase_ID',$x)}
          when('HGNC'){dbxrefS('HGNC','symbol',$x)}
          when('MIM_GENE'){dbxrefP('OMIM','gene',$x)}
          when('MIM_DISEASE'){dbxrefP('OMIM','disease',$x)}
-         when('Uniprot_gn'){printf "Other_name \"%s\" Inferred_automatically \"uniprot_xrefs_from_ensembl\"\n",$x->display_id}
+         when('Uniprot_gn'){
+           next if $skip{$x->dbID};
+           my $oname = $x->display_id;
+           $oname=~s/;//; # strip semicolons from the IDs
+           printf "Other_name \"%s\" Inferred_automatically \"uniprot_xrefs_from_ensembl\"\n",$oname
+         }
          default{}
       }
     }
