@@ -8,7 +8,7 @@
 # Script extended to also populate the Potential_model_for Human disease data utilising the DO ontology.
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2014-04-01 15:19:10 $      
+# Last updated on: $Date: 2015-02-10 14:52:03 $      
 
 use strict;                                      
 use lib $ENV{CVS_DIR};
@@ -22,12 +22,13 @@ use Storable;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $noload, $database, $acefile, $obofile,);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $noload, $database, $acefile, $obofile, $species);
 
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
+            "species=s"  => \$species,
 	    "database:s" => \$database,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
@@ -41,6 +42,7 @@ if ( $store ) {
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
+                             -organism => $species,
 			     );
 }
 
@@ -52,6 +54,7 @@ my $log = Log_files->make_build_log($wormbase);
 
 my $tace            = $wormbase->tace;        # TACE PATH
 my $WS_name         = $wormbase->get_wormbase_version_name();
+my $species_name    = $wormbase->full_name;
 
 $acefile = $wormbase->acefiles . "/omim_db_data.ace" if not defined $acefile;
 $obofile = $wormbase->primaries . "/citace/temp_unpack_dir/home/citace/Data_for_${WS_name}/Data_for_Ontology/disease_ontology.${WS_name}.obo" 
@@ -75,19 +78,22 @@ while (<TACE>) {
   chomp;
   s/\"//g;
 
-  if (/(WBGene\d+)\s+(\S+)\s+(\S+)\s+(OMIM)\s+(\S+)\s+(\d+)\s+(.+)/){
-    my ($gene, $ortholog, $analysis, $database, $type, $id, $species) = ($1, $2, $3, $4, $5, $6, $7);
+  if (/^WBGene\d+/) {
+    print "$_\n";
+    my ($gene, $gspecies, $ortholog, $species,  $analysis, $database, $database_field, $database_acc) = split(/\t/, $_);
 
-    next if $analysis ne 'EnsEMBL-Compara';
+    next if $analysis !~ /Compara/;
 
-    $gene2omim{$gene}->{$type}->{$id} = 1; 
+    $gene2omim{$gene}->{$database_field}->{$database_acc} = 1; 
 
     #
     # Add DO connections only for C.elegans genes
     #
-    if (exists $omim2do->{$id} and $species eq $wormbase->full_name) {
-      foreach my $doid (keys %{$omim2do->{$id}}) {
-        $gene2do{$gene}->{$doid}->{$id}->{$ortholog} = 1;
+    if ($gspecies eq $species_name) {
+      if (exists $omim2do->{$database_acc}) {
+        foreach my $doid (keys %{$omim2do->{$database_acc}}) {
+          $gene2do{$gene}->{$doid}->{$database_acc}->{$ortholog} = 1;
+        }
       }
     }
   }
@@ -202,64 +208,71 @@ Visible
 Class 
 Class Gene
 From 1
- 
+
 Colonne 2 
-Width 40 
+Width 16 
 Optional 
 Visible 
 Class 
-Class Protein 
-From 1 
-Tag Ortholog_other  
-Condition *ENSP*
+Class Species
+From 1
+Tag Species
 
 Colonne 3 
-Width 12 
-Optional 
+Width 40 
+Mandatory 
 Visible 
 Class 
-Class Analysis 
-Right_of 2 
-Tag  HERE  # From_analysis 
-  
+Class Gene 
+From 1 
+Tag Ortholog  
+
 Colonne 4 
 Width 12 
 Mandatory 
 Visible 
 Class 
-Class Database 
-From 2 
-Tag Database  
-Condition "OMIM"
- 
+Class Species 
+Right_of 3 
+Tag  HERE 
+Condition "Homo sapiens"
+
 Colonne 5 
 Width 12 
 Mandatory 
 Visible 
 Class 
-Class Database_field 
+Class Analysis 
 Right_of 4 
+Tag  HERE  # From_analysis 
+
+Colonne 6 
+Width 12 
+Mandatory 
+Visible 
+Class 
+Class Database 
+From 3 
+Tag Database  
+Condition "OMIM"
+ 
+Colonne 7 
+Width 12 
+Mandatory 
+Visible 
+Class 
+Class Database_field 
+Right_of 6 
 Tag HERE   
  
-Colonne 6 
+Colonne 8 
 Width 12 
 Optional 
 Visible 
 Class 
 Class Accession_number 
-Right_of 5 
+Right_of 7 
 Tag HERE   
-
-Colonne 7 
-Width 30 
-Optional 
-Visible 
-Class 
-Class Species 
-From 1 
-Tag Species
-
-
 
 // End of these definitions
 END
