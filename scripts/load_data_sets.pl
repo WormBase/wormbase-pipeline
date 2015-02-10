@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2015-01-26 11:15:25 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2015-02-10 10:27:58 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -74,7 +74,7 @@ sub parse_misc_elegans_files {
 		       $wormbase->misc_static."/orthologs.ensembl.ace"          => "ensembl_orthologs"     ,
 		       $wormbase->misc_static."/orthologs.inparanoid.ace"       => "inparanoid_orthologs"  ,
 		       $wormbase->misc_static."/orthologs.panther.ace"          => "panther_orthologs"     ,
-		       $wormbase->misc_static."/orthologs.treefam.ace"          => "treefam_orthologs"     ,
+		       #$wormbase->misc_static."/orthologs.treefam.ace"          => "treefam_orthologs"     ,
 		       $wormbase->misc_static."/ensemblhuman2omim.ace"          => "omim2humanprot"        ,
 		       $wormbase->misc_static."/misc_TEC_RED_sequence_data.ace" => "TEC_RED"               ,
 		       $wormbase->misc_static."/nembase_nematode_contigs.ace"   => "nembase_ace"           ,
