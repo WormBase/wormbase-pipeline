@@ -14,7 +14,7 @@
 //
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2014-12-05 16:56:57 $
+// Last edited on: $Date: 2015-02-10 16:20:44 $
 //
 //
 // Additional things to consider. If classes are added or new data in the ?Gene class
@@ -305,7 +305,6 @@
 		  RNASeq_FPKM ?Life_stage Float #Evidence
                   GO_term ?GO_term XREF Gene ?GO_code #Evidence
 		  GO_annotation ?GO_annotation XREF Gene
-		  Not_GO_annotation ?GO_annotation XREF Not_gene
                   Contained_in_operon ?Operon XREF Contains_gene
                   Ortholog ?Gene XREF Ortholog ?Species #Evidence
 		  Paralog ?Gene XREF Paralog ?Species #Evidence
@@ -366,6 +365,7 @@
 		  Pseudo_map_position // should be added to flag those genes which have Map position tags that
 				      // were 'promoted' from Interpolated_map_position tags
         Reference ?Paper XREF Gene #Evidence
+	Picture ?Picture XREF Gene
         Remark ?Text #Evidence
 	Method UNIQUE ?Method
 
@@ -480,6 +480,7 @@
 			   Other_regulated ?Text #Interactor_info                              // Free text describing a regulated entity or condition that does not fall into a standard WormBase category
 			   Rearrangement ?Rearrangement XREF Interactor #Interactor_info
 			   Feature_interactor ?Feature XREF Associated_with_Interaction #Interactor_info
+			   Variation_interactor ?Variation XREF Interactor #Interactor_info
 		Interaction_summary ?Text #Evidence
 		Detection_method Affinity_capture_luminescence           // A physical interaction detection technique
 				 Affinity_capture_MS                     // A physical interaction detection technique
@@ -514,10 +515,6 @@
 		Library_info Library_screened Text INT                   // In the context of Y2H or YH screens, for example, the library may have been cDNA library or a pool of clones
 			     Origin From_laboratory UNIQUE ?Laboratory   // A library generated at an academic laboratory
 				    From_company UNIQUE ?Text            // A library generated at a company
-		Deviation_from_expectation Text                          // A text description of the way in which the phenotype deviated from expectation in genetic interactions	
-		Neutrality_function UNIQUE Multiplicative                // The multiplicative neutrality function defines expectation as the product of two quantified phenotypes (relative to wild type) 
-					   Additive                      // The additive neutrality function defines expectation as the sum of two quantified phenotypes (relative to wild type) 
-					   Minimal                       // The minimal neutrality function defines expectation as the most severe of two quantified phenotypes (relative to wild type) 
 		Regulation_level Transcriptional                         // Regulation occurs at the transcriptional level
 				 Post_transcriptional                    // Regulation occurs at the post-transcriptional level
 				 Post_translational                      // Regulation occurs at the post-translational level
@@ -554,10 +551,7 @@
 				       Cis_regulator		   // A cis-acting regulator, e.g. an enhancer element
 				       Trans_regulated		   // A gene regulated in trans, e.g. by a transcription factor
 				       Cis_regulated		   // A gene regulated in cis, e.g. by an enhancer element
-		       Intragenic_effector_variation ?Variation XREF Interactor
-		       Intragenic_affected_variation ?Variation XREF Interactor
 		       Expr_pattern ?Expr_pattern		   // An expression pattern altered to indicate 
-		       Variation ?Variation XREF Interactor	   // (allele, polymorphism, etc.) involved in the interaction //removed XREF from proposal
 		       Transgene ?Transgene XREF Interactor	   // Transgene XREF Interactor that carries an interacting gene //removed XREF from proposal
 		       Construct ?Construct XREF Interactor
 		       Antibody ?Antibody XREF Interactor	   // Free text description of the antibody used to detect a regulation event //removed XREF from proposal
@@ -1031,45 +1025,34 @@
 ///////////////////////////////////////////////////////
 
 
-?GO_annotation  Gene_rel UNIQUE ?Gene XREF GO_annotation UNIQUE ?GO_term XREF GO_annotation #Annotation_relation
-		Not_Gene_rel UNIQUE ?Gene XREF Not_GO_annotation UNIQUE ?GO_term XREF Not_GO_annotation #Annotation_relation
-		Gene ?Gene
-		Not_gene ?Gene
-		GO_term ?GO_term
-		Not_GO_term ?GO_term
+?GO_annotation 	Gene ?Gene XREF GO_annotation
+		GO_term ?GO_term XREF GO_annotation
+		GO_code ?GO_code
+                Annotation_relation NOT
+                                    colocalizes_with
+                                    contributes_to
+                                    enables
+                                    involved_in
+                                    part_of
                 Annotation_made_with Interacting_gene ?Gene
-				     Interacting_protein ?Text ?Protein
-                                     Inferred_GO_term ?GO_term
+                                     Inferred_from_GO_term ?GO_term
                                      Motif ?Motif
                                      RNAi_result ?RNAi
                                      Variation ?Variation
                                      Phenotype ?Phenotype
                                      Database ?Database ?Database_field ?Text
-                Annotation_extension Life_stage_relation ?Text ?Life_stage
-                                     Gene_relation ?Text ?Gene
-                                     Protein_relation ?Text ?Protein
-                                     Molecule_relation ?Text ?Molecule
-                                     Anatomy_relation ?Text ?Anatomy_term
-                                     GO_term_relation ?Text ?GO_term
+                Annotation_extension Life_stage_relation ?Text UNIQUE ?Life_stage
+                                     Gene_relation ?Text UNIQUE ?Gene
+                                     Molecule_relation ?Text UNIQUE ?Molecule
+                                     Anatomy_relation ?Text UNIQUE ?Anatomy_term
+                                     GO_term_relation ?Text UNIQUE ?GO_term
                 Annotation_isoform ?Text ?Protein
-                Interacting_strain ?Strain
-                Interacting_species ?Species
+                Interacting_species ?Species ?Strain
                 Reference ?Paper XREF GO_annotation
                 GO_reference ?Database ?Database_field ?Text
                 Contributed_by ?Analysis
 	        Date_last_updated UNIQUE DateType
 
-
-#Annotation_relation  UNIQUE involved_in UNIQUE ?GO_code
-                             enables UNIQUE ?GO_code
-                             contributes_to UNIQUE ?GO_code
-                             part_of UNIQUE ?GO_code
-                             colocalizes_with UNIQUE ?GO_code
-			     Not_involved_in UNIQUE ?GO_code
-                             Not_enables UNIQUE ?GO_code
-                             Not_contributes_to UNIQUE ?GO_code
-                             Not_part_of UNIQUE ?GO_code
-                             Not_colocalizes_with UNIQUE ?GO_code
 
 
 
@@ -1078,6 +1061,7 @@
 // ?GO_term class modified 19/09/01 dl
 // 
 ///////////////////////////////////////////////////////
+
 
 ?GO_term Name ?Text
 	 Definition ?Text
@@ -1109,7 +1093,6 @@
 		       Expr_pattern ?Expr_pattern XREF GO_term
 		       Picture ?Picture XREF Cellular_component
 		       GO_annotation ?GO_annotation XREF GO_term
-                       Not_GO_annotation ?GO_annotation XREF Not_GO_term
  	 Version UNIQUE Text UNIQUE Text // Lincoln, to store version number of GO - only on 3 parent_terms [krb 031028]
 
 ///////////////////////////////////////////////////////////////
@@ -2310,6 +2293,7 @@
                  Anatomy ?Anatomy_term XREF Picture
 	         Cellular_component ?GO_term XREF Picture
 		 WBProcess ?WBProcess XREF Picture 
+		 Gene ?Gene XREF Picture
          Acknowledgment Template UNIQUE Text
                         Publication_year UNIQUE Text
                         Article_URL UNIQUE ?Database UNIQUE ?Database_field UNIQUE ?Text
@@ -2655,7 +2639,6 @@
 	   Reference ?Paper  
 	   Person ?Person
 	   Laboratory ?Laboratory #Lab_Location 
-	   Historical_gene ?Gene #Evidence 			
 	   Remark ?Text #Evidence
 
 
@@ -3428,7 +3411,7 @@
 		   Transcript ?Transcript XREF Variation #Molecular_change
 		   Pseudogene ?Pseudogene XREF Variation #Molecular_change
 		   Feature ?Feature XREF Associated_with_variation
-		   Interactor ?Interaction
+		   Interactor ?Interaction XREF Variation_interactor
 	   Possibly_affects ?Gene XREF Possibly_affected_by #Evidence
            Isolation Date DateType
                      Mutagen UNIQUE Text #Evidence
@@ -3607,7 +3590,7 @@
 	     Title Text
              Based_on_WB_Release Int
              Based_on_DB_Release Text
-	     Group Project UNIQUE ?Analysis XREF Subproject
+	     Group Project ?Analysis XREF Subproject
 		   Subproject ?Analysis XREF Project
              Description ?Text
 	     Sample ?Condition XREF Analysis
