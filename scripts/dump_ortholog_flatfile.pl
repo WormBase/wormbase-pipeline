@@ -10,11 +10,11 @@ my ($store,$worm,$debug,$test,$out,$wormbase);
 chomp $date;
 
 GetOptions(
-	'species=s'    => \$worm,    # $worm->species
-	'store=s'      => \$store,
-        'debug=s'      => \$debug,
-        'test'         => \$test,
-        'out=s'        => \$out,
+	'fullspecies=s'  => \$worm,    # $worm->species
+	'store=s'        => \$store,
+        'debug=s'        => \$debug,
+        'test'           => \$test,
+        'out=s'          => \$out,
 )||die(@!);
 
 
@@ -28,7 +28,8 @@ if ( $store ) {
 my $log = Log_files->make_build_log($wormbase);
 my $outfh = IO::File->new($out,'w')||die(@!);
 
-$log->write_to("Dumping orthologs for ${\$wormbase->species} to $out\n");
+$worm =~ s/_/ /;
+$log->write_to("Dumping orthologs for $worm to $out\n");
 
 my $db = Ace->connect(-path => $wormbase->autoace) ||die (Ace::Error);
 
@@ -48,15 +49,26 @@ HERE
 
 my $geneIt = $db->fetch_many(-query => "Find Gene; Species=\"$worm\"");
 while (my $gene = $geneIt->next){
-   my @orthologs = ($gene->Ortholog,$gene->Ortholog_other);
-   next unless @orthologs;
-   say $outfh '=';
-   say $outfh "$gene\t${\$gene->Public_name}";
-   foreach my $o(@orthologs){
-        my @support = $o->col(3);
-        @support = $o->col(2) unless @support;
-	say $outfh join("\t",($o->Species,$o,$o->class eq 'Gene'?$o->Public_name||'""':'""',join(';',@support)));
-   }
+  my $pn = $gene->Public_name;
+  next if not $pn;
+
+  my @orth_strings;
+
+  foreach my $o($gene->Ortholog){
+    next if not $o->Species;
+    my @support = $o->col(3);
+    push @orth_strings, join("\t",$o->Species, $o, $o->Public_name, join(';',@support)));
+  }
+  
+  if (@orth_strings) {
+    say $outfh '=';
+    say $outfh "$gene\t$pn\n";
+    foreach my $str (@orth_strings) {
+      say $outfh $str;
+    }
+  }
 }
 
+$db->close;
 $log->mail;
+exit(0);
