@@ -14,7 +14,7 @@
 //
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2015-02-10 16:20:44 $
+// Last edited on: $Date: 2015-02-19 16:22:11 $
 //
 //
 // Additional things to consider. If classes are added or new data in the ?Gene class
@@ -2294,6 +2294,7 @@
 	         Cellular_component ?GO_term XREF Picture
 		 WBProcess ?WBProcess XREF Picture 
 		 Gene ?Gene XREF Picture
+		 Life_stage ?Life_stage XREF Picture
          Acknowledgment Template UNIQUE Text
                         Publication_year UNIQUE Text
                         Article_URL UNIQUE ?Database UNIQUE ?Database_field UNIQUE ?Text
@@ -2490,6 +2491,7 @@
 		Followed_by ?Life_stage XREF Preceded_by
 		Expr_pattern ?Expr_pattern XREF Life_stage
 		WBProcess ?WBProcess XREF Life_stage
+		Picture ?Picture XREF Life_stage
 		Remark	?Text #Evidence
 		Definition ?Text // Wen [020607 krb]
 		Public_name UNIQUE ?Text
@@ -2612,21 +2614,12 @@
 	   Driven_by_gene ?Gene XREF Drives_construct #Evidence
 	   Gene ?Gene XREF Construct_product #Evidence
 	   3_UTR ?Gene #Evidence
-	   Fusion_reporter ?Text              //fluorescent proteins GFP, RFP, mCherry, etc.
-	   Other_reporter ?Text               //to add reporters, tags that arent included in model
-	   Purification_tag ?Text             //FLAG, HA, Myc, TAP, etc.  
-	   Recombination_site ?Text           //LoxP, FRT
-	   Type_of_construct  Chimera
-			      Domain_swap
-			      Engineered_mutation
-			      Fusion
-			      Complex                    // complex changes  
-			      Transcriptional_fusion
-			      Translational_fusion 
-			      Nterminal_translational_fusion
-			      Cterminal_translational_fusion
-			      Internal_coding_fusion
-	   Selection_marker ?Text              
+	   Fusion_reporter ?Text              // Fluorescent proteins GFP, RFP, mCherry, etc.
+	   Other_reporter ?Text               // to add reporters, tags that arent included in model
+	   Purification_tag ?Text             // FLAG, HA, Myc, TAP, etc.  
+	   Recombination_site ?Text           // LoxP, FRT
+	   Type_of_construct  ?Text           // A controlled value list of terms is used during curation
+	   Selection_marker ?Text             // 
 	   Construction_summary  ?Text        // Backbone vector, mol bio 
 	   DNA_text Text                      // for mapping, can include entire construct sequence
 	   Clone ?Clone XREF Construct
@@ -3318,7 +3311,7 @@
                       Allele_designation UNIQUE Text
                       Alleles ?Variation
                       Gene_classes ?Gene_class XREF Designating_laboratory
-                      Former_gene_classes ?Gene_class XREF Former_designating_laboratory
+                      Former_gene_classes ?Gene_class
 	      Staff   Registered_lab_members ?Person XREF Laboratory   // for people with WormBase Person IDs
         	      Past_lab_members ?Person XREF Old_laboratory     // for anyone who has left the field, or the circle of life
 	      Remark ?Text #Evidence
@@ -3724,4 +3717,5 @@
 // WS245
 // WS246
 // WS247
+// WS248
 //
