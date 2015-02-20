@@ -266,6 +266,11 @@ foreach my $chrom (sort keys %$chr_lengths) {
             # should not happen
           }
 
+          unless ($this_br->{start} && $this_br->{end}){
+            $log->write_to("Warning: ${\$bal->{name}} is missing start and/or end\n");
+            next;
+          }
+
           print $out_fh join("\t", $chr_prefix . $chrom, "Balanced_by_balancer", "biological_region", $this_br->{start}, $this_br->{end}, ".", ".", ".");
           if (not $gff3) {
             printf $out_fh "\tBalancer \"%s\" ; Balancer_type \"%s\"\n", $bal->{name}, $bal->{type};
