@@ -8,7 +8,7 @@
 # - Strip the class name prefix from all of the Name attrbutes 
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2014-04-04 14:58:59 $
+# Last updated on: $Date: 2015-02-23 17:20:49 $
 
 use strict;
 use lib $ENV{CVS_DIR};
@@ -25,7 +25,8 @@ my %source_map = (
   Non_coding_transcript     => 'WormBase',
   Pseudogene                => 'WormBase',
   miRNA_mature              => 'WormBase',
-  miRNA_precursor           => 'WormBase',
+  miRNA_primary_transcript  => 'WormBase',
+  pre_miRNA                 => 'WormBase',
   tRNA                      => 'WormBase',
   rRNA                      => 'WormBase',
   ncRNA                     => 'WormBase',
