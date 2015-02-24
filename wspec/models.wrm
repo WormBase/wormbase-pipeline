@@ -14,7 +14,7 @@
 //
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2015-02-19 16:22:11 $
+// Last edited on: $Date: 2015-02-24 10:59:28 $
 //
 //
 // Additional things to consider. If classes are added or new data in the ?Gene class
@@ -2631,7 +2631,8 @@
 		    Interactor ?Interaction
 	   Reference ?Paper  
 	   Person ?Person
-	   Laboratory ?Laboratory #Lab_Location 
+	   Laboratory ?Laboratory #Lab_Location
+	   Historical_gene ?Gene #Evidence
 	   Remark ?Text #Evidence
 
 
