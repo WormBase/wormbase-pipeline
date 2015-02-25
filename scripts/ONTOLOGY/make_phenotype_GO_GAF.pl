@@ -233,11 +233,10 @@ if ($variation) {
                                    "",
                                    $term,
                                    $ref_field,
-                                   "IMP",
+                                   "IEA",
                                    $with,
                                    $a,
                                    $seq_name,
-                                   $go_type,
                                    $taxid,
                                    $date);
           
