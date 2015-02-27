@@ -6,15 +6,16 @@ use Wormbase;
 use feature 'say';
 
 my $date = `date`;
-my ($store,$worm,$debug,$test,$out,$wormbase);
+my ($store,$worm,$debug,$test,$out,$database,$wormbase);
 chomp $date;
 
 GetOptions(
-	'fullspecies=s'  => \$worm,    # $worm->species
-	'store=s'        => \$store,
-        'debug=s'        => \$debug,
-        'test'           => \$test,
-        'out=s'          => \$out,
+  'fullspecies=s'  => \$worm,    # $worm->species
+  'store=s'        => \$store,
+  'debug=s'        => \$debug,
+  'test'           => \$test,
+  'out=s'          => \$out,
+  'database=s'     => \$database,
 )||die(@!);
 
 
@@ -31,7 +32,9 @@ my $outfh = IO::File->new($out,'w')||die(@!);
 $worm =~ s/_/ /;
 $log->write_to("Dumping orthologs for $worm to $out\n");
 
-my $db = Ace->connect(-path => $wormbase->autoace) ||die (Ace::Error);
+$database = $wormbase->autoace if not defined $database;
+
+my $db = Ace->connect(-path => $database) ||die (Ace::Error);
 
 my $version = 'WS'.$wormbase->version;
 
@@ -47,7 +50,7 @@ print $outfh <<HERE;
 # BEGIN CONTENTS
 HERE
 
-my $geneIt = $db->fetch_many(-query => "Find Gene; Species=\"$worm\"");
+my $geneIt = $db->fetch_many(-query => "Find Gene; Live; Species=\"$worm\"");
 while (my $gene = $geneIt->next){
   my $pn = $gene->Public_name;
   next if not $pn;
@@ -56,8 +59,9 @@ while (my $gene = $geneIt->next){
 
   foreach my $o($gene->Ortholog){
     next if not $o->Species;
+    next if $o->Status eq 'Dead';
     my @support = $o->col(3);
-    push @orth_strings, join("\t",$o->Species, $o, $o->Public_name, join(';',@support)));
+    push @orth_strings, join("\t",$o->Species, $o, $o->Public_name, join(';',@support));
   }
   
   if (@orth_strings) {
