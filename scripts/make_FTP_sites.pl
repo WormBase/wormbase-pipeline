@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2015-02-12 14:57:42 $
+# Last updated on: $Date: 2015-02-27 15:25:15 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -1764,6 +1764,7 @@ GSPECIES.BIOPROJ.WSREL.transposon_transcripts.fa.gz
 
 [TIER2]species/GSPECIES/BIOPROJ/annotation
 GSPECIES.BIOPROJ.WSREL.geneIDs.txt.gz
+GSPECIES.BIOPROJ.WSREL.orthologs.txt.gz
 
 [TIER2]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.best_blastp_hits.txt.gz
