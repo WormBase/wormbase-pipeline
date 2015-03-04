@@ -57,7 +57,7 @@ e.g. perl batch_merge.pl -file merger.txt
 
 =cut
 
-my ($USER, $test, $file, $debug, $load, $old, $ns, $PASS);
+my ($USER, $test, $file, $debug, $load, $old, $ns, $PASS,$out);
 GetOptions(
 	   'user:s'     => \$USER,
 	   'pass:s'     => \$PASS,
@@ -67,6 +67,7 @@ GetOptions(
 	   'load'       => \$load,
 	   'old'        => \$old,
 	   'ns'         => \$ns,
+	   'out:s'      => \$out,
 	  ) or die;
 
 
@@ -98,8 +99,8 @@ my $ace = Ace->connect('-path', $database) or $log->log_and_die("cant open $data
 
 my $outdir = $database."/NAMEDB_Files/";
 my $backupsdir = $outdir."BACKUPS/";
-my $outname = "batch_merge.ace";
-my $output = "$outdir"."$outname";
+$out ||= "batch_merge.ace";
+my $output = $outdir.$out;
 
 my %gene_versions; # remember the latest version used in all genes altered in case a gene is being merged in to more than once
 
@@ -325,7 +326,7 @@ sub load_data {
 # load information to $database if -load is specified
 $wormbase->load_to_database("$database", "$output", 'batch_merge.pl', $log, undef, 1);
 $log->write_to("5) Loaded $output into $database\n\n");
-$wormbase->run_command("mv $output $backupsdir"."$outname". $wormbase->rundate. "\n"); #append date to filename when moving.
+$wormbase->run_command("mv $output $backupsdir".$out. $wormbase->rundate. "\n"); #append date to filename when moving.
 $log->write_to("6) Output file has been cleaned away like a good little fellow\n\n");
 print "Finished!!!!\n";
 }
