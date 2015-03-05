@@ -164,6 +164,7 @@ _VGenetic_code     -V
 _VHomology_group   -V
 _VMovie            -H
 _VGO_term	   -V
+_VGO_annotation    -V
 _VGO_code	   -V
 _VSO_term	   -V
 _VDO_term          -V
