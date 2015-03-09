@@ -29,6 +29,7 @@ my %exclude = (
 	'Caenorhabditis brenneri'      => 1,
 	'Pristionchus pacificus'       => 1,
 	'Brugia malayi'                => 1,
+        'Onchocerca volvulus'          => 1,
 	) ;
 
 our $output; # file to write
