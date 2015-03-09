@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-11-29 15:02:27 $
+# Last edited on: $Date: 2015-03-09 16:24:21 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -375,29 +375,34 @@ sub process_human {
 }
 
 sub process_uniprot {
+  my ($ver, $do_swiss, $do_trembl) = @_;
 
-  # set up the combined swissprot and trembl fasta sequence data that is used by the script swiss_trembl2slim.pl  
-  # on Sanger, this is maintained by Sanger Systems, so we don't need to do anything
+  my ($target1, $target2, $target3); 
 
-  my $ver = shift;
-
-  my $target1 = $ENV{'PIPELINE'}."/blastdb/Supported/uniprot_sprot.fasta.gz";
-  my $filename = "/ebi/ftp/pub/databases/uniprot/knowledgebase/uniprot_sprot.fasta.gz";
-  if (!-e $filename) {$log->log_and_die("Can't find file $filename\n");}
-  $wormbase->run_command("cp $filename $target1",$log);
-
-
-  my $target2 = $ENV{'PIPELINE'}."/blastdb/Supported/uniprot_trembl.fasta.gz";
-  $filename = "/ebi/ftp/pub/databases/uniprot/knowledgebase/uniprot_trembl.fasta.gz";
-  if (!-e $filename) {$log->log_and_die("Can't find file $filename\n");}
-  $wormbase->run_command("cp $filename $target2",$log);
-
-
-  # uncompress and concatenate                                                                                                                                                                                                        
-  my $target3 = $ENV{'PIPELINE'}."/blastdb/Supported/uniprot";
+  if ($do_swiss) {
+    $target1 = $ENV{'PIPELINE'}."/blastdb/Supported/uniprot_sprot.fasta.gz";
+    my $filename = "/ebi/ftp/pub/databases/uniprot/knowledgebase/uniprot_sprot.fasta.gz";
+    if (!-e $filename) {$log->log_and_die("Can't find file $filename\n");}
+    $wormbase->run_command("cp $filename $target1",$log);
+  }
+  
+  if ($do_trembl) {
+    $target2 = $ENV{'PIPELINE'}."/blastdb/Supported/uniprot_trembl.fasta.gz";
+    my $filename = "/ebi/ftp/pub/databases/uniprot/knowledgebase/uniprot_trembl.fasta.gz";
+    if (!-e $filename) {$log->log_and_die("Can't find file $filename\n");}
+    $wormbase->run_command("cp $filename $target2",$log);
+  }
+  
+  $target3 = $ENV{'PIPELINE'}."/blastdb/Supported/uniprot";
   $wormbase->run_command("rm -f $target3",$log);
-  $wormbase->run_command("gunzip -c $target1 > ${target3}.pre",$log);
-  $wormbase->run_command("gunzip -c $target2 >> ${target3}.pre",$log);
+  $wormbase->run_commans("touch $target3", $log);
+
+  if (defined $target1 and -e $target1) {
+    $wormbase->run_command("gunzip -c $target1 >> ${target3}.pre",$log);
+  }
+  if (defined $target2 and -e $target2) {
+    $wormbase->run_command("gunzip -c $target2 >> ${target3}.pre",$log);
+  }
 
   # change Pyrrolysine (O) to Lysin (K) as WU BLAST can't deal with 'O' residues
   open (UNI, "<${target3}.pre") || $log->log_and_die("Can't open file ${target3}.pre\n");
