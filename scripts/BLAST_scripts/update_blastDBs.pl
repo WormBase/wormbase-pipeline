@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2015-03-09 16:24:21 $
+# Last edited on: $Date: 2015-03-09 16:31:34 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -81,7 +81,7 @@ if($uniprot or $swissprot or $trembl) {
     if (/UniProt\s+Knowledgebase\s+Release\s+(\d+)_(\d+)/){
       my $newver = sprintf("%d%d", $1, $2);
       if (!-e '/software/worm' && ($newver != $cver)) { # only run this is the EBI - Supported/uniprot is provided for us at the Sanger
-        &process_uniprot($newver);
+        &process_uniprot($newver, $swissprot, $trembl);
       }
       if($newver != $cver and ($uniprot or $swissprot)) {
         &process_swissprot($newver);
@@ -395,7 +395,7 @@ sub process_uniprot {
   
   $target3 = $ENV{'PIPELINE'}."/blastdb/Supported/uniprot";
   $wormbase->run_command("rm -f $target3",$log);
-  $wormbase->run_commans("touch $target3", $log);
+  $wormbase->run_command("touch $target3", $log);
 
   if (defined $target1 and -e $target1) {
     $wormbase->run_command("gunzip -c $target1 >> ${target3}.pre",$log);
