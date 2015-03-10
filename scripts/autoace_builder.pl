@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2014-12-10 16:21:18 $
+# Last edited on: $Date: 2015-03-10 11:15:15 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -72,7 +72,6 @@ GetOptions(
            'genexrefs'      => \$enagenexrefs,
            'proteinxrefs'   => \$enaprotxrefs,
            'xrefs'          => \$xrefs,
-	   'go_term'        => \$GO_term,
 	   'rna'            => \$rna,
 	   'dbcomp'         => \$dbcomp,
 	   'confirm'        => \$confirm,
@@ -195,7 +194,6 @@ $wormbase->run_script( 'make_wormpep.pl -all -final'                  , $log) if
 $wormbase->run_script( 'write_DB_remark.pl'                      , $log) if $remarks;
 $wormbase->run_script( 'molecular_names_for_genes.pl'            , $log) if $names;
 $wormbase->run_script( 'get_treefam.pl'                          , $log) if $treefam;
-$wormbase->run_script( 'inherit_GO_terms.pl -motif ', $log ) if $GO_term;
 $wormbase->run_script( 'KEGG.pl', $log )                                 if $kegg;
 
 # $build_dumpGFF.pl; (final) is run chronologically here but previous call will operate
@@ -545,6 +543,7 @@ sub make_UTR {
 }
 
 sub post_merge_steps {
+  $wormbase->run_script('inherit_GO_terms.pl -motif ', $log );
   $wormbase->run_script("cluster_gene_connection.pl", $log);
   $wormbase->run_script("tier3_stubs.pl", $log);
 }
