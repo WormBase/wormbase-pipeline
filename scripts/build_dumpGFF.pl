@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2015-03-10 10:43:50 $
+# Last edited on: $Date: 2015-03-12 21:21:15 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -91,7 +91,7 @@ init miRNA_primary_transcript elegans briggsae pristionchus japonica brenneri re
 init asRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus
 init lincRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus
 init piRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus
-init 7kncRNA elegans
+init 7kncRNA elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus
 blat BLAT_EST_BEST elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus
 blat BLAT_EST_OTHER elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus
 blat BLAT_NEMATODE elegans pristionchus remanei briggsae japonica brenneri brugia ovolvulus
