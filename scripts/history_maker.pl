@@ -145,25 +145,16 @@ if (! defined $user || $user eq "") {
 
 my $person;
 if (defined $user){ 
-  my @IDs = ('1983','4025','4055','615','1849','2062',);
-  if ($user eq "pad") {
-    $person = ("WBPerson".$IDs[0]);
-  } elsif ($user eq "gw3") {
-    $person = ("WBPerson".$IDs[1]);
-  } elsif ($user eq "mh6") {
-    $person = ("WBPerson".$IDs[2]);
-  }
-  elsif ($user eq "john") {
-    $person = ("WBPerson".$IDs[3]);
-  }
-  elsif ($user eq "tb") {
-    $person = ("WBPerson".$IDs[4]);
-  }
-  elsif ($user eq "es9") {
-    $person = ("WBPerson".$IDs[5]);
+  if ($user eq 'pad') {
+    $person = 'WBPerson1983';
+  } elsif ($user eq 'gw3') {
+    $person = 'WBPerson4025';
+  } elsif ($user eq 'mh6') {
+    $person = 'WBPerson4055');
+  } elsif ($user eq 'jl16') {
+    $person = 'WBPerson28994';
   }
 }
-
 
 
 #history nomenclature temp fix
