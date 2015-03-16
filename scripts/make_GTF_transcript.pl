@@ -7,8 +7,8 @@
 #
 # by Gary Williams
 #
-# Last updated by: $Author: gw3 $                      
-# Last updated on: $Date: 2015-01-26 14:27:11 $        
+# Last updated by: $Author: klh $                      
+# Last updated on: $Date: 2015-03-16 11:42:31 $        
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -85,25 +85,35 @@ my $old_output_file_size = -s $output;
 
 open (OUTDAT, ">$output") || die "Can't open $output\n";
 
-#my @file_types = qw(
-#	Coding_transcript
-#	Non_coding_transcript
-#	Pseudogene
-#	miRNA_primary_transcript
-#	ncRNA
-#	rRNA
-#	scRNA
-#       piRNA
-#       asRNA
-#       lincRNA
-#	snlRNA
-#	snoRNA
-#	snRNA
-#	stRNA
-#	tRNA
-#);
+my @file_types = qw(
+	Coding_transcript
+	Non_coding_transcript
+	miRNA_primary_transcript
+        pre_miRNA
+        miRNA
+        7kncRNA
+	ncRNA
+	rRNA
+        piRNA
+        asRNA
+        lincRNA
+	snoRNA
+	scRNA
+	snRNA
+	stRNA
+	tRNA
+);
 
-my @files = glob("$gffdir/*{_Coding_transcript.gff,_Non_coding_transcript.gff,_pre_miRNA.gff,_miRNA_primary_transcript.gff,_7kncRNA.gff,_ncRNA.gff,_rRNA.gff,_asRNA,_lincRNA,_scRNA.gff,_piRNA.gff,_snlRNA.gff,_snoRNA.gff,_snRNA.gff,_stRNA.gff,_tRNA.gff}");
+
+my @files;
+if ($wormbase->assembly_type eq 'contig') {
+  @files = map { "$gffdir/$_.gff" } @file_types;
+} else {
+  foreach my $pattern (map { "$gffdir/*_${_}.gff" } @file_types) {
+    push @files, glob($pattern);
+  }
+}
+
 
 foreach my $file (@files) {
   open (IN, "<$file") || $log->log_and_die("Can't open $file\n");
@@ -115,8 +125,9 @@ foreach my $file (@files) {
     next if ($line =~ /^\s*$/);
 
     my @line = split /\t+/, $line;
+    next if $line[2] eq 'intron';
+
     if ($line[8] =~ /Transcript\s+(\S+)/) {
-      if ($line[2] eq 'intron') {next}
       my $transcript_id = $1;
       $transcript_id =~ s/"//g;
 
