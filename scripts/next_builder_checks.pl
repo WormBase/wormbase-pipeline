@@ -6,8 +6,8 @@
 # A simple script to send a check list to the person who will be performing the next
 # build to check the current build
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2014-10-01 15:43:11 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2015-03-17 17:30:53 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -146,7 +146,9 @@ if($clones) {
 	if (defined $hd->Pep_homol(3) ) { 
 	  #$log->write_to($hd->name." OK\n");
 	} else {
-	  $log->error("\tERROR: Homol_data ".$hd->name." does not contain any wublastx alignments\n");
+	  if (not_usually_missing($hd->name)) {
+	    $log->error("\tERROR: Homol_data ".$hd->name." does not contain any wublastx alignments\n");
+	  }
 	}
       }
     }
@@ -170,7 +172,12 @@ if($clones) {
 
     $count = 0;
     foreach my $hd (@hd) {
-      if (! defined $hd->Feature(2)) {$log->write_to("Undefined object for ".$hd."\n");next}
+      if (! defined $hd->Feature(2)) {
+	if (not_expected_to_be_undefined($hd->name)) {
+	  $log->write_to("Undefined object for ".$hd."\n");
+	}
+	next
+      }
       print $hd->name,"\n";
       $count++;
       # check the Feature_data line
@@ -689,17 +696,264 @@ sub check_for_missing_tags {
   foreach my $tag (keys %current_count) {
     my $cc = $current_count{$tag};
     if (! exists $db_count{$tag}) {
-      $log->error("ERROR: $class : \"$id\" is missing all '$tag' tags. There were $cc in current_DB.\n")
+	if (allow_lower_value($id, $tag, 0)) {
+	  $log->write_to("INFORMATION: $class : \"$id\" is missing all '$tag' tags. There were $cc in current_DB. This has been seen before and is expected.\n")
+	} else {
+	  $log->error("ERROR: $class : \"$id\" is missing all '$tag' tags. There were $cc in current_DB.\n")
+	}
     } else {
       if ($db_count{$tag} < $current_count{$tag} * 0.9) { # if lost more than 10% then throw an error
 	my $diff = $current_count{$tag} - $db_count{$tag};
-	$log->error("ERROR: $class : \"$id\" has lost $diff '$tag' tags. There were $cc in current_DB.\n")
+	if (allow_lower_value($id, $tag, $db_count{$tag})) {
+	  $log->write_to("INFORMATION: $class : \"$id\" has lost $diff '$tag' tags. There were $cc in current_DB. This has been seen before and is expected.\n")
+	} else {
+	  $log->error("ERROR: $class : \"$id\" has lost $diff '$tag' tags. There were $cc in current_DB.\n")
+	}
       }
     }
   }
 
 }
 
+##################################################################
+# allow a lower value of some things as they always have lower counts than in currentdb
+
+sub allow_lower_value {
+  my ($id, $tag, $count) = @_;
+
+
+  # these are allowed to have a count of zero
+  my @allowed_missing = (
+			 "WBGene00220262 : GO_term", # brugia Gene
+			 "Bm9558e : Predicted", # brugia CDS
+			 "WBGene00000273 : Ortholog_other", # elegans Gene
+			 "WBPaper00024671:AFD_vs_AWB_downregulated : Gene", # elegans Expression_cluster
+			 "WBGene00051012 : Expr_pattern", # remanei Gene
+			 "Cre-acd-1 : Former_member_of",  # remanei Gene_name
+			 "WBGene00086998 : Automated_description", # briggsae Gene
+			 "WBGene00086998 : Expr_pattern", # briggsae Gene
+			 "WBGene00119208 : Expr_pattern", # japonica Gene
+			 "CJA00088 : GO_term", # japonica CDS
+		       );
+
+  if (grep {$_ eq "$id : $tag"} @allowed_missing) {return 1}
+
+  # these throw an error if they are missing
+  if ($count == 0) {return 0}
+  my @allowed_lower = (
+		       "WBGene00000273 : Ortholog", # elegans Gene
+		       "WBGene00000273 : Expression_cluster", # elegans Gene
+		       "yk786f06.5 : Homol_homol", # elegans Sequence
+		      );
+
+  if (grep {$_ eq "$id : $tag"} @allowed_missing) {return 1}
+
+  return 0;
+}
+
+##################################################################
+# allow names of homol_data objects that are usually missing
+
+sub not_usually_missing {
+  my ($name) = @_;
+
+  my @usually_missing = (
+			 "Cjap.Contig0:wublastx_brenneri",
+			 "Cjap.Contig0:wublastx_briggsae",
+			 "Cjap.Contig0:wublastx_brugia",
+			 "Cjap.Contig0:wublastx_fly",
+			 "Cjap.Contig0:wublastx_human",
+			 "Cjap.Contig0:wublastx_japonica",
+			 "Cjap.Contig0:wublastx_pristionchus",
+			 "Cjap.Contig0:wublastx_remanei",
+			 "Cjap.Contig0:wublastx_slimSwissProt",
+			 "Cjap.Contig0:wublastx_worm",
+			 "Cjap.Contig0:wublastx_yeast",
+			 "Cjap.Contig10:wublastx_brenneri",
+			 "Cjap.Contig10:wublastx_briggsae",
+			 "Cjap.Contig10:wublastx_brugia",
+			 "Cjap.Contig10:wublastx_fly",
+			 "Cjap.Contig10:wublastx_human",
+			 "Cjap.Contig10:wublastx_pristionchus",
+			 "Cjap.Contig10:wublastx_remanei",
+			 "Cjap.Contig10:wublastx_slimSwissProt",
+			 "Cjap.Contig10:wublastx_worm",
+			 "Cjap.Contig10:wublastx_yeast",
+			 "Cjap.Contig15:wublastx_briggsae",
+			 "Cjap.Contig15:wublastx_brugia",
+			 "Cjap.Contig15:wublastx_fly",
+			 "Cjap.Contig15:wublastx_human",
+			 "Cjap.Contig15:wublastx_pristionchus",
+			 "Cjap.Contig15:wublastx_slimSwissProt",
+			 "Cjap.Contig15:wublastx_worm",
+			 "Cjap.Contig15:wublastx_yeast",
+			 "Cjap.Contig30:wublastx_brenneri",
+			 "Cjap.Contig30:wublastx_briggsae",
+			 "Cjap.Contig30:wublastx_brugia",
+			 "Cjap.Contig30:wublastx_fly",
+			 "Cjap.Contig30:wublastx_human",
+			 "Cjap.Contig30:wublastx_pristionchus",
+			 "Cjap.Contig30:wublastx_remanei",
+			 "Cjap.Contig30:wublastx_slimSwissProt",
+			 "Cjap.Contig30:wublastx_worm",
+			 "Cjap.Contig30:wublastx_yeast",
+			 "Cjap.Contig100:wublastx_brenneri",
+			 "Cjap.Contig100:wublastx_briggsae",
+			 "Cjap.Contig100:wublastx_brugia",
+			 "Cjap.Contig100:wublastx_fly",
+			 "Cjap.Contig100:wublastx_human",
+			 "Cjap.Contig100:wublastx_pristionchus",
+			 "Cjap.Contig100:wublastx_remanei",
+			 "Cjap.Contig100:wublastx_slimSwissProt",
+			 "Cjap.Contig100:wublastx_worm",
+			 "Cjap.Contig100:wublastx_yeast",
+
+			 "Cjap.Contig200:wublastx_brenneri",
+			 "Cjap.Contig200:wublastx_briggsae",
+			 "Cjap.Contig200:wublastx_brugia",
+			 "Cjap.Contig200:wublastx_fly",
+			 "Cjap.Contig200:wublastx_human",
+			 "Cjap.Contig200:wublastx_pristionchus",
+			 "Cjap.Contig200:wublastx_japonica",
+			 "Cjap.Contig200:wublastx_slimSwissProt",
+			 "Cjap.Contig200:wublastx_worm",
+			 "Cjap.Contig200:wublastx_yeast",
+
+			 "Cjap.Contig300:wublastx_brenneri",
+			 "Cjap.Contig300:wublastx_briggsae",
+			 "Cjap.Contig300:wublastx_brugia",
+			 "Cjap.Contig300:wublastx_fly",
+			 "Cjap.Contig300:wublastx_human",
+			 "Cjap.Contig300:wublastx_pristionchus",
+			 "Cjap.Contig300:wublastx_japonica",
+			 "Cjap.Contig300:wublastx_remanei",
+			 "Cjap.Contig300:wublastx_slimSwissProt",
+			 "Cjap.Contig300:wublastx_worm",
+			 "Cjap.Contig300:wublastx_yeast",
+
+			 "Cjap.Contig500:wublastx_brenneri",
+			 "Cjap.Contig500:wublastx_briggsae",
+			 "Cjap.Contig500:wublastx_brugia",
+			 "Cjap.Contig500:wublastx_fly",
+			 "Cjap.Contig500:wublastx_human",
+			 "Cjap.Contig500:wublastx_pristionchus",
+			 "Cjap.Contig500:wublastx_remanei",
+			 "Cjap.Contig500:wublastx_slimSwissProt",
+			 "Cjap.Contig500:wublastx_worm",
+			 "Cjap.Contig500:wublastx_yeast",
+
+			 "Cjap.Contig800:wublastx_brugia",
+			 "Cjap.Contig800:wublastx_fly",
+			 "Cjap.Contig800:wublastx_human",
+			 "Cjap.Contig800:wublastx_slimSwissProt",
+			 "Cjap.Contig800:wublastx_worm",
+			 "Cjap.Contig800:wublastx_yeast",
+
+			 "Bmal_v3_scaffold481:wublastx_fly",
+			 "Bmal_v3_scaffold481:wublastx_human",
+			 "Bmal_v3_scaffold481:wublastx_yeast",
+			 "Bmal_v3_scaffold56:wublastx_yeast",
+			 "Bmal_v3_scaffold1819:wublastx_fly",
+			 "Bmal_v3_scaffold1819:wublastx_pristionchus",
+			 "Bmal_v3_scaffold1819:wublastx_yeast",
+			 "Bmal_v3_scaffold1229:wublastx_brenneri",
+			 "Bmal_v3_scaffold1229:wublastx_briggsae",
+			 "Bmal_v3_scaffold1229:wublastx_brugia",
+			 "Bmal_v3_scaffold1229:wublastx_fly",
+			 "Bmal_v3_scaffold1229:wublastx_human",
+			 "Bmal_v3_scaffold1229:wublastx_japonica",
+			 "Bmal_v3_scaffold1229:wublastx_pristionchus",
+			 "Bmal_v3_scaffold1229:wublastx_remanei",
+			 "Bmal_v3_scaffold1229:wublastx_slimSwissProt",
+			 "Bmal_v3_scaffold1229:wublastx_worm",
+			 "Bmal_v3_scaffold1229:wublastx_yeast",
+			 "Bmal_v3_scaffold1007:wublastx_brenneri",
+			 "Bmal_v3_scaffold1007:wublastx_briggsae",
+			 "Bmal_v3_scaffold1007:wublastx_fly",
+			 "Bmal_v3_scaffold1007:wublastx_human",
+			 "Bmal_v3_scaffold1007:wublastx_japonica",
+			 "Bmal_v3_scaffold1007:wublastx_pristionchus",
+			 "Bmal_v3_scaffold1007:wublastx_remanei",
+			 "Bmal_v3_scaffold1007:wublastx_slimSwissProt",
+			 "Bmal_v3_scaffold1007:wublastx_worm",
+			 "Bmal_v3_scaffold1007:wublastx_yeast",
+
+			 "OVOC_OO_000008:wublastx_yeast",
+			 "OVOC_OO_000054:wublastx_fly",
+			 "OVOC_OO_000629:wublastx_brenneri",
+			 "OVOC_OO_000629:wublastx_briggsae",
+			 "OVOC_OO_000629:wublastx_brugia",
+			 "OVOC_OO_000629:wublastx_fly",
+			 "OVOC_OO_000629:wublastx_human",
+			 "OVOC_OO_000629:wublastx_japonica",
+			 "OVOC_OO_000629:wublastx_pristionchus",
+			 "OVOC_OO_000629:wublastx_remanei",
+			 "OVOC_OO_000629:wublastx_slimSwissProt",
+			 "OVOC_OO_000629:wublastx_worm",
+			 "OVOC_OO_000629:wublastx_yeast",
+			 "OVOC_OO_000690:wublastx_brenneri",
+			 "OVOC_OO_000690:wublastx_briggsae",
+			 "OVOC_OO_000690:wublastx_brugia",
+			 "OVOC_OO_000690:wublastx_fly",
+			 "OVOC_OO_000690:wublastx_human",
+			 "OVOC_OO_000690:wublastx_japonica",
+			 "OVOC_OO_000690:wublastx_pristionchus",
+			 "OVOC_OO_000690:wublastx_remanei",
+			 "OVOC_OO_000690:wublastx_slimSwissProt",
+			 "OVOC_OO_000690:wublastx_worm",
+			 "OVOC_OO_000690:wublastx_yeast",
+			);
+
+  if (grep {$_ eq $name} @usually_missing) {return 0}
+  return 1;
+}
+##################################################################
+# 
+
+sub not_expected_to_be_undefined {
+  my ($name) = @_;
+
+  my @expected_to_be_undefined = (
+				  "Cjap.Contig15:RNASeq:1",
+				  "Cjap.Contig15:RNASeq_forward_reads:1",
+				  "Cjap.Contig30:inverted",
+				  "Cjap.Contig30:RNASeq:1",
+				  "Cjap.Contig30:RNASeq_forward_reads:1",
+				  "Cjap.Contig30:RNASeq_reverse_reads:1",
+				  "Cjap.Contig200:inverted",
+				  "Cjap.Contig200:RNASeq:1",
+				  "Cjap.Contig200:RNASeq_forward_reads:1",
+				  "Cjap.Contig200:RNASeq_reverse_reads:1",
+				  "Cjap.Contig300:RNASeq_forward_reads:1",
+				  "Bmal_v3_scaffold968:inverted",
+				  "Bmal_v3_scaffold968:RNASeq_stranded_reads:1",
+				  "Bmal_v3_scaffold481:RNASeq_stranded_reads:1",
+				  "Bmal_v3_scaffold56:RNASeq_stranded_reads:1",
+				  "Bmal_v3_scaffold921:inverted",
+				  "Bmal_v3_scaffold921:RNASeq_stranded_reads:1",
+				  "Bmal_v3_scaffold1819:inverted",
+				  "Bmal_v3_scaffold1819:RNASeq_stranded_reads:1",
+				  "Bmal_v3_scaffold1229:Confirmed_intron_RNASeq",
+				  "Bmal_v3_scaffold1229:inverted",
+				  "Bmal_v3_scaffold1229:RNASeq_stranded_reads:1",
+				  "Bmal_v3_scaffold1007:inverted",
+				  "Bmal_v3_scaffold1007:RNASeq_stranded_reads:1",
+				  "Bmal_v3_scaffold2080:inverted",
+				  "Bmal_v3_scaffold2080:RNASeq_stranded_reads:1",
+				  "Crem_Contig0:RNASeq_stranded_reads:16",
+				  "OVOC_OO_000001:RNASeq_stranded_reads:1",
+				  "OVOC_OO_000001:RNASeq_stranded_reads:2",
+				  "OVOC_OO_000008:Confirmed_intron_RNASeq",
+				  "OVOC_OO_000008:RNASeq_stranded_reads:1",
+				  "OVOC_OO_000054:Confirmed_intron_RNASeq",
+				  "OVOC_OO_000629:inverted",
+				  "OVOC_OO_000629:RNASeq_stranded_reads:1",
+				  "OVOC_OO_000690:inverted",
+				);
+
+  if (grep {$_ eq $name} @expected_to_be_undefined) {return 0}
+  return 1;
+}
 ##################################################################
 # open tace connection to get the object and slurp up the contents
 
