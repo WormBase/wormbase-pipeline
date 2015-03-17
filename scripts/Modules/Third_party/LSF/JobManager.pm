@@ -62,7 +62,7 @@ sub wait_all_children{
         $dependancy =~ s/\&\&$//;
     }
     
-    my $job = LSF::Job->submit_top( new_flags( [ $this->params ],['-I',-w => $dependancy])
+    my $job = LSF::Job->submit_top( new_flags( [ $this->params ],['-I',-w => $dependancy, -M => 100, -R => 'select[mem>100] rusage[mem=100]' ])
                                               ,"echo LSF::JobManager finished waiting for " . scalar @jobs . " jobs" );
     
 	$options{history} = 1 unless exists $options{history};
