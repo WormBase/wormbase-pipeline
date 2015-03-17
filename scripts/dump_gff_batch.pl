@@ -83,7 +83,7 @@ my $lsf = LSF::JobManager->new();
 my $host = qx('hostname');chomp $host;
 $port = 23100 if not $port;
 if (scalar(@chromosomes) > 50){
-  $wormbase->run_command("($giface_server $database $port 600:6000000:1000:600000000>/dev/null)>&/dev/null &",$log);
+  $wormbase->run_command("($giface_server $database $port 1200:6000000:1000:600000000>/dev/null)>&/dev/null &",$log);
   sleep 20;
 }
 
