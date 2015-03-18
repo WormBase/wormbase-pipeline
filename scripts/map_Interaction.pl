@@ -1,13 +1,11 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/usr/bin/env perl
 #
 # map_Interaction.pl
 #
 # Add information to Interaction objects via aceperl follows....
 #
-# by Dan Lawson
-#
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-10-14 10:16:24 $
+# Last updated on: $Date: 2015-03-18 10:16:06 $
 
 use strict;
 use warnings;
@@ -20,191 +18,165 @@ use Ace;
 # variables and command-line options #
 ######################################
 
-my $maintainers = "All";
-my $output;     # output ace file
-my $help;       # Help perldoc
-my $test;       # Test mode
-my $debug;      # Debug mode, verbose output to user running script
-my $verbose;    # Verbose mode
-my $noload;     # do not load to autoace
-my $store;      # specify a frozen configuration file
+my ($output, $test, $debug, $noload, $store, $acefile, $wb);
 
 GetOptions(
     'debug=s'   => \$debug,
-    'verbose'   => \$verbose,
     'test'      => \$test,
-    'help'      => \$help,
     'noload'    => \$noload,
     'acefile=s' => \$output,
     'store=s'   => \$store
 );
 
-# Display help if required
-&usage('Help') if ($help);
+if ($store) { 
+  $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n");
+}
+else { 
+  $wb = Wormbase->new( -debug => $debug, -test => $test ); 
+}
 
-############################
-# recreate configuration   #
-############################
-my $wb;
-if ($store) { $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
-else { $wb = Wormbase->new( -debug => $debug, -test => $test, ) }
-
-###########################################
-# Variables Part II (depending on $wb)    #
-###########################################
-$test  = $wb->test  if $wb->test;     # Test mode
-$debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one user
 my $tace  = $wb->tace;                # tace executable path
 my $dbdir = $wb->autoace;             # Database path
 
-$output = $output ? $output : "$dbdir/acefiles/Interaction_connections.ace";    # output file path
-print "// Test mode:\n// searching against $dbdir\n// output written to $output\n\n" if $test;
+$output = "$dbdir/acefiles/Interaction_connections.ace" if not defined $output;
 my $log = Log_files->make_build_log($wb);
-
-open( OUTPUT, ">$output" ) || die "Can't open output file $output\n";
 
 #####################
 # open a connection #
 #####################
 
 my $db = Ace->connect( -path    => "$dbdir", -program => $tace)
-  || do { print "Connection failure: ", Ace->error; die(); };
+    or $log->log_and_die("Could not successfully connect to Acedb $dbdir\n");
 
-my @interactions = $db->fetch( -class => 'Interaction', -name  => '*');
+open(my $outfh, ">$output" ) || die "Can't open output file $output\n";
 
-# Loop through each YH object
+my @interactions = $db->fetch( -query => 'Find Interaction WHERE Variation_Interactor OR Unaffiliated_variation');
+
 foreach my $interaction (@interactions) {
+  my (%results, %current_genes, %delete_unaffiliated);
 
-  print "// Interaction : \"$interaction\"\n" if ($verbose);
-  
-  if ( defined( $interaction->PCR_interactor ) ) {
-    my $pcr_name = $interaction->PCR_interactor;
-    
-    my $pcr = $db->fetch( PCR_product => $pcr_name );
-    
-    if ( defined( $pcr->Overlaps_CDS ) ) {
-      my @cds_names = $pcr->Overlaps_CDS;
-      print OUTPUT "\nInteraction : \"$interaction\"\n";
+  my $delete_unaffiliated = 0;
+
+  if (defined $interaction->get('Interactor_overlapping_Gene')) {
+    foreach my $g ($interaction->get('Interactor_overlapping_Gene')) {
+      my @evis;
+      foreach my $col ($g->col) {
+        my @evi_cmps = ($col->name);
+        if ($col->right) {
+          push @evi_cmps, $col->right->name;
+        }
       
-      foreach my $cds_name (@cds_names) {
-        print OUTPUT "Interactor_overlapping_CDS $cds_name\n";
+        my $evidence = join(" ", @evi_cmps);
+        push @evis, $evidence;
+      }
+      $current_genes{$g} = \@evis;
+    }
+  }
+
+  if (defined $interaction->get('Variation_interactor') ) {
+    foreach my $v ($interaction->get('Variation_interactor')) {
+      my @evis;
+      foreach my $col ($v->col) {
+        my @evi_cmps = ($col->name);
+        if ($col->right) {
+          push @evi_cmps, $col->right->name;
+        }
         
-        my $cds = $db->fetch( CDS => $cds_name );
-        my $gene = $cds->Gene;
-        print OUTPUT "Interactor_overlapping_Gene $gene\n";
-        $cds->DESTROY();
+        my $evidence = join(" ", @evi_cmps);
+        push @evis, $evidence;
       }
-      print OUTPUT "\n";
       
-      $pcr->DESTROY();
-    }
-  }
-  
-  if ( defined( $interaction->Sequence_interactor ) ) {
-    my $target = $interaction->Sequence_interactor;
+      my $var = $db->fetch( Variation => $v );
+      if (defined $var->Gene) {
+        my @gene = $var->Gene;
+        my (%found, %not_found);
 
-    my $seq = $db->fetch( Sequence => $target );
-
-    if ( defined( $seq->Matching_CDS ) ) {
-      my @cds_target = $seq->Matching_CDS;
-      print OUTPUT "\nInteraction : \"$interaction\"\n";
-
-      foreach my $cds_name (@cds_target) {
-        print OUTPUT "Interactor_overlapping_CDS $cds_name\n";
-
-        my $cds = $db->fetch( CDS => $cds_name );
-        my $gene_target = $cds->Gene;
-        print OUTPUT "Interactor_overlapping_Gene $gene_target\n";
-        $cds->DESTROY();
+        foreach my $g (@gene) {
+          if (exists $current_genes{$g->name}) {
+            $found{$g} = 1;
+          } else {
+            $not_found{$g} = 1;
+          }
+        }
+        if (keys %found) {
+          # transfer evidence if the gene does not already have some
+          foreach my $g (keys %found) {
+            if (@evis and not @{$current_genes{$g}}) {
+              $log->write_to("$interaction : Transferring Info only from $var to existing gene connection $g\n")
+                  if $debug;
+              $results{Interactor_overlapping_gene}->{$g->name} = \@evis;
+            } elsif (@{$current_genes{$g}} and not @evis) {
+              $log->write_to("$interaction : Transferring Info only from $g to existing Variation_interactor $v\n")
+                  if $debug;
+              $results{Variation_interactor}->{$v} = $current_genes{$g}
+            }
+          } 
+        } else {
+          $log->write_to(sprintf("%s : Adding new gene connections (%s) with Info via %s\n", 
+                                 $interaction, 
+                                 join(",", keys %not_found), 
+                                 $v)) if $debug;
+          foreach my $g (keys %not_found) {
+            $results{Interactor_overlapping_gene}->{$g} = \@evis;
+          }
+        }
       }
-      print OUTPUT "\n";
-      $seq->DESTROY();
+      $var->DESTROY();
     }
   }
-  $interaction->DESTROY();
-}
 
+  if (defined $interaction->get('Unaffiliated_variation')) {
+    foreach my $v ($interaction->get('Unaffiliated_variation')) {
+      my $var = $db->fetch( Variation => $v );
+      if (defined $var->Gene) {
+        foreach my $g ($var->Gene) {
+          if (exists $current_genes{$g->name}) {
+            $log->write_to("$interaction : Promoting unaffilated variation $v to Variation_interactor\n")
+                if $debug;
+            $results{Variation_Interactor}->{$v} = $current_genes{$g->name};
+            $delete_unaffiliated{$v} = 1;
+          }
+        }
+      }
+
+      $var->DESTROY();
+    }
+  }
+
+  $interaction->DESTROY();
+
+  if (keys %results) {
+    print $outfh "\nInteraction : \"$interaction\"\n";
+    foreach my $tag (keys %results) {
+      foreach my $obj (keys %{$results{$tag}}) {
+        my @evi = @{$results{$tag}->{$obj}};
+        if (@evi) {
+          foreach my $evi (@evi) {
+            print $outfh "$tag \"$obj\" $evi\n";
+          }
+        } else {
+            print $outfh "$tag \"$obj\"\n";
+        }
+      }
+    }
+  }
+  foreach my $v (sort keys %delete_unaffiliated) {
+    print $outfh "\nInteraction : \"$interaction\"\n";
+    print $outfh "-D Unaffiliated_variation \"$v\"\n";
+  }
+}
+close($outfh) or $log->log_and_die("Could not succesfully close $acefile\n");
 $db->close;
 
-close(OUTPUT);    # close the output filehandle
 
-###############
-# hasta luego #
-###############
+
+
 unless ($noload) {
-  $log->write_to("Loading file to autoace\n");
+  $log->write_to("Loading file to autoace\n") if $debug;
   $wb->load_to_database( $wb->autoace, $output, 'map_interaction_script', $log );
 }
 
 $log->mail();
 exit(0);
 
-###############################
-# Prints help and disappears  #
-###############################
-
-##############################################################
-#
-# Subroutines
-#
-##############################################################
-
-##########################################
-
-sub usage {
-    my $error = shift;
-
-    if ( $error eq 'Help' ) {
-
-        # Normal help menu
-        system( 'perldoc', $0 );
-        exit(0);
-    }
-}
-
-############################################
-
 __END__
-
-=pod
-
-=head2 NAME - map_Y2H.pl
-
-=head1 USAGE
-
-=over 4
-
-=item map_Y2H.pl [-options]
-
-=back
-
-map_Y2H.pl connects Yeast2Hybruid objects to the Gene and CDS objects
-via the PCR_bait and Sequence_target data stored within the database.
-
-map_Y2H.pl mandatory arguments:
-
-=over 4
-
-=item none
-
-=back
-
-map_Y2H.pl optional arguments:
-
-=over 4
-
-=item -debug, Debug mode
-
-=item -verbose, Verbose mode
-
-=item -test, Test mode, generate the acefile but do not upload them 
-
-=item -help, Help pages
-
-=item -store specify a configuration file
-
-=item -outfile specify location for the output Ace (if you want to use it outside of the build)
-
-=back
-
-=cut
