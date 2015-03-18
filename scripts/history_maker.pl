@@ -150,7 +150,7 @@ if (defined $user){
   } elsif ($user eq 'gw3') {
     $person = 'WBPerson4025';
   } elsif ($user eq 'mh6') {
-    $person = 'WBPerson4055');
+    $person = 'WBPerson4055';
   } elsif ($user eq 'jl16') {
     $person = 'WBPerson28994';
   }
