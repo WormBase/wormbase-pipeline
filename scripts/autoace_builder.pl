@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2015-03-19 12:17:46 $
+# Last edited on: $Date: 2015-03-19 22:11:57 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -187,7 +187,10 @@ $wormbase->run_script( 'load_data_sets.pl -misc', $log) if $misc_data_sets;
 $wormbase->run_script( 'load_data_sets.pl -homol', $log) if $homol_data_sets;
 # $build_dumpGFF.pl; (homol) is run chronologically here but previous call will operate
 $wormbase->run_script( 'make_wormrna.pl'                         , $log) if $rna;
-$wormbase->run_script( 'confirm_genes.pl'                        , $log) if $confirm;
+if ($confirm) {
+  $wormbase->run_script( 'confirm_genes.pl', $log);
+  $wormbase->run_script( 'update_Common_data.pl -cds2status ', $log);
+}    
 $wormbase->run_script( 'map_operons.pl'                          , $log) if $operon;
 $wormbase->run_script( "get_ena_submission_xrefs.pl -proteinxrefs", $log) if $enaprotxrefs;
 $wormbase->run_script( 'make_wormpep.pl -all -final'                  , $log) if $finish_wormpep;
