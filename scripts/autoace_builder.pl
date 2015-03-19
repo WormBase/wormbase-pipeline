@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2015-03-10 11:15:15 $
+# Last edited on: $Date: 2015-03-19 12:17:46 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -543,7 +543,7 @@ sub make_UTR {
 }
 
 sub post_merge_steps {
-  $wormbase->run_script('inherit_GO_terms.pl -motif ', $log );
+  $wormbase->run_script('transfer_interpro_GO_terms.pl', $log );
   $wormbase->run_script("cluster_gene_connection.pl", $log);
   $wormbase->run_script("tier3_stubs.pl", $log);
 }
