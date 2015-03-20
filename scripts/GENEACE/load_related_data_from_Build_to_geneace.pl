@@ -8,8 +8,8 @@
 # RUN this script anytime during the build or after the build when get_interpolated_map 
 # and update_inferred multi-pt data are done
 #
-# Last updated on: $Date: 2013-01-09 10:45:06 $
-# Last updated by: $Author: pad $
+# Last updated on: $Date: 2015-03-20 20:12:13 $
+# Last updated by: $Author: klh $
 
 
 use strict;
@@ -132,6 +132,7 @@ if (-e $paper) {
 foreach my $ftype ("binding_site", "binding_site_region", "promoter", "regulatory_region") {
   my $ffile = $wormbase->acefiles . "/feature_${ftype}.ace";
   if (-e $ffile) {
+    $log->write_to("Parsing out and loading parent info from $ffile...\n");
     my $tmp_file = &parse_out_parent_sequences($ffile);
     $wormbase->load_to_database($geneace, $tmp_file, "feature_${ftype}_parents",$log);
     unlink $tmp_file;
