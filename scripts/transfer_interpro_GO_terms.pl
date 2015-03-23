@@ -5,7 +5,7 @@
 # Transfers GO_term annotations from protein domains up to the gene
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2015-03-19 12:17:46 $      
+# Last updated on: $Date: 2015-03-23 15:26:41 $      
 
 use strict;
 use warnings;
@@ -83,14 +83,15 @@ $log->log_and_die("Did not find any annotations to transfer. Something probably 
 
 open (my $acefh,">$acefile") or $log->log_and_die("cant open $acefile :$!\n");
 foreach my $annot (@annots) {
-  my ($gene, $go_id, $motif) = @$annot;
-  printf $acefh "\nGO_annotation : \"%d\"\n", $annot_id++;
+  my ($gene, $go_id, $motif_list) = @$annot;
+  printf $acefh "\nGO_annotation : \"%08d\"\n", $annot_id++;
   print $acefh "Gene \"$gene\"\n";
   print $acefh "GO_term \"$go_id\"\n";
   print $acefh "GO_code \"IEA\"\n";
-  print $acefh "Motif \"$motif\"\n";
   print $acefh "GO_reference \"Gene Ontology Consortium\" \"GO_REF\" \"0000002\"\n";
-  
+  foreach my $motif (@$motif_list) {
+    print $acefh "Motif \"$motif\"\n";
+  }
 }
 close($acefh) or $log->log_and_die("Could not cleanly close $acefile\n");
 
@@ -156,35 +157,12 @@ sub transfer_from_motif {
   
   foreach my $gene (sort keys %res) {
     foreach my $go_acc (sort keys %{$res{$gene}}) {
-      foreach my $motif (sort keys %{$res{$gene}->{$go_acc}}) {
-        push @annotations, [$gene, $go_acc, $motif];
-      }
+      my @motifs = sort keys %{$res{$gene}->{$go_acc}};
+      push @annotations, [$gene, $go_acc, \@motifs];
     }
   }
   $log->write_to(sprintf("Propagated %d annotations\n", scalar(@annotations)));
   
-  return @annotations;
-}
-
-#################################################
-sub transfer_from_tmhmm {
-
-  my $mydb = Ace->connect(-path => $database ) 
-      or $log->log_and_die("Connection failure " . Ace->error . "\n");
-
-  my @annotations;
-
-  my $query = "FIND Protein WHERE Species = \"".$wormbase->full_name."\"" 
-      . " WHERE Feature AND NEXT = \"Tmhmm\";" 
-      . " FOLLOW Corresponding_CDS;"
-      . " FOLLOW Gene";
-  my $genes = $mydb->fetch_many(-query => $query);
-  while(my $gene = $genes->next){
-    push @annotations, [$gene, "GO:0016021", "CBS", "TMHMM"];
-  }
-
-  $mydb->close or $log->log_and_die("Could not close Ace connection\n");
-
   return @annotations;
 }
 
