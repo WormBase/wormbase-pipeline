@@ -5,7 +5,7 @@
 # Adds interpolated map positions and other information to gene and allele lines
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2014-08-27 21:50:10 $
+# Last updated on: $Date: 2015-03-23 12:11:34 $
 
 
 use strict;                                      
@@ -103,7 +103,7 @@ while (<$gff_in_fh>) {
       $f[8] .= " ; Sequence_name \"$sequence_name_h->{$gene}\"" 
           if exists $sequence_name_h->{$gene} and $f[8] !~ /Sequence_name/;
 
-      $f[8] .= " ; Biotype\"$biotype_h->{$gene}\"" 
+      $f[8] .= " ; Biotype \"$biotype_h->{$gene}\"" 
           if exists $biotype_h->{$gene} and $f[8] !~ /Biotype/;
     }
     
