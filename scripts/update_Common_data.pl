@@ -5,7 +5,7 @@
 # by Anthony Rogers et al
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2015-03-23 10:26:05 $
+# Last updated on: $Date: 2015-03-23 10:29:14 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -188,6 +188,7 @@ if ($all) {
     my $cmd = "update_Common_data.pl -${arg}";
     $cmd .= " -database $database" if defined $database;
     $cmd = $wormbase->build_cmd_line($cmd, $store_file);
+    $log->write_to("Submitting LSF job: $cmd\n");
     $lsf->submit(@bsub_options, $cmd);
   }
     
