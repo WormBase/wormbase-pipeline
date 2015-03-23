@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2015-03-19 22:11:57 $
+# Last edited on: $Date: 2015-03-23 10:54:31 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -546,13 +546,13 @@ sub make_UTR {
 }
 
 sub post_merge_steps {
+  $wormbase->run_script("ONTOLOGY/update_GO_terms.pl", $log); 
   $wormbase->run_script('transfer_interpro_GO_terms.pl', $log );
   $wormbase->run_script("cluster_gene_connection.pl", $log);
   $wormbase->run_script("tier3_stubs.pl", $log);
 }
 
 sub ontologies {
-  $wormbase->run_script( "ONTOLOGY/update_GO_terms.pl", $log); 
   $wormbase->run_script( "ONTOLOGY/make_anatomy_GAF.pl", $log);
   $wormbase->run_script( "ONTOLOGY/make_phenotype_GAF.pl", $log);
   $wormbase->run_script( "ONTOLOGY/make_disease_GAF.pl", $log);
