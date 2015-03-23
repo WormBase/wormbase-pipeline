@@ -5,7 +5,7 @@
 # by Anthony Rogers et al
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2014-11-20 11:29:49 $
+# Last updated on: $Date: 2015-03-23 10:26:05 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -153,9 +153,12 @@ our $tace= $wormbase->tace;
 if ($all) { 
 
   my @all_args = qw( clone2acc clone2size cds2wormpep cds2pid
-	    cds2status clone2seq clone2sv clone2centre genes2lab
+	    cds2status clone2sv clone2centre genes2lab
 	    worm_gene2cgc worm_gene2geneID worm_gene2class est
 	    est2feature gene_id clone2type cds2cgc rna2cgc pseudo2cgc clone2dbid rna2briefID);
+
+  # Deal with clone2seq up front, because that routine submits its own LSF jobs
+  &write_clones2seq();
 
   $wormbase->checkLSF;
   my $lsf = LSF::JobManager->new();
@@ -163,16 +166,15 @@ if ($all) {
   my $scratch_dir = $wormbase->logs;
   my $job_name = "worm_".$wormbase->species."_commondata";
 
-
   foreach my $arg (@all_args) {
     my $err = "$scratch_dir/update_Common_data.pl.lsf.${arg}.err";
     my $out = "$scratch_dir/update_Common_data.pl.lsf.${arg}.out";
     my @bsub_options = (-e => "$err", -o => "$out");
-    if ($arg eq 'clone2seq' or
-        $arg eq 'est2feature' or
-        $arg eq 'gene_id' or 
-        $arg eq 'est' or
-        $arg eq 'cds2wormpep') {
+    if (
+      $arg eq 'est2feature' or
+      $arg eq 'gene_id' or 
+      $arg eq 'est' or
+      $arg eq 'cds2wormpep') {
       push @bsub_options, (
         -M => "6000", 
         -R => "\"select[mem>6000] rusage[mem=6000]\"",
@@ -185,14 +187,10 @@ if ($all) {
     }
     my $cmd = "update_Common_data.pl -${arg}";
     $cmd .= " -database $database" if defined $database;
-    if ($arg eq 'clone2seq') {
-      if ($species eq 'elegans') {$cmd .= ' all'} # write out sequence hash for all species in main build
-      else {$cmd .= " $species"}                  # else write only the current species .fa file
-    }
     $cmd = $wormbase->build_cmd_line($cmd, $store_file);
     $lsf->submit(@bsub_options, $cmd);
   }
-
+    
   $lsf->wait_all_children( history => 1 );
   $log->write_to("All Common_data jobs have completed!\n");
   my @problem_cmds;
@@ -203,7 +201,6 @@ if ($all) {
     }
   }
   $lsf->clear;
-
 } else {
   # run the various options depending on command line arguments
   &write_cds2protein_id   if ($cds2protein_id);
@@ -765,11 +762,7 @@ sub write_clones2seq  {
     }
   }
 
-
-  # $clone2seq holds the species
-  if ($clone2seq eq "") {$clone2seq = $wormbase->species;} # the default is to do this species only
-
-  if ($clone2seq eq 'all') { 
+  if ($clone2seq eq 'all' or not $clone2seq) { 
   # set up LSF jobs each doing a different species, otherwise TACE
   # can crash or it takes a VERY long time
     $wormbase->checkLSF;
