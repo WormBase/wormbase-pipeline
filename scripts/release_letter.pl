@@ -2,8 +2,8 @@
 #
 # release_letter.pl                            
 # 
-# Last updated by: $Author: gw3 $               
-# Last updated on: $Date: 2014-08-29 13:02:52 $
+# Last updated by: $Author: klh $               
+# Last updated on: $Date: 2015-03-25 14:32:19 $
 
 # Generates a release letter at the end of build.
 #
@@ -80,7 +80,8 @@ if( $opt_l) {
 
   if (not -e "$reports_dir/chromosome_changes") {
     $log->write_to("Generating C. elegans chromosomal sequence changes Data...");
-    open (my $chrfh, "> $reports_dir/chromosome_changes") || die "Can't open file $reports_dir/chromosome_changes\n";
+    open (my $chrfh, "> $reports_dir/chromosome_changes") or 
+        $log->log_and_die("Can't open file $reports_dir/chromosome_changes\n");
     my $text = $assembly_mapper->write_changes( $wormbase );
     printf $chrfh $text;
     close($chrfh);
@@ -217,7 +218,7 @@ if( $opt_l) {
   printf $rlfh "Genes in Operons    %d\n\n", $operon_data{genes_in_operons};
 
   $log->write_to("Writing GO stats...\n");
-  &write_GO_stats($rlfh, $db, "elegans");
+  &write_GO_stats($rlfh, $wormbase);
   $db->close;
 
   printf $rlfh "\n-=============================================================================-\n";
@@ -356,32 +357,29 @@ sub write_cds_confirmation_status {
 
 #########################################
 sub write_GO_stats {
-  my ($fh, $db, $species) = @_;
+  my ($fh, $wb ) = @_;
 
-  my (%gene2code,%go2code,%assocs_by_code,$rnai_derived_assocs, $motif_derived_assocs, $curator_derived_assocs);
-  
-  my $iter = $db->fetch_many(-query => "Find Gene WHERE GO_term AND Species = \"*elegans\"");
-  while(my $gene = $iter->next) {
-    foreach my $line ($gene->GO_term) {
-      my $term = $line->name;
-      my $code = $line->right->name;
-      my $evi_tag = $line->right->right->name;
-      my $evi_val = $line->right->right->right->name;
+  my (%gene2code,%go2code,%assocs_by_code,%assocs_by_source,$iea_interpro, $iea_other);
+
+  my $go_annot_file = $wb->ontology . "/gene_association.WS${ver}.wb.c_elegans";
+  open(my $gaf, $go_annot_file) or $log->log_and_die("Could not open $go_annot_file for reading");
+  while(<$gaf>) {
+    next if /^\!/;
+    my @l = split(/\t/, $_);
+    my ($gene, $term, $ref, $code, $source,) = @l[1,4,5,6,13];
+
+    $term =~ s/GO://;
       
-      $term =~ s/GO://;
-      
-      $gene2code{$gene->name}->{$code} = 1;
-      $go2code{$term}->{$code} = 1;
-      $assocs_by_code{$code}++;
-      
-      if ($evi_tag eq 'Inferred_automatically') {
-        if ($evi_val =~ /WBRNAi/) {
-          $rnai_derived_assocs++;
-        } elsif ($evi_val =~ /INTERPRO/ or $evi_val =~ /TMHMM/) {
-          $motif_derived_assocs++;
-        }
+    $gene2code{$gene}->{$code} = 1;
+    $go2code{$term}->{$code} = 1;
+    $assocs_by_code{$code}++;
+    $assocs_by_source{$source}++;
+ 
+    if ($code eq 'IEA') {
+      if ($ref eq 'GO_REF:0000002') {
+        $iea_interpro++;
       } else {
-        $curator_derived_assocs++;
+        $iea_other++;
       }
     }
   }
@@ -445,13 +443,16 @@ sub write_GO_stats {
   printf $fh "-------------------------------\n\n";
   
   printf $fh "GO_codes - used for assigning evidence\n";
+  printf $fh "  IBA Inferred by Biological aspect of Ancestor\n";
   printf $fh "  IC  Inferred by Curator\n";
   printf $fh "  IDA Inferred from Direct Assay\n";
   printf $fh "  IEA Inferred from Electronic Annotation\n";
   printf $fh "  IEP Inferred from Expression Pattern\n";
   printf $fh "  IGI Inferred from Genetic Interaction\n";
+  printf $fh "  IKR Inferred from Key Residues\n";
   printf $fh "  IMP Inferred from Mutant Phenotype\n";
   printf $fh "  IPI Inferred from Physical Interaction\n";
+  printf $fh "  IRD Inferred from Rapid Divergence\n";
   printf $fh "  ISM Inferred from Sequence Model\n";
   printf $fh "  ISO Inferred from Sequence Orthology\n";
   printf $fh "  ISS Inferred from Sequence (or Structural) Similarity\n";
@@ -461,14 +462,17 @@ sub write_GO_stats {
   printf $fh "  TAS Traceable Author Statement\n\n";
   
   printf $fh "Number of gene<->GO_term associations    %5d\n", $total_assocs;
-  printf $fh "  Source of associations\n";
-  printf $fh "    Manually curated                 %5d\n", $curator_derived_assocs;
-  printf $fh "    Propagated from RNAi phenotype   %5d\n", $rnai_derived_assocs;
-  printf $fh "    Propagated from protein domains  %5d\n", $motif_derived_assocs;
-  printf $fh "  GO-code breakdown of associations:\n";
+  printf $fh "  Breakdown by annotation provider:\n";
+  printf $fh "    %-20s %5d\n", "WormBase", $assocs_by_source{"WB"};
+  foreach my $k (sort { $assocs_by_source{$b} <=> $assocs_by_source{$a} } keys %assocs_by_source) {
+    next if $k eq 'WB';
+    printf $fh "    %-20s %5d\n",  $k, $assocs_by_source{$k};
+  }
+  printf $fh "  Breakdown by evdience code:\n";
   printf $fh "    IEA     %d\n", $iea_assocs;
+  printf $fh "      Interpro2GO %5d\n", $iea_interpro; 
+  printf $fh "      Other       %5d\n", $iea_other; 
   printf $fh "    non-IEA %d\n", $non_iea_assocs;
-  printf $fh "    non-IEA breakdown:\n";
   foreach my $k (sort keys %assocs_by_code) {
     next if $k eq 'IEA';
     printf $fh "      %-3s   %5d\n", $k, $assocs_by_code{$k};
