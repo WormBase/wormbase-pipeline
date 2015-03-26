@@ -42,11 +42,18 @@ sub print_wormbase_GAF_header {
 
 ####################################
 sub get_GAF_date {
-  
-  my $year  = (1900 + (localtime)[5]);
-  my $month = (1 + (localtime)[4]);
-  my $day   = (localtime)[3];
-  
+  my ($in_date) = @_;
+
+  my ($year, $month, $day);
+
+  if (defined $in_date) {
+    ($year, $month, $day) = split(/\-/, $in_date);
+  } else {
+    $year  = (1900 + (localtime)[5]);
+    $month = (1 + (localtime)[4]);
+    $day   = (localtime)[3];
+  }
+
   my $date = sprintf("%04d%02d%02d", $year, $month, $day);
   
   return $date;
@@ -66,16 +73,20 @@ sub get_gene_info {
     chomp;
     s/\"//g;
 
-    my @l = split(/\s+/, $_);
-    
-    next if $l[0] !~ /^WBGene/;
+    my ($wbgene, $public_name, $sequence_name, $other_name, $status, $species) = split(/\t/, $_);
+    next if $wbgene !~ /^WBGene/;
 
-    $data{$l[0]} = {
-      public_name   => $l[1],
-      status        => $l[2],
-      taxid         => $l[3],
-      sequence_name => ($l[4]) ? $l[4] : "",
-    };
+    if (not exists $data{$wbgene}) {
+      $data{$wbgene} = {
+        public_name   => $public_name,
+        sequence_name => ($sequence_name) ? $sequence_name : "",
+        other_name    => ($other_name) ? [$other_name] : [],
+        status        => $status,
+        species       => $species,
+      };      
+    } elsif ($other_name) {
+      push @{$data{$wbgene}->{other_name}}, $other_name;
+    }
   }
 
   unlink $def;
@@ -103,7 +114,8 @@ Visible
 Class 
 Class Gene 
 From 1 
- 
+Condition WBGene* 
+
 Colonne 2 
 Width 12 
 Mandatory 
@@ -112,34 +124,8 @@ Class
 Class Gene_name 
 From 1 
 Tag Public_name 
-
+ 
 Colonne 3 
-Width 12 
-Mandatory 
-Visible 
-Next_Tag 
-From 1 
-Tag Status 
- 
-Colonne 4 
-Width 12 
-Mandatory 
-Hidden 
-Class 
-Class Species 
-From 1 
-Tag Species 
-$species_condition
- 
-Colonne 5 
-Width 12 
-Mandatory 
-Visible 
-Integer 
-From 4 
-Tag NCBITaxonomyID 
-
-Colonne 6 
 Width 12 
 Optional 
 Visible 
@@ -148,6 +134,32 @@ Class Gene_name
 From 1 
 Tag Sequence_name 
  
+Colonne 4
+Width 12
+Optional
+Visible
+Class
+Class Gene_name
+From 1
+Tag Other_name
+
+Colonne 5 
+Width 12 
+Mandatory 
+Visible 
+Next_Tag 
+From 1 
+Tag Status 
+ 
+Colonne 6 
+Width 12 
+Mandatory 
+Visible 
+Class 
+Class Species 
+From 1 
+Tag Species 
+$species_condition
 
 
 EOF
