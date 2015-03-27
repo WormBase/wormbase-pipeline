@@ -5,7 +5,7 @@
 # Transfers GO_term annotations from protein domains up to the gene
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2015-03-23 15:26:41 $      
+# Last updated on: $Date: 2015-03-27 15:18:23 $      
 
 use strict;
 use warnings;
@@ -33,6 +33,8 @@ my %BAD_ACCS =  (
   'GO:0009288' => 1,  # bacterial-type flagellum
   'GO:0007391' => 1,  # dorsal closure (only_in_taxon Insecta)
   'GO:0009103' => 1,  # lipopolysaccharide biosynthetic process (only in prokaryotes)
+  'GO:0005515' => 1,  # protein binding
+  'GO:0005488' => 1,  # binding
     );
 
 
@@ -138,7 +140,7 @@ sub transfer_from_motif {
   unlink $def;
   
   foreach my $k (sort keys %missing_go_def_rejections) {
-    $log->write_to(sprintf("Rejected %d annotations for %s because it has no definition in database\n", 
+    $log->write_to(sprintf("Rejected %d annotations for %s because it has no Valid term in the database\n", 
                            $missing_go_def_rejections{$k}, 
                            $k));
   }
@@ -223,9 +225,10 @@ Visible
 Class 
 Class GO_term 
 From 1 
+Condition Valid
   
 Colonne 2 
-Width 120
+Width 12
 Mandatory
 Visible 
 Class 
