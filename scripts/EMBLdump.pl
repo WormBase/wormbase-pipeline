@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl 
 # 
-#  Last updated on: $Date: 2015-01-27 11:20:43 $
+#  Last updated on: $Date: 2015-03-30 14:54:21 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -518,9 +518,9 @@ sub process_feature_table {
       } else {
         # for all other RNA types, pass them through as
         # ncRNA/other, but record the type in a note
-        $rna_note = $mod_dir; 
+        $rna_class = ($mod_dir eq 'lincRNA')? "lncRNA" : "other";
+        $rna_note = "biotype:$mod_dir";
         $mod_dir = "ncRNA";
-        $rna_class = "other";
       }
 
       if (defined $rna_class) {
