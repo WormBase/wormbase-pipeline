@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 #
 # script to merge variations in the form:
-#   batch_variation_merge.pl -user mt3 -file FILE.TXT [-server test_wbgene_id;mcs11;3307'] [-debug mt3] [-test]
+#   batch_variation_merge.pl -user mt3 -file FILE.TXT [-server test_wbgene_id;utlt-db;3307'] [-debug mt3] [-test]
 #
 #   the File is of format:
 #   WBVar1	WBVar2	WBVar3
@@ -38,7 +38,7 @@ my ($DB,$db);
 if ($server){
     $DB = $server;
 }elsif ($test) {
-    $DB = 'test_wbgene_id;mcs11;3307';
+    $DB = 'test_wbgene_id;utlt-db;3307';
 }else {
     $DB = 'wbgene_id;shap;3303';
 }

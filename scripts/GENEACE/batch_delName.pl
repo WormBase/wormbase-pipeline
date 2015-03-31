@@ -36,7 +36,7 @@ GetOptions(
 my $log = Log_files->make_log("NAMEDB:$0:$file", $USER);
 my $DB;
 if ($test) {
-    $DB = 'test_wbgene_id;mcs11;3307';
+    $DB = 'test_wbgene_id;utlt-db;3307';
   } else {
     $DB = 'wbgene_id;shap;3303';
 }

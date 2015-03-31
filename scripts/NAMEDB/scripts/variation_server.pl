@@ -82,7 +82,7 @@ sub main {
 	'onload' => 'init()',
     });
     if ($sw->is_dev()) {
-	$DB = 'test_wbgene_id;mcs11;3307';
+	$DB = 'test_wbgene_id;utlt-db;3307';
 	$sw->banner("This is the test server");
     } else {
 	$DB = 'wbgene_id;shap;3303';

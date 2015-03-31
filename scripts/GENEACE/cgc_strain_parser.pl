@@ -7,8 +7,8 @@
 # Script to convert cgc strain file into ace file for geneace
 # Page download and update upload to geneace has been automated [ck1]
 
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2015-01-13 15:29:57 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2015-03-31 10:16:20 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -126,7 +126,7 @@ open(INPUT, $input_file) || die "Can't open inputfile!";
 
 # setup the nameserver
 
-my $DB = $test ? 'test_wbgene_id;mcs11:3307' : 'wbgene_id;shap:3303';
+my $DB = $test ? 'test_wbgene_id;utlt-db:3307' : 'wbgene_id;shap:3303';
 my $db = NameDB_handler->new($DB,$ndbUser,$ndbPass,'/nfs/WWWdev/SANGER_docs/data');
 my $geneAceDB = Ace->connect(-path => $geneace_dir) or die Ace->error;
 $db->setDomain('Variation');
