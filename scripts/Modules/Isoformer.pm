@@ -7,7 +7,7 @@
 # Methods for running the Isoformer pipeline and other useful things
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2015-04-02 11:09:52 $      
+# Last updated on: $Date: 2015-04-17 13:19:51 $      
 
 =pod
 
@@ -20,7 +20,7 @@
   use Isoformer;
 
   # initialise
-  my $Isoformer = Isoformer->new($wormbase, $log);
+  my $Isoformer = Isoformer->new($wormbase, $log, $database);
 
 
 =head1 DESCRIPTION
@@ -58,12 +58,12 @@ use Coords_converter;
 =head2 
 
     Title   :   new
-    Usage   :   my $Isoformer = Isoformer->new($wormbase, $database, $log);
+    Usage   :   my $Isoformer = Isoformer->new($wormbase, $log, $database);
     Function:   initialises the object
     Returns :   Isoformer object;
     Args    :   $wormbase
                 $log
-                $database - optional path to database to store isoforms in
+                $database - path to database to get sequences, structures and genes from
                 $gff - optional location of the GFF file if it is not in the normal place
                 $notsl - optional - if true then don't try to make TSL isoforms - for debugging purposes
 
@@ -87,13 +87,13 @@ sub new {
 
   my $USER = $ENV{USER};
 
-  if (!defined $self->{'database'}) {
-    if ($species eq 'elegans') {
-      $self->{database} = "/nfs/wormpub/camace_${USER}";
-    } else {
-      $self->{database} = "/nfs/wormpub/${species}_${USER}";
-    }
+
+  if ($species eq 'elegans') {
+    $self->{curated_database} = "/nfs/wormpub/camace_${USER}";
+  } else {
+    $self->{curated_database} = "/nfs/wormpub/${species}_curation";
   }
+
 
   $self->{coords} = Coords_converter->invoke($self->{database}, undef, $self->{wormbase});
   $self->{db} = Ace->connect(-path => $self->{database}) || die "cannot connect to database at $self->{database}\n";
@@ -370,7 +370,7 @@ sub load_isoformer_method {
   $self->aceout("Colour RED\n");
   $self->aceout("CDS_colour RED\n");
   $self->aceout("Strand_sensitive Show_up_strand\n");
-  $self->aceout("Right_priority   2.64\n");
+  $self->aceout("Right_priority   1.45\n");
   $self->aceout("Overlap_mode Bumpable\n");
   $self->aceout("Show_text\n");
   $self->aceout("EMBL_feature CDS\n");
@@ -555,13 +555,13 @@ sub open_GFF_file {
   } else {
 
     if ($self->{species} eq 'elegans') {
-      $file = "/nfs/wormpub/DATABASES/current_DB/CHROMOSOMES/$chromosome.gff";
+      $file = $self->{wormbase}->autoace."/CHROMOSOMES/$chromosome.gff";
     } else {
       if ($self->{wormbase}->assembly_type eq 'contig') {      
 	$file = $self->{wormbase}->sequences . "/" . $self->{species}.".gff";
 	
       } else {
-	$file =  "/nfs/wormpub/BUILD/briggsae/CHROMOSOMES/$chromosome.gff";
+	$file =  $self->{wormbase}->autoace."/CHROMOSOMES/$chromosome.gff";
       }
     }
   }
@@ -570,7 +570,7 @@ sub open_GFF_file {
 
 }
 ###############################################################################
-# filter the list of splices and return those enclose by the specied region
+# filter the list of splices and return those enclosed by the specied region
 
 sub get_splices_in_region {
   my ($chromosome, $start, $end, $sense, $all_splices) = @_;
@@ -587,7 +587,7 @@ sub get_splices_in_region {
   return @splices;
 }
 ###############################################################################
-# filter the list of TSLs and return those enclose by the specied region
+# filter the list of TSLs and return those enclosed by the specied region
 
 sub get_TSL_in_region {
   my ($chromosome, $start, $end, $sense, $all_TSL) = @_;
@@ -685,63 +685,65 @@ sub determine_child_nodes {
 
 sub iterate_through_the_valid_structures {
   my ($self, $gene, $biotype, $confirmed, $TSL, $chromosome, $region_start, $region_end, $sense, @splices) = @_;
-
+  
   my $finished=0; # set when we have no more levels to increment up
-
+  
   my @created = ();
   my @warnings = ();
-
+  my %structures_made = ();
+  
   # get the clone coords of the region start/end
-#  print "********** in iterate_through_the_valid_structures region_end = $region_end\n";
+  #  print "********** in iterate_through_the_valid_structures region_end = $region_end\n";
   my ($region_clone, $region_clone_start, $region_clone_end) = $self->get_clone_coords($chromosome, $region_start, $region_end, $sense);
   # get any structures in this initial region
   $self->get_structures_in_region($confirmed, $sense, $region_clone, $region_clone_start, $region_clone_end);
-
+  
   do {
-
+    
     my ($chain) = &get_next_chain_of_intron_nodes(@splices);
-
+    
     my ($chrom_aug, $chrom_stop, $type, $exons) = $self->convert_to_exons($region_start, $region_end, $chain, $sense);
     # avoid bug where we have one exon of length one base
-    if (scalar @{$chain} == 1 && $chain->[0]->{start} == $chain->[0]->{end}) {
+    if (scalar @{$exons} == 1 && $exons->[0]->{start} == $exons->[0]->{end}) {
       print "SKIPPING STRUCTURE CONSISTING OF A OF 1 BASE EXON\n";
     } else {
-    
-      my $structure_warning = sanity_check($type, $chrom_aug, $chrom_stop, $exons);
-      if ($structure_warning) {push @warnings, $structure_warning}
-      
-      if ($type eq 'CDS') {
-	my ($clone, $clone_aug, $clone_stop) = $self->get_clone_coords($chromosome, $chrom_aug, $chrom_stop, $sense);
-	
-	# get structures overlapping the isoformer structure - doing
-	# this again in case we are at a clone boundary and some
-	# structures are on the superlink and some on the clone
-	$self->get_structures_in_region($confirmed, $sense, $clone, $clone_aug, $clone_stop);
-	
-	my $confirmed_ok = $self->check_not_already_curated($confirmed, $sense, $type, $clone, $clone_aug, $clone_stop, $exons);
-	if (!$confirmed_ok) {
-	  $self->make_isoform($self->{CDS_name}, $TSL, $clone, $clone_aug, $clone_stop, $sense, $exons, $gene);
-	  push @created, $self->{CDS_name}."_".$self->next_isoform();
-	  $self->inc_next_isoform();
-	}
-      } elsif ($type eq 'INVALID') { # no START and STOP found in the first and last exons
-	print "Found no good coding structure - should the region to look at be larger?\n";
-	my ($clone, $clone_aug, $clone_stop) = $self->get_clone_coords($chromosome, $chrom_aug, $chrom_stop, $sense);
-	
-	# get structures overlapping the isoformer structure - doing
-	# this again in case we are at a clone boundary and some
-	# structures are on the superlink and some on the clone
-	$self->get_structures_in_region($confirmed, $sense, $clone, $clone_aug, $clone_stop);
-	
-	my $confirmed_ok = $self->check_not_already_curated($confirmed, $sense, $type, $clone, $clone_aug, $clone_stop, $exons);
-	if (!$confirmed_ok) {
-	  $self->make_isoform($self->{ncRNA_name}, $TSL, $clone, $clone_aug, $clone_stop, $sense, $exons, $gene);
-	  push @created, $self->{ncRNA_name}."_".$self->next_isoform();
-	  $self->inc_next_isoform();
-	}
-	
+      if (check_for_duplicate_structures($chrom_aug, $chrom_stop, $type, $exons, \%structures_made)) {
+	print "Duplicate structure ignored\n";
       } else {
-	die "Type '$type' not defined\n\n";
+	my $structure_warning = sanity_check($type, $chrom_aug, $chrom_stop, $exons);
+	if ($structure_warning) {push @warnings, $structure_warning}
+	
+	if ($type eq 'CDS') {
+	  my ($clone, $clone_aug, $clone_stop) = $self->get_clone_coords($chromosome, $chrom_aug, $chrom_stop, $sense);
+	  
+	  # get structures overlapping the isoformer structure - doing
+	  # this again in case we are at a clone boundary and some
+	  # structures are on the superlink and some on the clone
+	  $self->get_structures_in_region($confirmed, $sense, $clone, $clone_aug, $clone_stop);
+	  
+	  my $confirmed_ok = $self->check_not_already_curated($confirmed, $sense, $type, $clone, $clone_aug, $clone_stop, $exons);
+	  if (!$confirmed_ok) {	  
+	    push @created, $self->make_isoform($self->{CDS_name}, $TSL, $clone, $clone_aug, $clone_stop, $sense, $exons, $gene);
+	    $self->inc_next_isoform();
+	  }
+	} elsif ($type eq 'INVALID') { # no START and STOP found in the first and last exons
+	  print "Found no good coding structure - should the region to look at be larger?\n";
+	  my ($clone, $clone_aug, $clone_stop) = $self->get_clone_coords($chromosome, $chrom_aug, $chrom_stop, $sense);
+	  
+	  # get structures overlapping the isoformer structure - doing
+	  # this again in case we are at a clone boundary and some
+	  # structures are on the superlink and some on the clone
+	  $self->get_structures_in_region($confirmed, $sense, $clone, $clone_aug, $clone_stop);
+	  
+	  my $confirmed_ok = $self->check_not_already_curated($confirmed, $sense, $type, $clone, $clone_aug, $clone_stop, $exons);
+	  if (!$confirmed_ok) {
+	    push @created, $self->make_isoform($self->{ncRNA_name}, $TSL, $clone, $clone_aug, $clone_stop, $sense, $exons, $gene);
+	    $self->inc_next_isoform();
+	  }
+	  
+	} else {
+	  die "Type '$type' not defined\n\n";
+	}
       }
     }
       
@@ -752,12 +754,36 @@ sub iterate_through_the_valid_structures {
 }
 
 ###############################################################################
+# check against the hash of structures already made in this region and return false if not made before
+
+sub check_for_duplicate_structures {
+  my ($chrom_aug, $chrom_stop, $type, $exons, $structures_made) = @_;
+  
+  my $result;
+  
+  # make key from exon boundaries
+  my $key = join ':', ($chrom_aug, $chrom_stop, $type);
+  foreach my $ex (@{$exons}) {
+    $key .= (":" . $ex->{start} . ":" . $ex->{end});
+  }
+  #print "key = $key\n";
+  
+  # see if this exists already in hash
+  if (exists $structures_made->{$key}) {$result = 1} else {$result = 0}
+  
+  # add key to hash
+  $structures_made->{$key} = 1;
+  
+  return $result;
+}
+
+###############################################################################
   # sanity check that the structure is ok
 
 sub sanity_check {
-
+  
   my ($type, $chrom_aug, $chrom_stop, $exons) = @_;
-
+  
   my $warning = "";
 
   my $length_in_sequence = abs($chrom_aug - $chrom_stop) + 1;
@@ -890,8 +916,8 @@ sub convert_to_exons {
   my $offset = 0;
   my $result = index($cds_seq, $aug, $offset);
   my $best_orf_len = -1;
-  my $best_aug = 0;
-  my $best_stop = 0;
+  my $best_aug = -1;
+  my $best_stop = -1;
   while ($result != -1) {
     my $frame = $result % 3;
     foreach my $stop (@{$stop_frames[$frame]}) {
@@ -933,7 +959,7 @@ sub convert_to_exons {
 sub convert_splices_to_exons {
   my ($region_start, $region_end, $chain, $sense) = @_;
   my @exons;
-
+  
   print "region_start $region_start, region_end $region_end sense $sense\n";
   if ($sense eq '+') {
     my $prev_end = $region_start; # start of first exon
@@ -942,10 +968,12 @@ sub convert_splices_to_exons {
       my $seq = $splice->{seq};
       my $splice_start = $splice->{start};
       my $splice_end = $splice->{end};
+      my $score = $splice->{score};
       
       push @exons, {
 		    start => ($prev_end - $region_start + 1),
 		    end   => ($splice_start - $region_start),
+		    score => $score,
 		   };
       $prev_end = $splice_end+1; # start of next exon
     }
@@ -953,16 +981,20 @@ sub convert_splices_to_exons {
 		  start => ($prev_end - $region_start + 1),
 		  end   => ($region_end - $region_start + 1),
 		 };
+    
   } else {
     my $stored_end = $region_end - $region_start + 1;
     foreach my $splice (@{$chain}) {
       if (exists $splice->{head}) {next}
       my $splice_start = $splice->{start};
       my $splice_end = $splice->{end};
+      my $score = $splice->{score};
+
       print "splice_start $splice_start splice_end $splice_end\n";
       push @exons, {
 		    start => $region_end - $splice_start + 2,
 		    end   => $stored_end,
+		    score => $score,
 		   };
       $stored_end = $region_end - $splice_end;
     }
@@ -985,6 +1017,7 @@ sub add_aug_and_stop_to_structure {
   $valid_aug = 0; # not seen it yet
   $valid_stop = 0;
 
+  # $best_aug and $best_stop will now be zero if they were not seen
   $best_aug++; # we are working in first base == 1 coords here
   $best_stop++;
 
@@ -1004,14 +1037,14 @@ sub add_aug_and_stop_to_structure {
       $end -= $best_aug - 1;
     }
     
-    if ($best_aug >= $start && $best_aug <= $end && $count == 0) { # is AUG in first exon?
+    if ($best_aug ne 0 && $best_aug >= $start && $best_aug <= $end && $count == 0) { # is AUG in first exon?
       $valid_aug = 1;
       $start = 1;
       $end -= $best_aug - 1;
     }
 
     print "exon count: $count best_stop: $best_stop previous_cumulative_len: $previous_cumulative_len cumulative_len: $cumulative_len\n";
-    if ($best_stop > $previous_cumulative_len && $best_stop <= $cumulative_len && $count == $#{$exons}) { # is STOP in last exon?
+    if ($best_stop ne 0 && $best_stop > $previous_cumulative_len && $best_stop <= $cumulative_len && $count == $#{$exons}) { # is STOP in last exon?
       $valid_stop = 1;
       $end -=  ($cumulative_len - $best_stop);# + ($best_aug - 1); # add the ($best_aug - 1) back on as it was removed earlier
     }
@@ -1112,7 +1145,7 @@ sub check_not_already_curated {
     print "checking exons against $name\n";
     if (&check_exons_match($CDS, $exons)) {
       $confirmed->{$name} = $biotype;
-      #print "Found all exons match\n";
+      print "Found all exons match, so $name is confirmed.\n";
       return $name;
     }
   }
@@ -1178,12 +1211,19 @@ sub get_clone_coords {
 }
 
 ###############################################################################
-# make a temporary gene
+# make an isofrm structure
+# return the name of the isoform that was made.
 
 sub make_isoform {
   my ($self, $Method, $TSL, $clone, $clone_aug, $clone_stop, $sense, $exons, $gene) = @_;
 
-  my $name = "${Method}_".$self->next_isoform();
+  my $name;
+  if ($self->{interactive}) {
+    $name = "${Method}_".$self->next_isoform();
+  } else {
+    # make the whole genome run have different names to the interactive isoforms
+    $name = $self->{species}."_${Method}_${gene}_".$self->next_isoform(); 
+  }
 
   my $feature_id = $TSL->{id}; # undef if not using a TSL
   my $TSL_type = $TSL->{tsl}; # empty string if not using a TSL
@@ -1194,6 +1234,7 @@ sub make_isoform {
   my $g_species = $self->{wormbase}->full_name();
   my $pseudogene_type;
   my $transcript_type;
+  my $total_score;
 
   if ($Method eq $self->{CDS_name}) {
     $biotype = 'CDS';
@@ -1240,6 +1281,7 @@ sub make_isoform {
     foreach my $exon (@{$exons}) {
       $self->aceout("Source_exons ". $exon->{start}. " ". $exon->{end}."\n");
       print "Source_exons ". $exon->{start}. " ". $exon->{end}."\n";
+      if (exists $exon->{score}) {$total_score += $exon->{score}}
     }
   }
 
@@ -1248,6 +1290,9 @@ sub make_isoform {
   my $Brief_identification;
   if ($clone_tag eq 'Transcript') { 
     $remark = "Remark \"[$date $USER] Created this non-coding transcript isoform based on the RNASeq splice data";
+    if ($total_score) { # will be zero in a one-exon gene, so don't bother to report it
+      $remark .=  " from $total_score reads spanning introns";
+    }
     if ($TSL_type) {
       $remark .=  " and the $TSL_type site"
     }
@@ -1256,6 +1301,9 @@ sub make_isoform {
   }
   else {
     $remark = "Remark \"[$date $USER] Created this isoform based on the RNASeq splice data";
+    if ($total_score) { # will be zero in a one-exon gene, so don't bother to report it
+      $remark .=  " from $total_score reads spanning introns";
+    }
     if ($TSL_type) {
       $remark .=  " and the $TSL_type site"
     }
@@ -1283,6 +1331,7 @@ sub make_isoform {
   $self->aceout("Transcript $transcript_type\n") if ($transcript_type);
   $self->aceout("Evidence Curator_confirmed $personid\n");
 
+  return $name;
 }
 ###############################################################################
 # clear selected isoformer structures
