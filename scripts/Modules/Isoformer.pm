@@ -7,7 +7,7 @@
 # Methods for running the Isoformer pipeline and other useful things
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2015-04-17 13:19:51 $      
+# Last updated on: $Date: 2015-04-17 15:54:13 $      
 
 =pod
 
@@ -96,7 +96,7 @@ sub new {
 
 
   $self->{coords} = Coords_converter->invoke($self->{database}, undef, $self->{wormbase});
-  $self->{db} = Ace->connect(-path => $self->{database}) || die "cannot connect to database at $self->{database}\n";
+  $self->db_connect();
 
   mkdir "$self->{database}/CHROMOSOMES", 0777; # we may need to write a new set of chromosome files if they do not yet exist
   $self->{seq_obj} = Sequence_extract->invoke($self->{database}, undef, $self->{wormbase});
@@ -154,10 +154,13 @@ sub new {
 sub db          { my $self = shift; my $db = shift; if (defined $db) {$self->{db} = $db}; return $self->{'db'}; }
 sub database    { my $self = shift; my $db = shift; if (defined $db) {$self->{database} = $db}; return $self->{'database'}; }
 sub interactive { my $self = shift; my $inter = shift;  if (defined $inter) {$self->{interactive} = $inter}; return $self->{'interactive'}; }
-sub next_isoform { my $self = shift; my $next_isoform = shift;  if (defined $next_isoform) {$self->{next_isoform} = $next_isoform} else {$self->{'next_isoform'} += 1}; return $self->{'next_isoform'}; }
+#sub next_isoform { my $self = shift; my $next_isoform = shift;  if (defined $next_isoform) {$self->{next_isoform} = $next_isoform} else {$self->{'next_isoform'} += 1}; return $self->{'next_isoform'}; }
+sub next_isoform { my $self = shift; my $next_isoform = shift;  if (defined $next_isoform) {$self->{next_isoform} = $next_isoform}; return $self->{'next_isoform'}; }
 sub inc_next_isoform { my $self = shift; $self->{'next_isoform'} += 1; return $self->{'next_isoform'}; }
 sub aceout      { my $self = shift; my $ace = shift;  if (defined $ace) {$self->{aceout} .= $ace}; return $self->{'aceout'}; }
 sub aceclear    { my $self = shift; $self->{aceout} = '';}
+sub db_connect  {my $self = shift;   $self->{db} = Ace->connect(-path => $self->{database}) || die "cannot connect to database at $self->{database}\n";}
+sub db_close    {my $self = shift; $self->{db}->close}
 
 ########################################################################
 
@@ -1408,6 +1411,18 @@ sub clear {
     my $biotype = $todelete{$delete};
     $self->aceout("\n-D $biotype : \"$delete\"\n");
     print "Clear $biotype : \"$delete\"\n";
+
+    my $output = $self->{database}."/tmp/isoformer_$$.ace";
+    open (CLEAR,">$output") or die "cant open $output\n";
+    print CLEAR $self->aceout();
+    $self->aceclear();
+    close CLEAR;
+
+    my $return_status = system("xremote -remote 'parse $output'");
+    if ( ( $return_status >> 8 ) != 0 ) {
+      die("WARNING - X11 connection appears to be lost\n");
+    }
+
   }
 
 
