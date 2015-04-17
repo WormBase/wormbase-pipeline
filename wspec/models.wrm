@@ -14,7 +14,7 @@
 //
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2015-02-24 10:59:28 $
+// Last edited on: $Date: 2015-04-17 14:35:52 $
 //
 //
 // Additional things to consider. If classes are added or new data in the ?Gene class
@@ -476,8 +476,7 @@
 			   Interactor_overlapping_gene ?Gene XREF Interaction #Interactor_info // Gene (or portion of gene) involved in the interaction
 			   Interactor_overlapping_protein ?Protein XREF Interaction #Interactor_info	// Protein (or portion of protein) involved in the interaction
 			   Molecule_interactor ?Molecule XREF Interaction #Interactor_info     // Molecule that regulates a gene or protein (ported from Gene_regulation Class) Modified Chris WS244
-			   Other_regulator ?Text #Interactor_info                              // Free text describing a regulator entity or condition that does not fall into a standard WormBase category
-			   Other_regulated ?Text #Interactor_info                              // Free text describing a regulated entity or condition that does not fall into a standard WormBase category
+			   Other_interactor  ?Text #Interactor_info 
 			   Rearrangement ?Rearrangement XREF Interactor #Interactor_info
 			   Feature_interactor ?Feature XREF Associated_with_Interaction #Interactor_info
 			   Variation_interactor ?Variation XREF Interactor #Interactor_info
@@ -537,7 +536,7 @@
 		DB_info Database ?Database ?Database_field ?Text         // Any database reference to the interaction outside of WormBase, e.g. BioGRID, Interactome
 		Paper ?Paper XREF Interaction
 		Antibody_remark ?Text
-		Historical_gene ?Gene #Evidence
+		Historical_gene ?Gene Text
 		Remark ?Text #Evidence
 
 
@@ -2192,7 +2191,7 @@
 	      Antibody_info ?Antibody XREF Expr_pattern // This applies to both Western & Antibody staining
                                                         // added [031120 krb]
 	      Curated_by UNIQUE Text // Hinxton (HX) or Caltech (CIT) Sylvia [010927 krb]
-	      Historical_gene ?Gene #Evidence
+	      Historical_gene ?Gene Text
 
 
 //Qualifer hash will be used for Expr_pattern curation to specify the reliability of data.
@@ -2265,7 +2264,7 @@
 				  Chicken
 				  Goat
 				  Other_animal Text
-	  Historical_gene ?Gene #Evidence 			
+	  Historical_gene ?Gene Text 			
 	  Possible_pseudonym ?Antibody XREF Possible_pseudonym_of
 	  Possible_pseudonym_of ?Antibody XREF Possible_pseudonym
 	  Expr_pattern ?Expr_pattern XREF Antibody_info
@@ -2632,7 +2631,7 @@
 	   Reference ?Paper  
 	   Person ?Person
 	   Laboratory ?Laboratory #Lab_Location
-	   Historical_gene ?Gene #Evidence
+	   Historical_gene ?Gene Text
 	   Remark ?Text #Evidence
 
 
@@ -3698,7 +3697,7 @@
                 Movie ?Movie #Evidence
                 Pathway DB_info Database ?Database ?Database_field ?Text //Can be used for any pathway db with unique accessionIDs
                 Remark ?Text #Evidence
-                Historical_gene ?Gene #Evidence
+                Historical_gene ?Gene Text
                 Reference ?Paper XREF WBProcess
 
 
