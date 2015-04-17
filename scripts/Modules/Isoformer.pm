@@ -7,7 +7,7 @@
 # Methods for running the Isoformer pipeline and other useful things
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2015-04-17 15:54:13 $      
+# Last updated on: $Date: 2015-04-17 16:15:20 $      
 
 =pod
 
@@ -212,6 +212,8 @@ sub make_isoforms_in_region {
   my %confirmed = ();
   my @created = ();
   my @warnings = ();
+  my %structures_made = ();
+
 
   foreach my $TSL (@TSL) {
     if ($sense eq '+') {
@@ -288,7 +290,7 @@ sub make_isoforms_in_region {
     &determine_child_nodes(@splices);
     
     # iterate through the valid structures
-    my ($created, $warnings) = $self->iterate_through_the_valid_structures($gene, $biotype, \%confirmed, $TSL, $chromosome, $region_start, $region_end, $sense, @splices);
+    my ($created, $warnings) = $self->iterate_through_the_valid_structures(\%structures_made, $gene, $biotype, \%confirmed, $TSL, $chromosome, $region_start, $region_end, $sense, @splices);
     push @created, @{$created};
     push @warnings, @{$warnings};
     
@@ -687,13 +689,12 @@ sub determine_child_nodes {
 #   if no more levels up to increment then return
 
 sub iterate_through_the_valid_structures {
-  my ($self, $gene, $biotype, $confirmed, $TSL, $chromosome, $region_start, $region_end, $sense, @splices) = @_;
+  my ($self, $structures_made, $gene, $biotype, $confirmed, $TSL, $chromosome, $region_start, $region_end, $sense, @splices) = @_;
   
   my $finished=0; # set when we have no more levels to increment up
   
   my @created = ();
   my @warnings = ();
-  my %structures_made = ();
   
   # get the clone coords of the region start/end
   #  print "********** in iterate_through_the_valid_structures region_end = $region_end\n";
@@ -710,7 +711,7 @@ sub iterate_through_the_valid_structures {
     if (scalar @{$exons} == 1 && $exons->[0]->{start} == $exons->[0]->{end}) {
       print "SKIPPING STRUCTURE CONSISTING OF A OF 1 BASE EXON\n";
     } else {
-      if (check_for_duplicate_structures($chrom_aug, $chrom_stop, $type, $exons, \%structures_made)) {
+      if (check_for_duplicate_structures($chrom_aug, $chrom_stop, $type, $exons, $structures_made)) {
 	print "Duplicate structure ignored\n";
       } else {
 	my $structure_warning = sanity_check($type, $chrom_aug, $chrom_stop, $exons);
