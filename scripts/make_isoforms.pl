@@ -7,7 +7,7 @@
 # This makes isoforms in the region of genes
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2015-04-02 11:26:28 $      
+# Last updated on: $Date: 2015-04-17 13:20:40 $      
 
 # Things isoformer gets confused by or misses:
 # - non-canonical spliced introns where the RNASeq intron is placed on the positive strand and so is missing from reverse-strand genes
@@ -74,13 +74,14 @@ if ($test) {
 }
 
 my $currentdb = $wormbase->database('current');
-
 $species = $wormbase->species;
+if (!defined $database && $species eq 'elegans') {$database = $currentdb}
+if (!defined $database) {$database = $wormbase->autoace()} # BUILD database for the species
 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
-my $Iso = Isoformer->new($wormbase, $log, $currentdb, $gff, $notsl);
+my $Iso = Isoformer->new($wormbase, $log, $database, $gff, $notsl);
 
 $Iso->interactive(0); # don't want any interactive stuff done at all
 
