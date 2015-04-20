@@ -7,7 +7,7 @@
 # Methods for running the Isoformer pipeline and other useful things
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2015-04-20 10:33:49 $      
+# Last updated on: $Date: 2015-04-20 12:51:46 $      
 
 =pod
 
@@ -299,6 +299,8 @@ sub make_isoforms_in_region {
   # print a summary
   my @confirmed=();
   my @not_confirmed=();
+  my $g_species = $self->{wormbase}->full_name();
+
   foreach my $confirmed_name (keys %confirmed) {
     if ($confirmed{$confirmed_name}) {
       push @confirmed, $confirmed_name;
@@ -319,6 +321,8 @@ sub make_isoforms_in_region {
       $self->aceout("Evidence Inferred_automatically make_isoforms.pl\n");
       $self->aceout("Method $method\n");
       $self->aceout("Source_exons 1 $last\n");
+      $self->aceout("Species \"$g_species\"\n");
+
 
       $self->aceout("\nSequence : $sequence\n");
       if ($sense eq '+') {
@@ -1500,6 +1504,7 @@ sub fix {
   my $target_exists = 0;
   my $gene_obj;
   my $gene;
+  my $g_species = $self->{wormbase}->full_name();
 
   my $CDS_name = $self->{CDS_name};
   my $ncRNA_name = $self->{ncRNA_name};
@@ -1600,6 +1605,8 @@ sub fix {
       my ($start,$end) = $_->row(0);
       $self->aceout("Source_exons ".$start->name." ".$end->name."\n");
     }
+    $self->aceout("Species \"$g_species\"\n");
+
 
     # transfer Remarks, etc tags
     foreach ($subject_obj->Remark) {
