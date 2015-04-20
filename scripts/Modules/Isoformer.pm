@@ -7,7 +7,7 @@
 # Methods for running the Isoformer pipeline and other useful things
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2015-04-20 10:26:08 $      
+# Last updated on: $Date: 2015-04-20 10:33:49 $      
 
 =pod
 
@@ -1598,7 +1598,7 @@ sub fix {
     $self->aceout("\n$biotype : $target\n");
     foreach ($subject_obj->Source_exons) {
       my ($start,$end) = $_->row(0);
-      $self->aceout("Source_exons ",$start->name," ",$end->name,"\n");
+      $self->aceout("Source_exons ".$start->name." ".$end->name."\n");
     }
 
     # transfer Remarks, etc tags
@@ -1608,26 +1608,26 @@ sub fix {
       my @evidence_value = $_->at('[2]');
       foreach my $evidence_type (@evidence_type) {
 	my $value = shift @evidence_value;
-	$self->aceout("Remark \"". $remark->name ,"\"");
-	$self->aceout(" \"". $evidence_type->name,"\"") if ($evidence_type);
-	$self->aceout(" \"". $value->name,"\"") if ($value);
+	$self->aceout("Remark \"". $remark->name ."\"");
+	$self->aceout(" \"". $evidence_type->name."\"") if ($evidence_type);
+	$self->aceout(" \"". $value->name."\"") if ($value);
 	$self->aceout("\n");
       }
     }
     foreach ($subject_obj->Isoform) {
       my ($isoform, $evidence, $evidence_value1, $evidence_value2) = $_->row(0);
-      $self->aceout("Isoform \"". $isoform->name ,"\"");
-      $self->aceout(" \"". $evidence->name,"\"") if ($evidence);
-      $self->aceout(" \"". $evidence_value1->name,"\"") if ($evidence_value1);
-      $self->aceout(" \"". $evidence_value2->name,"\"") if ($evidence_value2);
+      $self->aceout("Isoform \"". $isoform->name ."\"");
+      $self->aceout(" \"". $evidence->name."\"") if ($evidence);
+      $self->aceout(" \"". $evidence_value1->name."\"") if ($evidence_value1);
+      $self->aceout(" \"". $evidence_value2->name."\"") if ($evidence_value2);
       $self->aceout("\n");
     }
     foreach ($subject_obj->Evidence) { # for Michael
       my ($isoform, $evidence, $evidence_value1, $evidence_value2) = $_->row(0);
-      $self->aceout("Evidence \"". $isoform->name ,"\"");
-      $self->aceout(" \"". $evidence->name,"\"") if ($evidence);
-      $self->aceout(" \"". $evidence_value1->name,"\"") if ($evidence_value1);
-      $self->aceout(" \"". $evidence_value2->name,"\"") if ($evidence_value2);
+      $self->aceout("Evidence \"". $isoform->name ."\"");
+      $self->aceout(" \"". $evidence->name."\"") if ($evidence);
+      $self->aceout(" \"". $evidence_value1->name."\"") if ($evidence_value1);
+      $self->aceout(" \"". $evidence_value2->name."\"") if ($evidence_value2);
       $self->aceout("\n");
     }
  
