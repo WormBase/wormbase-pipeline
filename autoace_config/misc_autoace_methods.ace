@@ -1475,6 +1475,9 @@ Method : "wublastp_pristionchus"
 Colour "LIGHTGREEN"
 Remark "wublastp search of Wormpep vs Pristionchus pacificus peptides"
 
+Method : "wublastp_ovolvulus"
+Colour "LIGHTGREEN"
+Remark "wublastp search of Wormpep vs Onchocerca volvulus peptides"
 
 Method : "wublastp_brugia"
 Colour "LIGHTGREEN"
