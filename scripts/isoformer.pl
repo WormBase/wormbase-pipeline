@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2015-04-17 15:54:48 $      
+# Last updated on: $Date: 2015-04-20 10:01:56 $      
 
 # Things isoformer gets confused by or misses:
 # - non-canonical spliced introns where the RNASeq intron is placed on the positive strand and so is missing from reverse-strand genes
@@ -258,7 +258,7 @@ sub fix {
   $Iso->fix($userinput);
 
   open (TARGET, ">$output") or die "cant open $output\n";
-  print ISOFORM $Iso->aceout();
+  print TARGET $Iso->aceout();
   $Iso->aceclear();
   close TARGET;
 
