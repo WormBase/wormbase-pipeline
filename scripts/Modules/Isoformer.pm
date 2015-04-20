@@ -7,7 +7,7 @@
 # Methods for running the Isoformer pipeline and other useful things
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2015-04-17 16:15:20 $      
+# Last updated on: $Date: 2015-04-20 10:02:27 $      
 
 =pod
 
@@ -1510,12 +1510,12 @@ sub fix {
   }
 
   # check name looks OK and get biotype
-  if ($subject =~ /^${CDS_name}_\d+/) {
-    $biotype = 'CDS';
-    $subject_obj = $self->{db}->fetch(CDS => "$subject");
-  } elsif ($subject =~ /^${ncRNA_name}_\d+/) {
+  if ($subject =~ /${ncRNA_name}_\d+/) {
     $biotype = 'Transcript';
     $subject_obj = $self->{db}->fetch(Transcript => "$subject");
+  } elsif ($subject =~ /${CDS_name}_\d+/) {
+    $biotype = 'CDS';
+    $subject_obj = $self->{db}->fetch(CDS => "$subject");
   } else {
     print "fix what?\n";
     return;
