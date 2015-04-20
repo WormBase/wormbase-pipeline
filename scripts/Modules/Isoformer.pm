@@ -7,7 +7,7 @@
 # Methods for running the Isoformer pipeline and other useful things
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2015-04-20 12:51:46 $      
+# Last updated on: $Date: 2015-04-20 12:55:55 $      
 
 =pod
 
@@ -322,6 +322,7 @@ sub make_isoforms_in_region {
       $self->aceout("Method $method\n");
       $self->aceout("Source_exons 1 $last\n");
       $self->aceout("Species \"$g_species\"\n");
+      $self->aceout("CDS\n");
 
 
       $self->aceout("\nSequence : $sequence\n");
@@ -1606,7 +1607,7 @@ sub fix {
       $self->aceout("Source_exons ".$start->name." ".$end->name."\n");
     }
     $self->aceout("Species \"$g_species\"\n");
-
+    $self->aceout("CDS\n") if ($biotype eq 'CDS');
 
     # transfer Remarks, etc tags
     foreach ($subject_obj->Remark) {
