@@ -478,15 +478,6 @@ sub dumpData {
 	      print RECIP "$$data[2] "; #  pepHomolStart
 	      print RECIP "$$data[3] "; #  pepHomolEnd
 	      print RECIP "Target_species \"$QUERY_SPECIES\"\n";
-	      
-          print OUT "Pep_homol ";
-          print OUT "\"$prefix:$$data[4]\" "; #  homolID
-          print OUT "$$data[1] ";	#  analysis
-          print OUT "$$data[7] ";	#  e value
-          print OUT "$$data[2] ";	#  HomolStart
-          print OUT "$$data[3] ";	#  HomolEnd
-          print OUT "$$data[5] ";	#  pepHomolStar
-          print OUT "$$data[6]\n";	#  pepHomolEnd
 	    }
 	  }
 	}
