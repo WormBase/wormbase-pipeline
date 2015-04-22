@@ -7,7 +7,7 @@
 # This makes isoforms in the region of genes
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2015-04-17 13:20:40 $      
+# Last updated on: $Date: 2015-04-22 08:35:23 $      
 
 # Things isoformer gets confused by or misses:
 # - non-canonical spliced introns where the RNASeq intron is placed on the positive strand and so is missing from reverse-strand genes
@@ -36,7 +36,7 @@ use Modules::Isoformer;
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($species, $database, $gff, $notsl, $outfile, $dogene);
+my ($species, $database, $gff, $notsl, $outfile, $dogene, $chromosome);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
@@ -49,6 +49,7 @@ GetOptions ("help"       => \$help,
 	    "notsl"      => \$notsl, # don't try to make TSL isoforms - for debugging purposes
 	    "outfile:s"  => \$outfile, # output ACE file of isoform structures
 	    "dogene:s"   => \$dogene, # for testing, specify one gene ID to process
+	    "chromosome:s" => \$chromosome, # only do this chromsome
 	    );
 
 # always in debug mode
@@ -113,12 +114,14 @@ $Iso->load_isoformer_method;
 print ISOFORM $Iso->aceout();
 $Iso->aceclear();
 
-
-my @chromosomes = $wormbase->get_chromosome_names(-mito =>1, -prefix => 1);
-foreach my $chromosome (@chromosomes) {
+if (defined $chromosome) {
   process_genes_in_sequence($chromosome);
+} else {
+  my @chromosomes = $wormbase->get_chromosome_names(-mito =>1, -prefix => 1);
+  foreach my $chromosome (@chromosomes) {
+    process_genes_in_sequence($chromosome);
+  }
 }
-
 
 close(ISOFORM);
 
