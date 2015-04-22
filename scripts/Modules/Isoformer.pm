@@ -7,7 +7,7 @@
 # Methods for running the Isoformer pipeline and other useful things
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2015-04-20 12:55:55 $      
+# Last updated on: $Date: 2015-04-22 10:15:04 $      
 
 =pod
 
@@ -587,8 +587,8 @@ sub get_splices_in_region {
   my @splices;
 
   foreach my $splice (@{$all_splices}) {
-    if ($splice->{start} < $start) {next}
-    if ($splice->{end} > $end) {next}
+    if ($splice->{start} <= $start) {next}
+    if ($splice->{end} >= $end) {next}
     if ($splice->{sense} ne $sense) {next}
     if ($splice->{seq} ne $chromosome) {next}
     push @splices, $splice;
