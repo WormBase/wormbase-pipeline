@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2015-04-20 12:39:11 $
+# Last updated on: $Date: 2015-04-22 09:34:13 $
 # Last updated by: $Author: mh6 $
 #
 # see pod documentation at end of file for more information about this script
@@ -202,7 +202,7 @@ sub main_gene_checks {
       }
     }
     unless ($gene_model_name =~ /$cds_regex/) {
-      push(@error1,"warning $gene_model_name invalid\n") if (($method_test !~ /history|tRNA|Transposon|pre_miRNA|miRNA_primary_transcript/) && ($gene_model_name !~ /\S+.t\d+/));
+      push(@error1,"warning $gene_model_name invalid\n") if (($method_test !~ /history|tRNA|Transposon|pre_miRNA|miRNA_primary_transcript|non_coding_transcript_isoformer/) && ($gene_model_name !~ /\S+.t\d+/));
     }
     my @exon_coord1 = sort by_number ($gene_model->get('Source_exons',1));
     my @exon_coord2 = sort by_number ($gene_model->get('Source_exons',2));
