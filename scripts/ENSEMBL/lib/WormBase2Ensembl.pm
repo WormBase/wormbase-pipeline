@@ -333,14 +333,17 @@ sub parse_genes_gff3_fh {
       #
       # sort out phases.
       # 
-      foreach my $exon (@exons) {
-
+      for(my $i=0; $i < @exons; $i++) {
+        my $exon = $exons[$i];
+        
         if (exists $exon->{cds_seg}) {
 
           if (($strand eq '+' and $exon->{start} == $exon->{cds_seg}->{start}) or
               ($strand eq '-' and $exon->{end} == $exon->{cds_seg}->{end})) {
-            # convert the GFF phase to Ensembl phase
-            if ($self->ignore_gff_phases) {
+            # phase should always match end_phase of previous exon, if there is one
+            if ($i > 0 and exists($exons[$i-1]->{end_phase})) {
+              $exon->{phase} = $exons[$i-1]->{end_phase};
+            } elsif ($self->ignore_gff_phases) {
               # we have been told that the GFF phases are unreliable; therefore assume a start phase of 0
               $exon->{phase} = 0;
             } else {
