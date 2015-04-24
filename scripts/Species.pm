@@ -704,12 +704,20 @@ sub full_name {
 	};
 }
 sub chromosome_prefix {''}
-sub pep_prefix {''}
-sub pepdir_prefix{''};
 sub ncbi_tax_id {'34506'};
 sub ncbi_bioproject {'PRJEB125'};
 sub bioproject_description { 'Wellcome Trust Sanger Institute S. ratti genome project' }
 sub assembly_type {'contig'};
+
+sub seq_name_regex{qr/^SRAE_[\dX]\d+/};
+sub pep_prefix {'SRP'}
+sub pepdir_prefix{'sra'};
+sub cds_regex_noend{qr/SRAE_[\dX]\d+[a-z]*/}; # for getting the CDS part of a Transcript name
+sub cds_regex{qr/SRAE_[\dX]\d+[a-z]*/};
+sub seq_db {my $self = shift;return $self->database('sratti');}
+
+sub wormpep_prefix {'SRP'}
+
 sub TSL {(
 	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
 	  'Sr_SL1a' => "GGTTTATAAAACCCAGTTTGAG",
