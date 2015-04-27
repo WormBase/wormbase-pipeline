@@ -4,8 +4,8 @@
 #
 # written by Anthony Rogers
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2014-09-19 08:54:56 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2015-04-27 13:51:58 $
 #
 # it depends on:
 #    wormpep + history
@@ -97,7 +97,7 @@ if (-e $wormbase->autoace){
 #
 # Never do genblasts for C.ele, O.vol and B.mal
 #
-if ($species eq 'elegans' or $species eq 'ovolvulus' or $species eq 'brugia') {
+if ($species eq 'elegans' or $species eq 'ovolvulus' or $species eq 'brugia' or $species eq 'sratti') {
   $do_genblasts = 0;
 }
 
