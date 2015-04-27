@@ -7,7 +7,7 @@
 # simple script for creating new (sequence based) Gene objects 
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2015-03-31 10:16:20 $
+# Last edited on: $Date: 2015-04-27 13:30:28 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -84,8 +84,7 @@ $species_data{'brenneri'} = '1';
 $species_data{'japonica'} = '1';
 $species_data{'brugia'} = '1';
 $species_data{'ovolvulus'} = '1';
-
-
+$species_data{'sratti'} = '1';
 
 
 unless( $species_data{"$species"} ) {
