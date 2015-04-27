@@ -41,6 +41,8 @@ my %mapping = (
   ppacificus_mrna  => 'wormbase_id',
   ovolvulus_est   => 'wormbase_id',
   ovolvulus_mrna  => 'wormbase_id',
+  sratti_est   => 'wormbase_id',
+  sratti_mrna  => 'wormbase_id',
   celegans_ost     => 'wormbase_id',
   celegans_rst     => 'wormbase_id',
 
