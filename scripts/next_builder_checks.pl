@@ -6,8 +6,8 @@
 # A simple script to send a check list to the person who will be performing the next
 # build to check the current build
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2015-03-17 17:30:53 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2015-04-27 13:49:17 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -67,6 +67,8 @@ if (
     $wb->species eq 'briggsae' ||
     $wb->species eq 'brugia' ||
     $wb->species eq 'ovolvulus' ||
+    $wb->species eq 'sratti' ||
+    $wb->species eq 'brugia' ||
     $wb->species eq 'pristionchus') {
   $pfam=$seq=0;
 } elsif ($wb->species ne 'elegans') {
@@ -109,6 +111,8 @@ if($clones) {
     @clones = qw(Ppa_Contig0 Ppa_Contig10 Ppa_Contig15 Ppa_Contig30 Ppa_Contig100 Ppa_Contig200);
   } elsif ($wb->species eq 'ovolvulus') {
     @clones = qw(OVOC_OO_000001 OVOC_OO_000008 OVOC_OO_000054 OVOC_OO_000132 OVOC_OO_000629 OVOC_OO_000690);
+  } elsif ($wb->species eq 'sratti') {
+    @clones = qw(SRAE_chr2 SRAE_scaffold1);
   }
 
 
@@ -591,8 +595,17 @@ sub classes_to_check {
 			       Protein => 'OV:OVP01471',
 			       Transcript => 'OVOC8637',
 			     },
-
-
+                  'sratti'  => { 
+			       Ace2SO => 'coding_transcript_ace2so',
+			       CDS => 'SRAE_0000000800',
+			       Feature_data => 'SRAE_scaffold23:TRF',
+			       Gene => 'XXX',
+			       Gene_name => 'SRAE_0000000800',
+			       Homol_data => 'SRAE_0000000800:wublastx_brenneri',
+			       Method => 'BLAT_EST_BEST',
+			       Protein => 'SRP:SRP01471',
+			       Transcript => 'SRAE_0000000800',
+                             },
 		);
 
   my $species = $wb->species;
