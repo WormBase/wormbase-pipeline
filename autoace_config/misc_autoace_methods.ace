@@ -1479,6 +1479,10 @@ Method : "wublastp_ovolvulus"
 Colour "LIGHTGREEN"
 Remark "wublastp search of Wormpep vs Onchocerca volvulus peptides"
 
+Method : "wublastp_sratti"
+Colour "LIGHTGREEN"
+Remark "wublastp search of Wormpep vs Onchocerca volvulus peptides"
+
 Method : "wublastp_brugia"
 Colour "LIGHTGREEN"
 Remark "wublastp search of Wormpep vs Brugia malayi peptides"
@@ -1610,6 +1614,22 @@ Remark "wublastx search vs O. volvulus peptides"
 Display_gaps
 Gapped
 GFF_source "ovolvulus_proteins-BLASTX"
+GFF_feature "protein_match"
+GFF_SO "SO:0000349" // protein_match
+
+Method : "wublastx_sratti" 
+Colour GREEN
+Frame_sensitive
+Show_up_strand
+Score_by_width
+Score_bounds 10.000000 100.000000
+Allow_misalign
+Blixem_X
+Join_blocks
+Remark "wublastx search vs O. volvulus peptides"
+Display_gaps
+Gapped
+GFF_source "sratti_proteins-BLASTX"
 GFF_feature "protein_match"
 GFF_SO "SO:0000349" // protein_match
 
