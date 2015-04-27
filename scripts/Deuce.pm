@@ -7,7 +7,7 @@
 # Some methods for querying the WormBAse datomic database.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2015-02-23 09:29:53 $      
+# Last updated on: $Date: 2015-04-27 11:20:33 $      
 
 =pod
 
@@ -20,7 +20,7 @@
   use Deuce;
 
   my $db = Deuce->new('db.wormbase.org:8120/colonnade', $user, $password);
-  my $results = $db->$query($datomic_querystr);
+  my $results = $db->$query($datomic_querystr, $queryargs);
   my $schema = $db->schema;
   my $object = $db->fetch_object($class, $id);
   my @ID_names = $db->fetch($class, $class_id_pattern);
@@ -78,7 +78,8 @@ sub new {
   # default
   if (!defined $self->{'url'}) {
     $self->{'url'} = 'db.wormbase.org:8120/colonnade';
-
+  }
+  if (!defined $user || !defined $password) {
     my $login_details_file = glob("~/.deuce/COLONNADE.s");
     open(my $infh, $login_details_file)
       or die("Can't open secure account details file $login_details_file\n");
@@ -87,10 +88,11 @@ sub new {
       /^PASSWD:(\S+)$/ and $password = $1;
     }
     close($infh);
-
+    
     die("Could not find both user name and password in login details file\n")
       if not defined $user or not defined $password;
   }
+
   $self->{'url'} =~ s/http\:\/\///;
 
   my $cookie_jar = HTTP::CookieJar->new;
@@ -118,25 +120,26 @@ sub new {
 =head2 
 
     Title   :   query
-    Usage   :   my $results = $db->$query($querystr, $max_rows)
+    Usage   :   my $results = $db->$query($querystr, $queryargs, $max_rows)
     Function:   get the results of a query from the REST server
     Returns :   int count of total number of results, not constrained by the $max_rows
                 array of arrays holding the result of the first $max_rows results of the query
     Args    :   querystr - string - datomic query
+                queryargs - string - optional list of arguments for the query (e.g. IDs from a Keyset:  '["WBGene00000016" "WBGene00000017"]')
                 max_rows - int - maximum number of rows to return - if undef, then set to 10 million
 
 =cut
 
 
 sub query {
- my ($self, $querystr, $max_rows) = @_;
+ my ($self, $querystr, $queryargs, $max_rows) = @_;
 
  my $max_rows_str = '';
  if (!defined $max_rows) {
    $max_rows = 10000000; # Set to more than the max number of objects in any class.
  }
  $max_rows_str = ", :max-rows $max_rows";
- $querystr = '{:query ' . $querystr . ", :rules [] ${max_rows_str}}"; # encode query as EDN
+ $querystr = "{:query ".$querystr." :args [$queryargs], :rules [] ${max_rows_str}}"; # encode query as EDN
 
  $self->{'options'}->{'content'} = $querystr;
 
@@ -205,7 +208,7 @@ sub get_schema {
     Function:   returns the complete hash-ref of classes keyed on ACE name of the class
             :   useful data includes:
             :     'db/ident' => name of the class in the datomic database (e.g. 'transposon/id')
-            :     'pace/is-hash' => boolean, true is a hash (e.g. ?Evidence)
+            :     'pace/is-hash' => boolean, true if it is a hash (e.g. ?Evidence)
     Returns :   the complete classes - hash keyed by name of class
     Args    :   
 
@@ -368,7 +371,6 @@ sub is_class_a_hash {
   my $classes = $self->get_classes();
   return $classes->{$class}{'pace/is-hash'};
 }
-
 
 #############################################################################
 
@@ -713,8 +715,8 @@ sub fetch_object {
  my ($self, $class, $id) = @_;
  
  my $object_url = 'http://db.wormbase.org:8120/raw2/';
- $object_url .= "/$class;
- $object_url .= "/$id;
+ $object_url .= "/$class";
+ $object_url .= "/$id";
 
  my $response = HTTP::Tiny->new->get($object_url);
 
@@ -736,10 +738,11 @@ sub fetch_object {
     Usage   :   my $querystr = $db->$ace_to_querystr($class, $class_pattern, $querystr)
     Function:   convert an ACE-style query string into a datomic-like query string
     Returns :   datomic query string or undef if error
+                datomic args string formed from any keyset file specified as the class 'Keyset'
     Args    :   $class = datomic name of class
-                $class_pattern = optionally wildcarded pattern of ID in class to search for first
+                $class_pattern = optionally wildcarded pattern of ID in class to search for first, or name of Keyset file if class is 'Keyset'
                 $criteria = any subsequent criteria to search for 
-                $classref - ref to string - returns the class of object returned if defined
+                $classref - ref to string - returns the class of object returned, if defined
 
 =cut
 
@@ -754,9 +757,21 @@ sub ace_to_querystr {
 
   my $result=undef; # the result of the query
   my $criterion_count = 0; # the next numeric suffix to use on variable identifiers
+  my $keyset = 0; # flag for have a keyset
+  my $args = ''; # set of IDs in keyset;
+  my $Keyset_IDs;
 
   if (!defined $class || $class eq '') {
-    return $result;
+    return (undef, undef);
+  }
+
+  if ($class eq 'Keyset') { # should this be a case-independent match?
+    $keyset = 1; # set the flag to say we have a keyset
+    my $file = $pattern;
+    $pattern = '*'; # want all of the Keyset IDs
+    if (! -e $file) {warn "Can't find Keyset file '$file'\n"; return (undef, undef)}
+    ($class, $Keyset_IDs) = $self->read_keyset_file($file);
+    if (!defined $class) {warn "Problem reading data in Keyset '$file'\n"; return (undef, undef)}
   }
 
   if (!defined $pattern || $pattern eq '') {
@@ -769,43 +784,56 @@ sub ace_to_querystr {
 
   my $class_var = lc "${class}"; # initialise the class_variable to be the current lowerclassed class name (use wherever colonnade has '?col1, ?col6 etc.)
   if (defined $classref) {$$classref = $class_var}
-  my $in;# = ':in $ ';
+  my $in = ':in $ ';
   my $where = ":where ";
-  my $params = '';
+  my $find;
   my $tag_name_element;
   my $op;
 
   print "In ace_to_querystr, Criteria: $criteria\n";
 
-  # start off by constructing a query to get the class and pattern
-  # is the pattern a regular expression?
-  my $find = ":find [?col-id${class_var} ...] "; # initialise the col-id - return a collection of names
-  if ($pattern =~ /\*/) {
-# [:find ?col1-id :where [?col1 :cds/id ?col1-id] [(re-pattern "AC3.*") ?col1-regex] [(re-matches ?col1-regex ?col1-id)]] 
-    $pattern = $self->protect($pattern);
+  # initialise the col-id - return a collection of names
+  $find = ":find [?col-id${class_var} ...] "; 
 
+  # check if we have a keyset
+  if ($keyset) {
+    $in = ':in $ '."[?col-id${class_var} ...]";
+    $args = join '" "', @{$Keyset_IDs};
+    $args = '["'.$args.'"]';
     $where .= "[?${class_var} :${class_var}/id ?col-id${class_var}]";
-    $where .= "[(re-pattern \"(?i)$pattern\") ?var${criterion_count}-regex]"; # case-independent regular expression
-    $where .= "[(re-matches ?var${criterion_count}-regex ?col-id${class_var})]";
+
   } else {
-# [:find ?col1-id :where [?col1 :cds/id ?col1-id] [(ground "AC3.3") ?col1-id]]
-    # a single non-regex value
-    $where .= "[?${class_var} :${class_var}/id ?col-id${class_var}]";
-    $where .= "[(ground \"$pattern\") ?col-id${class_var}]";
+
+    # if not a keyset, start off by constructing a query to get the class and pattern
+    # is the pattern a regular expression?
+    if ($pattern =~ /\*/ || $pattern =~ /\?/) {
+      # [:find ?col1-id :where [?col1 :cds/id ?col1-id] [(re-pattern "AC3.*") ?col1-regex] [(re-matches ?col1-regex ?col1-id)]] 
+      $pattern = $self->protect($pattern);
+      
+      $where .= "[?${class_var} :${class_var}/id ?col-id${class_var}]";
+      $where .= "[(re-pattern \"(?i)$pattern\") ?var${criterion_count}-regex]"; # case-independent regular expression
+      $where .= "[(re-matches ?var${criterion_count}-regex ?col-id${class_var})]";
+      
+    } else {
+      # [:find ?col1-id :where [?col1 :cds/id ?col1-id] [(ground "AC3.3") ?col1-id]]
+      # a single non-regex value
+      $where .= "[?${class_var} :${class_var}/id ?col-id${class_var}]";
+      $where .= "[(ground \"$pattern\") ?col-id${class_var}]";
+    }
   }
 
-  my @criteria = split /\;/, $criteria;
+  my @criteria = split /\;|\bAND\b/, $criteria;
 
   foreach my $criterion (@criteria) {
     if ($criterion =~ /^\s*$/) {next}
 
     my $tokens = $self->parse_cmd($criterion);
-    if (!defined $tokens) {return undef} # syntax error found
+    if (!defined $tokens) {return (undef, undef)} # syntax error found
     $criterion_count++; # for making variables that are local to this criterion
     
     # get description of first word of command 
-    #       Name      Word Expect Type      Start End
-    # e.g. ('NEGATE', '!', 'TAG', 'NEGATE', 1,    0)
+    #       Name       Word            Expect Type       Start End
+    # e.g. ('MISSING', '(\!|\bNOT\b)', 'TAG', 'MISSING', 1,    0)
     my $next_token = 0;
     my ($name, $word, $expect_next, $type, $can_start, $can_end) = @{$tokens->[$next_token]};
     my ($next_name, $next_word, $next_expect_next, $next_type, $next_can_start, $next_can_end);
@@ -814,7 +842,7 @@ sub ace_to_querystr {
     }
     if ($can_start) {
 
-      if ($type eq 'TAG') { # fnd objects where the TAG matches various conditions
+      if ($type eq 'TAG') { # find objects where the TAG matches various conditions
 
 	$tag_name_element = $self->get_tag_name($class, $tokens, \$next_token);
 	my $objstr;
@@ -824,7 +852,7 @@ sub ace_to_querystr {
 	  $ident = $objstr->[$tag_name_element]->{ident};
 	} else {
 	  warn "Unknown type of tag '$word' in '$criterion'\n";
-	  return undef;
+	  return (undef, undef);
 	}
 	
 	if ($next_token+1 >= scalar @{$tokens}) { 	# at end of command, just the TAG so check it exists
@@ -853,7 +881,7 @@ sub ace_to_querystr {
 	  $next_token++;
 	  if ($next_token >= scalar @{$tokens}) {
 	    warn "Expected something after '$next_word' in '$criterion'\n";
-	    return undef;
+	    return (undef, undef);
 	  }
 	  my ($last_name, $last_word, $last_expect_next, $last_type, $last_can_start, $last_can_end) = @{$tokens->[$next_token]};
 	  print "parsed command is: $word $next_word $last_word\n";
@@ -886,7 +914,7 @@ sub ace_to_querystr {
 	    
 	    if ($next_name eq 'EQ') {
 	      # normal string or regex? - Only NOT or EQ are sensible if regex
-	      if ($last_word =~ /\*/) {
+	      if ($last_word =~ /\*/ || $last_word =~ /\?/) {
 		#  [?col1 :cds/brief-identification ?col6] [(re-pattern ".*e") ?col6-regex] [(re-matches ?col6-regex ?col6)]
 		# [:find ?col1-id :where [?col1 :cds/id ?col1-id] [(re-pattern "AC3.*") ?col1-regex] [(re-matches ?col1-regex ?col1-id)]] 
 		$last_word = $self->protect($last_word);
@@ -904,7 +932,7 @@ sub ace_to_querystr {
 	    } elsif ($next_name eq 'NOT') { 
 	      
 	      #[:find (count ?artist) .	      :where [?artist :artist/name]       (not-join [?artist]         [?release :release/artists ?artist]         [?release :release/year 1970])]
-	      if ($last_word =~ /\*/) {
+	      if ($last_word =~ /\*/ || $last_word =~ /\?/) {
 		$last_word = $self->protect($last_word);
 
 		$where .= "(not-join [?${class_var}]";
@@ -924,19 +952,19 @@ sub ace_to_querystr {
 	      
 	    } elsif ($next_name eq 'GE') {
 	      warn "Not yet implemented '$next_word', in '$criterion'\n";
-	      return undef;
+	      return (undef, undef);
 	    } elsif ($next_name eq 'LE') {
 	      warn "Not yet implemented '$next_word', in '$criterion'\n";
-	      return undef;
+	      return (undef, undef);
 	    } elsif ($next_name eq 'GT') {
 	      warn "Not yet implemented '$next_word', in '$criterion'\n";
-	      return undef;
+	      return (undef, undef);
 	    } elsif ($next_name eq 'LT') {
 	      warn "Not yet implemented '$next_word', in '$criterion'\n";
-	      return undef;
+	      return (undef, undef);
 	    } else {
 	      warn "Found unexpected token '$next_word', type $next_type after TAG in '$criterion'\n";
-	      return undef;
+	      return (undef, undef);
 	    }
 	    
 	  } elsif ($obj_type eq 'long' || $obj_type eq 'double') { # tag is numeric value
@@ -945,7 +973,7 @@ sub ace_to_querystr {
 	      $where .= "[?${class_var} :${ident} ?var${criterion_count}]";
 	      $where .= "[(ground $last_word) ?var${criterion_count}]";
 	      
-	    } elsif ($next_name eq 'NOT') { # how do we test for NE string?
+	    } elsif ($next_name eq 'NOT') { # +++ is this correct? Why have a not-join here instead of a simple '!=' operator?
 	      $where .= "(not-join [?${class_var}]";
 	      $where .= "[?${class_var} :${ident} ?var${criterion_count}]";
 	      $where .= "[(ground $last_word) ?var${criterion_count}]";
@@ -969,7 +997,7 @@ sub ace_to_querystr {
 	      
 	    } else {
 	      warn "Found unexpected token '$next_word', type $next_type after TAG in '$criterion'\n";
-	      return undef;
+	      return (undef, undef);
 	    }
 	    
 	    
@@ -985,7 +1013,7 @@ sub ace_to_querystr {
 	  
 	} else { # invalid command
 	  warn "Found token '$next_word', type $next_type after TAG in '$criterion'\n";
-	  return undef;
+	  return (undef, undef);
 	}
 	
       } elsif ($type eq 'COUNT') {
@@ -1011,7 +1039,7 @@ sub ace_to_querystr {
 	  $ident = $objstr->[$tag_name_element]->{ident};
 	} else {
 	  warn "Unknown type of tag '$word' in '$criterion'\n";
-	  return undef;
+	  return (undef, undef);
 	}
 	
 	if ($next_token+1 >= scalar @{$tokens}) { 	# at end of command, just the TAG so check it exists
@@ -1031,13 +1059,13 @@ sub ace_to_querystr {
 	  $next_token++;
 	  if ($next_token >= scalar @{$tokens}) {
 	    warn "Expected something after '$next_word' in '$criterion'\n";
-	    return undef;
+	    return (undef, undef);
 	  }
 	  my ($last_name, $last_word, $last_expect_next, $last_type, $last_can_start, $last_can_end) = @{$tokens->[$next_token]};
 	  print "parsed command is: $word $next_word $last_word\n";
 	  if ($last_type ne 'INT') {
 	    warn "Expected integer after '$next_word' in '$criterion'\n";
-	    return undef;	    
+	    return (undef, undef);	    
 	  }
 	  
 	  # if the 'db/valueType' is 'db.type/ref', then look for the next tag/value on the line by going to the ->{right} in the objstr
@@ -1056,50 +1084,29 @@ sub ace_to_querystr {
 	    $ident = $objstr->[$tag_name_element]->{ident};
 	  }
 	  
-	  if ($next_name eq 'EQ') {
-	    $where .= "[(datomic.api/q ";
-	    $where .= " '[:find ?col-id${class_var} (count ?countvar${criterion_count})";
-	    $where .= "  :where [?local${criterion_count} :${class_var}/id ?col-id${class_var}]";
-	    $where .= "         [?local${criterion_count} :${ident} ?countvar${criterion_count}]]";
-	    $where .= "  $)";
-	    $where .= " [[?col-id${class_var} ?var${criterion_count}-count]]]"; 
-            $where .= " [(= ?var${criterion_count}-count $last_word)]]";
 
-	    
-	  } elsif ($next_name eq 'NOT') { 
-	    $where .= "";
-	    $where .= "";
-	    $where .= "";
-	    $where .= "";
-	    $where .= "";
-	    
-	  } elsif ($next_name eq 'GE') {
-	    $where .= "";
-	    $where .= "";
-	    $where .= "";
-	    
-	  } elsif ($next_name eq 'LE') {
-	    $where .= "";
-	    $where .= "";
-	    $where .= "";
-	    
-	  } elsif ($next_name eq 'GT') {
-	    $where .= "";
-	    $where .= "";
-	    $where .= "";
-	    
-	  } elsif ($next_name eq 'LT') {
-	    $where .= "";
-	    $where .= "";
-	    $where .= "";
-	    
-	  } else {
+	  my %ops = (
+		     'EQ' => '=',
+		     'NOT' => '!=', # +++ is this correct we had a not-join above for 'NOT'
+		     'GE' => '>=',
+		     'LE' => '<=',
+		     'GT' => '>',
+		     'LT' => '<',
+		    );
+	  if (!exists  $ops{$next_name}) {
 	    warn "Found unexpected token '$next_word', type $next_type after TAG in '$criterion'\n";
-	    return undef;
+	    return (undef, undef);
 	  }
+
+	  $where .= "[(datomic.api/q ";
+	  $where .= " '[:find ?col-id${class_var} (count ?countvar${criterion_count})";
+	  $where .= "  :where [?local${criterion_count} :${class_var}/id ?col-id${class_var}]";
+	  $where .= "         [?local${criterion_count} :${ident} ?countvar${criterion_count}]]";
+	  $where .= "  $)";
+	  $where .= " [[?col-id${class_var} ?var${criterion_count}-count]]]"; 
+	  $where .= " [(".$ops{$next_name}." ?var${criterion_count}-count $last_word)]]";	  
 	  
-	  
-	} elsif ($type eq 'MISSING') { # '!' or 'NOT' TAG - find objects where is doesn't exist
+	} elsif ($type eq 'MISSING') { # '! TAG' or 'NOT TAG' - find objects where the TAG or 'TAG OP VALUE' doesn't exist
 	  # NOT TAG (NEXT) END
 	  #[:find ?name :where [?artist :artist/name ?name] [(missing? $ ?artist :artist/startYear)]]
 	  #[:find ?name :where [?cds :cds/id ?name][(missing? $ ?cds :cds/species)]
@@ -1112,7 +1119,7 @@ sub ace_to_querystr {
 	    
 	  } else {
 	    warn "Unknown type of tag '$word' in '$criterion'\n";
-	    return undef;
+	    return (undef, undef);
 	  }
 	}
 
@@ -1120,29 +1127,111 @@ sub ace_to_querystr {
 	# FOLLOW should cause the $class_var to change
 	# FOLLOW TAG (NEXT)
 	$tag_name_element = $self->get_tag_name($class, $tokens, \$next_token);
-	# +++ want to update the ${class_var} entity variable links all criteria for the class we now expect +++
+	# want to update the ${class_var} entity variable - this links all criteria for the class we now expect
 	# get the new class      
 	# $class = whatever 
 	# initialise the class_variable to be the new lowerclassed class name
 	# $class_var = lc "${class}"; 
+
+	# example of following from anatomy-function to phenotype
+	# [:find ?col1-id (pull ?col2 [*]) :where [?col1 :anatomy-function/id ?col1-id] [?col1 :anatomy-function/phenotype ?col2]]
+
+	# +++ to be done.
+	# +++ check that the value of the tag is an xref
+	# +++ get the new class name
+	# +++ make a 'where' link from the old class to the new class
+	$where .= "";
+
 	if (defined $classref) {$$classref = $class_var} # return the updated type of class that is now being returned
-	$find = ":find [?col-id${class_var} ...] "; # update the col-id
-	# +++ to be done
-	
+	$find = ":find [?col-id${class_var} ...] "; # update the col-id - return a collection of names
+
+
+      } elsif ($type eq 'IS') { # find resulting objects whose name matches the STRING
+	$next_token++;
+	if ($next_token >= scalar @{$tokens}) {
+	  warn "Expected something after '$next_word' in '$criterion'\n";
+	  return (undef, undef);
+	}
+	my ($last_name, $last_word, $last_expect_next, $last_type, $last_can_start, $last_can_end) = @{$tokens->[$next_token]};
+	print "parsed command is: $word $next_word $last_word\n";
+	if ($last_type ne 'STRING') {
+	  warn "Expected string after '$next_word' in '$criterion'\n";
+	  return (undef, undef);	    
+	}
+	if ($last_word =~ /\*/ || $last_word =~ /\?/) {
+	  # [:find ?col1-id :where [?col1 :cds/id ?col1-id] [(re-pattern "AC3.*") ?col1-regex] [(re-matches ?col1-regex ?col1-id)]] 
+	  $last_word = $self->protect($last_word);
+	  $where .= "[?${class_var} :${class_var}/id ?col-id${class_var}]";
+	  $where .= "[(re-pattern \"(?i)$last_word\") ?var${criterion_count}-regex]"; # case-independent regular expression
+	  $where .= "[(re-matches ?var${criterion_count}-regex ?col-id${class_var})]";
+	} else {
+	  # [:find ?col1-id :where [?col1 :cds/id ?col1-id] [(ground "AC3.3") ?col1-id]]
+	  # a single non-regex value
+	  $where .= "[?${class_var} :${class_var}/id ?col-id${class_var}]";
+	  $where .= "[(ground \"$last_word\") ?col-id${class_var}]";
+	}
+
+
       } else {
 	warn "Command '$word' not recognised\n";
-	return undef;
-      }
+	return (undef, undef);
+      } # list of commands
+    } else { # can start
+      warn "Command '$word' not recognised\n";
+      return (undef, undef);      
     }
+  } # foreach my $criterion (@criteria)
+
+  my $query = '[' . $find . $in . $where . ']' ;
+
+  return ($query, $args);
+}
+#################################################################
+
+=head2 
+
+    Title   :   read_keyset_file
+    Usage   :   my ($self, $class, $Keyset_IDs) = $self->read_keyset_file($file);
+    Function:   reads a Keyset file to get the class and ID names - only one class per Keyset file is allowed
+                This ignores anything after the comment '//'.
+                Quote characters are ignored.
+                It expects a format for each line of:
+                Class : ID
+                Or:
+                Class ID
+    Returns :   $class - string datomic class name, or undef if this is not found or other problem
+                $Keyset_IDs - array ref of ID names
+    Args    :   $file - string - Keyset filename
+                
+
+=cut
+
+sub read_keyset_file {
+  my ($self, $file) = @_;
+  my $class;
+  my @Keyset_IDs;
+
+  open (KEYSET, "<$file") || do {warn "Can't find Keyset file '$file'\n"; return (undef, undef)};
+  while (my $line = <KEYSET>) {
+    chomp $line;
+    $line =~ s#\/\/\.##; # remove comments
+    $line =~ s#["']##g; # remove quote characters
+    if ($line =~ /^\s*$/) {next} # ignore blank line
+    my @line = split /\s+/, $line;
+    if (defined $class) { # ckeck class is unique
+      if ($class ne $line[0]) {warn "Multiple classes in Keyset file '$file'\n"; return (undef, undef)};
+    } else {
+      $class = $line[0];
+    }
+    if (scalar @line < 2 || scalar @line > 3) {warn "Malformed line in Keyset file '$file': $line\n"; return (undef, undef)}
+    if (scalar @line == 3 && $line[1] ne ':') {warn "Malformed line in Keyset file '$file': $line\n"; return (undef, undef)}
+    if (length $line[$#line] < 1) {warn "Malformed line in Keyset file '$file': $line\n"; return (undef, undef)}
+    push @Keyset_IDs, $line[$#line];
   }
+  close (KEYSET);
+  my $datomic_class = $self->get_class_name_in_datomic($class);
+  return ($datomic_class, \@Keyset_IDs);
 
-
-
-
-# +++ removed $in from the query strng
-  my $query = '[' . $find . $where . ']' ;
-
-  return $query;
 }
 #################################################################
 # parse a simple constraint on the current search
@@ -1165,6 +1254,7 @@ sub parse_cmd {
 # TAG NEXT... OP STRING|NUM
 # FOLLOW TAG
 # FOLLOW TAG NEXT...
+# IS STRING
 
   my @token_def = (
 #                  Name           regex              ignore  expect after                 expect next       type      can start can end
@@ -1172,6 +1262,7 @@ sub parse_cmd {
 		   [COUNT      => qr{\bCOUNT\b}i,         0, 'START',                     'TAG',            'COUNT',  1,        0],
 		   [MISSING    => qr{(\!|\bNOT\b)}i,      0, 'START',                     'TAG',            'MISSING',1,        0],
 		   [FOLLOW     => qr{\bFOLLOW\b}i,        0, 'START',                     'TAG',            'FOLLOW', 1,        0],
+		   [IS         => qr{\bIS\b}i,            0, 'START',                     'STRING',         'IS',     1,        0],
 		   [NEXT       => qr{\bNEXT\b}i,          0, 'TAG',                       'NEXT OP END',    'NEXT',   0,        1],
 		   [GE         => qr{\>\=},               0, 'TAG NEXT',                  'NUM',            'OP',     0,        0],
 		   [LE         => qr{\<\=},               0, 'TAG NEXT',                  'NUM',            'OP',     0,        0],
@@ -1243,10 +1334,10 @@ sub parse_cmd {
     Returns :   int array element of the class schema @{$objstr} which has the required tag
                 or 'undef' if tag is not found
     Args    :   $class = name of class
-                $tokens = array-ref describing tokens in the search criteria
+                $tokens = ref to array describing tokens in the search criteria
                 $next_token = ref of int of next array element in $tokens to look at
 
-+++ Doesn't yet navigate to Evidence hash tags 
++++ Doesnt yet navigate to Evidence hash tags 
 
 
 =cut
@@ -1344,8 +1435,8 @@ sub protect {
     Usage   :   @results = $db->fetch('CDS', 'AC3.3*', 'Method = curated', \$count, \$returned_class)
     Function:   gets a list of the names of the members of the specified class that match the patetrn and the optional query criteria
     Returns :   number of results or sorted ID names of matching objects in array.
-    Args    :  $class - string - the class of object to get (datomic or Ace names can be used)
-               $pattern - string - pattern to match to ID name of the required object
+    Args    :  $class - string - the class of object to get (datomic or Ace names can be used), Also includes the special "classes" 'Class' and 'Keyset'
+               $pattern - string - pattern to match to ID name of the required object (or Keyset file is class is 'Keyset')
                $query - string - criteria to restrict the class/pattern results
                $countref - ref to int - returns the count of objects (optional)
                $classref - ref to string - returns the datomic name of the class of object returned (optional)
@@ -1362,22 +1453,24 @@ sub fetch {
   if (defined $countref) {$$countref = 0};
   if (defined $classref) {$$classref = $class};
 
+  print "in fetch() class name = $class";
+
   if ($class eq 'Class') { # should this be a case-independent match?
     $self->get_classes();
     my @classes = keys %{$self->{classes}};
     $pattern = $self->protect($pattern);
     @results = sort {$a cmp $b} grep /$pattern/i, @classes;
     $count = scalar @results;
+
   } else {
 
-    print "in fetch() class name = $class";
     my $datomic_class = $self->get_class_name_in_datomic($class);
     if (!defined $datomic_class) {die "Can't find datomic name of $class\n"}
 
-    my $querystr = $self->ace_to_querystr($datomic_class, $pattern, $query, $classref);
+    my ($querystr, $queryargs) = $self->ace_to_querystr($datomic_class, $pattern, $query, undef, $classref);
     if (defined $querystr) {
       print "In fetch() query:\n$querystr\n";
-      ($count, @results) = $self->query($querystr);
+      ($count, @results) = $self->query($querystr, $queryargs);
       @results =  sort {$a cmp $b} @{$results[0]};
       if (defined $countref) {$$countref = $count}
     }
@@ -1392,18 +1485,42 @@ sub fetch {
 }
 
 
+########################################################################################################################
+# NOTES
+########################################################################################################################
 
 
+# To implement 'Keyset', do something like this (from
+# http://docs.datomic.com/tutorial.html):
 
+# The previous example used a single value for the parameter ?t, but
+# you can also use a list of individual values. Here is a query that
+# finds communities of type :community.type/twitter or
+# :community.type/email-list.
 
+# [:find ?n ?t
+#  :in $ [?t ...]
+#  :where [?c :community/name ?n][?c :community/type ?t]]
 
+# In this case, the input source passed as the last argument to query
+# is a list of keywords, like this:
 
+# [:community.type/facebook-page :community.type/twitter]
 
+# Thomas says:
+# You should be able to POST to /colonnade/query with something like:
 
+#    {:query [:find ?public-name
+#             :in $ [?gene-id ...]
+#             :where [?gene :gene/id ?gene-id]
+#                    [?gene :gene/public-name ?public-name]]
+#     :args [["WBGene00000016" "WBGene00000017"]]}
 
+# You'll automatically get a db value ($) as your first argument.  If
+# :rules is specified, that'll be your second argument (for backwards
+# compatibility).  You can put arbitrary extra arguments in :args.
 
-
-
+########################################################################################################################
 
 
 1;
