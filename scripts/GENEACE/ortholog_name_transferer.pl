@@ -53,6 +53,7 @@ my %CGC_species = ('briggsae' => 'Cbr',
 		   'pacificus'=> 'Ppa',
 		   'brugia'   => 'Bma',
                    'ovolvulus'=> 'Ovo',
+                   'sratti'   => 'Sra',
 		  );
 
 $database = $database or $wormbase->database('geneace');
