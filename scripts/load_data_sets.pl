@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last updated by: $Author: klh $     
-# Last updated on: $Date: 2015-03-09 12:38:54 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2015-04-27 13:20:57 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -220,7 +220,7 @@ sub parse_briggsae_data {
 # genBlastG projections of elegans proteins onto other species' genomes
 sub parse_genBlastG {
 
-  if ($species ne 'elegans' and $species ne 'brugia' and $species ne 'ovolvulus') {
+  if ($species ne 'elegans' and $species ne 'brugia' and $species ne 'ovolvulus' and $species ne 'sratti') {
         $wormbase->load_to_database($wormbase->autoace, $wormbase->acefiles."/genblast.ace", "genBlastG", $log);
   }
 
