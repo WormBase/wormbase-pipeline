@@ -1363,7 +1363,7 @@ sub establish_paths {
   $self->{'primary'}->{'brenneri'} = $self->primaries .'/brenneri';
   $self->{'primary'}->{'brugia'} = $self->primaries .'/brugia';
   $self->{'primary'}->{'ovolvulus'} = $self->primaries .'/ovolvulus';
-
+  $self->{'primary'}->{'sratti'} = $self->primaries .'/sratti';
   
   $self->{'misc_static'} = $self->{'build_data'} . "/MISC_STATIC";
   $self->{'misc_dynamic'} = $self->{'build_data'} . "/MISC_DYNAMIC";
