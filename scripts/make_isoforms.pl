@@ -7,7 +7,7 @@
 # This makes isoforms in the region of genes
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2015-04-22 08:35:23 $      
+# Last updated on: $Date: 2015-04-27 11:08:08 $      
 
 # Things isoformer gets confused by or misses:
 # - non-canonical spliced introns where the RNASeq intron is placed on the positive strand and so is missing from reverse-strand genes
@@ -104,7 +104,7 @@ $Iso->interactive(0); # don't want any interactive stuff done at all
 # int - pos (current position in list of child nodes)
 
 if (!defined $outfile) {
-  $outfile = "/tmp/isoforms_${species}.ace";
+  $outfile = "/nfs/wormpub/CURATION_DATA/${species}_isoformer.ace";
 }
 
 open (ISOFORM, "> $outfile")  or die "cant open $Iso->outfile()\n";
@@ -122,6 +122,8 @@ if (defined $chromosome) {
     process_genes_in_sequence($chromosome);
   }
 }
+
+print ISOFORM "\n\n// Finished.\n";
 
 close(ISOFORM);
 
