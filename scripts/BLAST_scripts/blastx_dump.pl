@@ -4,7 +4,7 @@
 #   it is possible to set TEST_FEATURE = one_feature_id to just use one
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2014-04-24 12:39:28 $ 
+# Last edited on: $Date: 2015-04-27 13:19:48 $ 
 
 my $usage = <<USAGE;
 blastx_dump.pl options:
@@ -90,6 +90,7 @@ my %logic2type = (
 		  remapepx       => 'wublastx_remanei',
 		  brepepx        => 'wublastx_brenneri',
 		  ovolpepx       => 'wublastx_ovolvulus',
+                  srapepx        => 'wublastx_sratti',
 		  gadflyx        => 'wublastx_fly',
 		  ipi_humanx     => 'wublastx_human',
 		  yeastx         => 'wublastx_yeast',
@@ -103,6 +104,7 @@ my %logic2prefix = (
 		    jappepx        => 'JA:',
 		    brugpepx       => 'BM:',
 		    ovolpepx       => 'OV:',
+                    srapepx        => 'SRP:'
 		    brigpepx       => 'BP:',
 		    remapepx       => 'RP:',
 		    brepepx        => 'CN:',
@@ -323,7 +325,7 @@ sub filter_features {
 }
 
 sub get_latest_pep {
-   my @species =qw(wormpep remapep brigpep ppapep jappep brepep brugpep ovolpep);
+   my @species =qw(wormpep remapep brigpep ppapep jappep brepep brugpep ovolpep srapep);
    my @history_files;
    SPECIES: foreach my $s (@species){
        my @files = sort {$b cmp $a} glob($ENV{'WORMPUB'}."/BUILD/WORMPEP/$s*/*history*");
