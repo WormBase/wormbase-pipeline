@@ -178,9 +178,12 @@ sub validate_name {
                                      'CGC' => '^Ovo-[a-z21]{3,4}-[1-9]\d*(\.\d+)?$',
                                      'Sequence' => 'OVOC\d+$',
                                      'Public_name' => '^Ovo-[a-z21]{3,4}-[1-9]\d*(\.\d+)?$|^OVOC\d+$'
-                        },
-                                           
-
+                                     },
+                        'sratti' => {
+                                     'CGC' => '^Sra-[a-z21]{3,4}-[1-9]\d*(\.\d+)?$',
+                                     'Sequence' => 'SRAE_[\dX]\d+$',
+                                     'Public_name' => '^Sra-[a-z21]{3,4}-[1-9]\d*(\.\d+)?$|^SRAE_[\dX]\d+$'
+                                     },
 		      };
 
     unless ( $name =~ /$name_checks->{$species}->{$type}/ ) {
