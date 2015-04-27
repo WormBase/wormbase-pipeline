@@ -23,6 +23,7 @@ my %protein_blast_logics = (
   'ppapepx'        => 'PP', 
   'brugpepx'       => 'BM',
   'ovolpepx'       => 'OV',
+  'srapepx'        => 'SRP'
     );
 
 
@@ -98,11 +99,11 @@ foreach my $analysis_logic_name (@analysis_logic_names) {
     my $hits = $wb2ens->parse_protein_align_features_gff($gff_file, $analysis, $tag);
     $wb2ens->write_protein_align_features($hits);
 
-  } elsif (grep { $analysis_logic_name eq $_ } ('celegans_mrna', 'cbriggsae_mrna', 'cremanei_mrna', 'cbrenneri_mrna', 'cremanei_mrna', 'cjaponica_mrna','ppacificus_mrna', 'bmalayi_mrna', 'ovolvulus_mrna')) {
+  } elsif (grep { $analysis_logic_name eq $_ } ('celegans_mrna', 'cbriggsae_mrna', 'cremanei_mrna', 'cbrenneri_mrna', 'cremanei_mrna', 'cjaponica_mrna','ppacificus_mrna', 'bmalayi_mrna', 'ovolvulus_mrna','sratti_mrna')) {
     my $hits = $wb2ens->parse_dna_align_features_gff($gff_file, $analysis, 'BLAT_mRNA_BEST', 'expressed_sequence_match', $estori);
     $wb2ens->write_dna_align_features($hits);
 
-  } elsif (grep { $analysis_logic_name eq $_ } ('celegans_est', 'cbriggsae_est', 'cremanei_est', 'cbrenneri_est', 'cremanei_est', 'cjaponica_est','ppacificus_est', 'bmalayi_est','ovolvulus_est')) {
+  } elsif (grep { $analysis_logic_name eq $_ } ('celegans_est', 'cbriggsae_est', 'cremanei_est', 'cbrenneri_est', 'cremanei_est', 'cjaponica_est','ppacificus_est', 'bmalayi_est','ovolvulus_est','sratti_est')) {
     my $hits = $wb2ens->parse_dna_align_features_gff($gff_file, $analysis, 'BLAT_EST_BEST', 'expressed_sequence_match', $estori);
     $wb2ens->write_dna_align_features($hits);
 
