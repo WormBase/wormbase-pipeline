@@ -6,7 +6,7 @@
 #
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2015-01-09 12:23:58 $      
+# Last updated on: $Date: 2015-04-27 13:37:33 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -934,6 +934,7 @@ sub do_analysis_check {
 	    'remanei'     => 'Caenorhabditis remanei',
 	    'brugia'      => 'Brugia malayi',
 	    'ovolvulus'   => 'Onchocerca volvulus',
+	    'sratti'      => 'Strongyloides ratti',
 	   );
 
   $log->write_to("\n");
@@ -1029,6 +1030,7 @@ sub get_controls {
 			'ovolvulus' => 'O_volvulus_Cameroon_isolate',
 			'remanei'   => 'SB146',
 			'pristionchus'   => 'PS312',
+			'sratti'    => 'ED321',
 		       );
 
   my @Embryo = ('WBls:0000003', 'WBls:0000004', 'WBls:0000005',
