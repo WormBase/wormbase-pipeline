@@ -7,7 +7,7 @@
 # Methods for running the Isoformer pipeline and other useful things
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2015-04-22 10:15:04 $      
+# Last updated on: $Date: 2015-04-28 08:40:15 $      
 
 =pod
 
@@ -1256,21 +1256,7 @@ sub make_isoform {
     die "The Method '$Method' is not recognised\n";
   }
 
-  my $personid;
-  my $USER = $ENV{USER};
-  if ($USER eq 'gw3') {
-    $personid = 'WBPerson4025';
-  } elsif ($USER eq 'pad') {
-    $personid = 'WBPerson1983';
-  } elsif ($USER eq 'mh6') {
-    $personid = 'WBPerson4055';
-  } elsif ($USER eq 'jl16') { # Jane Lomax
-    $personid = 'WBPerson28994';
-  } elsif ($USER eq 'jane') { # Jane Lomax
-    $personid = 'WBPerson28994';
-  } else {
-    die "Unknown WBPerson id: $USER\n";
-  }
+  my $personid = $self->person();
 
   my ($day, $mon, $yr)  = (localtime)[3,4,5];
   my $date = sprintf("%02d%02d%02d",$yr-100, $mon+1, $day);
@@ -1297,6 +1283,7 @@ sub make_isoform {
   my $remark;
   my $DB_remark;
   my $Brief_identification;
+  my $USER = $ENV{USER};
   if ($clone_tag eq 'Transcript') { 
     $remark = "Remark \"[$date $USER] Created this non-coding transcript isoform based on the RNASeq splice data";
     if ($total_score) { # will be zero in a one-exon gene, so don't bother to report it
@@ -1539,7 +1526,7 @@ sub fix {
   }
 
   # check if target exists
-  my $message;
+  my $message = '';
   if ($biotype eq 'CDS') {
     $target_obj = $self->{db}->fetch(CDS => "$target");
   } else {
@@ -1554,7 +1541,7 @@ sub fix {
       $self->aceout("Method non_coding_transcript\n");
     }
 
-    $message = "\n*** Fix: $biotype $target does not exist - creating it.\n";
+    $message .= "\n*** Fix: $biotype $target does not exist - creating it.\n";
 
   } else {
     $target_exists = 1;
@@ -1639,10 +1626,37 @@ sub fix {
       $self->aceout("\n");
     }
  
-
     $self->aceout("\n\n");
 
-    $message = "\n*** Fix: structure updated for $target\n "
+    $message .= "\n*** Fix: structure updated for $target\n "
+  }
+
+  # do we need to make any existing object into an isoform?
+  if ($target =~ /(\S+?)b$/) { # making the 'b' isoform
+    my $orig_structure = $1;
+    my $orig_structure_obj;
+    my $orig_structure_class;
+    $orig_structure_obj = $self->{db}->fetch(CDS => "$orig_structure");
+    $orig_structure_class = 'CDS';
+    if (!defined $orig_structure_obj) {
+      $orig_structure_obj = $self->{db}->fetch(Pseudogene => "$orig_structure");
+      $orig_structure_class = 'Pseudogene';
+      if (!defined $orig_structure_obj) {
+	$orig_structure_obj = $self->{db}->fetch(Transcript => "$orig_structure");
+	$orig_structure_class = 'Transcript';
+      }
+    }
+    if (defined $orig_structure_obj) {
+      my $personid = $self->person();
+      $self->aceout("\n-R $orig_structure_class $orig_structure ${orig_structure}a\n");
+      $self->aceout("\n");
+      $self->aceout("\n$orig_structure_class : ${orig_structure}a\n");
+      $self->aceout("Isoform Curator_confirmed $personid\n");
+      $self->aceout("\n");
+      $message .= "\n*** Fix: $orig_structure renamed to ${orig_structure}a\n";
+    } else {
+      $message .= "\n*** Well this is odd, can't find object '$orig_structure' to rename to the 'a' isoform!\n";
+    }
   }
 
   print $message;
@@ -1681,23 +1695,23 @@ sub check {
     $target_obj = $self->{db}->fetch(Transcript => "$target");
   }
   if (! defined $target_obj) {
-    $message = "Can't find '$target' - did you save it?\n";
+    $message .= "Can't find '$target' - did you save it?\n";
     $status = 1;
   } else {
 
     # get the Method
     my $method = $target_obj->Method;
     if (!defined  $method) {
-      $message = "\n*** WARNING: No Method found\n";
+      $message .= "\n*** WARNING: No Method found\n";
       $status = 1;
     } else {
       $method = $method->name;
       if ($method ne "curated" && $method ne "Pseudogene" && $method ne "isoformer") {
-	$message = "\n*** WARNING: Invalid Method: '$method'\n";
+	$message .= "\n*** WARNING: Invalid Method: '$method'\n";
 	$status = 1;
       } else {
 	if ($method ne "isoformer") { # warn about a Method="isoformer", but carry on checking
-	  $message = "\n*** WARNING: Invalid Method: '$method'\n"
+	  $message .= "\n*** WARNING: Invalid Method: '$method'\n"
 	}
 	# get the sorted exons
 	my @exon_coord1 = sort by_number ($target_obj->get('Source_exons',1));
@@ -1724,7 +1738,7 @@ sub check {
 
 	# the exons should fit the Sequence span exactly
 	if ($exon_coord2[$#exon_coord2] - $exon_coord1[0] != abs($target_start - $target_end)) {
-	  $message = "\n*** WARNING: The Source_exons do not fit in the span of this object on the Sequence (bogus extra exons?)\n";
+	  $message .= "\n*** WARNING: The Source_exons do not fit in the span of this object on the Sequence (bogus extra exons?)\n";
 	  $status = 1;
 	} else {
 
@@ -1753,7 +1767,7 @@ sub check {
   }
 
   if ($status == 0) {
-    $message = "'$target' looks OK\n";
+    $message .= "'$target' looks OK\n";
   }
 
   print $message;
@@ -1761,6 +1775,26 @@ sub check {
 }
 ###############################################################################
 sub by_number{ $a <=> $b;}
+###############################################################################
+sub person {
+  my ($self) = @_;
+  my $personid;
+  my $USER = $ENV{USER};
+  if ($USER eq 'gw3') {
+    $personid = 'WBPerson4025';
+  } elsif ($USER eq 'pad') {
+    $personid = 'WBPerson1983';
+  } elsif ($USER eq 'mh6') {
+    $personid = 'WBPerson4055';
+  } elsif ($USER eq 'jl16') { # Jane Lomax
+    $personid = 'WBPerson28994';
+  } elsif ($USER eq 'jane') { # Jane Lomax
+    $personid = 'WBPerson28994';
+  } else {
+    die "Unknown WBPerson id: $USER\n";
+  }
+  return $personid;
+}
 ###############################################################################
 
 1;
