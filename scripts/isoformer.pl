@@ -7,7 +7,7 @@
 # This does stuff with what is in the active zone
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2015-04-28 08:44:03 $      
+# Last updated on: $Date: 2015-04-29 12:30:27 $      
 
 # Things isoformer gets confused by or misses:
 # - non-canonical spliced introns where the RNASeq intron is placed on the positive strand and so is missing from reverse-strand genes
@@ -170,6 +170,11 @@ while (1) {
       $Iso->check($userinput);
       next;
     }
+    if ($userinput =~ /^tsl\b/) {
+      $Iso->check_tsls($userinput);
+      next;
+    }
+    
     # get the region of interest from the CDS name or clone positions
     ($chromosome, $region_start, $region_end, $sense, $biotype, $gene) = $Iso->get_active_region($userinput);
     
