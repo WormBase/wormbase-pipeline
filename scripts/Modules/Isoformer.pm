@@ -7,7 +7,7 @@
 # Methods for running the Isoformer pipeline and other useful things
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2015-04-28 08:40:15 $      
+# Last updated on: $Date: 2015-04-29 12:30:47 $      
 
 =pod
 
@@ -421,6 +421,10 @@ sub get_active_region {
       my $clone_start;
       my $clone_end;
       my $clone = $obj->Sequence;
+      if (!defined $clone) {
+	print STDERR "Sequence is not defined for the CDS object $region[0]\n";
+	return undef;
+      }
       my @clone_CDSs = $clone->CDS_child;
       foreach my $CDS ( @clone_CDSs ) {
 	next unless ($CDS->name eq "$region[0]");
@@ -442,6 +446,10 @@ sub get_active_region {
 	my $clone_start;
 	my $clone_end;
 	my $clone = $obj->Sequence;
+	if (!defined $clone) {
+	  print STDERR "Sequence is not defined for the Pseudogene object $region[0]\n";
+	  return undef;
+	}
 	my @clone_Pseudogene = $clone->Pseudogene;
 	foreach my $Pseudogene ( @clone_Pseudogene ) {
 	  next unless ($Pseudogene->name eq "$region[0]");
@@ -466,6 +474,10 @@ sub get_active_region {
 	my $clone_start;
 	my $clone_end;
 	my $clone = $obj->Sequence;
+	if (!defined $clone) {
+	  print STDERR "Sequence is not defined for the Transcript object $region[0]\n";
+	  return undef;
+	}
 	my @clone_Transcript = $clone->Transcript;
 	foreach my $Transcript ( @clone_Transcript ) {
 	  next unless ($Transcript->name eq "$region[0]");
@@ -1772,6 +1784,47 @@ sub check {
 
   print $message;
   return $status;
+}
+###############################################################################
+sub check_tsls {
+  my ($self, $userinput) = @_;
+
+  if (! $self->{interactive}) {return}
+
+  my $status = 0;
+  my $message = '';
+
+  my @f = split /\s+/, $userinput;
+
+  my $target = $f[1];
+  if (! defined $target) {
+    print "tsl what?\n";
+    return $status;
+  }
+
+  # get the region of interest from the CDS name or clone positions
+  my ($chromosome, $region_start, $region_end, $sense, $biotype, $gene) = $self->get_active_region($target);
+
+  my @TSL = &get_TSL_in_region($chromosome, $region_start, $region_end, $sense, $self->{all_TSL}{$chromosome});
+  foreach my $TSL (@TSL) {
+    my $Feature = $TSL->{id};
+    my $type = $TSL->{tsl};
+    my $FT_obj = $self->{db}->fetch(Feature => "$Feature");
+    my @sequences = $FT_obj->Defined_by_sequence;
+    my @papers = $FT_obj->Defined_by_paper;
+    my @persons = $FT_obj->Defined_by_person;
+    my @analyses = $FT_obj->Defined_by_analysis;
+    my @remark = $FT_obj->Remark;
+    my $result=0;
+    my $report='';
+    if (scalar @sequences) {$result=1; $report.=" sequences"}
+    if (scalar @papers) {$result=1; $report.=" papers"}
+    if (scalar @persons) {$result=1; $report.=" persons"}
+    if (scalar @analyses > 1) {$result=1; $report.=" analyses"}
+    if (scalar @remark > 1 || $remark[0] !~ /\s1\sreads$/ ) {$result=1; $report.=" remarks"}
+    print "$Feature $type ". ($result ? "Looks Good" : "Too weak") . " ($report)\n";
+  }
+
 }
 ###############################################################################
 sub by_number{ $a <=> $b;}
