@@ -7,7 +7,7 @@
 # Methods for running the Isoformer pipeline and other useful things
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2015-04-29 12:30:47 $      
+# Last updated on: $Date: 2015-04-29 13:03:46 $      
 
 =pod
 
@@ -1809,20 +1809,40 @@ sub check_tsls {
   foreach my $TSL (@TSL) {
     my $Feature = $TSL->{id};
     my $type = $TSL->{tsl};
-    my $FT_obj = $self->{db}->fetch(Feature => "$Feature");
-    my @sequences = $FT_obj->Defined_by_sequence;
-    my @papers = $FT_obj->Defined_by_paper;
-    my @persons = $FT_obj->Defined_by_person;
-    my @analyses = $FT_obj->Defined_by_analysis;
-    my @remark = $FT_obj->Remark;
-    my $result=0;
-    my $report='';
-    if (scalar @sequences) {$result=1; $report.=" sequences"}
-    if (scalar @papers) {$result=1; $report.=" papers"}
-    if (scalar @persons) {$result=1; $report.=" persons"}
-    if (scalar @analyses > 1) {$result=1; $report.=" analyses"}
-    if (scalar @remark > 1 || $remark[0] !~ /\s1\sreads$/ ) {$result=1; $report.=" remarks"}
-    print "$Feature $type ". ($result ? "Looks Good" : "Too weak") . " ($report)\n";
+    print "$Feature $type ";
+    foreach my $FT (split /\s+/, $Feature) {
+      
+      my $FT_obj = $self->{db}->fetch(Feature => $FT);
+      if (!defined $FT_obj) {
+	print "$Feature $type - can't find this in the database!\n";
+      } else {
+	my @sequences = $FT_obj->Defined_by_sequence;
+	my @papers = $FT_obj->Defined_by_paper;
+	my @persons = $FT_obj->Defined_by_person;
+	my @analyses = $FT_obj->Defined_by_analysis;
+	my @remark = $FT_obj->Remark;
+	my $result=0;
+	my $report='';
+	my $c = scalar @sequences;
+	if ($c) {$result=1; $report.=" $c sequences"}
+	$c = scalar @papers;
+	if ($c) {$result=1; $report.=" $c papers"}
+	$c = scalar @persons;
+	if ($c) {$result=1; $report.=" $c persons"}
+	$c = scalar @analyses;
+	my $d = scalar @remark;
+	my $e=0;
+	if (defined $remark[0]) {
+	  ($e) = ($remark[0] !~ /\s\d+\sreads$/);
+	}
+	if ($d < $e) {$d = $e}
+	if ($c > 1) {$result=1; $report.=" $c analyses"} 
+	elsif ($d > 1) {$result=1; $report.=" $d remarks"}
+	my $r = ($result ? "Looks Good" : "Too weak");
+	print " $r ($report)  ";
+      }
+    }
+    print "\n";
   }
 
 }
