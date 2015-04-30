@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2015-04-30 09:39:26 $
+# Last updated on: $Date: 2015-04-30 10:02:23 $
 # Last updated by: $Author: gw3 $
 #
 # see pod documentation at end of file for more information about this script
@@ -110,25 +110,67 @@ else {
 ######################################################################################
     my $qclass;
     my @qclasses = ("Pseudogene", "Transcript", "CDS");
-
+    my %seen;
+    my $s;
     foreach $qclass (@qclasses) {
       $log->write_to("\nQuick test of $qclass\n");
+      %seen = ();
 
       my @tmpbad_genes = $db->fetch (-query => "FIND $qclass where !method");
-      foreach my $g (@tmpbad_genes) {$log->write_to("Error: $qclass $g has no method\n");}
+      foreach my $g (@tmpbad_genes) {
+	my $gg=$g->name; 
+	$log->write_to("Error: $qclass $gg has no method\n"); 
+	$seen{$gg}=1;
+      }
 
       my @no_se = $db->fetch (-query => "FIND $qclass where !Source_exons");
-      foreach my $g (@no_se) {$log->write_to("Error: $qclass $g has no Source_exons\n");}
+      foreach my $g (@no_se) {
+	my $gg=$g->name;
+	if (exists $seen{$gg}) {
+	  $s=' (seen already)';
+	} else {
+	  $s='';
+	}
+	$log->write_to("Error: $qclass $gg has no Source_exons $s\n"); 
+	$seen{$gg}=1;
+      }
 
       my @no_Sparent_genes = $db->fetch (-query => "FIND $qclass where !S_parent");
-      foreach my $g (@no_Sparent_genes) {$log->write_to("Error: $qclass $g has no S_parent\n");}
+      foreach my $g (@no_Sparent_genes) {
+	my $gg=$g->name; 
+	if (exists $seen{$gg}) {
+	  $s=' (seen already)';
+	} else {
+	  $s='';
+	}
+	$log->write_to("Error: $qclass $gg has no S_parent $s\n"); 
+	$seen{$gg}=1;
+      }
 
       my @no_species = $db->fetch (-query => "FIND $qclass where !Species");
-      foreach my $g (@no_species) {$log->write_to("Error: $qclass $g has no Species\n");}
+      foreach my $g (@no_species) {
+	my $gg=$g->name; 
+	if (exists $seen{$gg}) {
+	  $s=' (seen already)';
+	} else {
+	  $s='';
+	}
+	$log->write_to("Error: $qclass $gg has no Species $s\n"); 
+	$seen{$gg}=1;
+      }
     }
 
+    # and a test only for CDS
     my @no_CDS = $db->fetch (-query => "FIND CDS where !CDS");
-    foreach my $g (@no_CDS) {$log->write_to("Error: CDS $g has no CDS tag\n");}
+    foreach my $g (@no_CDS) {
+      my $gg=$g->name; 
+	if (exists $seen{$gg}) {
+	  $s=' (seen already)';
+	} else {
+	  $s='';
+	}
+      $log->write_to("Error: CDS $gg has no CDS tag $s\n");
+    }
 
     print STDERR "Fetching all genes...\n" if $verbose;
     @Predictions = $db->fetch (-query => 'Find All_genes where (Species = "'.$wormbase->full_name.'")');
