@@ -4,8 +4,8 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2015-04-22 09:34:13 $
-# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2015-04-30 09:39:26 $
+# Last updated by: $Author: gw3 $
 #
 # see pod documentation at end of file for more information about this script
 
@@ -109,41 +109,28 @@ else {
     # Quick tests
 ######################################################################################
     my $qclass;
-    my @qclasses = ("CDS","Pseudogene","Transcript");
+    my @qclasses = ("Pseudogene", "Transcript", "CDS");
+
     foreach $qclass (@qclasses) {
+      $log->write_to("\nQuick test of $qclass\n");
+
       my @tmpbad_genes = $db->fetch (-query => "FIND $qclass where !method");
-      splice @bad_genes,0,0,@tmpbad_genes;
+      foreach my $g (@tmpbad_genes) {$log->write_to("Error: $qclass $g has no method\n");}
+
       my @no_se = $db->fetch (-query => "FIND $qclass where !Source_exons");
-      splice @bad_genes,0,0,@no_se;
+      foreach my $g (@no_se) {$log->write_to("Error: $qclass $g has no Source_exons\n");}
+
       my @no_Sparent_genes = $db->fetch (-query => "FIND $qclass where !S_parent");
-      splice @bad_genes,0,0,@no_Sparent_genes;
+      foreach my $g (@no_Sparent_genes) {$log->write_to("Error: $qclass $g has no S_parent\n");}
+
       my @no_species = $db->fetch (-query => "FIND $qclass where !Species");
-      splice @bad_genes,0,0,@no_species;
-      #my @no_lab = $db->fetch (-query => "FIND $qclass where !From_laboratory");
-      #splice @bad_genes,0,0,@no_lab;
+      foreach my $g (@no_species) {$log->write_to("Error: $qclass $g has no Species\n");}
     }
+
     my @no_CDS = $db->fetch (-query => "FIND CDS where !CDS");
-    splice @bad_genes,0,0,@no_CDS;
+    foreach my $g (@no_CDS) {$log->write_to("Error: CDS $g has no CDS tag\n");}
 
-
-    my %h = map {($_,1)} @bad_genes;
-    my @bad_genesuniq = keys %h;
-
-    $Bcount = @bad_genesuniq;
-    if ($Bcount ne '0') {
-      $log->write_to("Error: $Bcount models have a quicktest issue (No method/Source_exons/S_parent/Species/CDS), please check\n");
-      print "Error: $Bcount models have a quicktest issue (No method/Source_exons/S_parent/Species/CDS), please check\n" if ($debug);
-      foreach $bad_genes(@bad_genesuniq) {
-	$log->write_to("Error: $bad_genes has one of the above issues\n"); #if ($verbose);
-	print "Error: $bad_genes has one of the above issues\n" if ($debug);
-      }
-    }
-    else {
-      $log->write_to("\nGreat $Bcount models have basic issues :)\n\n");
-      print "Great $Bcount models have basic issues :)\n" if ($debug);
-    }
     print STDERR "Fetching all genes...\n" if $verbose;
-    #@Predictions = $db->fetch (-query => 'FIND All_genes where method AND Species = "$speciesfn"');
     @Predictions = $db->fetch (-query => 'Find All_genes where (Species = "'.$wormbase->full_name.'")');
   }
   
