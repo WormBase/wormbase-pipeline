@@ -354,7 +354,7 @@ Colour GREEN
 Show_up_strand 
 Width 2.000000
 Show_text 
-EMBL_feature "miRNA"
+EMBL_feature "prim_transcript"
 Remark "SO:0000647"
 GFF_source "miRNA_primary_transcript"
 GFF_feature "miRNA_primary_transcript"
@@ -365,7 +365,7 @@ Colour GREEN
 Show_up_strand 
 Width 2.000000
 Show_text 
-EMBL_feature "miRNA"
+EMBL_feature "precursor_RNA"
 Remark "SO:0001244"
 GFF_source "pre_miRNA"
 GFF_feature "pre_miRNA"
@@ -2571,13 +2571,27 @@ EMBL_dump_info OS_line "Caenorhabditis elegans"
 EMBL_dump_info OC_line "Eukaryota\; Metazoa\; Nematoda\; Chromadorea\; Rhabditida\; Rhabditoidea\;"
 EMBL_dump_info OC_line "Rhabditidae; Peloderinae; Caenorhabditis."
 EMBL_dump_info RL_submission "Submitted (DD-MMM-YYYY) to the INSDC."
-EMBL_dump_info CC_line "Protein-coding gene structures below are the result of integration and manual review of the following types of data: ab initio predictions by Genefinder (P. Green and L. Hillier, pers. comm.)\; alignments to published proteins and cDNAs\; genome sequence conservation with other nematodes (e.g. to C. briggsae using WABA: Genome Res. 2000. 10:1115-1125)\; sequence features (such as trans-splice and polyA sites)."
-EMBL_dump_info CC_line "Sources of data: large-scale EST projects of Yuji Kohara (http:\/\/www.ddbj.nig.ac.jp\/c-elegans\/html\/CE_INDEX.html)\; ORFeome cloning project (http:\/\/worfdb.dfci.harvard.edu)\; RST large-scale sequencing project (Genome Res. 2009. 19:2334-2342)\; IST library (Science. 2004. 303:540-3)\; RT-PCR EST set (Ewing B. Green P. 2010 Unpublished)\; UTRome EST data submission (UTRome v1 Mangone M. Piano F. 2009)\; TEC-RED data (PNAS 2004. 101:1650-1655)\; RNA Deep sequencing data (454 read clusters - Makedonka Mitreva, unpublished\; Illumina sequence data, Genome Res. 2009. 19:657-66)\; Numerous data sets from the modENCODE project (Science. 2010. 330:1775-87)\; Individual C. elegans Nucleotide Database submissions\; Personal communications with C. elegans researchers\;"
-EMBL_dump_info CC_line "Non-Coding gene structures below are derived using the following methods and data: ab initio prediction of tRNAs by tRNAscan-SE (Nucl. Acids. Res., 25, 955-964)\; integration and appraisal of miRNAs from miRBase (http:\/\/www.mirbase.org)\; integration and appraisal of RFAM predictions (rfam.sanger.ac.uk)\; 21U-RNAs (Cell. 2006. 127:1193-1207)\; modENCODE data (Science. 2010. 330:1775-87)\; manual curation of novel published ncRNAs from the literature."
-EMBL_dump_info CC_line "Current sequence finishing criteria for the C. elegans genome sequencing consortium are that all bases are either sequenced unambiguously on both strands, or on a single strand with both a dye primer and dye terminator reaction, from distinct subclones. Exceptions are indicated by an explicit note."
-EMBL_dump_info CC_line "For a graphical representation of this sequence and its analysis see:- http:"
+EMBL_dump_info CC_line "NOTE: Sequence features are no longer represented on this clone record, but on the record for the parent chromosome."
+EMBL_dump_info CC_line "Sequence finishing criteria for the C. elegans genome sequencing consortium are that all bases are either sequenced unambiguously on both strands, or on a single strand with both a dye primer and dye terminator reaction, from distinct subclones. Exceptions are indicated by an explicit note."
 EMBL_dump_info source_organism "Caenorhabditis elegans"
 EMBL_dump_info gene_from_name
+
+Method : "worm_EMBL-dump_chrom"
+Display 
+EMBL_feature    
+EMBL_dump_info   ID_template "\%s"
+EMBL_dump_info   ID_division "INV"
+EMBL_dump_info   DE_format "Caenorhabditis elegans chromosome \%s"
+EMBL_dump_info   OS_line "Caenorhabditis elegans"
+EMBL_dump_info   OC_line "Eukaryota\; Metazoa\; Nematoda\; Chromadorea\; Rhabditida\; Rhabditoidea\;"
+EMBL_dump_info   OC_line "Rhabditidae\; Peloderinae\; Caenorhabditis."
+EMBL_dump_info   RL_submission "Submitted (DD-MMM-YYYY) to the INSDC."
+EMBL_dump_info   CC_line "Protein-coding gene structures below are the result of integration and manual review of the following types of data: ab initio predictions by Genefinder (P. Green and L. Hillier, pers. comm.)\; alignments to published proteins and cDNAs\; genome sequence conservation with other nematodes (e.g. to C. briggsae using WABA: Genome Res. 2000. 10:1115-1125)\; sequence features (such as trans-splice and polyA sites)."
+EMBL_dump_info   CC_line "Sources of data: large-scale EST projects of Yuji Kohara (http:\/\/www.ddbj.nig.ac.jp\/c-elegans\/html\/CE_INDEX.html)\; ORFeome cloning project (http:\/\/worfdb.dfci.harvard.edu)\; RST large-scale sequencing project (Genome Res. 2009. 19:2334-2342)\; IST library (Science. 2004. 303:540-3)\; RT-PCR EST set (Ewing B. Green P. 2010 Unpublished)\; UTRome EST data submission (UTRome v1 Mangone M. Piano F. 2009)\; TEC-RED data (PNAS 2004. 101:1650-1655)\; RNA Deep sequencing data (454 read clusters - Makedonka Mitreva, unpublished\; Illumina sequence data, Genome Res. 2009. 19:657-66)\; Numerous data sets from the modENCODE project (Science. 2010. 330:1775-87)\; Individual C. elegans Nucleotide Database submissions\; Personal communications with C. elegans researchers\;"
+EMBL_dump_info   CC_line "Non-Coding gene structures below are derived using the following methods and data: ab initio prediction of tRNAs by tRNAscan-SE (Nucl. Acids. Res., 25, 955-964)\; integration and appraisal of miRNAs from miRBase (http:\/\/www.mirbase.org)\; integration and appraisal of RFAM predictions (rfam.sanger.ac.uk)\; 21U-RNAs (Cell. 2006. 127:1193-1207)\; modENCODE data (Science. 2010. 330:1775-87)\; manual curation of novel published ncRNAs from the literature."
+EMBL_dump_info   source_organism "Caenorhabditis elegans"
+EMBL_dump_info   gene_from_name
+
 
 Method : "briggsae_EMBL-dump"
 Display
@@ -2613,7 +2627,7 @@ EMBL_dump_info RL_submission "Submitted (DD-MMM-YYYY) to the INSDC."
 EMBL_dump_info CC_line "Details of B. malayi assembly version B_malayi-3.0:"
 EMBL_dump_info CC_line "To improve upon the B. malayi nuclear genome assembly version 1, additional short read whole genome sequencing was conducted. The resulting data was reassembled into a new version 3 with an approximate coverage of 20x"
 EMBL_dump_info CC_line "7426 of the 13279 supercontigs fell below 2001bp in length, but are included for completeness."
-EMBL_dump_info CC_line "Assembly_name: B_malayi-3.0\nSeq_technoloy: capillary+next-gen (whole-genome-shotgun)\nSeq_coverage: 20x"
+EMBL_dump_info CC_line "Assembly_name: B_malayi-3.0\nSeq_technology: capillary+next-gen (whole-genome-shotgun)\nSeq_coverage: 20x"
 EMBL_dump_info CC_line "Annotation details:"
 EMBL_dump_info CC_line "Coding seqences below are the result of integration and manual review of the following data : RNASeq data (Ghedin E.,Berriman M. and Michalski M, unpublished) using cufflinks (Trapnell S et all)\; similarity to other proteins from BlastX analyses (http:\/\/blast.wustl.edu)\; the previous B. malayi curation efforts (Ghedin E. et. al, Science 317:1756-1769, 2002)\; gene predictions by Augustus (Stanke M., Schffmann O., Morgenstern B., Waack S., BMC Bioinformatics 7-62, 2006)\; GenBlastG aligned ortholog proteins from C.elegans (She R. et al., Bioinformatics, 2011)\;and personal communications with B. malayi researchers. tRNAs are predicted using the program tRNAscan-SE (Lowe T.M. and Eddy S.R., 1997, Nucl. Acids. Res., 25, 955-964)."
 EMBL_dump_info CC_line "For a graphical representation of this sequence and its analysis see:- http:"
