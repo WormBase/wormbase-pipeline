@@ -7,7 +7,7 @@
 # Methods for running the Isoformer pipeline and other useful things
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2015-04-29 13:03:46 $      
+# Last updated on: $Date: 2015-04-30 14:02:39 $      
 
 =pod
 
@@ -1786,6 +1786,7 @@ sub check {
   return $status;
 }
 ###############################################################################
+# command to display information about the TSLs in the region of interest
 sub check_tsls {
   my ($self, $userinput) = @_;
 
@@ -1847,7 +1848,167 @@ sub check_tsls {
 
 }
 ###############################################################################
+# force a structure to become a functional CDS by adding in small
+# introns to jump around premature STOP codons
+
+sub force {
+
+  my ($self, $userinput) = @_;
+
+  if (! $self->{interactive}) {return}
+
+  my $status = 0;
+  my $message = '';
+  my $end_not_found;
+  my $start_not_found;
+
+  my @f = split /\s+/, $userinput;
+
+  my $target = $f[1];
+  if (! defined $target) {
+    print "force what?\n";
+    return $status;
+  }
+
+  # get the object
+  my $biotype = 'CDS';
+  my $target_obj = $self->{db}->fetch(CDS => "$target");
+  if (! defined $target_obj) {
+    $biotype = 'Transcript';
+    $target_obj = $self->{db}->fetch(Transcript => "$target");
+  }
+  if (! defined $target_obj) {
+    $message .= "Can't find '$target' - did you save it?\n";
+    $status = 1;
+  } else {
+
+    my $sense = '+';
+
+    # get the sorted exons
+    my @exon_coord1 = sort by_number ($target_obj->get('Source_exons',1));
+    my @exon_coord2 = sort by_number ($target_obj->get('Source_exons',2));
+    
+    # get the Sequence start-end span 
+    my $clone = $target_obj->Sequence;
+    if (!defined $clone) {
+      print STDERR "Sequence is not defined for the object $f[0]\n";
+      return undef;
+    }
+    my @clone_CDSs;
+    if ($biotype eq 'CDS') {
+      @clone_CDSs = $clone->CDS_child;
+    } elsif ($biotype eq 'Transcript') {
+      @clone_CDSs = $clone->Transcript;
+    }
+    my ($clone_start, $clone_end);
+    foreach my $CDS ( @clone_CDSs ) {
+      next unless ($CDS->name eq "$target");
+      $clone_start = $CDS->right->name;
+      $clone_end = $CDS->right->right->name;
+      last;
+    }
+
+    my @chrom_exons1; # get exons in chromosome forward sense coords
+    my @chrom_exons2;
+    my ($chromosome, $start, $end);
+    my $coords = $self->{coords};
+    ($chromosome, $start) = $coords->Coords_2chrom_coords($clone, $clone_start);
+    ($chromosome, $end) = $coords->Coords_2chrom_coords($clone, $clone_end);
+    if ($start > $end) {
+      $sense = '-';
+      foreach my $e (@exon_coord1) {push @chrom_exons1, $start - $e + 1}
+      foreach my $e (@exon_coord2) {push @chrom_exons2, $start - $e + 1}
+    } else { # forward sense
+      foreach my $e (@exon_coord1) {push @chrom_exons1, $start + $e - 1}
+      foreach my $e (@exon_coord2) {push @chrom_exons2, $start + $e - 1}
+    }
+
+    @chrom_exons1 = sort by_number @chrom_exons1;
+    @chrom_exons2 = sort by_number @chrom_exons2;
+
+    # make the sequence from the exons
+    my $cds_seq;
+    for (my $i=0; $i < scalar @chrom_exons1; $i++) {  
+      my $exon_start = $chrom_exons1[$i];
+      my $exon_end = $chrom_exons2[$i];
+      my $len = $exon_end - $exon_start + 1;
+      $cds_seq .= $self->{seq_obj}->Sub_sequence($chromosome, $exon_start-1, $len);
+    }
+
+    if ($sense eq '-') {
+      $cds_seq = $self->{seq_obj}->DNA_revcomp($cds_seq);
+    }
+
+    # find the STOP codons, including the last codon
+    my @stops;
+    foreach my $stop ('taa', 'tga', 'tag') {
+      my $st_offset = 0;
+      my $st_result = index($cds_seq, $stop, $st_offset);
+      while ($st_result != -1) {
+	my $frame = $st_result % 3;
+	if ($frame == 0) {
+	  push @stops, $st_result; # 0 is the first base
+	}
+	$st_offset = $st_result + 1;
+	$st_result = index($cds_seq, $stop, $st_offset);
+      }
+    }
+    
+    # check the last codon is at the end of the Sequence span of the structure
+    my $last_stop = $stops[$#stops];
+    if (!defined $last_stop || length $cds_seq != $last_stop - 3) {
+      $message .= "No final STOP codon found - setting 'End_not_found' tag\n";
+      $end_not_found = 1;
+    } else { # remove the final STOP codon
+      pop @stops;
+    }
+    if ($cds_seq !~ /^atg/) {
+      $message .= "No START codon found - setting 'Start_not_found' tag\n";
+      $start_not_found = 1;
+    }
+
+    # find each premature STOP codon
+    # if it is less than three bases away from an intron splice site, then print warning and return
+    # add an intron to splice around the STOP codon
+    foreach my $stop (@stops) {
+      for (my $i=0; $i < scalar @exon_coord1; $i++) { 
+	my $done=0;
+	if ($stop > $exon_coord1[$i] && $stop < $exon_coord2[$i] - 3) { # $stop is zero-base coord, $exon_coord is one-based
+	  push @exon_coord1, $stop;
+	  push @exon_coord2, $stop+4;
+	  $done = 1;
+	  last;
+	}
+	if (!$done) {$message .= "STOP number $i is too close to the exon edge to splice around\n";}
+      }
+    }
+    @exon_coord1 = sort by_number @exon_coord1;
+    @exon_coord2 = sort by_number @exon_coord2;
+
+
+    # print the new Source_exons
+    $self->aceclear();
+    $self->aceout("\n$biotype : $target\n");
+    $self->aceout("End_not_found\n") if (defined $end_not_found && $biotype eq 'CDS');
+    $self->aceout("Start_not_found\n") if (defined $start_not_found && $biotype eq 'CDS');
+    for (my $i=0; $i < scalar @exon_coord1; $i++) { 
+      my ($exon1, $exon2) = ($exon_coord1[$i], $exon_coord2[$i]);
+      $self->aceout("Source_exons ".$exon1." ".$exon2."\n");
+    }
+  }
+
+
+  if ($status == 0) {
+    $message .= "'$target' looks OK\n";
+  }
+
+  print $message;
+
+}
+
+###############################################################################
 sub by_number{ $a <=> $b;}
+sub by_number_rev{ $b <=> $a;}
 ###############################################################################
 sub person {
   my ($self) = @_;
