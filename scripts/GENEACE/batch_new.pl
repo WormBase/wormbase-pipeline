@@ -38,7 +38,6 @@ GetOptions(
 	   'file:s'     => \$file,
 	   'debug:s'    => \$debug,
 	   'load'       => \$load,
-           'species:s'  => \$species,
 	  ) or die;
 
 
