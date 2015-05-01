@@ -31,17 +31,17 @@ e.g. perl batch_new.pl -file newgenes.txt
 
 =cut
 
-my ($USER, $test, $file, $debug, $load,);
+my ($USER, $test, $file, $debug, $load,$species);
 GetOptions(
 	   'user:s'     => \$USER,
 	   'test'       => \$test,
 	   'file:s'     => \$file,
 	   'debug:s'    => \$debug,
 	   'load'       => \$load,
+           'species:s'  => \$species,
 	  ) or die;
 
 
-my $species;
 my $log;
 if (defined $USER) {$log = Log_files->make_log("NAMEDB:$file", $USER);}
 elsif (defined $debug) {$log = Log_files->make_log("NAMEDB:$file", $debug);}
