@@ -825,7 +825,7 @@ sub TSL {(
 
 ######################################################
 
-package Csp5;
+package Csinica;
 use Carp;
 our @ISA = qw(Wormbase Species);
 
@@ -843,19 +843,19 @@ sub full_name {
 	my $self = shift;
 	my %param = @_ ;
 	if($param{'-short'}){
-		return 'C. species5';
+		return 'C. sinica';
 	}	elsif($param{'-g_species'}){
-		return 'c_sp5';
+		return 'c_sinica';
 	}
-	else { return'Caenorhabditis sp. 5'
+	else { return'Caenorhabditis sinica'
 	};
 }
 sub chromosome_prefix {'Csp5_scaffold'}
 sub pep_prefix {'S5'}
-sub pepdir_prefix{'csp5'};
-sub ncbi_tax_id {'497829'}; # this is the ID of the DRD-2008 strain
+sub pepdir_prefix{'csin'};
+sub ncbi_tax_id {'1550068'}; # this is the ID of the DRD-2008 strain
 sub ncbi_bioproject {'PRJNA194557'};
-sub bioproject_description { 'University of Edinburgh Caenorhabditis sp. 5 genome project' }
+sub bioproject_description { 'University of Edinburgh Caenorhabditis sinica genome project' }
 sub assembly_type {'contig'};
 ######################################################
 
