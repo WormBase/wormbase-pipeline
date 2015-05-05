@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2015-03-31 10:16:20 $
+# Last updated on: $Date: 2015-05-05 11:38:21 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -177,6 +177,15 @@ while(<INPUT>){
   $description =~ s/\"//g; #"
   # change any URLs present else the double back slash will be treated as a comment
   $description =~ s/http:\/\//URL: /g;
+
+  if ($description =~ /Attribution: (.*) (Paper_evidence WBPaper\d+)/){
+      my $attribution="$1";
+      my $paper ="$2";
+      $attribution =~ s/\s+/ /g;
+      chomp $attribution;
+      print STRAIN "Remark \"$attribution\" $paper\n";
+      $description =~ s/\s*Attribution: .* Paper_evidence WBPaper\d+//;
+  }
   print STRAIN "Remark \"$description\" Inferred_automatically \"From CGC strain data\"\n" unless ($description eq "");
   print DELETE_STRAIN  "-D Remark \n" unless ($description eq ""); 
 
