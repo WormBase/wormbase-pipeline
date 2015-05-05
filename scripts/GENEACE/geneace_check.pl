@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2014-06-23 08:57:32 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2015-05-05 15:16:54 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -23,6 +23,7 @@ use File::Path;
 # command line options                            # 
 ###################################################
 my ($help, $debug, $test, $class, @classes, $database, $ace, $verbose);
+my @skip_methods;
 
 GetOptions ("help"        => \$help,
             "debug=s"     => \$debug,
@@ -30,7 +31,8 @@ GetOptions ("help"        => \$help,
 	    "database=s"  => \$database,
             "ace"         => \$ace,
 	    "verbose"     => \$verbose,
-            "test"    => \$test
+            "test"        => \$test,
+            "skipmethod=s@" =>  \@skip_methods,
 	   );
 
 ###################################################
@@ -875,7 +877,10 @@ sub process_allele_class{
     }
   }
 
-  my $query = "find Variation;Allele";
+  my $query = "find Variation Allele";
+  foreach my $meth (@skip_methods) {
+    $query .= " AND Method != \"$meth\"";
+  }
   my $alleles_it = $db->fetch_many(-query => "$query");
 
   # now loop through all alleles looking for problems
@@ -1134,7 +1139,7 @@ sub process_strain_class {
 	  # diff allele->locus link in geneace and allele->locus in strain genotype
 	  # if diff, print error LOG
 	
-	  if ( defined @{$allele_locus{$allele}} ){
+	  if ( @{$allele_locus{$allele}} ){
 	    my @LOci = @{$allele_locus{$allele}};
 	    my %LOci;
 	    map {$LOci{$_}++} @LOci;
