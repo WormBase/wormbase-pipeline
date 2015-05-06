@@ -7,7 +7,7 @@
 # Builds a wormpep data set from the current autoace database
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2014-10-17 14:00:44 $
+# Last updated on: $Date: 2015-05-06 12:03:48 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -124,9 +124,6 @@ if ($initial) {
   &run_pepace			if $pepace; #req history and fasta files
   &write_accession 	if $accession;
   &write_blast_pep 	if $pepfile;
-  unless ((-e $wormbase->acefiles."/pfam_motifs.ace") && (-e $wormbase->acefiles."/interpro_motifs.ace")) {
-    &get_additional_data if $additional;
-  }
 }
 elsif( $final ) {
   $pid=$pepfile=$table=1 if $all;
@@ -421,19 +418,6 @@ sub write_accession {
   close PEP;		
 }
 
-sub get_additional_data {
-  # get Pfam domains (this step loads resulting ace file)
-  $log->write_to("getting PFAM\n");
-  $wormbase->run_script("GetPFAM_motifs.pl", $log);#
-  
-  # get interpro domains (this step loads resulting ace file )
-  $log->write_to("getting InterPro\n");
-  $wormbase->run_script("GetInterPro_motifs.pl", $log);
-
-  # make interpro2go connections (to be used by getProteinID)
-  #$log->write_to("getting InterPro2Go mapping\n");
-  #$wormbase->run_script("make_Interpro2GO_mapping.pl", $log);
-}
 
 sub run_pepace {
   # build database history info 

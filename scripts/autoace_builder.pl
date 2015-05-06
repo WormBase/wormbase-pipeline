@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2015-04-27 13:52:47 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2015-05-06 12:03:48 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -31,7 +31,7 @@ my ( $gff_dump,     $processGFF, $gff_split );
 my $gene_span;
 my ( $load, $big_load, $tsuser );
 my ($map_features, $remap_misc_dynamic, $map, $map_alleles, $transcripts, $cdna_files, $misc_data_sets, $homol_data_sets, $nem_contigs);
-my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $remarks, $names, $treefam);
+my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $remarks, $names, $treefam, $load_interpro);
 my ( $utr, $agp, $gff_munge, $gff3_munge, $extras , $ontologies, $interpolate, $check, $enaseqxrefs, $enagenexrefs, $enaprotxrefs, $xrefs);
 my ( $data_check, $buildrelease, $public,$finish_build, $gffdb, $autoace, $release, $user, $kegg, $prepare_gff_munge, $post_merge);
 
@@ -48,6 +48,7 @@ GetOptions(
            'first_dumps'    => \$first_dumps,
 	   'assembly'       => \$assembly,
 	   'make_wormpep'   => \$make_wormpep,
+           'loadinterpro'   => \$load_interpro,
 	   'finish_wormpep' => \$finish_wormpep,
 	   'gff_dump:s'     => \$gff_dump,
 	   'processGFF:s'   => \$processGFF,
@@ -142,6 +143,9 @@ $wormbase->run_script( "get_ena_submission_xrefs.pl -genexrefs", $log)  if $enag
 $wormbase->run_script( "processGFF.pl -$processGFF",                       $log ) if $processGFF;
 
 &do_assembly_stuff() if $assembly;   # dependant on clone_acc for agp
+
+$wormbase->run_script("GetPFAM_motifs.pl", $log) if $load_interpro;
+$wormbase->run_script("GetInterPro_motifs.pl", $log) if $load_interpro;
 
 $wormbase->run_script( 'make_wormpep.pl -initial -all',                    $log ) if $make_wormpep;
 
