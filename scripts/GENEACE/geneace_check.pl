@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2015-05-05 15:16:54 $
+# Last updated on: $Date: 2015-05-06 09:33:26 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -1139,7 +1139,7 @@ sub process_strain_class {
 	  # diff allele->locus link in geneace and allele->locus in strain genotype
 	  # if diff, print error LOG
 	
-	  if ( @{$allele_locus{$allele}} ){
+	  if ( exists $allele_locus{$allele} ) {
 	    my @LOci = @{$allele_locus{$allele}};
 	    my %LOci;
 	    map {$LOci{$_}++} @LOci;
