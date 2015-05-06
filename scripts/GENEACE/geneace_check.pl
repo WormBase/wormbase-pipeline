@@ -1,4 +1,4 @@
-#!/software/bin/perl -w
+/bin/perl -w
 # 
 # geneace_check.pl
 #
@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2015-05-06 09:33:26 $
+# Last updated by: $Author: mt3 $
+# Last updated on: $Date: 2015-05-06 12:16:56 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -358,7 +358,7 @@ sub test_locus_for_errors{
   }
 
   # test for missing Public_name and assign one if so
-  if( !defined $gene_id->Public_name && (defined $gene_id->CGC_name || defined $gene_id->Sequence_name || defined $gene_id->Other_name) ){
+  if( !defined $gene_id->Public_name && (defined $gene_id->CGC_name || defined $gene_id->Sequencename || defined $gene_id->Other_name) ){
     $warnings .= "ERROR(a): $gene_id has no Public_name but has CGC/Sequence/Other_name\n";
     if ($ace){
       print ACE "\nGene : \"$gene_id\"\n";
@@ -1008,8 +1008,8 @@ sub process_allele_class{
       }
 
       # find alleles that have flanking_seqs but no SMAPPED sequence
-      if ( $allele ->Flanking_sequences && ! defined $allele ->Sequence ) {
-	print LOG "ERROR: Allele $allele has Flanking_sequences tag but has no Sequence tag\n";
+      if ( $allele ->Flanking_sequences && ! defined $allele ->Mapping_target ) {
+	print LOG "ERROR: Allele $allele has Flanking_sequences tag but has no Mapping_target tag\n";
       }
     }  
   }
