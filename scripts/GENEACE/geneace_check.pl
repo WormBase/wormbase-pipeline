@@ -1,4 +1,4 @@
-/bin/perl -w
+#!/software/bin/perl -w
 # 
 # geneace_check.pl
 #
@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2015-05-06 12:16:56 $
+# Last updated on: $Date: 2015-05-06 12:23:56 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
