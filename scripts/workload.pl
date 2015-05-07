@@ -61,7 +61,7 @@ if ( $store ) {
 my $log = Log_files->make_build_log($wormbase);
 
 # checks
-if (!defined $USER) {$log->log_and_die("-user not specified\n")}
+if (!defined $USER) {$log->log_and_die("-user not specified ($USER is required to query the Nameserver)\n")}
 if (!defined $release1) {$log->log_and_die("-release1 not specified\n")}
 if (!defined $release2) {$log->log_and_die("-release2 not specified\n")}
 
@@ -84,7 +84,8 @@ my $mysql = DBI -> connect($dbsn, $dbuser, $dbpass, {RaiseError => 1})
 
 # open an ACE connection
 #print "Connecting to Ace\n";
-my $database = "/nfs/wormpub/DATABASES/geneace";
+#my $database = "/nfs/wormpub/DATABASES/geneace";
+my $database = $wormbase->database('current');
 my $ace = Ace->connect (-path => $database) || die "cannot connect to database at $database\n";
 
 
@@ -138,17 +139,17 @@ my %dates = (
 	     239 => ['2013-05-01', '2013-08-01'], # May-Jun-Jul (IWM delayed things)
 	     240 => ['2013-08-01', '2013-10-01'], # Aug-Sep
 	     241 => ['2013-10-01', '2013-12-01'], # Oct-Nov
-	     242 => ['2013-12-01', '2014-02-01'], # Dec-Jan
+	     242 => ['2013-12-01', '2014-01-31'], # Dec-Jan (to Jan 31)
 
-	     243 => ['2014-02-01', '2014-04-01'], # Feb-Mar
-	     244 => ['2014-04-01', '2014-06-01'], # Apr-May (probable dates in the future ...)
-	     245 => ['2014-06-01', '2014-08-01'], # Jun-Jul
-	     246 => ['2014-08-01', '2014-10-01'], # Aug-Sep
-	     247 => ['2014-10-01', '2014-12-01'], # Oct-Nov
-	     248 => ['2014-12-01', '2015-02-01'], # Dec-Jan
+	     243 => ['2014-01-31', '2014-03-28'], # Feb-Mar (to Mar 28)
+	     244 => ['2014-03-28', '2014-05-30'], # Apr-May (to May 30)
+	     245 => ['2014-05-30', '2014-07-25'], # Jun-Jul (to July 25)
+	     246 => ['2014-07-25', '2014-10-10'], # Aug-Sep (to Oct 10)
+	     247 => ['2014-10-10', '2015-01-12'], # Oct-Nov (to Jan 12)
+	     248 => ['2015-01-12', '2015-03-06'], # Dec-Jan (to Mar 6)
 
-	     249 => ['2015-02-01', '2015-04-01'], # Feb-Mar
-	     250 => ['2015-04-01', '2015-06-01'], # Apr-May
+	     249 => ['2015-03-06', '2015-04-01'], # Feb-Mar (to May 1)
+	     250 => ['2015-04-01', '2015-06-01'], # Apr-May (probable dates in the future ...)
 	    );
 
 
@@ -322,7 +323,7 @@ foreach my $release (200 .. $release2) {
       $count_removed = &get_removed($full_species, $startdate, $enddate);
       $count_new     = &get_new    ($full_species, $startdate, $enddate);  
 
-      print "\tWS$release: removed: $count_removed, changed: $count_changed, new: $count_new, new isoform: $count_new_isoform\n";
+      print "\tWS$release: removed: $count_removed, new gene: $count_new, new isoform: $count_new_isoform, model changed: $count_changed\n";
       
       $total_removed += $count_removed;
       $total_changed += $count_changed;
@@ -336,7 +337,7 @@ foreach my $release (200 .. $release2) {
 }
 
 
-print "Total: removed: $total_removed, changed: $total_changed, new: $total_new, new isoform: $total_new_isoform\n";
+print "Total: removed: $total_removed, new gene: $total_new, new isoform: $total_new_isoform, model changed: $total_changed\n";
 
 # close the ACE connection
 $ace->close;
@@ -372,6 +373,9 @@ sub get_removed {
   foreach my $result_row (@$ref_results) {
     my $gene = $result_row->[2];
     my $obj =  $ace->fetch("Gene" => $gene);
+    if (!defined $obj) {
+      $log->log_and_die("The object is not defined for Gene $gene - not in database?\n");
+    }
     my $gene_species = $obj->Species;
     #print "$gene $gene_species\n";
     if ($gene_species eq $full_species) {
