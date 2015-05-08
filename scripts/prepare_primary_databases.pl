@@ -2,8 +2,8 @@
 #
 # prepare_primary_databases.pl
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2013-09-27 15:20:32 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2015-05-08 10:36:56 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -102,7 +102,9 @@ else {
 $log->write_to("Transfering /nfs/wormpub/DATABASES/$ref to PRIMARIES\n");
 my $primary_path = $wormbase->primary($ref);
 my $test_file = "$primary_path/database/block1.wrm";
-($databases{$ref}->{last_date}) = $wormbase->find_file_last_modified($test_file);
+if (-e $test_file) {
+  ($databases{$ref}->{last_date}) = $wormbase->find_file_last_modified($test_file);
+}
 $wormbase->delete_files_from($wormbase->primary($ref),'*','+');
 $wormbase->run_script("TransferDB.pl -start ".$wormbase->database($ref). " -end $primary_path -database -wspec", $log);
     
