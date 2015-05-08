@@ -107,6 +107,10 @@ CHROMLOOP: foreach my $chrom ( @chromosomes ) {
       if (scalar(@chromosomes) <= 50) {
         push @bsub_options, (-M => "4500", 
                              -R => "\"select[mem>4500] rusage[mem=4500]\"");
+      } else {
+        push @bsub_options, (-M => "100", 
+                             -R => "\"select[mem>100] rusage[mem=100]\"");
+
       }
 
       my $cmd = "$dumpGFFscript -database $database -dump_dir $dump_dir -method $method -species $species";
