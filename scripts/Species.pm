@@ -19,8 +19,7 @@ use Carp;
 
 use Wormbase;
 
-my ($BRENCONTIGS,
-    $REMCONTIGS,
+my ($REMCONTIGS,
     $JAPCONTIGS,
     $TESTCONTIGS);
 
