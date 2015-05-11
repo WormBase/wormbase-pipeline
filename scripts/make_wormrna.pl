@@ -1,44 +1,37 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/usr/bin/env perl
 #
 # make_wormrna.pl
 # 
-# Usage : make_wormrna.pl -r <release_number>
-#
 # Builds a wormrna data set from the current autoace database
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2014-02-13 16:39:05 $
-
-
-#################################################################################
-# variables                                                                     #
-#################################################################################
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2015-05-11 12:35:47 $
 
 use strict;
+
+use Getopt::Long;
+use Storable;
+use Ace;
+use Bio::SeqIO;
+use Digest::MD5 qw(md5 md5_hex md5_base64) ;
+
 use lib $ENV{CVS_DIR};
 use Wormbase;
-use Getopt::Long;
-use IO::Handle;
-use Ace;
-use Socket;
-use Storable;
 
-$|=1;
-    
-######################################
-# variables and command-line options # 
-######################################
+my $rnacentral_md5s = "ftp://ftp.ebi.ac.uk/pub/databases/RNAcentral/current_release/md5/md5.tsv.gz";
 
-my ($help, $debug, $release, $test, $store, $species);
-my $errors      = 0;    # for tracking how many errors there are
+my ($help, $debug, $test, $store, $species, $noload);
+my ($rnafile, $no_rnacentral, %seqs);
 
 GetOptions (
-	    "help"      => \$help,
-	    "release=s" => \$release,
-            "debug=s"   => \$debug,
-	    "test"      => \$test,
-	    "store:s"   => \$store,
-	    "species:s" => \$species
+  "help"         => \$help,
+  "debug=s"      => \$debug,
+  "test"         => \$test,
+  "store:s"      => \$store,
+  "species:s"    => \$species,
+  "rnafile=s"    => \$rnafile,
+  "nornacentral" => \$no_rnacentral,
+  "noload"       => \$noload,
 	   );
 
 my $wormbase;
@@ -48,66 +41,65 @@ if( $store ) {
 else {
   $wormbase = Wormbase->new( -debug   => $debug,
 			     -test    => $test,
-			    -organism => $species
+                             -organism => $species
 			   );
 }
 
 my $log = Log_files->make_build_log($wormbase);
 
-# Display help if required
-&usage("Help") if ($help);
-
 
 #######################################
 # release data                        #
 #######################################
-
-$release         = $wormbase->get_wormbase_version unless $release;
-my $old_release  = $release-1;
-
 my $dbdir     = $wormbase->autoace;
-my $new_wrdir = $wormbase->wormrna;
 my $tace      = $wormbase->tace;
 
-$ENV{'ACEDB'} = $dbdir;
+my $release   = $wormbase->get_wormbase_version;
+my $new_wrdir = $wormbase->wormrna;
+
+$rnafile = "$new_wrdir/".$wormbase->pepdir_prefix."rna$release.rna" 
+    if not defined $rnafile;
 
 ###############################################
 # retrieve the desired RNA sequence objects   #
 ###############################################
+$log->write_to("Connecting to database...\n") if $debug;
 
-my $db = Ace->connect (-path => $dbdir, -program => $tace) || $log->log_and_die("Couldn't connect to $dbdir\n");
+my $db = Ace->connect (-path => $dbdir, -program => $tace) 
+    or $log->log_and_die("Could not connect to $dbdir\n");
 
 # Get RNA genes, but not other Transcript objects
 my $query = "FIND Transcript WHERE Method != Coding_transcript"
     . " AND Method != history_transcript"
     . " AND Species = \"".$wormbase->full_name."\"";
-$log->write_to("$query\n");
-my @transcripts = $db->fetch (-query => $query);
 
-my $count = scalar(@transcripts);
-#$log->write_to("Found ". $count . " RNA sequences, writing output file\n\n");
+$log->write_to("Fetching transcripts from db...\n") if $debug;
+my @transcripts = $db->fetch (-query => $query);
 
 
 ###########################################################################
 # get the rna sequence, write a rna.fasta file,
 ###########################################################################
-my $rnafile = "$new_wrdir/".$wormbase->pepdir_prefix."rna$release.rna";
-open (DNA , ">$rnafile") || die "Couldn't write $rnafile : $!\n"; 
-my (%dot2num , @dotnames , @c_dotnames);
+my $outio = Bio::SeqIO->new(-format => 'fasta',
+                            -file   => ">$rnafile");
+
+$log->write_to("Writing transcript sequence...\n") if $debug;
 
 while( my $obj = shift @transcripts) {    
+  
+  my $gene = $obj->Gene;
+  if (not $gene) {
+    $log->write_to("Ignoring transcript $obj that does not have parent gene\n");
+    next;
+  }
+  my $cgc_name = $gene->CGC_name;
 
-  print "processing $obj\n" if $debug;
-
-
-  # Grab Brief_identification
-  my $brief_id = $obj->Transcript;
-  if ((!defined ($brief_id)) || ($brief_id eq "")) {
-    $log->write_to("ERROR: No type set for $obj - setting to ncRNA, but this should be fixed\n");
-    $log->error;
+  my $method = $obj->Method;
+  my $brief_id = $method->GFF_feature;
+  if (not $brief_id) {
+    $log->write_to("No type set for $obj - setting to ncRNA, but this should be fixed\n");
     $brief_id = "ncRNA";
   }
-  print "$obj -> brief_id is \"$brief_id\"\n" if $debug;
 
   my $dna = $obj->asDNA();
   if ((!defined ($dna)) || ($dna eq "")) {
@@ -117,156 +109,79 @@ while( my $obj = shift @transcripts) {
   }
   $dna =~ s/\n/ /;
   $dna =~ s/\n//g;
-  $dna =~ /^>(\S+)\s+(\w.*)/s; 
-  my $dseq = $2; 
-  $dseq =~ tr/a-z/A-Z/; 
-  $dseq =~ tr /T/U/; 
-  $dseq =~ s/\s//g;
-  
-  print "$obj -> dna is ${\length($dseq)} bp long\n" if $debug;
+  $dna =~ s/^>\S+\s+//; 
+  $dna =~ s/\s//g; 
+  $dna =~ tr/a-z/A-Z/;
 
-  # Grab locus name if present
-  my $gene = $obj->Gene;
-  my $cgc_name = $gene->CGC_name if ($gene);
-  print "$obj -> CGC name is $cgc_name\n" if ($debug && $cgc_name);
+  $seqs{$obj->name} = {
+    seq => $dna,
+    gene => $gene->name,
+  };
 
-  my $rseq = &reformat($dseq);
-  if ($cgc_name) {
-    print DNA ">$obj $brief_id gene=$gene locus:$cgc_name\n$rseq";
-  }
-  elsif($brief_id) {
-    print DNA ">$obj $brief_id gene=$gene\n$rseq";
-  }
-  else {
-    print DNA ">$obj gene=$gene\n$rseq";
-  }
-#  $count++;
-  exit(0) if $count > 50 && $debug;  
+  $dna =~ tr/T/U/; 
+  my $desc .= "biotype=$brief_id gene=$gene";
+  $desc .= " locus=$cgc_name" if defined $cgc_name;
+
+  my $seq = Bio::PrimarySeq->new(-seq => $dna,
+                                 -id  => $obj,
+                                 -desc => $desc);
+
+  $outio->write_seq($seq);
 }   
-
-close DNA;
-chmod (0444 , $rnafile) || $log->write_to("cannot chmod $rnafile\n");
-
 $db->close;
-
-##################
-# Check the files
-##################
 $wormbase->check_files($log);
 
+&add_rnacentral_xrefs() unless $no_rnacentral;
 
 $log->mail;
 exit(0);
 
 
-
-
 ##############################################################
-#
-# Subroutines
-#
-##############################################################
-
-
-sub reformat {
-  my $in_string = shift;
-  my $out_string = "";
+sub add_rnacentral_xrefs {
   
-  for (my $idx = 0; $idx < length($in_string); ) {
-    my $next_idx = $idx + 60;
-    
-    if ($next_idx > length($in_string)) {
-      $next_idx = length($in_string);
+  $log->write_to("Adding RNAcentral xrefs...\n") if $debug;
+
+  my $lfile = "/tmp/rnacentral_md5s.wormbase.$$.gz";
+  $wormbase->run_command("wget -O $lfile $rnacentral_md5s");
+
+  my %ids_by_md5;
+
+  open(my $fh, "gunzip -c $lfile |") or $log->log_and_die("Could not open stream to $lfile\n");
+  while(<$fh>) {
+    /^(\S+)\s+(\S+)/ and do {
+      $ids_by_md5{$2}->{$1} = 1;
+    };
+  }
+  unlink $lfile;
+
+  my $acefile = $wormbase->acefiles . "/rnacentral_xrefs.ace";
+  open(my $outfh, ">$acefile") or $log->log_and_die("Could not open $acefile for writing\n");
+  
+  foreach my $rna (sort keys %seqs) {
+    my $md5 = md5_hex($seqs{$rna}->{seq});
+
+    if (exists $ids_by_md5{$md5}) {
+      my @rnac = sort keys %{$ids_by_md5{$md5}};
+
+      foreach my $entity (sprintf("Transcript : \"%s\"", $rna), 
+                          sprintf("Gene : \"%s\"", $seqs{$rna}->{gene})) {
+        print $outfh "\n$entity\n";
+        foreach my $acc (@rnac) {
+          print $outfh "Database \"RNAcentral\" \"URSid\" \"$acc\"\n";
+        }
+      }
     }
-
-    $out_string .= substr($in_string, $idx, $next_idx - $idx) . "\n"; 
-    
-    $idx = $next_idx;
   }
+  close($outfh) or $log->log_and_die("Could not close $acefile after writing\n");
 
-  return $out_string;
+  #
+  # To do: load to database
+  # 
+  if (not $noload) {
+    $wormbase->load_to_database($wormbase->autoace, $acefile, "RNAcentral_xrefs", $log);
+  }
 }
-
-
-
-#################################
-
-sub usage {
-  my $error = shift;
-
-  if ($error eq "Help") {
-    # Normal help menu
-    system ('perldoc',$0);
-    exit (0);
-  }
-  # Error  2 - invalid wormrna release number
-  elsif ($error eq "releasename") {
-    # Invalid wormrna release number file
-    print "=> Invalid/missing wormrna release number supplied.\n";
-    print "=> Release number must be an interger (e.g. 30)\n\n";
-    exit(0);
-  }
-
-}
-
-
-
-
-__END__
-
-=pod
-
-=head2   NAME - make_wormrna.pl
-
-
-=head1 USAGE
-
-=over 4
-
-=item make_wormrna.pl [-options]
-
-=back
-
-make_wormrna.pl will generate a rna data set from the autoace
-database directory.  Finds RNA genes in Transcript class, but filters out 
-any other Transcript objects which represent full length transcripts of
-coding genes (i.e. where Method = Transcript)
-
-make_wormrna.pl mandatory arguments:
-
-=over 4
-
-=item -release <release number>
-
-=back
-
-make_wormrna.pl OPTIONAL arguments:
-
-=over 4
-
-=item -help, Help page
-
-=item -debug <username> = Verbose/Debug mode
-
-=back
-
-=head1 EXAMPLES:
-
-=over 4
-
-=item make_wormrna.pl -release 4
-
-=back
-
-Creates a new wormrna data set in the (new) /wormsrv2/WORMRNA/wormrna4 directory
-
-=cut
-
-
-
-
-
-
 
 
 
