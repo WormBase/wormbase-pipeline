@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2015-05-06 12:23:56 $
+# Last updated on: $Date: 2015-05-13 13:32:24 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -358,7 +358,7 @@ sub test_locus_for_errors{
   }
 
   # test for missing Public_name and assign one if so
-  if( !defined $gene_id->Public_name && (defined $gene_id->CGC_name || defined $gene_id->Sequencename || defined $gene_id->Other_name) ){
+  if( !defined $gene_id->Public_name && (defined $gene_id->CGC_name || defined $gene_id->Sequence_name || defined $gene_id->Other_name) ){
     $warnings .= "ERROR(a): $gene_id has no Public_name but has CGC/Sequence/Other_name\n";
     if ($ace){
       print ACE "\nGene : \"$gene_id\"\n";
