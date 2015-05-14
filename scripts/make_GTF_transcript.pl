@@ -7,8 +7,8 @@
 #
 # by Gary Williams
 #
-# Last updated by: $Author: klh $                      
-# Last updated on: $Date: 2015-03-16 11:42:31 $        
+# Last updated by: $Author: gw3 $                      
+# Last updated on: $Date: 2015-05-14 09:38:09 $        
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -109,8 +109,11 @@ my @files;
 if ($wormbase->assembly_type eq 'contig') {
   @files = map { "$gffdir/$_.gff" } @file_types;
 } else {
-  foreach my $pattern (map { "$gffdir/*_${_}.gff" } @file_types) {
-    push @files, glob($pattern);
+  my @chroms = $wormbase->get_chromosome_names(-prefix => 1, -mito => 1);
+  foreach my $chrom (@chroms) {
+    foreach my $pattern (map { "$gffdir/${chrom}_${_}.gff" } @file_types) {
+      push @files, glob($pattern);
+    }
   }
 }
 
