@@ -106,6 +106,8 @@ else
     # for the Compara analysis pipeline
     setenv ENSEMBL_CVS_ROOT_DIR "${WORM_PACKAGES}/ensembl"
     set path = (${ENSEMBL_CVS_ROOT_DIR}/ensembl-hive/scripts ${WORM_PACKAGES}/wublast/ ${WORM_BIN} ${path})
+    # to use the ensembl-geneomes version of perl which knows about Oracle (but not ACE.pm)
+    set path = (/nfs/panda/ensemblgenomes/perl/perlbrew/perls/5.14.2/bin/perl ${path})
 
     # use java version 1.6
     setenv JAVA_HOME /sw/arch/pkg/jdk1.6
