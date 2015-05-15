@@ -5,18 +5,17 @@ use strict;
 use Getopt::Long;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 
-my ($org_id, $bioproject_id, $ena_cred, $verbose); 
+my ($bioproject_id, $ena_cred, $verbose); 
 
 &GetOptions(
   'enacred=s'       => \$ena_cred,
-  'orgid=s'         => \$org_id,
   'bioprojectid=s'  => \$bioproject_id, 
   'verbose'         => \$verbose,
     );
 
 
 if (not defined $org_id or
-    not defined $ena_cred) {
+    not defined $bioproject_id) {
   die "Incorrect invocation\n";
 }
 
@@ -27,20 +26,20 @@ if (not defined $org_id or
 
 my $ena_dbh = &get_ena_dbh($ena_cred);
 
-my $ena_sql =  "SELECT d.primaryacc#, b.version"
-    . " FROM dbentry d, bioseq b"
-    . " WHERE d.primaryacc# IN ("
-    . "   SELECT primaryacc#"
-    . "   FROM dbentry" 
-    . "   JOIN sourcefeature USING (bioseqid)"
-    . "   WHERE organism = $org_id"
+#
+# statusid = 4 => only live public records
+#
+
+my $ena_sql = 
+    "   SELECT primaryacc#, b.version"
+    . "   FROM dbentry d, bioseq b" 
+    . "   WHERE d.bioseqid = b.seqid"
     . "   AND study_id = '$bioproject_id'"
-    . "   AND statusid = 4)"
-    . " AND d.bioseqid = b.seqid";
-    
+    . "   AND statusid = 4";
+
 my $ena_sth = $ena_dbh->dbc->prepare($ena_sql);
 
-print STDERR "Doing primary lookup of CDS entries in ENA ORACLE database...\n" if $verbose;
+print STDERR "Doing primary lookup of sequence versions in ENA ORACLE database...\n" if $verbose;
 
 $ena_sth->execute || die "Can't execute statement: $DBI::errstr";
 

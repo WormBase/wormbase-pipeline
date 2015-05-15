@@ -17,7 +17,7 @@ my ($org_id, $ena_cred, $uniprot_cred, $bioproject_id, $verbose);
     );
 
 
-if (not defined $org_id or
+if (not defined $bioproject_id or
     not defined $ena_cred or
     not defined $uniprot_cred) {
   die "Incorrect invocation: you must supply -orgid, -enacred and -uniprotcred\n";
@@ -44,9 +44,7 @@ my $ena_sql =  "SELECT d.primaryacc#, b.version, c.PROTEIN_ACC, c.version, c.chk
     . " WHERE d.primaryacc# IN ("
     . "   SELECT primaryacc#"
     . "   FROM dbentry" 
-    . "   JOIN sourcefeature USING (bioseqid)"
-    . "   WHERE organism = $org_id"
-    . "   AND study_id = '$bioproject_id'"
+    . "   WHERE study_id = '$bioproject_id'"
     . "   AND statusid = 4)"
     . " AND c.bioseqid = d.bioseqid"
     . " AND d.bioseqid = b.seqid"

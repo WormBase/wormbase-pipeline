@@ -240,7 +240,6 @@ sub lookup_from_ebi_production_dbs {
     my $cmd =  "source $ena_env &&"
         . " $ena_perl  $ENV{CVS_DIR}/get_sequence_versions_ebiprod.pl"
         . "  -enacred $ena_cred"
-        . "  -orgid $ncbi_tax_id"
         . "  -bioprojectid $bioproject_id";
     
     system("$cmd > $output_file") 
@@ -250,7 +249,6 @@ sub lookup_from_ebi_production_dbs {
     my $cmd =  "source $ena_env &&"
         . " $ena_perl  $ENV{CVS_DIR}/get_gene_ids_ebiprod.pl"
         . "  -enacred $ena_cred"
-        . "  -orgid $ncbi_tax_id"
         . "  -bioprojectid $bioproject_id";
     
     system("$cmd > $output_file") 

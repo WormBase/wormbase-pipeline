@@ -5,18 +5,17 @@ use strict;
 use Getopt::Long;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 
-my ($org_id, $bioproject_id, $ena_cred, $verbose); 
+my ($bioproject_id, $ena_cred, $verbose); 
 
 &GetOptions(
   'enacred=s'       => \$ena_cred,
-  'orgid=s'         => \$org_id,
   'bioprojectid=s'  => \$bioproject_id,
   'verbose'         => \$verbose,
     );
 
 
 if (
-    not defined $org_id or
+    not defined $bioproject_id or
     not defined $ena_cred) {
   die "Incorrect invocation: you must supply -enacred and -orgid\n";
 }
@@ -36,9 +35,7 @@ my $ena_sql =  "SELECT d.primaryacc#, sf.featid, fq.fqualid, fq.text"
     . " WHERE d.primaryacc# IN ("
     . "   SELECT primaryacc#"
     . "   FROM dbentry" 
-    . "   JOIN sourcefeature USING (bioseqid)"
-    . "   WHERE organism = $org_id"
-    . "   AND study_id = '$bioproject_id'"
+    . "   WHERE study_id = '$bioproject_id'"
     . "   AND statusid = 4)"
     . " AND d.dataclass = dc.dataclass"
     . " AND d.bioseqid = b.seqid"
