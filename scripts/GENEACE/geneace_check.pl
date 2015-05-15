@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2015-05-13 13:32:24 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2015-05-15 10:58:35 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
@@ -129,13 +129,17 @@ foreach $class (@classes){
 #######################################
 
 $db->close;
-print LOG "Ended at ",`date`,"\n";
-close(LOG);
+print LOG "\nEnded at ",`date`,"\n";
+close(LOG)
+or warn $! ? "Error closing log: $!"
+                   : "Exit status $? log close";
+print "Exit status $? log close\n\n" if ($debug);
 
 
 close(ACE) if ($ace);
 # email everyone specified by $maintainers
 $wb->mail_maintainer("geneace_check: SANGER",$maintainers,$log);
+
 exit(0);
 #--------------------------------------------------------------------------------------------------------------------
 
@@ -329,6 +333,7 @@ sub process_gene_class{
 
 sub test_locus_for_errors{
   my $gene_id = shift;
+  if ($debug) {print "$gene_id\n";}
   my $warnings;
 
 
@@ -372,7 +377,7 @@ sub test_locus_for_errors{
   }
 
   if( !defined $gene_id->Public_name && !defined $gene_id->CGC_name && !defined $gene_id->Sequence_name && !defined $gene_id->Other_name ){
-    $warnings .= "ERROR: $gene_id (?) has no Public_name as there is no CGC_/Sequence_/Other_name\n";
+    $warnings .= "WARNING: $gene_id has no name information please check it was merged into a cgc_named gene (266 known issues)\n" unless  ($gene_id->Remark =~ /[MERGED INTO UNCLONED GENE]/);
   }
 
   # test for discrepancy betw. CGC_name and Gene_class name, ie, for aap-1, the gene_class should be aap
@@ -400,7 +405,6 @@ sub test_locus_for_errors{
       my $history = $gene_id->$tag;
       if ( $history =~ /:wp\d+/ ){
 	$warnings .= "ERROR: $gene_id has $tag with :wpxxx history name appended\n";
-
       }
     }
   }
@@ -411,18 +415,19 @@ sub test_locus_for_errors{
     my $species = $gene_id->Species;
     if ($species eq "Caenorhabditis elegans"){
       my $seq = $gene_id->Sequence_name;
-
-  # don't need to do this for Dead genes.
-    my $identity = $gene_id->Status;
-    if ($identity eq "Live"){
-      my $seq = $gene_id->Sequence_name;
       
-      # need to chop off the ending to just get clone part
-      $seq =~ s/\..*//;
-      $warnings .= "ERROR(a): $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no Positive_clone but info is available from Sequence_name $seq\n";
-
-      # must use Inferred_automatically from Evidence hash for this type of info
-      print ACE "\n\nGene : \"$gene_id\"\nPositive_clone \"$seq\" Inferred_automatically \"From sequence, transcript, pseudogene data\"\n" if ($ace);
+      # don't need to do this for Dead genes.
+      my $identity = $gene_id->Status;
+      if ($identity eq "Live"){
+	my $seq = $gene_id->Sequence_name;
+	
+	# need to chop off the ending to just get clone part
+	$seq =~ s/\..*//;
+	$warnings .= "ERROR(a): $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no Positive_clone but info is available from Sequence_name $seq\n";
+	
+	# must use Inferred_automatically from Evidence hash for this type of info
+	print ACE "\n\nGene : \"$gene_id\"\nPositive_clone \"$seq\" Inferred_automatically \"From sequence, transcript, pseudogene data\"\n" if ($ace);
+      }
     }
   }
 
@@ -439,13 +444,15 @@ sub test_locus_for_errors{
 	print ACE "-D Live\n";
       }
     }
+  }
     
-    if ( $gene_id->Version_change ){
-      my $tag = &get_event($gene_id);
-      if (!defined($tag)){
-	$warnings .= "ERROR: $gene_id has an Event tag but does not have any following tag\n";
-      }
-      elsif ($tag eq "Killed"){
+  if ( $gene_id->Version_change ){
+    my $tag = &get_event($gene_id);
+    if (!defined($tag)){
+      $warnings .= "ERROR: $gene_id has an Event tag but does not have any following tag\n";
+    }
+    elsif ($tag eq "Killed"){
+      if ( defined $gene_id->at('Identity.Live')){
 	$warnings .= "ERROR(a): $gene_id ($Gene_info{$gene_id}{'Public_name'}) has 'Live' tag but also has 'Killed' tag => Lose Live\n";
 	if ($ace){
 	  print ACE "\nGene : \"$gene_id\"  \/\/20.2\n";
@@ -454,7 +461,7 @@ sub test_locus_for_errors{
       }
     }
   }
-
+  
 
   # checks that a Gene has identical CGC_name and Other_name
   if ( defined $gene_id->CGC_name && defined $gene_id->Other_name ){
@@ -465,7 +472,6 @@ sub test_locus_for_errors{
       }
     }
   }
-
 
   print LOG "$warnings" if(defined($warnings));
 }
@@ -1271,7 +1277,7 @@ sub create_log_files{
     print LOG "The (a) following ERROR, or UPDT, eg, indicates ace output \n$acefile for direct upload to correct problems.\n\n";
   }
   
-}}
+}
 
 
 
