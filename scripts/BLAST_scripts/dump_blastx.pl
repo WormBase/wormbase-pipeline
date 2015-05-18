@@ -4,8 +4,8 @@
 # script to submit blastx dumping scripts onto the farm
 # and concatenate them at the end
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2015-04-27 12:28:25 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2015-05-18 10:06:10 $
 #
 
 my $usage = <<USAGE;
@@ -67,7 +67,7 @@ my %logic2type = (
 		  remapepx => 'remanei',
 		  brepepx => 'brenneri',
 		  ovolpepx => 'ovolvulus',
-                  srapepx => 'sratti'
+                  srapepx => 'sratti',
 		  gadflyx => '1',
 		  ipi_humanx => '1',
 		  yeastx => '1',
