@@ -3,8 +3,8 @@
 #   script to dump single blastx logic_names from an ensembl_database
 #   it is possible to set TEST_FEATURE = one_feature_id to just use one
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2015-04-27 13:19:48 $ 
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2015-05-18 10:44:08 $ 
 
 my $usage = <<USAGE;
 blastx_dump.pl options:
@@ -104,7 +104,7 @@ my %logic2prefix = (
 		    jappepx        => 'JA:',
 		    brugpepx       => 'BM:',
 		    ovolpepx       => 'OV:',
-                    srapepx        => 'SRP:'
+                    srapepx        => 'SRP:',
 		    brigpepx       => 'BP:',
 		    remapepx       => 'RP:',
 		    brepepx        => 'CN:',
