@@ -338,7 +338,7 @@ while (<BLAST>) {
            \%bre_matches,
            \%ppa_matches,
            \%bru_matches,
-           \%ovo_matches
+           \%ovo_matches,
            \%sra_matches) 
     if (%worm_matches or 
         %human_matches or 
