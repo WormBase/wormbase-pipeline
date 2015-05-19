@@ -1,59 +1,154 @@
 #!/usr/bin/perl -w
-#===============================================================================
-#
-#         FILE:  wormbase_gene_xrefs.pl
-#
-#        USAGE:  ./wormbase_gene_xrefs.pl
-#
-#  DESCRIPTION:
-#
-#      OPTIONS:  ---
-# REQUIREMENTS:  ---
-#         BUGS:  ---
-#        NOTES:  ---
-#       AUTHOR:   (), <>
-#      COMPANY:
-#      VERSION:  1.0
-#      CREATED:  21/11/06 16:50:14 GMT
-#     REVISION:  ---
-#===============================================================================
 
 use strict;
-use Ace;
 use Getopt::Long;
 
-my ( $database, $insert, $update ,$fix);
-GetOptions(
-    'database=s'   => \$database,
-    'insert_xref'  => \$insert,
-    'update_xrefs' => \$update,
-    'fix_xrefs'    => \$fix,
-  )
-  || die "bad commandline option \n";
+use Bio::EnsEMBL::DBSQL::DBAdaptor;
+use Bio::EnsEMBL::DBEntry;
 
-if ($insert || $fix) {
-    my $dbh = Ace->connect( -path => $database ) || die "cannot open connection to db", Ace->error;
+my (
+  $dbname,
+  $dbhost,
+  $dbuser,
+  $dbport,
+  $dbpass,
+  $xref_file,
+  $no_write,
+);
 
-    my @genes = $dbh->fetch( -class => 'Gene', -name => '*', -Species => 'Caenorhabditis elegans' );
-    foreach my $gene (@genes) {
-        next unless ( $gene->Sequence );
-        my $primary_id  = $gene->Sequence_name;
-        my $public_name = $gene->Public_name;
-        my $description = $gene->Concise_description ? $gene->Concise_description . ' [Source: WormBase]' : '';
-        $description =~ s/\;/\./g;
-	if ($insert){
-	        print
-"INSERT IGNORE INTO xref (external_db_id,dbprimary_acc,display_label,info_type,info_text,description) VALUES (2400,\"$primary_id\",\"$public_name\",\"DIRECT\",\"Externally assigned relationship between $primary_id and $public_name\",\"$description\");\n";
-	}
-	else {
-		print
-"UPDATE xref SET display_label=\"$public_name\", info_type=\"DIRECT\", info_text=\"Externally assigned relationship between $primary_id and $public_name\", description=\"$description\" WHERE external_db_id=2400 AND dbprimary_acc=\"$primary_id\";\n";
-		print
-"UPDATE gene g,gene_stable_id s SET g.description=\"$description\" WHERE g.gene_id=s.gene_id AND s.stable_id=\"$primary_id\";\n" if length $description > 4;
-	
-	}
-    }
+$dbuser = 'ensro';
+
+&GetOptions(
+  'dbname=s' => \$dbname,
+  'user=s'   => \$dbuser,
+  'host=s'   => \$dbhost,
+  'port=s'   => \$dbport,
+  'pass=s'   => \$dbpass,
+  'xref=s'   => \$xref_file,
+  'nowrite'  => \$no_write,
+);
+
+my $db = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
+	'-dbname' => $dbname,
+	'-host' => $dbhost,
+	'-user' => $dbuser,
+	'-port' => $dbport,
+	'-pass' => $dbpass
+  
+);
+
+my (%gene2gseq, %gene2wbgene, %gene2locus, %transcript2tran, %translation2pep);
+
+my $xref_fh;
+if ($xref_file =~ /\.gz$/) {
+  open( $xref_fh, "gunzip -c $xref_file |") or die "Could not open gzip stream on $xref_file\n";
+} else {
+  open( $xref_fh, $xref_file) or die "Could not open $xref_file for reading\n";
 }
-if ($update){
-	print "UPDATE gene g, gene_stable_id s, xref x SET display_xref_id=xref_id,g.description=x.description WHERE g.gene_id=s.gene_id AND s.stable_id=x.dbprimary_acc AND external_db_id=2400 AND length(x.description) > 4;\n";
+
+while(<$xref_fh>) {
+  my ($gseq_id, $wbgene_id, $locus_id, $transcript_id, $wormpep_id) = split(/\s+/, $_);
+
+  $gene2wbgene{$wbgene_id} = Bio::EnsEMBL::DBEntry->new(
+    -primary_id  => $wbgene_id,
+    -display_id  => $wbgene_id,
+    -dbname      => 'wormbase_gene',
+    -version     => 0,
+    -info_type   => 'DIRECT',
+    -description => "",
+    -info_text   => "");
+  
+  if ($gseq_id ne '.') {
+    $gene2gseq{$wbgene_id} = Bio::EnsEMBL::DBEntry->new(
+      -primary_id  => $wbgene_id,
+      -display_id  => $gseq_id,
+      -dbname      => 'wormbase_gseqname',
+      -version     => 0,
+      -info_type   => 'DIRECT',
+      -description => "",
+      -info_text   => "");      
+  } 
+  if ($locus_id ne '.') {
+    $gene2locus{$wbgene_id} = Bio::EnsEMBL::DBEntry->new(
+      -primary_id  => $wbgene_id,
+      -display_id  => $locus_id,
+      -dbname      => 'wormbase_locus',
+      -version     => 0,
+      -info_type   => 'DIRECT',
+      -description => "",
+      -info_text   => "");
+    
+  }
+  if ($transcript_id ne '.') {
+    $transcript2tran{$transcript_id} = Bio::EnsEMBL::DBEntry->new(
+      -primary_id  => $transcript_id,
+      -display_id  => $transcript_id,
+      -dbname      => 'wormbase_transcript',
+      -version     => 0,
+      -info_type   => 'DIRECT',
+      -description => "",
+      -info_text   => "");
+  }
+  if ($wormpep_id ne '.') {
+    $translation2pep{$transcript_id} = Bio::EnsEMBL::DBEntry->new(
+      -primary_id  => $wormpep_id,
+      -display_id  => $wormpep_id,
+      -dbname      => 'wormpep_id',
+      -version     => 0,
+      -info_type   => 'DIRECT',
+      -description => "",
+      -info_text   => "");
+  }
+}
+
+my (@to_write);
+
+foreach my $g (@{$db->get_GeneAdaptor->fetch_all}) {
+  if (exists $gene2wbgene{$g->stable_id}) {
+    push @to_write, [$gene2wbgene{$g->stable_id}, $g->dbID, 'Gene'];
+  }
+  if (exists $gene2gseq{$g->stable_id}) {
+    push @to_write, [$gene2gseq{$g->stable_id}, $g->dbID, 'Gene'];
+  }
+  if (exists $gene2locus{$g->stable_id}) {
+    push @to_write, [$gene2locus{$g->stable_id}, $g->dbID, 'Gene'];
+  }
+}
+
+
+foreach my $t (@{$db->get_TranscriptAdaptor->fetch_all}) {
+  if (exists $transcript2tran{$t->stable_id}) {
+    push @to_write, [$transcript2tran{$t->stable_id}, $t->dbID, 'Transcript'];
+  }
+}
+
+foreach my $tr (@{$db->get_TranslationAdaptor->fetch_all}) {
+  if (exists $translation2pep{$tr->stable_id}) {
+    push @to_write, [$translation2pep{$tr->stable_id}, $tr->dbID, 'Translation'];
+  }
+}
+
+
+if ($no_write) {
+  foreach my $obj (@to_write) {
+    my ($dbentry, $ensid, $enstype) = @$obj;
+    printf "Would write %s %s %d %s\n", $dbentry->primary_id, $dbentry->display_id, $ensid, $enstype;
+  }
+} else {
+  foreach my $dbname ("wormbase_gene", "wormbase_gseqname", "wormbase_locus", "wormbase_transcript", "wormpep_id") {
+    my $del_sql = "DELETE object_xref.*, xref.* "
+        . "FROM external_db, xref, object_xref "
+        . "WHERE external_db.external_db_id = xref.external_db_id "
+        . "AND xref.xref_id = object_xref.xref_id "
+        . "AND db_name = '$dbname'";
+
+    my $sth = $db->dbc->prepare($del_sql);
+    $sth->execute();
+    $sth->finish;
+  }
+
+  foreach my $obj (@to_write) {
+    my ($dbentry, $ensid, $enstype) = @$obj;
+    $db->get_DBEntryAdaptor->store($dbentry, $ensid, $enstype, 1);
+  }
 }
