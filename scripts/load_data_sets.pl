@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2015-04-27 13:20:57 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2015-05-19 14:34:36 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -139,7 +139,7 @@ sub parse_homol_data {
 		    "${species}_blastx.ace",
 		    #motif info
 		    "worm_ensembl_${species}_motif_info.ace",
-		    'interpro_motifs.ace',
+		    #'interpro_motifs.ace',
 		    #protein info
 		    "worm_ensembl_${species}_interpro_motif_info.ace",
 		    #other data
