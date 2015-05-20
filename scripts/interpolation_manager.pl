@@ -31,6 +31,7 @@ GetOptions(
   "fix"     => \$fix,
 );
 
+$flags = '';
 
 if ($store) { 
   $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n"); 
