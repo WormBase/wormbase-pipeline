@@ -6,8 +6,8 @@
 # A simple script to send a check list to the person who will be performing the next
 # build to check the current build
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2015-04-27 13:49:17 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2015-05-20 09:27:01 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -104,7 +104,7 @@ if($clones) {
   } elsif ($wb->species eq 'remanei') {
     @clones = qw(Crem_Contig0 Crem_Contig10 Crem_Contig15 Crem_Contig30 Crem_Contig100 Crem_Contig200 Crem_Contig300 Crem_Contig500 Crem_Contig800);
   } elsif ($wb->species eq 'japonica') {
-    @clones = qw(Cjap.Contig0 Cjap.Contig10 Cjap.Contig15 Cjap.Contig30 Cjap.Contig100 Cjap.Contig200 Cjap.Contig300 Cjap.Contig500 Cjap.Contig800);
+    @clones = qw(Cjap.Contig2 Cjap.Contig7087 Cjap.Contig772 Cjap.Contig7751 Cjap.Contig8547 Cjap.Contig91 Cjap.Contig9449 Cjap.Contig981 Cjap.Contig9854);
   } elsif ($wb->species eq 'brugia') {
     @clones = qw(Bmal_v3_scaffold968 Bmal_v3_scaffold481 Bmal_v3_scaffold56 Bmal_v3_scaffold921 Bmal_v3_scaffold1819 Bmal_v3_scaffold1229 Bmal_v3_scaffold1007 Bmal_v3_scaffold2080);
   } elsif ($wb->species eq 'pristionchus') {
@@ -557,7 +557,6 @@ sub classes_to_check {
 			       Ace2SO => 'transposable_element_ace2so',
 			       Analysis => 'RNASeq.japonica.DF5081.WBls:0000038.Unknown.WBbt:0007833.PRJNA75295.SRX100091',
 			       CDS => 'CJA00088',
-			       Clone => 'CJA46583',
 			       Condition => 'RNASeq_Hillier.japonica.L4_larva_Replicate',
 			       Feature_data => 'CA758779:low',
 			       Gene => 'WBGene00119208', # misses Ortholog Ortholog_other Other_name
@@ -771,96 +770,6 @@ sub not_usually_missing {
   my ($name) = @_;
 
   my @usually_missing = (
-			 "Cjap.Contig0:wublastx_brenneri",
-			 "Cjap.Contig0:wublastx_briggsae",
-			 "Cjap.Contig0:wublastx_brugia",
-			 "Cjap.Contig0:wublastx_fly",
-			 "Cjap.Contig0:wublastx_human",
-			 "Cjap.Contig0:wublastx_japonica",
-			 "Cjap.Contig0:wublastx_pristionchus",
-			 "Cjap.Contig0:wublastx_remanei",
-			 "Cjap.Contig0:wublastx_slimSwissProt",
-			 "Cjap.Contig0:wublastx_worm",
-			 "Cjap.Contig0:wublastx_yeast",
-			 "Cjap.Contig10:wublastx_brenneri",
-			 "Cjap.Contig10:wublastx_briggsae",
-			 "Cjap.Contig10:wublastx_brugia",
-			 "Cjap.Contig10:wublastx_fly",
-			 "Cjap.Contig10:wublastx_human",
-			 "Cjap.Contig10:wublastx_pristionchus",
-			 "Cjap.Contig10:wublastx_remanei",
-			 "Cjap.Contig10:wublastx_slimSwissProt",
-			 "Cjap.Contig10:wublastx_worm",
-			 "Cjap.Contig10:wublastx_yeast",
-			 "Cjap.Contig15:wublastx_briggsae",
-			 "Cjap.Contig15:wublastx_brugia",
-			 "Cjap.Contig15:wublastx_fly",
-			 "Cjap.Contig15:wublastx_human",
-			 "Cjap.Contig15:wublastx_pristionchus",
-			 "Cjap.Contig15:wublastx_slimSwissProt",
-			 "Cjap.Contig15:wublastx_worm",
-			 "Cjap.Contig15:wublastx_yeast",
-			 "Cjap.Contig30:wublastx_brenneri",
-			 "Cjap.Contig30:wublastx_briggsae",
-			 "Cjap.Contig30:wublastx_brugia",
-			 "Cjap.Contig30:wublastx_fly",
-			 "Cjap.Contig30:wublastx_human",
-			 "Cjap.Contig30:wublastx_pristionchus",
-			 "Cjap.Contig30:wublastx_remanei",
-			 "Cjap.Contig30:wublastx_slimSwissProt",
-			 "Cjap.Contig30:wublastx_worm",
-			 "Cjap.Contig30:wublastx_yeast",
-			 "Cjap.Contig100:wublastx_brenneri",
-			 "Cjap.Contig100:wublastx_briggsae",
-			 "Cjap.Contig100:wublastx_brugia",
-			 "Cjap.Contig100:wublastx_fly",
-			 "Cjap.Contig100:wublastx_human",
-			 "Cjap.Contig100:wublastx_pristionchus",
-			 "Cjap.Contig100:wublastx_remanei",
-			 "Cjap.Contig100:wublastx_slimSwissProt",
-			 "Cjap.Contig100:wublastx_worm",
-			 "Cjap.Contig100:wublastx_yeast",
-
-			 "Cjap.Contig200:wublastx_brenneri",
-			 "Cjap.Contig200:wublastx_briggsae",
-			 "Cjap.Contig200:wublastx_brugia",
-			 "Cjap.Contig200:wublastx_fly",
-			 "Cjap.Contig200:wublastx_human",
-			 "Cjap.Contig200:wublastx_pristionchus",
-			 "Cjap.Contig200:wublastx_japonica",
-			 "Cjap.Contig200:wublastx_slimSwissProt",
-			 "Cjap.Contig200:wublastx_worm",
-			 "Cjap.Contig200:wublastx_yeast",
-
-			 "Cjap.Contig300:wublastx_brenneri",
-			 "Cjap.Contig300:wublastx_briggsae",
-			 "Cjap.Contig300:wublastx_brugia",
-			 "Cjap.Contig300:wublastx_fly",
-			 "Cjap.Contig300:wublastx_human",
-			 "Cjap.Contig300:wublastx_pristionchus",
-			 "Cjap.Contig300:wublastx_japonica",
-			 "Cjap.Contig300:wublastx_remanei",
-			 "Cjap.Contig300:wublastx_slimSwissProt",
-			 "Cjap.Contig300:wublastx_worm",
-			 "Cjap.Contig300:wublastx_yeast",
-
-			 "Cjap.Contig500:wublastx_brenneri",
-			 "Cjap.Contig500:wublastx_briggsae",
-			 "Cjap.Contig500:wublastx_brugia",
-			 "Cjap.Contig500:wublastx_fly",
-			 "Cjap.Contig500:wublastx_human",
-			 "Cjap.Contig500:wublastx_pristionchus",
-			 "Cjap.Contig500:wublastx_remanei",
-			 "Cjap.Contig500:wublastx_slimSwissProt",
-			 "Cjap.Contig500:wublastx_worm",
-			 "Cjap.Contig500:wublastx_yeast",
-
-			 "Cjap.Contig800:wublastx_brugia",
-			 "Cjap.Contig800:wublastx_fly",
-			 "Cjap.Contig800:wublastx_human",
-			 "Cjap.Contig800:wublastx_slimSwissProt",
-			 "Cjap.Contig800:wublastx_worm",
-			 "Cjap.Contig800:wublastx_yeast",
 
 			 "Bmal_v3_scaffold481:wublastx_fly",
 			 "Bmal_v3_scaffold481:wublastx_human",
@@ -927,17 +836,6 @@ sub not_expected_to_be_undefined {
   my ($name) = @_;
 
   my @expected_to_be_undefined = (
-				  "Cjap.Contig15:RNASeq:1",
-				  "Cjap.Contig15:RNASeq_forward_reads:1",
-				  "Cjap.Contig30:inverted",
-				  "Cjap.Contig30:RNASeq:1",
-				  "Cjap.Contig30:RNASeq_forward_reads:1",
-				  "Cjap.Contig30:RNASeq_reverse_reads:1",
-				  "Cjap.Contig200:inverted",
-				  "Cjap.Contig200:RNASeq:1",
-				  "Cjap.Contig200:RNASeq_forward_reads:1",
-				  "Cjap.Contig200:RNASeq_reverse_reads:1",
-				  "Cjap.Contig300:RNASeq_forward_reads:1",
 				  "Bmal_v3_scaffold968:inverted",
 				  "Bmal_v3_scaffold968:RNASeq_stranded_reads:1",
 				  "Bmal_v3_scaffold481:RNASeq_stranded_reads:1",
