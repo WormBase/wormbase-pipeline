@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: klh $
-# Last edited on: $Date: 2015-05-06 12:03:48 $
+# Last edited on: $Date: 2015-05-20 11:07:12 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -31,7 +31,7 @@ my ( $gff_dump,     $processGFF, $gff_split );
 my $gene_span;
 my ( $load, $big_load, $tsuser );
 my ($map_features, $remap_misc_dynamic, $map, $map_alleles, $transcripts, $cdna_files, $misc_data_sets, $homol_data_sets, $nem_contigs);
-my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $remarks, $names, $treefam, $load_interpro);
+my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $names, $treefam, $load_interpro);
 my ( $utr, $agp, $gff_munge, $gff3_munge, $extras , $ontologies, $interpolate, $check, $enaseqxrefs, $enagenexrefs, $enaprotxrefs, $xrefs);
 my ( $data_check, $buildrelease, $public,$finish_build, $gffdb, $autoace, $release, $user, $kegg, $prepare_gff_munge, $post_merge);
 
@@ -78,7 +78,6 @@ GetOptions(
 	   'confirm'        => \$confirm,
 	   'operon'         => \$operon,
 	   'repeats'        => \$repeats,
-	   'remarks'        => \$remarks,
 	   'names'          => \$names,
 	   'treefam'        => \$treefam,
 	   'utr'            => \$utr,
@@ -198,7 +197,6 @@ if ($confirm) {
 $wormbase->run_script( 'map_operons.pl'                          , $log) if $operon;
 $wormbase->run_script( "get_ena_submission_xrefs.pl -proteinxrefs", $log) if $enaprotxrefs;
 $wormbase->run_script( 'make_wormpep.pl -all -final'                  , $log) if $finish_wormpep;
-$wormbase->run_script( 'write_DB_remark.pl'                      , $log) if $remarks;
 $wormbase->run_script( 'molecular_names_for_genes.pl'            , $log) if $names;
 $wormbase->run_script( 'get_treefam.pl'                          , $log) if $treefam;
 $wormbase->run_script( 'KEGG.pl', $log )                                 if $kegg;
@@ -553,6 +551,7 @@ sub post_merge_steps {
   $wormbase->run_script("ONTOLOGY/update_GO_terms.pl", $log); 
   $wormbase->run_script('transfer_interpro_GO_terms.pl', $log );
   $wormbase->run_script("cluster_gene_connection.pl", $log);
+  $wormbase->run_script("write_DB_remark.pl", $log);
   $wormbase->run_script("tier3_stubs.pl", $log);
 }
 
