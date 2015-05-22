@@ -55,7 +55,8 @@ open(my $out, ">$outfile") or $log->log_and_die("cannot open $outfile : $!\n");
 
 &print_wormbase_GAF_header($out);
 
-$it = $db->fetch_many(-query=>'find Gene Disease_info');
+#$it = $db->fetch_many(-query=>'find Gene Disease_info');
+$it = $db->fetch_many(-query=>'find Gene WBGene00000001');
 
 while (my $obj=$it->next) {
   next unless $obj->isObject();
@@ -71,7 +72,7 @@ while (my $obj=$it->next) {
       my $text = $meth->right->name;
       my ($with_from_list) = $text =~ /\((\S+)\)/;
       
-      my @ens  = grep { $_ =~ /ENSEMBL:/ } split(/,/, $with_from_list);
+      my @ens = map { "ENSEMBL:$_" } grep { $_ =~ /ENSG\d+/ } split(/,/, $with_from_list);
       my @omim = grep { $_ =~ /OMIM:/ } split(/,/, $with_from_list);
 
       &print_wormbase_GAF_line($out,  
@@ -90,11 +91,19 @@ while (my $obj=$it->next) {
   }
 
   foreach my $doterm ($obj->Experimental_model) {
-    my @papers;
+    my (@papers, @omims);
     foreach my $evi ($doterm->right->col) {
       if ($evi->name eq 'Paper_evidence') {
         foreach my $paper ($evi->col) {
           push @papers, $paper;
+        }
+      } elsif ($evi->name eq 'Accession_evidence') {
+        foreach my $db ($evi->col) {
+          if ($db->name eq 'OMIM') {
+            foreach my $acc ($db->col) {
+              push @omims, "OMIM:$acc";
+            }
+          }
         }
       }
     }
@@ -106,7 +115,7 @@ while (my $obj=$it->next) {
                                $doterm,
                                "WB_REF:$paper",
                                "IMP", 
-                               "",
+                               join("|", @omims),
                                "D",
                                $gene_info->{$g}->{sequence_name},
                                $taxid, 
