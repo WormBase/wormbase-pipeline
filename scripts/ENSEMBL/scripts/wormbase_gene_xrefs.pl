@@ -145,10 +145,36 @@ if ($no_write) {
     my $sth = $db->dbc->prepare($del_sql);
     $sth->execute();
     $sth->finish;
+
+    $sth = $db->dbc->prepare("UPDATE gene SET display_xref_id = NULL");
+    $sth->execute();
+    $sth->finish();
   }
 
+  my %potential_display_xrefs;
+  
   foreach my $obj (@to_write) {
     my ($dbentry, $ensid, $enstype) = @$obj;
     $db->get_DBEntryAdaptor->store($dbentry, $ensid, $enstype, 1);
+
+    if ($enstype eq 'Gene') {
+      push @{$potential_display_xrefs{$ensid}}, $dbentry;
+    }
   }
+
+  my $sth = $db->dbc->prepare("UPDATE gene SET display_xref_id = ? WHERE gene_id = ?");
+
+  foreach my $gene_id (sort { $a <=> $b } keys %potential_display_xrefs) {
+    my @xrefs = @{$potential_display_xrefs{$gene_id}};
+    my ($gseq)  = grep { $_->dbname eq 'wormbase_gseqname' } @xrefs;
+    my ($locus) = grep { $_->dbname eq 'wormbase_locus'    } @xrefs; 
+
+    if (defined $locus) {
+      $sth->execute($locus->dbID, $gene_id);
+    } elsif (defined $gseq) {
+      $sth->execute($gseq->dbID, $gene_id);
+    } 
+  }
+  $sth->finish();
+
 }
