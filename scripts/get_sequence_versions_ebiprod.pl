@@ -5,17 +5,17 @@ use strict;
 use Getopt::Long;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 
-my ($bioproject_id, $ena_cred, $verbose); 
+my ($bioproject_id, $ena_cred, $verbose, $all_records); 
 
 &GetOptions(
   'enacred=s'       => \$ena_cred,
   'bioprojectid=s'  => \$bioproject_id, 
   'verbose'         => \$verbose,
+  'nonpublic'       => \$all_records,
     );
 
 
-if (not defined $org_id or
-    not defined $bioproject_id) {
+if (not defined $bioproject_id) {
   die "Incorrect invocation\n";
 }
 
@@ -29,19 +29,21 @@ my $ena_dbh = &get_ena_dbh($ena_cred);
 #
 # statusid = 4 => only live public records
 #
-
 my $ena_sql = 
     "   SELECT primaryacc#, b.version"
-    . "   FROM dbentry d, bioseq b" 
+    . "   FROM dbentry d, bioseq b"
     . "   WHERE d.bioseqid = b.seqid"
     . "   AND study_id = '$bioproject_id'"
-    . "   AND statusid = 4";
+    . "   AND dataclass <> 'SET'";
+if (not $all_records) {
+  $ena_sql .=  "   AND statusid = 4";
+}
 
 my $ena_sth = $ena_dbh->dbc->prepare($ena_sql);
 
 print STDERR "Doing primary lookup of sequence versions in ENA ORACLE database...\n" if $verbose;
 
-$ena_sth->execute || die "Can't execute statement: $DBI::errstr";
+$ena_sth->execute || die "Cannot execute statement: $DBI::errstr";
 
 my (%results);
 
