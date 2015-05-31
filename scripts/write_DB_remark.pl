@@ -6,7 +6,7 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates a suitable DB_remark
 #
-# Last updated on: $Date: 2015-05-20 11:14:08 $
+# Last updated on: $Date: 2015-05-31 15:00:18 $
 # Last updated by: $Author: klh $
 
 ###########################
@@ -14,7 +14,7 @@
 ###########################
 # Real Genes (clone.number)
 # --------------------------
-# 1. CGC name --> "C. elegans CGC name protein"
+# 1. CGC name --> "CGC name protein"
 # 2. pfam motif --> "contains similarity to Pfam domain PFXXXXXX (title)"
 #       * take ALL pfam motifs
 # 3. interpro motif --> "contains similarity to Interpro domain XXXXXXX (title)"
@@ -147,12 +147,13 @@ while (my $cds = $CDSs->next ) {
     next;
   }
 
+
   if (defined($gene->CGC_name)) {
     $cgc_name = $gene->CGC_name;
     $cgc_protein_name = uc($cgc_name);
   }
   
-  push @full_string,  $wormbase->full_name('-short' => 1)." $cgc_protein_name protein" if ($cgc_name); 
+  push @full_string, "$cgc_protein_name protein" if ($cgc_name); 
 
   # Find motifs
   $protein = $cds->Corresponding_protein;
@@ -303,29 +304,28 @@ foreach my $pseudogene (@pseudogenes) {
   if(!defined($pseudogene->Gene)){
     $log->write_to("ERROR: $pseudogene does not have a Gene tag.  This is bad!\n");
     next;
-  } else{
-    $gene_name = $pseudogene->Gene;
-    $gene = $db->fetch(Gene => $gene_name);
-    if(defined($gene->CGC_name)){
-      $cgc_name = $gene->CGC_name;
-    }
-  }
+  } 
 
+  $gene_name = $pseudogene->Gene;
+  $gene = $db->fetch(Gene => $gene_name);
+  if(defined($gene->CGC_name)){
+    $cgc_name = $gene->CGC_name;
+  }
   $type = $pseudogene->Coding_pseudogene;
 
   if ($type or $cgc_name) {
     if ($type and $cgc_name) { 
-      $full_string = $wormbase->full_name('-short' => 1)." $type pseudogene $cgc_name"; 
+      $full_string = "$type pseudogene $cgc_name"; 
     } 
     elsif ($type) { 
-      $full_string = $wormbase->full_name('-short' => 1)." $type pseudogene"; 
+      $full_string = "$type pseudogene"; 
     } 
     elsif ($cgc_name) {
-      $full_string = $wormbase->full_name('-short' => 1)." pseudogene $cgc_name"; 
+      $full_string = "pseudogene $cgc_name"; 
     }
   } 
   else {
-    $full_string = $wormbase->full_name('-short' => 1)." predicted pseudogene"; 
+    $full_string = "predicted pseudogene"; 
   }
 
   $object_count++;
@@ -377,12 +377,12 @@ while ( my $transcript = $transcripts->next ) {
   if(not defined($transcript->Gene)){
     $log->write_to("ERROR: $transcript does not have a Gene tag.  This is bad!\n");
     next; 
-  } else{
-    $gene_name = $transcript->Gene;
-    $gene = $db->fetch(Gene => $gene_name);
-    if(defined($gene->CGC_name)){
-      $cgc_name = $gene->CGC_name;
-    }
+  } 
+
+  $gene_name = $transcript->Gene;
+  $gene = $db->fetch(Gene => $gene_name);
+  if(defined($gene->CGC_name)){
+    $cgc_name = $gene->CGC_name;
   }
   
   if($transcript->Method(1)){
@@ -407,34 +407,34 @@ while ( my $transcript = $transcripts->next ) {
 
   if (not $type) { # non-coding transcript isoforms have no tag after 'Transcript'
     if ($cgc_name) {
-      $full_string = $wormbase->full_name('-short' => 1)." non-coding isoform of $cgc_name";
+      $full_string = "non-coding isoform of $cgc_name";
     } 
     else {
-      $full_string = $wormbase->full_name('-short' => 1)." predicted non-coding isoform";
+      $full_string = "predicted non-coding isoform";
     } 
   } elsif ($method =~/tRNAscan/) { # tRNAs
     if ($cgc_name) {
-      $full_string = $wormbase->full_name('-short' => 1)." tRNA $cgc_name";
+      $full_string = "tRNA $cgc_name";
     } else {
-      $full_string = $wormbase->full_name('-short' => 1)." predicted tRNA";
+      $full_string = "predicted tRNA";
     }
   } elsif ($type eq 'ncRNA') { # RNA genes
     if ($cgc_name) {
-      $full_string = $wormbase->full_name('-short' => 1)." non-protein coding RNA $cgc_name";
+      $full_string = "non-protein coding RNA $cgc_name";
     } else {
-      $full_string = $wormbase->full_name('-short' => 1)." probable non-coding RNA";
+      $full_string = "probable non-coding RNA";
     }
   } elsif ($type eq 'snRNA') { # snRNA genes
     if ($cgc_name) {
-      $full_string = $wormbase->full_name('-short' => 1)." small nuclear RNA $description $cgc_name";
+      $full_string = "small nuclear RNA $description $cgc_name";
     } else {
-      $full_string = $wormbase->full_name('-short' => 1)." small nuclear RNA $description";
+      $full_string = "small nuclear RNA $description";
     }
   } elsif ($type eq 'snoRNA') { # snoRNA genes
     if ($cgc_name) {
-      $full_string = $wormbase->full_name('-short' => 1)." small nucleolar RNA $description $cgc_name";
+      $full_string = "small nucleolar RNA $description $cgc_name";
     } else {
-      $full_string = $wormbase->full_name('-short' => 1)." small nucleolar RNA $description";
+      $full_string = "small nucleolar RNA $description";
     }
   } elsif ($type eq 'miRNA') { # miRNA genes
     if ($method eq 'miRNA_primary_transcript') {
@@ -443,33 +443,33 @@ while ( my $transcript = $transcripts->next ) {
       $type = $method;
     }
     if ($cgc_name) {
-      $full_string = $wormbase->full_name('-short' => 1)." $type $cgc_name";
+      $full_string = "$type $cgc_name";
     } else {
-      $full_string = $wormbase->full_name('-short' => 1)." predicted $type";
+      $full_string = "predicted $type";
     }
   } elsif ($type eq 'scRNA') { # scRNA genes
     if ($cgc_name) {
-      $full_string = $wormbase->full_name('-short' => 1)." small cytoplasmic RNA $cgc_name";
+      $full_string = "small cytoplasmic RNA $cgc_name";
     } else {
-      $full_string = $wormbase->full_name('-short' => 1)." predicted small cytoplasmic RNA";
+      $full_string = "predicted small cytoplasmic RNA";
     }
   } elsif ($type eq 'lincRNA') { # lincRNA genes
     if ($cgc_name) {
-      $full_string = $wormbase->full_name('-short' => 1)." large intervening non-coding RNA $cgc_name";
+      $full_string = "long intervening non-coding RNA $cgc_name";
     } else {
-      $full_string = $wormbase->full_name('-short' => 1)." predicted large intervening non-coding RNA";
+      $full_string = "predicted long intervening non-coding RNA";
     }
   } elsif ($type eq 'asRNA') { # asRNA genes
     if ($cgc_name) {
-      $full_string = $wormbase->full_name('-short' => 1)." antisense RNA $cgc_name";
+      $full_string = "antisense RNA $cgc_name";
     } else {
-      $full_string = $wormbase->full_name('-short' => 1)." predicted antisense RNA";
+      $full_string = "predicted antisense RNA";
     }
   } elsif ($type eq 'piRNA') { # piRNA genes
     if ($cgc_name) {
-      $full_string = $wormbase->full_name('-short' => 1)." piwi-associated RNA $cgc_name";
+      $full_string = "piwi-associated RNA $cgc_name";
     } else {
-      $full_string = $wormbase->full_name('-short' => 1)." predicted piwi-associated RNA";
+      $full_string = "predicted piwi-associated RNA";
     }
   }
 
