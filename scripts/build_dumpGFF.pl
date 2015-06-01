@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2015-04-27 11:19:24 $
+# Last edited by: $Author: klh $
+# Last edited on: $Date: 2015-06-01 11:27:08 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -72,6 +72,8 @@ init Pseudogene elegans briggsae remanei pristionchus japonica brenneri brugia o
 init Transposon elegans pristionchus japonica brenneri briggsae remanei brugia ovolvulus sratti
 init Transposon_CDS elegans pristionchus japonica brenneri briggsae remanei brugia ovolvulus sratti
 init Transposon_Pseudogene elegans pristionchus japonica brenneri briggsae remanei brugia ovolvulus sratti
+init rRNA_Pseudogene elegans pristionchus japonica brenneri briggsae remanei brugia ovolvulus sratti
+init tRNA_Pseudogene elegans pristionchus japonica brenneri briggsae remanei brugia ovolvulus sratti
 init curated  elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti
 init history elegans briggsae pristionchus japonica brenneri brugia ovolvulus sratti
 init history_pseudogene elegans briggsae pristionchus japonica brenneri brugia ovolvulus sratti
