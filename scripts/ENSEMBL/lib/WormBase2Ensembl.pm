@@ -142,6 +142,8 @@ sub parse_genes_gff3_fh {
       $l[2] ne 'nc_primary_transcript' and 
       $l[2] ne 'protein_coding_primary_transcript' and  
       $l[2] ne 'pseudogenic_transcript' and 
+      $l[2] ne 'pseudogenic_rRNA' and
+      $l[2] ne 'pseudogenic_tRNA' and 
       $l[2] ne 'CDS' and 
       $l[2] ne 'exon');
 
@@ -202,6 +204,8 @@ sub parse_genes_gff3_fh {
              $l[2] eq 'piRNA' or
              $l[2] eq 'antisense_RNA' or
              $l[2] eq 'pseudogenic_transcript' or
+             $l[2] eq 'pseudogenic_rRNA' or
+             $l[2] eq 'pseudogenic_tRNA' or
              $l[2] eq 'nc_primary_transcript' or 
              $l[2] eq 'protein_coding_primary_transcript') {
       $transcripts{$id}->{source} = $l[1];
@@ -423,7 +427,11 @@ sub parse_genes_gff3_fh {
           $gene_biotypes{ncRNA}++;
         } elsif ($gff_type =~ /pseudo/) {
           $transcript->analysis($pseudo_ana);
-          $transcript->biotype('pseudogene');
+          my $biotype = "pseudogene";
+          if ($gff_type =~ /pseudogenic_(\S+)/ and $1 ne 'transcript') {
+            $biotype = "${1}_pseudogene";
+          }
+          $transcript->biotype($biotype);
           $gene_biotypes{pseudogene}++;
         } elsif ( $gff_type eq 'mRNA'){
           # mRNA feature with no corresponding CDS. Barf
