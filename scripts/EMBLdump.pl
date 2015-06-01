@@ -2,7 +2,7 @@
 #
 # EMBLdump.pl 
 # 
-#  Last updated on: $Date: 2015-03-30 14:54:21 $
+#  Last updated on: $Date: 2015-06-01 12:00:07 $
 #  Last updated by: $Author: klh $
 
 use strict;
@@ -532,21 +532,8 @@ sub process_feature_table {
       }
       $feat->{ftype} = $mod_dir;
 
-    } elsif ($feat->{ftype} =~ /Pseudogene/) {
-      # skip psudogenes for now; currently in briggsae, the only pseudogenes
-      # are tRNAs, but we cannot assume this; therefore no way of determining
-      # reliably what sort of psseudogene we are looking at
-      next if $species eq 'briggsae';
-        
-      my $new_dv = "CDS";
-
-      # hack: in C.elegans, all Pseudogenes with .t\d+ suffices are
-      # tRNA pseudogenes; 
-      foreach my $tg (@{$feat->{quals}}) {
-        if ($tg->[0] =~ /\/gene=\"\S+\.t\d+\"/) {
-          $new_dv = "tRNA";
-        } 
-      }
+    } elsif ($feat->{ftype} =~ /(\S+)_Pseudogene/) {
+      my $new_dv = "$1";
 
       $feat->{ftype} = $new_dv;
       $feat->{is_pseudo} = 1;
