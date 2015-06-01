@@ -178,7 +178,7 @@ Colour DARKGRAY
 Show_up_strand	
 Width 1.500000
 Show_text
-EMBL_feature "Pseudogene"
+EMBL_feature "CDS_Pseudogene"
 EMBL_qualifier "\/note=\"\%s\"" "note"
 GFF_source "Pseudogene"
 GFF_SO "SO:0000516" "nc_transcript_ace2so" // pseudogenic_transcript
@@ -264,6 +264,16 @@ GFF_feature "rRNA"
 EMBL_feature "rRNA"
 GFF_SO "SO:0000252" "nc_transcript_ace2so" // rRNA
 
+Method : "rRNA_Pseudogene" 
+Colour DARKGRAY
+Show_up_strand	
+Width 1.500000
+Show_text
+EMBL_feature "rRNA_Pseudogene"
+EMBL_qualifier "\/note=\"\%s\"" "note"
+GFF_source "rRNA_Pseudogene"
+GFF_SO "SO:0000777" "nc_transcript_ace2so" // pseudogenic_rRNA
+
 Method : "tRNA" 
 Colour GREEN
 Show_up_strand	
@@ -294,6 +304,16 @@ EMBL_feature "tRNA"
 GFF_source "tRNA"
 GFF_feature "tRNA"
 GFF_SO "SO:0000253" "nc_transcript_ace2so" // tRNA
+
+Method : "tRNA_Pseudogene" 
+Colour DARKGRAY
+Show_up_strand	
+Width 1.500000
+Show_text
+EMBL_feature "tRNA_Pseudogene"
+EMBL_qualifier "\/note=\"\%s\"" "note"
+GFF_source "tRNA_Pseudogene"
+GFF_SO "SO:0000778" "nc_transcript_ace2so" // pseudogenic_tRNA
 
 Method : "scRNA" 
 Colour GREEN
