@@ -14,6 +14,7 @@ my (
   $dbpass,
   $xref_file,
   $no_write,
+  $logic_name,
 );
 
 $dbuser = 'ensro';
@@ -26,6 +27,7 @@ $dbuser = 'ensro';
   'pass=s'   => \$dbpass,
   'xref=s'   => \$xref_file,
   'nowrite'  => \$no_write,
+  'analysis=s' => \$logic_name,
 );
 
 my $db = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
@@ -38,6 +40,12 @@ my $db = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
 );
 
 my (%gene2gseq, %gene2wbgene, %gene2locus, %transcript2tran, %translation2pep);
+
+$logic_name = "wormbase_xrefs" if not defined $logic_name;
+my $analysis = $db->get_AnalysisAdaptor->fetch_by_logic_name($logic_name);
+if (not defined $analysis) {
+  $analysis = Bio::EnsEMBL::Analysis->new(-logic_name => $logic_name);
+}
 
 my $xref_fh;
 if ($xref_file =~ /\.gz$/) {
@@ -56,7 +64,9 @@ while(<$xref_fh>) {
     -version     => 0,
     -info_type   => 'DIRECT',
     -description => "",
-    -info_text   => "");
+    -info_text   => "",
+    -analysis    => $analysis,
+      );
   
   if ($gseq_id ne '.') {
     $gene2gseq{$wbgene_id} = Bio::EnsEMBL::DBEntry->new(
@@ -66,7 +76,9 @@ while(<$xref_fh>) {
       -version     => 0,
       -info_type   => 'DIRECT',
       -description => "",
-      -info_text   => "");      
+      -info_text   => "",
+      -analysis    => $analysis,
+        );      
   } 
   if ($locus_id ne '.') {
     $gene2locus{$wbgene_id} = Bio::EnsEMBL::DBEntry->new(
@@ -76,7 +88,9 @@ while(<$xref_fh>) {
       -version     => 0,
       -info_type   => 'DIRECT',
       -description => "",
-      -info_text   => "");
+      -info_text   => "",
+      -analysis    => $analysis,
+        );
     
   }
   if ($transcript_id ne '.') {
@@ -87,7 +101,9 @@ while(<$xref_fh>) {
       -version     => 0,
       -info_type   => 'DIRECT',
       -description => "",
-      -info_text   => "");
+      -info_text   => "",
+      -analysis    => $analysis,
+        );
   }
   if ($wormpep_id ne '.') {
     $translation2pep{$transcript_id} = Bio::EnsEMBL::DBEntry->new(
@@ -97,7 +113,9 @@ while(<$xref_fh>) {
       -version     => 0,
       -info_type   => 'DIRECT',
       -description => "",
-      -info_text   => "");
+      -info_text   => "",
+      -analysis    => $analysis,
+        );
   }
 }
 
