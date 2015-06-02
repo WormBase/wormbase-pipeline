@@ -6,7 +6,7 @@
 # builds wormbase & wormpep FTP sites
 # 
 # Last updated by: $Author: klh $
-# Last updated on: $Date: 2015-03-25 09:57:59 $
+# Last updated on: $Date: 2015-06-02 08:48:04 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -353,7 +353,7 @@ sub copy_xrefs {
   my $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying/zipping xref files\n");
 
-  my %accessors = ($wormbase->all_species_accessors);
+  my %accessors = ($wormbase->species_accessors);
   $accessors{elegans} = $wormbase;
 
   foreach my $wb (values %accessors) {
@@ -369,7 +369,7 @@ sub copy_xrefs {
     if (-e $xref_file) {
       $wormbase->run_command("cat $xref_file | gzip -n -9 -c > $out_file", $log);
     } else {
-      $log->error("Could not find xref file $xref_file");
+      $log->error("ERROR: Could not find xref file $xref_file");
     }
   }
 
@@ -452,7 +452,7 @@ sub copy_dna_files{
               and die "Could not gzip $tgt after copying\n";
         };          
         $@ and do {
-          $log->error("Could not copy DNA file $src for $species; skipping\n");
+          $log->error("ERROR: Could not copy DNA file $src for $species; skipping\n");
           next ACC;
         };
       }
