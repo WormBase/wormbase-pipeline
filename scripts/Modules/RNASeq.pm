@@ -7,7 +7,7 @@
 # Methods for running the RNAseq pipeline and other useful things like searching the ENA warehouse
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2014-12-12 13:03:16 $      
+# Last updated on: $Date: 2015-06-02 16:01:31 $      
 
 =pod
 
@@ -136,7 +136,7 @@ sub read_accession {
 
   my @fields = (
 		"run_accession",
-		"study_accession",
+#		"study_accession", # don't read the study_accession treat the secondary_study_accession as the study_accession
 		"secondary_study_accession",
 		"sample_accession",
 		"experiment_accession",
@@ -215,6 +215,7 @@ sub read_accession {
 	my $working_field_count = 0;
 	foreach my $working_field_name (@working_fields) {
 	  $data{$f[0]}{$working_field_name} = $f[$working_field_count];
+	  if ($working_field_name eq 'secondary_study_accession') {$data{$f[0]}{'study_accession'} = $f[$working_field_count];} # change secondary_study_accession to study_accession
 	  $working_field_count++;
 	}
       }
@@ -226,11 +227,13 @@ sub read_accession {
       my $field_count = 0;
       foreach my $field_name (@fields) {
 	$data{$f[0]}{$field_name} = $f[$field_count];
+	if ($field_name eq 'secondary_study_accession') {$data{$f[0]}{'study_accession'} = $f[$field_count];} # change secondary_study_accession to study_accession
 	# debug Study IDs
 	if ($field_name eq 'secondary_study_accession' && $f[$field_count] !~ /^(D|E|S)RP/) {print "Have a secondary_study_accession field in read_accession('$accession') = $f[$field_count]\n"}
 	$field_count++;
       }
     }
+    if (!exists $data{$f[0]}{'study_accession'} ) {die "No study accession found for $f[0]\n"} # sanity check that we used secondary_study_accession correctly to replace study_accession
   }
 
   return \%data;
@@ -616,10 +619,6 @@ sub add_one_new_experiment_to_config {
   my $runs_in_this_study = $self->read_accession($study_accession);
   my $experiments = $self->get_experiments_from_run_data($runs_in_this_study);
 
-  # no , don't do the following. We now want to store everything under the Study ID, not the Project ID
-  # if we are using a secondary accession as the Study name for the file, then use the primary study accession instead
-  #if ($experiments->{$experiment_accession}{study_accession} ne $study_accession) {$study_accession = $experiments->{$experiment_accession}{study_accession}}
-
   my $ini = $self->get_study_config_file($study_accession);
 
   # make sure that this experiment was done in this species - some Studies have multiple species in
@@ -676,11 +675,13 @@ sub update_experiment_config_record {
   my $runs_in_this_study = $self->read_accession($study_accession);
   my $experiments = $self->get_experiments_from_run_data($runs_in_this_study);
 
-  # if we are using a secondary accession as the Study name for the file, then use the primary study accession instead
-  if ($experiments->{$experiment_accession}{study_accession} ne $study_accession) {
-    print "In update_experiment_config_record() :\nExpt $experiment_accession has different study accession (",$experiments->{$experiment_accession}{study_accession},") to original ($study_accession)\n";
-    $changed_study_id = 1;
-    $study_accession = $experiments->{$experiment_accession}{study_accession}
+  # if we are using a primary accession as the Study name for the file, then use the secondary study accession instead
+  if (exists $experiments->{$experiment_accession}{secondary_study_accession} ) {
+    if ($experiments->{$experiment_accession}{secondary_study_accession} ne $study_accession) {
+      print "In update_experiment_config_record() :\nExpt $experiment_accession has different config file secondary study accession (",$experiments->{$experiment_accession}{secondary_study_accession},") to the ENA secondary_study_accession ($study_accession)\n";
+      $changed_study_id = 1;
+      $study_accession = $experiments->{$experiment_accession}{study_accession}
+    }
   }
   my $ini = $self->get_study_config_file($study_accession);
 
@@ -695,7 +696,7 @@ sub update_experiment_config_record {
   
   $ini->AddSection ($experiment_accession);
   
-  if ($changed_study_id) { # the existing experiment record may be using the old secondary ID, so write it all out
+  if ($changed_study_id) { # the existing experiment record may be using the old primary ID, so write it all out
     foreach my $param (keys %{$experiments->{$experiment_accession}}) {
       my $value = $experiments->{$experiment_accession}{$param};
       $ini->newval($experiment_accession, $param, $value);
@@ -879,6 +880,7 @@ sub update_experiment_config_data {
     # keyword 'locked' in the record.
     # get full experiment details from ENA and store experiment details in INI file
     my $study_accession = $ena_experiments->{$experiment_accession}{study_accession};
+    print "Checking existing expt $experiment_accession in study $study_accession\n";
     $self->update_experiment_config_record($study_accession, $experiment_accession, %{$config_experiments->{$experiment_accession}});
   }
 
