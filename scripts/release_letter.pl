@@ -3,7 +3,7 @@
 # release_letter.pl                            
 # 
 # Last updated by: $Author: klh $               
-# Last updated on: $Date: 2015-03-25 14:32:19 $
+# Last updated on: $Date: 2015-06-02 11:06:13 $
 
 # Generates a release letter at the end of build.
 #
@@ -366,7 +366,7 @@ sub write_GO_stats {
   while(<$gaf>) {
     next if /^\!/;
     my @l = split(/\t/, $_);
-    my ($gene, $term, $ref, $code, $source,) = @l[1,4,5,6,13];
+    my ($gene, $term, $ref, $code, $source,) = @l[1,4,5,6,14];
 
     $term =~ s/GO://;
       
