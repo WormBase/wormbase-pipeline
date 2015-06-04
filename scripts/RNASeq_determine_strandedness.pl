@@ -8,7 +8,7 @@
 # looking at the region of the ama-1 gene, or homologs
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2015-03-23 13:53:45 $      
+# Last updated on: $Date: 2015-06-04 11:25:17 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -83,7 +83,7 @@ my %regions = ( # chromosome, start, end and sense of highly expressed region of
 	       'ovolvulus' => ['OVOC_OM1b', 20162608, 20175080, '-'     ], # WBGene00239543 OVOC2734
 	       'pacificus' => ['59', 541834, 551440, '-'                ], # Ppa-ama-1
 	       'remanei'   => ['125', 5842, 20968, '+'                  ], # Cre-ama-1
-	       'sratti'    => ['SRAE_scaffold0000002', 418838, 423508, '-'], # sratti ama-1
+	       'sratti'    => ['SRAE_scaffold2', 418838, 423508, '-'    ], # sratti ama-1
 	      );
 
 foreach my $experiment_accession (keys %{$data}) {
