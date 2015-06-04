@@ -7,7 +7,7 @@
 # Methods for running the Isoformer pipeline and other useful things
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2015-04-30 14:02:39 $      
+# Last updated on: $Date: 2015-06-04 10:27:54 $      
 
 =pod
 
@@ -183,6 +183,11 @@ sub make_isoforms_in_region {
   my ($chromosome, $region_start, $region_end);
   ($chromosome, $region_start) = $self->{coords}->Coords_2chrom_coords($sequence, $seq_start);
   ($chromosome, $region_end) = $self->{coords}->Coords_2chrom_coords($sequence, $seq_end);
+  # briggsae has some contigs in the reverse sense on the golden path, so check the sense again
+  if ($region_start > $region_end) {
+    ($region_start, $region_end) = ($region_end, $region_start);
+    $sense = '-';
+  }
 
    
   my @TSL = &get_TSL_in_region($chromosome, $region_start, $region_end, $sense, $self->{all_TSL}{$chromosome});
