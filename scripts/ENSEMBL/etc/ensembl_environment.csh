@@ -76,7 +76,7 @@ else
 
     setenv CVS_DIR $WORMPUB/wormbase-pipeline/scripts 
 
-    setenv PIPELINE /gpfs/nobackup/ensembl_genomes/wormbase/BUILD/pipeline
+    setenv PIPELINE /nfs/nobackup/ensemblgenomes/wormbase/BUILD/pipeline
     
     setenv LSB_DEFAULTQUEUE production-rh6
 
@@ -130,7 +130,7 @@ endif
 # these are now system-independent locations
 ############################################
 
-setenv LSFPATHS $PIPELINE # Resources hint for LSF
+#setenv LSFPATHS $PIPELINE # Resources hint for LSF
 
 setenv WORMBASE $WORMPUB # wormpub and wormbase are interchangeable terms
 setenv WORM_BIN ${WORM_SW_ROOT}/bin
