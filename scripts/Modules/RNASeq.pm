@@ -7,7 +7,7 @@
 # Methods for running the RNAseq pipeline and other useful things like searching the ENA warehouse
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2015-06-02 16:01:31 $      
+# Last updated on: $Date: 2015-06-09 14:32:44 $      
 
 =pod
 
@@ -97,7 +97,7 @@ sub new {
   $self->{'check'} = shift;      # true if existing GTF and cufflinks data should be left untouched (for checkpointing and restarting)
 
   # set up useful paths etc.
-  $self->{'RNASeqBase'}      = "/gpfs/nobackup/ensembl_genomes/wormbase/BUILD/RNASeq/" . $self->{wormbase}->{species};
+  $self->{'RNASeqBase'}      = "/nfs/nobackup/ensemblgenomes/wormbase/BUILD/RNASeq/" . $self->{wormbase}->{species};
   $self->{'RNASeqSRADir'}    = $self->RNASeqBase . "/SRA";
   $self->{'RNASeqGenomeDir'} = $self->RNASeqBase . "/Genome";
   $self->{'Software'}        = "/nfs/panda/ensemblgenomes/wormbase/software/packages";
