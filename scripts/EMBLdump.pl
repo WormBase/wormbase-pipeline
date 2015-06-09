@@ -2,8 +2,8 @@
 #
 # EMBLdump.pl 
 # 
-#  Last updated on: $Date: 2015-06-01 12:00:07 $
-#  Last updated by: $Author: klh $
+#  Last updated on: $Date: 2015-06-09 09:10:18 $
+#  Last updated by: $Author: mh6 $
 
 use strict;
 use Getopt::Long;
@@ -290,7 +290,7 @@ if ($dump_modified) {
       } elsif ($species eq 'briggsae') {
         $de_line = "$full_species_name AF16 supercontig from assembly CB4, $seqname";
       } elsif ($species eq 'brugia'){
-        $de_line = "$full_species_name FR3 supercontig from assembly B_malayi-3.0 $seqname"
+        $de_line = "$full_species_name FR3 supercontig from assembly B_malayi-3.1 $seqname"
       }
       
       print $out_fh "DE   $de_line\n";
