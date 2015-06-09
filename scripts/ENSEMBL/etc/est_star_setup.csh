@@ -41,7 +41,7 @@ endif
 
 
 setenv PIPELINE_CODE_DIR $WORM_PACKAGES/ensembl_genomes
-setenv PIPELINE_DATA_DIR /gpfs/nobackup/ensemblgenomes/wormbase/BUILD/EST-data/$SPECIES
+setenv PIPELINE_DATA_DIR /nfs/nobackup/ensemblgenomes/wormbase/BUILD/EST-data/$SPECIES
 set path = (/nfs/panda/ensemblgenomes/external/STAR $path)
 setenv CORE_DB_NAME worm_ensembl_$SPECIES
 setenv DB_HOST  mysql-wormbase-pipelines
