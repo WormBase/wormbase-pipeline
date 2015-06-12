@@ -55,8 +55,7 @@ open(my $out, ">$outfile") or $log->log_and_die("cannot open $outfile : $!\n");
 
 &print_wormbase_GAF_header($out);
 
-#$it = $db->fetch_many(-query=>'find Gene Disease_info');
-$it = $db->fetch_many(-query=>'find Gene WBGene00000001');
+$it = $db->fetch_many(-query=>'find Gene Disease_info');
 
 while (my $obj=$it->next) {
   next unless $obj->isObject();
