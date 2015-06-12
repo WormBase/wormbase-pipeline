@@ -242,6 +242,7 @@ sub parse_genes_gff3_fh {
       my $tran = $transcripts{$tid};
       my $gff_source = $tran->{source};
       my $gff_type = $tran->{type};
+      my $strand = $tran->{strand};
       my $tsid;
       if ($tran->{name}) {
         $tsid = $tran->{name};
@@ -266,15 +267,21 @@ sub parse_genes_gff3_fh {
 
       my @exons = sort { $a->{start} <=> $b->{start} } @{$tran->{exons}};
 
-      # sanity check: exons do not overlap
-      for(my $i=0; $i < scalar(@exons) - 1; $i++) {
-        if ($exons[$i]->{end} >= $exons[$i+1]->{start}) {
-          $self->verbose and print STDERR "Skipping gene with  transcript $tid ($gff_source) - exons overlap\n";
-          next GENE;
+      # sanity check: exons have same strand as transcript
+      foreach my $e (@exons) {
+        if ($e->{strand} ne $strand) {
+          die "Bailing on transcript $tid - at least one exon has different strand\n";
         }
       }
 
-      my $strand = $exons[0]->{strand};
+      # sanity check: exons do not overlap
+      for(my $i=0; $i < scalar(@exons) - 1; $i++) {
+        if ($exons[$i]->{end} >= $exons[$i+1]->{start}) {
+          die "Bailing on transcript $tid - exons overlap\n";
+        }
+      }
+
+
       my $slice = $self->slices->{$exons[0]->{seq}};
       die "Could not find slice\n" if not defined $slice;
 
