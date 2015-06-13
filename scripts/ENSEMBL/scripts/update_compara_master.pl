@@ -143,7 +143,7 @@ foreach my $core_db (@core_dbs) {
   eval {
     $gdb = $compara_dbh->get_GenomeDBAdaptor->fetch_by_name_assembly($prod_name);
   };
-  if ($@) {
+  if ($@ or not defined $gdb) {
     # not present; create it
     print STDERR "Creating new GenomeDB for $prod_name\n";
     $gdb = Bio::EnsEMBL::Compara::GenomeDB->new(-db_adaptor => $core_db);
