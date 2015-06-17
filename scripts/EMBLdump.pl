@@ -2,8 +2,8 @@
 #
 # EMBLdump.pl 
 # 
-#  Last updated on: $Date: 2015-06-09 09:10:18 $
-#  Last updated by: $Author: mh6 $
+#  Last updated on: $Date: 2015-06-17 11:45:03 $
+#  Last updated by: $Author: klh $
 
 use strict;
 use Getopt::Long;
@@ -20,22 +20,12 @@ use Wormbase;
 use Coords_converter;
 
 my %species_info = (
-  genome_project_id => {
-    elegans  => 13758,
-    briggsae => 10731,
-    brugia   => 10729,
-  },
-
-  taxon_id => {
-    elegans  => 6239,
-    briggsae => 473542,
-    brugia   => 6279,
-  },
 
   strain => {
     elegans => 'Bristol N2',
     briggsae => 'AF16',
     brugia   => 'FR3',
+    sratti   => 'ED321',
   },
 
 );    
@@ -105,6 +95,7 @@ $species = $wormbase->species;
 $full_species_name = $wormbase->full_name;
 my $dbdir = ($database) ? $database : $wormbase->autoace;
 my $tace = $wormbase->tace;
+my ($bioproject_number) = $wormbase->ncbi_bioproject =~ /^\w+(\d+)/; 
 
 $decorations_db =  $wormbase->database('current') if not defined $decorations_db;
 $cds2proteinid_db = $decorations_db if not defined $cds2proteinid_db;
@@ -266,7 +257,7 @@ if ($dump_modified) {
       #
       # PR
       #
-      print $out_fh "PR   Project:$species_info{genome_project_id}->{$species};\n";
+      print $out_fh "PR   Project:$bioproject_number;\n";
       print $out_fh "XX\n";
       
       #
@@ -459,7 +450,7 @@ sub process_feature_table {
 
     if ($feat->{ftype} eq 'source') {
       printf $out_fh "FT   %-16s%s\n", $feat->{ftype}, $feat->{location}->[0];
-      printf $out_fh "FT   %16s/db_xref=\"taxon:%d\"\n", " ", $species_info{taxon_id}->{$species};
+      printf $out_fh "FT   %16s/db_xref=\"taxon:%d\"\n", " ", $wormbase->ncbi_tax_id;
       printf $out_fh "FT   %16s/strain=\"%s\"\n", " ", $species_info{strain}->{$species};
       printf $out_fh "FT   %16s/mol_type=\"genomic DNA\"\n", " ";
       if ($seqname =~ /CHROMOSOME_(\S+)/) {
@@ -977,8 +968,16 @@ sub get_references {
        "RT   \"Draft genome of the filarial nematode parasite Brugia malayi.\";",
        "RL   Science. 2007 Sep 21;317(5845):1756-60.",
       ],
-    ]
-
+    ],
+    sratti => [
+      [
+       "RA   Aslett M.;",
+       "RT   ;",
+       "RL   Submitted (04-NOV-2013) to the INSDC.",
+       "RL   Pathogen Sequencing Unit, Wellcome Trust Sanger Institute, Wellcome Trust",
+       "RL   Genome Campus, Hinxton, Cambridge, Cambridgeshire CB10 1SA, UNITED KINGDOM.",
+      ],
+    ],
     );
 
   return $primary_references{$species};
