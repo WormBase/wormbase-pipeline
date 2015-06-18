@@ -65,17 +65,22 @@ Filter "Method = Transposon_CDS"
 Class elegans_RNA_genes
 Visible
 Is_a_subclass_of Transcript
-Filter "(NOT Method = Coding_transcript) AND (NOT Method = history_transcript) AND (Species = C*elegans)"
+Filter "(NOT Method = Coding_transcript) AND (NOT Method = history_transcript) AND (NOT Method = non_coding_transcript_isoformer) AND (Species = C*elegans)"
 
 Class briggsae_RNA_genes
 Visible
 Is_a_subclass_of Transcript
-Filter "(NOT Method = Coding_transcript) AND (NOT Method = history_transcript) AND (Species = C*briggsae)"
+Filter "(NOT Method = Coding_transcript) AND (NOT Method = history_transcript) AND (NOT Method = non_coding_transcript_isoformer) AND (Species = C*briggsae)"
 
 Class Coding_transcripts
 Visible
 Is_a_subclass_of Transcript
 Filter "(Method = Coding_transcript)"
+
+Class curated_Transcript
+Visible
+Is_a_subclass_of Transcript
+Filter "(NOT Method = Coding_transcript) AND (NOT Method = history_transcript) AND (NOT Method = non_coding_transcript_isoformer) AND (Species)"
 
 // ?Pseudogene subclasseses
 Class elegans_pseudogenes
@@ -219,7 +224,7 @@ Class All_genes
 Visible
 Composite_of curated_CDS
 Composite_of Pseudogene
-Composite_of Transcript
+Composite_of curated_Transcript
 Composite_of Transposon
 
 
