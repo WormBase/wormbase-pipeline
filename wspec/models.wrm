@@ -14,7 +14,7 @@
 //
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2015-06-18 19:25:15 $
+// Last edited on: $Date: 2015-06-19 16:31:08 $
 //
 //
 // Additional things to consider. If classes are added or new data in the ?Gene class
@@ -3719,4 +3719,5 @@
 // WS246
 // WS247
 // WS248
-//
+// WS249
+// WS250
