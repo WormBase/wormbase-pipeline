@@ -14,7 +14,7 @@
 //
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: pad $
-// Last edited on: $Date: 2015-06-19 16:31:08 $
+// Last edited on: $Date: 2015-06-30 14:08:30 $
 //
 //
 // Additional things to consider. If classes are added or new data in the ?Gene class
@@ -2693,7 +2693,7 @@
 #Phenotype_info	Paper_evidence ?Paper
 		Person_evidence	?Person
 		Curator_confirmed	?Person
-		Summary UNIQUE ?Text #Evidence // specific summary about the phenotype
+		Remark ?Text #Evidence // specific remarks about the phenotype
 		Quantity_description ?Text #Evidence //Remark to describe what quantity describes, below
 		Quantity UNIQUE Int UNIQUE Int #Evidence
 		Not #Evidence //This is being phased out but is needed for the next phase [06/08/10].
