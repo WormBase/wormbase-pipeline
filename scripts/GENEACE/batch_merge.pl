@@ -57,7 +57,7 @@ e.g. perl batch_merge.pl -file merger.txt
 
 =cut
 
-my ($USER, $test, $file, $debug, $load, $old, $ns, $PASS,$out);
+my ($USER, $test, $file, $debug, $load, $old, $ns, $PASS,$out,$force);
 GetOptions(
 	   'user:s'     => \$USER,
 	   'pass:s'     => \$PASS,
@@ -68,6 +68,7 @@ GetOptions(
 	   'old'        => \$old,
 	   'ns'         => \$ns,
 	   'out:s'      => \$out,
+	   'force'      => \$force,
 	  ) or die;
 
 
@@ -230,7 +231,7 @@ sub merge_gene {
       my $dead_CGC_name = $deadgeneObj->CGC_name;
       if (defined $dead_CGC_name) {
 	$log->error("Warning: $deadgene has a CGC name ($dead_CGC_name) - this merge needs checking as cgc names are involved. Check this with Jonathon. and only then load the .ace file\n");
-	if (defined$load) {undef$load;}
+	if (defined$load) {undef$load unless $force;}
 	$ok = 1;
       }
 
