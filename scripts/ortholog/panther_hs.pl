@@ -1,38 +1,38 @@
 #!/bin/env perl
 # this script will 
-# * translate panther human uniprot protein ids to ensembl protein ids
-# * take a panther ortholog flatfile and create an ACE output
-# caveat: might barf on a new schema as the stable_ids were moved around
+open INF, 'blah.txt';
 
-use DBI;
+my %u2e;
 
-my $db = DBI->connect( "DBI:mysql:database=homo_sapiens_core_64_37;host=ensembldb.ensembl.org;port=5306",'anonymous');
+while(<INF>){
+  chomp;
+  my @F=split;
+  $u2e{$F[1]}=$F[0];
+}
 
-my $sth=$db->prepare('SELECT stable_id FROM translation_stable_id JOIN object_xref ox ON(ensembl_id=translation_id AND ensembl_object_type="Translation") JOIN xref x ON (ensembl_object_type="Translation" AND ox.xref_id=x.xref_id) WHERE dbprimary_acc=? AND external_db_id=2200');
+my %sp2lin= (
+  MOUSE => 'Mus musculus',
+  HUMAN => 'Homo sapiens',
+  DANRE => 'Danio rerio',
+  DROME => 'Drosophila melanogaster',
+  YEAST => 'Saccharomyces cerevisiae',
+);
 
 while(<>){
-    ($from)=$_=~/(WBGene\d+)/;
-    ($to)=$_=~/(ENSG\d+)/;
-    ($uniprot)=$_=~/UniProtKB=(\w+)/;
-        
-    $sth->execute($uniprot);
-    my @proteins;
-    while(my @ary = $sth->fetchrow_array){push @proteins,$ary[0]}
+    next unless /WBGene/;
+    my ($from)=$_=~/(WBGene\d+)/;
+    my @F=split;
+    my ($to) = grep{$_=~!/WBGene/}($F[0],$F[1]);
+    next unless $to;
 
-    next unless $proteins[0];
-    print "Gene : $from\n";
-    map{print "Ortholog_other ENSEMBL:$_ From_analysis Panther\n"}@proteins;
+    my ($thing) = $to=~/^(\w+)\|/;
+    my ($uniprot)=$to=~/UniProtKB=(\w+)/;
+    
+    next unless $u2e{$uniprot};
 
-    foreach my $prot(@proteins){
-    print <<HERE
+    print "Gene : \"$from\"\n";
+    print 'Ortholog "',$u2e{$uniprot},"\" \"$sp2lin{$thing}\" From_analysis Panther\n\n";
 
-Protein : ENSEMBL:$prot
-Species "Homo sapiens"
-DB_info Database EnsEMBL ENSEMBL_geneID $to
-DB_info Database EnsEMBL ENSEMBL_proteinID $prot
-DB_info Database UniProt UniProtAcc $uniprot
-DB_info Database UniProt UniProtID $uniprot
-
-HERE
-     }
+    print "Gene : \"",$u2e{$uniprot},"\"\n";
+    print 'Ortholog "',$from,'" "Caenorhabditis elegans" from_analysis Panther',"\n\n"
 }
