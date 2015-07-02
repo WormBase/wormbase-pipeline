@@ -80,17 +80,16 @@ sub submit_bottom{
 
 sub submit_pos{
     my ($self,$pos,@params) = @_;
-    my ($job,@output);
-    my $h = start( ['bsub',@params], \undef, \$output[0], \$output[1] );
-    my $idx = $self->LSF =~ /^4/;
+    my ($job,$output);
+    my $h = start( ['bsub', @params], \undef, \$output );
     pump( $h );
-    if( $output[$idx] =~ /Job <(\d+)>/ ){
+    if( $output =~ /Job <(\d+)>/ ){
         $job = $self->new($1);
         # do post processing, assuming that the command succeeded
         # because we got the jobid back
-        $self->post_process(0,@output);
+        $self->post_process(0,$output);
         # then reset the output and error
-        $output[0] = $output[1] =  '';
+        $output = '';
         my $re = $self->RaiseError(0);
         if($pos){
 	        $job->top; # would throw an error if its already running
@@ -101,7 +100,7 @@ sub submit_pos{
     }
     finish($h);
     #  print out the rest of the output and error
-    $self->post_process($?,@output);
+    $self->post_process($?,$output);
     return $job;
 }
 
