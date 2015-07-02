@@ -12,14 +12,15 @@ genbank2gff3.pl
 
 
     Options:
-        --filter   -x  genbank feature type(s) to ignore
-        --ethresh  -e  error threshold for unflattener
-                       set this high (>2) to ignore all unflattener errors
-        --format   -f  Input format (SeqIO types): GenBank, Swiss or Uniprot, EMBL work
-                       (GenBank is default)
-        --quiet        don't talk about what is being processed 
-        --typesource   SO sequence type for source (e.g. chromosome; region; contig)
-        --help     -h  display this message
+        --filter   -x   genbank feature type(s) to ignore
+        --ethresh  -e   error threshold for unflattener
+                        set this high (>2) to ignore all unflattener errors
+        --format   -f   Input format (SeqIO types): GenBank, Swiss or Uniprot, EMBL work
+                        (GenBank is default)
+        --quiet         don't talk about what is being processed 
+        --typesource    SO sequence type for source (e.g. chromosome; region; contig)
+        --help      -h  display this message
+        --gffsource     String to use for GFF source (default: WormBase_imported)
 
 
 =head1 DESCRIPTION
@@ -98,14 +99,12 @@ my $ok= GetOptions(
   'quiet!'        => \$quiet, # swap quiet to verbose
   'DEBUG!'        => \$DEBUG,
   'outfile=s'     => \$outfile,
-  'source=s'      => \$SOURCEID,
+  'gffsource=s'   => \$SOURCEID,
     );
 
 
 $verbose= !$quiet;
 
-# keep SOURCEID as-is and change FORMAT for SeqIO types; 
-# note SeqIO uses file.suffix to guess type; not useful here
 $FORMAT   = "swiss" if $FORMAT =~/UniProt|trembl/;
 $verbose  = 1 if($DEBUG);
 
@@ -113,6 +112,7 @@ my $tm  = Bio::SeqFeature::Tools::TypeMapper->new;
 my $idh = Bio::SeqFeature::Tools::IDHandler->new;
 
 $source_type ||= "region"; # should really parse from FT.source contents below
+$SOURCEID ||= "WormBase_imported";
 
 #my $FTSOmap = $tm->FT_SO_map();
 my $FTSOmap;
@@ -477,10 +477,7 @@ sub gene_features {
     }
     
   } elsif ( /CDS|protein|polypeptide/ ) {
-    return GM_NOT_PART unless $rna_id;
-    return GM_NOT_PART if($genelinkID && $genelinkID ne $gene_id); #??
-    (my $pro_id = $rna_id) =~ s/\.t/\.p/;
-    
+
     if( ! $CDSKEEP && /CDS/) {  
       $f->primary_tag($PROTEIN_TYPE); 
       
@@ -501,10 +498,22 @@ sub gene_features {
     else {
       $f->add_tag_value( Parent => $rna_id );
       if ($f->primary_tag eq 'CDS') {
-        my ($codon_start) = $f->get_tag_values('codon_start');
-        $f->frame($codon_start - 1);
+        my ($codon_start);
+        eval {
+          ($codon_start) = $f->get_tag_values('codon_start');
+        };
+        if (not $@) {
+          $f->frame($codon_start - 1);
+        } else {
+          $f->frame(0);
+        }
       }
     }
+    
+    return GM_NOT_PART unless $rna_id;
+    return GM_NOT_PART if($genelinkID && $genelinkID ne $gene_id); #??
+
+    (my $pro_id = $rna_id) =~ s/\.t/\.p/;
     
     $f->add_tag_value( ID => $pro_id );
     
