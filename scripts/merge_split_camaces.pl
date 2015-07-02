@@ -5,7 +5,7 @@
 # A script to make multiple copies of core species database for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2014-08-04 14:55:14 $
+# Last edited on: $Date: 2015-07-02 10:23:29 $
 #====================
 #perl ~/wormbase/scripts/merge_split_camaces.pl -update -gw3 -pad -species elegans -test -version $MVERSION > /nfs/wormpub/camace_orig/WSXXX -WSXXY/load_data.txt
 
@@ -46,33 +46,37 @@ my $oldskool;              # script uses Garys new acediff.pl but you can select
 my $nochecks;              # dont run camcheck as this can take ages.
 my $verbose;               # Additional printout
 my $names;                 # option to just dump Public_name data for given species.
+my $altacefiles;           # alternative location for acefiles
+my $altblat;               # alternative location for blat data
 
   GetOptions (
-	      "all"        => \$all,
-	      "pad"        => \$pad,
-	      "gw3"        => \$gw3,
-	      "mh6"        => \$mh6,
-	      "es9"        => \$es9,
-	      "curation"   => \$curation,
-	      "merge"      => \$merge,
-	      "split"      => \$split,
-	      "update"     => \$update,
-	      "help"       => \$help,
-	      "debug:s"    => \$debug,
-	      "version:s"  => \$WS_version,
-	      "store"      => \$store,
-	      "species:s"  => \$species,
-	      "test"       => \$test,
-	      "email:s"    => \$email,
-	      "nodump"     => \$nodump,
-	      "nosplit"    => \$nosplit,
-	      "database:s" => \$sdatabase,
-	      "remove_only" => \$remove_only,
-	      "load_only"  => \$load_only,
-	      "oldskool"   => \$oldskool,
-	      "nochecksl"  => \$nochecks,
-	      "verbose"    => \$verbose,
-	      "names"      =>\$names,
+	      "all"           => \$all,
+	      "pad"           => \$pad,
+	      "gw3"           => \$gw3,
+	      "mh6"           => \$mh6,
+	      "es9"           => \$es9,
+	      "curation"      => \$curation,
+	      "merge"         => \$merge,
+	      "split"         => \$split,
+	      "update"        => \$update,
+	      "help"          => \$help,
+	      "debug:s"       => \$debug,
+	      "version:s"     => \$WS_version,
+	      "store"         => \$store,
+	      "species:s"     => \$species,
+	      "test"          => \$test,
+	      "email:s"       => \$email,
+	      "nodump"        => \$nodump,
+	      "nosplit"       => \$nosplit,
+	      "database:s"    => \$sdatabase,
+	      "remove_only"   => \$remove_only,
+	      "load_only"     => \$load_only,
+	      "oldskool"      => \$oldskool,
+	      "nochecksl"     => \$nochecks,
+	      "verbose"       => \$verbose,
+	      "names"         => \$names,
+	      "altacefiles:s" => \$altacefiles,
+	      "altblat:s"     => \$altblat,
 	     );
 
 
@@ -543,6 +547,10 @@ sub load_curation_data {
     $log->write_to ("The BUILD has finished...using elegans/acefiles\n");
   }
   # If the species build database isn't present then you can't currently access old non-elegans ace files.
+  elsif ($altacefiles) {
+    $acefiles = $altacefiles;
+    $log->write_to ("Using $altacefiles as the source of acefile data as you defined it ;)\n");
+  }
   else {
     print "ERROR the $species build appears to be missing!!!\n"; 
     $log->log_and_die("ERROR the $species build appears to be missing!!!\n");
@@ -629,6 +637,7 @@ sub load_curation_data {
 	  "$acefiles/feature_three_prime_UTR.ace",
 	  "$acefiles/pepace.ace",
 	  "$wormpub/CURATION_DATA/PAD_DATA/elegans.public_names_ws${WS_version}.ace",
+	  "$wormpub/CURATION_DATA/${species}_isoformer.ace",
 	  "$acefiles/mass-spec-data.ace",
 	 );
   }
@@ -672,7 +681,47 @@ sub load_curation_data {
   # upload BLAT results to database #
   unless (($sub_database eq "camace") or ($load_only) or ($sub_database eq "$species")) {
     $log->write_to ("\n\nUpdate BLAT results in $database_path\n");
-      $wormbase->run_script("load_blat2db.pl -all -dbdir $database_path -species $species", $log) && die "Failed to run load_blat2db.pl\n";
+
+    my $blat_dir; 
+    $blat_dir = "/nfs/wormpub/BUILD/${species}/BLAT" unless ($altblat); 
+    if ($altblat) {
+      $blat_dir = $altblat;
+      $log->write_to ("Using $altblat for the BLAT data as you defined it ;)\n");
+    }
+
+    my @BLATfiles;
+    push (@BLATfiles,
+          "$blat_dir/virtual_objects.$species.blat.EST.$species.ace",
+          "$blat_dir/virtual_objects.$species.blat.OST.$species.ace",
+          "$blat_dir/virtual_objects.$species.blat.RST.$species.ace",
+          "$blat_dir/virtual_objects.$species.blat.mRNA.$species.ace",
+          "$blat_dir/virtual_objects.$species.blat.ncRNA.$species.ace",
+          "$blat_dir/virtual_objects.$species.ci.EST.$species.ace",
+          "$blat_dir/virtual_objects.$species.ci.OST.$species.ace",
+          "$blat_dir/virtual_objects.$species.ci.RST.$species.ace",
+          "$blat_dir/virtual_objects.$species.ci.mRNA.$species.ace",
+          "$blat_dir/virtual_objects.$species.ci.ncRNA.$species.ace",
+          "$blat_dir/$species.blat.${species}_EST.ace",
+          "$blat_dir/$species.blat.${species}_OST.ace",
+          "$blat_dir/$species.blat.${species}_RST.ace",
+          "$blat_dir/$species.blat.${species}_mRNA.ace",
+          "$blat_dir/$species.blat.${species}_ncRNA.ace",
+          "$blat_dir/$species.good_introns.EST.ace",
+          "$blat_dir/$species.good_introns.OST.ace",
+          "$blat_dir/$species.good_introns.RST.ace",
+          "$blat_dir/$species.good_introns.mRNA.ace",
+          "$blat_dir/$species.good_introns.ncRNA.ace",
+	 );
+    my $BLATfile;
+    foreach $BLATfile (@BLATfiles) {
+      $log->write_to ("Looking for $BLATfile......................\n");
+      if (-e $BLATfile) {
+	&loadace("$BLATfile", "${WS_version}_curation_data_update", $database_path) or die "Failed to load $BLATfile\n";
+      }
+      else {
+	$log->write_to ("!!WARNING!! File: $BLATfile does not exist\n\n");
+      }
+    }
   }
 }
 
