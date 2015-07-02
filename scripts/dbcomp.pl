@@ -5,8 +5,8 @@
 # Counts the number of objects in an ACEDB database for each Class stated in the config file
 # Compares this number to those from a second database.
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2013-10-09 15:31:49 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2015-07-02 13:46:46 $
 
 
 use strict;
@@ -524,8 +524,14 @@ sub get_curation_stats {
     my $RW = $lab_count{RW_lost} + $lab_count{RW_changed} + $lab_count{RW_new_gene} + $lab_count{RW_new_isoform};
     my $HX = $lab_count{HX_lost} + $lab_count{HX_changed} + $lab_count{HX_new_gene} + $lab_count{HX_new_isoform};
     my $total = $HX + $RW;
+    my $total_lost = $lab_count{HX_lost} + $lab_count{RW_lost};
+    my $total_changed = $lab_count{RW_changed} + $lab_count{HX_changed};
+    my $total_new_gene = $lab_count{RW_new_gene} + $lab_count{HX_new_gene};
+    my $total_iso = $lab_count{RW_new_isoform} + $lab_count{HX_new_isoform};
+
     if ($species eq 'elegans') {
-      print OUT "Total ", $total,"\nHinxton: $HX\nSt. Louis: $RW\n\nlost (Hinxton): $lab_count{HX_lost}\nlost (St. Louis): $lab_count{RW_lost}\n\nchanged (Hinxton): $lab_count{HX_changed}\nchanged (St. Louis): $lab_count{RW_changed}\n\nnew gene (Hinxton): $lab_count{HX_new_gene}\nnew gene (St. Louis): $lab_count{RW_new_gene}\n\nnew isoform (Hinxton): $lab_count{HX_new_isoform}\nnew isoform (St. Louis): $lab_count{RW_new_isoform}\n";
+      print OUT "Total $total\nlost: $total_lost ($lab_count{HX_lost}/$lab_count{RW_lost})\nchanged: $total_changed ($lab_count{HX_changed}/$lab_count{RW_changed})\nnew gene: $total_new_gene ($lab_count{HX_new_gene}/$lab_count{RW_new_gene})\nnew isoform: $total_iso ($lab_count{HX_new_isoform}/$lab_count{RW_new_isoform})\n";
+#      print OUT "Total ", $total,"\nHinxton: $HX\nSt. Louis: $RW\n\nlost (Hinxton): $lab_count{HX_lost}\nlost (St. Louis): $lab_count{RW_lost}\n\nchanged (Hinxton): $lab_count{HX_changed}\nchanged (St. Louis): $lab_count{RW_changed}\n\nnew gene (Hinxton): $lab_count{HX_new_gene}\nnew gene (St. Louis): $lab_count{RW_new_gene}\n\nnew isoform (Hinxton): $lab_count{HX_new_isoform}\nnew isoform (St. Louis): $lab_count{RW_new_isoform}\n";
     } else {
       print OUT "Total $RW\nlost: $lab_count{RW_lost}\nchanged: $lab_count{RW_changed}\nnew gene: $lab_count{RW_new_gene}\nnew isoform: $lab_count{RW_new_isoform}\n";
     }
