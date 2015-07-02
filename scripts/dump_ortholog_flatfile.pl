@@ -6,7 +6,7 @@ use Wormbase;
 use feature 'say';
 
 my $date = `date`;
-my ($store,$worm,$debug,$test,$out,$database,$wormbase);
+my ($store,$worm,$debug,$test,$out,$wormbase,$database,$version);
 chomp $date;
 
 GetOptions(
@@ -16,6 +16,7 @@ GetOptions(
   'test'           => \$test,
   'out=s'          => \$out,
   'database=s'     => \$database,
+  'version=s'      => \$version,
 )||die(@!);
 
 
@@ -24,7 +25,7 @@ if ( $store ) {
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
-                             );
+			   );
 }
 my $log = Log_files->make_build_log($wormbase);
 my $outfh = IO::File->new($out,'w')||die(@!);
@@ -32,11 +33,15 @@ my $outfh = IO::File->new($out,'w')||die(@!);
 $worm =~ s/_/ /;
 $log->write_to("Dumping orthologs for $worm to $out\n");
 
-$database = $wormbase->autoace if not defined $database;
+unless ($database) {
+  $database = $wormbase->autoace;
+}
 
 my $db = Ace->connect(-path => $database) ||die (Ace::Error);
 
-my $version = 'WS'.$wormbase->version;
+unless ($version) {
+  $version = 'WS'.$wormbase->version;
+}
 
 
 print $outfh <<HERE;
