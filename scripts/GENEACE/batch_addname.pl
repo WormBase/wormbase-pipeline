@@ -65,13 +65,17 @@ open (FILE,"<$file") or die "can't open $file : $!\n";
 my $method = defined($force) ? 'force_name' : 'add_name';
 my $count=0;
 while(<FILE>) {
-    eval{
-	my($id,$name) = split;
-	my $success = $db->$method($id,$name,$type,$species);
-	my $msg = defined $success ? 'ok' : 'FAILED';
-	$log->write_to("$id\t$name\t$msg\n");
-    };
-	$count++;
+    my($id,$name) = split;
+    my $success = $db->$method($id,$name,$type,$species);
+    if (defined $success) {
+      $log->write_to("$id\t$name\tok\n");
+      print "$id\t$name\tok\n";
+    }
+    else {
+      $log->write_to("$id\t$name\tFAILED NAMEDB assignment\n");
+      print "$id\t$name\tFAILED NAMEDB assignment\n";
+    }
+  $count++;
 }
 
 $log->write_to("=======================\nprocessed $count genes\n");
