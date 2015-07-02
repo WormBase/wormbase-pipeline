@@ -3,15 +3,17 @@
 unlimit
 
 switch ($#argv)
-  case "3":
+  case "4":
         breaksw
   default:
-        echo 'Usage: wee_gff_dump <ACEDB directory> <clone> <output file>' ; exit 1
+        echo 'Usage: wee_gff_dump <ACEDB directory> <clone> <output file> <gff version 2/3>' ; exit 1
 endsw
 
 
-/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.LINUX_64/giface $1 <<EOF > /dev/null
-gif seqget $2 ; seqdisplay; seqactions -gf_features; seqfeatures -version 2 -file $3
+#/software/worm/acedb/old_versions/giface $1 <<EOF > /dev/null
+/software/worm/acedb/current/bin/giface $1 <<EOF > /dev/null
+#gif seqget $2 ; seqdisplay; seqactions -gf_features; seqfeatures -version $4 -file $3
+gif seqget $2; seqfeatures -version $4 -file $3
 EOF
 
 
