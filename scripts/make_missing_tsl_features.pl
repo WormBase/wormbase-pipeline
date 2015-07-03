@@ -29,9 +29,9 @@
 #
 
 
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2011-07-19 13:43:02 $      
-
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2015-07-03 09:51:59 $      
+use lib '/nfs/WWWdev/SANGER_docs/lib/Projects/C_elegans';
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
@@ -46,12 +46,7 @@ use Coords_converter;
 use Data::Dumper;
 use Feature_mapper;
 use Modules::Overlap;
-
-# stuff for the feature_server
-use lib '/nfs/WWWdev/SANGER_docs/lib/Projects/C_elegans';
-#change to your user (pass is same)
-use constant USERNAME => 'gw3';
-use constant PASSWD   => 'gw3';
+use NameDB_handler;
 use NameDB;
 
 
@@ -59,7 +54,7 @@ use NameDB;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $USER,);
 my ($input, $output, $database);
 
 GetOptions ("help"       => \$help,
@@ -70,10 +65,10 @@ GetOptions ("help"       => \$help,
 	    "input:s"    => \$input, # input list of sequences to work on
 	    "output:s"    => \$output, #output ace file
 	    "database:s" => \$database,	# defaults to currentdb
-	    );
+	    "user:s"     => \$USER,
+	   );
 
 $test = 1;
-$debug = "gw3";
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
@@ -131,16 +126,11 @@ my $mapper = Feature_mapper->new($database, undef, $wormbase);
 # get the Overlap object
 my $ovlp = Overlap->new($database, $wormbase);
 
-# set up the feature server connection
-my $feature_db;
-if ($test) {
-  print "Using the TEST feature server\n";
-  $feature_db = NameDB->connect('test_wbgene_id:mcs2a',USERNAME,PASSWD);
-} else {
-# UNCOMMENT THIS WHEN YOU ARE READY TO DO A LIVE RUN!
-#  $feature_db = NameDB->connect('wbgene_id:mcs2a',USERNAME,PASSWD);
-}
-$feature_db->setDomain('Feature');
+#connect to name server and set domain to 'Gene'
+my $DB      = 'wbgene_id;mcs12a;3307';
+my $DOMAIN  = 'Feature';
+my $feature_db = NameDB_handler->new($DB,$USER,$USER,"/nfs/WWWdev/SANGER_docs/data");
+    $db->setDomain('Feature');
 
 
 # look in ~wormpub/DATABASES/current_DB/COMMON_DATA/clonesize.dat
