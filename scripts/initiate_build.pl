@@ -2,8 +2,8 @@
 #
 # initiate_build.pl
 #
-# Last edited by: $Author: klh $
-# Last edited on: $Date: 2011-04-18 08:36:02 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2015-07-03 15:25:39 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -53,12 +53,13 @@ if (-e "${\$wormbase->autoace}/database") {
 
 # update the main scripts, autoace_contig and wgf for elegans only
 if ($wormbase->species eq 'elegans') {
-  $wormbase->run_command("cd $ENV{CVS_DIR}; cvs update .", $log)
-      and $log->log_and_die("Failed to cvs update scripts dir; stopping\n");
+  $wormbase->run_command("cd $ENV{CVS_DIR}; git pull .", $log)
+      and $log->log_and_die("Failed to git pull scripts dir; stopping\n");
   
-  # update autoace_config
-  $wormbase->run_command("cd ". $wormbase->basedir . "/autoace_config ; cvs update .", $log)
-      and $log->log_and_die("Failed to cvs update autoace_config dir; stopping\n");
+  # update autoace_config in BUILD/
+  $wormbase->run_command('cd '.$wormbase->basedir.' && rm -rf autoace_config && cp -rf '.$ENV{CVS_DIR}.'/autoace_config '.$wormbase->basedir.'/autoace_config', 'no_log')
+      and $log->log_and_die("Failed to update autoace_config dir; stopping\n");
+ 
   
   #copy the genefinder files 
   $wormbase->run_command('cp -r '.$wormbase->build_data.'/wgf '.$wormbase->autoace.'/wgf', 'no_log');
@@ -68,16 +69,15 @@ if ($wormbase->species eq 'elegans') {
 # initiate autoace build                                                        #
 #################################################################################
 
-## update CVS wspec, wquery and autoace_config from CVS
-$wormbase->run_command("cd ".$wormbase->autoace."; cvs -d :pserver:cvsuser\@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -d wspec -r WS${version} wormbase/wspec", $log)
-    and $log->log_and_die("Failed to checkout wspec dir; not proceeding\n");
-$wormbase->run_command("cd ".$wormbase->autoace."; cvs -d :pserver:cvsuser\@cvs.sanger.ac.uk:/cvsroot/ensembl checkout -d wquery wormbase/wquery", $log)
-    and $log->log_and_die("Failed to checkout wquery directory; not proceeding\n");
+## update the species specific wspec, wquery and autoace_config
+$wormbase->run_command('cp -rf '.$ENV{CVS_DIR}.'/wspec '.$wormbase->autoace.'/wspec', 'no_log')
+      and $log->log_and_die("Failed to update wspec dir; stopping\n");
+$wormbase->run_command('cp -rf '.$ENV{CVS_DIR}.'/wquery '.$wormbase->autoace.'/wquery', 'no_log')
+      and $log->log_and_die("Failed to update wspec dir; stopping\n");
+$wormbase->run_command('cp -rf '.$ENV{CVS_DIR}.'/autoace_config '.$wormbase->autoace.'/autoace_config', 'no_log')
+      and $log->log_and_die("Failed to update wspec dir; stopping\n");
 
-#$wormbase->run_command("cd ".$wormbase->autoace."; cvs -d :ext:cvs.sanger.ac.uk:/cvsroot/ensembl checkout -d wspec -r WS${version} wormbase/wspec", $log);
-#$wormbase->run_command("cd ".$wormbase->autoace."; cvs -d :ext:cvs.sanger.ac.uk:/cvsroot/ensembl checkout -d wquery wormbase/wquery", $log);
-
-## update database.wrm using cvs
+## update database.wrm 
 eval {
   my $dbwrm = $wormbase->autoace .  "/wspec/database.wrm";
   $wormbase->run_command("chmod u+w $dbwrm") 
