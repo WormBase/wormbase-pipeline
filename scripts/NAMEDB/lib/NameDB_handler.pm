@@ -245,6 +245,7 @@ sub dienice {
     print "<p>$errmsg</p>\n";
   } else {
     croak "$errmsg\n";
+    return $errmsg;
   }
 }
 
