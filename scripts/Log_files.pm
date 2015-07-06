@@ -15,8 +15,6 @@
 
 package Log_files;
 
-use lib $ENV{CVS_DIR};
-use Wormbase;
 use Carp;
 use File::Spec;
 
