@@ -43,8 +43,8 @@ foreach my $species (@species_list) {
   
     # Create the description
     my $desc = sprintf(
-                '<br />Sample ID: <a href="http://www.ebi.ac.uk/ena/data/view/%s">%s</a><br />
-                 ENA ID: <a href="http://www.ebi.ac.uk/ena/data/view/%s">%s</a><br />
+                '<br />ENA Sample ID: <a href="http://www.ebi.ac.uk/ena/data/view/%s">%s</a><br />
+                 ENA Project ID: <a href="http://www.ebi.ac.uk/ena/data/view/%s">%s</a><br />
                  ArrayExpress ID: <a href="http://www.ebi.ac.uk/arrayexpress/experiments/%s">%s</a>',
               $parts[5], $parts[5], $parts[6], $parts[6], $parts[7], $parts[7]);
     if($parts[8]) {
