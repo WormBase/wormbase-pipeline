@@ -9,7 +9,7 @@ foreach my $species (@species_list) {
  
   warn "Species: $species";
  
-  my $file = "./in/$species.txt";
+  my $file = "../in/$species.txt";
   (my $out = $file) =~ s/in/out/;
   open(INFILE, $file);
   open(OUTFILE, ">$out");
@@ -52,7 +52,7 @@ foreach my $species (@species_list) {
     }
     $desc =~ s/\n//g;
   
-    # TODO: Generate the URL
+    # Generate the URL
     my $url = "http://www.ebi.ac.uk/~jane/Trackhubs/myHub_$species/$species/$parts[5].bw";
   
     # Create the config file text
