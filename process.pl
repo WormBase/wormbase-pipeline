@@ -57,7 +57,7 @@ foreach my $species (@species_list) {
     my $url = "http://www.ebi.ac.uk/~jane/Trackhubs/myHub_$species/$species/$parts[5].bw";
   
     # Create the config file text
-    $groups .= sprintf("%s=%s\n", $parts[5], $parts[6]);
+    $groups .= sprintf("%s=%s\n", "$counter\_$parts[5]", $parts[6]);
     $files .= sprintf("[%s]\nsource_name=%s\ncaption=%s\ndescription=%s\nsource_url=%s\nsource_type=rnaseq\ndisplay=off\ncolour=%s\n\n",
       "$counter\_$parts[5]", $parts[1], $parts[0], $desc, $url, $hex);
   
