@@ -21,23 +21,23 @@ package Species;
 our @ISA = qw(Wormbase);
 
 sub flatten_params {
-    shift;    # get rid of the class name
-    my %param_hash = %{ shift() };
-    my @param_array;
-    while ( my ( $k, $v ) = each %param_hash ) { push @param_array, $k, $v }
-    return @param_array;
+  shift;    # get rid of the class name
+  my %param_hash = %{ shift() };
+  my @param_array;
+  while ( my ( $k, $v ) = each %param_hash ) { push @param_array, $k, $v }
+  return @param_array;
 }
 
 # use with  (-prefix => 'whatever', -mito => 1)
 sub get_chromosome_names {
-	my $self= shift;
-	my %options = @_;
-	my @chromosomes=$self->chromosome_names;
-	my $prefix=$options{'-prefix'};
-	$prefix=$self->chromosome_prefix if ($prefix && length $prefix < 2);
-	push @chromosomes, $self->mt_name if $options{'-mito'} && $self->mt_name;
-	return map {$prefix.$_} @chromosomes if $options{'-prefix'};
-	return @chromosomes
+  my $self= shift;
+  my %options = @_;
+  my @chromosomes=$self->chromosome_names;
+  my $prefix=$options{'-prefix'};
+  $prefix=$self->chromosome_prefix if ($prefix && length $prefix < 2);
+  push @chromosomes, $self->mt_name if $options{'-mito'} && $self->mt_name;
+  return map {$prefix.$_} @chromosomes if $options{'-prefix'};
+  return @chromosomes
 }
 
 # denotes whether this is the canonical project for this species
@@ -46,25 +46,18 @@ sub is_canonical {
 }
 
 sub _new {
-    my $class = shift;
-    my %param = %{ shift(@_) };
-
-    # additional parameters go here
-
-    my $self = $class->initialize( $class->flatten_params( \%param ) );
-
-    # add stuff here
-
-    bless $self, $class;
+  my $class = shift;
+  my %param = %{ shift(@_) };
+  
+  my $self = $class->initialize( $class->flatten_params( \%param ) );
+  
+  bless $self, $class;
 }
 
 
 sub TSL {  
   ('SL1'  => "GGTTTAATTACCCAAGTTTGAG"); # the SL1 sequence is conserved across the majority of nematodes
 }
-
-
-# methods to overwrite
 
 # Default method, not usually used - pulls the names from a file
 # 
@@ -101,6 +94,19 @@ sub chromosome_names {
   return @{$self->{'chromosome_names'}};
 }
 
+sub full_name {
+  my $self = shift;
+  my %param = @_ ;
+  if($param{'-short'}){
+    return $self->short_name;
+  } elsif($param{'-g_species'}){
+    return $self->gspecies_name;
+  }
+  else { 
+    return $self->long_name;
+  }
+}
+
 sub chromosome_prefix { return '' }
 sub full_name { return undef}
 sub mt_name {return undef}
@@ -129,18 +135,9 @@ sub cds_regex_noend{qr/^[A-Z0-9_cel]+\.[1-9]\d{0,3}[A-Za-z]?/};  # for getting t
 sub ncbi_tax_id {'6239'};
 sub ncbi_bioproject {'PRJNA13758'};
 sub bioproject_description {'C.elegans Sequencing Consortium genome project'};
-sub full_name {
-	my $self = shift;
-	my %param = @_ ;
-	if($param{'-short'}){
-		return 'C. elegans';
-	}
-	elsif($param{'-g_species'}){
-		return 'c_elegans';
-	}
-	else { return'Caenorhabditis elegans'
-	};
-}
+sub short_name {'C. elegans'}
+sub gspecies_name {'c_elegans'}
+sub long_name {'Caenorhabditis elegans'}
 sub wormpep_prefix{'WP'}
 sub assembly_type {'chromosome'};
 sub seq_db {my $self = shift;return $self->database('camace');}
@@ -168,19 +165,6 @@ sub TSL {
 package Briggsae;
 our @ISA = qw(Species);
 
-sub _new {
-    my $class = shift;
-    my %param = %{ shift(@_) };
-    my $self = $class->initialize( $class->flatten_params( \%param ) );
-
-    # stuff post object creation goes here
-
-    # overriding wormpep directory with brigpep
-    $self->{'wormpep'}  = $self->brigpep;
-
-    bless $self, $class;
-}
-
 sub chromosome_prefix {'chr'}
 sub chromosome_names {qw(I I_random II III III_random IV IV_random V V_random X X_random un)} # CB4
 
@@ -194,27 +178,11 @@ sub ncbi_bioproject {'PRJNA10731'};
 sub bioproject_description {'C. briggsae Sequencing Consortium genome project'};
 sub assembly_type {'chromosome'};
 sub seq_db {my $self = shift;return $self->database('briggsae');}
-
-
-sub full_name {
-	my $self = shift;
-	my %param = @_ ;
-	if($param{'-short'}){
-		return 'C. briggsae';
-	}	elsif($param{'-g_species'}){
-		return 'c_briggsae';
-	}
-	else { return'Caenorhabditis briggsae'
-	};
-}
+sub short_name {'C. briggsae'}
+sub gspecies_name {'c_briggsae'}
+sub long_name {'Caenorhabditis briggsae'}
 sub wormpep_prefix{'BP'}
-
-sub wormpep_files {
-  my $self = shift;
-  return ( "brigpep", "brigpep.accession", "brigpep.dna", "brigpep.history", "brigpep.fasta", "brigpep.table",
-	   "brigpep.diff" );
-}
-sub upload_db_name {'briggsae'};
+sub upload_db_name {'briggsae'}
 sub TSL {(
 	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
 	  'Cb_SL2' => "GGTTTTAACCCAGTTACTCAAG",
@@ -231,27 +199,9 @@ package Remanei;
 use Carp;
 our @ISA = qw(Species);
 
-sub _new {
-    my $class = shift;
-    my %param = %{ shift(@_) };
-    my $self = $class->initialize( $class->flatten_params( \%param ) );
-
-    # add stuff post object creation goes here
-
-    bless $self, $class;
-}
-sub full_name {
-	my $self = shift;
-	my %param = @_ ;
-	if($param{'-short'}){
-		return 'C. remanei';
-	}	elsif($param{'-g_species'}){
-		return 'c_remanei';
-	}
-	else { return'Caenorhabditis remanei'
-	};
-}
-
+sub short_name {'C. remanei'}
+sub gspecies_name{'c_remanei'}
+sub long_name{'Caenorhabditis remanei'}
 sub wormpep_prefix {'RP'}
 sub pep_prefix {'RP'}
 sub pepdir_prefix{'rema'};
@@ -289,36 +239,14 @@ package Brenneri;
 use Carp;
 our @ISA = qw(Species);
 
-sub _new {	
-    my $class = shift;
-    my %param = %{ shift(@_) };
-
-    # additional parameters
-    # $param{'-autoace'}='/nfs/wormpub/TEST_BUILD/autoace/brenneri';
-
-    my $self = $class->initialize( $class->flatten_params( \%param ) );
-
-    # add stuff post object creation goes here
-
-    bless $self, $class;
-}
-
 sub pep_prefix {'CN'}
 sub pepdir_prefix{'bre'};
 sub ncbi_tax_id {'135651'};
 sub ncbi_bioproject {'PRJNA20035'};
 sub bioproject_description {'C.brenneri Sequencing Consortium genome project'};
-sub full_name {
-	my $self = shift;
-	my %param = @_ ;
-	if($param{'-short'}){
-		return 'C. brenneri';
-	}elsif($param{'-g_species'}){
-		return 'c_brenneri';
-	}
-	else { return'Caenorhabditis brenneri'
-	};
-}
+sub short_name {'C. brenneri'}
+sub gspecies_name{'c_brenneri'}
+sub long_name{'Caenorhabditis brenneri'}
 sub assembly_type {'contig'};
 sub seq_db {my $self = shift;return $self->database('brenneri');}
 sub wormpep_prefix {'CN'}
@@ -387,17 +315,6 @@ package Japonica;
 use Carp;
 our @ISA = qw(Species);
 
-sub _new {	
-    my $class = shift;
-    my %param = %{ shift(@_) };
-
-    my $self = $class->initialize( $class->flatten_params( \%param ) );
-
-    # add stuff post object creation goes here
-
-    bless $self, $class;
-}
-
 sub pep_prefix {'JA'}
 sub pepdir_prefix{'jap'};
 sub ncbi_tax_id {'281687'};
@@ -409,19 +326,9 @@ sub cds_regex_noend{qr/CJA\d{5}[a-z]*/}; # for getting the CDS part of a Transcr
 sub assembly_type {'contig'};
 sub seq_db {my $self = shift;return $self->database('japonica');}
 sub wormpep_prefix {'JA'}
-
-sub full_name {
-	my $self = shift;
-	my %param = @_ ;
-	if($param{'-short'}){
-		return 'C. japonica';
-	}elsif($param{'-g_species'}){
-		return 'c_japonica';
-	}
-	else { return'Caenorhabditis japonica'
-	};
-}
-
+sub short_name {'C. japonica'}
+sub gspecies_name{'c_japonica'}
+sub long_name{'Caenorhabditis japonica'}
 sub upload_db_name {'japonica'};
 
 # The gene CJA48849 defines the additional sequence
@@ -449,27 +356,9 @@ package Pristionchus;
 use Carp;
 our @ISA = qw(Species);
 
-sub _new {
-    my $class = shift;
-    my %param = %{ shift(@_) };
-    my $self = $class->initialize( $class->flatten_params( \%param ) );
-
-    # add stuff post object creation goes here
-
-    bless $self, $class;
-}
-sub full_name {
-	my $self = shift;
-	my %param = @_ ;
-	if($param{'-short'}){
-		return 'P. pacificus';
-	}elsif($param{'-g_species'}){
-		return 'p_pacificus';
-	}
-	else { return'Pristionchus pacificus'
-	};
-}
-
+sub short_name {'P. pacificus'}
+sub gspecies_name{'p_pacificus'}
+sub long_name{'Pristionchus pacificus'}
 sub cds_regex{qr/PPA\d{5}[a-z]*/};
 sub seq_name_regex{qr/^PPA\d{5}/};
 sub cds_regex_noend{qr/PPA\d{5}[a-z]*/}; # for getting the CDS part of a Transcript name
@@ -504,36 +393,18 @@ package Brugia;
 use Carp;
 our @ISA = qw(Species);
 
-sub _new {	
-    my $class = shift;
-    my %param = %{ shift(@_) };
-
-    my $self = $class->initialize( $class->flatten_params( \%param ) );
-
-    # add stuff post object creation goes here
-
-    bless $self, $class;
-}
-sub full_name {
-	my $self = shift;
-	my %param = @_ ;
-	if($param{'-short'}){
-		return 'B. malayi';
-	}	elsif($param{'-g_species'}){
-		return 'b_malayi';
-	}
-	else { return'Brugia malayi'
-	};
-}
-sub seq_name_regex{qr/^Bm\d+/};
+sub short_name {'B. malayi'}
+sub gspecies_name{'b_malayi'}
+sub long_name{'Brugia malayi'}
+sub seq_name_regex{qr/^Bm\d+/}
 sub pep_prefix {'BM'}
-sub pepdir_prefix{'brug'};
-sub cds_regex_noend{qr/Bm\d+[a-z]*/}; # for getting the CDS part of a Transcript name
-sub cds_regex{qr/Bm\d+[a-z]*/};
-sub ncbi_tax_id {'6279'};
-sub ncbi_bioproject {'PRJNA10729'};
+sub pepdir_prefix{'brug'}
+sub cds_regex_noend{qr/Bm\d+[a-z]*/}
+sub cds_regex{qr/Bm\d+[a-z]*/}
+sub ncbi_tax_id {'6279'}
+sub ncbi_bioproject {'PRJNA10729'}
 sub bioproject_description { 'University of Pittsburgh B. malayi genome project' }
-sub assembly_type {'contig'};
+sub assembly_type {'contig'}
 sub seq_db {my $self = shift;return $self->database('brugia');}
 
 sub TSL {(
@@ -552,34 +423,16 @@ package Ovolvulus;
 use Carp;
 our @ISA = qw(Species);
 
-sub _new {	
-    my $class = shift;
-    my %param = %{ shift(@_) };
-
-    my $self = $class->initialize( $class->flatten_params( \%param ) );
-
-    # add stuff post object creation goes here
-
-    bless $self, $class;
-}
-sub full_name {
-	my $self = shift;
-	my %param = @_ ;
-	if($param{'-short'}){
-		return 'O. volvulus';
-	}	elsif($param{'-g_species'}){
-		return 'o_volvulus';
-	}
-	else { return'Onchocerca volvulus'
-	};
-}
-sub seq_name_regex{qr/^OVOC\d+/};
+sub short_name {'O. volvulus'}
+sub gspecies_name{'o_volvulus'}
+sub long_name{'Onchocerca volvulus'}
+sub seq_name_regex{qr/^OVOC\d+/}
 sub pep_prefix {'OVP'}
 sub pepdir_prefix{'ovol'};
-sub cds_regex_noend{qr/OVOC\d+[a-z]*/}; # for getting the CDS part of a Transcript name
-sub cds_regex{qr/OVOC\d+[a-z]*/};
+sub cds_regex_noend{qr/OVOC\d+[a-z]*/}
+sub cds_regex{qr/OVOC\d+[a-z]*/}
 sub ncbi_tax_id {6282};
-sub ncbi_bioproject {'PRJEB513'};
+sub ncbi_bioproject {'PRJEB513'}
 sub bioproject_description { 'Wellcome Trust Sanger Institute O. volvulus genome project' }
 sub assembly_type {'contig'};
 sub seq_db {my $self = shift;return $self->database('ovolvulus');}
@@ -597,31 +450,13 @@ package Sratti;
 use Carp;
 our @ISA = qw(Species);
 
-sub _new {	
-    my $class = shift;
-    my %param = %{ shift(@_) };
-
-    my $self = $class->initialize( $class->flatten_params( \%param ) );
-
-    # add stuff post object creation goes here
-
-    bless $self, $class;
-}
-sub full_name {
-	my $self = shift;
-	my %param = @_ ;
-	if($param{'-short'}){
-		return 'S. ratti';
-	}	elsif($param{'-g_species'}){
-		return 's_ratti';
-	}
-	else { return'Strongyloides ratti'
-	};
-}
-sub ncbi_tax_id {'34506'};
-sub ncbi_bioproject {'PRJEB125'};
+sub short_name {'S. ratti'}
+sub gspecies_name{'s_ratti'}
+sub long_name{'Strongyloides ratti'}
+sub ncbi_tax_id {'34506'}
+sub ncbi_bioproject {'PRJEB125'}
 sub bioproject_description { 'Wellcome Trust Sanger Institute S. ratti genome project' }
-sub assembly_type {'contig'};
+sub assembly_type {'contig'}
 
 sub seq_name_regex{qr/^SRAE_[\dX]\d+/};
 sub pep_prefix {'SRP'}
@@ -661,31 +496,29 @@ sub TSL {(
 #
 ######################################################
 
+package Cangaria;
+use Carp;
+
+our @ISA = qw(Wormbase);
+
+sub short_name {'C. angaria'}
+sub gspecies_name{'c_angaria'}
+sub long_name{'Caenorhabditis angaria'}
+sub ncbi_tax_id {'860376'};
+sub ncbi_bioproject {'PRJNA51225'};
+sub bioproject_description { 'California Institute of Technology C. angaria genome project' }
+sub assembly_type {'contig'};
+
+
+#######################################################
 
 package Csinica;
 use Carp;
 our @ISA = qw(Species);
 
-sub _new {	
-    my $class = shift;
-    my %param = %{ shift(@_) };
-
-    my $self = $class->initialize( $class->flatten_params( \%param ) );
-
-    # add stuff post object creation goes here
-
-    bless $self, $class;
-}
-sub full_name {
-  my $self = shift;
-  my %param = @_ ;
-  if($param{'-short'}){
-    return 'C. sinica';
-  }	elsif($param{'-g_species'}){
-    return 'c_sinica';
-  }
-  else { return'Caenorhabditis sinica' };
-}
+sub short_name {'C. sinica'}
+sub gspecies_name{'c_sinica'}
+sub long_name{'Caenorhabditis sinica'}
 sub ncbi_tax_id {'1550068'}; # this is the ID of the DRD-2008 strain
 sub ncbi_bioproject {'PRJNA194557'};
 sub bioproject_description { 'University of Edinburgh Caenorhabditis sinica genome project' }
@@ -696,25 +529,9 @@ package Cafra;
 use Carp;
 our @ISA = qw(Species);
 
-sub _new {	
-    my $class = shift;
-    my %param = %{ shift(@_) };
-
-    my $self = $class->initialize( $class->flatten_params( \%param ) );
-
-    # add stuff post object creation goes here
-
-    bless $self, $class;
-}
-sub full_name {
-  my $self = shift;
-  my %param = @_ ;
-  if($param{'-short'}){
-    return 'C. afra';
-  }	elsif($param{'-g_species'}){
-    return 'c_afra';
-  } else { return'Caenorhabditis afra'};
-}
+sub short_name {'C. afra'}
+sub gspecies_name{'c_afra'}
+sub long_name{'Caenorhabditis afra'}
 sub ncbi_tax_id {'1094335'};
 sub ncbi_bioproject {'PRJNA51171'};
 sub bioproject_description { 'Genome Institute at Washington University Caenorhabditis afra genome project' }
@@ -725,25 +542,9 @@ package Cnigoni;
 use Carp;
 our @ISA = qw(Species);
 
-sub _new {	
-  my $class = shift;
-  my %param = %{ shift(@_) };
-  
-  my $self = $class->initialize( $class->flatten_params( \%param ) );
-  
-  # add stuff post object creation goes here
-  
-  bless $self, $class;
-}
-sub full_name {
-  my $self = shift;
-  my %param = @_ ;
-  if($param{'-short'}){
-    return 'C. nigoni';
-  }	elsif($param{'-g_species'}){
-    return 'c_nigoni';
-  } else { return'Caenorhabditis nigoni'};
-}
+sub short_name {'C. nigoni'}
+sub gspecies_name{'c_nigoni'}
+sub long_name{'Caenorhabditis nigoni'}
 sub ncbi_tax_id {'1611254'};
 sub ncbi_bioproject {'PRJNA51169'};
 sub bioproject_description { 'Genome Institute at Washington University Caenorhabditis sp. 9 genome project' }
@@ -754,27 +555,9 @@ package Ctropicalis;
 use Carp;
 our @ISA = qw(Species);
 
-sub _new {	
-    my $class = shift;
-    my %param = %{ shift(@_) };
-
-    my $self = $class->initialize( $class->flatten_params( \%param ) );
-
-    # add stuff post object creation goes here
-
-    bless $self, $class;
-}
-sub full_name {
-  my $self = shift;
-  my %param = @_ ;
-  if($param{'-short'}){
-    return 'C. tropicalis';
-  }	elsif($param{'-g_species'}){
-    return 'c_tropicalis';
-  }
-  else { return'Caenorhabditis tropicalis'
-  };
-}
+sub short_name {'C. tropicalis'}
+sub gspecies_name{'c_tropicalis'}
+sub long_name{'Caenorhabditis tropicalis'}
 sub ncbi_tax_id {'1561998'};
 sub ncbi_bioproject {'PRJNA53597'};
 sub bioproject_description { 'Genome Institute at Washington University Caenorhabditis sp. 11 genome project' }
@@ -785,27 +568,9 @@ package Panagrellus;
 use Carp;
 our @ISA = qw(Species);
 
-sub _new {	
-    my $class = shift;
-    my %param = %{ shift(@_) };
-
-    my $self = $class->initialize( $class->flatten_params( \%param ) );
-
-    # add stuff post object creation goes here
-
-    bless $self, $class;
-}
-sub full_name {
-  my $self = shift;
-  my %param = @_ ;
-  if($param{'-short'}){
-    return 'P. redivivus';
-  }	elsif($param{'-g_species'}){
-    return 'p_redivivus';
-  }
-  else { return'Panagrellus redivivus'
-  };
-}
+sub short_name {'P. redivivus'}
+sub gspecies_name{'p_redivivus'}
+sub long_name{'Panagrellus redivivus'}
 sub ncbi_tax_id {'6233'};
 sub ncbi_bioproject {'PRJNA186477'};
 sub bioproject_description { 'California Institute of Technology P. redivivus genome project'};
@@ -813,29 +578,13 @@ sub assembly_type {'contig'};
 
 #######################################################
 
-package remanei_px356;
+package Remanei_px356;
 use Carp;
 our @ISA = qw(Species);
 
-sub _new {	
-    my $class = shift;
-    my %param = %{ shift(@_) };
-
-    my $self = $class->initialize( $class->flatten_params( \%param ) );
-
-    # add stuff post object creation goes here
-
-    bless $self, $class;
-}
-sub full_name {
-  my $self = shift;
-  my %param = @_ ;
-  if($param{'-short'}){
-    return 'C. remanei';
-  }	elsif($param{'-g_species'}){
-    return 'c_remanei';
-  } else { return'Caenorhabditis remanei' };
-}
+sub short_name {'C. remanei'}
+sub gspecies_name{'c_remanei'}
+sub long_name{'Caenorhabditis remanei'}
 sub ncbi_tax_id {'31234'};
 sub ncbi_bioproject {'PRJNA248909'};
 sub bioproject_description { 'University of Oregon University C. remanei PX356 genome project' }
@@ -844,94 +593,17 @@ sub is_canonical { 0 };
 
 #######################################################
 
-package elegans_hawaii;
+package Elegans_hawaii;
 use Carp;
 our @ISA = qw(Species);
 
-sub _new {	
-    my $class = shift;
-    my %param = %{ shift(@_) };
-
-    my $self = $class->initialize( $class->flatten_params( \%param ) );
-
-    bless $self, $class;
-}
-sub full_name {
-  my $self = shift;
-  my %param = @_ ;
-  if($param{'-short'}){
-    return 'C. elegans';
-  }	elsif($param{'-g_species'}){
-    return 'c_elegans';
-  } else { return'Caenorhabditis elegans'};
-}
+sub short_name {'C. elegans'}
+sub gspecies_name{'c_elegans'}
+sub long_name{'Caenorhabditis elegans'}
 sub ncbi_tax_id {'6209'};
 sub ncbi_bioproject {'PRJNA275000'};
 sub bioproject_description { 'University of Washington C. elegans CB4856 genome project' }
 sub assembly_type {'contig'};
 sub is_canonical { 0 };
 
-
-
-
 1;
-
-
-=pod
-
-=head1 NAME Species.pm
-
-=head1 DESCRIPTION extends Wormbase.pm
-
-Species.pm provides Elegans, Briggsae and Remanei classes, which are inherited from Wormbase
-and Species. Species provides generics for the more specific child classes.
-
-runs tests if not used as module.
-
-=head1 Species
-
-=head2 flatten_params($hashref)
-
-flattens an hash into an array
-
-=head2  get_chromosome_names([-prefix => 1 / PREFIX , -mito => 1])
-
-returns list of chromosomes including mitochondria (-mito => 1),
-default prefix (-prefix => 1) or a custom prefix (-prefix => 'blablub_')
-
-uses mock methods if called from within Species
-
-=head2 _new([params,...])
-
-calls the Wormbase constructor and blesses into the new class.
-
-=head2 mock_methods (should be overwritten in the child classes)
-
-=over 3 
-
-=item
-chromosome_names
-
-=item 
-mt_name
-
-=back
-
-=head1 Elegans
-
-inherits from Species and Wormbase
-
-just overwrites the mock methods from Species
-
-=head1 Briggsae
-
-inherits from Species and Wormbase
-
-changes basedirectory to: $basedir/autoace/briggsae
-does use the CB1 assembly names.
-
-=head1 Remanei
-
-inherits from Species and Wormbase
-
-=cut 
