@@ -112,6 +112,7 @@ sub full_name { return undef}
 sub mt_name {return undef}
 sub pep_prefix {return undef}
 sub wormpep_prefix {return undef}
+sub pepdir_prefix{ return undef };
 
 #########################################
 #
