@@ -1,22 +1,4 @@
-#!/usr/bin/perl -w
-#===============================================================================
-#
-#         FILE:  check_genes.pl
-#
-#        USAGE:  ./check_genes.pl -database DATABASE_NAME -outputfile FILE_NAME [-dna|-transcripts_only]
-#
-#  DESCRIPTION:  
-#
-#      OPTIONS:  ---
-# REQUIREMENTS:  ---
-#         BUGS:  ---
-#        NOTES:  ---
-#       AUTHOR:   (), <>
-#      COMPANY:  
-#      VERSION:  1.0
-#      CREATED:  11/07/06 17:49:26 BST
-#     REVISION:  ---
-#===============================================================================
+#!/usr/bin/env perl 
 
 use strict;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
@@ -31,10 +13,10 @@ my $dbpass = "";
 my ($database,$dna,$transcript_only,$outfile);
 
 GetOptions( 
-  'dbhost=s'        => \$dbhost,
-  'dbport=s'        => \$dbport,
-  'dbuser=s'        => \$dbuser,
-  'dbpass=s'        => \$dbpass,
+  'host=s'        => \$dbhost,
+  'port=s'        => \$dbport,
+  'user=s'        => \$dbuser,
+  'pass=s'        => \$dbpass,
   'dbname=s'        => \$database,
   'dna'             => \$dna,
   'transcript_only' => \$transcript_only, 
