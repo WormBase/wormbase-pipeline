@@ -499,7 +499,7 @@ sub TSL {(
 package Cangaria;
 use Carp;
 
-our @ISA = qw(Wormbase);
+our @ISA = qw(Species);
 
 sub short_name {'C. angaria'}
 sub gspecies_name{'c_angaria'}
