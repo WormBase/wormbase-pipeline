@@ -4,8 +4,8 @@
 #
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
-# Last updated by: $Author: klh $
-# Last updated on: $Date: 2014-01-07 17:11:48 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2015-07-09 09:39:11 $
 =pod
 
 =head1 NAME
@@ -55,7 +55,7 @@ my %method_database = (
 		       'superfamily' => 'SSF',
 		       'gene3d'      => 'GENE3D',
 		       'hmmpanther'  => 'PANTHER',
-		       'hamap'       => 'HAMPA',
+		       'hamap'       => 'HAMAP',
 	       );
 
 =head2 new
