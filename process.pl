@@ -39,9 +39,6 @@ foreach my $species (@species_list) {
       $hex .= sprintf("%02X", $col);
     }
   
-    # Remove space from group name
-    $parts[3] =~ s/ //g;
-  
     # Create the description
     my $desc = sprintf(
                 '<br />ENA Sample ID: <a href="http://www.ebi.ac.uk/ena/data/view/%s">%s</a><br />
@@ -61,7 +58,7 @@ foreach my $species (@species_list) {
   
     # Create the config file text
     $groups .= sprintf("%s=%s\n", $track_id, $parts[6]);
-    $files .= sprintf("[%s]\nsource_name=%s\ncaption=%s\ndescription=%s\nsource_url=%s\nsource_type=rnaseq\ndisplay=on\ncolour=%s\n\n",
+    $files .= sprintf("[%s]\nsource_name=%s\ncaption=%s\ndescription=%s\nsource_url=%s\nsource_type=rnaseq\ndisplay=tiling\ncolour=%s\n\n",
       $track_id, $parts[1], $parts[0], $desc, $url, $hex);
   
     $counter++;
