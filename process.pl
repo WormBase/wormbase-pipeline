@@ -51,7 +51,7 @@ foreach my $species (@species_list) {
     $desc =~ s/\n//g;
   
     # Generate the URL
-    my $url = "http://www.ebi.ac.uk/~jane/Trackhubs/myHub_$species/$species/$parts[5].bw";
+    my $url = "http://ngs.sanger.ac.uk/production/parasites/wormbase/RNASeq_alignments/myHub_$species/$species/$parts[5].bw";
 
     # Create the unique track ID
     my $track_id = sprintf("%03d", $counter) . "_" . $parts[5];
