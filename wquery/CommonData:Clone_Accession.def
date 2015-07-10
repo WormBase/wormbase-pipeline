@@ -19,7 +19,7 @@ Visible
 Class 
 Class Sequence 
 From 1
-Condition Genomic_canonical OR Subsequence
+Condition Genomic_canonical OR Subsequence OR Source
  
 Colonne 2 
 Width 20 
@@ -29,6 +29,7 @@ Class
 Class Database 
 From 1 
 Tag Database      
+Condition "EMBL" OR "NDB"
  
 Colonne 3 
 Width 12 
