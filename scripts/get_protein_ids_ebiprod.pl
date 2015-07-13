@@ -162,12 +162,13 @@ $uniprot_dbh = &get_uniprot_dbh($uniprot_cred);
 #
 # subcategory_type_id = 3 => EC number
 #
-$uniprot_sql = "SELECT accession, text "
-    . "FROM dbentry dbe, dbentry_2_description dbe2desc, description_category dc, description_subcategory dsc "
+$uniprot_sql = "SELECT dbe.accession, dct.type, dsct.type, dsc.text "
+    . "FROM dbentry dbe, dbentry_2_description dbe2desc, description_category dc, cv_description_category_type dct, description_subcategory dsc, cv_desc_subcategory_type dsct "
     . "WHERE dbe.dbentry_id = dbe2desc.dbentry_id " 
     . "AND dbe2desc.dbentry_2_description_id = dc.dbentry_2_description_id "
     . "AND dc.category_id = dsc.category_id "
-    . "AND subcategory_type_id = 3 "
+    . "AND dc.category_type_id = dct.category_type_id "
+    . "AND dsc.subcategory_type_id = dsct.subcategory_type_id "
     . "AND dbe.accession = ?";
 
 $uniprot_sth = $uniprot_dbh->dbc->prepare($uniprot_sql);
@@ -176,9 +177,12 @@ foreach my $entry_a (values %resultsHash) {
   foreach my $entry (@$entry_a) {
     if (exists $entry->{SWALL_AC}) {
       $uniprot_sth->execute($entry->{SWALL_AC});
-      my ($acc, $ec_num) = $uniprot_sth->fetchrow_array;
-      if (defined $acc and defined $ec_num) {
-        $entry->{EC} = $ec_num;
+      while (my ($acc, $type, $subtype, $de_text) = $uniprot_sth->fetchrow_array) {
+        if ($subtype eq 'EC') {
+          $entry->{EC} = $de_text;
+        } elsif ($type eq 'RecName' and $subtype eq 'Full') {
+          $entry->{DE} = $de_text if $de_text !~ /^Uncharacterized protein/;
+        }
       }
     }
   }
@@ -194,17 +198,18 @@ $uniprot_dbh->dbc->disconnect_if_idle;
 @resultsArr = sort { $a->{NT_AC} cmp $b->{NT_AC} or $a->{AA_PID} cmp $b->{AA_PID} } map { @$_ } values(%resultsHash);
 foreach my $entry (@resultsArr) {
   
-  printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", 
+  printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", 
          $entry->{NT_AC},
          $entry->{NT_version},
          $entry->{AA_PID},
          $entry->{AA_version},
          $entry->{AA_checksum},
          $entry->{AA_text},
-         exists($entry->{SWALL_AC}) ? $entry->{SWALL_AC} : "UNDEFINED",
-         exists($entry->{SWALL_ID}) ? $entry->{SWALL_ID} : "UNDEFINED",
-         exists($entry->{SWALL_ISOFORM}) ? $entry->{SWALL_ISOFORM} : "UNDEFINED",
-         exists($entry->{EC}) ? $entry->{EC} : "UNDEFINED",
+         exists($entry->{SWALL_AC}) ? $entry->{SWALL_AC} : ".",
+         exists($entry->{SWALL_ID}) ? $entry->{SWALL_ID} : ".",
+         exists($entry->{SWALL_ISOFORM}) ? $entry->{SWALL_ISOFORM} : ".",
+         exists($entry->{EC}) ? $entry->{EC} : ".",
+         exists($entry->{DE}) ? $entry->{DE} : ".",
       );
 
 }

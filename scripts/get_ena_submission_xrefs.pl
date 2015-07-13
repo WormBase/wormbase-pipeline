@@ -11,7 +11,7 @@ use Log_files;
 
 my ($debug, $test, $store, $species, $wb, 
     $svacefile, $pidacefile, $noload, $ncbi_tax_id, $bioproject_id, $pid_table_file,$sv_table_file, $gid_table_file, $gidacefile,
-    %cds_xrefs, %pep_xrefs, $generate_tables, $sequence_xrefs, $protein_xrefs, $gene_xrefs, $common_data_dir);
+    $generate_tables, $sequence_xrefs, $protein_xrefs, $gene_xrefs, $common_data_dir);
 
 
 &GetOptions ("debug:s"        => \$debug,
@@ -131,7 +131,8 @@ if ($gene_xrefs) {
 
 
 if ($protein_xrefs) {
-  my ( %accession2clone, %cds2wormpep);
+  my (%cds_xrefs, %pep_xrefs,%cds_product, %accession2clone, %cds2wormpep);
+
   $wb->FetchData('accession2clone', \%accession2clone, $common_data_dir);
   $wb->FetchData('cds2wormpep', \%cds2wormpep, $common_data_dir);
 
@@ -145,33 +146,36 @@ if ($protein_xrefs) {
     chomp;
     my @data = split("\t",$_);
     
-    next unless scalar(@data) == 10;
-    my($cloneacc, $pid, $version, $cds, $uniprot_ac, $uniprot_id, $uniprot_iso_acc, $ec_num) 
-        = ($data[0],$data[2],$data[3],$data[5],$data[6],$data[7],$data[8],$data[9]);  
+    next unless scalar(@data) == 11;
+    my($cloneacc, $pid, $version, $cds, $uniprot_ac, $uniprot_id, $uniprot_iso_acc, $ec_num, $product_name) 
+        = ($data[0],$data[2],$data[3],$data[5],$data[6],$data[7],$data[8],$data[9], $data[10]);  
     
     next unless (defined $pid);
-    $log->write_to("Potential New Protein: $_\n") if $uniprot_ac eq 'UNDEFINED';
+    $log->write_to("Potential New Protein: $_\n") if $uniprot_ac eq '.';
     
-    next unless exists $cds2wormpep{$cds}; # just ENA is slightly out of date w.r.t. our latest annotation
+    next unless exists $cds2wormpep{$cds}; # if ENA is slightly out of date w.r.t. our latest annotation
     
     push @{$cds_xrefs{$cds}->{Protein_id}}, [$accession2clone{$cloneacc}, $pid, $version];
     
     if($cds2wormpep{$cds}) {
-      if (defined $uniprot_ac and $uniprot_ac ne 'UNDEFINED') {
+      if (defined $uniprot_ac and $uniprot_ac ne '.') {
         $cds_xrefs{$cds}->{dblinks}->{UniProt}->{UniProtAcc}->{$uniprot_ac} = 1;
         $pep_xrefs{"WP:".$cds2wormpep{$cds}}->{dblinks}->{UniProt}->{UniProtAcc}->{$uniprot_ac} = 1;
       }
-      if (defined $uniprot_id and $uniprot_id ne 'UNDEFINED') {
+      if (defined $uniprot_id and $uniprot_id ne '.') {
         $cds_xrefs{$cds}->{dblinks}->{UniProt}->{UniProtId}->{$uniprot_id} = 1;
         $pep_xrefs{"WP:".$cds2wormpep{$cds}}->{dblinks}->{UniProt}->{UniProtId}->{$uniprot_id} = 1;
       }
-      if (defined $uniprot_iso_acc and $uniprot_iso_acc ne 'UNDEFINED') {
+      if (defined $uniprot_iso_acc and $uniprot_iso_acc ne '.') {
         $cds_xrefs{$cds}->{dblinks}->{UniProt}->{UniProtIsoformAcc}->{$uniprot_iso_acc} = 1;
         $pep_xrefs{"WP:".$cds2wormpep{$cds}}->{dblinks}->{UniProt}->{UniProtIsoformAcc}->{$uniprot_iso_acc} = 1;
       }
-      if (defined $ec_num and $ec_num ne 'UNDEFINED') {
+      if (defined $ec_num and $ec_num ne '.') {
         $cds_xrefs{$cds}->{dblinks}->{KEGG}->{KEGG_id}->{$ec_num} = 1;
         $pep_xrefs{"WP:".$cds2wormpep{$cds}}->{dblinks}->{KEGG}->{KEGG_id}->{$ec_num} = 1;
+      }
+      if (defined $product_name and $product_name ne '.' and defined $uniprot_ac and $uniprot_ac ne'.') {
+        $cds_product{$cds}->{$product_name}->{$uniprot_ac} = 1;
       }
     }
   }
@@ -202,6 +206,16 @@ if ($protein_xrefs) {
       print $acefh "\n";
     }
   }
+
+  foreach my $cds (sort keys %cds_product) {
+    print $acefh "\nCDS : \"$cds\"\n";
+    foreach my $prod_name (keys %{$cds_product{$cds}}) {
+      foreach my $acc (sort keys %{$cds_product{$cds}->{$prod_name}}) {
+        print $acefh "Brief_identification \"$prod_name\" Accession_evidence \"$acc\"\n";
+      }
+    }
+  }
+  
 
   close($acefh) or $log->log_and_die("Could not close $pidacefile properly\n");
   
@@ -258,43 +272,3 @@ sub lookup_from_ebi_production_dbs {
 
 }
 
-
-###########################
-sub get_uniprot_acc2idmap {
-  my (%acc2ids);
-
-  my $ua       = LWP::UserAgent->new;
-
-  my $base     = 'http://srs.ebi.ac.uk/srsbin/cgi-bin/wgetz?-noSession';
-  my $query    = "+[uniprot-org:$ggenus]&[uniprot-org:$gspecies]";
-
-  my $cResult  = '+-page+cResult+-ascii';
-  my $fullview = '+-view+UniprotView+-ascii+-lv+';
-
-  $log->write_to("Doing query: ${base}${query}${cResult}\n");
-
-
-  my $qa1 = $ua->get($base.$query.$cResult);
-  $log->log_and_die("Can't get URL -- " . $qa1->status_line) unless $qa1->is_success;
-
-  if($qa1->content =~/^(\d+)/) {
-    my $lv = $1;
-    $log->write_to("EBI SRS server returned $lv entries; fetching...\n");
-    
-    my $tmp_file = "/tmp/srs_results.$$.txt";
-    my $qa2 = $ua->get($base.$query.$fullview.$lv, ':content_file' => $tmp_file);
-    $log->log_and_die("Could not fetch Uniprot entries using EBI SRS server") 
-        if not $qa2->is_success;
-
-    open(my $f, $tmp_file);
-    while(<$f>) {
-      /UNIPROT:(\S+)\s+(\S+)/ and do {
-        $acc2ids{$2} = $1;
-      }
-    }
-  } else {
-    $log->log_and_die("Unexpected content from SRS query\n");
-  }
-   
-  return \%acc2ids;
-}
