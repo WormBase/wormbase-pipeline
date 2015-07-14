@@ -32,9 +32,12 @@ my (
   $gffdir,
   $wormbase,
   $database,
+  $min_overlap,
   @chromosomes,
   %results,
     );
+
+$min_overlap = 30;
 
 GetOptions(
   "debug=s"       => \$debug,
@@ -46,6 +49,7 @@ GetOptions(
   'chrom=s@'      => \@chromosomes,
   'gffdir=s'      => \$gffdir,
   'database=s'    => \$database,
+  'minoverlap=s'  => \$min_overlap,
     );
 
 #################################################
@@ -247,7 +251,7 @@ sub get_RNAi_from_gff {
 
       my ($name) = $l[8] =~ /\"RNAi:(\S+.+)\"\s+\d+\s+\d+$/;
 
-      my @hits = @{$map->search_feature_segments($l[0], $l[3], $l[4])};
+      my @hits = @{$map->search_feature_segments($l[0], $l[3], $l[4], undef, $min_overlap)};
       map { $results->{$name}->{$rnai_type}->{$class}->{$_} = 1 } @hits;
     
     }
