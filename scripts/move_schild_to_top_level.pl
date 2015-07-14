@@ -19,6 +19,7 @@ use Getopt::Long;
 use lib $ENV{CVS_DIR};
 
 use Coords_converter;
+use Log_files;
 
 my (
   $wormbase,
@@ -57,36 +58,44 @@ else {
       );
 }
 
-$database = $wormbase->autoace if not defined $database;
+my $log = Log_files->make_build_log($wormbase);
 
-if (defined $acefile) {
-  open($acefh, ">$acefile") or die "Could not open $acefile for writing\n";
-} else {
-  $acefh = \*STDOUT;
-}
+$database = $wormbase->autoace if not defined $database;
+$acefile = $wormbase->acefiles . "/move_schild_to_toplevel.ace" if not defined $acefile;
+
+open($acefh, ">$acefile") or $log->log_and_die("Could not open $acefile for writing\n");
 
 my $full_name = $wormbase->full_name;
 
 my $cc = Coords_converter->invoke( $database, undef, $wormbase );
-my $db = Ace->connect(-path => $database) or die "Could not connect to $database\n";
+
+$log->write_to("Connecting to database...\n");
+my $db = Ace->connect(-path => $database) or $log->log_and_die("Could not connect to $database\n");
 
 my (%tl_seqs, %good_method_cache, %embl_method_cache);
+
+$log->write_to("Fetching EMBL-dump-containing methods...\n");
 
 my $iter = $db->fetch_many(-query => "Find Method EMBL_feature");
 while(my $meth = $iter->next) {
   $embl_method_cache{$meth->name} = 1;
 }
 
+$log->write_to("Fetching CDS/Transcript/Pseudogenes with EMBL-dump-containing methods...\n");
+
 my $method_clause = "(" . join(" OR ", map { "Method = \"$_\"" } sort keys %embl_method_cache) . ")"; 
 
 foreach my $class ("CDS", "Transcript", "Pseudogene") {
   my $query =  "Find $class Species = \"$full_name\" AND $method_clause";
 
+  $debug and $log->write_to("   QUERY:$query\n");
   my $iter = $db->fetch_many(-query => "$query");
   while(my $obj = $iter->next()) {    
     $good_method_cache{$obj->name} = 1;
   }
 }
+
+$log->write_to("Fetching sequences with S_children having EMBL-dump-containing methods...\n");
 
 foreach my $schild (@schild_list) {
   my (%add_seqs, %del_seqs);
@@ -119,10 +128,13 @@ foreach my $schild (@schild_list) {
   }
 }
 
-if ($acefile) {
-  close($acefh) or die "Could not close $acefile after writing\n";
-  $wormbase->load_to_database($database, $acefile, "move_to_toplevel") unless $noload;
+close($acefh) or $log->log_and_die("Could not close $acefile after writing\n");
+$db->close();
+
+if (not $noload) {
+  $log->write_to("Loading new mappings...\n");
+  $wormbase->load_to_database($database, $acefile, "move_to_toplevel");
 }
 
-
+$log->mail();
 exit(0);
