@@ -88,7 +88,6 @@ _VGene_cluster     -V
 _VGene_class       -V
 _VGene_name	   -V
 _VLocus            -V -D GMAP
-_VLocus            -V 
 _VRearrangement    -V -D GMAP
 _VMap              -V -D GMAP  
 _VMultiMap	   -H -D DtMULTIMAP
