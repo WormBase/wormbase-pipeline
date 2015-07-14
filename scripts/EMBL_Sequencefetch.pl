@@ -109,7 +109,6 @@ my %species2taxonid = (
 		       'japonica'          => "281687",
 		       'brenneri'          => "135651",
 		       'pristionchus'      => "54126",
-		       'heterorhabditis'   => "37862",
 		       'brugia'            => "6279",
 		       'cangaria'          => "96668",
 		       'sratti'            => "34506",
