@@ -96,7 +96,7 @@ $species = $wormbase->species;
 $full_species_name = $wormbase->full_name;
 my $dbdir = ($database) ? $database : $wormbase->autoace;
 my $tace = $wormbase->tace;
-my ($bioproject_number) = $wormbase->ncbi_bioproject =~ /^\w+(\d+)/; 
+my $bioproject = $wormbase->ncbi_bioproject; 
 
 $decorations_db =  $wormbase->database('current') if not defined $decorations_db;
 $cds2proteinid_db = $decorations_db if not defined $cds2proteinid_db;
@@ -259,7 +259,7 @@ if ($dump_modified) {
       #
       # PR
       #
-      print $out_fh "PR   Project:$bioproject_number;\n";
+      print $out_fh "PR   Project:$bioproject\n";
       print $out_fh "XX\n";
       
       #
