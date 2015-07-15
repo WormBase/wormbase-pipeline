@@ -48,7 +48,7 @@ my ($test,
     $sequencelevel,
     $agp_file,
     $clone2type, $gene2cgcname, $gene2gseqname, $trans2gene, $clone2dbid, $multi_gene_loci, $seleno_prots,
-    $cds2proteinid_db, $cds2status_db, $trans2dbremark_db, $decorations_db,
+    $cds2proteinid_db, $cds2status_db, $trans2dbremark_db, $trans2briefid_db, $decorations_db,
     $cds2status_h, $cds2proteinid_h,  $trans2dbremark_h, $trans2type_h, $trans2briefid_h,
     $agp_segs,
     %additional_qualifiers,
@@ -68,6 +68,7 @@ GetOptions (
   "piddb=s"         => \$cds2proteinid_db,
   "dbremarkdb=s"    => \$trans2dbremark_db,
   "cdsstatusdb=s"   => \$cds2status_db,
+  "briefiddb=s"     => \$trans2briefid_db,
   "modprivate=s"    => \$private,
   "moddumpfile:s"   => \$mod_dump_file,
   "rawdumpfile:s"   => \$raw_dump_file,
@@ -101,6 +102,7 @@ $decorations_db =  $wormbase->database('current') if not defined $decorations_db
 $cds2proteinid_db = $decorations_db if not defined $cds2proteinid_db;
 $cds2status_db = $decorations_db if not defined $cds2status_db;
 $trans2dbremark_db = $decorations_db if not defined $trans2dbremark_db;
+$trans2briefid_db = $decorations_db if not defined $trans2briefid_db;
 
 ###############################
 # misc. variables             #
@@ -129,7 +131,7 @@ if ($dump_raw) {
     $command .= "query find Sequence $single\ngif EMBL $raw_dump_file\n";# find sequence and dump
     $command .= "quit\n";# say you don't want to save and exit
   } else {
-    $command .= "query find Sequence EMBL_dump_info AND Species=\"${\$wormbase->full_name}\"";
+    $command .= "query find Sequence EMBL_dump_info AND Species=\"$full_species_name\"";
     if ($species eq 'elegans') {
       if ($sequencelevel) {
         $command .= " AND Source";
@@ -177,7 +179,6 @@ if ($dump_modified) {
     $multi_gene_loci = &get_multi_gene_loci($gene2gseqname);
     
     $trans2type_h = &fetch_transcript2type($dbdir);
-    $trans2briefid_h = &fetch_transcript2briefid($dbdir);
     
     # Some information is not yet available in autoace (too early in the build)
     # By default, pull cds2status, trans2dbremark and protein_ids from current_DB,
@@ -185,6 +186,7 @@ if ($dump_modified) {
     $cds2status_h = &fetch_cds2status($cds2status_db);
     $cds2proteinid_h = &fetch_cds2proteinid($cds2proteinid_db);
     $trans2dbremark_h = &fetch_trans2dbremark($trans2dbremark_db);
+    $trans2briefid_h = &fetch_transcript2briefid($trans2briefid_db);
     
     $seleno_prots = &fetch_selenoproteins($dbdir);
   }
@@ -578,20 +580,28 @@ sub process_feature_table {
     #
     my $prod_name = "";
     if ($feat->{ftype} eq 'CDS') {
-      if ($feat->{is_pseudo}) {
-        $prod_name = "Pseudogenic transcript $wb_isoform_name";
+      if (exists $trans2briefid_h->{$wb_isoform_name}) {
+        $prod_name = $trans2briefid_h->{$wb_isoform_name};
       } else {
-        my $isoform_suf;
-        if ($wb_isoform_name =~ /^$gseq_name(.+)$/) {
-          $isoform_suf = $1;
-        }
-        if (exists $gene2cgcname->{$wb_geneid}) {
-          $prod_name = uc($gene2cgcname->{$wb_geneid});
-        } else {
-          $prod_name = $gseq_name;
-        }       
-        if (defined $isoform_suf) {
-          $prod_name .= ", isoform $isoform_suf";
+        if ($feat->{is_pseudo}) {
+          $prod_name = "Pseudogenic transcript $wb_isoform_name";
+        } else {     
+          # new guidelines from ENA/UniProt; do not put gene name
+          # in product qualifier. Default to Uncharacterized protein
+          $prod_name = "Uncharacterized protein";
+
+          #if (exists $gene2cgcname->{$wb_geneid}) {
+          #  $prod_name .= " " . uc($gene2cgcname->{$wb_geneid});
+          #}
+
+          # The following is odd, but it is what UniProt wanted...
+          #my $isoform_suf;
+          #if ($wb_isoform_name =~ /^$gseq_name(.+)$/) {
+          #  $isoform_suf = $1;
+          #}          
+          #if (defined $isoform_suf) {
+          #  $prod_name .= " (isoform $isoform_suf)";
+          #}
         }
       }
     } elsif ($feat->{ftype} eq 'mRNA') {
@@ -720,15 +730,7 @@ sub process_feature_table {
     }
 
     if ($feat->{ftype} eq 'CDS') {      
-      if ($trans2briefid_h->{$wb_isoform_name}) {
-        my $rem = sprintf("%s", $trans2briefid_h->{$wb_isoform_name});
-        $rem =~ s/\s+/ /g;
-
-        my $rem_line = "/note=\"$rem\"";
-        my @wl = split(/\n/, wrap('','',$rem_line));
-                       
-        push @{$revised_quals{note}}, \@wl;
-      } elsif ($trans2dbremark_h->{$wb_isoform_name}) {
+      if ($trans2dbremark_h->{$wb_isoform_name}) {
         my $rem = sprintf("%s", $trans2dbremark_h->{$wb_isoform_name});
         $rem =~ s/\s+/ /g;
         
@@ -1403,7 +1405,7 @@ sub fetch_transcript2type {
 sub fetch_transcript2briefid {
   my ($ref_db) = @_;
 
-  my %tran2briefid;
+  my (%res, %tran2briefid);
 
   if (not $quicktest and -d $ref_db) {
     $log->write_to("You are using $ref_db to get CDS/Transcript Brief_identification\n");
@@ -1414,16 +1416,37 @@ sub fetch_transcript2briefid {
       open(TACE, "echo '$command' | $tace $ref_db |");
       while(<TACE>) {
         chomp;
-        s/\"//g;
-        my ($obj, $brief_id) = split(/\t/, $_);
-        
-        if (defined $brief_id) {
-          $brief_id =~ s/C\. elegans //; 
-          $brief_id =~ s/\\//g; 
-          $tran2briefid{$obj} = $brief_id;
+        next if not /^\"\S+\"/;
+        s/\"//g; 
+        my ($obj, $brief_id, $evi_database) = split(/\t/, $_);
+
+        if (not $evi_database) {
+          $evi_database = "no_evidence";
         }
+        
+        $brief_id =~ s/C\. elegans //; 
+        $brief_id =~ s/\\//g; 
+
+        next if $brief_id =~ /^Uncharacterized protein/;
+
+        $res{$class}->{$obj}->{lc($evi_database)} = $brief_id;
       }
       unlink $query;
+    }
+  }
+
+  foreach my $class (keys %res) {    
+    foreach my $obj (keys %{$res{$class}}) {
+      if ($class eq 'CDS') {
+        # only include the UniProt ones for CDS for time being;
+        # InterPro and no-evidence ones have questionable source
+        if (exists $res{$class}->{$obj}->{uniprot}) {
+          $tran2briefid{$obj} = $res{$class}->{$obj}->{uniprot};
+        }
+      } else {
+        my ($evi) = values %{$res{$class}->{$obj}};
+        $tran2briefid{$obj} = $evi;
+      }
     }
   }
 
@@ -1489,6 +1512,7 @@ sub get_brief_id_query {
   }
 
   my $briefid_tablemaker_query = <<"EOF";
+
 Sortcolumn 1
 
 Colonne 1 
@@ -1496,10 +1520,10 @@ Width 12
 Optional 
 Visible 
 Class 
-Class $class
+Class $class 
 From 1 
 $condition
-
+ 
 Colonne 2 
 Width 12 
 Mandatory 
@@ -1507,7 +1531,25 @@ Visible
 Class 
 Class Text 
 From 1 
-Tag Brief_identification
+Tag Brief_identification 
+ 
+Colonne 3 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Database 
+Right_of 2 
+Tag  HERE  # Accession_evidence 
+ 
+Colonne 4 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Text 
+Right_of 3 
+Tag  HERE  
 
 EOF
 
