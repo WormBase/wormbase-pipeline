@@ -17,8 +17,6 @@ sub new {
 }
 
 
-
-# stores genes to a bdb
 sub register_segment {
   my ($self, $seq,$start,$end,$strand,$name)=@_;
 
@@ -92,9 +90,10 @@ sub search_feature_spans {
   return [map  { $_->{name} } @hits];
 }
 
+
 ###############################
 sub search_feature_segments {
-  my ($self,$chromosome,$start,$end,$strand)=@_;
+  my ($self, $chromosome, $start, $end, $strand, $min_overlap)=@_;
 
   my @list; 
   if (exists $self->_indexed_features->{$chromosome}) {
@@ -113,25 +112,36 @@ sub search_feature_segments {
   if (@hits) {
 
     foreach my $hit (@hits) {
-
       my $match = 0;
+      
+      foreach my $seg (@{$self->_features->{$hit->{name}}}) {
+        next if $seg->{end} < $start;
+        last if $seg->{start} > $end;
 
-     foreach my $seg (@{$self->_features->{$hit->{name}}}) {
-       if ($start <= $seg->{end} and $end >= $seg->{start}) {
-          $match = 1;
-          last;
+        if ($start <= $seg->{end} and $end >= $seg->{start}) {
+          $match += $seg->{end} - $seg->{start} + 1;
+          # if not interested in degree of overlaps, we can bail as soon as any overlap is asserted
+          last if not defined $min_overlap;
+
+          if ($start > $seg->{start}) {
+            $match += ($start - $seg->{start});
+          }
+          if ($end < $seg->{end}) {
+            $match += ($seg->{end} - $end);
+          }
         }
       }
-
-      if ($match) {
-        push @seg_hits, $hit; 
+      
+      if ($match and (not defined $min_overlap or $match > $min_overlap)) {
+        push @seg_hits, $hit->{name};
       }
     }
   }
 
-  return [map { $_->{name} } @seg_hits];
+  return \@seg_hits;
   
 }
+
 
 
 #################################
