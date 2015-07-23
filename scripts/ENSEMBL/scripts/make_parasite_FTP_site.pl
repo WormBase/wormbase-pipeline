@@ -12,9 +12,10 @@ my $DUMP_TRANSCRIPTS_SCRIPT = "dump_transcripts.pl";
 my $DUMP_GFF3_SCRIPT = "dump_gff3.pl";
 
 my $WORMBASE_CORE = {
-  'brugia_malayi_prjna10729'     => 1,
-  'onchocerca_volvulus_prjeb513' => 1,
-  'strongyloides_ratti_prjeb125' => 1,
+  'brugia_malayi_prjna10729'           => 1,
+  'onchocerca_volvulus_prjeb513'       => 1,
+  'strongyloides_ratti_prjeb125'       => 1,
+  'pristionchus_pacificus_prjna12644'  => 1,
 }; 
 
 my (
@@ -255,6 +256,7 @@ sub make_core_symlinks {
                          "CDS_transcripts.fa.gz", 
                          "mRNA_transcripts.fa.gz", 
                          "proteins.fa.gz", 
+                         "ncRNA_transcripts.fa.gz",
                          "annotations.gff3.gz") {
       my $link_fname_dest = join(".", $ps_species_name, $bioproject, $release, $fsuffix);
       my $link_fname_source = join(".", $wb_species_name, $bioproject, $wb_release, $fsuffix);
