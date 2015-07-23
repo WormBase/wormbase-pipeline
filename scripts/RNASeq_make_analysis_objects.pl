@@ -1678,7 +1678,7 @@ sub get_life_stage {
 
 			    # my extra terms
 			    'early embryo' => 'WBls:0000004', # 'proliferating embryo' => 'WBls:0000004',
-			    'late embryo' => 'WBls:000002', # 'fully-elongated embryo' => 'WBls:0000021',
+			    'late embryo' => 'WBls:0000021', # 'fully-elongated embryo' => 'WBls:0000021',
 			    'young adult' => 'WBls:0000063', # 'newly molted young adult hermaphrodite' => 'WBls:0000063',
 			    'Young Adult' => 'WBls:0000063', # 'newly molted young adult hermaphrodite' => 'WBls:0000063',
 			    'mixed stage' => 'WBls:0000002', # all stages

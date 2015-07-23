@@ -470,10 +470,10 @@ sub make_fpkm {
     my $mean_value = mean(@total_values);
     $Ntotal = scalar @total_values;
 
-    my $total_median_analysis = "RNASeq.$species.all_stages.control_median";
+    my $total_median_analysis = "RNASeq.$species.total_over_all_stages.control_median";
     print EXPRACE "\nGene : \"$gene_id\"\n";
     print EXPRACE "RNASeq_FPKM  \"WBls:0000002\"  \"$median_value\"  From_analysis \"$total_median_analysis\"\n"; # all life stages
-    my $total_mean_analysis = "RNASeq.$species.all_stages.control_mean";
+    my $total_mean_analysis = "RNASeq.$species.total_over_all_stages.control_mean";
     print EXPRACE "\nGene : \"$gene_id\"\n";
     print EXPRACE "RNASeq_FPKM  \"WBls:0000002\"  \"$mean_value\"  From_analysis \"$total_mean_analysis\"\n"; # all life stages
 
@@ -481,30 +481,31 @@ sub make_fpkm {
 
   # write the total mean and median Analysis and Condition object
   print EXPRACE "\n";
-  print EXPRACE "Analysis : \"RNASeq.$species.all_stages.control_median\"\n";
+  print EXPRACE "Analysis : \"RNASeq.$species.total_over_all_stages.control_median\"\n";
   print EXPRACE "Title \"Median FPKM value of all $species control samples\"\n";
-  print EXPRACE "Description \"This is the median value of the N=$Ntotal RNASeq FPKM expression values for this gene in all life-stage of this species of all samples in the SRA that are wildtype controls that do not appear to have undergone any experimental conditions or treatment that would affect gene expression.\"\n";
+  print EXPRACE "Description \"This is the median value of the N=$Ntotal RNASeq FPKM expression values for this gene in all life-stages of this species of all samples in the SRA that are wildtype controls that do not appear to have undergone any experimental conditions or treatment that would affect gene expression.\"\n";
   print EXPRACE "Species_in_analysis \"$full_name\"\n";
   print EXPRACE "Project \"RNASeq.$species\"\n";
-  print EXPRACE "Sample \"RNASeq.$species.all_stages.control_median\"\n";
+  print EXPRACE "Sample \"RNASeq.$species.total_over_all_stages.control_median\"\n";
   print EXPRACE "\n";
-  print EXPRACE "Condition : \"RNASeq.$species.all_stages.control_median\"\n";
+  print EXPRACE "Condition : \"RNASeq.$species.total_over_all_stages.control_median\"\n";
   print EXPRACE "Species \"$full_name\"\n";
 
   print EXPRACE "\n";
-  print EXPRACE "Analysis : \"RNASeq.$species.all_stages.control_mean\"\n";
+  print EXPRACE "Analysis : \"RNASeq.$species.total_over_all_stages.control_mean\"\n";
   print EXPRACE "Title \"Mean FPKM value of all $species control samples\"\n";
-  print EXPRACE "Description \"This is the mean value of the N=$Ntotal RNASeq FPKM expression values for this gene in all life-stage of this species of all samples in the SRA that are wildtype controls that do not appear to have undergone any experimental conditions or treatment that would affect gene expression.\"\n";
+  print EXPRACE "Description \"This is the mean value of the N=$Ntotal RNASeq FPKM expression values for this gene in all life-stages of this species of all samples in the SRA that are wildtype controls that do not appear to have undergone any experimental conditions or treatment that would affect gene expression.\"\n";
   print EXPRACE "Species_in_analysis \"$full_name\"\n";
   print EXPRACE "Project \"RNASeq.$species\"\n";
-  print EXPRACE "Sample \"RNASeq.$species.all_stages.control_mean\"\n";
+  print EXPRACE "Sample \"RNASeq.$species.total_over_all_stages.control_mean\"\n";
   print EXPRACE "\n";
-  print EXPRACE "Condition : \"RNASeq.$species.all_stages.control_mean\"\n";
+  print EXPRACE "Condition : \"RNASeq.$species.total_over_all_stages.control_mean\"\n";
   print EXPRACE "Species \"$full_name\"\n";
 
   close(MANIFEST);
   close(EXPRACE);
   
+  $status = $wormbase->run_script("acezip.pl -file $expression_file", $log);
   my $expression_file_size = -s $expression_file;
   if ($old_expression_file_size < $expression_file_size * 0.9 || $old_expression_file_size > $expression_file_size * 1.1) {
     $log->error("WARNING: old expression file size: $old_expression_file_size, new expression file size: $expression_file_size\n");

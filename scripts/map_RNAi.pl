@@ -32,9 +32,12 @@ my (
   $gffdir,
   $wormbase,
   $database,
+  $min_overlap,
   @chromosomes,
   %results,
     );
+
+$min_overlap = 30;
 
 GetOptions(
   "debug=s"       => \$debug,
@@ -46,6 +49,7 @@ GetOptions(
   'chrom=s@'      => \@chromosomes,
   'gffdir=s'      => \$gffdir,
   'database=s'    => \$database,
+  'minoverlap=s'  => \$min_overlap,
     );
 
 #################################################
@@ -60,8 +64,6 @@ my $to_search_against = {
                   ['Pseudogene',            'Pseudogene',            'exon'] ],
   
   Pseudogene => [ ['Pseudogene', 'Pseudogene', 'exon'] ],
-
-  Expr_profile => [ ['Expr_profile', 'Expr_profile', 'experimental_result_region'] ],
 
 };
 
@@ -169,17 +171,13 @@ foreach my $rnai ( keys %results ) {
   foreach my $rnai_type (keys %{$results{$rnai}}) {
     foreach my $class (keys %{$results{$rnai}->{$rnai_type}}) {
       foreach my $obj (keys %{$results{$rnai}->{$rnai_type}->{$class}}) {
-        if ($class eq 'Expr_profile') {
-          print $ace_fh "$class \"$obj\"\n";
-        } else {
-          print $ace_fh "$class \"$obj\" Inferred_automatically \"RNAi_${rnai_type}\"\n";
-          if (not exists $tran2gene{$obj}) {
-            $log->log_and_die("Could not find parent gene for $obj\n");
-          }
-          my $gene = $tran2gene{$obj};
-          $genes{$gene}->{$rnai_type} = 1;
-          $gene2rnai{$gene}->{$rnai}->{$rnai_type} = 1;
+        print $ace_fh "$class \"$obj\" Inferred_automatically \"RNAi_${rnai_type}\"\n";
+        if (not exists $tran2gene{$obj}) {
+          $log->log_and_die("Could not find parent gene for $obj\n");
         }
+        my $gene = $tran2gene{$obj};
+        $genes{$gene}->{$rnai_type} = 1;
+        $gene2rnai{$gene}->{$rnai}->{$rnai_type} = 1;
       }
     }
   }
@@ -247,7 +245,7 @@ sub get_RNAi_from_gff {
 
       my ($name) = $l[8] =~ /\"RNAi:(\S+.+)\"\s+\d+\s+\d+$/;
 
-      my @hits = @{$map->search_feature_segments($l[0], $l[3], $l[4])};
+      my @hits = @{$map->search_feature_segments($l[0], $l[3], $l[4], undef, $min_overlap)};
       map { $results->{$name}->{$rnai_type}->{$class}->{$_} = 1 } @hits;
     
     }
