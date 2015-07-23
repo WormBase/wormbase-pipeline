@@ -32,7 +32,7 @@ if ( $store ) {
 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
-
+my $errorcount = "0";
 #connect to Geneace and read in data
 my $acedb = ($database and -d $database) ? $database : $wormbase->database('geneace');
 my $def = "$acedb/wquery/SCRIPT:geneace_nameDB_comm.def";
@@ -45,6 +45,7 @@ while( <$TABLE> ){
 	s/\"//g;  # remove "
 	my($gene, $cgc, $seq, $status) = split(/\s/);
 	$log->error("$gene has no status:$_\n") unless $status;
+	$errorcount++ unless $status;
 	$ace_genes{"$gene"}->{'cgc'} = $cgc if $cgc;
 	$ace_genes{"$gene"}->{'seq'} = $seq if $seq;
 	$ace_genes{"$gene"}->{'sts'} = ($status eq 'Live' ? 1 : 0);
@@ -100,7 +101,9 @@ foreach my $gene (keys %server_genes) {
 # any genes left in the acedb list are absent from the nameserver
 foreach (keys %ace_genes ){
 	$log->error("ERROR: $_ absent from nameserver\n");
+	$errorcount++;
 }
+$log->write_to("INFO: $errorcount errors found\n") if ($log->report_errors > 0);
 $log->write_to("No errors found\n") if ($log->report_errors == 0);
 $log->mail;
 exit(0);
@@ -113,6 +116,7 @@ sub check_gene {
 	      # check Live 
 	      if ($ace_genes{"$gene"}->{'sts'} != $server_genes{"$gene"}->{'sts'}){
 		$log->error("ERROR: $gene live or dead ? ns".$ace_genes{"$gene"}->{'sts'}." g".$server_genes{"$gene"}->{'sts'}."\n");
+		$errorcount++;
 		return;
 	      }
 	      return if ($ace_genes{"$gene"}->{'sts'} == 0) ; #dont check dead genes.
@@ -124,16 +128,19 @@ sub check_gene {
                   #determine if either doesn't
                   unless ($ace_genes{"$gene"}->{$type}) {
                     $log->error("ERROR: Geneace - $gene missing $type name ".$server_genes{"$gene"}->{$type}."\n");
-                    next;
+                    $errorcount++;
+		    next;
                   }			
                   unless ($server_genes{"$gene"}->{$type}) {
                     $log->error("ERROR: Server - $gene missing $type name ".$ace_genes{"$gene"}->{$type}."\n");
-                    next;
+                    $errorcount++;
+		    next;
                   }
                   # confirm they are the same if both have name type	
                   if ($ace_genes{"$gene"}->{$type} ne $server_genes{"$gene"}->{$type}) {
                     $log->error("ERROR: $gene different $type names for $gene G:".$ace_genes{"$gene"}->{$type}." N:".$server_genes{"$gene"}->{$type}."\n");
-                    next;
+                    $errorcount++;
+		    next;
                   }
 		}
 	      }
@@ -143,11 +150,13 @@ sub check_gene {
 	else {
 	  # nameserver query will not return genes imported without a valid name.
 	  $log->error("ERROR: $gene missing from server\n");
+	  $errorcount++;
 	  return;
 	}	
       }
       else {
 	$log->error("ERROR: $gene missing from acedb\n");
+	$errorcount++;
 	return;
       }
 }
