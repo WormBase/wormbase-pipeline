@@ -22,7 +22,7 @@ use strict;
 use Getopt::Long;
 use Storable;
 
-use lib $ENV{'CVS_DIR'};
+use lib $ENV{CVS_DIR};
 use Wormbase;
 
 my ($test,
@@ -33,6 +33,7 @@ my ($test,
     $wormbase,
     $outfile,
     $no_header,
+    $no_coding_transcripts,
     );
 
 GetOptions (
@@ -43,6 +44,7 @@ GetOptions (
   "database:s"      => \$database,
   "outfile:s"       => \$outfile,
   "noheader"        => \$no_header,
+  "nocodingtrans"   => \$no_coding_transcripts,
     );
 
 
@@ -85,8 +87,13 @@ while (<TACE>) {
   next if $gene !~ /^WBGene/;
 
   $wbgene{$gene}->{cds}->{$cds} = 1;
-  $wbgene{$gene}->{transcript}->{$trans} = 1;
-  $transcds{$trans} = $cds;
+  if ($no_coding_transcripts) {
+    $wbgene{$gene}->{transcript}->{$cds} = 1;
+    $transcds{$cds} = $cds;
+  } else {
+    $wbgene{$gene}->{transcript}->{$trans} = 1;
+    $transcds{$trans} = $cds;
+  }
   
   $prot =~ s/\S+://;
   $cds{$cds}->{protein} = $prot;
