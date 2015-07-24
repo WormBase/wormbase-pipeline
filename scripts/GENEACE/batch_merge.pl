@@ -18,6 +18,16 @@ use Wormbase;
 
   -file	     file containing genes to merge <Mandatory>
 
+  -override  This option forces the geneace ststus checks to be ignored for pushing 
+             merges into the Nameserver when the changes have already been done in geneace
+             via a batch adhoc submission. Cannot be used with the -load option
+
+  -force     This option forces the .ace file to be loaded into geneace when there are Gene
+             names involved as it's some what easier to resolve issues post merge instead of 
+             overlooking when merges have failed because of this.
+
+  -ns        Causes the merge to be done in the NS should be used in conjunction with -user and -pass.
+
     FORMAT:
 
 optional  EMAIL : mh6@sanger.ac.uk
@@ -57,7 +67,7 @@ e.g. perl batch_merge.pl -file merger.txt
 
 =cut
 
-my ($USER, $test, $file, $debug, $load, $old, $ns, $PASS,$out,$force);
+my ($USER, $test, $file, $debug, $load, $old, $ns, $PASS,$out,$force,$override);
 GetOptions(
 	   'user:s'     => \$USER,
 	   'pass:s'     => \$PASS,
@@ -69,6 +79,7 @@ GetOptions(
 	   'ns'         => \$ns,
 	   'out:s'      => \$out,
 	   'force'      => \$force,
+	   'override'   => \$override,
 	  ) or die;
 
 
@@ -80,20 +91,29 @@ else {$log = Log_files->make_log("NAMEDB:$file");}
 my $DB;
 my $db;
 my $ecount;
+
+if ($load && $override) {
+   $log->log_and_die("OPTIONS ERROR: You cannot use the -load and -override option at the same time!!!!!!!\n");
+}
+
 if ($test) {
-    $DB = 'test_wbgene_id;utlt-db;3307';
-  } else {
-    $DB = 'wbgene_id;shap;3303';
+  $log->write_to("TEST mode is ON!\n\n");
+  $DB = 'test_wbgene_id;utlt-db;3307';
+} else {
+  $DB = 'wbgene_id;shap;3303';
 }
 my $wormbase = Wormbase->new("-organism" =>$species);
 my $database = "/nfs/wormpub/DATABASES/geneace";
 $log->write_to("Working.........\n-----------------------------------\n\n\n1) killing genes in file [${file}]\n\n");
-$log->write_to("TEST mode is ON!\n\n") if $test;
+
 
 if ($ns) {
-$log->write_to("Contacting NameServer.....\n");
-$db = NameDB_handler->new($DB,$USER,$PASS,'/nfs/WWWdev/SANGER_docs/data/');
-$db->setDomain('Gene');
+  unless ($USER && $PASS) {
+    $log->log_and_die("OPTIONS ERROR: You need to supply both a username and password for the MySQL database with -user <username> -pass <password>.\n");
+  }
+  $log->write_to("Contacting NameServer.....\n");
+  $db = NameDB_handler->new($DB,$USER,$PASS,'/nfs/WWWdev/SANGER_docs/data/');
+  $db->setDomain('Gene');
 }
 
 my $ace = Ace->connect('-path', $database) or $log->log_and_die("cant open $database: $!\n");
@@ -173,6 +193,7 @@ sub merge_gene {
     if ($livegeneObj) {
       # is this a Live gene with no merge from the DEAD gene in the last Acquires_merge?
       my $status = $livegeneObj->Status->name;
+      if ($debug) {print "LIVE GENE:$livegeneObj :  ".$livegeneObj->Status->name."\n";}
       if ($status ne 'Live') {
 	$log->error("ERROR: $livegene is not a Live gene\n");
 	$ok = 0;
@@ -184,10 +205,12 @@ sub merge_gene {
 	  ($acquires_merge) = $acquires_merge_obj->row;
 	}
       }
+      unless ($override) {
       if (defined $acquires_merge && $acquires_merge eq $deadgene) {
 	$log->error("Warning: $livegene has a tag saying it has already merged with $deadgene - this merge will not be done again\n");
 	$ok = 0;
       }
+    }
 
       # get the version
       my $ver;
@@ -210,10 +233,13 @@ sub merge_gene {
     my $deadgeneObj = $ace->fetch('Gene', $deadgene);
     if ($deadgeneObj) {
       # is this a Live gene with no merge into the LIVE gene in the last Merged_into?
-      my $status = $deadgeneObj->Status->name;
-      if ($status ne 'Live') {
-	$log->error("ERROR: $deadgene is not a Live gene\n");
-	$ok = 0;
+      if ($debug) {print "DEAD GENE:$deadgeneObj :  ".$deadgeneObj->Status->name."\n";}
+      unless ($override) {
+	my $status = $deadgeneObj->Status->name;
+	if ($status ne 'Live') {
+	  $log->error("ERROR: $deadgene is not a Live gene\n");
+	  $ok = 0;
+	}
       }
       # get the last Merged_into tag
       my $merged_into;
