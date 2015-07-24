@@ -21,7 +21,7 @@ use Species;
 
 our @core_organisms=qw(Elegans Briggsae Remanei Brenneri Japonica Pristionchus Brugia Ovolvulus Sratti);
 #our @tier3_organisms=qw(Mhapla Mincognita Heterorhabditis Hcontortus Hcontortus_gasser Cangaria Tspiralis Ctropicalis Asuum Bxylophilus Csinica Loaloa Asuum_davis Panagrellus Dimmitis Namericanus Acey Tsuis_male Tsuis_female Pexspectatus);
-our @tier3_organisms=qw(Cangaria Ctropicalis Csinica Panagrellus);
+our @tier3_organisms=qw(Cangaria Ctropicalis Csinica Panagrellus Remanei_px356 Elegans_hawaii);
 
 our @provisional_organisms = qw();
 
