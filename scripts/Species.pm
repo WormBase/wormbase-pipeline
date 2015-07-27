@@ -600,7 +600,7 @@ our @ISA = qw(Species);
 sub short_name {'C. elegans'}
 sub gspecies_name{'c_elegans'}
 sub long_name{'Caenorhabditis elegans'}
-sub ncbi_tax_id {'6209'};
+sub ncbi_tax_id {'6239'};
 sub ncbi_bioproject {'PRJNA275000'};
 sub bioproject_description { 'University of Washington C. elegans CB4856 genome project' }
 sub assembly_type {'contig'};
