@@ -76,7 +76,14 @@ sub chromosome_names {
        my $species = $db->fetch(Species => $self->full_name);
        die("cannot find species ${\$self->full_name} in ${\$self->autoace}\n") unless $species;
 
-       my $assembly = $species->Assembly;
+       my $assembly;
+
+       my @assemblies = $species->Assembly;
+       while (my $a = shift @assemblies){
+	   next unless $a->Status eq 'Live';
+           my @hit = grep {$self->ncbi_bioproject eq $_} $a->DB_info->col(3);
+           $assembly = $a if $hit[0];
+       }
        my @sequences = $assembly->follow(-tag=>'Sequences');
        open (my $outf,">${\$self->common_data}/toplevel_seqs.lst") || die($!);
        map { print $outf $_->name, "\n" } @sequences;
@@ -112,6 +119,7 @@ sub mt_name {return undef}
 sub pep_prefix {return undef}
 sub wormpep_prefix {return undef}
 sub pepdir_prefix{ return undef };
+sub ncbi_bioproject{ return undef};
 
 #########################################
 #
