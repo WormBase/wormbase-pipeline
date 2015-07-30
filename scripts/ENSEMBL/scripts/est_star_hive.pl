@@ -45,7 +45,7 @@ if (!defined $SPECIES) {die "-species is not set\n"}
 my $project_dir = "/nfs/panda/ensemblgenomes/wormbase/BUILD_DATA/cDNA/$SPECIES";
 my $WORM_PACKAGES = "/nfs/panda/ensemblgenomes/wormbase/software/packages";
 my $PIPELINE_CODE_DIR = "/nfs/panda/ensemblgenomes/wormbase/software/packages/ensembl_genomes";
-my $PIPELINE_DATA_DIR = "/nfs/nobackup2/ensemblgenomes/wormbase/BUILD/EST-data/$SPECIES";
+my $PIPELINE_DATA_DIR = "/nfs/nobackup/ensemblgenomes/wormbase/BUILD/EST-data/$SPECIES";
 my $CORE_DB_NAME = "worm_ensembl_$SPECIES";
 my $DB_HOST = "mysql-wormbase-pipelines";
 my $DB_PORT = 4331;

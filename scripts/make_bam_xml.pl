@@ -111,7 +111,7 @@ my $RG_bamfile;
 
 my $db = Ace->connect(-path => $wormbase->autoace);
 
-my $dir = "/nfs/nobackup2/ensemblgenomes/wormbase/BUILD/RNASeq/$species/SRA/$srx/tophat_out";
+my $dir = "/nfs/nobackup/ensemblgenomes/wormbase/BUILD/RNASeq/$species/SRA/$srx/tophat_out";
 if (!-e $dir) {$log->log_and_die("The tophat_out directory for $srx was not found\n")}
 chdir $dir;
 

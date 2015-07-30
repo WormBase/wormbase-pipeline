@@ -156,7 +156,7 @@ sub write_proteins {
   $verbose and print STDERR "  Dumping proteins for $dbname...\n";
   
   mkpath $outdir if not -d $outdir;
-  my $fname = join(".", $species, $bioproject, $release, "proteins", "fa");
+  my $fname = join(".", $species, $bioproject, $release, "protein", "fa");
   
   &run_and_zip("$FindBin::Bin/$DUMP_TRANSCRIPTS_SCRIPT -dbname $dbname", "-pep", $outdir, $fname);
 }
@@ -217,13 +217,14 @@ sub run_and_zip {
 sub make_md5sums {
 
   my $targetdir = "$tl_out_dir/$release";
-  my $checksum_file = "$targetdir/CHECKSUMS";
+  my $checksum_file = "CHECKSUMS";
 
   my @files;
   open(FIND, "find $targetdir -name '*.*' |");
   while(<FIND>) {
     chomp;
     s/^$targetdir\///;
+    $verboase and print STDERR "Will checksum: $_\n";
     push @files, $_;
   }
 
@@ -255,7 +256,7 @@ sub make_core_symlinks {
                          "genomic_masked.fa.gz",
                          "CDS_transcripts.fa.gz", 
                          "mRNA_transcripts.fa.gz", 
-                         "proteins.fa.gz", 
+                         "protein.fa.gz", 
                          "ncRNA_transcripts.fa.gz",
                          "annotations.gff3.gz") {
       my $link_fname_dest = join(".", $ps_species_name, $bioproject, $release, $fsuffix);
