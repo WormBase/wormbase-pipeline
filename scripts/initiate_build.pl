@@ -53,11 +53,11 @@ if (-e "${\$wormbase->autoace}/database") {
 
 # update the main scripts, autoace_contig and wgf for elegans only
 if ($wormbase->species eq 'elegans') {
-  $wormbase->run_command("cd $ENV{CVS_DIR}; git pull .", $log)
+  $wormbase->run_command("cd $ENV{CVS_DIR}/..; git pull .", $log)
       and $log->log_and_die("Failed to git pull scripts dir; stopping\n");
   
   # update autoace_config in BUILD/
-  $wormbase->run_command('cd '.$wormbase->basedir.' && rm -rf autoace_config && cp -rf '.$ENV{CVS_DIR}.'/autoace_config '.$wormbase->basedir.'/autoace_config', 'no_log')
+  $wormbase->run_command('cd '.$wormbase->basedir.' && rm -rf autoace_config && cp -rf '.$ENV{CVS_DIR}.'/../autoace_config '.$wormbase->basedir.'/autoace_config', 'no_log')
       and $log->log_and_die("Failed to update autoace_config dir; stopping\n");
  
   
@@ -70,11 +70,11 @@ if ($wormbase->species eq 'elegans') {
 #################################################################################
 
 ## update the species specific wspec, wquery and autoace_config
-$wormbase->run_command('cp -rf '.$ENV{CVS_DIR}.'/wspec '.$wormbase->autoace.'/wspec', 'no_log')
+$wormbase->run_command('cp -rf '.$ENV{CVS_DIR}.'/../wspec '.$wormbase->autoace.'/wspec', 'no_log')
       and $log->log_and_die("Failed to update wspec dir; stopping\n");
-$wormbase->run_command('cp -rf '.$ENV{CVS_DIR}.'/wquery '.$wormbase->autoace.'/wquery', 'no_log')
+$wormbase->run_command('cp -rf '.$ENV{CVS_DIR}.'/../wquery '.$wormbase->autoace.'/wquery', 'no_log')
       and $log->log_and_die("Failed to update wspec dir; stopping\n");
-$wormbase->run_command('cp -rf '.$ENV{CVS_DIR}.'/autoace_config '.$wormbase->autoace.'/autoace_config', 'no_log')
+$wormbase->run_command('cp -rf '.$ENV{CVS_DIR}.'/../autoace_config '.$wormbase->autoace.'/autoace_config', 'no_log')
       and $log->log_and_die("Failed to update wspec dir; stopping\n");
 
 ## update database.wrm 
