@@ -265,28 +265,38 @@ if ($dump_modified) {
       #
       # DE
       #
-      my $de_line;
+      my @de_line;
       
       if ($species eq 'elegans') {
         if ($seqname =~ /CHROMOSOME_(\S+)/) {
           $chromosome = $1;
-          $de_line = "$full_species_name chromosome $chromosome";
+          @de_line = ("$full_species_name chromosome $chromosome");
         } elsif (!defined($clone2type->{$seqname})){
-          $de_line =  "$full_species_name clone $seqname";
+          @de_line = ("$full_species_name clone $seqname");
         } elsif (lc($clone2type->{$seqname}) eq "other") {
-          $de_line = "$full_species_name clone $seqname";
+          @de_line = ("$full_species_name clone $seqname");
         } elsif (lc($clone2type->{$seqname}) eq "yac") {
-          $de_line = "$full_species_name YAC $seqname";
+          @de_line = ("$full_species_name YAC $seqname");
         } else {
-          $de_line = "$full_species_name $clone2type->{$seqname} $seqname";
+          @de_line = ("$full_species_name $clone2type->{$seqname} $seqname");
         }
       } elsif ($species eq 'briggsae') {
-        $de_line = "$full_species_name AF16 supercontig from assembly CB4, $seqname";
+        @de_line = ("$full_species_name AF16 supercontig from assembly CB4, $seqname");
       } elsif ($species eq 'brugia'){
-        $de_line = "$full_species_name FR3 supercontig from assembly B_malayi-3.1 $seqname"
+        @de_line = ("$full_species_name FR3 supercontig from assembly B_malayi-3.1 $seqname");
+      } elsif ($species eq 'sratti') {
+        if ($seqname =~ /_chr(\S+)/) {
+          $chromosome = $1;
+          @de_line = ("$full_species_name genome assembly S_ratti_ED321, chr${chromosome}");
+        } else {
+          @de_line = ("$full_species_name genome assembly S_ratti_ED321, scaffold", 
+                      "$seqname");
+        }
       }
       
-      print $out_fh "DE   $de_line\n";
+      foreach my $de_line (@de_line) {
+        print $out_fh "DE   $de_line\n";
+      }
       $written_header = 1;
       next;
     }
@@ -365,6 +375,7 @@ if ($dump_modified) {
       next;
     } elsif (/^FT\s+(.+)/) {
       my $content = $1;
+      next if $content eq '/pseudo';
       if ($content =~ /^\/\w+=/) {
         push @{$features[-1]->{quals}}, [$content];
       } else {
@@ -471,58 +482,37 @@ sub process_feature_table {
       }
       next;
     } elsif ($feat->{ftype} =~ /RNA$/) {
-      #
-      # 1st FT line should be one of 4
-      # FT    ncRNA
-      # FT    rRNA
-      # FT    tRNA
-      # FT    misc_RNA
-      # Supported bio types for ncRNA
-      #  /ncRNA_class="antisense_RNA"
-      #  /ncRNA_class="miRNA"
-      #  /ncRNA_class="piRNA"
-      #  /ncRNA_class="scRNA"              
-      #  /ncRNA_class="siRNA"
-      #  /ncRNA_class="snoRNA"
-      #  /ncRNA_class="snRNA"
-      #  /ncRNA_class="other"
-      # Nothing else counts
-
       my $mod_dir = $feat->{ftype};
-      my ($rna_class, $rna_note);
+      my ($rna_class, $rna_product);
 
       if ($mod_dir eq 'antisense_RNA' or
           $mod_dir eq 'miRNA' or
           $mod_dir eq 'piRNA' or
           $mod_dir eq 'scRNA' or
-          $mod_dir eq 'siRNA' or 
-          $mod_dir eq 'snoRNA' or 
+          $mod_dir eq 'siRNA' or
+          $mod_dir eq 'snoRNA' or
           $mod_dir eq 'snRNA') {
         $rna_class = $mod_dir;
         $mod_dir = 'ncRNA';
+      } elsif ($mod_dir eq 'lincRNA') {
+        $rna_class = "lncRNA";
+        $mod_dir = "ncRNA";
       } elsif ($mod_dir eq 'ncRNA') {
-        $rna_class = 'other';
+        $rna_class = 'other';        
       } elsif ($mod_dir eq 'tRNA' or  
                $mod_dir eq 'rRNA' or
                $mod_dir eq 'misc_RNA' or
                $mod_dir eq 'precursor_RNA' or
                $mod_dir eq 'prim_transcript') {
-        # no class, do nothing
+        # no class
       } else {
-        # for all other RNA types, pass them through as
-        # ncRNA/other, but record the type in a note
-        $rna_class = ($mod_dir eq 'lincRNA')? "lncRNA" : "other";
-        $rna_note = "biotype:$mod_dir";
-        $mod_dir = "ncRNA";
+        $log->log_and_die("Unexpected feature type " . $feat->{ftype});
       }
 
       if (defined $rna_class) {
         $feat->{rna_class} = $rna_class;
         push @{$feat->{quals}}, ["/ncRNA_class=\"$rna_class\""];
       } 
-      if (defined $rna_note) {
-        $feat->{rna_note} = $rna_note;
-      }
       $feat->{ftype} = $mod_dir;
 
     } elsif ($feat->{ftype} =~ /(\S+)_Pseudogene/) {
@@ -589,62 +579,55 @@ sub process_feature_table {
           # new guidelines from ENA/UniProt; do not put gene name
           # in product qualifier. Default to Uncharacterized protein
           $prod_name = "Uncharacterized protein";
-
-          #if (exists $gene2cgcname->{$wb_geneid}) {
-          #  $prod_name .= " " . uc($gene2cgcname->{$wb_geneid});
-          #}
-
-          # The following is odd, but it is what UniProt wanted...
-          #my $isoform_suf;
-          #if ($wb_isoform_name =~ /^$gseq_name(.+)$/) {
-          #  $isoform_suf = $1;
-          #}          
-          #if (defined $isoform_suf) {
-          #  $prod_name .= " (isoform $isoform_suf)";
-          #}
         }
       }
     } elsif ($feat->{ftype} eq 'mRNA') {
-      my $isoform_suf;
-      if ($wb_isoform_name =~ /^$gseq_name(.+)$/) {
-        $isoform_suf = $1;
-        $isoform_suf =~ s/^\.//;
-      }
-      if ($gene2cgcname->{$wb_geneid}) {
-        $prod_name = uc($gene2cgcname->{$wb_geneid});
-      }
-      $prod_name .= " primary transcript";
-      if ($isoform_suf) {
-        $prod_name .= " $isoform_suf";
-      }
-      
+      # unclear what product should be for mRNAs. Defer for now
     } elsif ($feat->{ftype} eq 'misc_RNA') {
-      if ($gene2cgcname->{$wb_geneid}) {
-        $prod_name = $gene2cgcname->{$wb_geneid};
-      } else {
-        $prod_name = $gseq_name;
-      }
-      $prod_name = "Non-coding transcript of $prod_name";
-    } elsif ($feat->{ftype} =~ /RNA/) {
+      $prod_name = "Non-coding transcript of protein-coding gene";
+    } elsif ($feat->{ftype} =~ /RNA/) {      
       # note that prim_transcript will not match this, but this is fine
       # because prim_transcript features are not allowed to have a product
       my $pname = ($gene2cgcname->{$wb_geneid}) ? $gene2cgcname->{$wb_geneid} : $wb_isoform_name;
-
-      if ($feat->{ftype} eq 'precursor_RNA') {
-        $prod_name = "microRNA $pname precursor";
-      } elsif (($feat->{ftype} eq 'tRNA' or $feat->{ftype} eq 'rRNA') and not $feat->{is_pseudo}) {
+      
+      if ($feat->{ftype} eq 'rRNA' or $feat->{ftype} eq 'tRNA') {
         if ($trans2briefid_h->{$wb_isoform_name}) {
           $prod_name = $trans2briefid_h->{$wb_isoform_name};
         } else {
-          $prod_name = $wb_isoform_name;
+          $prod_name = $feat->{type};
         }
-      } elsif (exists $feat->{rna_class} and $feat->{rna_class} eq 'miRNA') {
-        $prod_name = "microRNA $pname";
-        if ($wb_isoform_name =~ /([ab])$/) {
-          $prod_name .= " ($1)";
+        if ($feat->{is_pseudo}) {
+          $prod_name .= " pseudogene";
+        }        
+      } elsif ($feat->{ftype} eq 'precursor_RNA') {
+        $prod_name = "microRNA $pname precursor";
+      } elsif (exists $feat->{rna_class}) {
+        my $rclass = $feat->{rna_class};
+        if ($rclass eq 'miRNA') {
+          $prod_name = "microRNA $pname";
+          if ($wb_isoform_name =~ /([ab])$/) {
+            $prod_name .= " ($1)";
+          }
+        } elsif ($rclass  eq 'antisense_RNA') {
+          $prod_name = "antisense RNA";
+        } elsif ($rclass eq 'piRNA') {
+          $prod_name = "piwi-interacting RNA";
+        } elsif ($rclass eq 'scRNA') {
+          $prod_name = "small cytoplasmic RNA";
+        } elsif ($rclass eq 'siRNA') {
+          $prod_name = "small interfering RNA";
+        } elsif ($rclass eq 'snoRNA') {
+          $prod_name = "small nucleolar RNA";
+        } elsif ($rclass eq 'snRNA') {
+          $prod_name = "small nuclear RNA";
+        } elsif ($rclass eq 'lincRNA') {
+          $prod_name = "long non-coding RNA";
+        } else {
+          $prod_name = "Unclassified non-coding RNA";
         }
+        $prod_name .= " $pname";
       } else {
-        $prod_name = "RNA transcript $pname";
+        $prod_name = "Unclassified non-coding RNA $pname";
       }
     }
     $product_qual = ["/product=\"$prod_name\""] if $prod_name;
@@ -742,18 +725,19 @@ sub process_feature_table {
     } elsif ($feat->{ftype} eq 'ncRNA' and 
              $feat->{rna_class} eq 'other') { 
       
-      # We can only have one note for ncRNA features
-      if ($feat->{rna_note}) {
-        push @{$revised_quals{note}}, ["/note=\"$feat->{rna_note}\""];
-      } elsif (exists $trans2type_h->{$wb_isoform_name} and 
-          exists $trans2type_h->{$wb_isoform_name}->{note} and
-          $trans2type_h->{$wb_isoform_name}->{note} ) {
-        my $type_rna_note = $trans2type_h->{$wb_isoform_name}->{note};
-        push @{$revised_quals{note}}, ["/note=\"$type_rna_note\""];
-      } elsif ($trans2briefid_h->{$wb_isoform_name} and 
-          $trans2briefid_h->{$wb_isoform_name} ne "ncRNA") {
-        my $bid_rna_note = $trans2briefid_h->{$wb_isoform_name};
-        push @{$revised_quals{note}}, ["/note=\"$bid_rna_note\""];
+      # The following will work once Brief_identification and
+      # RNA type remarks have been cleaned up. Until then, disabled. 
+      if (0) {
+        if (exists $trans2type_h->{$wb_isoform_name} and 
+            exists $trans2type_h->{$wb_isoform_name}->{note} and
+            $trans2type_h->{$wb_isoform_name}->{note} ) {
+          my $type_rna_note = $trans2type_h->{$wb_isoform_name}->{note};
+          push @{$revised_quals{note}}, ["/note=\"$type_rna_note\""];
+        } elsif ($trans2briefid_h->{$wb_isoform_name} and 
+                 $trans2briefid_h->{$wb_isoform_name} ne "ncRNA") {
+          my $bid_rna_note = $trans2briefid_h->{$wb_isoform_name};
+          push @{$revised_quals{note}}, ["/note=\"$bid_rna_note\""];
+        }
       }
     }
     
@@ -1382,6 +1366,7 @@ sub fetch_transcript2type {
     my $command = "Table-maker -p $query\nquit\n";
     open(TACE, "echo '$command' | $tace $ref_db |");
     while(<TACE>) {
+      print STDERR $_;
       chomp;
       s/\"//g;
       my ($obj, $type, $other_comment) = split(/\t/, $_);
@@ -1390,6 +1375,7 @@ sub fetch_transcript2type {
         $tran2type{$obj}->{type} = $type;
         if ($other_comment) {
           $other_comment =~ s/\\//g;
+          print STDERR "Captured comment for $obj ($type) : $other_comment\n";
           $tran2type{$obj}->{note} = $other_comment;
         }
       }
@@ -1678,7 +1664,7 @@ sub get_ncrna_type_query {
       $log->log_and_die("Could not open $tmdef for writing\n");  
 
 
-  my $condition = "Condition Live AND Species = \"$full_species_name\"";
+  my $condition = "Condition Species = \"$full_species_name\"";
   if ($single) {
     $condition .= " AND Sequence = \"$single\""
   }
@@ -1737,13 +1723,7 @@ sub get_gene_name_query {
       $log->log_and_die("Could not open $tmdef for writing\n");  
 
 
-  my $condition = "Condition Live AND Species = \"$full_species_name\"";
-  if ($single) {
-    $condition .= " AND Sequence = \"$single\"";
-  } else {
-    $condition .= " AND Sequence";
-  }
-
+  my $condition = "Condition Live AND Species = \"$full_species_name\" AND Sequence_name";
   my $gname_query = <<"EOF";
 
 Sortcolumn 1
