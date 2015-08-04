@@ -133,7 +133,7 @@ $db->close();
 
 if (not $noload) {
   $log->write_to("Loading new mappings...\n");
-  $wormbase->load_to_database($database, $acefile, "move_to_toplevel");
+  $wormbase->load_to_database($database, $acefile, "move_to_toplevel", $log);
 }
 
 $log->mail();
