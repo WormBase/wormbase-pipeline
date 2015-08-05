@@ -37,7 +37,7 @@ my (
   %results,
     );
 
-$min_overlap = 30;
+$min_overlap = 50;
 
 GetOptions(
   "debug=s"       => \$debug,
