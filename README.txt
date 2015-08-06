@@ -1,6 +1,7 @@
 Git Branch of the WormBase pipeline code
-* used mainly to allow distributed access and contributions  to the source code
-* is planned to mirror the CVS version by daily syncs
+
+This is the main source repository of the WormBase codebase of the Hinxton team of WormBase.
+The main purpose of the code is to build and process data in order to release a final database.
 
 Main Project Site:
 http://www.wormbase.org
