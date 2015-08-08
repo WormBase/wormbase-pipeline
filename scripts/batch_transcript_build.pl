@@ -139,7 +139,7 @@ if (not $no_load) {
   $wormbase->run_script("dump_gff_batch.pl -method Coding_transcript", $log);
 
   $log->write_to("Creating Coding_transcript fasta file\n");
-  $wormbase->run_script("fasta_dumper.pl -method Coding_transcript -class Transcript -gene", $log);
+  $wormbase->run_script("fasta_dumper.pl", $log);
   $wormbase->run_command("gzip -9 ".$wormbase->sequences."/coding_transcripts.dna",$log);
 
   $log->write_to("Updating common data\n");
