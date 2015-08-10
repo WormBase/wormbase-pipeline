@@ -48,8 +48,8 @@ my ($test,
     $sequencelevel,
     $agp_file,
     $clone2type, $gene2cgcname, $gene2gseqname, $trans2gene, $clone2dbid, $multi_gene_loci, $seleno_prots,
-    $cds2proteinid_db, $cds2status_db, $trans2dbremark_db, $trans2briefid_db, $decorations_db,
-    $cds2status_h, $cds2proteinid_h,  $trans2dbremark_h, $trans2type_h, $trans2briefid_h,
+    $cds2proteinid_db, $cds2status_db, $trans2dbremark_db, $decorations_db,
+    $cds2status_h, $cds2proteinid_h,  $trans2dbremark_h, $trans2briefid_h, $trans2type_h, $gclass2desc_h,
     $agp_segs,
     %additional_qualifiers,
     );
@@ -68,7 +68,6 @@ GetOptions (
   "piddb=s"         => \$cds2proteinid_db,
   "dbremarkdb=s"    => \$trans2dbremark_db,
   "cdsstatusdb=s"   => \$cds2status_db,
-  "briefiddb=s"     => \$trans2briefid_db,
   "modprivate=s"    => \$private,
   "moddumpfile:s"   => \$mod_dump_file,
   "rawdumpfile:s"   => \$raw_dump_file,
@@ -102,7 +101,6 @@ $decorations_db =  $wormbase->database('current') if not defined $decorations_db
 $cds2proteinid_db = $decorations_db if not defined $cds2proteinid_db;
 $cds2status_db = $decorations_db if not defined $cds2status_db;
 $trans2dbremark_db = $decorations_db if not defined $trans2dbremark_db;
-$trans2briefid_db = $decorations_db if not defined $trans2briefid_db;
 
 ###############################
 # misc. variables             #
@@ -179,16 +177,17 @@ if ($dump_modified) {
     $multi_gene_loci = &get_multi_gene_loci($gene2gseqname);
     
     $trans2type_h = &fetch_transcript2type($dbdir);
-    
+    $gclass2desc_h = &fetch_geneclass2desc($dbdir);
+    $trans2briefid_h = &fetch_transcript2briefid($dbdir);
+    $seleno_prots = &fetch_selenoproteins($dbdir);
+
     # Some information is not yet available in autoace (too early in the build)
     # By default, pull cds2status, trans2dbremark and protein_ids from current_DB,
     # however, allow command-line override when necessary
     $cds2status_h = &fetch_cds2status($cds2status_db);
     $cds2proteinid_h = &fetch_cds2proteinid($cds2proteinid_db);
     $trans2dbremark_h = &fetch_trans2dbremark($trans2dbremark_db);
-    $trans2briefid_h = &fetch_transcript2briefid($trans2briefid_db);
-    
-    $seleno_prots = &fetch_selenoproteins($dbdir);
+   
   }
 
   if (not defined $mod_dump_file) {
@@ -209,7 +208,7 @@ if ($dump_modified) {
     # Store the necessary default ID line elements ready for use in the new style EMBL ID lines.
     if(/^ID\s+(\S+)\s+\S+\s+\S+\s+\S+\s+(\d+)\s+\S+/){
       ($seqname, $seqlen) = ($1, $2);
-      $idline_suffix = sprintf("SV XXX; linear; genomic DNA; %s; INV; $seqlen BP.", ($sequencelevel) ? "STD" : "CON");;
+      $idline_suffix = sprintf("SV XXX; linear; genomic DNA; %s; INV; $seqlen BP.", ($sequencelevel) ? "STD" : "CON");
       @accs = ();
       @features = ();
       $written_header = 0;
@@ -483,7 +482,7 @@ sub process_feature_table {
       next;
     } elsif ($feat->{ftype} =~ /RNA$/) {
       my $mod_dir = $feat->{ftype};
-      my ($rna_class, $rna_product);
+      my ($rna_class);
 
       if ($mod_dir eq 'antisense_RNA' or
           $mod_dir eq 'miRNA' or
@@ -568,69 +567,126 @@ sub process_feature_table {
     #
     # /product
     #
-    my $prod_name = "";
+    my ($prod_name, $class_based_name, @prod_notes);
     if ($feat->{ftype} eq 'CDS') {
       if (exists $trans2briefid_h->{$wb_isoform_name}) {
         $prod_name = $trans2briefid_h->{$wb_isoform_name};
+      } elsif (exists $gene2cgcname->{$wb_geneid}) {
+        my $gclass = $gene2cgcname->{$wb_geneid};
+        $gclass =~ s/-[^-]+$//;
+        if (exists $gclass2desc_h->{$gclass}) {
+          $prod_name = $gclass2desc_h->{$gclass};
+          $prod_name =~ s/\\//g; 
+          if ($feat->{is_pseudo}) {
+            $prod_name .= " pseudogene";
+          }
+          $class_based_name = $gclass;
+        }
+      } 
+      if ($feat->{is_pseudo}) {
+        if (defined $prod_name) {
+        # no product allowed for pseudogenes; add them as a note
+          push @prod_notes, $prod_name;
+          undef $prod_name;
+        }
       } else {
-        if ($feat->{is_pseudo}) {
-          $prod_name = "Pseudogenic transcript $wb_isoform_name";
-        } else {     
-          # new guidelines from ENA/UniProt; do not put gene name
-          # in product qualifier. Default to Uncharacterized protein
+        if (defined $prod_name) {
+          if ($class_based_name) {
+            push @prod_notes, "Product from WormBase gene class $class_based_name";
+          }
+        } else {
           $prod_name = "Uncharacterized protein";
         }
       }
+      #if ($trans2dbremark_h->{$wb_isoform_name}) {
+      #  my $rem = sprintf("%s", $trans2dbremark_h->{$wb_isoform_name});
+      #  $rem =~ s/\s+/ /g;
+      #  push @prod_notes, $rem;
+      #}
     } elsif ($feat->{ftype} eq 'mRNA') {
       # unclear what product should be for mRNAs. Defer for now
-    } elsif ($feat->{ftype} eq 'misc_RNA') {
-      $prod_name = "Non-coding transcript of protein-coding gene";
     } elsif ($feat->{ftype} =~ /RNA/) {      
       # note that prim_transcript will not match this, but this is fine
       # because prim_transcript features are not allowed to have a product
       my $pname = ($gene2cgcname->{$wb_geneid}) ? $gene2cgcname->{$wb_geneid} : $wb_isoform_name;
+      my $unclassified = 0;
       
-      if ($feat->{ftype} eq 'rRNA' or $feat->{ftype} eq 'tRNA') {
+      if ($feat->{ftype} eq 'misc_RNA') {
+        $prod_name = "Non-coding transcript of protein-coding gene $pname";
+      } elsif ($feat->{ftype} eq 'rRNA' or $feat->{ftype} eq 'tRNA') {
         if ($trans2briefid_h->{$wb_isoform_name}) {
           $prod_name = $trans2briefid_h->{$wb_isoform_name};
         } else {
-          $prod_name = $feat->{type};
+          $prod_name = $feat->{ftype};
         }
         if ($feat->{is_pseudo}) {
           $prod_name .= " pseudogene";
+          push @prod_notes, $prod_name;
+          undef $prod_name;
         }        
       } elsif ($feat->{ftype} eq 'precursor_RNA') {
-        $prod_name = "microRNA $pname precursor";
+        $prod_name = "pre-microRNA $pname";
       } elsif (exists $feat->{rna_class}) {
         my $rclass = $feat->{rna_class};
         if ($rclass eq 'miRNA') {
-          $prod_name = "microRNA $pname";
           if ($wb_isoform_name =~ /([ab])$/) {
-            $prod_name .= " ($1)";
+            $pname .= ",$1";
           }
+          $prod_name = "microRNA $pname";
         } elsif ($rclass  eq 'antisense_RNA') {
-          $prod_name = "antisense RNA";
+          $prod_name = "antisense RNA $pname";
         } elsif ($rclass eq 'piRNA') {
-          $prod_name = "piwi-interacting RNA";
+          $prod_name = "piwi-interacting RNA $pname";
         } elsif ($rclass eq 'scRNA') {
-          $prod_name = "small cytoplasmic RNA";
+          $prod_name = "small cytoplasmic RNA $pname";
         } elsif ($rclass eq 'siRNA') {
-          $prod_name = "small interfering RNA";
+          $prod_name = "small interfering RNA $pname";
         } elsif ($rclass eq 'snoRNA') {
-          $prod_name = "small nucleolar RNA";
+          $prod_name = "small nucleolar RNA $pname";
         } elsif ($rclass eq 'snRNA') {
-          $prod_name = "small nuclear RNA";
+          $prod_name = "small nuclear RNA $pname";
         } elsif ($rclass eq 'lincRNA') {
-          $prod_name = "long non-coding RNA";
+          $prod_name = "long non-coding RNA $pname";
         } else {
-          $prod_name = "Unclassified non-coding RNA";
+          $prod_name = "Unclassified non-coding RNA $pname";
+          $unclassified = 1;
         }
-        $prod_name .= " $pname";
       } else {
         $prod_name = "Unclassified non-coding RNA $pname";
+        $unclassified = 1;
+      }
+      
+      # The following will work once Brief_identification and
+      # RNA type remarks have been cleaned up. Until then, disabled. 
+      if ($unclassified and 0) {
+        if (exists $trans2type_h->{$wb_isoform_name} and 
+            exists $trans2type_h->{$wb_isoform_name}->{note} and
+            $trans2type_h->{$wb_isoform_name}->{note} ) {
+          my $type_rna_note = $trans2type_h->{$wb_isoform_name}->{note};
+          push @{$revised_quals{note}}, ["/note=\"$type_rna_note\""];
+          push @prod_notes, $type_rna_note;
+        } elsif ($trans2briefid_h->{$wb_isoform_name} and 
+                 $trans2briefid_h->{$wb_isoform_name} ne "ncRNA") {
+          my $bid_rna_note = $trans2briefid_h->{$wb_isoform_name};
+          push @prod_notes, $bid_rna_note;
+        }
+      }
+
+    }
+    $product_qual = [];
+    if ($prod_name) {
+      my $prod_line = "/product=\"$prod_name\"";
+      my @wl =  split(/\n/, wrap('','',$prod_line));
+      push @$product_qual, @wl;
+    }
+    if (@prod_notes) {
+      foreach my $note (@prod_notes) {
+        my $note_line = "/note=\"$note\"";
+        my @wl2 = split(/\n/, wrap('','',$note_line));
+        
+        push @$product_qual, @wl2;
       }
     }
-    $product_qual = ["/product=\"$prod_name\""] if $prod_name;
 
     #
     # /protein_id and prediction_status notes
@@ -711,36 +767,6 @@ sub process_feature_table {
         }
       }
     }
-
-    if ($feat->{ftype} eq 'CDS') {      
-      if ($trans2dbremark_h->{$wb_isoform_name}) {
-        my $rem = sprintf("%s", $trans2dbremark_h->{$wb_isoform_name});
-        $rem =~ s/\s+/ /g;
-        
-        my $rem_line = "/note=\"$rem\"";
-        my @wl = split(/\n/, wrap('','',$rem_line));
-        
-        push @{$revised_quals{note}}, \@wl;
-      }
-    } elsif ($feat->{ftype} eq 'ncRNA' and 
-             $feat->{rna_class} eq 'other') { 
-      
-      # The following will work once Brief_identification and
-      # RNA type remarks have been cleaned up. Until then, disabled. 
-      if (0) {
-        if (exists $trans2type_h->{$wb_isoform_name} and 
-            exists $trans2type_h->{$wb_isoform_name}->{note} and
-            $trans2type_h->{$wb_isoform_name}->{note} ) {
-          my $type_rna_note = $trans2type_h->{$wb_isoform_name}->{note};
-          push @{$revised_quals{note}}, ["/note=\"$type_rna_note\""];
-        } elsif ($trans2briefid_h->{$wb_isoform_name} and 
-                 $trans2briefid_h->{$wb_isoform_name} ne "ncRNA") {
-          my $bid_rna_note = $trans2briefid_h->{$wb_isoform_name};
-          push @{$revised_quals{note}}, ["/note=\"$bid_rna_note\""];
-        }
-      }
-    }
-    
 
     #
     # Finally, print them all out in a consistent sensible order
@@ -1206,25 +1232,13 @@ sub fetch_selenoproteins {
 
 ################################
 sub fetch_gene2names {
-  my ($db) = @_;
+  my ($ref_db) = @_;
 
   my (%gene2cgc, %gene2gseqname);
   
-  if (not $quicktest and -d $db) {
-
-    $log->write_to("You are using $db to get gene names\n");
-
-    my $query = &get_gene_name_query();
-    my $command = "Table-maker -p $query\nquit\n";
-    open(TACE, "echo '$command' | $tace $db |");
-    while(<TACE>) {
-      chomp;
-      s/\"//g;
-      next if /^acedb/;
-      next if /^\/\//;
-      next if not /\S/;
-
-      my ($gene, $cgc_name, $gseqname) = split(/\t/, $_);
+  if (not $quicktest and -d $ref_db) {
+    foreach my $aref (&_run_table_maker($ref_db, &get_gene_name_query() )) {
+      my ($gene, $cgc_name, $gseqname) = @$aref;
 
       $log->log_and_die("Could not get gseqname for $gene\n") if not $gseqname;
       
@@ -1233,7 +1247,6 @@ sub fetch_gene2names {
         $gene2gseqname{$gene} = $gseqname if $gseqname;
       }
     }
-    unlink $query;
   }
 
   return (\%gene2cgc, \%gene2gseqname);
@@ -1251,23 +1264,10 @@ sub fetch_cds2status {
   }
 
   if (-d $ref_db) {
-
-    $log->write_to("You are using $ref_db to get CDS status\n");
-    
-    my $query = &get_status_query();
-    my $command = "Table-maker -p $query\nquit\n";
-    
-    open (TACE, "echo '$command' | $tace $ref_db |");
-    while (<TACE>) {
-      chomp;
-      s/\"//g;
-      next unless (/^([A-Z,0-9,.]+?\w)\s+(\w+)/) ;
-      my ($cds, $status) = ($1, $2);
+    foreach my $aref (&_run_table_maker($ref_db, &get_status_query())) {
+      my ($cds, $status) = @$aref;
       $cds2status{$cds} = $status;
     }
-    close TACE;
-
-    unlink $query;
   } elsif (lc($ref_db) eq 'none') {
     $log->write_to("You have specifed 'none' for the cds2status db, so will not be added\n");
   } else {
@@ -1288,22 +1288,10 @@ sub fetch_cds2proteinid {
   }
 
   if (-d $ref_db) {
-    $log->write_to("You are using $ref_db to get CDS protein_id\n");
-    
-    my $query = &get_protein_id_query();
-    my $command = "Table-maker -p $query\nquit\n";
-    open(TACE, "echo '$command' | $tace $ref_db |");
-    while(<TACE>) {
-      chomp;
-      s/\"//g;
-      if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\d+)$/) {
-        my ($cds, $seqname, $protein_id, $version) = ($1, $2, $3, $4);
-        $cds2proteinid{$cds}->{$seqname} = "${protein_id}.${version}";
-      }   
+    foreach my $aref (&_run_table_maker($ref_db,&get_protein_id_query() )) {
+      my ($cds, $seqname, $protein_id, $version) = @$aref;
+      $cds2proteinid{$cds}->{$seqname} = "${protein_id}.${version}";
     }
-    close(TACE);
-    
-    unlink $query;
   } elsif (lc($ref_db) eq 'none') {
     $log->write_to("You have specifed 'none' for the cds2protein_id db, so will not be added\n");
   } else {
@@ -1324,25 +1312,13 @@ sub fetch_trans2dbremark {
   }
 
   if (-d $ref_db) {
-    $log->write_to("You are using $ref_db to get CDS/Transcript db_remarks\n");
-    
-    my @qfiles;
     foreach my $class ("CDS", "Transcript") {
-      my $query = &get_db_remark_query($class);
-      push @qfiles, $query;
-      my $command = "Table-maker -p $query\nquit\n";
-      open(TACE, "echo '$command' | $tace $ref_db |");
-      while(<TACE>) {
-        chomp;
-        if (/^\"(\S+)\"\s+\"(.+)\"$/) {
-          my ($obj, $dbremark) = ($1, $2);
-          $dbremark =~ s/\\//g;
-          $trans2dbremark{$obj} = $dbremark;
-        }
+      foreach my $aref (&_run_table_maker($ref_db, &get_db_remark_query($class))) {
+        my ($obj, $dbremark) = @$aref;
+        $dbremark =~ s/\\//g;
+        $trans2dbremark{$obj} = $dbremark;
       }
     }
-    
-    unlink @qfiles;
   } elsif (lc($ref_db) eq 'none') {
     $log->write_to("You have specifed 'none' for the trans2dbremark db, so will not be added\n");
   } else {
@@ -1360,28 +1336,18 @@ sub fetch_transcript2type {
   my %tran2type;
 
   if (not $quicktest and -d $ref_db) {
-    $log->write_to("You are using $ref_db to get Transcript types\n");
-    
-    my $query = &get_ncrna_type_query();
-    my $command = "Table-maker -p $query\nquit\n";
-    open(TACE, "echo '$command' | $tace $ref_db |");
-    while(<TACE>) {
-      print STDERR $_;
-      chomp;
-      s/\"//g;
-      my ($obj, $type, $other_comment) = split(/\t/, $_);
+    foreach my $aref (&_run_table_maker($ref_db, &get_ncrna_type_query())) {
+      my ($obj, $type, $other_comment) = @$aref;
 
       if ($type) {
         $tran2type{$obj}->{type} = $type;
         if ($other_comment) {
           $other_comment =~ s/\\//g;
-          print STDERR "Captured comment for $obj ($type) : $other_comment\n";
           $tran2type{$obj}->{note} = $other_comment;
         }
       }
     }
-    unlink $query;
-  }
+  } 
 
   return \%tran2type;
 
@@ -1394,17 +1360,9 @@ sub fetch_transcript2briefid {
   my (%res, %tran2briefid);
 
   if (not $quicktest and -d $ref_db) {
-    $log->write_to("You are using $ref_db to get CDS/Transcript Brief_identification\n");
-    
     foreach my $class ("CDS", "Transcript", "Pseudogene") {
-      my $query = &get_brief_id_query($class);
-      my $command = "Table-maker -p $query\nquit\n";
-      open(TACE, "echo '$command' | $tace $ref_db |");
-      while(<TACE>) {
-        chomp;
-        next if not /^\"\S+\"/;
-        s/\"//g; 
-        my ($obj, $brief_id, $evi_database) = split(/\t/, $_);
+      foreach my $aref (&_run_table_maker($ref_db, &get_brief_id_query($class) )) {
+        my ($obj, $brief_id, $evi_database) = @$aref;
 
         if (not $evi_database) {
           $evi_database = "no_evidence";
@@ -1412,12 +1370,11 @@ sub fetch_transcript2briefid {
         
         $brief_id =~ s/C\. elegans //; 
         $brief_id =~ s/\\//g; 
-
+        
         next if $brief_id =~ /^Uncharacterized protein/;
-
+        
         $res{$class}->{$obj}->{lc($evi_database)} = $brief_id;
       }
-      unlink $query;
     }
   }
 
@@ -1439,6 +1396,48 @@ sub fetch_transcript2briefid {
   return \%tran2briefid;
 }
 
+
+########################
+sub fetch_geneclass2desc {
+  my ($ref_db) = @_;
+
+  #
+  # These are ones that we do not want to use as product names, 
+  # because they are uninformative (e.g. tag) or based mutant-phenotype
+  # (e.g. unc). There will be others, but these are the big hitters in
+  # terms of gen numbers. 
+  #
+  my @blacklist = (
+    "age",
+    "tag",
+    "unc",
+    "eat",
+    "egl",
+    "lin",
+    "pfk",
+    "pfkb",
+      );
+
+  my %class2desc;
+
+  if (not $quicktest and -d $ref_db) {
+    foreach my $aref (&_run_table_maker($ref_db, &get_gene_class_query())) {
+      my ($gclass, $desc) = @$aref;
+
+      next if grep { $gclass eq $_ } @blacklist;
+      next if $desc =~ /abnormal/i;
+      next if $desc =~ /defective/i;
+      next if $desc =~ /sensitiv/i;
+      next if $desc =~ /lethal/i;
+      next if $desc =~ /resist/i;
+
+      $class2desc{$gclass} = $desc;
+    }
+  }
+
+  return \%class2desc;
+
+}
 
 
 ########################
@@ -1492,9 +1491,9 @@ sub get_brief_id_query {
   open my $qfh, ">$tmdef" or 
       $log->log_and_die("Could not open $tmdef for writing\n");
 
-  my $condition = "";
+  my $condition = "Condition Method";
   if ($single) {
-    $condition = "Condition Sequence = \"$single\""
+    $condition .= " AND Sequence = \"$single\""
   }
 
   my $briefid_tablemaker_query = <<"EOF";
@@ -1608,7 +1607,7 @@ EOF
 ##########################
 sub get_status_query {
 
-  my $tmdef = "/tmp/status_tmquery.$$.def";
+  my $tmdef = "/tmp/cdsstatus_tmquery.$$.def";
   open my $qfh, ">$tmdef" or 
       $log->log_and_die("Could not open $tmdef for writing\n");  
 
@@ -1764,6 +1763,70 @@ EOF
   
 }
 
+####################################
+sub get_gene_class_query {
+
+  my $tmdef = "/tmp/gclass_tmquery.$$.def";
+  open my $qfh, ">$tmdef" or 
+      $log->log_and_die("Could not open $tmdef for writing\n");  
+
+
+  my $gclass_query = <<"EOF";
+
+Sortcolumn 1
+
+Colonne 1 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Gene_class
+From 1 
+ 
+Colonne 2 
+Width 12 
+Mandatory 
+Visible 
+Class 
+Class Text 
+From 1 
+Tag Description
+ 
+EOF
+ 
+  print $qfh $gclass_query;
+  close($qfh);
+
+  return $tmdef;
+
+}
+
+
+##############################################
+sub _run_table_maker {
+  my ($ref_db, $def_file) = @_;
+
+  $log->write_to("Running table-maker on $ref_db with $def_file\n");
+
+  my $command = "Table-maker -p $def_file\nquit\n";
+  open(my $tacefh, "echo '$command' | $tace $ref_db |");
+
+  my @res;
+  while(<$tacefh>) {
+    chomp;
+    s/\"//g;
+    next if /^acedb/;
+    next if /^\/\//;
+    next if not /\S/;
+    
+    my @line = split(/\t/, $_);
+
+    push @res, \@line;
+  }
+
+  unlink $def_file;
+  return @res;
+}
 
 
 __END__
