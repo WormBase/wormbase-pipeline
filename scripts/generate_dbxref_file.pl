@@ -21,6 +21,7 @@
 use strict;
 use Getopt::Long;
 use Storable;
+use Net::FTP;
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -34,6 +35,7 @@ my ($test,
     $outfile,
     $no_header,
     $no_coding_transcripts,
+    $ena_upload,
     );
 
 GetOptions (
@@ -45,6 +47,7 @@ GetOptions (
   "outfile:s"       => \$outfile,
   "noheader"        => \$no_header,
   "nocodingtrans"   => \$no_coding_transcripts,
+  "enaupload"       => \$ena_upload,
     );
 
 
@@ -67,19 +70,37 @@ my $tace = $wormbase->tace;
 my $full_species_name = $wormbase->full_name;
 my $wormbase_version = $wormbase->get_wormbase_version_name;
 my $dbdir = ($database) ? $database : $wormbase->autoace;
-$outfile = $wormbase->acefiles . "/DBXREFs.txt" if not defined $outfile;
+if (not defined $outfile) {
+  if ($ena_upload) {
+    $outfile = $wormbase->acefiles . "/wormbase_xrefs." .$wormbase->get_wormbase_version_name . ".txt.gz";
+  } else {
+    $outfile = $wormbase->acefiles . "/DBXREFs.txt";
+  }
+}
 
 my (%wbgene, %gene, %cds, %transcds,%clone2acc, $out_fh);
 
-$wormbase->FetchData('clone2accession', \%clone2acc, "$dbdir/COMMON_DATA");
+$log->write_to("Generating sequence accession table\n");
+
+my $query = &generate_accession_query();
+my $command = "Table-maker -p $query\nquit\n";
+open(my $tacefh,  "echo '$command' | $tace $dbdir |");
+while(<$tacefh>) {
+  chomp; s/\"//g;
+  my ($seq_name, $accession) = split(/\t/, $_);
+  next if not defined $accession;
+  $clone2acc{$seq_name} = $accession;
+}
+close($tacefh) or $log->log_and_die("Could not close tace TM query\n");
+unlink($query);
 
 $log->write_to("Generating protein-coding table\n");
 
-my $query = &generate_coding_query($full_species_name);
-my $command = "Table-maker -p $query\nquit\n";
+$query = &generate_coding_query($full_species_name);
+$command = "Table-maker -p $query\nquit\n";
 
-open (TACE, "echo '$command' | $tace $dbdir |");
-while (<TACE>) {
+open ($tacefh, "echo '$command' | $tace $dbdir |");
+while (<$tacefh>) {
   chomp; s/\"//g;
 
   my ($cds, $gene, $trans, $prot, $clone, $pid, $pid_version, $uniprot ) = split(/\t/, $_);
@@ -103,7 +124,7 @@ while (<TACE>) {
   $cds{$cds}->{uniprot} = $uniprot if $uniprot;
 
 }
-close TACE;
+close($tacefh) or $log->log_and_die("Could not cleanly close tace TM query\n");
 unlink $query;
 
 foreach my $class ('Transcript', 'Pseudogene') {
@@ -111,8 +132,8 @@ foreach my $class ('Transcript', 'Pseudogene') {
 
   $query = &generate_noncoding_query($full_species_name, $class);
   $command = "Table-maker -p $query\nquit\n";
-  open (TACE, "echo '$command' | $tace $dbdir |");
-  while (<TACE>) {
+  open (my $tacefh, "echo '$command' | $tace $dbdir |");
+  while (<$tacefh>) {
     chomp; s/\"//g;
     
     my ($trans, $gene, $parent ) = split(/\t/, $_);
@@ -121,7 +142,7 @@ foreach my $class ('Transcript', 'Pseudogene') {
     $wbgene{$gene}->{transcript}->{$trans} = 1;
     $wbgene{$gene}->{sequence} = $parent;
   }
-  close TACE;
+  close($tacefh) or $log->log_and_die("Could not cleanly close tace TM query\n");
   unlink $query;
 }  
 
@@ -131,8 +152,8 @@ $log->write_to("Generating gene table\n");
 $query = &generate_gene_query($full_species_name);
 $command = "Table-maker -p $query\nquit\n";
 
-open (TACE, "echo '$command' | $tace $dbdir |");
-while (<TACE>) {
+open ($tacefh, "echo '$command' | $tace $dbdir |");
+while (<$tacefh>) {
   chomp; s/\"//g;
   
   my ($wbgene, $sequence_name, $cgc_name, $locus_tag) = split(/\t/, $_);
@@ -146,10 +167,14 @@ while (<TACE>) {
     $wbgene{$wbgene}->{locus_tag} = $locus_tag;
   }
 }
-close TACE;
+close($tacefh) or$log->log_and_die("Could not cleanly close tace TM query\n");
 unlink $query;
 
-open($out_fh, ">$outfile") or $log->log_and_die("Could not open $outfile for writing\n");
+if ($outfile =~ /\.gz$/) {
+  open($out_fh, "| gzip -c > $outfile") or $log->log_and_die("Could not open $outfile for writing\n");
+} else {
+  open($out_fh, ">$outfile") or $log->log_and_die("Could not open $outfile for writing\n");
+}
 
 &write_header($out_fh) unless $no_header;
 
@@ -209,8 +234,43 @@ foreach my $g (sort keys %gene) {
 
 close($out_fh) or $log->log_and_die("Could not cleanly close output file\n");
 
+if ($ena_upload) {
+  &upload_to_ena();
+}
+
 $log->mail();
 exit(0);
+
+
+#####################################################
+sub upload_to_ena {
+
+  my ($ftp_host, $ftp_user, $ftp_pass, $ftp_dir);
+
+  my $login_details_file = $wormbase->wormpub . "/ebi_resources/ENAXREFFTP.s";
+  open(my $infh, $login_details_file)
+      or $log->log_and_die("Can't open secure account details file $login_details_file\n");
+  while (<$infh>){
+    /^HOST:(\S+)$/ and $ftp_host = $1;
+    /^USER:(\S+)$/ and $ftp_user = $1;
+    /^PASS:(\S+)$/ and $ftp_pass = $1;
+    /^DIR:(\S+)$/  and $ftp_dir  = $1;
+  }
+  close($infh);
+
+  # Establish ftp connection 
+  my $ftp = Net::FTP->new($ftp_host, Debug => 0) 
+      or $log->log_and_die("Cannot connect to $ftp_host: $@");
+  $ftp->login($ftp_user,"$ftp_pass")
+      or $log->log_and_die ("Cannot login to $ftp_host using WormBase credentials\n". $ftp->message);
+  $ftp->cwd($ftp_dir) 
+      or $log->log_and_die ("Cannot change into to_ena dir for upload of files\n". $ftp->message);
+  
+  $ftp->put($outfile)
+      or $log->log_and_die ("FTP-put failed for $outfile: ".$ftp->message."\n");
+  $ftp->quit;
+}
+
 
 ##########################################
 sub write_header {
@@ -238,6 +298,66 @@ HERE
   print $out_fh $header;
 
 }
+
+
+##########################################
+sub generate_accession_query {
+
+  my $tmdef = "/tmp/clone2acc_tmquery.$$.def";
+  open my $qfh, ">$tmdef" or 
+      $log->log_and_die("Could not open $tmdef for writing\n");  
+
+  my $tablemaker_template = <<"EOF";
+
+Sortcolumn 1
+
+Colonne 1 
+Subtitle Genome sequence  
+Width 20 
+Optional 
+Visible 
+Class 
+Class Sequence 
+From 1
+Condition Genomic_canonical OR Subsequence OR Source
+ 
+Colonne 2 
+Width 20 
+Mandatory 
+Hidden 
+Class 
+Class Database 
+From 1 
+Tag Database      
+Condition "EMBL" OR "NDB"
+ 
+Colonne 3 
+Width 12 
+Optional 
+Hidden 
+Class 
+Class Database_field 
+Right_of 2 
+Tag HERE   
+Condition NDB_AC
+ 
+Colonne 4 
+Subtitle Accession  
+Width 12 
+Optional 
+Visible 
+Class 
+Class Accession_number 
+Right_of 3 
+Tag HERE   
+ 
+EOF
+
+  print $qfh $tablemaker_template;
+  return $tmdef;
+
+}
+
 
 ##########################################
 sub generate_coding_query {
@@ -351,6 +471,7 @@ EOF
 }
 
 
+############################################
 sub generate_noncoding_query {
   my ($full_species, $class) = @_;
 
@@ -406,7 +527,7 @@ EOF
 }
 
 
-
+#######################################
 sub generate_gene_query {
   my ($full_species) = @_;
 
