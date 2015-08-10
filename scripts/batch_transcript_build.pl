@@ -98,7 +98,7 @@ if (@no_run) {
     my $outfname = "transcripts_${batchname}.ace";
     my $pfname = "problems_${batchname}.txt";
     my $err = "$scratch_dir/transcript_builder.$batchname.err.$$";
-    my $cmd = "$builder_script -database $database -chunkid $chunk_id -chunktotal $chunk_total -acefname $outfname -problemfname $pfname";
+    my $cmd = "$builder_script -database $database -chunkid $chunk_id -chunktotal $chunk_total -acefname $outfname -problemfname $pfname -no_dump";
     $log->write_to("$cmd\n");
     print "$cmd\n";
     $cmd = $wormbase->build_cmd($cmd);
@@ -137,7 +137,11 @@ if (not $no_load) {
   
   $log->write_to("batch_dumping GFF files\n");
   $wormbase->run_script("dump_gff_batch.pl -method Coding_transcript", $log);
-    
+
+  $log->write_to("Creating Coding_transcript fasta file\n");
+  $wormbase->run_script("fasta_dumper.pl", $log);
+  $wormbase->run_command("gzip -9 ".$wormbase->sequences."/coding_transcripts.dna",$log);
+
   $log->write_to("Updating common data\n");
   $wormbase->run_script("update_Common_data.pl -worm_gene2geneID", $log);
 
