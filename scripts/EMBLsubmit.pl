@@ -80,7 +80,7 @@ $ftp_dir  = $cl_ftp_dir  if defined $cl_ftp_dir;
 ###################################################
 my $ftp = Net::FTP->new($ftp_host, Debug => 0) 
     or $log->log_and_die("Cannot connect to $ftp_host: $@");
-$ftp->login($ftp_user,"$ftp_pass\@")
+$ftp->login($ftp_user,$ftp_pass)
     or $log->log_and_die ("Cannot login to $ftp_host using WormBase credentials\n". $ftp->message);
 $ftp->cwd($ftp_dir) 
     or $log->log_and_die ("Cannot change into to_ena dir for upload of files\n". $ftp->message);
