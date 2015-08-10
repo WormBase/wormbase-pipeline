@@ -6,8 +6,8 @@
 #
 # Script to make ?Transcript objects
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2015-07-03 09:43:54 $
+# Last updated by: $Author: klh $
+# Last updated on: $Date: 2014-12-23 13:14:17 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -25,7 +25,7 @@ use Storable;
 my ($debug, $store, $help, $verbose, $really_verbose, @test_est,
     $database, $test, @chromosomes, $chunk_total, $chunk_id,
     $gff_dir, $transcript_dir, $ace_fname, $problem_fname,
-    @test_cds, $wormbase, $species, $detailed_debug, $fasta, $no_build, $no_dump);
+    @test_cds, $wormbase, $species, $detailed_debug);
 
 my $gap = 15;			# $gap is the gap allowed in an EST alignment before it is considered a "real" intron
 my $COVERAGE_THRESHOLD = 95.0;  # the alignment score threshold below which any cDNAs that overlap two genes will not be considered.
@@ -52,9 +52,6 @@ GetOptions ( "debug:s"      => \$debug,
              "acefname:s"       => \$ace_fname,
              "problemfname:s"   => \$problem_fname,
              "detaileddebug"    => \$detailed_debug,
-	     "fasta"            => \$fasta,
-	     "no_build"         => \$no_build,
-	     "no_dump"          => \$no_dump,
 	   ) ;
 
 
@@ -91,12 +88,6 @@ my $log = Log_files->make_build_log($wormbase);
 &check_opts;
 
 
-
-
-if ($no_build) {$log->write_to("NoBuild mode selected so only going to create coding_transcript fasta file.\n\n");}
-# no_build option to allow for additional functionality to be tested.
-unless ($no_build) {
-  $log->write_to("Building full transcripts for $species\n\n");
 # awful hack to override the location of GFF_SPLITS, needed in test mode
 if (defined $gff_dir) {
   if (not $test) {
@@ -106,9 +97,6 @@ if (defined $gff_dir) {
   }
   $wormbase->{gff_splits} = $gff_dir;
 }
-
-
-
 
 
 # write out the transcript objects
@@ -634,8 +622,6 @@ foreach my $chrom ( @chromosomes ) {
 }
 
 close($out_fh);
-}
-&make_transcripts_fa unless ($no_dump); # make a file containing the coding_transcripts dna in fasta format.
 
 $log->mail();
 exit(0);
@@ -649,39 +635,6 @@ exit(0);
 #
 #######################################################################################################
 
-
-################################################################################
-# make a file containing the coding_transcripts sequence in fasta format.
-################################################################################
-
-sub make_transcripts_fa{
-  # For each coding_transcript object, extract DNA and save it in a file to be copied to the ftp site.
-  
-  my $runtime = $wormbase->runtime;
-  $log->write_to("$runtime: making Transcripts fasta file\n");
-  
-  my $gspecies = $wormbase->full_name('-g_species' => 1);
-  my $full_name = $wormbase->full_name;
-  my $target_dir = $wormbase->sequences;
-  my $out     = "$target_dir/coding_transcripts.dna";
-  
-  open TRANS,">$out" ||die($!);
-  
-  my $connection = Ace->connect(-path => "$db") || die (Ace->error);
-    my $codtrans_it = $connection->fetch_many(-query => "Find Transcript; Species=\"${full_name}\"; Method=\"Coding_transcript\";");
-    while(my $codtrans=$codtrans_it->next){
-      my $dna =$codtrans->asDNA();
-      print TRANS "$dna";
-    }
-  close TRANS;
-  $wormbase->run_command("gzip -9 -f $out", $log);
-  $runtime = $wormbase->runtime;
-  $log->write_to("$runtime: Finished making Transcripts fasta file\n\n");
-  return(0);
-}
-
-
-##############
 
 sub eradicateSingleBaseDiff {
   my $cDNAh = shift;
