@@ -10,8 +10,9 @@ use Wormbase;
 use Log_files;
 
 my ($debug, $test, $store, $species, $wb, 
-    $svacefile, $pidacefile, $noload, $ncbi_tax_id, $bioproject_id, $pid_table_file,$sv_table_file, $gid_table_file, $gidacefile,
-    $generate_tables, $sequence_xrefs, $protein_xrefs, $gene_xrefs, $common_data_dir);
+    $svacefile, $pidacefile, $noload, $ncbi_tax_id, $bioproject_id, 
+    $pid_table_file,$sv_table_file, $gid_table_file, $gidacefile,
+    $generate_tables, $sequence_xrefs, $protein_xrefs, $gene_xrefs, $load_product_names, $common_data_dir);
 
 
 &GetOptions ("debug:s"        => \$debug,
@@ -29,6 +30,7 @@ my ($debug, $test, $store, $species, $wb,
              'sequencexrefs'  => \$sequence_xrefs,
              'proteinxrefs'   => \$protein_xrefs,
              'genexrefs'      => \$gene_xrefs,
+             'loadprodnames'  => \$load_product_names,
              'commondata:s'   => \$common_data_dir,
     );
 
@@ -207,11 +209,13 @@ if ($protein_xrefs) {
     }
   }
 
-  foreach my $cds (sort keys %cds_product) {
-    print $acefh "\nCDS : \"$cds\"\n";
-    foreach my $prod_name (keys %{$cds_product{$cds}}) {
-      foreach my $acc (sort keys %{$cds_product{$cds}->{$prod_name}}) {
-        print $acefh "Brief_identification \"$prod_name\" Accession_evidence \"$acc\"\n";
+  if ($load_product_names) {
+    foreach my $cds (sort keys %cds_product) {
+      print $acefh "\nCDS : \"$cds\"\n";
+      foreach my $prod_name (keys %{$cds_product{$cds}}) {
+        foreach my $acc (sort keys %{$cds_product{$cds}->{$prod_name}}) {
+          print $acefh "Brief_identification \"$prod_name\" Accession_evidence \"UniProt\" \"$acc\"\n";
+        }
       }
     }
   }
