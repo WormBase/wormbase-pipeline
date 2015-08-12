@@ -296,7 +296,7 @@ sub make_fpkm {
     $log->write_to("\n");
     
     if (!exists $data->{$experiment_accession}{analysis}) {
-      $log->write_to("$experiment_accession lacks an acedb Analysis object - this will not included in the SPELL expression data\n");
+      $log->write_to("INFORMATION: this is not an error - $experiment_accession lacks an acedb Analysis object - this will not included in the SPELL expression data\n");
       next;
     }
     
