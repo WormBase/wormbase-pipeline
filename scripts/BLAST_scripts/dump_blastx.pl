@@ -99,7 +99,7 @@ foreach my $db (keys %logic2type){
     my $outfile = "$dumpdir/${species}_$db.$job_count.ace";
     push @outfiles,$outfile;
     my $options="-database $database -logicname $db -outfile $outfile -store $storable -sequence $chrom";
-    $options .= ' -self' if $logic2type{$db} eq lc(ref $species);
+    $options .= ' -self' if $logic2type{$db} eq lc(ref $wormbase);
     my $cmd = "perl $ENV{CVS_DIR}/BLAST_scripts/blastx_dump.pl $options";
     if (!defined $rerun || grep /^$job_count$/, @rerun) {
       $lsf->submit($cmd);
