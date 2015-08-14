@@ -54,7 +54,7 @@ if( $species eq 'elegans') {
     &parse_remanei_data         if ($misc && $species eq 'remanei');
     &parse_brugia_data          if ($misc && $species eq 'brugia');
     &parse_nematode_seqs        if $misc;
-    &parse_genBlastG            if $homol;
+    &parse_genBlastG            if ($homol && $wormbase->long_name =~/Caenorhabditis/); # only parse for Vc
   }
 }
 $log->mail();
