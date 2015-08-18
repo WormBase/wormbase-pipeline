@@ -90,8 +90,7 @@ if ($chromosome) {
 }
 
 # specifies the Allele Methods, that should get parsed/dumped/interpolated
-my @allele_methods = ('Allele',
-                      'Deletion_allele',
+my @allele_methods = ('Deletion_allele',
                       'Insertion_allele',
                       'Deletion_and_Insertion_allele',
                       'Substitution_allele',
