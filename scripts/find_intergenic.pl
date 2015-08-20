@@ -350,7 +350,7 @@ $log->write_to("gzipping $output\n");
 $wormbase->run_command("gzip -f $output", $log);
 
 $wormbase->check_file("$output.gz", $log,
-		      minsize => 6219946,
+		      minsize => 6182319,
 );
 
 $log->write_to("Finished.");
