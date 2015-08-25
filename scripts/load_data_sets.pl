@@ -81,7 +81,6 @@ sub parse_misc_elegans_files {
 		       $wormbase->misc_static."/other_nematode_ESTs.ace"        => "other_nematode_ace"    ,
 		       $wormbase->misc_static."/washu_nematode_contigs.ace"     => "washu_nem_ace"         ,
 		       #$wormbase->misc_dynamic."/misc_mass_spec_GenniferMerrihew.ace"  => "mass_spec"      ,
-		       $wormbase->misc_static."/GINUMBERS/GI_numbers.ace"       => "gi_number"             ,
 		       $wormbase->misc_static.'/misc_mtce_protein_IDs.ace'      => 'mtce_protein_IDs'      ,
 		       $wormbase->misc_dynamic.'/Caenorhabditae_sequence_data_to_load.ace'     => 'Caenorhabditae_seq_data',
 		       $wormbase->misc_dynamic.'/fosmids.ace'                   => 'vancouver_fosmids'     ,
