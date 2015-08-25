@@ -1,4 +1,4 @@
-#!/software/bin/perl -w
+#!/usr/bin/env perl 
 #
 # get_GI.pl
 # 
@@ -29,7 +29,7 @@ GetOptions (
   "test"        => \$test, 
   "database:s"  => \$database,
   "noupdate"    => \$noupdate,
-  "noupdate"    => \$noload,
+  "noload"      => \$noload,
   "acefile=s"   => \$acefile,
 	   );
 

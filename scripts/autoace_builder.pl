@@ -31,7 +31,7 @@ my ( $gff_dump,     $processGFF, $gff_split );
 my $gene_span;
 my ( $load, $big_load, $tsuser );
 my ($map_features, $remap_misc_dynamic, $map, $map_alleles, $transcripts, $cdna_files, $misc_data_sets, $homol_data_sets, $nem_contigs);
-my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $names, $treefam, $load_interpro);
+my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $names, $treefam, $ncbo_xrefs, $load_interpro);
 my ( $utr, $agp, $gff_munge, $gff3_munge, $extras , $ontologies, $interpolate, $check, $enaseqxrefs, $enagenexrefs, $enaprotxrefs, $xrefs);
 my ( $data_check, $buildrelease, $public,$finish_build, $gffdb, $autoace, $release, $user, $kegg, $prepare_gff_munge, $post_merge);
 
@@ -80,6 +80,7 @@ GetOptions(
 	   'repeats'        => \$repeats,
 	   'names'          => \$names,
 	   'treefam'        => \$treefam,
+           'ncbi_xrefs'     => \$ncbi_xrefs,
 	   'utr'            => \$utr,
 	   'interpolation'  => \$interpolate,
 	   'agp'            => \$agp,
@@ -206,6 +207,11 @@ $wormbase->run_script( 'KEGG.pl', $log )                                 if $keg
 
 $wormbase->run_script( "interpolation_manager.pl -fix -pseudo", $log) if $interpolate;
 $wormbase->run_script( "make_agp_file.pl"                        , $log) if $agp;
+
+if ($ncbi_xrefs and $wormbase->species eq 'elegans') {
+  $wormbase->run_script( 'get_GI.pl', $log );
+  $wormbase->run_script( 'load_refseq_xrefs.pl', $log);
+}
 
 if ($prepare_gff_munge) {
   if ($wormbase->species eq 'elegans') {
