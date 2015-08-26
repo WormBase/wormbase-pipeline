@@ -127,7 +127,7 @@ while (<$go_fh>){
       
       print $go_out_fh "\nGO_term : \"$wbid\"\n";
       print $go_out_fh "Definition \"$def\"\n";
-      print $go_out_fh "Term \"$name\"\n";
+      print $go_out_fh "Name \"$name\"\n";
       print $go_out_fh "Type \"".ucfirst($namespace)."\"\n";
       print $go_out_fh "\n";
       $gocount++;
