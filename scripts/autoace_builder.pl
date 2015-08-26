@@ -31,7 +31,7 @@ my ( $gff_dump,     $processGFF, $gff_split );
 my $gene_span;
 my ( $load, $big_load, $tsuser );
 my ($map_features, $remap_misc_dynamic, $map, $map_alleles, $transcripts, $cdna_files, $misc_data_sets, $homol_data_sets, $nem_contigs);
-my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $names, $treefam, $ncbo_xrefs, $load_interpro);
+my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $names, $treefam, $ncbi_xrefs, $load_interpro);
 my ( $utr, $agp, $gff_munge, $gff3_munge, $extras , $ontologies, $interpolate, $check, $enaseqxrefs, $enagenexrefs, $enaprotxrefs, $xrefs);
 my ( $data_check, $buildrelease, $public,$finish_build, $gffdb, $autoace, $release, $user, $kegg, $prepare_gff_munge, $post_merge);
 
