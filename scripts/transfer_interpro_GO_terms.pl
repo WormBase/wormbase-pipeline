@@ -234,7 +234,7 @@ Visible
 Class 
 Class Text 
 From 1 
-Tag Term
+Tag Name
 
 ENDE
 
