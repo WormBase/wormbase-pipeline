@@ -50,7 +50,8 @@ while (my($species,$wb)=each %accessors){
   } elsif (-e "$prot.gz") {
     $prot_seqio = Bio::SeqIO->new(-format => 'fasta', -fh => "gunzip -c $prot.gz |");
   } else {
-    $log->log_and_die("Could not find $prot or $prot.gz");
+    $log->write_to("Could not find $prot or $prot.gz for $species\n");
+    next;
   }
 
   while (my $seq = $prot_seqio->next_seq) {
