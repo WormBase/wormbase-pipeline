@@ -458,7 +458,7 @@ sub check_go_term {
         
           print GOOUT "\nGO_term : \"$wbid\"\n";
           print GOOUT "Definition \"$def\"\n";
-          print GOOUT "Term \"$name\"\n";
+          print GOOUT "Name \"$name\"\n";
           print GOOUT "Type \"".ucfirst($namespace)."\"\n";
           print GOOUT "\n";
           $gocount++;
