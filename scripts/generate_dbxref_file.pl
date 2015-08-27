@@ -266,9 +266,12 @@ sub upload_to_ena {
   $ftp->cwd($ftp_dir) 
       or $log->log_and_die ("Cannot change into to_ena dir for upload of files\n". $ftp->message);
   
+  $ftp->binary();
   $ftp->put($outfile)
       or $log->log_and_die ("FTP-put failed for $outfile: ".$ftp->message."\n");
   $ftp->quit;
+
+  $log->write_to("Successfully uploaded file $outfile to ENA Xref FTP drop-box\n");
 }
 
 
