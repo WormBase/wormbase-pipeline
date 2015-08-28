@@ -144,7 +144,7 @@ GetOptions ("help"          => \$help,
 	    "all"            => \$all,
             "allnopublic"    => \$all_nopublic,
             "wbversion=s"    => \$WS_version,
-            'orthologylists=s'=> \$orthology_lists,
+            'orthologylists'=> \$orthology_lists,
     );
 
 
