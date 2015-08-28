@@ -1192,6 +1192,7 @@ sub make_assembly_manifest {
       # need to find the corresponding accessor, because only that
       # will tell us whether the bioproject is the canonical one
       my ($rel_acc) = grep { $_->ncbi_bioproject eq $bioproj } @accs;
+      next unless $rel_acc;
       my $is_canonical = $rel_acc->is_canonical;
       my $bioproj_desc = $rel_acc->bioproject_description;
 
