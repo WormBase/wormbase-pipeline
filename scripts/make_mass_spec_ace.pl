@@ -376,6 +376,8 @@ sub parse_data {
     push @{$cds_cgc_names{$cds}}, $cgc;
   }
 
+  my %uniprot2wormpep = get_uniprot();
+
   # if we have a directory specified, look there for files ending *.ms-dat
   if (defined $directory) {
     opendir (DIR, $directory) or $log->log_and_die("cant open directory $directory\n");
@@ -384,15 +386,15 @@ sub parse_data {
     foreach my $file ( @files ) {
       next if( $file eq '.' or $file eq '..');
       if( (-T $directory."/".$file) and substr($file,-7,7 ) eq ".ms-dat" ) {
-	&parse_file($directory."/".$file, \%wormpep2cds, \%cgc_names, \%cds_cgc_names, \%experiment, \%peptide);
+	&parse_file($directory."/".$file, \%wormpep2cds, \%cgc_names, \%cds_cgc_names, \%uniprot2wormpep, \%experiment, \%peptide);
       }
     }
 
-  close DIR;
+    close DIR;
 
   } else {			# else read one input file
     $log->write_to("Reading input file\n");
-    &parse_file($input, \%wormpep2cds, \%cgc_names, \%cds_cgc_names, \%experiment, \%peptide);
+    &parse_file($input, \%wormpep2cds, \%cgc_names, \%cds_cgc_names, \%uniprot2wormpep, \%experiment, \%peptide);
 
   }
 
@@ -403,7 +405,7 @@ sub parse_data {
 ##########################################
 # get the data out of a file
 sub parse_file {
-  my ($input_file, $wormpep2cds, $cgc_names, $cds_cgc_names, $experiment, $peptide) = @_;
+  my ($input_file, $wormpep2cds, $cgc_names, $cds_cgc_names, $uniprot2wormpep, $experiment, $peptide) = @_;
 
   my $peptide_sequence;
   my $peptide_probability;
@@ -415,6 +417,9 @@ sub parse_file {
   my $quantification_type;
   my $CDS_name;
   my @CDS_names;
+
+  my $non_existent = 0;
+  my $not_in_wormbase = 0;
 
   my $experiment_id = undef;
 
@@ -522,7 +527,7 @@ sub parse_file {
 	@CDS_names = ();
       }
 
-      if ($cgc_name =~ /\S+\-\d+/) { # standard CGC-style name e.g. daf-1
+      if ($cgc_name =~ /\S+\-\d+/ && $cgc_name !~ /^UNIPROT/) { # standard CGC-style name e.g. daf-1
 	if (!exists $cds_cgc_names->{$cgc_name}) {
 	  print "line $line has a non-existent cds_cgc name\n";
 	  next;
@@ -548,6 +553,26 @@ sub parse_file {
       } elsif ($cgc_name =~ /clone:\S+/) { # this peptide doesn't match a CDS or gene - it is in an ORF somewhere on this clone
 	push @CDS_names, $cgc_name; # store clone name with 'clone:' prefix - this will be dealt with specially
 
+      } elsif ($cgc_name =~ /UNIPROT:(\S+)/) { # this is a UniProt ID
+	my $uniprot = $1;
+	if (exists $uniprot2wormpep->{$uniprot}) {
+	  my $wormpep = $uniprot2wormpep->{$uniprot};
+	  if (!exists $wormpep2cds->{$wormpep}) {
+	    if (! exists $wormpep_history_proteins->{$wormpep}) {
+	      print "line $line with wormpep ID '$wormpep' has a non-existent wormpep ID\n";
+	      $non_existent++;
+	      next;
+	    } else {
+	      push @CDS_names, $wormpep_history_proteins->{$wormpep}; # the CDS names for this UniProt
+	    }
+	  } else {
+	    push @CDS_names, (split /\s+/, $wormpep2cds->{$wormpep}); # the CDS names for this UniProt
+	  }
+	} else {
+	  print "line $line has a UniProt ID '$uniprot' that is not in Wormbase\n";
+	  $not_in_wormbase++;
+	}
+	
       } else {
 	die($input_file ,":gene name '$cgc_name' not recognised\n");
       }
@@ -558,6 +583,9 @@ sub parse_file {
     }
   }
   close (DATA);
+
+  print "UniProt entries that have a non existent WormPep ID: $non_existent\n";
+  print "UniProt entries that are not in WormBase: $not_in_wormbase\n";
 
 }
 
@@ -1186,6 +1214,98 @@ sub get_protein_details {
 
 }
 
+##########################################
+# get the mapping of UniProt names to protein names
+#  my %uniprot2wormpep = get_uniprot();
+
+sub get_uniprot {
+
+  print "Reading UniProt data\n";
+
+  my %uniprot;
+#  my $database = $wormbase->database('current');
+  my $database = $wormbase->autoace;
+
+  my $table_def = &write_uniprot_def;
+  my $table_query = $wormbase->table_maker_query($database, $table_def);
+  while(<$table_query>) {
+    chomp;
+    s/\"//g;  #remove "
+    next if (/acedb/ or /\/\//);
+    my @data = split(/\t/,$_);
+    my ($wormpep, $uniprot) = @data;
+    
+    if (!defined $uniprot) {next;}
+    
+    $wormpep =~ s/WP\://;
+    
+    $uniprot{$uniprot} = $wormpep;
+    #print "$uniprot\t$wormpep\n";
+  }
+  
+  return %uniprot;
+}
+############################################################################
+# this will write out an acedb tablemaker defn to a temp file
+############################################################################
+#  my %uniprot = get_uniprot($database);
+
+sub write_uniprot_def {
+  my $def = "/tmp/Uniprot_$$.def";
+  open TMP,">$def" or $log->log_and_die("cant write $def: $!\n");
+
+  my $txt = <<END;
+
+Sortcolumn 1
+
+Colonne 1 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Protein 
+From 1 
+Condition IS "WP:*"
+
+Colonne 2 
+Width 12 
+Mandatory
+Hidden 
+Class 
+Class Database 
+From 1 
+Tag Database 
+Condition UniProt
+ 
+Colonne 3 
+Width 12 
+Mandatory
+Hidden 
+Class 
+Class Database_field 
+Right_of 2 
+Tag  HERE  
+Condition UniProtAcc
+ 
+Colonne 4 
+Width 30 
+Mandatory
+Visible 
+Class 
+Class Text 
+Right_of 3 
+Tag  HERE  
+ 
+ 
+END
+
+  print TMP $txt;
+  close TMP;
+  return $def;
+}
+
+
+############################################################################
 
 ##########################################
 # my @homol_lines = &get_genome_mapping($ms_peptide, $CDS_name, $cds_start, $exons_start_ref, $exons_end_ref, \%protein_positions); 
