@@ -2029,6 +2029,8 @@ sub person {
     $personid = 'WBPerson28994';
   } elsif ($USER eq 'jane') { # Jane Lomax
     $personid = 'WBPerson28994';
+  } elsif ($USER eq 'wormpub') {
+    $personid = 'WBPerson4025'; # Gary again
   } else {
     die "Unknown WBPerson id: $USER\n";
   }
