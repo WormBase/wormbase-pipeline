@@ -3286,6 +3286,7 @@
 		 Movie ?Movie XREF Reference
 		 DO_term ?DO_term #Evidence
 		 GO_annotation ?GO_annotation XREF Reference
+		 GO_term ?GO_term
        Curation_pipeline Phenotype2GO
        Keyword ?Keyword
        Remark ?Text #Evidence
