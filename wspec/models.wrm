@@ -1183,6 +1183,25 @@
                       Associated_transgene ?Transgene XREF Transgene_for_disease 
          Version UNIQUE Text
 
+
+///////////////////////////////////////////////////////////////
+//
+// ?PATO_term class - Chris WS251
+//
+////////////////////////////////////////////////////////////////
+
+?PATO_term Name ?Text
+           Definition ?Text
+           Alt_id ?Text
+           Synonym ?Text
+           Status UNIQUE Valid
+                         Obsolete
+           Child ?PATO_term
+           Parent ?PATO_term
+           Version UNIQUE Text
+
+
+
 //////////////////////////////////////////////////////////
 // ?AO_code class -  Raymond Lee 040203
 // Evidence codes only relevant to the Anatomy_term Class
@@ -2702,7 +2721,6 @@
                 Quantity_description ?Text #Evidence //Remark to describe what quantity describes, below
                 Quantity UNIQUE Int UNIQUE Int #Evidence
                 Not #Evidence //This is being phased out but is needed for the next phase [06/08/10].
-                Anatomy_term ?Anatomy_term #Evidence 
                 Penetrance Incomplete Text #Evidence
                            Low Text #Evidence
                            High Text #Evidence
@@ -2712,7 +2730,7 @@
                 Semi_dominant #Evidence
                 Dominant #Evidence
                 Haplo_insufficient #Evidence
-                Caused_by ?Gene #Evidence
+                Caused_by_gene ?Gene #Evidence
                 Caused_by_other ?Text #Evidence
                 Rescued_by_transgene ?Transgene
                 Variation_effect Gain_of_function_undetermined_type #Evidence
@@ -2729,13 +2747,16 @@
                                  Probable_hypomorph_via_phenotype #Evidence
                                  Wild_allele #Evidence
                 Affected_by Molecule ?Molecule #Evidence // ?Molecule model Karen Yook
+                EQ_annotations Anatomy_term ?Anatomy_term ?PATO_term #Evidence
+                               Life_stage ?Life_stage ?PATO_term #Evidence
+                               GO_term ?GO_term ?PATO_term #Evidence
+                               Molecule_affected  ?Molecule ?PATO_term #Evidence
                 Temperature_sensitive Heat_sensitive Text #Evidence
                                       Cold_sensitive Text #Evidence
                 Maternal UNIQUE Strictly_maternal #Evidence
                                 With_maternal_effect #Evidence
                 Paternal #Evidence
-                Phenotype_assay Life_stage ?Life_stage #Evidence
-                                Strain ?Strain #Evidence
+                Phenotype_assay Strain ?Strain #Evidence
                                 Treatment ?Text #Evidence
                                 Temperature ?Text #Evidence
                                 Genotype ?Text #Evidence
