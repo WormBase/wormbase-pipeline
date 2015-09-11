@@ -1179,6 +1179,9 @@
 		      Phenotype ?Phenotype XREF DO_term
 		      WBProcess ?WBProcess XREF DO_term
 		      Reference ?Paper XREF DO_term 
+	 Reagent_info Associated_antibody ?Antibody XREF Antibody_for_disease
+		      Associated_construct ?Construct XREF Construct_for_disease
+		      Associated_transgene ?Transgene XREF Transgene_for_disease 
 	 Version UNIQUE Text
 
 //////////////////////////////////////////////////////////
@@ -2269,6 +2272,7 @@
 	  Historical_gene ?Gene Text 			
 	  Possible_pseudonym ?Antibody XREF Possible_pseudonym_of
 	  Possible_pseudonym_of ?Antibody XREF Possible_pseudonym
+	  Antibody_for_disease ?DO_term XREF Associated_antibody #Evidence
 	  Expr_pattern ?Expr_pattern XREF Antibody_info
 	  Interactor ?Interaction
 	  Reference ?Paper XREF Antibody
@@ -2590,6 +2594,7 @@
 			 Interactor ?Interaction
 		Associated_with Marked_rearrangement ?Rearrangement XREF By_transgene
 				Strain ?Strain XREF Transgene 
+				Transgene_for_disease ?DO_term XREF Associated_transgene #Evidence
 		Reference ?Paper XREF Transgene  
 		Species UNIQUE ?Species       
 		Remark ?Text #Evidence
@@ -2628,6 +2633,7 @@
 		    Topic_output_indicator ?WBProcess XREF Marker_construct
 		    Expression_pattern ?Expr_pattern XREF Construct
 		    Interactor ?Interaction
+	   Construct_for_disease ?DO_term XREF Associated_construct #Evidence
 	   Reference ?Paper  
 	   Person ?Person
 	   Laboratory ?Laboratory #Lab_Location
