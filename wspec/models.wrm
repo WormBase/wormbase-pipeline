@@ -3005,9 +3005,16 @@
                                Regulated_by_molecule ?Molecule XREF Regulate_expr_cluster            // Wen WS228
                     Associated_with Life_stage ?Life_stage                 // Wen WS228
                                     GO_term ?GO_term                       // Wen WS228
-                                    Anatomy_term ?Anatomy_term XREF Expression_cluster #Evidence //Describes microarray experiments involving expression profiling in a particular tissue or cell Igor Dec 06
+                                    Anatomy_term ?Anatomy_term XREF Expression_cluster #Expression_cluster_info //Describes microarray experiments involving expression profiling in a particular tissue or cell
                                     WBProcess ?WBProcess XREF Expression_cluster #Evidence
                     Remark ?Text #Evidence
+
+#Expression_cluster_info Expressed
+                         Depleted
+                         Enriched
+                         Dissection
+                         mRNA_tagging
+                         FACS
      
 
 //////////////////////////////////////////////////////////////////
