@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-my @species_list = ('echinococcus_multilocularis_prjeb122', 'echinococcus_granulosus_prjeb121', 'hymenolepis_microstoma_prjeb124');
+my @species_list = ('strongyloides_stercoralis_prjeb528');
 my $counter = 0;
 
 foreach my $species (@species_list) {
@@ -51,7 +51,7 @@ foreach my $species (@species_list) {
     $desc =~ s/\n//g;
   
     # Generate the URL
-    my $url = "http://ngs.sanger.ac.uk/production/parasites/wormbase/RNASeq_alignments/myHub_$species/$species/$parts[5].bw";
+    my $url = "http://ngs.sanger.ac.uk/production/parasites/wormbase/RNASeq_alignments/strongyloides_stercoralis_prjeb3116/$parts[5].bw";
 
     # Create the unique track ID
     my $track_id = sprintf("%03d", $counter) . "_" . $parts[5];
