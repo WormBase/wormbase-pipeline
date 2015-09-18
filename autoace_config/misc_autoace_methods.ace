@@ -485,6 +485,17 @@ GFF_source "Allele"
 GFF_feature "substitution"
 GFF_SO "SO:1000002" // substitution
 
+Method : "Engineered_allele" 
+Remark "Allele derived from genome editing"
+Colour "ORANGE"
+Strand_sensitive
+Width "1.1"
+Show_text
+GFF_source "Allele"
+GFF_feature "sequence_alteration"
+GFF_SO "SO:0001059" // sequence_alteration
+
+
 Method : "Polymorphism"
 Width 1.1
 Colour ORANGE
