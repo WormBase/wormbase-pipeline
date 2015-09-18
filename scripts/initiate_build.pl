@@ -55,7 +55,9 @@ if (-e "${\$wormbase->autoace}/database") {
 if ($wormbase->species eq 'elegans') {
   $wormbase->run_command("cd $ENV{CVS_DIR}/..; git pull .", $log)
       and $log->log_and_die("Failed to git pull scripts dir; stopping\n");
-  
+  $wormbase->run_command("cd $ENV{CVS_DIR}/..; git checkout WS$version .", $log)
+      and $log->log_and_die("Failed to switch branch; stopping\n");
+ 
   # update autoace_config in BUILD/
   $wormbase->run_command('cd '.$wormbase->basedir.' && rm -rf autoace_config && cp -rf '.$ENV{CVS_DIR}.'/../autoace_config '.$wormbase->basedir.'/autoace_config', 'no_log')
       and $log->log_and_die("Failed to update autoace_config dir; stopping\n");
