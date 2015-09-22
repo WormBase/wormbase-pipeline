@@ -3681,38 +3681,11 @@
 //
 //////////////////////////////////////////////////    
 
-?Molecule Name ?Text         // WBMoleculeID
-          Public_name ?Text  // Source = CTD, ChEBI, research articles
-          Formula ?Text      // Source chebi.obo RELATED FORMULA [KEGG COMPOUND:] and RELATED FORMULA [ChEBI:] can be mulitple
-          Monoisotopic_mass ?Float // Source?
-          IUPAC ?Text        // Source chebi.obo EXACT IUPAC_NAME [IUPAC:] can be multiple
-          SMILES ?Text       // Source chebi.obo RELATED SMILES [ChEBI:], unique
-          InChi ?Text        // Source chebi.obo RELATED InChI [ChEBI:], unique
-          InChiKey ?Text     // Source chebi.obo RELATED InChIKey [ChEBI:] unique
-          Synonym ?Text      // CTD
-          DB_info Database  ?Database ?Database_field ?Text  // for kegg/reactome pathways- also perhaps for all chebi.obo tags (may replace chebi source tags above)
-          Status Detected  #Evidence
-                 Predicted #Evidence
-          Origin Plant       // from HMDB
-                 Microbial  ?Species
-                 Cosmetic
-                 Toxin_Pollutant
-                 Food_for_human
-                 Drug
-                 Exogenous
-                 Endogenous   ?Species #Evidence
-                 Drug_metabolite
-                 Pharmaceutical
-                                 // Biofunctionfrom HMDB  or ChEBI Role ontology - do we want to take in the whole ontology? can we just create the .ace and extract chebi-obo ID public name mappings/
-          Biofunction Metabolite // will be in ChEBI or HMDB ontology
-                      Regulatory // may be in ChEBI or HMDB ontology
-                      Structural // may be in ChEBI or HMDB ontology
-          Ligand_for Gene_product_receptor ?Gene #Evidence 
-                     Molecule_receptor ?Molecule XREF Receptor_for_molecule #Evidence
-                     Receptor_for_molecule ?Molecule XREF Molecule_receptor #Evidence
-          Regulate_expr_cluster ?Expression_cluster XREF Regulated_by_molecule
-          Requirement Essential ?Species #Evidence
-                      Nonessential ?Species #Evidence
+?Molecule Name ?Text
+          Public_name ?Text
+          Synonym ?Text
+          DB_info Database ?Database ?Database_field ?Text
+          Regulate_expr_cluster ?Expression_cluster XREF Regulated_by_molecule    // Wen WS228
           WBProcess ?WBProcess XREF Molecule
           Affects_phenotype_of Variation ?Variation ?Phenotype #Evidence
                                Strain ?Strain ?Phenotype #Evidence
