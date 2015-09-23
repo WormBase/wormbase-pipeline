@@ -787,8 +787,8 @@ GFF_SO "SO:0000120" "predicted_CDS_ace2so" // protein_coding_primary_transcript,
 
 Method : "ensembl"
 Colour ORANGE
-CDS_colour PALEORANGE
-Show_up_strand PALEORANGE
+CDS_colour ORANGE
+Show_up_strand ORANGE
 Bumpable
 Show_text
 GFF_SO "SO:0000120" "predicted_CDS_ace2so" // protein_coding_primary_transcript, but No_span
