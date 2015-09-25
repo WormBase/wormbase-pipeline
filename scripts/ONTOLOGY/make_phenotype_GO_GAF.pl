@@ -175,29 +175,37 @@ if ($variation) {
   while (my $obj=$it->next) {
     next unless $obj->isObject();
   
-    # skip gain-of-function alleles
-    if ($obj->Gain_of_function) { 
-      next;
-    }
-
     my @genes = $obj->Gene;
     @genes = grep { exists $gene_info->{$_} and $gene_info->{$_}->{status} ne 'Dead' } @genes;
 
     next if not @genes;
 
     my %phen_hash=();
-    foreach ($obj->Phenotype) {
-      next if not $phen2go{$_};
+    foreach my $phen ($obj->Phenotype) {
+      next if not $phen2go{$phen};
 
-      $phen_hash{$_}{count}++;
-      if ($_->at("Paper_evidence")) {
-        $phen_hash{$_}{Paper_evidence} = $_->at("Paper_evidence[1]");
+      if ($phen->at("Variation_effect")) {
+        my $gain_of_function = 0;
+        foreach my $effect ($phen->at("Variation_effect")) {
+          if ($effect =~ /gain_of_function/i) {
+            $gain_of_function = 1;
+          }
+        }
+        if ($gain_of_function) {
+          $log->write_to("Skipping $obj<->$phen because annotated as Gain-of-function\n");
+          next;
+        }
       }
-      if ($_->at("Person_evidence")) {
-        $phen_hash{$_}{Person_evidence} = $_->at("Person_evidence[1]")=~/(WBPerson\d+)/ ? $1 : '';
+
+      $phen_hash{$phen}{count}++;
+      if ($phen->at("Paper_evidence")) {
+        $phen_hash{$phen}{Paper_evidence} = $phen->at("Paper_evidence[1]");
       }
-      if ($_->at("Curator_confirmed")) {
-        $phen_hash{$_}{Curator_confirmed} = $_->at("Curator_confirmed[1]")=~/(WBPerson\d+)/ ? $1 : '';
+      if ($phen->at("Person_evidence")) {
+        $phen_hash{$phen}{Person_evidence} = $phen->at("Person_evidence[1]")=~/(WBPerson\d+)/ ? $1 : '';
+      }
+      if ($phen->at("Curator_confirmed")) {
+        $phen_hash{$phen}{Curator_confirmed} = $phen->at("Curator_confirmed[1]")=~/(WBPerson\d+)/ ? $1 : '';
       }
     }
   
