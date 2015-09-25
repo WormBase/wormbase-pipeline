@@ -196,6 +196,7 @@ sub parse_genes_gff3_fh {
              $l[2] eq 'tRNA' or
              $l[2] eq 'miRNA' or
              $l[2] eq 'pre_miRNA' or
+             $l[2] eq 'miRNA_primary_transcript' or
              $l[2] eq 'scRNA' or
              $l[2] eq 'snoRNA' or
              $l[2] eq 'ncRNA' or
