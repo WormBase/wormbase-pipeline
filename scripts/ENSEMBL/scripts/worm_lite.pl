@@ -44,16 +44,6 @@ my $generic_config = $global_config->{generics};
 
 my $cvsDIR = $generic_config->{cvsdir};
 
-my ($prod_db_host, $prod_db_port, $prod_db_name) = 
-    ($generic_config->{ensprod_host},
-     $generic_config->{ensprod_port},
-     $generic_config->{ensprod_dbname});
-
-my ($tax_db_host, $tax_db_port, $tax_db_name) = 
-    ($generic_config->{taxonomy_host},
-     $generic_config->{taxonomy_port},
-     $generic_config->{taxonomy_dbname});
-
 if ($allspecies) {
   die "You cannot supply both -species and -allspecies!\n" if @species;
 
@@ -85,9 +75,19 @@ foreach my $species (@species) {
 foreach my $myspecies (@species) {
   my $myconfig = $global_config->{$myspecies};
 
-  foreach my $db_property ('host', 'port', 'user', 'password') {
-    if (not $myconfig->{database}->{$db_property}) {
-      $myconfig->{database}->{$db_property} = $generic_config->{database}->{$db_property};
+  foreach my $key (keys %$generic_config) {
+    if ($key =~ /_database/) {
+      foreach my $key2 (keys %{$generic_config->{$key}}) {
+        if (not $myconfig->{$key} or not $myconfig->{$key}->{$key2}) {
+          $myconfig->{$key}->{$key2} = $generic_config->{$key}->{$key2};
+        }
+      }
+    } else {
+      if (not $myconfig->{$key}) {
+        $myconfig->{$key} = $generic_config->{$key};
+      } else {
+        $myconfig->{$key} = join(",", $generic_config->{$key}, $myconfig->{$key});
+      }
     }
   }
 
@@ -107,7 +107,9 @@ exit(0);
 sub setupdb {
   my ($species, $config) = @_;
 
-  my $db = $config->{database};
+  my $db = $config->{core_database};
+  my $tax_db = $config->{taxonomy_database};
+  my $prod_db = $config->{production_database};
 
   print ">>creating new database $db->{dbname} on $db->{host}\n";
 
@@ -133,11 +135,11 @@ sub setupdb {
       die "Either taxon_id or species must be defined for $species to load the taxonomy\n";
     }
 
-    print "Loading taxonomy...N";
+    print "Loading taxonomy...\n";
     my $cmd = "perl $cvsDIR/ensembl-pipeline/scripts/load_taxonomy.pl $species_lookup_params "
-        . "-taxondbhost $tax_db_host " 
-        . "-taxondbport $tax_db_port "
-        . "-taxondbname $tax_db_name "
+        . "-taxondbhost $tax_db->{host} " 
+        . "-taxondbport $tax_db->{port} "
+        . "-taxondbname $tax_db->{dbname} "
         . "-lcdbhost $db->{host} "
         . "-lcdbport $db->{port} "
         . "-lcdbname $db->{dbname} "
@@ -153,9 +155,10 @@ sub setupdb {
         . "--pass $db->{password} "
         . "--port $db->{port} "
         . "--database $db->{dbname} "
-        . "--mhost $prod_db_host "
-        . "--mport $prod_db_port "
-        . "--mdatabase $prod_db_name "
+        . "--mhost $prod_db->{host} "
+        . "--mport $prod_db->{port} "
+        . "--muser $prod_db->{user} "
+        . "--mdatabase $prod_db->{dbname} "
 	. "--dropbaks "
 	. "--dumppath /tmp/ ";
     print "$cmd\n";
@@ -168,14 +171,7 @@ sub setupdb {
                                 $db->{password},
                                 $db->{dbname});
 
-    my @ana_conf_files;
-
-    if ($generic_config->{analysisconf}) {
-      push @ana_conf_files, $generic_config->{analysisconf};
-    }
-    if ($config->{analysisconf}) {
-      push @ana_conf_files, $config->{analysisconf};
-    }
+    my @ana_conf_files = split(/,/, $config->{analysisconf});
     
     foreach my $cfile (@ana_conf_files) {
       if (-e $cfile) {
@@ -197,7 +193,7 @@ sub setupdb {
 sub load_assembly {
   my ($species, $config) = @_;
 
-  my $db = $config->{database};
+  my $db = $config->{core_database};
   
   my $seq_level_coord_sys = $config->{seqlevel};
   my $top_level_coord_sys = $config->{toplevel};
@@ -322,7 +318,7 @@ sub load_assembly {
 sub load_genes {
   my ($species, $config) = @_;
 
-  my $db = $config->{database};
+  my $db = $config->{core_database};
 
   my $dba = new Bio::EnsEMBL::DBSQL::DBAdaptor(
     -host   => $db->{host},
@@ -333,6 +329,8 @@ sub load_genes {
       );
 
   my (%ana_hash);
+
+  &empty_out_old_gene_set($dba);
 
   foreach my $ana (@{$dba->get_AnalysisAdaptor->fetch_all}) {
     $ana_hash{$ana->logic_name} = $ana;
@@ -456,20 +454,9 @@ sub load_genes {
 sub load_rules {
   my ($species, $config) = @_;
   
-  my $db = $config->{database};
+  my $db = $config->{core_database};
 
-  my @conf_files;
-  foreach my $path ($generic_config->{ruleconf}, $config->{ruleconf}) {
-    if ($path) {
-      foreach my $file (split(/,/, $path)) {
-        if (-e $file) {
-          push @conf_files, $file;
-        } else {
-          die "Rule config file $file could not be found\n";
-        } 
-      }
-    }
-  }
+  my @conf_files = split(/,/, $config->{ruleconf});
     
   my $load_rule_base = "perl $cvsDIR/ensembl-pipeline/scripts/rule_setup.pl "
       . "-dbhost $db->{host} "
@@ -498,7 +485,7 @@ sub load_rules {
 sub load_input_ids {
   my ($species, $config) = @_;
   
-  my $db = $config->{database};
+  my $db = $config->{core_database};
 
   my $load_input_ids_base =  "perl $cvsDIR/ensembl-pipeline/scripts/make_input_ids "
       . "-dbhost $db->{host} "
@@ -521,7 +508,7 @@ sub load_input_ids {
 sub load_meta_table {
   my ($species, $config) = @_;
   
-  my $db = $config->{database};
+  my $db = $config->{core_database};
   
   my $mysql = "mysql -h $db->{host} -P $db->{port} -u $db->{user} --password=$db->{password} -D $db->{dbname}";
   
@@ -537,4 +524,31 @@ sub load_meta_table {
           and die "Could not insert value for $db_key into meta\n";
     }
   }
+}
+
+#################################################
+sub empty_out_old_gene_set {
+  my ($dba) = @_;
+
+  my $dbc = $dba->dbc;
+
+  $dbc->do('TRUNCATE TABLE gene')  or die $dbc->errstr;
+  $dbc->do('TRUNCATE TABLE gene_attrib')  or die $dbc->errstr;
+  $dbc->do('TRUNCATE TABLE transcript') or die $dbc->errstr;
+  $dbc->do('TRUNCATE TABLE transcript_attrib')  or die $dbc->errstr;
+  $dbc->do('TRUNCATE TABLE exon')  or die $dbc->errstr;
+  $dbc->do('TRUNCATE TABLE exon_transcript') or die $dbc->errstr;
+  $dbc->do('TRUNCATE TABLE translation')  or die $dbc->errstr;
+  $dbc->do('TRUNCATE TABLE translation_attrib') or die $dbc->errstr;
+  $dbc->do('TRUNCATE TABLE protein_feature')  or die $dbc->errstr;
+  $dbc->do('TRUNCATE TABLE interpro')  or die $dbc->errstr;
+  
+  $dbc->do('TRUNCATE TABLE xref') or die $dbc->errstr;
+  $dbc->do('TRUNCATE TABLE object_xref') or die $dbc->errstr;
+  $dbc->do('TRUNCATE TABLE ontology_xref') or die $dbc->errstr;
+  $dbc->do('TRUNCATE TABLE identity_xref') or die $dbc->errstr;
+  $dbc->do('TRUNCATE TABLE external_synonym') or die $dbc->errstr;
+  $dbc->do('TRUNCATE TABLE density_type') or die $dbc->errstr;
+  $dbc->do('TRUNCATE TABLE dependent_xref') or die $dbc->errstr;
+
 }
