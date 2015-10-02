@@ -111,19 +111,19 @@ sub setupdb {
   my $tax_db = $config->{taxonomy_database};
   my $prod_db = $config->{production_database};
 
-  print ">>creating new database $db->{dbname} on $db->{host}\n";
+  print STDERR ">>creating new database $db->{dbname} on $db->{host}\n";
 
   my $mysql = "mysql -h $db->{host} -P $db->{port} -u $db->{user} --password=$db->{password}";
   
   eval {
-    print "Recreating database from scratch...\n";
+    print STDERR "Recreating database from scratch...\n";
     system("$mysql -e \"DROP DATABASE IF EXISTS $db->{dbname};\"") && die;
     system("$mysql -e \"create database $db->{dbname};\"")         && die;
 
-    print "loading table.sql from ensembl...\n";
+    print STDERR "loading table.sql from ensembl...\n";
     system("$mysql $db->{dbname} < " . $cvsDIR . "/ensembl/sql/table.sql" ) && die;
     
-    print "loading table.sql from ensembl-pipeline...\n";
+    print STDERR "loading table.sql from ensembl-pipeline...\n";
     system("$mysql $db->{dbname} < " . $cvsDIR . "/ensembl-pipeline/sql/table.sql" ) && die("Could not load pipeline tables\n");
     
     my $species_lookup_params;
@@ -135,7 +135,7 @@ sub setupdb {
       die "Either taxon_id or species must be defined for $species to load the taxonomy\n";
     }
 
-    print "Loading taxonomy...\n";
+    print STDERR "Loading taxonomy...\n";
     my $cmd = "perl $cvsDIR/ensembl-pipeline/scripts/load_taxonomy.pl $species_lookup_params "
         . "-taxondbhost $tax_db->{host} " 
         . "-taxondbport $tax_db->{port} "
@@ -145,10 +145,10 @@ sub setupdb {
         . "-lcdbname $db->{dbname} "
         . "-lcdbuser $db->{user} "
         . "-lcdbpass $db->{password}";
-    print "$cmd\n";        
+    print STDERR "$cmd\n";        
     system($cmd) and die "Could not load taxonomy\n";
     
-    print "Loading production table...\n";
+    print STDERR "Loading production table...\n";
     $cmd = "perl $cvsDIR/ensembl-production/scripts/production_database/populate_production_db_tables.pl "
         . "--host $db->{host} "
         . "--user $db->{user} "
@@ -161,7 +161,7 @@ sub setupdb {
         . "--mdatabase $prod_db->{dbname} "
 	. "--dropbaks "
 	. "--dumppath /tmp/ ";
-    print "$cmd\n";
+    print STDERR "$cmd\n";
     system($cmd) and die "Could not populate production tables\n";
 
     my $db_opt_string = sprintf("-dbhost %s -dbport %s -dbuser %s -dbpass %s -dbname %s", 
@@ -175,9 +175,9 @@ sub setupdb {
     
     foreach my $cfile (@ana_conf_files) {
       if (-e $cfile) {
-        print "Loading analyses...\n";
+        print STDERR "Loading analyses...\n";
         $cmd = "perl $FindBin::Bin/analysis_setup.pl $db_opt_string -read -file $cfile";
-        print "Running: $cmd\n";
+        print STDERR "Running: $cmd\n";
         system($cmd) and die "Could not load analyses from $cfile\n";
       } else {
         die "Could not find analysis config file $cfile\n";
@@ -216,7 +216,7 @@ sub load_assembly {
             . "-rank $top_level_rank "
             . "-default_version "
             . "-agp_file $agp";
-        print "Running: $cmd\n";
+        print STDERR "Running: $cmd\n";
         system($cmd) and die "Could not load seq_regions from agp file\n";
       }
     }
@@ -235,7 +235,7 @@ sub load_assembly {
           . "-rank $seq_level_rank "
           . "-default_version -sequence_level "
           . "-fasta_file $fasta";
-      print "Running: $cmd\n";
+      print STDERR "Running: $cmd\n";
       system($cmd) and die "Could not load seq_regions fasta file\n";
     }
   }
@@ -254,7 +254,7 @@ sub load_assembly {
             . "-component_name $seq_level_coord_sys "
             . "-component_version $coord_sys_ver "
             . "-agp_file $agp";
-        print "Running: $cmd\n";
+        print STDERR "Running: $cmd\n";
         system($cmd) and die "Could not load the assembly table from agp file\n";
       }
     }
@@ -266,7 +266,7 @@ sub load_assembly {
       . "-dbuser $db->{user} "
       . "-dbpass $db->{password} "
       . "-dbname $db->{dbname}" ;
-  print "Running: $cmd\n";
+  print STDERR "Running: $cmd\n";
   system($cmd) and die "Could not set toplevel\n";
   
   if ($config->{mitochondrial}) {
@@ -280,7 +280,7 @@ sub load_assembly {
         . "-dbname $db->{dbname} "
         . "-codontable 5 "
         . "@mito_seqs";
-    print "Running: $cmd\n";
+    print STDERR "Running: $cmd\n";
     system($cmd) and die "Could not set the mitochrondrial table";
   }
 
@@ -294,7 +294,7 @@ sub load_assembly {
         . "SET seq_region.name = CONCAT(\"$prefix\", seq_region.name) "
         . "WHERE seq_region.coord_system_id = coord_system.coord_system_id "
         . "AND coord_system.name = \"chromosome\"";
-    print "Running: $mysql -e '$sql'\n";
+    print STDERR "Running: $mysql -e '$sql'\n";
     system("$mysql -e '$sql'") and die "Could not add chromosome prefixes to chromosome names\n";
   }
 
@@ -413,10 +413,10 @@ sub load_genes {
 
   } elsif (@gff3_files) {
     if (scalar(@gff3_files) == 1) {
-      @genes = @{$wb2ens->parse_genes_gff3( $gff3_files[0], $cod_analysis, $nc_analysis, $pseudo_analysis)};
+      @genes = @{$wb2ens->parse_genes_gff3( $gff3_files[0], $cod_analysis, $nc_analysis, $pseudo_analysis, { WormBase => 1, WormBase_imported => 1 } )};
     } else {
       open(my $gff_fh, "cat @gff3_files |") or die "Could not create GFF stream\n";
-      @genes = @{$wb2ens->parse_genes_gff3_fh( $gff_fh, $cod_analysis, $nc_analysis, $pseudo_analysis )};
+      @genes = @{$wb2ens->parse_genes_gff3_fh( $gff_fh, $cod_analysis, $nc_analysis, $pseudo_analysis,{ WormBase => 1, WormBase_imported => 1 } )};
     }
     if (scalar(@genes) == 0) {
       die "Could not extract any genes from GFF3 file. Exiting\n";
@@ -424,6 +424,21 @@ sub load_genes {
   } else {
     die "No gff or gff3 files found - death\n";
   }
+
+  # correct seleno proteins
+  if ($config->{seleno}) {
+    my %seleno_genes = map { $_ => 1 } split(/,/, $config->{seleno});
+
+    foreach my $gene (@genes) {
+      if (exists $seleno_genes{$gene->stable_id}) {
+        print STDERR "Fixing selenoprotein " . $gene->stable_id . "\n";
+        foreach my $t (@{$gene->get_all_Transcripts}) {
+          $wb2ens->translation_fix($t);
+        }
+      }
+    }
+  }
+  
 
   $wb2ens->write_genes( \@genes );
   
@@ -435,7 +450,7 @@ sub load_genes {
       . "-dbport $db->{port} "
       . "-coord toplevel "
       . "-write";
-  print "Running: $set_canon_cmd\n";
+  print STDERR "Running: $set_canon_cmd\n";
   system($set_canon_cmd) and die "Could not set canonical transcripts\n";
 
   my $timestamp = strftime("%Y-%m", localtime(time));
@@ -469,9 +484,9 @@ sub load_rules {
     
   foreach my $cfile (@conf_files) {
     if (-e $cfile) {
-      print "Loading rules from $cfile...\n";
+      print STDERR "Loading rules from $cfile...\n";
       my $cmd = "$load_rule_base $cfile";
-      print "Running: $cmd\n";
+      print STDERR "Running: $cmd\n";
       system($cmd) and die "Could not load analyses from $cfile\n";
     } else {
       die "Could not find analysis config file $cfile\n";
@@ -498,7 +513,7 @@ sub load_input_ids {
   my $trids_cmd = "$load_input_ids_base -translation_id -logic submittranslation";
 
   foreach my $cmd ($slice_cmd, $trids_cmd) {
-    print "Running: $cmd\n";
+    print STDERR "Running: $cmd\n";
     system($cmd) and die "Could not successfully make input ids\n";
   }
 
@@ -512,7 +527,7 @@ sub load_meta_table {
   
   my $mysql = "mysql -h $db->{host} -P $db->{port} -u $db->{user} --password=$db->{password} -D $db->{dbname}";
   
-  print "Populating meta table for $db->{dbname}...\n";
+  print STDERR "Populating meta table for $db->{dbname}...\n";
   foreach my $key (keys %$config) {
     if ($key =~ /^meta\.(\S+)/) {
       my $db_key = $1;
@@ -529,6 +544,8 @@ sub load_meta_table {
 #################################################
 sub empty_out_old_gene_set {
   my ($dba) = @_;
+
+  print STDERR "Emptying out old gene set and associated tables...\n";
 
   my $dbc = $dba->dbc;
 
