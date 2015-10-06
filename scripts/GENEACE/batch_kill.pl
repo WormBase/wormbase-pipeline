@@ -70,7 +70,7 @@ if ($test) {
   } else {
     $DB = 'wbgene_id;shap;3303';
 }
-my $wormbase = Wormbase->new("-organism" =>$species);
+my $wormbase = Wormbase->new("-organism" =>$species, -debug => $debug, -test => $test);
 my $database = "/nfs/wormpub/DATABASES/geneace";
 $log->write_to("Working.........\n-----------------------------------\n\n\n1) killing ${domain}s in file [${file}]\n\n");
 $log->write_to("TEST mode is ON!\n\n") if $test;
@@ -126,7 +126,7 @@ sub kill_gene {
   if($gene and $person and $remark) {
     $count++;
     my $geneObj = $ace->fetch($domain, $gene);
-    if($gene) {
+    if($geneObj) {
       
       if ($domain eq 'Gene'){
 	my $ver = $geneObj->Version->name;
