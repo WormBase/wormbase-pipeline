@@ -117,14 +117,14 @@ our $gff_types = ( $config->{gff_types} || "curated coding_exon" );
 # mysql database parameters
 #my $dba = Bio::EnsEMBL::DBSQL::DBConnection->new(
 my $dba = Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor->new(
-						 -user   => $config->{database}->{user},
-						 -dbname => $config->{database}->{dbname},
-						 -host   => $config->{database}->{host},
-						 -port   => $config->{database}->{port}, 
+						 -user   => $config->{core_database}->{user},
+						 -dbname => $config->{core_database}->{dbname},
+						 -host   => $config->{core_database}->{host},
+						 -port   => $config->{core_database}->{port}, 
 						 -driver => 'mysql'
 						)
   || die "cannot connect to db, $DBI::errstr";
-$dba->dbc->password( $config->{database}->{password} );
+$dba->dbc->password( $config->{core_database}->{password} );
 
 # get a clean handle to the database to use later
 my $raw_dbh = $dba->dbc->db_handle;
@@ -482,8 +482,8 @@ sub update_dna {
   # create analys_tables and rules
   my $db_options = sprintf(
 			   "-dbhost %s -dbuser %s -dbpass %s -dbname %s -dbport %s",
-			   $config->{database}->{host},   $config->{database}->{user}, $config->{database}->{password},
-			   $config->{database}->{dbname}, $config->{database}->{port}
+			   $config->{core_database}->{host},   $config->{core_database}->{user}, $config->{core_database}->{password},
+			   $config->{core_database}->{dbname}, $config->{core_database}->{port}
 			  );
   my $pipeline_scripts = "$ensembl_code_dir/ensembl-pipeline/scripts";
   my $generic_conf_dir         = ($generic_config->{confdir}||die("please set a generic confdir in $yfile_name\n"));
@@ -551,11 +551,11 @@ sub update_proteins {
   # load new ones
   
   my $db_options = sprintf('-dbhost %s -dbuser %s -dbpass %s -dbname %s -dbport %i',
-			   $config->{database}->{host},   
-                           $config->{database}->{user}, 
-                           $config->{database}->{password},
-                           $config->{database}->{dbname}, 
-                           $config->{database}->{port}
+			   $config->{core_database}->{host},   
+                           $config->{core_database}->{user}, 
+                           $config->{core_database}->{password},
+                           $config->{core_database}->{dbname}, 
+                           $config->{core_database}->{port}
 			  );
   
   $wormbase->run_command("perl $Bin/ENSEMBL/scripts/worm_lite.pl -yfile $yfile_name -load_genes -species $species", $log );
@@ -752,11 +752,11 @@ sub update_analysis {
   
   # update BLAT stuff
   my $db_options = sprintf('-user %s -password %s -host %s -port %i -dbname %s', 
-			   $config->{database}->{user}, 
-                           $config->{database}->{password},
-                           $config->{database}->{host},
-                           $config->{database}->{port},
-                           $config->{database}->{dbname});
+			   $config->{core_database}->{user}, 
+                           $config->{core_database}->{password},
+                           $config->{core_database}->{host},
+                           $config->{core_database}->{port},
+                           $config->{core_database}->{dbname});
   if ($do_blats) {
     $wormbase->run_script( "BLAST_scripts/ensembl_blat.pl $db_options -species $species -version $WS_version", $log );    
   }  
