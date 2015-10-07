@@ -196,7 +196,13 @@ if ($confirm) {
   $wormbase->run_script( 'update_Common_data.pl -cds2status ', $log);
 }    
 $wormbase->run_script( 'map_operons.pl'                          , $log) if $operon;
-$wormbase->run_script( "get_ena_submission_xrefs.pl -proteinxrefs", $log) if $enaprotxrefs;
+if ($enaprotxrefs) {
+  $wormbase->run_script( "get_ena_submission_xrefs.pl -proteinxrefs", $log);
+  if ($species eq 'elegans') {
+    $wormbase->run_script( 'generate_dbxref_file.pl -nocodingtrans -enaupload', $log);  
+  }
+}
+
 $wormbase->run_script( 'make_wormpep.pl -all -final'                  , $log) if $finish_wormpep;
 $wormbase->run_script( 'molecular_names_for_genes.pl'            , $log) if $names;
 $wormbase->run_script( 'get_treefam.pl'                          , $log) if $treefam;

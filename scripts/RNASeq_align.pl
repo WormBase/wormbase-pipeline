@@ -240,9 +240,10 @@ sub make_fpkm {
 			  'WBls:0000038' => 'L4',
 			  'WBls:0000032' => 'Dauer',
 			  'WBls:0000041' => 'Adult',
-			  'WBls:0000002' => 'Mixed stages',
-			 );
- 
+			  'WBls:0000002' => 'Mixed stages', # all stages Ce
+			  "WBls:0000101" => 'Mixed stages', # all stages nematode
+			);
+
 
 
   $log->write_to("\nResults\n");
@@ -470,12 +471,15 @@ sub make_fpkm {
     my $mean_value = mean(@total_values);
     $Ntotal = scalar @total_values;
 
+    my $all_life_stages = "WBls:0000002"; # all stages Ce
+    if ($species ne 'elegans') {$all_life_stages = "WBls:0000101"} # all stages nematode
+
     my $total_median_analysis = "RNASeq.$species.total_over_all_stages.control_median";
     print EXPRACE "\nGene : \"$gene_id\"\n";
-    print EXPRACE "RNASeq_FPKM  \"WBls:0000002\"  \"$median_value\"  From_analysis \"$total_median_analysis\"\n"; # all life stages
+    print EXPRACE "RNASeq_FPKM  \"$all_life_stages\"  \"$median_value\"  From_analysis \"$total_median_analysis\"\n"; # all life stages
     my $total_mean_analysis = "RNASeq.$species.total_over_all_stages.control_mean";
     print EXPRACE "\nGene : \"$gene_id\"\n";
-    print EXPRACE "RNASeq_FPKM  \"WBls:0000002\"  \"$mean_value\"  From_analysis \"$total_mean_analysis\"\n"; # all life stages
+    print EXPRACE "RNASeq_FPKM  \"$all_life_stages\"  \"$mean_value\"  From_analysis \"$total_mean_analysis\"\n"; # all life stages
 
   }
 

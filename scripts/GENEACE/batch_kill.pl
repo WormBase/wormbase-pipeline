@@ -70,7 +70,7 @@ if ($test) {
   } else {
     $DB = 'wbgene_id;shap;3303';
 }
-my $wormbase = Wormbase->new("-organism" =>$species);
+my $wormbase = Wormbase->new("-organism" =>$species, -debug => $debug, -test => $test);
 my $database = "/nfs/wormpub/DATABASES/geneace";
 $log->write_to("Working.........\n-----------------------------------\n\n\n1) killing ${domain}s in file [${file}]\n\n");
 $log->write_to("TEST mode is ON!\n\n") if $test;
@@ -105,7 +105,7 @@ while(<FILE>){
       undef $tflag;
     }
     else { #gather info
-      if   (/(WBGene\d{8}|WBVar\d{8})/) { $gene = $1; } 
+      if (/(WBGene\d{8}|WBVar\d{8})|WBsf\d+/) { $gene = $1; } 
       elsif(/(WBPerson\d+)/) { $person = $1; }
       elsif(/Remark\s+\:\s+\"(.*)\"/){
 	$remark = $1;
@@ -126,7 +126,7 @@ sub kill_gene {
   if($gene and $person and $remark) {
     $count++;
     my $geneObj = $ace->fetch($domain, $gene);
-    if($gene) {
+    if($geneObj) {
       
       if ($domain eq 'Gene'){
 	my $ver = $geneObj->Version->name;
@@ -138,9 +138,10 @@ sub kill_gene {
 	else {
 	  print ACE "\nGene : $gene\nVersion $ver\nHistory Version_change $ver now $person Event Killed\nDead\nRemark \"$remark\" Curator_confirmed $person\n-D Sequence_name\n-D Method\n-D Map_info\n-D Other_name\n-D Allele\n";
 	}
-      }
-      elsif($domain eq 'Variation'){
+      } elsif($domain eq 'Variation'){
 	print ACE "\nVariation : $gene\nStatus Dead Curator_confirmed $person\nRemark \"$remark\"\n";
+      } elsif($domain eq 'Feature'){
+        print Ace "\nFeature : $gene\nDeprecated \"feature has been retired\" Curator_confirmed $person\nRemark \"$remark\"\n";
       }
       #nameserver kill
       $log->write_to("NS->kill $gene\n");
