@@ -110,7 +110,7 @@ foreach my $species (@species_list) {
     close(HTMLOUT);
  
     # Generate the URL
-    my $url = "http://ngs.sanger.ac.uk/production/parasites/wormbase/RNASeq_alignments/myHub_$species/$species/$parts[5].bw";
+    my $url = "http://ngs.sanger.ac.uk/production/parasites/wormbase/RNASeq_alignments/$species/$parts[5].bw";
 
     # Create the trackDB text
     $groups .= sprintf("track %s\nsuperTrack on\ngroup %s\nshortLabel %s\nlongLabel %s\nhtml doc/%s\n\n", $parts[6], $parts[6], $parts[6], $parts[6], $parts[6]) unless $names{$parts[6]};
