@@ -129,15 +129,15 @@ foreach my $species (@species_list) {
 }
 
 sub get_reference {
-        # Form a reference from a PubMed ID
-        my ($pmid) = @_;
-        my $url = "http://www.ebi.ac.uk/europepmc/webservices/rest/search/query=$pmid";
-        my $ua = LWP::UserAgent->new();
-        my $response = $ua->get($url);
-        if ($response->is_success) {
-          my $result = XMLin($response->decoded_content);
-          my $text = encode_entities("$result->{resultList}->{result}->{authorString} ") . "<a href=\"http://europepmc.org/abstract/MED/$pmid\">" . encode_entities("$result->{resultList}->{result}->{title}") . "</a> <em>" . encode_entities($result->{resultList}->{result}->{journalTitle}) . "</em>" . encode_entities(", $result->{resultList}->{result}->{pubYear};$result->{resultList}->{result}->{journalVolume}($result->{resultList}->{result}->{issue}):$result->{resultList}->{result}->{pageInfo}");      # encode_entities will encode any symbolic characters (such as ligatures in author names) into the correct HTML
-          return $text;
-        }
+  # Form a reference from a PubMed ID
+  my ($pmid) = @_;
+  my $url = "http://www.ebi.ac.uk/europepmc/webservices/rest/search/query=$pmid";
+  my $ua = LWP::UserAgent->new();
+  my $response = $ua->get($url);
+  if ($response->is_success) {
+    my $result = XMLin($response->decoded_content);
+    my $text = encode_entities("$result->{resultList}->{result}->{authorString} ") . "<a href=\"http://europepmc.org/abstract/MED/$pmid\">" . encode_entities("$result->{resultList}->{result}->{title}") . "</a> <em>" . encode_entities($result->{resultList}->{result}->{journalTitle}) . "</em>" . encode_entities(", $result->{resultList}->{result}->{pubYear};$result->{resultList}->{result}->{journalVolume}($result->{resultList}->{result}->{issue}):$result->{resultList}->{result}->{pageInfo}");      # encode_entities will encode any symbolic characters (such as ligatures in author names) into the correct HTML
+    return $text;
+  }
 }
  
