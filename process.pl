@@ -10,6 +10,7 @@ my @species_list = ('echinococcus_granulosus_prjeb121', 'echinococcus_multilocul
 my $counter = 0;
 
 # Create the hub.txt file
+mkdir 'myHub' unless -d 'myHub';
 open(OUTFILE, '>myHub/hub.txt');
 print OUTFILE "hub WBPS-RNASeq\nshortLabel RNA-Seq Alignments\nlongLabel RNA-Seq Alignments\ngenomesFile genomes.txt\nemail parasite-help\@sanger.ac.uk\n";
 close(OUTFILE);
