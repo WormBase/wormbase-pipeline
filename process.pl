@@ -40,8 +40,6 @@ foreach my $species (@species_list) {
   mkdir "myHub/$species" unless -d "myHub/$species";
   open(OUTFILE, ">myHub/$species/trackDb.txt");
 
-## TODO: Only code above here converted to TrackHub; everything below still needs work
-  
   my $groups;
   my $files;
   my %names;
