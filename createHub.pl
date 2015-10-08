@@ -98,20 +98,21 @@ foreach my $species (@species_list) {
     print HTMLOUT $proj_desc;
     close(HTMLOUT);
 
+    # Generate the URL
+    my $url = "http://ngs.sanger.ac.uk/production/parasites/wormbase/RNASeq_alignments/$species/$parts[5].bw";
+
     # Create the sample description
     my $desc = sprintf(
                 'ENA Sample ID: <a href="http://www.ebi.ac.uk/ena/data/view/%s">%s</a><br />
                  %s',
               $parts[5], $parts[5], $proj_desc);
     $desc =~ s/\n//g;
+    $desc .= "<br /><br />This data comes from URL: $url";
     mkdir "myHub/$species/doc" unless -d "myHub/$species/doc";
     open(HTMLOUT, ">myHub/$species/doc/$track_id.html");
     print HTMLOUT $desc;
     close(HTMLOUT);
  
-    # Generate the URL
-    my $url = "http://ngs.sanger.ac.uk/production/parasites/wormbase/RNASeq_alignments/$species/$parts[5].bw";
-
     # Create the trackDB text
     $groups .= sprintf("track %s\nsuperTrack on\ngroup %s\nshortLabel %s\nlongLabel %s\nhtml doc/%s\n\n", $parts[6], $parts[6], $parts[6], $parts[6], $parts[6]) unless $names{$parts[6]};
     $files .= sprintf("track %s\nparent %s\nbigDataUrl %s\nshortLabel %s\nlongLabel %s\ncolor %s\nhtml doc/%s\n\n", $track_id, $parts[6], $url, $parts[0], $parts[1], $parts[4], $track_id);
