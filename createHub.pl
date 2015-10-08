@@ -76,33 +76,33 @@ foreach my $species (@species_list) {
     }
   
     # Create the project description
-    my $desc = sprintf('
+    my $proj_desc = sprintf('
                  ENA Project ID: <a href="http://www.ebi.ac.uk/ena/data/view/%s">%s</a><br />
                  ArrayExpress ID: <a href="http://www.ebi.ac.uk/arrayexpress/experiments/%s">%s</a>',
               $parts[6], $parts[6], $parts[7], $parts[7]);
-    if($parts[8]) {
-      $desc .= sprintf('<br />PubMed ID: <a href="http://europepmc.org/abstract/MED/%s">%s</a>', $parts[8], $parts[8]);
+    if($parts[6]) {
+      my $ref = get_ENA_project($parts[6]);
+      $proj_desc .= "<br /><br />$ref<br />" if $ref;
     }
-    $desc =~ s/\n//g;
-    mkdir "myHub/$species/doc" unless -d "myHub/$species/doc";
-    open(HTMLOUT, ">myHub/$species/doc/$parts[6].html");
-    print HTMLOUT $desc;
-    close(HTMLOUT);
-
-    # Create the sample description
-    $desc = sprintf(
-                'ENA Sample ID: <a href="http://www.ebi.ac.uk/ena/data/view/%s">%s</a><br />
-                 ENA Project ID: <a href="http://www.ebi.ac.uk/ena/data/view/%s">%s</a><br />
-                 ArrayExpress ID: <a href="http://www.ebi.ac.uk/arrayexpress/experiments/%s">%s</a>',
-              $parts[5], $parts[5], $parts[6], $parts[6], $parts[7], $parts[7]);
     if($parts[8]) {
       my $ref = get_reference($parts[8]);
       if($ref) {
-        $desc .= "<br />$ref"; 
+        $proj_desc .= "<br />Reference<br />$ref"; 
       } else {
-        $desc .= sprintf('<br />PubMed ID: <a href="http://europepmc.org/abstract/MED/%s">%s</a>', $parts[8], $parts[8]);
+        $proj_desc .= sprintf('<br />PubMed ID: <a href="http://europepmc.org/abstract/MED/%s">%s</a>', $parts[8], $parts[8]);
       }
     }
+    $proj_desc =~ s/\n//g;
+    mkdir "myHub/$species/doc" unless -d "myHub/$species/doc";
+    open(HTMLOUT, ">myHub/$species/doc/$parts[6].html");
+    print HTMLOUT $proj_desc;
+    close(HTMLOUT);
+
+    # Create the sample description
+    my $desc = sprintf(
+                'ENA Sample ID: <a href="http://www.ebi.ac.uk/ena/data/view/%s">%s</a><br />
+                 %s',
+              $parts[5], $parts[5], $proj_desc);
     $desc =~ s/\n//g;
     mkdir "myHub/$species/doc" unless -d "myHub/$species/doc";
     open(HTMLOUT, ">myHub/$species/doc/$track_id.html");
@@ -137,6 +137,18 @@ sub get_reference {
   if ($response->is_success) {
     my $result = XMLin($response->decoded_content);
     my $text = encode_entities("$result->{resultList}->{result}->{authorString} ") . "<a href=\"http://europepmc.org/abstract/MED/$pmid\">" . encode_entities("$result->{resultList}->{result}->{title}") . "</a> <em>" . encode_entities($result->{resultList}->{result}->{journalTitle}) . "</em>" . encode_entities(", $result->{resultList}->{result}->{pubYear};$result->{resultList}->{result}->{journalVolume}($result->{resultList}->{result}->{issue}):$result->{resultList}->{result}->{pageInfo}");      # encode_entities will encode any symbolic characters (such as ligatures in author names) into the correct HTML
+    return $text;
+  }
+}
+
+sub get_ENA_project {
+  my ($id) = @_;
+  my $url = "http://www.ebi.ac.uk/ena/data/view/$id&display=xml";
+  my $ua = LWP::UserAgent->new();
+  my $response = $ua->get($url);
+  if ($response->is_success) {
+    my $result = XMLin($response->decoded_content);
+    my $text = "Project Description<br />$result->{STUDY}->{DESCRIPTOR}->{STUDY_DESCRIPTION}";
     return $text;
   }
 }
