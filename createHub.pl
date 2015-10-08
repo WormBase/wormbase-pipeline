@@ -4,6 +4,8 @@ use strict;
 use warnings;
 use Data::Dumper;
 use LWP::UserAgent;
+use HTML::Entities;
+use XML::Simple;
 use JSON;
 
 my @species_list = `ls ./in/*.txt | xargs -n1 basename`;
@@ -94,7 +96,12 @@ foreach my $species (@species_list) {
                  ArrayExpress ID: <a href="http://www.ebi.ac.uk/arrayexpress/experiments/%s">%s</a>',
               $parts[5], $parts[5], $parts[6], $parts[6], $parts[7], $parts[7]);
     if($parts[8]) {
-      $desc .= sprintf('<br />PubMed ID: <a href="http://europepmc.org/abstract/MED/%s">%s</a>', $parts[8], $parts[8]);
+      my $ref = get_reference($parts[8]);
+      if($ref) {
+        $desc .= "<br />$ref"; 
+      } else {
+        $desc .= sprintf('<br />PubMed ID: <a href="http://europepmc.org/abstract/MED/%s">%s</a>', $parts[8], $parts[8]);
+      }
     }
     $desc =~ s/\n//g;
     mkdir "myHub/$species/doc" unless -d "myHub/$species/doc";
@@ -119,5 +126,18 @@ foreach my $species (@species_list) {
   close(INFILE);
   close(OUTFILE);
  
+}
+
+sub get_reference {
+        # Form a reference from a PubMed ID
+        my ($pmid) = @_;
+        my $url = "http://www.ebi.ac.uk/europepmc/webservices/rest/search/query=$pmid";
+        my $ua = LWP::UserAgent->new();
+        my $response = $ua->get($url);
+        if ($response->is_success) {
+          my $result = XMLin($response->decoded_content);
+          my $text = encode_entities("$result->{resultList}->{result}->{authorString} ") . "<a href=\"http://europepmc.org/abstract/MED/$pmid\">" . encode_entities("$result->{resultList}->{result}->{title}") . "</a> <em>" . encode_entities($result->{resultList}->{result}->{journalTitle}) . "</em>" . encode_entities(", $result->{resultList}->{result}->{pubYear};$result->{resultList}->{result}->{journalVolume}($result->{resultList}->{result}->{issue}):$result->{resultList}->{result}->{pageInfo}");      # encode_entities will encode any symbolic characters (such as ligatures in author names) into the correct HTML
+          return $text;
+        }
 }
  
