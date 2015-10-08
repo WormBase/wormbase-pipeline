@@ -6,7 +6,12 @@ use Data::Dumper;
 use LWP::UserAgent;
 use JSON;
 
-my @species_list = ('echinococcus_granulosus_prjeb121', 'echinococcus_multilocularis_prjeb122', 'hymenolepis_microstoma_prjeb124', 'strongyloides_stercoralis_prjeb528');
+my @species_list = `ls ./in/*.txt | xargs -n1 basename`;
+foreach(@species_list) {
+  chomp;
+  $_ =~ s/\.txt//;
+}
+
 my $counter = 0;
 
 # Create the hub.txt file
