@@ -19,7 +19,7 @@ my $counter = 0;
 # Create the hub.txt file
 mkdir 'myHub' unless -d 'myHub';
 open(OUTFILE, '>myHub/hub.txt');
-print OUTFILE "hub WBPS-RNASeq\nshortLabel RNA-Seq Alignments\nlongLabel RNA-Seq Alignments\ngenomesFile genomes.txt\nemail parasite-help\@sanger.ac.uk\n";
+print OUTFILE "hub WBPS-RNASeq\nshortLabel WormBase ParaSite\nlongLabel RNA-Seq Alignments for WormBase ParaSite\ngenomesFile genomes.txt\nemail parasite-help\@sanger.ac.uk\n";
 close(OUTFILE);
 
 open(OUTFILE, '>myHub/genomes.txt');
