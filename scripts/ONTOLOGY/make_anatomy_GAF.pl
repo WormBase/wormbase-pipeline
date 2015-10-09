@@ -70,8 +70,11 @@ while ( my $obj = $it->next ) {
     $genes{$g->name}++;
   }
   foreach my $at ($obj->Anatomy_term) {
-    my $qual = $at->right;
-    $at{$at->name} = ($qual) ? $qual : "";
+    $at{$at} = "";
+    foreach my $tag ($at->col) {
+      next if $tag->name =~ /Life_stage/;
+      $at{$at} = $tag->name;
+    }
   }
 
   # take first reference only
