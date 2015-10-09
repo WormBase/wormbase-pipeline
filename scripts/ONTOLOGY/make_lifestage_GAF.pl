@@ -15,6 +15,7 @@ use GAF;
 
 my ( $help, $debug, $test, $store, $wormbase );
 my ( $outfile, $acedbpath, $verbose );
+my ( $rnaseq );
 
 GetOptions(
   "help"       => \$help,
@@ -23,6 +24,7 @@ GetOptions(
   "store:s"    => \$store,
   "database:s" => \$acedbpath,
   "output:s"   => \$outfile,
+  "rnaseq"     => \$rnaseq,
   "verbose"    => \$verbose,
     );
 
@@ -96,34 +98,36 @@ while ( my $obj = $it->next ) {
   }
 }
 
-$it = $db->fetch_many(-query => "Find Gene RNAseq_FPKM AND Species = \"$full_name\" AND NOT Dead");
-while (my $g = $it->next) {
-  foreach my $ls ($g->RNASeq_FPKM) {
-    my %sra_accs;
-    foreach my $data ($ls->col) {
-      if ($data->name >= 10.0) {  # semi-arbitrary cut-off for confirmed expression
-        if ($data->right and $data->right->name eq 'From_analysis') {
-          my $ana = $data->right->right->name;
-          if ($ana =~ /\.(SRX\S+)/) {
-            $sra_accs{$1} = 1;
+if ($rnaseq) {
+  $it = $db->fetch_many(-query => "Find Gene RNAseq_FPKM AND Species = \"$full_name\" AND NOT Dead");
+  while (my $g = $it->next) {
+    foreach my $ls ($g->RNASeq_FPKM) {
+      my %sra_accs;
+      foreach my $data ($ls->col) {
+        if ($data->name >= 10.0) {  # semi-arbitrary cut-off for confirmed expression
+          if ($data->right and $data->right->name eq 'From_analysis') {
+            my $ana = $data->right->right->name;
+            if ($ana =~ /\.(SRX\S+)/) {
+              $sra_accs{$1} = 1;
+            }
           }
         }
       }
-    }
-    if (keys %sra_accs) {
-      my $with_from = join("|", map { "ENA:$_" } sort keys %sra_accs);
-      &print_wormbase_GAF_line($outfh, 
-                               $g, 
-                               $gene_info->{$g}->{public_name}, 
-                               "",
-                               $ls, 
-                               "WB_REF:",
-                               "IEA", 
-                               $with_from,
-                               "L",  
-                               $gene_info->{$g}->{sequence_name},
-                               $taxid, 
-                               $date);
+      if (keys %sra_accs) {
+        my $with_from = join("|", map { "ENA:$_" } sort keys %sra_accs);
+        &print_wormbase_GAF_line($outfh, 
+                                 $g, 
+                                 $gene_info->{$g}->{public_name}, 
+                                 "",
+                                 $ls, 
+                                 "WB_REF:",
+                                 "IEA", 
+                                 $with_from,
+                                 "L",  
+                                 $gene_info->{$g}->{sequence_name},
+                                 $taxid, 
+                                 $date);
+      }
     }
   }
 }
