@@ -115,7 +115,7 @@ foreach my $species (@species_list) {
  
     # Create the trackDB text
     $groups .= sprintf("track %s\nsuperTrack on\ngroup %s\nshortLabel %s\nlongLabel %s\nhtml doc/%s\n\n", $parts[6], $parts[6], $parts[6], $parts[6], $parts[6]) unless $names{$parts[6]};
-    $files .= sprintf("track %s\nparent %s\nbigDataUrl %s\nshortLabel %s\nlongLabel %s\ncolor %s\nhtml doc/%s\n\n", $track_id, $parts[6], $url, $parts[0], $parts[1], $parts[4], $track_id);
+    $files .= sprintf("track %s\nparent %s\ntype bigWig\nbigDataUrl %s\nshortLabel %s\nlongLabel %s\ncolor %s\nhtml doc/%s\n\n", $track_id, $parts[6], $url, $parts[0], $parts[1], $parts[4], $track_id);
     $counter++;
     $names{$parts[6]} = 1;
 
