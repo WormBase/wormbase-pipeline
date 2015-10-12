@@ -233,6 +233,7 @@ sub parse_genes_gff3_fh {
 
     my $gene = Bio::EnsEMBL::Gene->new(
       -stable_id => $sid,
+      -source => 'WormBase',
         );
 
     my (%gene_biotypes);
@@ -384,6 +385,7 @@ sub parse_genes_gff3_fh {
       
       my $transcript = Bio::EnsEMBL::Transcript->new(
         -stable_id => $tsid,
+        -source => 'WormBase',
           );
 
 
