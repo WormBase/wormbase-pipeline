@@ -452,6 +452,18 @@ sub parse_genes_gff3_fh {
           $transcript->analysis($nc_ana);
           $transcript->biotype($gff_type);
           $gene_biotypes{"miRNA"}++;
+        } elsif ( $gff_type eq 'scRNA') {
+          # not acknowledged as a biotype by Ensembl; change to default ncRNA
+          $transcript->analysis($nc_ana);
+          my $bt = "ncRNA";
+          $transcript->biotype($bt);
+          $gene_biotypes{$bt}++;
+        }  elsif ( $gff_type eq 'antisense_RNA') {
+          # not acknowledged as a biotype by Ensembl; change to default ncRNA
+          $transcript->analysis($nc_ana);
+          my $bt = "antisense";
+          $transcript->biotype($bt);
+          $gene_biotypes{$bt}++;
         } else {
           $transcript->analysis($nc_ana);
           my $bt = ($gff_type =~ /RNA/) ? $gff_type : 'ncRNA';
