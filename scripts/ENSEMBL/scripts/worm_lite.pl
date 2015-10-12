@@ -566,6 +566,7 @@ sub empty_out_old_gene_set {
   $dbc->do('TRUNCATE TABLE identity_xref') or die $dbc->errstr;
   $dbc->do('TRUNCATE TABLE external_synonym') or die $dbc->errstr;
   $dbc->do('TRUNCATE TABLE density_type') or die $dbc->errstr;
+  $dbc->do('TRUNCATE TABLE density_feature') or die $dbc->errstr;
   $dbc->do('TRUNCATE TABLE dependent_xref') or die $dbc->errstr;
 
 }
