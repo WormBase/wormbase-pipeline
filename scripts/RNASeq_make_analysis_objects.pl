@@ -1675,6 +1675,18 @@ sub get_life_stage {
 			  '480 min post first-cleavage' => 'WBls:0000591',
 			  '510 min post first-cleavage' => 'WBls:0000621',
 			  '540 min post first-cleavage' => 'WBls:0000651',
+			  '560 min post first-cleavage' => 'WBls:0000693',
+			  '570 min post first-cleavage' => 'WBls:0000694',
+			  '640 min post first-cleavage' => 'WBls:0000695',
+			  '650 min post first-cleavage' => 'WBls:0000696',
+			  '660 min post first-cleavage' => 'WBls:0000697',
+			  '720 min post first-cleavage' => 'WBls:0000698',
+			  '770 min post first-cleavage' => 'WBls:0000699',
+			  '780 min post first-cleavage' => 'WBls:0000700',
+			  '820 min post first-cleavage' => 'WBls:0000701',
+			  '830 min post first-cleavage' => 'WBls:0000702',
+			  '850 min post first-cleavage' => 'WBls:0000703',
+
 
 			    # my extra terms
 			    'early embryo' => 'WBls:0000004', # 'proliferating embryo' => 'WBls:0000004',
