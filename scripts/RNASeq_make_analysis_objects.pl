@@ -1393,7 +1393,9 @@ sub get_tissue {
 			 'enteric muscle'	 => 'WBbt:0008600',
 			 'male sex myoblast'	 => 'WBbt:0008604',
 			 'hermaphrodite sex myoblast'	 => 'WBbt:0008605',
-
+			 'C cell'        => 'WBbt:0003810',
+			 'E cell'        => 'WBbt:0004804',
+			 'MS cell'       => 'WBbt:0004458',
 			);
 
   # see if we can find a tissue already seen in this study
