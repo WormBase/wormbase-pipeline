@@ -955,6 +955,14 @@ Overlap_mode Bumpable
 Remark "cufflinks assembled RNASeq from adult female libraries: B. malayi adult females were isolated from peritoneally-infected gerbils >60 days post infection. Females were gravid and actively releasing mf. They were rinsed with media 3 times and flash frozen prior to RNA isolation."
 GFF_SO "SO:0000120" "predicted_CDS_ace2so" // protein_coding_primary_transcript, but No_span
 
+Method : "cufflinks"
+Colour RED
+CDS_colour RED
+Show_up_strand
+Overlap_mode Bumpable
+Remark "cufflinks assembled RNASeq from mixed libraries."
+GFF_SO "SO:0000120" "predicted_CDS_ace2so" // protein_coding_primary_transcript, but No_span
+
 Method : "cufflinks_Adult_male"
 Colour RED
 CDS_colour RED
