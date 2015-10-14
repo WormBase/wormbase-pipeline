@@ -25,7 +25,7 @@ my ($test,$debug,$wormbase,$store,$noupdate,$noload,$database, $acefile);
 
 GetOptions (
   "debug:s"     => \$debug,
-  "store"       => \$store,
+  "store=s"     => \$store,
   "test"        => \$test, 
   "database:s"  => \$database,
   "noupdate"    => \$noupdate,

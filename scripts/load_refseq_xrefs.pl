@@ -16,9 +16,11 @@
 #==================
 
 use strict;
+use Carp;
+use Getopt::Long;
+
 use lib $ENV{CVS_DIR};
 use Wormbase;
-use Getopt::Long;
 use Log_files;
 use Storable;
 
@@ -30,7 +32,7 @@ my ($test,$debug,$wormbase,$store,$noload,$database,$xreffile,$acefile);
 
 GetOptions (
   "debug:s"     => \$debug,
-  "store"       => \$store,
+  "store=s"     => \$store,
   "test"        => \$test, 
   "database:s"  => \$database,
   "acefile=s"   => \$acefile,
