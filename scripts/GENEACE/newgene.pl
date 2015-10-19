@@ -40,6 +40,7 @@ my $store;
 my ($USER,$PASS,); # provide your mysql username and password to request new WBGeneIDs
 my $sneak;       # option to store the ID::Gene data in a pseudo .ace format.
 my $outdir;      # specify your own output directory for the files to load.
+my $bio;         # Mandatory biotype
 
 GetOptions ("input=s"     => \$input,
             "seq=s"       => \$seq,
@@ -58,6 +59,7 @@ GetOptions ("input=s"     => \$input,
 	    "password:s"  => \$PASS,
 	    "pseudoace:s" => \$sneak,
 	    "out:s"       => \$outdir,
+	    "bio:s"         => \$bio,
 	    );
 
 my $wormbase;
@@ -103,11 +105,27 @@ die "-who option must be an integer\n"                   if ($who && ($who !~ m/
 die "can't use -id option if processing input file\n"    if ($id && $input);
 
 die "-seq option is not a valid type of sequence name\n" if ($seq && ($seq !~ $wormbase->cds_regex));
+die "-bio is a mandatory option\n" unless ($bio);
 
 # set CGC field to null string if not specified
 $cgc = "NULL" if (!$cgc);
 
 
+# SO:0001217 CDS
+# SO:0001263 Transcript
+# SO:0000111 Transposon
+# SO:0000336 Pseudogene
+
+unless (($bio eq "CDS") || ($bio eq "Transcript") || ($bio eq "Transposon") || ($bio eq "Pseudogene")) {
+  die "-bio option $bio is not valid, please use CDS/Transcript/Transposon/Pseudogene\n";
+}
+
+my $SO;
+
+if ($bio eq "CDS") {$SO = "0001217";}
+if ($bio eq "Transcript") {$SO = "0001263";}
+if ($bio eq "Transposon") {$SO = "0000111";}
+if ($bio eq "Pseudogene") {$SO = "0000336";}
 
 ######################################
 # set person ID for curator
@@ -338,6 +356,7 @@ sub process_gene{
     print OUT "\nGene : $gene_id\n";
     print OUT "Live\n";
     print OUT "Version 1\n";
+    print OUT "Biotype \"SO:$SO\"\n";
     print OUT "Sequence_name \"$seq\"\n";
     if ($species eq "elegans"){
       print OUT "Other_name \"CELE_${seq}\"\n";
