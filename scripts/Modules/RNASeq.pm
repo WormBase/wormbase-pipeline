@@ -134,6 +134,7 @@ sub read_accession {
 
   my %data;
 
+  # For searchable fields, see the last table on http://www.ebi.ac.uk/ena/data/warehouse/usage
   my @fields = (
 		"run_accession",
 #		"study_accession", # don't read the study_accession treat the secondary_study_accession as the study_accession
@@ -166,7 +167,7 @@ sub read_accession {
   open (DATA, "wget -q -O - '$query' |") || die("RNASeq: Can't get information on SRA entry $accession in read_accession()\n");
 
   my $line_count=0;
-  while(my $line = <DATA>) {
+  while (my $line = <DATA>) {
     if (++$line_count == 1) {next;} # skip the title line
     chomp $line;
     
@@ -239,6 +240,80 @@ sub read_accession {
   return \%data;
 }
 
+
+=head2 
+
+    Title   :   get_pubmed
+    Usage   :   %pubmed = $self->get_pubmed();
+    Function:   get the xref of study ID and PubMed ID from the ENA
+    Returns :   hash of pubmed IDs keyed by primary study ID (study_alias=PRJNA259320)
+    Args    :   
+
+  Get Pubmed for each Study (primary 'PRJN' accession)
+ http://www.ebi.ac.uk/ena/data/xref/search?source=PubMed&target=study
+  Get EuropePMC for each study gives no results, so ignore this
+ http://www.ebi.ac.uk/ena/data/xref/search?source=EuropePMC&target=study
+
+=cut
+
+
+sub get_pubmed {
+
+  my $query = "http://www.ebi.ac.uk/ena/data/xref/search?source=PubMed&target=study";
+    
+  open (DATA, "wget -q -O - '$query' |") || die("RNASeq: Can't get information on PubMed xrefs in get_pubmed()\n");
+
+  my %pubmed;
+  my $line_count=0;
+  while (my $line = <DATA>) {
+    if (++$line_count == 1) {next;} # skip the title line
+
+#Source	Source primary accession	Source secondary accession	Target	Target primary accession	Target secondary accession
+#PubMed	10023641		study	PRJNA75501	
+    my ($source, $pubmed, $secondary, $target, $study) = split /\s/, $line;
+    $pubmed{$study}=$pubmed;
+
+  }
+  close(DATA);
+
+  return %pubmed;
+}
+
+=head2 
+
+    Title   :   get_WBPaper
+    Usage   :   %wbpaper = $self->get_WBPaper();
+    Function:   get the xref of WBPaper ID and PubMed ID from Caltech
+    Returns :   hash of WBPaper IDs keyed by PubMed ID
+    Args    :   
+
+=cut
+
+sub get_WBPaper {
+
+  my $query = "http://tazendra.caltech.edu/~azurebrd/cgi-bin/forms/generic.cgi?action=WpaXref";
+    
+  open (DATA, "wget -q -O - '$query' |") || die("RNASeq: Can't get information on PubMed xrefs in get_WBPaper()\n");
+
+  my %wbpaper;
+  while (my $line = <DATA>) {
+
+#WBPaper00000044	cgc44
+#WBPaper00000044	doi10.1163/187529267X00058
+#WBPaper00000045	cgc45
+#WBPaper00000045	doi10.1007/BF01896577
+#WBPaper00000045	pmid5800143
+#WBPaper00000046	cgc46
+#WBPaper00000046	pmid19322369
+    my ($wbpaper, $pubmed) = split /\s+/, $line;
+    if ($pubmed =~ /pmid(\d+)/) { # ignore anything that is not a PubMed ID
+      $wbpaper{$pubmed} = $1;
+    }
+  }
+  close(DATA);
+
+  return %wbpaper;
+}
 
 =head2 
 
@@ -412,9 +487,12 @@ sub find_experiments_search {
   my $query = 'http://www.ebi.ac.uk/ena/data/warehouse/search?query=%22tax_eq%28TAXON%29%22&result=read_experiment&display=XML';
   $query =~ s/TAXON/$taxon_id/;
   
-  my $ua = LWP::UserAgent->new();
-  my $response = $ua->get($query);
-  my $xmlstring = $response->content;
+  open (DATA, "wget -q -O - '$query' |") || die("RNASeq: Can't get information on SRA entries in find_experiments_search()\n");
+
+  my $primary_id;
+  my $study_id=0;
+  my $in_study=0;
+  my $in_geo=0;
   
   #     <IDENTIFIERS>
   #          <PRIMARY_ID>SRX007173</PRIMARY_ID>
@@ -428,14 +506,24 @@ sub find_experiments_search {
   #          </IDENTIFIERS>
   #     </STUDY_REF>
   
-  my $primary_id;
-  my $study_id=0;
-  my $in_study=0;
+
+  #   <EXPERIMENT_ATTRIBUTES>
+  #        <EXPERIMENT_ATTRIBUTE>
+  #             <TAG>GEO Accession</TAG>
+  #             <VALUE>GSM1576710</VALUE>
+  #        </EXPERIMENT_ATTRIBUTE>
   
-  my @xmlstring = split /\n/, $xmlstring;
-  foreach my $line (@xmlstring) {
-    if ($line =~ /<PRIMARY_ID>(\S+)<\/PRIMARY_ID>/ && !$in_study) {
+#  my $trace='SRX494916'; # for debugging
+#  my $trace_on=0;
+
+  my $line_count=0;
+  while (my $line = <DATA>) {
+
+#    if ($trace_on) {print $line}
+
+    if ($line =~ /<PRIMARY_ID>(..X\S+)<\/PRIMARY_ID>/ && !$in_study) {
       $primary_id = $1;
+#      if ($primary_id eq $trace) {$trace_on=1;print $line} else {$trace_on=0;}
     } elsif ($line =~ /<STUDY_REF /) { # the study accession should be somewhere in this line
       $in_study=1;
       if ($line =~ /accession=\"(\S+)\"/) {
@@ -447,8 +535,18 @@ sub find_experiments_search {
       $in_study=0;
     } elsif ($line =~ /<TITLE>(.+?)<\/TITLE>/) {
       $data->{$primary_id}{study_title} = $1;
+    } elsif ($line =~ /<TAG>GEO Accession<\/TAG>/) {
+      $in_geo=1;
+    } elsif ($in_geo) {
+      $in_geo=0;
+      if ($line =~ /<VALUE>(GSM\d+)<\/VALUE>/) {
+	$data->{$primary_id}{geo_accession} = $1;
+      }
     }
   }
+  close(DATA);
+
+  if (!defined $data) {die("RNASeq: Can't get information on SRA entries in find_experiments_search()\n")}
   return $data;
 }
 
@@ -850,6 +948,9 @@ sub update_experiment_config_data {
   my @new_experiment_accessions;
   my @existing_experiment_accessions;
 
+  my %pubmed = $self->get_pubmed(); # hash of pubmed IDs keyed by primary study ID (study_alias=PRJNA259320)
+  my %wbpaper = $self->get_WBPaper(); # hash of WBPaper IDs keyed by PubMed ID
+
   foreach my $experiment (keys %{$ena_experiments}) {
     if (!exists $config_experiments->{$experiment}) {
       push @new_experiment_accessions, $experiment;
@@ -858,6 +959,7 @@ sub update_experiment_config_data {
     }
   }
 
+  # create new studies
   my $study_ini = $self->read_all_studies_config();
   foreach my $experiment_accession (@new_experiment_accessions) {
     # store study details in INI file
@@ -865,6 +967,27 @@ sub update_experiment_config_data {
     my $study_title = $ena_experiments->{$experiment_accession}{study_title};
     $study_ini->AddSection ($study_accession);
     $study_ini->newval($study_accession, 'study_title', $study_title);
+    # add pubmed and wbpaper data
+    if (exists $ena_experiments->{$experiment_accession}{study_alias}) {
+      my $study_alias = $ena_experiments->{$experiment_accession}{study_alias};
+      my $pubmed = $pubmed{$study_alias};
+      if (defined $pubmed) {
+	$study_ini->newval($study_accession, 'pubmed', $pubmed);
+	my $wbpaper = $wbpaper{$pubmed};
+	if (defined $wbpaper) {
+	  $study_ini->newval($study_accession, 'wbpaper', $wbpaper);
+	}
+      }
+    }
+    # library_source=GENOMIC
+    if ($ena_experiments->{$experiment_accession}{library_source} eq 'GENOMIC') {$study_ini->newval($study_accession, 'ignore', 'Genomic.')}
+
+    # library_strategy=ChIP-Seq
+    if ($ena_experiments->{$experiment_accession}{library_strategy} eq 'ChIP-Seq') {$study_ini->newval($study_accession, 'ignore', 'ChIP-Seq.')}
+
+    # library_selection=size fractionation
+    if ($ena_experiments->{$experiment_accession}{library_selection} eq 'size fractionation') {$study_ini->newval($study_accession, 'ignore', 'Small RNA stuff.')}
+
     $study_ini->RewriteConfig;
     print "Added Study $study_accession to Study.ini\n";
 
@@ -872,14 +995,39 @@ sub update_experiment_config_data {
     $self->add_one_new_experiment_to_config($study_accession, $experiment_accession);
   }
 
+  # add new experiments to existing studies
   foreach my $experiment_accession (@existing_experiment_accessions) {
-    # we don't want to change Study INI record, 
+    # we don't want to change the Study INI record much, 
     # we just want to add anything that may have been added or changed
     # to the experiment record, unless it has known problems that have
     # been manually corrected in which case we should have put a
     # keyword 'locked' in the record.
-    # get full experiment details from ENA and store experiment details in INI file
+
+    # But it is useful to add pubmed and wbpaper data to the Study.ini
     my $study_accession = $ena_experiments->{$experiment_accession}{study_accession};
+    if (exists $ena_experiments->{$experiment_accession}{study_alias}) {
+      my $study_alias = $ena_experiments->{$experiment_accession}{study_alias};
+      my $pubmed = $pubmed{$study_alias};
+      if (defined $pubmed) {
+	$study_ini->newval($study_accession, 'pubmed', $pubmed);
+	my $wbpaper = $wbpaper{$pubmed};
+	if (defined $wbpaper) {
+	  $study_ini->newval($study_accession, 'wbpaper', $wbpaper);
+	}
+      }
+    }
+    # library_source=GENOMIC
+    if ($ena_experiments->{$experiment_accession}{library_source} eq 'GENOMIC') {$study_ini->newval($study_accession, 'ignore', 'Genomic.')}
+
+    # library_strategy=ChIP-Seq
+    if ($ena_experiments->{$experiment_accession}{library_strategy} eq 'ChIP-Seq') {$study_ini->newval($study_accession, 'ignore', 'ChIP-Seq.')}
+
+    # library_selection=size fractionation
+    if ($ena_experiments->{$experiment_accession}{library_selection} eq 'size fractionation') {$study_ini->newval($study_accession, 'ignore', 'Small RNA stuff.')}
+
+    $study_ini->RewriteConfig;
+
+    # get full experiment details from ENA and store experiment details in INI file
     print "Checking existing expt $experiment_accession in study $study_accession\n";
     $self->update_experiment_config_record($study_accession, $experiment_accession, %{$config_experiments->{$experiment_accession}});
   }

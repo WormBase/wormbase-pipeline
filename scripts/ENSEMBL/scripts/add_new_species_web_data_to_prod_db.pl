@@ -10,7 +10,9 @@ use Bio::EnsEMBL::DBSQL::DBConnection;
 my (
   $verbose,
   $host, $port, $user, $pass, $database,
-  $mhost, $muser, $mport, $mpass, $mdatabase);
+  $mhost, $muser, $mport, $mpass, $mdatabase, 
+  $clear_existing,
+    );
     
 
 
@@ -26,6 +28,7 @@ GetOptions(
   "port=i"      => \$port,
   "dbname=s"    => \$database,
   "verbose"     => \$verbose,
+  "clearexisting" =>  \$clear_existing,
     );
 
 
@@ -67,6 +70,18 @@ my $res_aref = $prod->sql_helper()->execute(-SQL=>$species_prod_sql,
                                             -PARAMS => [$species]);
 my ($species_id) = @{$res_aref->[0]};
 
+if (not $species_id) {
+  die "Could not find species_id for $species\n";
+}
+
+if ($clear_existing) {
+  print STDERR "DELETING existing web_data for $species\n";
+
+  my $delete_existing_sql = "DELETE FROM analysis_web_data WHERE species_id = ?";
+
+  $res_aref = $prod->sql_helper()->execute_update(-SQL => $delete_existing_sql,
+                                                  -PARAMS => [$species_id]);
+}  
 
 
 my $analysis_prod_sql = "SELECT analysis_description_id, default_web_data_id "
