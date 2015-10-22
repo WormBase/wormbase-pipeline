@@ -764,7 +764,7 @@ sub add_one_new_experiment_to_config {
     # library_selection=size fractionation
     if ($experiments->{$experiment_accession}{library_selection} eq 'size fractionation') {$study_ini->newval($study_accession, 'ignore', 'Small RNA stuff.')}
 
-    # $study_ini->RewriteConfig; is done in the calling routine, not required here
+    $study_ini->RewriteConfig;
 
 }
 
@@ -874,7 +874,7 @@ sub update_experiment_config_record {
     # library_selection=size fractionation
     if ($experiments->{$experiment_accession}{library_selection} eq 'size fractionation') {$study_ini->newval($study_accession, 'ignore', 'Small RNA stuff.')}
 
-#    $study_ini->RewriteConfig; is done in the calling routine, not required here
+    $study_ini->RewriteConfig;
 
 }
 
@@ -1020,7 +1020,7 @@ sub update_experiment_config_data {
     # store study details in INI file
     my $study_accession = $ena_experiments->{$experiment_accession}{study_accession};
     my $study_title = $ena_experiments->{$experiment_accession}{study_title};
-    my $geo_accession = (exists $ena_experiments->{$experiment_accession}{study_title}) ? $ena_experiments->{$experiment_accession}{study_title} : '';
+    my $geo_accession = (exists $ena_experiments->{$experiment_accession}{geo_accession}) ? $ena_experiments->{$experiment_accession}{geo_accession} : '';
     $study_ini->AddSection ($study_accession);
     $study_ini->newval($study_accession, 'study_title', $study_title);
     print "Added Study $study_accession to Study.ini\n";
@@ -1039,7 +1039,7 @@ sub update_experiment_config_data {
 
     # But it is useful to add pubmed and wbpaper data to the Study.ini
     my $study_accession = $ena_experiments->{$experiment_accession}{study_accession};
-    my $geo_accession = (exists $ena_experiments->{$experiment_accession}{study_title}) ? $ena_experiments->{$experiment_accession}{study_title} : '';
+    my $geo_accession = (exists $ena_experiments->{$experiment_accession}{geo_accession}) ? $ena_experiments->{$experiment_accession}{geo_accession} : '';
 
     # get full experiment details from ENA and store experiment details in INI file
     print "Checking existing expt $experiment_accession in study $study_accession\n";
