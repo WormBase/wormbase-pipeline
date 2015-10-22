@@ -270,7 +270,7 @@ sub get_pubmed {
 
 #Source	Source primary accession	Source secondary accession	Target	Target primary accession	Target secondary accession
 #PubMed	10023641		study	PRJNA75501	
-    my ($source, $pubmed, $secondary, $target, $study) = split /\s+/, $line;
+    my ($source, $pubmed, $secondary, $target, $study) = split /\s/, $line;
     $pubmed{$study}=$pubmed;
 
   }
