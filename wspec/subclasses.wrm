@@ -51,6 +51,11 @@ Visible
 Is_a_subclass_of CDS
 Filter "((Method = curated) OR (Method = provisional)) AND (Species = C*briggsae)"
 
+Class sratti_CDS
+Visible
+Is_a_subclass_of CDS
+Filter "((Method = curated) OR (Method = provisional)) AND (Species = S*ratti)"
+
 Class curated_CDS
 Visible
 Is_a_subclass_of CDS
@@ -72,6 +77,12 @@ Visible
 Is_a_subclass_of Transcript
 Filter "(NOT Method = Coding_transcript) AND (NOT Method = history_transcript) AND (NOT Method = non_coding_transcript_isoformer) AND (Species = C*briggsae)"
 
+Class sratti_RNA_genes
+Visible
+Is_a_subclass_of Transcript
+Filter "(NOT Method = Coding_transcript) AND (NOT Method = history_transcript) AND (NOT Method = non_coding_transcript_isoformer) AND (Species = S*ratti)"
+
+
 Class Coding_transcripts
 Visible
 Is_a_subclass_of Transcript
@@ -92,6 +103,11 @@ Class briggsae_pseudogenes
 Visible
 Is_a_subclass_of Pseudogene
 Filter "(Method = Pseudogene) AND (Species = C*briggsae)"
+
+Class sratti_pseudogenes
+Visible
+Is_a_subclass_of Pseudogene
+Filter "(Method = Pseudogene) AND (Species = S*ratti)"
 
 // ?Transposon subclasses
 Class elegans_transposons
@@ -184,10 +200,25 @@ Visible
 Is_a_subclass_of Gene
 Filter "Species = Caenorhabditis*remanei"
 
+Class Genes_ovolvulus
+Visible
+Is_a_subclass_of Gene
+Filter "Species = Onchocerca*volvulus"
+
+Class Genes_brugia
+Visible
+Is_a_subclass_of Gene
+Filter "Species = Brugia*malayi"
+
 Class Genes_Pristionchus
 Visible
 Is_a_subclass_of Gene
 Filter "Species = Pristionchus*"
+
+Class Genes_Sratti
+Visible
+Is_a_subclass_of Gene
+Filter "Species = S*ratti"
 
 Class Live_genes
 Visible
