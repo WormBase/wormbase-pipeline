@@ -700,7 +700,7 @@ sub add_new_experiments_in_study {
 =head2 
 
     Title   :   add_one_new_experiment_to_config
-    Usage   :   $self->add_one_new_experiment_to_config($study_accession, $experiment_accession);
+    Usage   :   $self->add_one_new_experiment_to_config($study_accession, $experiment_accession, $geo_accession, $study_ini, $pubmed, $wbpaper);
     Function:   Updates the 'experiments' INI object for a study and writes the study's 'experiments' INI file
     Returns :   updates Experiments ini file
     Args    :   Accession of the new Study (used to name INI file), experiment accession
@@ -709,7 +709,7 @@ sub add_new_experiments_in_study {
 
 
 sub add_one_new_experiment_to_config {
-  my ($self, $study_accession, $experiment_accession) = @_;
+  my ($self, $study_accession, $experiment_accession, $geo_accession, $study_ini, $pubmed, $wbpaper) = @_;
 
   my $taxon = $self->{wormbase}->ncbi_tax_id;
   if (! defined $taxon) {die("RNASeq: taxon ID not given in find_studies()\n")};
@@ -737,7 +737,35 @@ sub add_one_new_experiment_to_config {
     $ini->newval($experiment_accession, $param, $value);
   }
 
+  # we got the GEO_accession from find_experiments() getting the complete list of experiments for this species
+  if (defined $geo_accession && $geo_accession ne '') {$ini->newval($experiment_accession, 'geo_accession', $geo_accession)}
+
   $ini->RewriteConfig;
+  
+
+  # now update the Study.ini record based on this experiment information
+    if (exists $experiments->{$experiment_accession}{study_alias}) {
+      my $study_alias = $experiments->{$experiment_accession}{study_alias};
+      my $pubmed = $pubmed->{$study_alias};
+      if (defined $pubmed) {
+	$study_ini->newval($study_accession, 'pubmed', $pubmed);
+	my $wbpaper = $wbpaper->{$pubmed};
+	if (defined $wbpaper) {
+	  $study_ini->newval($study_accession, 'wbpaper', $wbpaper);
+	}
+      }
+    }
+    # library_source=GENOMIC
+    if ($experiments->{$experiment_accession}{library_source} eq 'GENOMIC') {$study_ini->newval($study_accession, 'ignore', 'Genomic.')}
+
+    # library_strategy=ChIP-Seq
+    if ($experiments->{$experiment_accession}{library_strategy} eq 'ChIP-Seq') {$study_ini->newval($study_accession, 'ignore', 'ChIP-Seq.')}
+
+    # library_selection=size fractionation
+    if ($experiments->{$experiment_accession}{library_selection} eq 'size fractionation') {$study_ini->newval($study_accession, 'ignore', 'Small RNA stuff.')}
+
+    # $study_ini->RewriteConfig; is done in the calling routine, not required here
+
 }
 
 
@@ -745,7 +773,7 @@ sub add_one_new_experiment_to_config {
 =head2 
 
     Title   :   update_experiment_config_record
-    Usage   :   $ini = $self->read_experiments_from_study_config($study_accession, $experiment_accession, %expt_config)
+    Usage   :   $ini = $self->read_experiments_from_study_config($study_accession, $experiment_accession, $geo_accession, $study_ini, \%pubmed, \%wbpaper, %expt_config)
     Function:   Updates an existing experiment config record adding new parameters, unless the config parameter 'locked' is set. Changed config parameters are reported to STDOUT but not altered.
     Returns :   updates Experiments ini file
     Args    :   Accession of the new Study (used to name INI file), Experiment_accession to update, hash of existing experiment parameter/value pairs
@@ -753,7 +781,7 @@ sub add_one_new_experiment_to_config {
 =cut
 
 sub update_experiment_config_record {
-  my ($self, $study_accession, $experiment_accession, %expt_config) = @_;
+  my ($self, $study_accession, $experiment_accession, $geo_accession, $study_ini, $pubmed, $wbpaper, %expt_config) = @_;
 
   my $changed_study_id = 0;
 
@@ -818,9 +846,35 @@ sub update_experiment_config_record {
       }
     }
   }
-  
+
+  # we got the GEO_accession from find_experiments() getting the complete list of experiments for this species
+  if (defined $geo_accession && $geo_accession ne '') {$ini->newval($experiment_accession, 'geo_accession', $geo_accession)}
+
   $ini->RewriteConfig;
   
+
+  # now update the Study.ini record based on this experiment information
+    if (exists $experiments->{$experiment_accession}{study_alias}) {
+      my $study_alias = $experiments->{$experiment_accession}{study_alias};
+      my $pubmed = $pubmed->{$study_alias};
+      if (defined $pubmed) {
+	$study_ini->newval($study_accession, 'pubmed', $pubmed);
+	my $wbpaper = $wbpaper->{$pubmed};
+	if (defined $wbpaper) {
+	  $study_ini->newval($study_accession, 'wbpaper', $wbpaper);
+	}
+      }
+    }
+    # library_source=GENOMIC
+    if ($experiments->{$experiment_accession}{library_source} eq 'GENOMIC') {$study_ini->newval($study_accession, 'ignore', 'Genomic.')}
+
+    # library_strategy=ChIP-Seq
+    if ($experiments->{$experiment_accession}{library_strategy} eq 'ChIP-Seq') {$study_ini->newval($study_accession, 'ignore', 'ChIP-Seq.')}
+
+    # library_selection=size fractionation
+    if ($experiments->{$experiment_accession}{library_selection} eq 'size fractionation') {$study_ini->newval($study_accession, 'ignore', 'Small RNA stuff.')}
+
+#    $study_ini->RewriteConfig; is done in the calling routine, not required here
 
 }
 
@@ -942,7 +996,7 @@ sub update_study_config_data {
 sub update_experiment_config_data {
   my ($self) = @_;
 
-  my $ena_experiments = $self->find_experiments(); # hash key = all experiment_accessions, hash of hash {study_accession} or {study_title}
+  my $ena_experiments = $self->find_experiments(); # hash key = all experiment_accessions, hash of hash {study_accession} or {study_title} or {geo_accession}
   my $config_experiments = $self->get_all_experiments();
 
   my @new_experiment_accessions;
@@ -961,38 +1015,18 @@ sub update_experiment_config_data {
 
   # create new studies
   my $study_ini = $self->read_all_studies_config();
+
   foreach my $experiment_accession (@new_experiment_accessions) {
     # store study details in INI file
     my $study_accession = $ena_experiments->{$experiment_accession}{study_accession};
     my $study_title = $ena_experiments->{$experiment_accession}{study_title};
+    my $geo_accession = (exists $ena_experiments->{$experiment_accession}{study_title}) ? $ena_experiments->{$experiment_accession}{study_title} : '';
     $study_ini->AddSection ($study_accession);
     $study_ini->newval($study_accession, 'study_title', $study_title);
-    # add pubmed and wbpaper data
-    if (exists $ena_experiments->{$experiment_accession}{study_alias}) {
-      my $study_alias = $ena_experiments->{$experiment_accession}{study_alias};
-      my $pubmed = $pubmed{$study_alias};
-      if (defined $pubmed) {
-	$study_ini->newval($study_accession, 'pubmed', $pubmed);
-	my $wbpaper = $wbpaper{$pubmed};
-	if (defined $wbpaper) {
-	  $study_ini->newval($study_accession, 'wbpaper', $wbpaper);
-	}
-      }
-    }
-    # library_source=GENOMIC
-    if ($ena_experiments->{$experiment_accession}{library_source} eq 'GENOMIC') {$study_ini->newval($study_accession, 'ignore', 'Genomic.')}
-
-    # library_strategy=ChIP-Seq
-    if ($ena_experiments->{$experiment_accession}{library_strategy} eq 'ChIP-Seq') {$study_ini->newval($study_accession, 'ignore', 'ChIP-Seq.')}
-
-    # library_selection=size fractionation
-    if ($ena_experiments->{$experiment_accession}{library_selection} eq 'size fractionation') {$study_ini->newval($study_accession, 'ignore', 'Small RNA stuff.')}
-
-    $study_ini->RewriteConfig;
     print "Added Study $study_accession to Study.ini\n";
 
     # get full experiment details from ENA and store experiment details in INI file
-    $self->add_one_new_experiment_to_config($study_accession, $experiment_accession);
+    $self->add_one_new_experiment_to_config($study_accession, $experiment_accession, $study_ini, \%pubmed, \%wbpaper);
   }
 
   # add new experiments to existing studies
@@ -1005,32 +1039,14 @@ sub update_experiment_config_data {
 
     # But it is useful to add pubmed and wbpaper data to the Study.ini
     my $study_accession = $ena_experiments->{$experiment_accession}{study_accession};
-    if (exists $ena_experiments->{$experiment_accession}{study_alias}) {
-      my $study_alias = $ena_experiments->{$experiment_accession}{study_alias};
-      my $pubmed = $pubmed{$study_alias};
-      if (defined $pubmed) {
-	$study_ini->newval($study_accession, 'pubmed', $pubmed);
-	my $wbpaper = $wbpaper{$pubmed};
-	if (defined $wbpaper) {
-	  $study_ini->newval($study_accession, 'wbpaper', $wbpaper);
-	}
-      }
-    }
-    # library_source=GENOMIC
-    if ($ena_experiments->{$experiment_accession}{library_source} eq 'GENOMIC') {$study_ini->newval($study_accession, 'ignore', 'Genomic.')}
-
-    # library_strategy=ChIP-Seq
-    if ($ena_experiments->{$experiment_accession}{library_strategy} eq 'ChIP-Seq') {$study_ini->newval($study_accession, 'ignore', 'ChIP-Seq.')}
-
-    # library_selection=size fractionation
-    if ($ena_experiments->{$experiment_accession}{library_selection} eq 'size fractionation') {$study_ini->newval($study_accession, 'ignore', 'Small RNA stuff.')}
-
-    $study_ini->RewriteConfig;
+    my $geo_accession = (exists $ena_experiments->{$experiment_accession}{study_title}) ? $ena_experiments->{$experiment_accession}{study_title} : '';
 
     # get full experiment details from ENA and store experiment details in INI file
     print "Checking existing expt $experiment_accession in study $study_accession\n";
-    $self->update_experiment_config_record($study_accession, $experiment_accession, %{$config_experiments->{$experiment_accession}});
+    $self->update_experiment_config_record($study_accession, $experiment_accession, $geo_accession, $study_ini, \%pubmed, \%wbpaper, %{$config_experiments->{$experiment_accession}});
   }
+
+  $study_ini->RewriteConfig;
 
   return @new_experiment_accessions;
 }
