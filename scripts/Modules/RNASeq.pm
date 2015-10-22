@@ -1026,7 +1026,7 @@ sub update_experiment_config_data {
     print "Added Study $study_accession to Study.ini\n";
 
     # get full experiment details from ENA and store experiment details in INI file
-    $self->add_one_new_experiment_to_config($study_accession, $experiment_accession, $study_ini, \%pubmed, \%wbpaper);
+    $self->add_one_new_experiment_to_config($study_accession, $experiment_accession, $geo_accession, $study_ini, \%pubmed, \%wbpaper);
   }
 
   # add new experiments to existing studies
