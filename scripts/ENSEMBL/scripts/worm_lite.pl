@@ -425,6 +425,8 @@ sub load_genes {
     die "No gff or gff3 files found - death\n";
   }
 
+  $wb2ens->write_genes( \@genes );
+
   # correct seleno proteins
   if ($config->{seleno}) {
     my %seleno_genes = map { $_ => 1 } split(/,/, $config->{seleno});
@@ -438,10 +440,7 @@ sub load_genes {
       }
     }
   }
-  
-
-  $wb2ens->write_genes( \@genes );
-  
+    
   my $set_canon_cmd = "perl $cvsDIR/ensembl/misc-scripts/canonical_transcripts/select_canonical_transcripts.pl "
       . "-dbhost $db->{host} "
       . "-dbuser $db->{user} "
@@ -568,5 +567,6 @@ sub empty_out_old_gene_set {
   $dbc->do('TRUNCATE TABLE density_type') or die $dbc->errstr;
   $dbc->do('TRUNCATE TABLE density_feature') or die $dbc->errstr;
   $dbc->do('TRUNCATE TABLE dependent_xref') or die $dbc->errstr;
-
+  $dbc->do('TRUNCATE TABLE genome_statistics') or die $dbc->errstr;
+  
 }
