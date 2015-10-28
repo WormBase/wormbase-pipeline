@@ -547,7 +547,7 @@ sub single_query_tests {
   # Check for non-standard methods in CDS class
   my @CDSfilter;
   if ($species eq 'brugia') {
-    @CDSfilter = $db->fetch (-query => 'FIND CDS; method != Transposon_CDS; method != Transposon_Pseudogene; method != curated; method !=history; method !=Genefinder; method !=twinscan; method !=jigsaw; method !=mGene; method !=RNASEQ.Hillier; method !=RNASEQ.Hillier.Aggregate; method !=cufflinks*; method !=genBlastG; method != *isoformer');
+    @CDSfilter = $db->fetch (-query => 'FIND CDS; method != Transposon_CDS; method != Transposon_Pseudogene; method != curated; method !=history; method !=Genefinder; method !=twinscan; method !=jigsaw; method !=mGene; method !=RNASEQ.Hillier; method !=RNASEQ.Hillier.Aggregate; method !=cufflinks*; method !=genBlastG; method != *isoformer; method !=ensembl');
   }
   else {
     @CDSfilter = $db->fetch (-query => 'FIND CDS; method != Transposon_CDS; method != Transposon_Pseudogene; method != curated; method !=history; method !=Genefinder; method !=twinscan; method !=jigsaw; method !=mGene; method !=RNASEQ.Hillier; method !=RNASEQ.Hillier.Aggregate; method != *isoformer');
