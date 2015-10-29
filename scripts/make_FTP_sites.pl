@@ -369,7 +369,7 @@ sub copy_xrefs {
     if (-e $xref_file) {
       $wormbase->run_command("cat $xref_file | gzip -n -9 -c > $out_file", $log);
     } else {
-      $log->error("ERROR: Could not find xref file $xref_file");
+      $log->error("ERROR: Could not find xref file $xref_file\n");
     }
   }
 
