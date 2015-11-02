@@ -91,17 +91,13 @@ foreach my $classmethodlabel (@classmethodlabel) {
   }
 }
 
-if (@seqs) {
-  my $seqio = Bio::SeqIO->new(-format => 'fasta',
-                              -file => ">$out");
-  foreach my $seq (sort { $a->id cmp $b->id } @seqs) {
-    $seqio->write_seq($seq);
-  }
-  $seqio->close();
-  $log->write_to("Wrote " . scalar(@seqs) . " seqs for @classmethodlabel\n");
-} else {
-  $log->write_to("No seqs for @classmethodlabel\n");
+my $seqio = Bio::SeqIO->new(-format => 'fasta',
+                            -file => ">$out");
+foreach my $seq (sort { $a->id cmp $b->id } @seqs) {
+  $seqio->write_seq($seq);
 }
+$seqio->close();
+$log->write_to("Wrote " . scalar(@seqs) . " seqs for @classmethodlabel\n");
 
 $connection->close();
 

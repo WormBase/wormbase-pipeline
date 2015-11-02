@@ -609,7 +609,8 @@ sub load_curation_data {
     if ($species eq "brugia") {
       push (@files,
 	    "$wormpub/CURATION_DATA/misc_brugia_cufflinks.ace",
-	    "$wormpub/CURATION_DATA/misc_tigr_homol.ace",
+	    "$wormpub/CURATION_DATA/misc_tigr_transcripts.ace",
+	    "$wormpub/CURATION_DATA/misc_brugia_augustus.ace",
 	    "$acefiles/primaries/geneace/geneace_Operon_data.ace",
 	    "$acefiles/operon_coords.ace",
 	   );
