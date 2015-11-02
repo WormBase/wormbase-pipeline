@@ -59,6 +59,7 @@ my $RNASeq = RNASeq->new($wormbase, $log, 0, 0);
 
 if (defined $suggest) {
   suggest(); 
+  $log->mail();
   exit(0);
 }
 

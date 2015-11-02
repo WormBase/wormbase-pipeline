@@ -307,7 +307,7 @@ sub get_WBPaper {
 #WBPaper00000046	pmid19322369
     my ($wbpaper, $pubmed) = split /\s+/, $line;
     if ($pubmed =~ /pmid(\d+)/) { # ignore anything that is not a PubMed ID
-      $wbpaper{$pubmed} = $1;
+      $wbpaper{$pubmed} = $wbpaper;
     }
   }
   close(DATA);
