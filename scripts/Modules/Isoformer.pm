@@ -580,9 +580,13 @@ sub open_GFF_file {
   if (defined $gff) {
     $file = $gff;
   } else {
-
     if ($self->{species} eq 'elegans') {
       $file = $self->{wormbase}->autoace."/CHROMOSOMES/$chromosome.gff";
+      my $currentdb_file = $self->{wormbase}->database('current') . "/CHROMOSOMES/$chromosome.gff";
+      if (! -e $file && -e $currentdb_file) {
+	print "$file doesn't exist. Using $currentdb_file instead\n";
+	$file = $currentdb_file;
+      }
     } else {
       if ($self->{wormbase}->assembly_type eq 'contig') {      
 	$file = $self->{wormbase}->sequences . "/" . $self->{species}.".gff";
