@@ -784,6 +784,8 @@ sub update_experiment_config_record {
   my ($self, $study_accession, $experiment_accession, $geo_accession, $study_ini, $pubmed, $wbpaper, %expt_config) = @_;
 
   my $changed_study_id = 0;
+  my $changed_ini=0;
+  my $changed_study=0;
 
   # we just want to add anything that may have been added to the
   # experiment record, unless it has known problems that have been
@@ -809,7 +811,7 @@ sub update_experiment_config_record {
       $study_accession = $experiments->{$experiment_accession}{study_accession}
     }
   }
-  my $ini = $self->get_study_config_file($study_accession);
+  my $ini;
 
   # make sure that this experiment was done in this species - some Studies have multiple species in
   if ($experiments->{$experiment_accession}{tax_id} ne $taxon) {
@@ -820,12 +822,12 @@ sub update_experiment_config_record {
     }
   } 
   
-  $ini->AddSection ($experiment_accession);
-  
   if ($changed_study_id) { # the existing experiment record may be using the old primary ID, so write it all out
     foreach my $param (keys %{$experiments->{$experiment_accession}}) {
       my $value = $experiments->{$experiment_accession}{$param};
+      if (!$changed_ini) {$ini = $self->get_study_config_file($study_accession);} # only get the details from the INI file if we wish to change it
       $ini->newval($experiment_accession, $param, $value);
+      $changed_ini = 1;
     }
     
   } else { # be selective in what we write
@@ -833,14 +835,20 @@ sub update_experiment_config_record {
       my $value = $experiments->{$experiment_accession}{$param};
       if (!exists $expt_config{$param}) {
 	print "Updating Experiment $experiment_accession to Study $study_accession: adding '$param = $value\n";
+	if (!$changed_ini) {$ini = $self->get_study_config_file($study_accession);} # only get the details from the INI file if we wish to change it
 	$ini->newval($experiment_accession, $param, $value);
+	$changed_ini = 1;
       } else {
 	my $old_value = $expt_config{$param};
 	if ($old_value ne $value) {
-	  if ($param eq 'library_selection' || $param eq 'library_strategy') {
+	  if ($param eq 'fastq_ftp' && defined $old_value && $old_value ne '') {
+            # do nothing
+	  } elsif ($param eq 'library_selection' || $param eq 'library_strategy' || $param eq 'fastq_ftp') {
 	    print "Changed value '$param = $value' found for Experiment $experiment_accession in Study $study_accession - old value: '$param = $old_value'\n";
 	  } else {
+	    if (!$changed_ini) {$ini = $self->get_study_config_file($study_accession);} # only get the details from the INI file if we wish to change it
 	    $ini->newval($experiment_accession, $param, $value);
+	    $changed_ini = 1;
 	  }
 	}
       }
@@ -848,34 +856,49 @@ sub update_experiment_config_record {
   }
 
   # we got the GEO_accession from find_experiments() getting the complete list of experiments for this species
-  if (defined $geo_accession && $geo_accession ne '') {$ini->newval($experiment_accession, 'geo_accession', $geo_accession)}
+  if (defined $geo_accession && $geo_accession ne '') {
+    if (!$changed_ini) {$ini = $self->get_study_config_file($study_accession);} # only get the details from the INI file if we wish to change it
+    $ini->newval($experiment_accession, 'geo_accession', $geo_accession);
+    $changed_ini = 1;
+  }
 
-  $ini->RewriteConfig;
-  
+  if ($changed_ini) {
+    $ini->RewriteConfig;
+  }
 
   # now update the Study.ini record based on this experiment information
-    if (exists $experiments->{$experiment_accession}{study_alias}) {
-      my $study_alias = $experiments->{$experiment_accession}{study_alias};
-      my $pubmed = $pubmed->{$study_alias};
-      if (defined $pubmed) {
+  if (exists $experiments->{$experiment_accession}{study_alias}) {
+    my $study_alias = $experiments->{$experiment_accession}{study_alias};
+    my $pubmed = $pubmed->{$study_alias};
+    if (defined $pubmed) {
+      my $config_pubmed = $expt_config{pubmed};
+      if (!defined $config_pubmed) {
 	$study_ini->newval($study_accession, 'pubmed', $pubmed);
+	$changed_study = 1;
 	my $wbpaper = $wbpaper->{$pubmed};
 	if (defined $wbpaper) {
 	  $study_ini->newval($study_accession, 'wbpaper', $wbpaper);
 	}
+      } else {
+	print "Changed value 'pubmed = $pubmed' for Experiment $experiment_accession in Study $study_accession - old value: 'pubmed = $config_pubmed'\n";
       }
     }
+  }
+
+  if (!exists $expt_config{ignore}) {
     # library_source=GENOMIC
-    if ($experiments->{$experiment_accession}{library_source} eq 'GENOMIC') {$study_ini->newval($study_accession, 'ignore', 'Genomic.')}
-
+    if ($experiments->{$experiment_accession}{library_source} eq 'GENOMIC') {$changed_study = 1; $study_ini->newval($study_accession, 'ignore', 'Genomic.')}
+  
     # library_strategy=ChIP-Seq
-    if ($experiments->{$experiment_accession}{library_strategy} eq 'ChIP-Seq') {$study_ini->newval($study_accession, 'ignore', 'ChIP-Seq.')}
-
+    if ($experiments->{$experiment_accession}{library_strategy} eq 'ChIP-Seq') {$changed_study = 1; $study_ini->newval($study_accession, 'ignore', 'ChIP-Seq.')}
+  
     # library_selection=size fractionation
-    if ($experiments->{$experiment_accession}{library_selection} eq 'size fractionation') {$study_ini->newval($study_accession, 'ignore', 'Small RNA stuff.')}
+    if ($experiments->{$experiment_accession}{library_selection} eq 'size fractionation') {$changed_study = 1; $study_ini->newval($study_accession, 'ignore', 'Small RNA stuff.')}
+  }
 
+  if ($changed_study) {
     $study_ini->RewriteConfig;
-
+  }
 }
 
 =head2 
