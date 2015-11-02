@@ -12,6 +12,8 @@
 
 # Run as:
 # perl ~gw3/bin/RNASeq_make_analysis_objects.pl -species elegans -study SRP021083 -paper WBPaper00044426 -out SRP021083.ace
+# Or:
+# perl ~gw3/bin/RNASeq_make_analysis_objects.pl -species elegans -suggest
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -23,7 +25,7 @@ use Getopt::Long;
 use Log_files;
 use Storable;
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $species, $study, $outfile, $paper, $output, $redo);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $species, $study, $outfile, $paper, $output, $redo, $suggest);
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
             "test"       => \$test,
@@ -34,6 +36,7 @@ GetOptions ("help"       => \$help,
 	    "paper:s"    => \$paper,   # the WBPaper ID to use
 	    "output:s"   => \$output,  # the output ace file ready for you to read into geneace
 	    "redo"       => \$redo,    # do even though an analysis already exists
+	    "suggest"    => \$suggest, # suggest potential Studies that could now be curated (are the correct types and have a paper, etc.)
 );
 
 $debug = "gw3";
@@ -52,6 +55,12 @@ if ( $store ) {
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
+my $RNASeq = RNASeq->new($wormbase, $log, 0, 0);
+
+if (defined $suggest) {
+  suggest(); 
+  exit(0);
+}
 
 if (!defined $output) {$log->log_and_die("-output not defined\n")}
 if (!defined $study) {$log->log_and_die("-study not defined\n")}
@@ -105,7 +114,6 @@ my %default_strain = (
 
 open(OUT, ">$output") || $log->log_and_die("Can't open $output\n");
 
-my $RNASeq = RNASeq->new($wormbase, $log, 0, 0);
 
 # find all experiments in the Study
 my %hash;
@@ -1818,4 +1826,41 @@ sub get_study_display {
   }
   return $display;
 
+}
+
+###################################################################
+
+# look through the .ini config files and find studies with a pubmed ID
+# that have experiments that have not been curated and which are
+# TRANSCRIPTOMIC, etc. Display details of each Study.
+
+sub suggest {
+
+  my %expt_hashref;
+  my %study_hashref;
+  my $count; # number of experiments in this study that could be curated
+
+  my $studies_ini = $RNASeq->read_all_studies_config();
+  if (defined $studies_ini) {
+    $RNASeq->convert_ini_to_hashref($studies_ini, \%study_hashref);
+    foreach my $study (keys %study_hashref) {
+      %expt_hashref = ();
+      $count = 0;
+      if (exists $study_hashref{ $study}{ignore} ) {next}
+      if (!exists $study_hashref{$study}{pubmed}) {next}
+      my $pubmed = $study_hashref{$study}{pubmed};
+      my $wbpaper = (exists $study_hashref{$study}{wbpaper}) ? $study_hashref{$study}{wbpaper} : '';
+      my $experiments_ini = $RNASeq->read_experiments_from_study_config($study);
+      $RNASeq->convert_ini_to_hashref($experiments_ini, \%expt_hashref);
+      foreach my $expt (keys %expt_hashref) {
+	if (!exists $expt_hashref{$expt}{analysis} ) {
+	  $count++;
+	}
+      }
+      if ($count) {
+	print "$study: $count experiments pubmed: $pubmed wbpaper: $wbpaper\n";
+      }
+    }
+  }
+  print "Inform Kimberley of any pubmed papers that do not have a WBPaper ID\n";
 }
