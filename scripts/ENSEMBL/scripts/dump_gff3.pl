@@ -94,8 +94,7 @@ while( my $slice = shift @slices) {
       display     => $gene->stable_id(), # wrong but fixes db's without xref_mapping
       gff_source  => (defined $gene->analysis->gff_source) ? $gene->analysis->gff_source : "WormBase",
         );
-    
-    # get all transcripts of the gene
+
     my $all_transcripts = $gene->get_all_Transcripts();
     while( my $transcript = shift @{$all_transcripts}) {
       
@@ -175,7 +174,7 @@ while( my $slice = shift @slices) {
         # built, and we want consistency in the dumps
         my $exon_gff_id = sprintf("exon:%s.%d", $transcript->stable_id, $exon_count++);
         
-        push @{$tr_obj->{'exon'}}, {
+        push @{$tr_obj->{exon}}, {
           gff_id    => $exon_gff_id,
           seqname   => $slice_name,
           start     => $exon->seq_region_start(),
@@ -185,9 +184,39 @@ while( my $slice = shift @slices) {
       }
       
 
-      push @{$gene_to_dump{'transcript'}}, $tr_obj;
+      push @{$gene_to_dump{transcript}}, $tr_obj;
     }
     print $out_fh dump_gene(\%gene_to_dump);
+  }
+
+    
+  #
+  # Prediction transcripts
+  #
+  $debug and print STDERR " Fetching and processing prediction transcripts...\n";
+  
+  my $pts = $slice->get_all_PredictionTranscripts;    
+
+  while(my $pt = shift @$pts) {
+    my $label =  $pt->display_label;
+    my $gff_id = sprintf("GBG_%d.%s", $pt->dbID, $label);
+
+    foreach my $pe (@{$pt->get_all_Exons}) {
+      my $feat = {
+        seqname      => $pt->slice->seq_region_name,
+        strand       => ($pt->strand > 0?'+':'-'),
+        hit_start    => $pe->seq_region_start,
+        hit_stop     => $pe->seq_region_end,
+        score        => ($pe->score||'.'),
+        phase        => (defined $pe->phase) ? (3 - $pe->phase) % 3 : ".",
+        logic_name   => $pt->analysis->logic_name,
+        gff_source   => (defined $pt->analysis->gff_source) ? $pt->analysis->gff_source : "WormBase_prediction",
+        feature_type => "CDS",
+        display      => $label,
+        gff_id       => $gff_id,
+      };
+      print $out_fh dump_feature($feat);
+    }
   }
   
   next if $slim;
@@ -230,6 +259,7 @@ while( my $slice = shift @slices) {
           hit_start    => $feat->start,
           hit_stop     => $feat->end,
           score        => $feat->score,
+          phase        => ".",
           p_value      => $feat->p_value,
           gff_id       => $feat->analysis->logic_name . "." . $feat->dbID,
           logic_name   => $feat->analysis->logic_name,
@@ -270,6 +300,7 @@ while( my $slice = shift @slices) {
         hit_start    => $feat->start,
         hit_stop     => $feat->end,
         score        => $feat->score,
+        phase        => ".",
         p_value      => $feat->p_value,
         gff_id       => $feat->analysis->logic_name . "." . $feat->dbID,
         logic_name   => $feat->analysis->logic_name,
@@ -291,6 +322,7 @@ while( my $slice = shift @slices) {
       hit_start   => $feature->seq_region_start,
       hit_stop    => $feature->seq_region_end,
       score       => ($feature->score||'.'),
+      phase        => ".",
       logic_name  => $feature->analysis->logic_name,
       display     => $feature->repeat_consensus->name,
       gff_source  => (defined $feature->analysis->gff_source) ? $feature->analysis->gff_source : "WormBase",
@@ -310,6 +342,7 @@ while( my $slice = shift @slices) {
       hit_start    => $simpfeature->seq_region_start,
       hit_stop     => $simpfeature->seq_region_end,
       score        => ($simpfeature->score||'.'),
+      phase        => ".",
       logic_name   => $simpfeature->analysis->logic_name,
       gff_source   => (defined $simpfeature->analysis->gff_source) ? $simpfeature->analysis->gff_source : "WormBase",
       feature_type => (defined $simpfeature->analysis->gff_feature) ? $simpfeature->analysis->gff_feature : $simpfeature->analysis->logic_name,
@@ -317,6 +350,7 @@ while( my $slice = shift @slices) {
     print $out_fh dump_feature($stripped_simpfeature);
   }
   
+
   print $out_fh '#'x80;
   print $out_fh "\n";
   close($out_fh) unless defined $out_file;
@@ -438,7 +472,7 @@ sub dump_feature {
                      $feature{hit_stop},
                      $feature{score},
                      $feature{strand},
-                     ".");
+                     $feature{phase});
   my @group;
   push @group, "ID=$feature{gff_id}" if $feature{gff_id};
   push @group, "Name=$feature{display}" if $feature{display};
@@ -661,7 +695,7 @@ sub filter_features {
     my @sorted_bin = sort {$a->{p_value} <=> $b->{p_value} or $b->{score} <=> $a->{score} } @$bin;
 
     $best=&p_value($sorted_bin[0]->{p_value});
-    map { $f_features{$_->{dbid}}=$_ if (&p_value($_->{p_value}) > $best*0.75 && $max_hsp++ <5)} @sorted_bin; 
+    map { $f_features{$_->{gff_id}}=$_ if (&p_value($_->{p_value}) > $best*0.75 && $max_hsp++ <5)} @sorted_bin; 
   }
   
   # attempt to group the hits by id so that we can "join them up"
@@ -685,7 +719,7 @@ sub filter_features {
         }
       }
       foreach my $group (@grouped_hits) {
-        my $id = $logic . "." . $group->[0]->{dbid};
+        my $id = $logic . "." . $group->[0]->{gff_id};
         foreach my $hit (@$group) {
           $hit->{id} = $id;
           push @final_list, $hit;
