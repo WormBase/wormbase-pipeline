@@ -377,6 +377,7 @@ sub get_removed {
   my $ref_results = $db_query->fetchall_arrayref;
   foreach my $result_row (@$ref_results) {
     my $gene = $result_row->[2];
+    print "Removed Gene: $gene\n" if $verbose;
     my $obj =  $ace->fetch("Gene" => $gene);
     if (!defined $obj) {
       $log->log_and_die("The object is not defined for Gene $gene - not in database?\n");
@@ -405,6 +406,7 @@ sub get_new {
   my $ref_results = $db_query->fetchall_arrayref;
   foreach my $result_row (@$ref_results) {
     my $gene = $result_row->[2];
+    print "Added Gene: $gene\n" if $verbose;
     my $obj =  $ace->fetch("Gene" => $gene);
     if (defined $obj) {   # some very new genes will not yet have been added to geneace - ignore them as they certainly will not be in a recent WS release yet
       my $gene_species = $obj->Species;
