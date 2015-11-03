@@ -294,7 +294,7 @@ foreach my $release (200 .. $release2) {
       $count_new     = &get_new    ($full_species, $startdate, $enddate);  
 
       #print "\tWS$release: removed: $count_removed, changed: $count_changed, new: $count_new, new isoform: $count_new_isoform\n";
-      $log->write_to("\tWS$release: removed: $count_removed, changed: $count_changed, new: $count_new, new isoform: $count_new_isoform\n");
+      $log->write_to("\tWS$release:\tremoved: $count_removed,\tnew gene: $count_new,\tnew isoform: $count_new_isoform,\tmodel changed: $count_changed\n");
 
       $total_removed += $count_removed;
       $total_changed += $count_changed;
@@ -327,7 +327,7 @@ foreach my $release (200 .. $release2) {
       $count_new     = &get_new    ($full_species, $startdate, $enddate);  
 
 #      print "\tWS$release: removed: $count_removed, new gene: $count_new, new isoform: $count_new_isoform, model changed: $count_changed\n";
-      $log->write_to("\tWS$release: removed: $count_removed, new gene: $count_new, new isoform: $count_new_isoform, model changed: $count_changed\n");
+      $log->write_to("\tWS$release:\tremoved: $count_removed,\tnew gene: $count_new,\tnew isoform: $count_new_isoform,\tmodel changed: $count_changed\n");
 
       $total_removed += $count_removed;
       $total_changed += $count_changed;
@@ -342,7 +342,7 @@ foreach my $release (200 .. $release2) {
 
 
 #print "Total: removed: $total_removed, new gene: $total_new, new isoform: $total_new_isoform, model changed: $total_changed\n";
-$log->write_to("Total: removed: $total_removed, new gene: $total_new, new isoform: $total_new_isoform, model changed: $total_changed\n");
+$log->write_to("Total:\tremoved: $total_removed,\tnew gene: $total_new,\tnew isoform: $total_new_isoform,\tmodel changed: $total_changed\n");
 
 # close the ACE connection
 $ace->close;
