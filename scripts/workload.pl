@@ -42,8 +42,6 @@ GetOptions ("help"       => \$help,
 	    "release2=s"	 => \$release2, # WS number to end at
 	    );
 
-# always in debug mode
-$debug = $USER;
 
 
 if (!defined $release1) {die "-release1 not specified\n";}
@@ -89,8 +87,10 @@ my $database = $wormbase->database('current');
 my $ace = Ace->connect (-path => $database) || die "cannot connect to database at $database\n";
 
 
-# release start and end dates 
+# release start and end dates of dates when curation is being done, ending at the data upload freeze data
 # NB these are the dates between data-freezes when curation that goes into the next Build is done
+# The first date is the second date of the line above.
+# The second date is the delivered date of the 'data freeze/upload' column in http://www.wormbase.org/about/release_schedule#01--10
 my %dates = (
 	     200 => ['2009-01-01', '2009-02-01'], # Jan 2009
 	     201 => ['2009-02-01', '2009-03-01'], # Feb
@@ -139,17 +139,19 @@ my %dates = (
 	     239 => ['2013-05-01', '2013-08-01'], # May-Jun-Jul (IWM delayed things)
 	     240 => ['2013-08-01', '2013-10-01'], # Aug-Sep
 	     241 => ['2013-10-01', '2013-12-01'], # Oct-Nov
-	     242 => ['2013-12-01', '2014-01-31'], # Dec-Jan (to Jan 31)
+	     242 => ['2013-12-01', '2014-01-31'], # to Jan 31
 
-	     243 => ['2014-01-31', '2014-03-28'], # Feb-Mar (to Mar 28)
-	     244 => ['2014-03-28', '2014-05-30'], # Apr-May (to May 30)
-	     245 => ['2014-05-30', '2014-07-25'], # Jun-Jul (to July 25)
-	     246 => ['2014-07-25', '2014-10-10'], # Aug-Sep (to Oct 10)
-	     247 => ['2014-10-10', '2015-01-12'], # Oct-Nov (to Jan 12)
-	     248 => ['2015-01-12', '2015-03-06'], # Dec-Jan (to Mar 6)
+	     243 => ['2014-01-31', '2014-03-28'], # to Mar 28
+	     244 => ['2014-03-28', '2014-05-30'], # to May 30
+	     245 => ['2014-05-30', '2014-07-25'], # to July 25
+	     246 => ['2014-07-25', '2014-10-10'], # to Oct 10
+	     247 => ['2014-10-10', '2015-01-12'], # to Jan 12
+	     248 => ['2015-01-12', '2015-03-06'], # to 06-Mar-2015
 
-	     249 => ['2015-03-06', '2015-04-01'], # Feb-Mar (to May 1)
-	     250 => ['2015-04-01', '2015-06-01'], # Apr-May (probable dates in the future ...)
+	     249 => ['2015-03-06', '2015-05-01'], # to 01-May-2015
+	     250 => ['2015-05-01', '2015-06-31'], # to 31-Jul-2015
+	     251 => ['2015-06-31', '2015-10-02'], # to 02-Oct-2015
+	     252 => ['2015-10-02', '2015-12-04'], # (probable dates in the future ...)
 	    );
 
 
@@ -291,8 +293,9 @@ foreach my $release (200 .. $release2) {
       $count_removed = &get_removed($full_species, $startdate, $enddate);
       $count_new     = &get_new    ($full_species, $startdate, $enddate);  
 
-      print "\tWS$release: removed: $count_removed, changed: $count_changed, new: $count_new, new isoform: $count_new_isoform\n";
-      
+      #print "\tWS$release: removed: $count_removed, changed: $count_changed, new: $count_new, new isoform: $count_new_isoform\n";
+      $log->write_to("\tWS$release: removed: $count_removed, changed: $count_changed, new: $count_new, new isoform: $count_new_isoform\n");
+
       $total_removed += $count_removed;
       $total_changed += $count_changed;
       $total_new += $count_new;
@@ -323,8 +326,9 @@ foreach my $release (200 .. $release2) {
       $count_removed = &get_removed($full_species, $startdate, $enddate);
       $count_new     = &get_new    ($full_species, $startdate, $enddate);  
 
-      print "\tWS$release: removed: $count_removed, new gene: $count_new, new isoform: $count_new_isoform, model changed: $count_changed\n";
-      
+#      print "\tWS$release: removed: $count_removed, new gene: $count_new, new isoform: $count_new_isoform, model changed: $count_changed\n";
+      $log->write_to("\tWS$release: removed: $count_removed, new gene: $count_new, new isoform: $count_new_isoform, model changed: $count_changed\n");
+
       $total_removed += $count_removed;
       $total_changed += $count_changed;
       $total_new += $count_new;
@@ -337,7 +341,8 @@ foreach my $release (200 .. $release2) {
 }
 
 
-print "Total: removed: $total_removed, new gene: $total_new, new isoform: $total_new_isoform, model changed: $total_changed\n";
+#print "Total: removed: $total_removed, new gene: $total_new, new isoform: $total_new_isoform, model changed: $total_changed\n";
+$log->write_to("Total: removed: $total_removed, new gene: $total_new, new isoform: $total_new_isoform, model changed: $total_changed\n");
 
 # close the ACE connection
 $ace->close;
