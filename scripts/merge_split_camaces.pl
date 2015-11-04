@@ -641,6 +641,7 @@ sub load_curation_data {
 	  "$wormpub/CURATION_DATA/${species}_isoformer.ace",
 	  "$acefiles/mass-spec-data.ace",
 	 );
+     push (@files,"$acefiles/genblast.ace") if -e "$acefiles/genblast.ace"; # load in genblast data if it exists
   }
 
   foreach $file (@files) {
