@@ -307,7 +307,7 @@ sub get_WBPaper {
 #WBPaper00000046	pmid19322369
     my ($wbpaper, $pubmed) = split /\s+/, $line;
     if ($pubmed =~ /pmid(\d+)/) { # ignore anything that is not a PubMed ID
-      $wbpaper{$pubmed} = $wbpaper;
+      $wbpaper{$1} = $wbpaper;
     }
   }
   close(DATA);
@@ -875,12 +875,15 @@ sub update_experiment_config_record {
       if (!defined $config_pubmed) {
 	$study_ini->newval($study_accession, 'pubmed', $pubmed);
 	$changed_study = 1;
+      } else {
+	print "Changed value 'pubmed = $pubmed' for Experiment $experiment_accession in Study $study_accession - old value: 'pubmed = $config_pubmed'\n";
+      }
+      if (!exists $expt_config{wbpaper}) {
 	my $wbpaper = $wbpaper->{$pubmed};
 	if (defined $wbpaper) {
 	  $study_ini->newval($study_accession, 'wbpaper', $wbpaper);
+	  $changed_study = 1;
 	}
-      } else {
-	print "Changed value 'pubmed = $pubmed' for Experiment $experiment_accession in Study $study_accession - old value: 'pubmed = $config_pubmed'\n";
       }
     }
   }
