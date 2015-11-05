@@ -867,26 +867,27 @@ sub update_experiment_config_record {
   }
 
   # now update the Study.ini record based on this experiment information
-  if (exists $experiments->{$experiment_accession}{study_alias}) {
+  my $pubmed = undef;
+  if (exists  $expt_config{pubmed}) {
+    $pubmed = $expt_config{pubmed};
+  } elsif (exists $experiments->{$experiment_accession}{study_alias}) {
     my $study_alias = $experiments->{$experiment_accession}{study_alias};
-    my $pubmed = $pubmed->{$study_alias};
+    $pubmed = $pubmed->{$study_alias};
     if (defined $pubmed) {
-      my $config_pubmed = $expt_config{pubmed};
-      if (!defined $config_pubmed) {
-	$study_ini->newval($study_accession, 'pubmed', $pubmed);
+      $study_ini->newval($study_accession, 'pubmed', $pubmed);
+      $changed_study = 1;
+    }
+  }
+  if (defined $pubmed) {
+    if (!exists $expt_config{wbpaper}) {
+      my $wbpaper = $wbpaper->{$pubmed};
+      if (defined $wbpaper) {
+	$study_ini->newval($study_accession, 'wbpaper', $wbpaper);
 	$changed_study = 1;
-      } else {
-	print "Changed value 'pubmed = $pubmed' for Experiment $experiment_accession in Study $study_accession - old value: 'pubmed = $config_pubmed'\n";
-      }
-      if (!exists $expt_config{wbpaper}) {
-	my $wbpaper = $wbpaper->{$pubmed};
-	if (defined $wbpaper) {
-	  $study_ini->newval($study_accession, 'wbpaper', $wbpaper);
-	  $changed_study = 1;
-	}
       }
     }
   }
+  
 
   if (!exists $expt_config{ignore}) {
     # library_source=GENOMIC
