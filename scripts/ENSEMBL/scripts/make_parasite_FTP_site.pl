@@ -160,6 +160,7 @@ sub write_file {
   if (defined $prevdir) {
     my $prevfile = join("/", $prevdir, join(".", $species, $bioproject, $prev_release, $suffix, "gz"));
     die "Could not find $prevfile\n" if not -e $prevfile;
+    $fname .= ".gz";
     $verbose and print STDERR "    Copying file from previous release ($prevfile)\n";
     system("cp $prevfile $outdir/$fname") and die "Could not copy $prevfile to $outdir/$fname\n";
   } else {
@@ -210,7 +211,7 @@ sub make_md5sums {
   my $checksum_file = "CHECKSUMS";
 
   my @files;
-  open(FIND, "find $targetdir -name '*.*' |");
+  open(FIND, "find $targetdir/species -name '*.*' | sort |");
   while(<FIND>) {
     chomp;
     s/^$targetdir\///;
