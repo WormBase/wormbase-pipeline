@@ -867,20 +867,20 @@ sub update_experiment_config_record {
   }
 
   # now update the Study.ini record based on this experiment information
-  my $pubmed = undef;
+  my $pubmed_id = undef;
   if (exists  $expt_config{pubmed}) {
-    $pubmed = $expt_config{pubmed};
+    $pubmed_id = $expt_config{pubmed};
   } elsif (exists $experiments->{$experiment_accession}{study_alias}) {
     my $study_alias = $experiments->{$experiment_accession}{study_alias};
-    $pubmed = $pubmed->{$study_alias};
-    if (defined $pubmed) {
-      $study_ini->newval($study_accession, 'pubmed', $pubmed);
+    $pubmed_id = $pubmed->{$study_alias};
+    if (defined $pubmed_id) {
+      $study_ini->newval($study_accession, 'pubmed', $pubmed_id);
       $changed_study = 1;
     }
   }
-  if (defined $pubmed) {
+  if (defined $pubmed_id) {
     if (!exists $expt_config{wbpaper}) {
-      my $wbpaper = $wbpaper->{$pubmed};
+      my $wbpaper = $wbpaper->{$pubmed_id};
       if (defined $wbpaper) {
 	$study_ini->newval($study_accession, 'wbpaper', $wbpaper);
 	$changed_study = 1;
@@ -1741,6 +1741,17 @@ sub run_cufflinks {
       $log->log_and_die("Didn't run cufflinks to get the isoform/gene expression successfully\n");
     }
   }
+
+  # make the cufflinks assembly file for Michael Paulini to model into operons :-)
+  my $species = $self->{wormbase}->{species};
+  if ($species ne 'elegans' && !-e "assembly/transcripts.gtf") {
+    mkdir "assembly", 0777;
+    chdir "assembly";
+    my $strand_option = "--min-intron-length 25 --max-intron-length 30000";
+    $status = $self->{wormbase}->run_command("$Software/cufflinks/cufflinks $strand_option ../../$alignmentDir/accepted_hits.bam", $log);
+    if ($status != 0) {  $log->log_and_die("Didn't run cufflinks to get the cufflinks gene structures successfully\n"); }    
+  }
+
   return $status;
 }
 
