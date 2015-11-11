@@ -25,7 +25,7 @@ use LWP::Simple;
 # variables and command-line options #
 ######################################
 
-my ($help,$debug,$test,$verbose,$store,$wormbase,$organism,$output,$nolongtext,$dna,$database,$species,$dump_only,$input,$repull,$noload,);
+my ($help,$debug,$test,$verbose,$store,$wormbase,$organism,$output,$nolongtext,$dna,$database,$species,$dump_only,$input,$repull,$noload, $fasta, $source);
 
 GetOptions ("help"       => \$help,       #
             "debug=s"    => \$debug,      # debug option, turns on more printing and only email specified user.
@@ -38,6 +38,8 @@ GetOptions ("help"       => \$help,       #
 	    "dump_only"  => \$dump_only,  # Only dumps the Transcript data from the primary databases.
 	    "nolongtext" => \$nolongtext, # Don't dump longtext
 	    "input=s"    => \$input,      # EMBL flat file to be parse if doing manually.
+	    "fasta=s"    => \$fasta,      # Fasta flat file to parse if doing manually (e.g. a Trinity contig file of RNASeq reads).
+	    "source=s"   => \$source,     # Specify the source that that the fasta file comes from. E.G. 'trinity', ....
 	    "repull"     => \$repull,     # overrides the sequence data stored locally and re-fetches.
 	    "noload"     => \$noload,     # Causes files to be generated but not loaded.
 	    "output:s"   => \$output,     # Allows the user to specify the directory you want to save the data in.
@@ -63,10 +65,9 @@ my $tace = $wormbase->tace; # TACE PATH
 # output dirs
 my $output_dir;
 
-if (defined$output) {
+if (defined $output) {
   $output_dir = $output;
-}
-else {
+} else {
   $output_dir = $wormbase->database('camace')."/EMBL_sequence_info";
 }
 $wormbase->run_command ("mkdir $output_dir", $log) if (!-e $output_dir);
@@ -96,7 +97,6 @@ my $acefile;
 my $dnafile;
 my $Longtextfile;
 my $miscdir = glob('~wormpub/BUILD_DATA/MISC_DYNAMIC');
-my $work;
 
 # http://www.ebi.ac.uk/ena/data/view/Taxon:6239&portal=sequence_coding&offset=1&length=1000&limit=1000&display=txt
 # http://www.ebi.ac.uk/ena/data/view/Taxon:6239&portal=sequence&dataclass=EST&display=txt&header=true
@@ -127,7 +127,7 @@ my %taxon2species = (
 		     '6282' => "ovolvulus",
 		    );
 
-@molecules = ("EST","mRNA",);
+@molecules = ("EST","mRNA");
 
 
 
@@ -147,7 +147,36 @@ Retrieving EMBL sequences as a full update.
 #Counters
 my ($retrieved,$retrievedseen);
 
-if (!defined$input){
+####################################
+# Optionally just parse input file #
+####################################
+
+if (defined $fasta) {
+  &generate_data_from_fasta($fasta);
+
+
+} elsif (defined $input) {
+  print "You are generating Sequence data and Features from a supplied EMBL flat file...is this correct?\n\n";
+#  if (!defined $Type) {
+#    print "ERROR: You need to specify a data Type (eg. EST mRNA) using the command line option -Type\n\nDo you want to assign one now and continue? (y or n)\n";
+#    my $answer=<STDIN>;
+#    if ($answer eq "y\n") {
+#      print "Please input a data Type ('EST' or 'mRNA' or '?'):";
+#      $Type=<STDIN>;
+#    }
+#    if ($answer eq "n\n") {
+#      die "Failed to process $input as a data type was not specified\n To avoid this issue please use -Type in conjunction with -input on command line\n"
+#    }
+#  }
+  &generate_data_from_flat($input) ;
+
+
+
+#########################################
+# Get the data from the ENA's warehouse #
+#########################################
+
+} else { 
   my @organism;
   if (!defined($species)) {
     @organism = (keys %species2taxonid);
@@ -181,7 +210,7 @@ if (!defined$input){
     foreach $molecule (@molecules) {
 #Fetch EST and mRNA data from ENA
       $log->write_to("Fetching $molecule Sequence data from EMBL: $species \n");
-      &get_embl_data ($molecule, $taxid, $full_species_name, $species) if (!defined $dump_only);
+      my $work = &get_embl_data ($molecule, $taxid, $full_species_name, $species) if (!defined $dump_only);
       
 
 # Process the new data.
@@ -211,25 +240,6 @@ if (!defined$input){
 
 
 
-####################################
-# Optionally just parse input file #
-####################################
-
-elsif ($input) {
-  print "You are generating Sequence data and Features from a supplied EMBL flat file...is this correct?\n\n";
-#  if (!defined $Type) {
-#    print "ERROR: You need to specify a data Type (eg. EST mRNA) using the command line option -Type\n\nDo you want to assign one now and continue? (y or n)\n";
-#    my $answer=<STDIN>;
-#    if ($answer eq "y\n") {
-#      print "Please input a data Type ('EST' or 'mRNA' or '?'):";
-#      $Type=<STDIN>;
-#    }
-#    if ($answer eq "n\n") {
-#      die "Failed to process $input as a data type was not specified\n To avoid this issue please use -Type in conjunction with -input on command line\n"
-#    }
-#  }
-  &generate_data_from_flat ($input) ;
-}
 $log->write_to ("WORK DONE\n");
 $log->mail();
 exit(0);
@@ -306,6 +316,8 @@ sub get_embl_data {
 
   my $url;
   my $name;
+  my $work;
+
   if ($molecule =~ /EST/) {
     $url = "http://www.ebi.ac.uk/ena/data/warehouse/search?query=%22tax_eq%28$taxid%29%20AND%20dataclass=%22EST%22%22&result=sequence_release&display=text";
     $name="$output_dir/${species}_${taxid}_EST.txt";
@@ -337,14 +349,130 @@ sub get_embl_data {
   }
   close(FIN);
   $log->write_to("EMBL: Finished getting $species $molecule data.\n");
+
+  return $work;
 }
 
 #####################################################################################################################
-# generate_data_from_flat this is now the main processing sub.                                                                                          #
+# generate_data_from_fasta                                                                                          #
+# it is assumed that we are reading data for $species                                                               #
+# the molecule type and other values are set by the parameter -source e.g. 'trinity'
+# no longtext file is produced                                                             #
+# subroutine to parse a file containing multiple fasta entries to produce .ace .dna and .longtext files for acedb.  #
+#####################################################################################################################
+
+sub generate_data_from_fasta {
+  my $inputfile = shift;
+  
+  my $ID;
+  my $taxid = $species2taxonid{$species};
+  my $full_species_name = $wormbase->full_name;
+  
+  
+  # Output files
+  $acefile = "${output_dir}/$inputfile.ace";
+  if ($dna) {
+    $dnafile = "${output_dir}/$inputfile.dna";
+  }
+  
+  # Remove stale data.
+  $wormbase->run_command ("rm $dnafile", $log) if ($dna && -e $dnafile);
+  $wormbase->run_command ("rm $acefile", $log) if (-e $acefile);
+  
+  #open output file for full entries.
+  open (OUT_ACE,  ">$acefile");
+  print "$acefile opened.\n" if $debug;
+  open (OUT_DNA,  ">$dnafile") if defined($dna);
+  
+  my (@description, $seq, $status, $protid, $protver, $start, $idF, $svF, $idF2, $type, $def, $sequencelength, $subspecies, $species_name);
+  
+# Trinity entries look like:
+#>SRX004867_TR2|c0_g1_i1 len=238 path=[216:0-237] [-1, 216, -2]
+#TTTTTTTTATGAAAGCTGCTTTTATATAGTTTACACCTTCTATGGTTTTCTGTTGCTTTT
+#TGAACCAAACACATGAGCCACCATTGAATTCATTACAGTAGTTGATTCCAATTCCGTCGA
+#AATCTACCGAAACGCTGTTATCCCATAATCTAATTGATATTTTGTTGAAGTGAGTTCCGA
+#GTTTATCAATAGCGGTGCGTAAACTTCTACACACCTTTCGGCAGGTTAGTATTTCCAC
+
+  open (NEW_SEQUENCE, "<$inputfile");
+  my $done = 0;
+  while (<NEW_SEQUENCE>) {
+    if (/^>(\S+)/) {
+      if (defined $idF) { #  print out the DNA sequence of the previous entry
+	$seq = &feature_finder ($seq, $idF, 1); # want to check both orientations and return rev-comp if it appears to be reversed.
+	output_seq($seq, $idF, $ID, $full_species_name, $source);
+	$seq = '';
+      }
+      
+      $idF = $1;
+      if ($source eq 'trinity') {
+	($ID) = ($idF =~ /\S+?_/); # get the SRA ID from the Trinity sequence ID
+      }
+      $retrieved++;
+      $seq = "";
+      
+      # Is this entry already in the database?
+      if (defined $acc_sv2sequence{$idF}) {
+	print "$idF is already in the database. Not loaded again.\n";
+	$idF = undef; # don't output the sequence
+	next;
+      }
+      
+      print OUT_DNA "\n>$idF\n" if $dna;
+      
+    } else { # sequence line
+      chomp;
+      $seq .= $_;       
+    }
+  }
+  if (defined $idF) { 
+    $seq = &feature_finder ($seq, $idF, 1); # want to check both orientations and return rev-comp if it appears to be reversed.
+    output_seq($seq, $idF, $ID, $full_species_name, $source); #  print out the DNA sequence of the last entry
+  }
+  
+  close (NEW_SEQUENCE);
+  close (OUT_ACE);
+  close (OUT_DNA) if $dna;
+  $log->write_to("\n\nOutput Files:\n");
+  $log->write_to("Ace file => $acefile\n");
+  $log->write_to ("DNA file => $dnafile\n") if ($dna);
+}
+
+#####################################################################################################################
+# output_seq
+# print details of an entry from the fasta file to the ace files.
+#####################################################################################################################
+
+sub output_seq {
+  my ($seq, $idF, $ID, $full_species_name, $source) = @_;
+  
+  print OUT_ACE "\nDNA \: \"$idF\"\n";
+  print OUT_DNA "$seq\n" if ($dna);
+  print OUT_ACE "$seq\n";
+  
+  print OUT_ACE "\nSequence : \"$idF\"\n";
+  print OUT_ACE "DNA $idF\n";
+  print OUT_ACE "Database $source AC $ID\n";
+  print OUT_ACE "Species \"$full_species_name\"\n";
+  
+  # Properties depend on the molecule subdivision of embl that the sequence was fetched from.
+  
+  if ($source eq 'trinity') {
+    print OUT_ACE "Properties cDNA $source\n";
+    print OUT_ACE "Method \"$source\"\n";
+  } else {
+    die "can't determine the type from the ID line for\n";
+  }
+}
+  
+  
+  
+#####################################################################################################################
+# generate_data_from_flat this is now the main processing sub.                                                      #
 # subroutine to parse a file containing multiple EMBL flat files to produce .ace .dna and .longtext files for acedb.#
 #####################################################################################################################
 
-sub generate_data_from_flat {
+ sub generate_data_from_flat {
+
   my $inputfile = shift;
   my $molecule = shift; 
   my $taxid = shift; 
@@ -361,11 +489,11 @@ sub generate_data_from_flat {
   }
   else {
     $output_dir = "/nfs/wormpub/";
-    $acefile = "${output_dir}$inputfile.ace";
+    $acefile = "${output_dir}/$inputfile.ace";
     if ($dna) {
-      $dnafile = "${output_dir}$inputfile.dna";
+      $dnafile = "${output_dir}/$inputfile.dna";
     }
-    $Longtextfile = "${output_dir}$inputfile.txt";
+    $Longtextfile = "${output_dir}/$inputfile.txt";
   }
 
   # Remove stale data.
@@ -546,7 +674,7 @@ sub generate_data_from_flat {
 	 die "can't determine the type from the ID line for $idF2\n";
        }
        
-       &feature_finder ($seq,$idF2),
+       &feature_finder ($seq,$idF2);
      }
    }				#end of record flag loop
   close (NEW_SEQUENCE);
@@ -567,12 +695,48 @@ sub generate_data_from_flat {
 #############################################################################
 
 sub feature_finder {
-  my $subseq = shift;
-  my $subidF2 = shift;
-  my $feature=Features::annot($subseq,$subidF2);
-  if ($feature) {
-    chomp $feature;
-    print OUT_ACE "\n",$feature;
+  my ($subseq1, $subidF, $test_both_senses) = @_;
+
+  $subseq1=~tr/ACGT/acgt/; #lowercase sequence
+
+  my $feature1=Features::annot($subseq1, $subidF);
+  if (!defined $test_both_senses) {
+    chomp $feature1;
+    print OUT_ACE "\n",$feature1;
+    return $subseq1;
+  }
+
+  # we want to test both senses and use the one that appears to be the correct one, so get the other sense
+  my $subseq2 = $wormbase->DNA_string_reverse($subseq1);
+  my $feature2=Features::annot($subseq2, $subidF);
+
+  if (!$feature1 && !$feature2) {
+    return $subseq1;
+  }
+
+  # if only the forward sense has features or if it has a TSL
+  if ($feature1 && !$feature2 || $feature1 =~ /\:TSL\"/) {
+    chomp $feature1;
+    print OUT_ACE "\n",$feature1;
+    return $subseq1;
+  } 
+
+  # if only the reverse sense has features or if it has a TSL
+  if (!$feature1 && $feature2 || $feature2 =~ /\:TSL\"/) { 
+    chomp $feature2;
+    print OUT_ACE "\n",$feature2;
+    return $subseq2;
+  }
+  
+  # use the sense that has a longer description, but we don't like to have to mess about masking out low complexity regions.
+  if (length $feature1 >= length $feature2 || $feature2 =~ /low-complexity/) {
+    chomp $feature1;
+    print OUT_ACE "\n",$feature1;
+    return $subseq1;
+  } else {
+    chomp $feature2;
+    print OUT_ACE "\n",$feature2;
+    return $subseq2;
   }
 }
 
