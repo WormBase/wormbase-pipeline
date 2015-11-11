@@ -37,6 +37,7 @@ my (
   $core_symlinks,
   $checksum, 
   $verbose,
+  $prev_rel_tl_dir,
     );
 
 $user = 'ensro';
@@ -50,7 +51,7 @@ $wb_rel_num = "666";
   'port=s'           => \$port,
   'genome=s'         => \@genomes,
   'unmaskedgenome'   => \$g_nomask,
-  'softmaskedgenome'=> \$g_smask,
+  'softmaskedgenome' => \$g_smask,
   'hardmaskedgenome' => \$g_hmask,
   'proteins'         => \$prot,
   'cdstranscripts'   => \$cds_tran,
@@ -63,10 +64,13 @@ $wb_rel_num = "666";
   'checksum'         => \$checksum,
   'verbose'          => \$verbose,
   'coresymlinks'     => \$core_symlinks,
+  'prevreldir=s'     => \$prev_rel_tl_dir,  # copy data from previous release dir (if it exists)
     );
 
 my $release = "WBPS${rel_num}";
+my $prev_release = "WBPS" . ($rel_num - 1);
 my $wb_release = "WS${wb_rel_num}";
+
 
 if ($g_nomask or $g_smask or $g_hmask or $cds_tran or $mrna_tran or $prot or $gff3 or $all) {
 
@@ -78,14 +82,64 @@ if ($g_nomask or $g_smask or $g_hmask or $cds_tran or $mrna_tran or $prot or $gf
     my ($species, $bioproject) = $genome =~ /^(\S+_\S+)_(\S+)/;
     $bioproject = uc($bioproject);
     my $outdir = join("/", $tl_out_dir, $release, "species", $species, $bioproject);
-    
-    &write_unmasked_genome($dbname, $species, $bioproject, $outdir) if $g_nomask or $all; 
-    &write_softmasked_genome($dbname, $species, $bioproject, $outdir) if $g_smask or $all; 
-    &write_hardmasked_genome($dbname, $species, $bioproject, $outdir) if $g_hmask or $all; 
-    &write_cds_transcripts($dbname, $species, $bioproject, $outdir) if $cds_tran or $all;
-    &write_mrna_transcripts($dbname, $species, $bioproject, $outdir) if $mrna_tran or $all;
-    &write_proteins($dbname, $species, $bioproject, $outdir) if $prot or $all;
-    &write_gff3($dbname, $species, $bioproject, $outdir) if $gff3 or $all;
+    my $prevdir;
+
+    if ($prev_rel_tl_dir) {
+      $prevdir = join("/", $prev_rel_tl_dir, $prev_release, "species", $species, $bioproject);
+      if (not -d $prevdir) {
+        warn("Previous release data for $prevdir  not found. Will generate.\n");
+        undef $prevdir;
+      }
+    }
+
+    &write_file($species, 
+                $bioproject,
+                $outdir, 
+                "genomic.fa", 
+                "$DUMP_GENOME_SCRIPT -dbname $dbname",
+                $prevdir) if $g_nomask or $all;
+
+    &write_file($species, 
+                $bioproject,
+                $outdir, 
+                "genomic_softmasked.fa", 
+                "$DUMP_GENOME_SCRIPT -dbname $dbname -softmask",
+                $prevdir) if $g_smask or $all;
+
+    &write_file($species, 
+                $bioproject,
+                $outdir, 
+                "genomic_masked.fa", 
+                "$DUMP_GENOME_SCRIPT -dbname $dbname -mask",
+                $prevdir) if $g_hmask or $all;
+
+    &write_file($species, 
+                $bioproject,
+                $outdir, 
+                "CDS_transcripts.fa", 
+                "$DUMP_TRANSCRIPTS_SCRIPT -dbname $dbname -cds",
+                $prevdir) if $cds_tran or $all;
+
+    &write_file($species, 
+                $bioproject,
+                $outdir, 
+                "mRNA_transcripts.fa", 
+                "$DUMP_TRANSCRIPTS_SCRIPT -dbname $dbname -mrna",
+                $prevdir) if $mrna_tran or $all;
+
+    &write_file($species, 
+                $bioproject,
+                $outdir, 
+                "protein.fa", 
+                "$DUMP_TRANSCRIPTS_SCRIPT -dbname $dbname -pep",
+                $prevdir) if $prot or $all;
+
+    &write_file($species, 
+                $bioproject,
+                $outdir, 
+                "annotations.gff3", 
+                "$DUMP_GFF3_SCRIPT -dbname $dbname",
+                $prevdir) if $gff3 or $all;
   }  
 }
 
@@ -93,85 +147,31 @@ if ($g_nomask or $g_smask or $g_hmask or $cds_tran or $mrna_tran or $prot or $gf
 &make_core_symlinks(@genomes) if $core_symlinks;
 
 ###############################
+
 ###############################
+sub write_file {
+  my ($species, $bioproject, $outdir, $suffix, $script, $prevdir) = @_;
 
-sub write_unmasked_genome {
-  my ($dbname, $species, $bioproject, $outdir) = @_;
+  $verbose and print STDERR "  Creating $suffix file for $species/$bioproject\n";
 
-  $verbose and print STDERR "  Dumping unmasked genome for $dbname...\n";
   mkpath $outdir if not -d $outdir;
-  my $fname = join(".", $species, $bioproject, $release, "genomic", "fa");
+  my $fname = join(".", $species, $bioproject, $release, $suffix);
   
-  &run_and_zip("$FindBin::Bin/$DUMP_GENOME_SCRIPT -dbname $dbname", "", $outdir, $fname);
+  if (defined $prevdir) {
+    my $prevfile = join("/", $prevdir, join(".", $species, $bioproject, $prev_release, $suffix, "gz"));
+    die "Could not find $prevfile\n" if not -e $prevfile;
+    $fname .= ".gz";
+    $verbose and print STDERR "    Copying file from previous release ($prevfile)\n";
+    system("cp $prevfile $outdir/$fname") and die "Could not copy $prevfile to $outdir/$fname\n";
+  } else {
+    $verbose and print STDERR "    Dumping file using $script\n";
+
+    my $this_cmd = "$FindBin::Bin/$script -host $host -port $port -user $user -outfile $outdir/$fname";
+
+    system($this_cmd) and die "Could not successfully run $this_cmd\n";
+    system("gzip -9 -n $outdir/$fname") and die "Could not successfully gzip $outdir/$fname\n";
+  }
 }
-
-sub write_softmasked_genome {
-  my ($dbname, $species, $bioproject, $outdir) = @_;
-
-  $verbose and print STDERR "  Dumping softmasked-genome for $dbname...\n";
-  
-  mkpath $outdir if not -d $outdir;
-  my $fname = join(".", $species, $bioproject, $release, "genomic_softmasked", "fa");
-  
-  &run_and_zip("$FindBin::Bin/$DUMP_GENOME_SCRIPT -dbname $dbname", "-softmask", $outdir, $fname);
-}
-
-sub write_hardmasked_genome {
-  my ($dbname, $species, $bioproject, $outdir) = @_;
-
-  $verbose and print STDERR "  Dumping masked genome for $dbname...\n";
-  
-  mkpath $outdir if not -d $outdir;
-  my $fname = join(".", $species, $bioproject, $release, "genomic_masked", "fa");
-  
-  &run_and_zip("$FindBin::Bin/$DUMP_GENOME_SCRIPT -dbname $dbname", "-mask", $outdir, $fname); 
-}
-
-sub write_cds_transcripts {
-  my ($dbname, $species, $bioproject, $outdir) = @_;
-
-  $verbose and print STDERR "  Dumping CDS transcripts for $dbname...\n";
-  
-  mkpath $outdir if not -d $outdir;
-  my $fname = join(".", $species, $bioproject, $release, "CDS_transcripts", "fa");
-  
-  &run_and_zip("$FindBin::Bin/$DUMP_TRANSCRIPTS_SCRIPT -dbname $dbname", "-cds", $outdir, $fname);
-    
-}
-
-sub write_mrna_transcripts {
-  my ($dbname, $species, $bioproject, $outdir) = @_;
-
-  $verbose and print STDERR "  Dumping mRNA transcripts for $dbname...\n";
-  
-  mkpath $outdir if not -d $outdir;
-  my $fname = join(".", $species, $bioproject, $release, "mRNA_transcripts", "fa");
-  
-  &run_and_zip("$FindBin::Bin/$DUMP_TRANSCRIPTS_SCRIPT -dbname $dbname", "-mrna", $outdir, $fname);
-}
-
-sub write_proteins {    
-  my ($dbname, $species, $bioproject, $outdir) = @_;
-
-  $verbose and print STDERR "  Dumping proteins for $dbname...\n";
-  
-  mkpath $outdir if not -d $outdir;
-  my $fname = join(".", $species, $bioproject, $release, "protein", "fa");
-  
-  &run_and_zip("$FindBin::Bin/$DUMP_TRANSCRIPTS_SCRIPT -dbname $dbname", "-pep", $outdir, $fname);
-}
- 
-sub write_gff3 {
-  my ($dbname, $species, $bioproject, $outdir) = @_;
-
-  $verbose and print STDERR "  Dumping GFF3 for $dbname...\n";
-  
-  mkpath $outdir if not -d $outdir;
-      my $fname = join(".", $species, $bioproject, $release, "annotations", "gff3");
-  
-  &run_and_zip("$FindBin::Bin/$DUMP_GFF3_SCRIPT -dbname $dbname", "", $outdir, $fname);
-}
-
 
 
 
@@ -203,15 +203,6 @@ sub get_databases {
   return @dbs;
 }
 
-#####################
-sub run_and_zip {
-  my ($cmd, $options, $outdir, $outfname) = @_;
-
-  my $this_cmd = "$cmd $options -host $host -port $port -user $user -outfile $outdir/$outfname";
-
-  system($this_cmd) and die "Could not successfully run $cmd\n";
-  system("gzip -9 -n $outdir/$outfname") and die "Could not successfully gzip $outdir/$outfname\n";
-}
 
 #####################
 sub make_md5sums {
@@ -220,11 +211,11 @@ sub make_md5sums {
   my $checksum_file = "CHECKSUMS";
 
   my @files;
-  open(FIND, "find $targetdir -name '*.*' |");
+  open(FIND, "find $targetdir/species -name '*.*' | sort |");
   while(<FIND>) {
     chomp;
     s/^$targetdir\///;
-    $verboase and print STDERR "Will checksum: $_\n";
+    $verbose and print STDERR "Will checksum: $_\n";
     push @files, $_;
   }
 

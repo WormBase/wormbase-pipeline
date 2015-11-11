@@ -8,7 +8,6 @@ use lib "$Bin/../lib";
 
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use IO::File;
-use Domain2Interpro;
 use Getopt::Long;
 
 my ($dbname, $dbuser, $dbpass, $dbport, $dbhost, $debug,
@@ -58,7 +57,6 @@ if ($num_jobs) {
   exit(0);
 }
 
-my $mapper = Domain2Interpro->new();
 
 if (defined $out_file) {
   open($out_fh, ">$out_file") or die "Could not open $out_file for writing\n";
@@ -84,35 +82,32 @@ while( my $slice = shift @slices) {
   $debug and print STDERR " Fetching and processing genes...\n";
   my $genes = $slice->get_all_Genes();
   while( my $gene=shift @$genes) {
-    my $gene_stable_id = 'gene:'.$gene->stable_id();
+    my $gene_gff_id = 'gene:'.$gene->stable_id();
     
     my %gene_to_dump = (
-      stable_id => $gene_stable_id,
-      name      => $slice_name,
+      gff_id    => $gene_gff_id,
+      seqname   => $slice_name,
       start     => $gene->seq_region_start(),
       end       => $gene->seq_region_end(),
       strand    => $gene->strand(),
       note      => ($gene->status()||'PREDICTED' ). " " . $gene->biotype(),
-      alias       => $gene->stable_id(),
       display     => $gene->stable_id(), # wrong but fixes db's without xref_mapping
       gff_source  => (defined $gene->analysis->gff_source) ? $gene->analysis->gff_source : "WormBase",
         );
-    
-    # get all transcripts of the gene
+
     my $all_transcripts = $gene->get_all_Transcripts();
     while( my $transcript = shift @{$all_transcripts}) {
       
-      my $transcript_stable_id = 'transcript:'.$transcript->stable_id();
+      my $transcript_gff_id = 'transcript:'.$transcript->stable_id();
 
       my $tr_obj =  {
-        stable_id => $transcript_stable_id,
-        name      => $slice_name,
+        gff_id    => $transcript_gff_id,
+        seqname   => $slice_name,
         start     => $transcript->start(),
         end       => $transcript->end(),
         strand    => $transcript->strand(),
         note      => $transcript->biotype(),
         info      => get_info($transcript),
-        alias     => $transcript->stable_id(),
         display     => $transcript->stable_id(),
         gff_source  => (defined $transcript->analysis->gff_source) ?  $transcript->analysis->gff_source : "WormBase",
         gff_type    => (defined $transcript->analysis->gff_feature ) ? $transcript->analysis->gff_feature : $transcript->biotype,
@@ -121,18 +116,18 @@ while( my $slice = shift @slices) {
       my $translation = $transcript->translation;
 
       if (defined $translation) {
-        my $translation_id = 'cds:'.$transcript->translation->stable_id();
+        my $translation_gff_id = 'cds:'.$transcript->translation->stable_id();
 
         $tr_obj->{cds_start} = $translation->genomic_start();
         $tr_obj->{cds_end}   = $translation->genomic_end();
-        $tr_obj->{translation_stable_id} = $translation_id;
+        $tr_obj->{translation_stable_id} = $translation_gff_id;
 
         my $all_t_exons = $transcript->get_all_translateable_Exons();
         
         while (my $cds = shift @{$all_t_exons}) {
           push @{$tr_obj->{'cds'}}, {
-            stable_id => $translation_id,
-            name      => $slice_name,
+            gff_id    => $translation_gff_id,
+            seqname   => $slice_name,
             start     => $cds->seq_region_start(),
             end       => $cds->seq_region_end(),
             strand    => $cds->strand(),
@@ -146,10 +141,10 @@ while( my $slice = shift @slices) {
           @coords = grep { $_->isa("Bio::EnsEMBL::Mapper::Coordinate") } @coords;
           foreach my $coord (@coords) {
             push @{$tr_obj->{'utr5'}}, {
-              name => $slice_name,
-              start => $coord->start, 
-              end   => $coord->end,
-              strand => $coord->strand,
+              seqname => $slice_name,
+              start   => $coord->start, 
+              end     => $coord->end,
+              strand  => $coord->strand,
             };
           }
         }
@@ -160,10 +155,10 @@ while( my $slice = shift @slices) {
           @coords = grep { $_->isa("Bio::EnsEMBL::Mapper::Coordinate") } @coords;
           foreach my $coord (@coords) {
             push @{$tr_obj->{'utr3'}}, {
-              name => $slice_name,
-              start => $coord->start, 
-              end   => $coord->end,
-              strand => $coord->strand,
+              seqname => $slice_name,
+              start   => $coord->start, 
+              end     => $coord->end,
+              strand  => $coord->strand,
             };
           }
         }
@@ -177,11 +172,11 @@ while( my $slice = shift @slices) {
         # dont use exon_stable_id because it may or may not be shared
         # between exons shared between transcripts depending on how the database was
         # built, and we want consistency in the dumps
-        my $exon_stable_id = sprintf("exon:%s.%d", $transcript->stable_id, $exon_count++);
+        my $exon_gff_id = sprintf("exon:%s.%d", $transcript->stable_id, $exon_count++);
         
-        push @{$tr_obj->{'exon'}}, {
-          stable_id => $exon_stable_id,
-          name      => $slice_name,
+        push @{$tr_obj->{exon}}, {
+          gff_id    => $exon_gff_id,
+          seqname   => $slice_name,
           start     => $exon->seq_region_start(),
           end       => $exon->seq_region_end(),
           strand    => $exon->strand(),
@@ -189,9 +184,39 @@ while( my $slice = shift @slices) {
       }
       
 
-      push @{$gene_to_dump{'transcript'}}, $tr_obj;
+      push @{$gene_to_dump{transcript}}, $tr_obj;
     }
     print $out_fh dump_gene(\%gene_to_dump);
+  }
+
+    
+  #
+  # Prediction transcripts
+  #
+  $debug and print STDERR " Fetching and processing prediction transcripts...\n";
+  
+  my $pts = $slice->get_all_PredictionTranscripts;    
+
+  while(my $pt = shift @$pts) {
+    my $label =  $pt->display_label;
+    my $gff_id = sprintf("GBG_%d.%s", $pt->dbID, $label);
+
+    foreach my $pe (@{$pt->get_all_Exons}) {
+      my $feat = {
+        seqname      => $pt->slice->seq_region_name,
+        strand       => ($pt->strand > 0?'+':'-'),
+        hit_start    => $pe->seq_region_start,
+        hit_stop     => $pe->seq_region_end,
+        score        => ($pe->score||'.'),
+        phase        => (defined $pe->phase) ? (3 - $pe->phase) % 3 : ".",
+        logic_name   => $pt->analysis->logic_name,
+        gff_source   => (defined $pt->analysis->gff_source) ? $pt->analysis->gff_source : "WormBase_prediction",
+        feature_type => "CDS",
+        display      => $label,
+        gff_id       => $gff_id,
+      };
+      print $out_fh dump_feature($feat);
+    }
   }
   
   next if $slim;
@@ -226,16 +251,18 @@ while( my $slice = shift @slices) {
         $cigar_line = cigar_to_almost_cigar($cigar_line);
         
         my $stripped_feature = {
+          seqname      => $slice->seq_region_name,
           hit_id       => $feat->hseqname, 
-          target_id    => $slice->seq_region_name,
-          target_start => $feat->hstart,
-          target_stop  => $feat->hend,
+          hit_start    => $feat->hstart,
+          hit_stop     => $feat->hend,
+          display      => $feat->hseqname,
           strand       => ($feat->strand > 0?'+':'-'),
           hit_start    => $feat->start,
           hit_stop     => $feat->end,
           score        => $feat->score,
+          phase        => ".",
           p_value      => $feat->p_value,
-          dbid         => $feat->dbID,
+          gff_id       => $feat->analysis->logic_name . "." . $feat->dbID,
           logic_name   => $feat->analysis->logic_name,
           cigar        => $cigar_line,
           gff_source   => (defined $feat->analysis->gff_source) ? $feat->analysis->gff_source : $feat->analysis->logic_name,
@@ -266,16 +293,18 @@ while( my $slice = shift @slices) {
       $cigar_line = cigar_to_almost_cigar($cigar_line);
       
       my $stripped_feature = {
+        seqname      => $feat->slice->seq_region_name,
         hit_id       => $feat->hseqname,
-        target_id    => $feat->slice->seq_region_name,
-        target_start => $feat->hstart,
-        target_stop  => $feat->hend,
+        hit_start    => $feat->hstart,
+        hit_stop     => $feat->hend,
+        display      => $feat->hseqname,
         strand       => ($feat->strand > 0?'+':'-'),
         hit_start    => $feat->start,
         hit_stop     => $feat->end,
         score        => $feat->score,
+        phase        => ".",
         p_value      => $feat->p_value,
-        dbid         => $feat->dbID,
+        gff_id       => $feat->analysis->logic_name . "." . $feat->dbID,
         logic_name   => $feat->analysis->logic_name,
         cigar        => $cigar_line,
         gff_source   => (defined $feat->analysis->gff_source) ? $feat->analysis->gff_source : $feat->analysis->logic_name,
@@ -290,13 +319,14 @@ while( my $slice = shift @slices) {
   my $features = $slice->get_all_RepeatFeatures;
   while(my $feature = shift @$features) {
     my $stripped_feature = {
-      target_id   => $feature->slice->seq_region_name,
+      seqname     => $feature->slice->seq_region_name,
       strand      => ($feature->strand > 0?'+':'-'),
       hit_start   => $feature->seq_region_start,
       hit_stop    => $feature->seq_region_end,
       score       => ($feature->score||'.'),
-      dbid        => $feature->dbID,
+      phase        => ".",
       logic_name  => $feature->analysis->logic_name,
+      display     => $feature->repeat_consensus->name,
       gff_source  => (defined $feature->analysis->gff_source) ? $feature->analysis->gff_source : "WormBase",
       feature_type=> (defined $feature->analysis->gff_feature) ? $feature->analysis->gff_feature : 'repeat_region',
     };
@@ -309,12 +339,12 @@ while( my $slice = shift @slices) {
   $features = $slice->get_all_SimpleFeatures;
   while(my $simpfeature = shift @$features) {
     my $stripped_simpfeature = {
-      target_id    => $simpfeature->slice->seq_region_name,
+      seqname      => $simpfeature->slice->seq_region_name,
       strand       => ($simpfeature->strand > 0?'+':'-'),
       hit_start    => $simpfeature->seq_region_start,
       hit_stop     => $simpfeature->seq_region_end,
       score        => ($simpfeature->score||'.'),
-      dbid         => $simpfeature->dbID,
+      phase        => ".",
       logic_name   => $simpfeature->analysis->logic_name,
       gff_source   => (defined $simpfeature->analysis->gff_source) ? $simpfeature->analysis->gff_source : "WormBase",
       feature_type => (defined $simpfeature->analysis->gff_feature) ? $simpfeature->analysis->gff_feature : $simpfeature->analysis->logic_name,
@@ -322,6 +352,7 @@ while( my $slice = shift @slices) {
     print $out_fh dump_feature($stripped_simpfeature);
   }
   
+
   print $out_fh '#'x80;
   print $out_fh "\n";
   close($out_fh) unless defined $out_file;
@@ -435,11 +466,24 @@ sub reverse_cigar {
 sub dump_feature {
   my $i=shift;
   my %feature=%{$i};
-  my $gff_line=
-      "$feature{target_id}\t$feature{gff_source}\t$feature{feature_type}\t$feature{hit_start}\t$feature{hit_stop}\t".
-      "$feature{score}\t$feature{strand}\t.".
-      ($feature{id} ? "\tID=$feature{id}"  : "\tID=$feature{logic_name}.$feature{dbid}").
-      ($feature{cigar}?";Name=$feature{hit_id};Target=$feature{hit_id} $feature{target_start} $feature{target_stop};Gap=$feature{cigar}\n":"\n");
+  my $gff_line= join("\t", 
+                     $feature{seqname},
+                     $feature{gff_source},
+                     $feature{feature_type},
+                     $feature{hit_start},
+                     $feature{hit_stop},
+                     $feature{score},
+                     $feature{strand},
+                     $feature{phase});
+  my @group;
+  push @group, "ID=$feature{gff_id}" if $feature{gff_id};
+  push @group, "Name=$feature{display}" if $feature{display};
+  push @group, "Target=$feature{hit_id} $feature{hit_start} $feature{hit_stop}" if $feature{hit_id};
+  push @group, "Gap=$feature{cigar}" if $feature{cigar};
+
+  $gff_line .= "\t" . join(";", @group);
+  $gff_line .= "\n";
+
   return $gff_line;
 }
 
@@ -447,32 +491,28 @@ sub dump_feature {
 # build the info tag including protein features and interpro
 sub get_info {
   my $transcript= shift;
-  my $info='';
+  my $info = '';
+  my @info;
   
   if (defined $transcript->translation) {
     # get all protein_features on the transcript
     my $features=$transcript->translation->get_all_ProteinFeatures();
     # get logic_name and hit_id
-    my %plain_features;
-    my $rest_features;
-    map {
-      if ($mapper->get_method2database($_->analysis->logic_name())) {
-        push @{$plain_features{$_->analysis->logic_name()}},
-        [$_->display_id(),
-         $_->start(), 
-         $_->end(),
-         (defined $_->hstart)  ? $_->hstart : 0,
-         (defined $_->hend)    ? $_->hend : 0,
-         (defined $_->score)   ? $_->score : 0,
-         (defined $_->p_value) ? $_->p_value : 0]
+    my %domains;
+    foreach my $feat (@$features) {
+      if ($feat->interpro_ac) {
+        $domains{$feat->interpro_ac} = 1;
       }
-      else {
-        push @$rest_features,$_
+    }
+
+    foreach my $acc (sort keys %domains) {
+      my $dbe = $ensdb->get_DBEntryAdaptor->fetch_by_db_accession('InterPro', $acc );
+      if (defined $dbe) {
+        push @info, "method:InterPro accession:$acc description:" . $dbe->description;
       }
-    } @$features;
-    my @interpros=$mapper->get_mapping(\%plain_features);
-    map {$info.=sprintf( "position:%d-%d method:%s accession:%s description:%s %%0A", $_->[1], $_->[2],
-                         'InterPro', $_->[0] , $_->[7]) if $_->[1]} @interpros;    
+    }
+
+    $info = join(" %0A", @info);
   }
   return $info;
 }
@@ -484,56 +524,54 @@ sub dump_gene {
   my $output = '';
   
   # Dump gene
-  $output .= "# Gene " . $gene->{'stable_id'} . "\n";
-  $output .= gff_line($gene->{'name'}, 
-                      $gene->{'gff_source'}, 
+  $output .= "# Gene " . $gene->{gff_id} . "\n";
+  $output .= gff_line($gene->{seqname}, 
+                      $gene->{gff_source}, 
                       'gene', 
-                      $gene->{'start'}, 
-                      $gene->{'end'},
-                      $gene->{'strand'}, 
-                      $gene->{'stable_id'},
+                      $gene->{start}, 
+                      $gene->{end},
+                      $gene->{strand}, 
+                      $gene->{gff_id},
                       undef, 
-                      $gene->{'display'}, 
-                      $gene->{'note'},
-                      undef,
-                      $gene->{'alias'});
+                      $gene->{display}, 
+                      $gene->{note});
   
   # Dump transcripts
-  my $parent = $gene->{'stable_id'};
+  my $parent = $gene->{gff_id};
   my %exon_parent;
-  foreach my $transcript (@{$gene->{'transcript'}}) {
-    $output .= gff_line($transcript->{'name'}, 
-                        $transcript->{'gff_source'}, 
+  foreach my $transcript (@{$gene->{transcript}}) {
+    $output .= gff_line($transcript->{seqname}, 
+                        $transcript->{gff_source}, 
                         (exists $transcript->{cds}) ? 'mRNA' : $transcript->{gff_type}, 
-                        $transcript->{'start'}, 
-                        $transcript->{'end'},
-                        $transcript->{'strand'}, 
-                        $transcript->{'stable_id'}, 
+                        $transcript->{start}, 
+                        $transcript->{end},
+                        $transcript->{strand}, 
+                        $transcript->{gff_id}, 
                         undef,
-                        ($transcript->{'display'} || undef), 
+                        ($transcript->{display} || undef), 
                         undef, 
                         ($transcript->{info}||undef),
-                        $transcript->{'alias'},$parent);
+                        undef,$parent);
     
     # Store the parent of this transcript's exons
-    foreach my $exon (@{$transcript->{'exon'}}) {
-      ${$exon_parent{$exon->{'stable_id'}}}{$transcript->{'stable_id'}} = 1;
+    foreach my $exon (@{$transcript->{exon}}) {
+      ${$exon_parent{$exon->{gff_id}}}{$transcript->{gff_id}} = 1;
     }
   }
   
   # Dump exons
-  foreach my $transcript (@{$gene->{'transcript'}}) {
-    foreach my $exon (@{$transcript->{'exon'}}) {
-      next if !$exon_parent{$exon->{'stable_id'}}; # If there are no parents then we've already dumped this exon
-      my @parents = keys %{$exon_parent{$exon->{'stable_id'}}};
-      delete $exon_parent{$exon->{'stable_id'}};
-      $output .= gff_line($exon->{'name'}, 
-                          $transcript->{'gff_source'}, 
+  foreach my $transcript (@{$gene->{transcript}}) {
+    foreach my $exon (@{$transcript->{exon}}) {
+      next if !$exon_parent{$exon->{gff_id}}; # If there are no parents then we've already dumped this exon
+      my @parents = keys %{$exon_parent{$exon->{gff_id}}};
+      delete $exon_parent{$exon->{gff_id}};
+      $output .= gff_line($exon->{seqname}, 
+                          $transcript->{gff_source}, 
                           'exon', 
-                          $exon->{'start'}, 
-                          $exon->{'end'},
-                          $exon->{'strand'}, 
-                          $exon->{'stable_id'}, 
+                          $exon->{start}, 
+                          $exon->{end},
+                          $exon->{strand}, 
+                          $exon->{gff_id}, 
                           undef,
                           undef,
                           undef,
@@ -544,57 +582,57 @@ sub dump_gene {
   }
   
   # Dump coding_exons
-  foreach my $transcript (@{$gene->{'transcript'}}) {
-    my $parent = $transcript->{'stable_id'};
-    if (exists $transcript->{'utr5'}) {
-      foreach my $utr_seg (@{$transcript->{'utr5'}}) {
-        $output .= gff_line($utr_seg->{'name'},
-                            $transcript->{'gff_source'}, 
+  foreach my $transcript (@{$gene->{transcript}}) {
+    my $parent = $transcript->{gff_id};
+    if (exists $transcript->{utr5}) {
+      foreach my $utr_seg (@{$transcript->{utr5}}) {
+        $output .= gff_line($utr_seg->{seqname},
+                            $transcript->{gff_source}, 
                             'five_prime_UTR', 
-                            $utr_seg->{'start'}, 
-                            $utr_seg->{'end'}, 
-                            $utr_seg->{'strand'}, 
+                            $utr_seg->{start}, 
+                            $utr_seg->{end}, 
+                            $utr_seg->{strand}, 
                             undef, 
                             undef, 
                             undef, 
                             undef, 
                             undef, 
                             undef, 
-                            $transcript->{'stable_id'});
+                            $transcript->{gff_id});
       }
     }
-    if (exists $transcript->{'cds'}) {
-      foreach my $cds (@{$transcript->{'cds'}}) {
-        $output .= gff_line($cds->{'name'}, 
-                            $transcript->{'gff_source'}, 
+    if (exists $transcript->{cds}) {
+      foreach my $cds (@{$transcript->{cds}}) {
+        $output .= gff_line($cds->{seqname}, 
+                            $transcript->{gff_source}, 
                             'CDS', 
-                            $cds->{'start'}, 
-                            $cds->{'end'},
-                            $cds->{'strand'}, 
-                            $cds->{'stable_id'}, 
-                            $cds->{'phase'},
+                            $cds->{start}, 
+                            $cds->{end},
+                            $cds->{strand}, 
+                            $cds->{gff_id}, 
+                            $cds->{phase},
                             undef, 
                             undef,
                             undef,
                             undef,
-                            $transcript->{'stable_id'});
+                            $transcript->{gff_id});
       }
     }
-    if (exists $transcript->{'utr3'}) {
-      foreach my $utr_seg (@{$transcript->{'utr3'}}) {
-        $output .= gff_line($utr_seg->{'name'}, 
-                            $transcript->{'gff_source'}, 
+    if (exists $transcript->{utr3}) {
+      foreach my $utr_seg (@{$transcript->{utr3}}) {
+        $output .= gff_line($utr_seg->{seqname}, 
+                            $transcript->{gff_source}, 
                             'three_prime_UTR', 
-                            $utr_seg->{'start'}, 
-                            $utr_seg->{'end'}, 
-                            $utr_seg->{'strand'}, 
+                            $utr_seg->{start}, 
+                            $utr_seg->{end}, 
+                            $utr_seg->{strand}, 
                             undef, 
                             undef, 
                             undef, 
                             undef, 
                             undef, 
                             undef, 
-                            $transcript->{'stable_id'});
+                            $transcript->{gff_id});
       }
     }
   }
@@ -659,7 +697,7 @@ sub filter_features {
     my @sorted_bin = sort {$a->{p_value} <=> $b->{p_value} or $b->{score} <=> $a->{score} } @$bin;
 
     $best=&p_value($sorted_bin[0]->{p_value});
-    map { $f_features{$_->{dbid}}=$_ if (&p_value($_->{p_value}) > $best*0.75 && $max_hsp++ <5)} @sorted_bin; 
+    map { $f_features{$_->{gff_id}}=$_ if (&p_value($_->{p_value}) > $best*0.75 && $max_hsp++ <5)} @sorted_bin; 
   }
   
   # attempt to group the hits by id so that we can "join them up"
@@ -675,15 +713,15 @@ sub filter_features {
       while(my $hit = shift @hits) {
         if (@grouped_hits and
             $hit->{hit_start} > $grouped_hits[-1]->[-1]->{hit_stop} and
-            (($strand eq '+' and $hit->{target_start} > $grouped_hits[-1]->[-1]->{target_stop}) or
-             ($strand eq '-' and $hit->{target_stop} < $grouped_hits[-1]->[-1]->{target_start}))) {
+            (($strand eq '+' and $hit->{hit_start} > $grouped_hits[-1]->[-1]->{hit_stop}) or
+             ($strand eq '-' and $hit->{hit_stop} < $grouped_hits[-1]->[-1]->{hit_start}))) {
           push @{$grouped_hits[-1]}, $hit;
         } else {
           push @grouped_hits, [$hit];
         }
       }
       foreach my $group (@grouped_hits) {
-        my $id = $logic . "." . $group->[0]->{dbid};
+        my $id = $logic . "." . $group->[0]->{gff_id};
         foreach my $hit (@$group) {
           $hit->{id} = $id;
           push @final_list, $hit;

@@ -148,9 +148,13 @@ foreach my $core_db (@core_dbs) {
     print STDERR "Creating new GenomeDB for $prod_name\n";
     $gdb = Bio::EnsEMBL::Compara::GenomeDB->new(-db_adaptor => $core_db);
     if ($locators) {
-      my $loc = sprintf("Bio::EnsEMBL::DBSQL::DBAdaptor/host=%s;port=%s;user=%s;pass=%s;dbname=%s;disconnect_when_inactive=1", $core_db->dbc->host, $core_db->dbc->port, $core_db->dbc->user, $core_db->dbc->password, $core_db->dbc->dbname);
+      my $loc = sprintf("Bio::EnsEMBL::DBSQL::DBAdaptor/host=%s;port=%s;user=%s;pass=%s;dbname=%s;disconnect_when_inactive=1", 
+                        $core_db->dbc->host, 
+                        $core_db->dbc->port, 
+                        $core_db->dbc->user, 
+                        $core_db->dbc->password, 
+                        $core_db->dbc->dbname);
       $gdb->locator($loc);
-      
     }
     $compara_dbh->get_GenomeDBAdaptor->store($gdb);
   } else {
@@ -159,6 +163,16 @@ foreach my $core_db (@core_dbs) {
     my $gdb_tmp =  Bio::EnsEMBL::Compara::GenomeDB->new(-db_adaptor => $core_db);
     $gdb->assembly($gdb_tmp->assembly);
     $gdb->genebuild($gdb_tmp->genebuild);
+    if ($locators) {
+      my $loc = sprintf("Bio::EnsEMBL::DBSQL::DBAdaptor/host=%s;port=%s;user=%s;pass=%s;dbname=%s;disconnect_when_inactive=1", 
+                        $core_db->dbc->host, 
+                        $core_db->dbc->port, 
+                        $core_db->dbc->user, 
+                        $core_db->dbc->password, 
+                        $core_db->dbc->dbname);
+      $gdb->locator($loc);      
+    }
+
     $compara_dbh->get_GenomeDBAdaptor->update($gdb);
   }
 
@@ -184,11 +198,7 @@ if ($create_tree_mlss) {
   system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara $master_dbname --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type ENSEMBL_ORTHOLOGUES --f --pw") 
       and die "Could not create MLSS for orthologs\n";
   
-# For between-species paralogues  
-  #system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara $master_dbname --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type ENSEMBL_PARALOGUES --f --pw") 
-  #    and die "Could not create MLSS for between-species paralogs\n"; 
-  
-# For same-species paralogues
+  # For same-species paralogues
   system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara $master_dbname --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type ENSEMBL_PARALOGUES --f --sg") 
       and die "Could not create MLSS for within-species paralogs\n"; 
   
