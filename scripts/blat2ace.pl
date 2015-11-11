@@ -25,7 +25,7 @@ use Coords_converter;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase, $species);
 my ($database, $confirmed_introns, $qtype, $qspecies, $map_to_clone);
-my ($acefile, $pslfile, $virtualobjsfile, $confirmedfile, $bestm, $otherm, $group_align_segs, $min_coverage, %query_seen);
+my ($acefile, $pslfile, $virtualobjsfile, $confirmedfile, $bestm, $otherm, $group_align_segs, $min_coverage, %query_seen, $batch_by_query);
 
 GetOptions (
   "help"          => \$help,
@@ -45,6 +45,7 @@ GetOptions (
   "psl:s"         => \$pslfile,
   "groupaligns"   => \$group_align_segs,
   "mincoverage=s" => \$min_coverage,
+  "batchbyquery"  => \$batch_by_query,
     );
 
 
@@ -131,6 +132,7 @@ if (grep(/$qspecies/, @nematodes)) {
 
 my (%best_coverage, %target_feature_counts, @all_virt_hashes, $out_fh, $confirmed_fh);
 
+$log->write_to("Reading PSL file to get list of sequences...\n");
 open(BLAT, "<$pslfile") or $log->log_and_die("Could open $pslfile $!\n");
 while(<BLAT>) {
   next unless /^\d/;
@@ -141,7 +143,6 @@ while(<BLAT>) {
   my $coverage = ($match/$qsize)*100; 
 
   next if defined $min_coverage and $coverage < $min_coverage;
-  print STDERR "COVERAGE = $coverage, MIN_COVERAGE = $min_coverage\n";
   
   if (not exists $best_coverage{$qname} or $coverage > $best_coverage{$qname}->{coverage}) {
     $best_coverage{$qname} = {
@@ -158,17 +159,25 @@ close(BLAT);
 
 my (@sequence_groups, $count_of_last);
 
-foreach my $tid (sort { $target_feature_counts{$b} <=> $target_feature_counts{$a} } keys %target_feature_counts) {
-  if (not @sequence_groups or $count_of_last >= 100000) {
-    push @sequence_groups, [ $tid ];
-    $count_of_last = $target_feature_counts{$tid};
-  } else {
-    push @{$sequence_groups[-1]}, $tid;
-    $count_of_last += $target_feature_counts{$tid};
+$log->write_to("Making batches for processing...\n");
+if ($batch_by_query) {
+  foreach my $qid (keys %best_coverage) {
+    if (not @sequence_groups or scalar(@{$sequence_groups[-1]}) >= 200000) {
+      push @sequence_groups, [];
+    }
+    push @{$sequence_groups[-1]}, $qid;
   }
-} 
-
-$log->write_to($wormbase->runtime.":  Parsing psl in " . scalar(@sequence_groups) . " target-batches\n\n");
+} else {
+  foreach my $tid (sort { $target_feature_counts{$b} <=> $target_feature_counts{$a} } keys %target_feature_counts) {
+    if (not @sequence_groups or $count_of_last >= 100000) {
+      push @sequence_groups, [ $tid ];
+      $count_of_last = $target_feature_counts{$tid};
+    } else {
+      push @{$sequence_groups[-1]}, $tid;
+      $count_of_last += $target_feature_counts{$tid};
+    }
+  } 
+}
 
 open($out_fh, ">$acefile") or $log->log_and_die("Could not open $acefile for writing\n");
 
@@ -179,10 +188,11 @@ if ($confirmed_introns) {
   open $confirmed_fh, ">$confirmedfile" or $log->log_and_die("Could not open $confirmedfile for writing\n");
 }
 
+$log->write_to("Made ". scalar(@sequence_groups). " batches\n");
 foreach my $seq_group (@sequence_groups) {
-  my (%hits, %hits_by_tname, %target_lengths, %target_batch);
+  my (%hits, %hits_by_tname, %target_lengths, %batch);
 
-  map { $target_batch{$_} = 1 } @$seq_group;
+  map { $batch{$_} = 1 } @$seq_group;
 
   $log->write_to($wormbase->runtime.":  Doing batch with " . scalar(@$seq_group) . " targets...\n");
 
@@ -208,7 +218,11 @@ foreach my $seq_group (@sequence_groups) {
     my @q_starts     = split (/,/, $f[19]);      # start coordinates of each query block
     my @t_starts     = split (/,/, $f[20]);      # start coordinates of each target (superlink) block
     
-    next if not $target_batch{$tname};
+    if ($batch_by_query) {
+      next if not $batch{$qname};
+    } else {
+      next if not $batch{$tname};
+    }
 
     if (not exists $target_lengths{$tname}) {
       $target_lengths{$tname} = $tsize;
@@ -355,6 +369,7 @@ foreach my $seq_group (@sequence_groups) {
     push @all_virt_hashes, &write_ace_top_level($out_fh, $qtype, $bestm, $otherm, \%hits_by_tname, \%target_lengths);
   }
 }
+$log->write_to("Finished processing batches\n");
 
 # write virtuals sequences here
 open my $vfh, ">$virtualobjsfile" or $log->log_and_die("Could not open $virtualobjsfile for writing\n");
@@ -612,7 +627,7 @@ sub confirm_introns {
     print $ci_fh "\nSequence : \"$tname\"\n";
       
     foreach my $intr (@{$ci{$tname}}) {
-      my $merge = $intr->[0].":".$intr->[1];
+      my $merge = join(":", $tname, $intr->[0], $intr->[1]);
       if (not exists $double{$merge}) {
         # If RST or OST modify output.
         if (($type eq "RST") or ($type eq "OST")) {
