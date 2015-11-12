@@ -13,8 +13,6 @@
 // -----------------------------------------------------------------------------
 //
 // ALL WormBase groups should be in sync with this set of models
-// Last edited by: $Author: pad $
-// Last edited on: $Date: 2015-06-30 14:08:30 $
 //
 //
 // Additional things to consider. If classes are added or new data in the ?Gene class
@@ -24,8 +22,8 @@
 //
 // Notes:
 //
-// Add a CVS tag line at the end of the file when the models are fully prepared for a 
-// WB build to start, this allows for one final CVS commit and message.
+// Add a Build tag line at the end of the file when the models are fully prepared for a 
+// WB build to start, this allows for one final commit and message.
 //
 // Tags that shouldn't be used:
 // -----------------------------------------------------------------------------
@@ -2747,6 +2745,7 @@
                                  Probable_hypomorph_via_phenotype #Evidence
                                  Wild_allele #Evidence
                 Affected_by Molecule ?Molecule #Evidence // ?Molecule model Karen Yook
+                            Pathogen ?Species #Evidence
                 EQ_annotations Anatomy_term ?Anatomy_term ?PATO_term #Evidence
                                Life_stage ?Life_stage ?PATO_term #Evidence
                                GO_term ?GO_term ?PATO_term #Evidence
