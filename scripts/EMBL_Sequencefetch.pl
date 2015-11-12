@@ -405,7 +405,7 @@ sub generate_data_from_fasta {
       
       $idF = $1;
       if ($source eq 'trinity') {
-	($ID) = ($idF =~ /\S+?_/); # get the SRA ID from the Trinity sequence ID
+	($ID) = ($idF =~ /(\S+?)_/); # get the SRA ID from the Trinity sequence ID
       }
       $retrieved++;
       $seq = "";
@@ -457,7 +457,7 @@ sub output_seq {
   # Properties depend on the molecule subdivision of embl that the sequence was fetched from.
   
   if ($source eq 'trinity') {
-    print OUT_ACE "Properties cDNA $source\n";
+    print OUT_ACE "Properties cDNA cDNA_EST\n";
     print OUT_ACE "Method \"$source\"\n";
   } else {
     die "can't determine the type from the ID line for\n";

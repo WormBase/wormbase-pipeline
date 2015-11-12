@@ -20,14 +20,108 @@ use Wormbase;
 use Coords_converter;
 
 my %species_info = (
-
+  #
+  # STRAIN
+  #
   strain => {
-    elegans => 'Bristol N2',
+    elegans  => 'Bristol N2',
     briggsae => 'AF16',
     brugia   => 'FR3',
     sratti   => 'ED321',
   },
+  
+  #
+  # REFERENCES
+  #
+  references => {
+    elegans =>  [
+      [
+        "RA   Sulson J.E., Waterston R.;",
+        "RL   Nematode Sequencing Project: Sanger Institute, Hinxton, Cambridge",
+        "RL   CB10 1SA, UK and The Genome Institute at Washington University,", 
+        "RL   St. Louis, MO 63110, USA.",
+      ],
+      [ 
+        "RX   PUBMED; 9851916.",
+        "RG   Caenorhabditis elegans Sequencing Consortium",
+        "RA   Sulson J.E., Waterston R.;",
+        "RT   \"Genome sequence of the nematode C. elegans: a platform for investigating",
+        "RT   biology\";",
+        "RL   Science 282(5396):2012-2018(1998).",
+      ],
+    ],
+  
+    briggsae => [
+      [
+        "RX   PUBMED; 14624247.",
+        "RA   Stein L.D., Bao Z., Blasiar D., Blumenthal T., Brent M.R., Chen N.,",
+        "RA   Chinwalla A., Clarke L., Clee C., Coghlan A., Coulson A., D'Eustachio P.,",
+        "RA   Fitch D.H., Fulton L.A., Fulton R.E., Griffiths-Jones S., Harris T.W.,",
+        "RA   Hillier L.W., Kamath R., Kuwabara P.E., Mardis E.R., Marra M.A.,",
+        "RA   Miner T.L., Minx P., Mullikin J.C., Plumb R.W., Rogers J., Schein J.E.,",
+        "RA   Sohrmann M., Spieth J., Stajich J.E., Wei C., Willey D., Wilson R.K.,",
+        "RA   Durbin R., Waterston R.H.;",
+        "RT   \"The genome sequence of Caenorhabditis briggsae: a platform for comparative",
+        "RT   genomics\";",
+        "RL   PLoS Biol. 1(2):E45-E45(2003).",
+      ],
+      [ 
+        "RX   PUBMED; 21779179.",
+        "RA   Ross J.A., Koboldt D.C., Staisch J.E., Chamberlin H.M., Gupta B.P.,",
+        "RA   Miller R.D., Baird S.E., Haag E.S.;",
+        "RT   \"Caenorhabditis briggsae recombinant inbred line genotypes reveal",
+        "RT   inter-strain incompatibility and the evolution of recombination\";",
+        "RL   PLoS Gen. 7(7):E1002174-E1002174(2011).",
+      ],
+    ],
+          
+    brugia => [
+      [
+        "RX   PUBMED; 17885136.",
+        "RA   Ghedin E., Wang S., Spiro D., Caler E., Zhao Q., Crabtree J., Allen J.E.,",
+        "RA   Delcher A.L., Guiliano D.B., Miranda-Saavedra D., Angiuoli S.V., Creasy T.,",
+        "RA   Amedeo P., Haas B., El-Sayed N.M., Wortman J.R., Feldblyum T., Tallon L.,",
+        "RA   Schatz M., Shumway M., Koo H., Salzberg S.L., Schobel S., Pertea M., Pop M.,",
+        "RA   White O., Barton G.J., Carlow C.K., Crawford M.J., Daub J., Dimmic M.W.,",
+        "RA   Estes C.F., Foster J.M., Ganatra M., Gregory W.F., Johnson N.M., Jin J.,",
+        "RA   Komuniecki R., Korf I., Kumar S., Laney S., Li B.W., Li W., Lindblom T.H.,",
+        "RA   Lustigman S., Ma D., Maina C.V., Martin D.M., McCarter J.P., McReynolds L.,",
+        "RA   Mitreva M., Nutman T.B., Parkinson J., Peregrin-Alvarez J.M., Poole C., Ren Q.,",
+        "RA   Saunders L., Sluder A.E., Smith K., Stanke M., Unnasch T.R., Ware J., Wei A.D.,",
+        "RA   Weil G., Williams D.J., Zhang Y., Williams S.A., Fraser-Liggett C., Slatko B.,",
+        "RA   Blaxter M.L., Scott A.L.;",
+        "RT   \"Draft genome of the filarial nematode parasite Brugia malayi.\";",
+        "RL   Science. 2007 Sep 21;317(5845):1756-60.",
+      ],
+    ],
 
+    sratti => [
+      [
+        "RA   Aslett M.;",
+        "RT   ;",
+        "RL   Submitted (16-SEP-2014) to the INSDC.",
+        "RL   Pathogen Sequencing Unit, Wellcome Trust Sanger Institute, Wellcome Trust",
+        "RL   Genome Campus, Hinxton, Cambridge, Cambridgeshire CB10 1SA, UNITED KINGDOM.",
+      ],
+    ],
+
+    ovolvulus => [
+      [
+        "RA   Aslett M.;",
+        "RT   ;",
+        "RL   Submitted (04-NOV-2013) to the INSDC.",
+        "RL   Pathogen Sequencing Unit, Wellcome Trust Sanger Institute, Wellcome Trust",
+        "RL   Genome Campus, Hinxton, Cambridge, Cambridgeshire CB10 1SA, UNITED KINGDOM.",
+      ],
+      [
+
+        "RA   Cotton J., Tsai J., Stanley E., Tracey A., Holroyd N., Lustigman S.,",
+        "RA   Berriman M.;",
+        "RT   \"Genome sequencing of Onchocerca volvulus\"",
+        "RL   Unpublished.",
+      ],
+    ]
+  }    
 );    
 
 my ($test,
@@ -51,6 +145,7 @@ my ($test,
     $cds2proteinid_db, $cds2status_db, $trans2dbremark_db, $decorations_db,
     $cds2status_h, $cds2proteinid_h,  $trans2dbremark_h, $trans2briefid_h, $trans2type_h, $gclass2desc_h,
     $agp_segs,
+    $no_annotation,
     %additional_qualifiers,
     );
 
@@ -73,6 +168,7 @@ GetOptions (
   "rawdumpfile:s"   => \$raw_dump_file,
   "quicktest"       => \$quicktest,
   "sequencelevel"   => \$sequencelevel,
+  "noannotation"    => \$no_annotation,
   "agpfile=s"       => \$agp_file,
     );
 
@@ -96,6 +192,12 @@ $full_species_name = $wormbase->full_name;
 my $dbdir = ($database) ? $database : $wormbase->autoace;
 my $tace = $wormbase->tace;
 my $bioproject = $wormbase->ncbi_bioproject; 
+
+if ($species eq 'sratti') {
+  $sequencelevel = 1;
+} elsif ($species ne "elegans") {
+  $sequencelevel = 0;
+}
 
 $decorations_db =  $wormbase->database('current') if not defined $decorations_db;
 $cds2proteinid_db = $decorations_db if not defined $cds2proteinid_db;
@@ -173,7 +275,7 @@ if ($dump_modified) {
   $clone2dbid = &fetch_clone2dbid($dbdir);
   ($gene2cgcname, $gene2gseqname) = &fetch_gene2names($dbdir);
 
-  if (not $sequencelevel) {
+  if (not $no_annotation) {
     $multi_gene_loci = &get_multi_gene_loci($gene2gseqname);
     
     $trans2type_h = &fetch_transcript2type($dbdir);
@@ -201,7 +303,7 @@ if ($dump_modified) {
   open(my $out_fh, ">$mod_dump_file") or $log->log_and_die("Could not open $mod_dump_file for writing\n");
   open(my $raw_fh, $raw_dump_file) or $log->log_and_die("Could not open $raw_dump_file for reading\n");
   
-  my ($seqname, $chromosome, $seqlen, $idline_suffix, @accs, @features, $written_header, %written_version_tag);
+  my ($seqname, $seqlen, $idline_suffix, @accs, @features, %source_quals, $written_header, %written_version_tag);
   
   while (<$raw_fh>) {
     
@@ -211,6 +313,7 @@ if ($dump_modified) {
       $idline_suffix = sprintf("SV XXX; linear; genomic DNA; %s; INV; $seqlen BP.", ($sequencelevel) ? "STD" : "CON");
       @accs = ();
       @features = ();
+      %source_quals = ();
       $written_header = 0;
       
       next;
@@ -252,8 +355,10 @@ if ($dump_modified) {
       #
       if ($clone2dbid->{$seqname}) {
         print $out_fh "AC * $clone2dbid->{$seqname}\n";
-        print $out_fh "XX\n";
+      } else {
+        print $out_fh "AC * $accs[0]\n";
       }
+      print $out_fh "XX\n";
       
       #
       # PR
@@ -264,35 +369,45 @@ if ($dump_modified) {
       #
       # DE
       #
-      my @de_line;
+      my (@de_line);
       
       if ($species eq 'elegans') {
         if ($seqname =~ /CHROMOSOME_(\S+)/) {
-          $chromosome = $1;
-          @de_line = ("$full_species_name chromosome $chromosome");
+          @de_line = ("$full_species_name chromosome $1");
+          $source_quals{chromosome} = $1;
         } elsif (!defined($clone2type->{$seqname})){
           @de_line = ("$full_species_name clone $seqname");
+          $source_quals{clone} = $seqname;
         } elsif (lc($clone2type->{$seqname}) eq "other") {
           @de_line = ("$full_species_name clone $seqname");
+          $source_quals{clone} = $seqname;
         } elsif (lc($clone2type->{$seqname}) eq "yac") {
           @de_line = ("$full_species_name YAC $seqname");
+          $source_quals{clone} = $seqname;
         } else {
           @de_line = ("$full_species_name $clone2type->{$seqname} $seqname");
+          $source_quals{clone} = $seqname;
         }
       } elsif ($species eq 'briggsae') {
         @de_line = ("$full_species_name AF16 supercontig from assembly CB4, $seqname");
+        $source_quals{note} = "supercontig $seqname";
       } elsif ($species eq 'brugia'){
         @de_line = ("$full_species_name FR3 supercontig from assembly B_malayi-3.1 $seqname");
+        $source_quals{note} = "supercontig $seqname";
       } elsif ($species eq 'sratti') {
-        if ($seqname =~ /_chr(\S+)/) {
-          $chromosome = $1;
-          @de_line = ("$full_species_name genome assembly S_ratti_ED321, chr${chromosome}");
-        } else {
-          @de_line = ("$full_species_name genome assembly S_ratti_ED321, scaffold", 
-                      "$seqname");
+        my $de_prefix = "$full_species_name assembly S_ratti_ED321";
+        if ($seqname =~ /_chr(\S)_scaffold(\d+)/) {
+          @de_line = ("$de_prefix, chr $1 scaffold $2");
+          $source_quals{chromosome} = $1;
+        } elsif ($seqname =~ /chr(\S)/) {
+          @de_line = ("$de_prefix, chromosome $1");
+          $source_quals{chromosome} = $1;
+        } elsif ($seqname =~ /scaffold(\d+)/) {
+          @de_line = ("$de_prefix, scaffold $1"); 
+          $source_quals{note} = "supercontig $seqname";
         }
       }
-      
+    
       foreach my $de_line (@de_line) {
         print $out_fh "DE   $de_line\n";
       }
@@ -319,29 +434,19 @@ if ($dump_modified) {
 
       my $ref_count = 1;
       
-      if ($species eq 'elegans') {
-        # elegans is a special case, because every clone has a different primary
-        # author.
-        printf $out_fh "RN   [%d]\n", $ref_count++;
-        printf $out_fh "RP   1-%d\n", $seqlen;
-        print $out_fh "RG   WormBase Consortium\n";
-        if (defined $primary_RA) {
-          print $out_fh $primary_RA;
-        } else {
-          print $out_fh "RA   Howe, K.L.;\n";
-        }
-        print $out_fh "RT   ;\n";
-        print $out_fh $primary_RL if defined $primary_RL;
-        print $out_fh "RL   Nematode Sequencing Project: Sanger Institute, Hinxton, Cambridge\n";
-        print $out_fh "RL   CB10 1SA, UK and The Genome Institute at Washington University,\n"; 
-        print $out_fh "RL   St. Louis, MO 63110, USA. E-mail: help\@wormbase.org\n";
-        print $out_fh "XX\n";
-      }
+      printf $out_fh "RN   [%d]\n", $ref_count++;
+      printf $out_fh "RP   1-%d\n", $seqlen;
+      print $out_fh "RG   WormBase Consortium\n";
+      print $out_fh "RA   WormBase;\n";
+      print $out_fh "RT   ;\n";
+      print $out_fh "RL   WormBase Group, European Bioinformatics Institute,\n";
+      print $out_fh "RL   Cambridge, CB10 1SA, UK. Email: help\@wormbase.org\n";
+      print $out_fh "XX\n";
 
-      my @refs = @{&get_references()};
+      my @refs = @{$species_info{references}->{$species}};
       for(my $i=0; $i < @refs; $i++) {
         printf $out_fh "RN   [%d]\n", $ref_count++;
-        print $out_fh "RP   1-$seqlen\n";
+        printf $out_fh "RP   1-%d\n", $seqlen;
         map { print $out_fh "$_\n" } @{$refs[$i]};
         print $out_fh "XX\n";
       }
@@ -352,7 +457,7 @@ if ($dump_modified) {
     #
     # Comments
     #
-    if (/^CC   / and not $sequencelevel) {
+    if (/^CC   / and not $no_annotation) {
       if (not $written_version_tag{$seqname}) {
         printf $out_fh "CC   Annotated features correspond to WormBase release %s.\n", $wormbase->get_wormbase_version_name;
         print $out_fh "XX\n";
@@ -371,6 +476,12 @@ if ($dump_modified) {
         location  => [$content],
         quals     => [],
       };
+      if ($ftype eq 'source') {
+        foreach my $k (sort keys %source_quals) {
+          push @{$features[-1]->{quals}}, ["/$k=\"$source_quals{$k}\""];
+        }
+      }
+
       next;
     } elsif (/^FT\s+(.+)/) {
       my $content = $1;
@@ -454,7 +565,7 @@ exit(0);
 sub process_feature_table {
   my ($out_fh, $seqname, @feats) = @_;
 
-  if ($sequencelevel) {
+  if ($no_annotation) {
     @feats = grep { $_->{ftype} eq 'source' } @feats;
   }
 
@@ -465,19 +576,10 @@ sub process_feature_table {
       printf $out_fh "FT   %16s/db_xref=\"taxon:%d\"\n", " ", $wormbase->ncbi_tax_id;
       printf $out_fh "FT   %16s/strain=\"%s\"\n", " ", $species_info{strain}->{$species};
       printf $out_fh "FT   %16s/mol_type=\"genomic DNA\"\n", " ";
-      if ($seqname =~ /CHROMOSOME_(\S+)/) {
-        printf $out_fh "FT   %16s/chromosome=\"$1\"\n", " ";
-      } elsif ($seqname =~ /chr(\S+)/) {
-        printf $out_fh "FT   %16s/chromosome=\"$1\"\n", " ";
-      }
-
       foreach my $tag (@{$feat->{quals}}) {
         foreach my $ln (@$tag) {
           printf $out_fh "FT   %16s%s\n", " ", $ln;
         }
-      }
-      if ($species eq 'briggsae' ||$species eq 'brugia') {
-        printf $out_fh "FT   %16s/note=\"supercontig %s\"\n", " ", $seqname;
       }
       next;
     } elsif ($feat->{ftype} =~ /RNA$/) {
@@ -911,89 +1013,6 @@ sub get_multi_gene_loci {
   return \%multi_gene_loci;
 }
 
-##########################
-sub get_references {
-
-  my %primary_references = (
-    elegans =>  [
-      [ 
-        "RX   PUBMED; 9851916.",
-        "RG   Caenorhabditis elegans Sequencing Consortium",
-        "RA   Sulson J.E., Waterston R.;",
-        "RT   \"Genome sequence of the nematode C. elegans: a platform for investigating",
-        "RT   biology\";",
-        "RL   Science 282(5396):2012-2018(1998).",
-      ],
-    ],
-    
-    briggsae => [
-      ["RG   WormBase Consortium",
-       "RA   Howe K.L.;",
-       "RT   ;",
-       "RL   Submitted (03-OCT-2011) to the INSDC.",
-       "RL   WormBase group, European Bioinformatics Institute,",
-       "RL   Cambridge, CB10 1SA, UNITED KINGDOM.",
-       ],
-      [
-       "RX   PUBMED; 14624247.",
-       "RA   Stein L.D., Bao Z., Blasiar D., Blumenthal T., Brent M.R., Chen N.,",
-       "RA   Chinwalla A., Clarke L., Clee C., Coghlan A., Coulson A., D'Eustachio P.,",
-       "RA   Fitch D.H., Fulton L.A., Fulton R.E., Griffiths-Jones S., Harris T.W.,",
-       "RA   Hillier L.W., Kamath R., Kuwabara P.E., Mardis E.R., Marra M.A.,",
-       "RA   Miner T.L., Minx P., Mullikin J.C., Plumb R.W., Rogers J., Schein J.E.,",
-       "RA   Sohrmann M., Spieth J., Stajich J.E., Wei C., Willey D., Wilson R.K.,",
-       "RA   Durbin R., Waterston R.H.;",
-       "RT   \"The genome sequence of Caenorhabditis briggsae: a platform for comparative",
-       "RT   genomics\";",
-       "RL   PLoS Biol. 1(2):E45-E45(2003).",
-      ],
-      [ 
-        "RX   PUBMED; 21779179.",
-        "RA   Ross J.A., Koboldt D.C., Staisch J.E., Chamberlin H.M., Gupta B.P.,",
-        "RA   Miller R.D., Baird S.E., Haag E.S.;",
-        "RT   \"Caenorhabditis briggsae recombinant inbred line genotypes reveal",
-        "RT   inter-strain incompatibility and the evolution of recombination\";",
-        "RL   PLoS Gen. 7(7):E1002174-E1002174(2011).",
-      ],
-    ],
-    brugia => [
-      ["RG   WormBase Consortium",
-       "RA   Ghedin E., Paulini M.;",
-       "RT   ;",
-       "RL   Submitted (12-Dec-2012) to the INSDC.",
-       "RL   WormBase Group, European Bioinformatics Institute,",
-       "RL   Cambridge, CB10 1SA, UNITED KINGDOM.",
-       ],
-      ["RX   PUBMED; 17885136.",
-       "RA   Ghedin E., Wang S., Spiro D., Caler E., Zhao Q., Crabtree J., Allen J.E.,",
-       "RA   Delcher A.L., Guiliano D.B., Miranda-Saavedra D., Angiuoli S.V., Creasy T.,",
-       "RA   Amedeo P., Haas B., El-Sayed N.M., Wortman J.R., Feldblyum T., Tallon L.,",
-       "RA   Schatz M., Shumway M., Koo H., Salzberg S.L., Schobel S., Pertea M., Pop M.,",
-       "RA   White O., Barton G.J., Carlow C.K., Crawford M.J., Daub J., Dimmic M.W.,",
-       "RA   Estes C.F., Foster J.M., Ganatra M., Gregory W.F., Johnson N.M., Jin J.,",
-       "RA   Komuniecki R., Korf I., Kumar S., Laney S., Li B.W., Li W., Lindblom T.H.,",
-       "RA   Lustigman S., Ma D., Maina C.V., Martin D.M., McCarter J.P., McReynolds L.,",
-       "RA   Mitreva M., Nutman T.B., Parkinson J., Peregrin-Alvarez J.M., Poole C., Ren Q.,",
-       "RA   Saunders L., Sluder A.E., Smith K., Stanke M., Unnasch T.R., Ware J., Wei A.D.,",
-       "RA   Weil G., Williams D.J., Zhang Y., Williams S.A., Fraser-Liggett C., Slatko B.,",
-       "RA   Blaxter M.L., Scott A.L.;",
-       "RT   \"Draft genome of the filarial nematode parasite Brugia malayi.\";",
-       "RL   Science. 2007 Sep 21;317(5845):1756-60.",
-      ],
-    ],
-    sratti => [
-      [
-       "RA   Aslett M.;",
-       "RT   ;",
-       "RL   Submitted (04-NOV-2013) to the INSDC.",
-       "RL   Pathogen Sequencing Unit, Wellcome Trust Sanger Institute, Wellcome Trust",
-       "RL   Genome Campus, Hinxton, Cambridge, Cambridgeshire CB10 1SA, UNITED KINGDOM.",
-      ],
-    ],
-    );
-
-  return $primary_references{$species};
-}
 
 
 ###################################
@@ -1022,38 +1041,7 @@ sub stage_dump_to_submissions_repository {
       }
     };
     
-    if (/^\s+(.+)$/) {
-      my $seq = $1;
-      $seq =~ s/\s+//g;
-      $records{$cosmid}->{seq} .= uc($seq);
-    }
-    
     push @$current_lines, $_;
-  }
-  
-  foreach my $cosmid (sort keys %records) {    
-    next if not exists $records{$cosmid}->{seq};
-    
-    my $hash = $wormbase->submit_repos_hash_from_sequence_name($cosmid); 
-
-    my $seq_file  = "$submit_repo/$hash/$cosmid/$cosmid.fasta";      
-    if (not -e $seq_file) {
-      $log->log_and_die("Could not find the FASTA file for $cosmid ($seq_file)");
-    }
-    
-    my $sio = Bio::SeqIO->new(-format => 'fasta',
-                              -file   => $seq_file);
-    my $seqobj = $sio->next_seq;
-    
-    if (uc($seqobj->seq) ne $records{$cosmid}->{seq}) {
-      # sequence has changed
-      my $newseqobj = Bio::PrimarySeq->new(-id => $cosmid,
-                                           -seq => $records{$cosmid}->{seq});
-      my $sioout = Bio::SeqIO->new(-format => 'fasta',
-                                   -file   => ">$seq_file");
-      $sioout->write_seq($newseqobj);
-      $sioout->close();
-    }
   }
   
   foreach my $cosmid (sort keys %records) {
@@ -1383,8 +1371,14 @@ sub fetch_transcript2briefid {
       if ($class eq 'CDS') {
         # only include the UniProt ones for CDS for time being;
         # InterPro and no-evidence ones have questionable source
-        if (exists $res{$class}->{$obj}->{uniprot}) {
-          $tran2briefid{$obj} = $res{$class}->{$obj}->{uniprot};
+        if ($species eq 'elegans') {
+          if (exists $res{$class}->{$obj}->{uniprot}) {
+            $tran2briefid{$obj} = $res{$class}->{$obj}->{uniprot};
+          }
+        } else {
+          foreach my $evi (keys %{$res{$class}->{$obj}}) {
+            $tran2briefid{$obj} = $res{$class}->{$obj}->{$evi};
+          }
         }
       } else {
         my ($evi) = values %{$res{$class}->{$obj}};
