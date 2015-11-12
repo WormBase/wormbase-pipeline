@@ -2183,15 +2183,16 @@
               Type Reporter_gene ?Text
                    In_situ Text
                    Antibody ?Text
-                   Northern Text // Wen [krb 030425]
-                   Western Text  // Wen 
-                   RT_PCR Text   // Wen
-                   Localizome ?Text //added by Wen
+                   Northern Text
+                   Western Text
+                   RT_PCR Text
+                   RNASeq ?Analysis
+                   Localizome ?Text
                    Microarray ?Microarray_experiment
                    Tiling_array ?Analysis
                    EPIC ?Text 
                    Cis_regulatory_element Text
-              Expression_cluster ?Expression_cluster XREF Expr_pattern //added by Wen.for localizome
+              Expression_cluster ?Expression_cluster XREF Expr_pattern //added for localizome
               Microarray_results ?Microarray_results XREF Expr_Pattern
               Pattern ?Text
               Picture ?Picture XREF Expr_pattern
