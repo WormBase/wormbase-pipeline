@@ -1589,6 +1589,7 @@
              3d_data ?3d_data XREF CDS
              //Structure_data ?Structure_data XREF Corresponding_CDS #Evidence
              RNASeq_FPKM ?Life_stage Float #Evidence
+             Last_reviewed UNIQUE DateType UNIQUE ?Person
              Remark ?Text #Evidence
      Associated_feature ?Feature XREF Associated_with_CDS #Evidence
      Method UNIQUE ?Method
@@ -1626,6 +1627,7 @@
                     Confidential_remark ?Text
                     SAGE_tag ?SAGE_tag XREF Transcript #SAGE_mapping_info
                     RNASeq_FPKM ?Life_stage Float #Evidence
+                    Last_reviewed UNIQUE DateType UNIQUE ?Person
                     Remark ?Text #Evidence
             Properties Transcript UNIQUE  asRNA UNIQUE Text            // antisense long ncRNAs
                                           lincRNA UNIQUE Text          // long intergenic/intervening ncRNAs 
@@ -1691,6 +1693,7 @@
                     SAGE_tag ?SAGE_tag XREF Pseudogene #SAGE_mapping_info
                     Microarray_results ?Microarray_results XREF Pseudogene  //added for Microarray_results
                     RNASeq_FPKM ?Life_stage Float #Evidence
+                    Last_reviewed UNIQUE DateType UNIQUE ?Person
                     Remark ?Text #Evidence
             Associated_feature ?Feature XREF Associated_with_pseudogene #Evidence
             Confidential_remark ?Text
