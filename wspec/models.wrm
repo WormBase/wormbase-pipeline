@@ -1608,7 +1608,7 @@
                     Database ?Database ?Database_field UNIQUE ?Text
             Origin From_laboratory UNIQUE ?Laboratory                         // [020306 kj]
                    Species UNIQUE ?Species                                    // [020306 kj]
-            Visible Gene ?Gene XREF Corresponding_transcript // for live transcripts
+            Visible Gene UNIQUE ?Gene XREF Corresponding_transcript // for live transcripts
                     Gene_history UNIQUE ?Gene XREF Corresponding_transcript_history // when Transcript is dead
                     Variation ?Variation XREF Transcript // added to fit two alleles of RNA genes [021127 krb]
                     Matching_cDNA ?Sequence XREF Matching_transcript #Evidence            // to attach non-coding RNA genes to matching ESTs
