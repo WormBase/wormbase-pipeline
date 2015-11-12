@@ -579,6 +579,7 @@
                Type Deletion
                     Duplication Free_dup
                     Translocation
+                    Inversion
                     Compound Text
                     Introgression
                Phenotype ?Phenotype XREF Rearrangement #Phenotype_info
@@ -3389,7 +3390,6 @@
                             Type_of_mutation Substitution UNIQUE Text UNIQUE Text #Evidence // wild type and mutant sequence
                                              Insertion UNIQUE Text #Evidence
                                              Deletion UNIQUE Text #Evidence  
-                                             Inversion #Evidence
                                              Tandem_duplication #Evidence           
                             PCR_product ?PCR_product XREF Variation  
                             SeqStatus UNIQUE Not_sequenced //[2006-02-17 ar2] to differentiate between mutations which have been sequenced and those which have not.
