@@ -3679,23 +3679,47 @@
 
 //////////////////////////////////////////////////
 //
-// ?Molecule class Model - Proposed by Karen Yook WS217
-// Connects to: #Phenotype_info
+// ?Molecule class Model
 //
 //////////////////////////////////////////////////    
 
-?Molecule Name ?Text
+
+?Molecule Name ?Text               //WBMoleculeID
           Public_name ?Text
-          Synonym ?Text
-          DB_info Database ?Database ?Database_field ?Text
-          Regulate_expr_cluster ?Expression_cluster XREF Regulated_by_molecule    // Wen WS228
+          Formula ?Text            //imported from ChEBI
+          Monoisotopic_mass ?Float //need to set up automated calculation based on formula
+          IUPAC ?Text              //imported from ChEBI
+          SMILES ?Text             //imported from ChEBI
+          InChi ?Text              //imported from ChEBI
+          InChiKey ?Text           //imported from ChEBI
+          Synonym ?Text            //mainly from CTD, but also from papers and ChEBI
+          DB_info Database ?Database ?Database_field ?Text //links molecule to ChEBI, CTD, KEGG, etc
+          Status Detected #Evidence
+                 Predicted #Evidence
+          Detection_method ?Text #Evidence //NMR, MALDI-MS, HPLC-UV, shotgun lipidomics
+          Extraction_method ?Text #Evidence //MeOH, exometabolome, MeOH/Chloroform, 5% trichloroacetic acid
+          Nonspecies_source ?Text
+          Chemical_synthesis #Evidence
+          Endogenous_in ?Species #Evidence
+          Biofunction_role Metabolite ?Text #Evidence
+                           Regulator ?Text #Evidence
+                           Structural_component ?Text #Evidence
+                           Cofactor ?Text #Evidence
+                           Activator ?Text #Evidence
+                           Inhibitor ?Text #Evidence
+                           Product ?Text #Evidence
+                           Substrate ?Text #Evidence
+                           Ligand ?Text #Evidence
+                           Receptor ?Text #Evidence
+          Essential_for ?Species #Evidence
           WBProcess ?WBProcess XREF Molecule
+          Regulate_expr_cluster ?Expression_cluster XREF Regulated_by_molecule
           Affects_phenotype_of Variation ?Variation ?Phenotype #Evidence
                                Strain ?Strain ?Phenotype #Evidence
                                Transgene ?Transgene ?Phenotype #Evidence
                                RNAi ?RNAi ?Phenotype #Evidence
-                               Rearrangement ?Rearrangement ?Phenotype #Evidence  // KY [110602 pad]
-          Interaction ?Interaction XREF Molecule_interactor                       // Chris WS244
+                               Rearrangement ?Rearrangement ?Phenotype #Evidence
+          Interaction ?Interaction XREF Molecule_interactor
           Molecule_use ?Text #Evidence
           Reference ?Paper XREF Molecule
           Remark ?Text #Evidence
@@ -3758,3 +3782,37 @@
 // WS248
 // WS249
 // WS250
+// WS251
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
