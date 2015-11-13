@@ -31,6 +31,7 @@ my $lab;
 my $species;
 my $display_by_clones;
 my $addevidence;
+my $addlastreviewed;
 my $addrem;
 my $ncRNA;
 my $nonRNA;
@@ -43,6 +44,7 @@ my $v;
 
 GetOptions (
 	    "addevidence"       => \$addevidence,
+	    "addlastreviewed"   => \$addlastreviewed,
 	    "remark"            => \$addrem,
 	    "ncrna"             => \$ncRNA,
 	    "non"               => \$nonRNA,
@@ -121,6 +123,7 @@ if (defined $brugia) {
   $version = $brugia;
   $blesser = "1";
   $addevidence = "1";
+  $addlastreviewed = "1";
   $clone = "1";
   $cleangene = "1";
   $addrem = "1";
@@ -171,6 +174,7 @@ my $form_gene2;                 # gene variable from blesser form
 my $form_gene3;                 # gene variable from evidence form
 my $form_gene4;                 # gene variable from clean_gene form
 my $form_gene_rem;              # gene variable from remark form
+my $form_gene_last_rev;         # gene variable from Last_reviewed form
 my $form_rna;                   # gene variable from ncRNAwork form
 my $form_nonRNA;                # gene variable from non_coding_transcript form
 my $form_pseudo;                # pseudogene variable from Pseudogene form
@@ -227,6 +231,7 @@ $gui_height += 200 if $blast;
 $gui_height += 110 if $blesser;
 $gui_height += 110 if $clone;
 $gui_height += 130 if $addevidence;
+$gui_height += 130 if $addlastreviewed;
 $gui_height += 50 if ($cleangene or $ncRNA);
 $gui_height += 130 if ($pseudo);
 $gui_height += 80 if ($nonRNA or $addrem);
@@ -521,6 +526,69 @@ if ($addevidence) {
 						  );
 }
 ######### end add evidence
+
+
+# add Last_reviewed to a CDS
+###########################################################
+
+my $lastrev;
+if ($addlastreviewed) {
+  my $last_reviewed = $RightLabel->Frame( -background => "Sandy Brown",
+				       -height     => "400",
+				       -width      => "600",
+				       -label      => "Populate Last_reviewed tag",
+				       -relief     => "raised",
+				       -borderwidth => 5,
+				       )->pack( -pady => "5", #modified
+						-fill => "x"
+						);
+  # Reference database label
+  my $db_lbl = $last_reviewed->Label( -text => "Source: $cdatabase",
+				      -background => 'Sandy Brown',
+				      -foreground => 'black'
+				    )->pack( -pady => '3'
+					   );
+
+  # CDS entry widgets
+  my $CDS_lbl = $last_reviewed->Label( -text => ' MOD  ID',
+				       -background => 'Sandy Brown',
+				       -foreground => 'black'
+				       )->pack(-pady => '6',
+					       -padx => '6',
+					       -side => 'left',
+					       );
+
+  $lastrev = $last_reviewed->Entry( -width => '10',
+				       -background => 'whitesmoke',
+				       -textvariable=> \$form_gene_last_rev,
+				       )->pack(-side => 'left',
+					       -pady => '5',
+					       -padx => '5'
+					       );
+
+  # make Return and Enter submit CDS 
+  $lastrev->bind("<Return>",[ \&add_last_rev]);
+  $lastrev->bind("<KP_Enter>",[ \&add_last_rev]);
+  
+
+  # Add Evidence button
+  my $rev = $last_reviewed->Button( -text => " Reviewed This Model",
+				     -command => [\&add_last_rev]
+				     )->pack(-side => 'left',
+					     -pady => '2',
+					     -padx => '6',
+					     -anchor => "w"
+					     );
+  # Clear CDS entry button
+  my $clear_last_rev = $last_reviewed->Button( -text => "Clear",
+					  -command => [\&clear_last_rev]
+					  )->pack(-side => 'right',
+						  -pady => '2',
+						  -padx => '6',
+						  -anchor => "e"
+						  );
+}
+######### end add Last_reviewed
 
 
 # addremark stub to a CDS
@@ -1133,6 +1201,89 @@ exit(0);
 #
 ##############################################################
 
+sub add_last_rev
+  {
+    my $refgene = $form_gene_last_rev;
+    return unless $refgene;
+
+    if (!defined $person) {return &error_warning("You have not specified -user on the command line.")}
+
+    my $class;
+
+    &generate_message("CHECK", "Please save your database before clicking OK");
+    $cdb->close();
+    $cdb = Ace->connect(-path => $cdatabase);
+
+    
+    # if $refgene ends with a letter, then it is a specific isoform to
+    # be tagged, else it is a sequence name and we want to find all
+    # CDS/Pseudogene/Transcript objects hanging off this Gene and tag
+    # them.
+
+    my $output = $session_file.$refgene;
+      
+    if ($refgene =~ /[a-z]$/) {
+
+      my $obj = $cdb->fetch(CDS       => "$refgene");
+      $obj ||= $cdb->fetch(Transcript => "$refgene");
+      $obj ||= $cdb->fetch(Pseudogene => "$refgene");
+      return &error_warning("Invalid ID","$refgene is not a valid model name") unless $obj;
+      $class = $obj->class->name;
+      my $method = $obj->Method->name;
+      
+      if ($class eq 'CDS' && $method ne "curated") {return &error_warning("Only curated CDS models can have the Last_reviewed added in this way.")}
+      
+      # tag the objects
+      open (LR,">$output") or die "cant open $output\n";
+      print LR "\n$class : \"$refgene\"\n";
+      print LR "Last_reviewed now $person\n\n";
+      close LR;
+
+    } else {
+
+      open (LR,">$output") or die "cant open $output\n";
+
+      my @cdses = $cdb->fetch(-query=>"find CDS ${refgene}*");
+      foreach my $cds (@cdses){
+	if ($cds eq $refgene || $cds =~ /${refgene}[a-z]$/) {
+	  print LR "\nCDS : \"$cds\"\n";
+	  print LR "Last_reviewed now $person\n\n";
+	}
+      }
+    
+      if (!@cdses) {
+	my @pseuds = $cdb->fetch(-query=>"find Pseudogene ${refgene}*");
+	foreach my $pseud (@pseuds){
+	  if ($pseud eq $refgene || $pseud =~ /${refgene}[a-z]$/) {
+	    print LR "\nPseudogene : \"$pseud\"\n";
+	    print LR "Last_reviewed now $person\n\n";	
+	  }
+	}
+	
+	if (!@pseuds) {
+	  my @trans = $cdb->fetch(-query=>"find Transcript ${refgene}*");
+	  foreach my $trans (@trans){
+	    if ($trans eq $refgene || $trans =~ /${refgene}[a-z]$/) {
+	      print LR "\nTranscript : \"$trans\"\n";
+	      print LR "Last_reviewed now $person\n\n";
+	    }
+	  }
+	}
+      }
+      close LR;
+    }
+
+    my $return_status = system("xremote -remote 'parse $output'");
+    if ( ( $return_status >> 8 ) != 0 ) {
+      &error_warning("WARNING", "X11 connection appears to be lost");
+    } else {
+      &confirm_message("Success", "Added Last_reviewed tag to $form_gene_last_rev");
+      &clear_last_rev;
+    }
+  }
+
+################
+
 sub add_evidence 
   {
     my $CLASS;
@@ -1591,10 +1742,13 @@ sub clear_proposed
   {
     $proposed_name->delete(0,'end');
   }
-
 sub clear_evi
   {
     $cdswork->delete(0,'end');
+  }
+sub clear_last_rev
+  {
+    $lastrev->delete(0,'end');
   }
 sub clear_rem
   {
@@ -2881,6 +3035,8 @@ A perl Tk interface to aid manual gene curation.
 
 -addevidence : This option allows the curator to automatically add the top level evidence to a CDS object
 
+-addlastreviewed : This option allows the curator to automatically add the "Last_reviewed" tag to a CDS object. It takes the sequence name to add the tag to all isoforms, or a specific isoform name to add the tag only to that isoform.
+
 -cleangene   : This option removes all unwanted Isoforms from a given loci. Isoforms are preserved by the presence of the top level Evidence tag.
 
 -brugia       : This automatically selects options that are useful for brugia curation and stores a version number. Version number hard sets the CDS history prefix to be :bm<var>.
@@ -2904,7 +3060,7 @@ A perl Tk interface to aid manual gene curation.
 
   C. elegans curation
 
-      history_maker.pl -user pad -source /nfs/wormpub/camace_orig -curationdb /nfs/wormpub/camace_pad -blesser -clone -addevidence -anomaly -clean -chromosome I,II,III,X
+      history_maker.pl -user pad -source /nfs/wormpub/camace_orig -curationdb /nfs/wormpub/camace_pad -blesser -clone -addevidence -addlastreviewed -anomaly -clean -chromosome I,II,III,X
 
 
   Brugia curation
