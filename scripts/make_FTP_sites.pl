@@ -1006,7 +1006,7 @@ sub copy_wormpep_files {
     }
 
     #CDS Transcripts file
-    if (-e $source_cdnafile) {G
+    if (-e $source_cdnafile) {
       my $target_cdnafile = "$tgt/$gspecies.$bioproj.${WS_version_name}.CDS_transcripts.fa.gz";
 
       open(my $source_cdna_fh, "cat $source_cdnafile |");
