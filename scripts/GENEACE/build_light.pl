@@ -36,21 +36,20 @@ else {
 my $log = Log_files->make_build_log($wormbase);
 my $dbdir = "/nfs/wormpub/DATABASES/build_light_full";
 unless (defined $sourcedb) {
-  $sourcedb = "/nfs/wormpub/DATABASES/current_DB";
+  $sourcedb = "/nfs/wormpub/BUILD/elegans";
 }
 unless ($all || $quick){ $log->log_and_die("You must specify all or quick command line options or else you dont have any data to load\n");}
 
 # create the necessary dir structure
 unless ($noinit) {
-if (-e "$dbdir/wspec/models.wrm") {
-  $wormbase->run_command("rm -rf $dbdir", $log) && die "Failed to remove the database $dbdir\n";
-}
-unless (-e "$dbdir/wspec/models.wrm") {
-  $wormbase->run_command("mkdir $dbdir", $log) && die "Failed to create directory $dbdir/wspec/models.wrm\n";
-  $wormbase->run_command("cp -rf /nfs/users/nfs_p/pad/wormbase/wspec $dbdir/", $log) && die "Failed to copy the wspec directory\n";
-  $wormbase->run_command("mkdir $dbdir/database", $log) && die "Failed to create directory database\n";
-  
-}
+  if (-e "$dbdir/wspec/models.wrm") {
+    $wormbase->run_command("rm -rf $dbdir", $log) && die "Failed to remove the database $dbdir\n";
+  }
+  unless (-e "$dbdir/wspec/models.wrm") {
+    $wormbase->run_command("mkdir $dbdir", $log) && die "Failed to create directory $dbdir/wspec/models.wrm\n";
+    $wormbase->run_command("cp -rf /nfs/wormpub/wormbase-pipeline/wspec $dbdir/", $log) && die "Failed to copy the wspec directory\n";
+    $wormbase->run_command("mkdir $dbdir/database", $log) && die "Failed to create directory database\n";
+  }
 }
 
 ####################################
@@ -117,8 +116,8 @@ if ($all){
 
 unless ($noinit) {
   $log->log_and_die("*Reinitdb error - lock.wrm file present..\n") if (-e "$dbdir/database/lock.wrm");
-
-  if( -e "$dbdir/database" ) {
+  
+  if( -e "$dbdir/database/log.wrm" ) {
     unlink glob("$dbdir/database/new/*") or $log->write_to("ERROR: Couldn't unlink file $dbdir/database/new/ : $!\n");
     unlink glob("$dbdir/database/touched/*") or $log->write_to( "ERROR: Couldn't unlink file $dbdir/database/touched/ : $!\n");
     
