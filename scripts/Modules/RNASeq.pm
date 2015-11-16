@@ -1453,6 +1453,80 @@ sub get_SRX_file {
 #  }
 }
 
+
+=head2 
+
+    Title   :   trimmomatic
+    Usage   :   $self->trimmomatic($experimenta_accession)
+    Function:   trims adapter and poor sequence regions from the reads using Trinity's Trimmomatic program
+    Returns :   success = 0
+    Args    :   experiment_accession - string
+
+=cut
+
+sub trimmomatic {
+  my ($self, $experiment_accession) = @_;
+
+  my $log = $self->{log};
+  my $status;
+  my $RNASeqSRADir = $self->{RNASeqSRADir};
+  my $trimmomatic_done_file = "$RNASeqSRADir/$experiment_accession/SRR/trimmomatic.done";
+  chdir "$RNASeqSRADir/$experiment_accession/SRR";
+  
+  my @files = glob("*.fastq");
+  $log->write_to("Have fastq files: @files\n");
+  
+  # do we have paired reads?
+  my $have_paired_reads = 0;
+  my @files1 = sort glob("*_1.fastq"); # sort to ensure the two sets of files are in the same order
+  my @files2 = sort glob("*_2.fastq");
+  if ((@files1 == @files2) && @files2 > 0) {
+    $log->write_to("Have paired-end files.\n");
+    $have_paired_reads = 1;
+    @files = @files1;
+  }
+  
+  my @SRR_ids; # the SRR IDs processed
+  
+  # run alignment on each fastq file (or paired-read files) in turn
+  foreach my $fastq_file (@files) {
+
+    # get the SRR ID of the file
+    my $srr_name = $fastq_file;
+    $srr_name =~ s/.fastq$//;
+    $srr_name =~ s/_1$//;
+    push @SRR_ids, $srr_name;
+    
+    my $cmd='';
+    if ($have_paired_reads) {
+      my $next_paired_file = shift @files2;
+      $fastq_file .= " $next_paired_file"; # space character between the paired file names
+      my ($output_paired_file) = ($fastq_file =~ s/.fastq/.P.qtrim/g);
+      my ($output_unpaired_file) = ($fastq_file =~ s/.fastq/.U.qtrim/g);
+
+      # For paired-ended data:
+      $cmd = "$ENV{WORM_PACKAGES}/java7/bin/java -jar $ENV{WORM_PACKAGES}/trinity/trinity-plugins/Trimmomatic/trimmomatic.jar PE -threads 2 -phred33 $fastq_file $output_paired_file $output_unpaired_file ILLUMINACLIP:$ENV{WORM_PACKAGES}/trinity/trinity-plugins/Trimmomatic/adapters/TruSeq3-PE.fa:2:30:10 SLIDINGWINDOW:4:5 LEADING:5 TRAILING:5 MINLEN:25";
+
+    } else {
+      my ($output_file) = ( $fastq_file =~ s/.fastq/.P.qtrim/g);
+
+      # For single-ended data
+      $cmd = "$ENV{WORM_PACKAGES}/java7/bin/java -jar $ENV{WORM_PACKAGES}/trinity/trinity-plugins/Trimmomatic/trimmomatic-0.30.jar SE -phred33 $fastq_file $output_file ILLUMINACLIP:$ENV{WORM_PACKAGES}/trinity/trinity-plugins/Trimmomatic/adapters/TruSeq3-SE:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:5 MINLEN:25";
+    }
+
+    $log->write_to("Trimmomatic run $cmd\n");
+    
+    $status = $self->{wormbase}->run_command($cmd, $log);
+    if ($status != 0) { 
+      $log->write_to("Didn't run Trimmomatic successfully\n");
+    } else {
+      $status = $self->{wormbase}->run_command("touch $trimmomatic_done_file", $log);
+    }
+  }
+
+}
+
+
 =head2 
 
     Title   :   sam_to_bam
@@ -2110,6 +2184,7 @@ sub align_star {
   my $experiment_accession = $experiment->{experiment_accession};
   my $bam_done_file = "$RNASeqSRADir/$experiment_accession/".$self->{'alignmentDir'}."/accepted_hits.bam.done";
   my $srr_done_file = "$RNASeqSRADir/$experiment_accession/SRR/fastq.done";
+  my $trimmomatic_done_file = "$RNASeqSRADir/$experiment_accession/SRR/trimmomatic.done";
   my $solid_done_file = "$RNASeqSRADir/$experiment_accession/SRR/solid.done";
   my $alignmentDir = $self->{'alignmentDir'};
   my $exptDir = "$RNASeqSRADir/$experiment_accession/$alignmentDir";
@@ -2117,7 +2192,7 @@ sub align_star {
   my $bam_stranded_hits = "$exptDir/hits.stranded";
   my $introns_done_file = "$RNASeqSRADir/$experiment_accession/Introns/Intron.ace.done";
 
-  if ($self->{new_genome} || !-e $bam_done_file) { 
+  if ($self->{new_genome} || !-e $bam_done_file || !-e $srr_done_file || !-e $trimmomatic_done_file) { 
 
     if ($self->{new_genome} || !-e $srr_done_file) { 
       $self->get_SRA_files($experiment_accession);
@@ -2138,15 +2213,18 @@ sub align_star {
       my $status = $self->{wormbase}->run_command("touch $solid_done_file", $log); # set flag to indicate we have finished this
     }
 
-    chdir "$RNASeqSRADir/$experiment_accession"; # get into the correct experiment directory
-    $self->{wormbase}->run_command("rm -rf ".$self->{'alignmentDir'}, $log); #delete the old  tophat_out or star_out
-    $self->run_star_alignment($experiment, $threads);
+    if (!-e $trimmomatic_done_file) {$self->trimmomatic($experiment_accession)}
+
+    if ($self->{new_genome} || !-e $bam_done_file) {
+      chdir "$RNASeqSRADir/$experiment_accession"; # get into the correct experiment directory
+      $self->{wormbase}->run_command("rm -rf ".$self->{'alignmentDir'}, $log); #delete the old tophat_out or star_out
+      $self->run_star_alignment($experiment, $threads);
+    }
   }
 
-  if (!-e $bam_hits) {$self->make_hits($experiment_accession)}
-  if (!-e $bam_stranded_hits) {$self->make_stranded_hits($experiment)}
-
-  if (!-e $introns_done_file) {$self->get_introns($experiment_accession)}
+  if (!-e $bam_hits)              {$self->make_hits($experiment_accession)}
+  if (!-e $bam_stranded_hits)     {$self->make_stranded_hits($experiment)}
+  if (!-e $introns_done_file)     {$self->get_introns($experiment_accession)}
 
   if (! $notbuild) {
     my $strandedness = $experiment->{strandedness};
