@@ -21,6 +21,7 @@ Options:
   --database  DBI-style database dsn, e.g. mysql:test:host=localhost
   --user      username
   --password  password
+  --seq_name Sequence_name that was removed from geneace
 
   id_resurrect.pl -user ar2 -password <ar2 pswd> -id WBGene00000001 -domain Gene -species brugia -load
   optional  (-test -database).  Will default to live nameserver, -test will change to test database.
@@ -30,16 +31,17 @@ Options:
 END
 
 my ($DB,$USER,$PASS);
-my ($domain, $id, $test, $output, $species, $load);
-GetOptions('database:s' => \$DB,
-	   'user:s'     => \$USER,
-	   'password:s' => \$PASS,
-	   'id:s'       => \$id,
-	   'test'       => \$test,
-	   'domain:s'   => \$domain,
-	   'output:s'   => \$output,
-	   'species:s'  => \$species,
-	   'load'       => \$load,
+my ($domain, $id, $test, $output, $species, $load, $force,);
+GetOptions('database:s'      => \$DB,
+	   'user:s'          => \$USER,
+	   'password:s'      => \$PASS,
+	   'id:s'            => \$id,
+	   'test'            => \$test,
+	   'domain:s'        => \$domain,
+	   'output:s'        => \$output,
+	   'species:s'       => \$species,
+	   'load'            => \$load,
+	   'seq_name:s'      => \$force,
 	  ) or die $USAGE;
 
 unless ($DB) {
@@ -63,13 +65,13 @@ my $rundate     = `date +%y%m%d`; chomp $rundate;
 my $tace = $wormbase->tace;
 
 my $WBUSERS = {
-	    # these are the users WBPerson id
-	    'klh'           => 3111,
-	    'pad'           => 1983,
-	    'mt3'           => 2970,
-	    'gw3'           => 4025,
-	    'mh6'           => 4055,
-	   };
+	       # these are the users WBPerson id
+	       'klh'           => 3111,
+	       'pad'           => 1983,
+	       'mt3'           => 2970,
+	       'gw3'           => 4025,
+	       'mh6'           => 4055,
+	      };
 
 my $acedb = "/nfs/wormpub/DATABASES/geneace";
 my $db = NameDB->connect($DB,$USER,$PASS, '/nfs/WWWdev/SANGER_docs/htdocs');
@@ -81,12 +83,22 @@ my $ver = $idObj->Version->name;
 $ver++;
 
 my $clone;
-
-my $seq_name = $idObj->Sequence_name->name;
-if ($seq_name =~ /(\S+)\.\d+/) {
-  $clone = $1;
+my $seq_name;
+if (defined $force) {
+  if ($force =~  /(\S+)\.\d+/) {
+    $clone = $1;
+    $seq_name = $force;
+  }
 }
-else {$clone = $seq_name;}
+
+  unless  (defined $force)  {
+    $seq_name = $idObj->Sequence_name->name;
+    if ($seq_name =~ /(\S+)\.\d+/) {
+      $clone = $1;
+    }
+    else {$clone = $seq_name;}
+  }
+
 
 unless ($output) {$output = "/tmp/idressurect_${id}.ace";}
 open (OUT,">$output") or die "Can't open $output\n";
