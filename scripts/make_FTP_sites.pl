@@ -144,7 +144,7 @@ GetOptions ("help"          => \$help,
 	    "all"            => \$all,
             "allnopublic"    => \$all_nopublic,
             "wbversion=s"    => \$WS_version,
-            'orthologylists'=> \$orthology_lists,
+            'orthologylists=s'=> \$orthology_lists,
     );
 
 
@@ -1005,9 +1005,11 @@ sub copy_wormpep_files {
       $log->error("ERROR: Could not find peptide file for $gspecies ($source_pepfile)\n");
     }
 
-    if (-e $source_cdnafile) {
+    #CDS Transcripts file
+    if (-e $source_cdnafile) {G
       my $target_cdnafile = "$tgt/$gspecies.$bioproj.${WS_version_name}.CDS_transcripts.fa.gz";
-      open(my $source_cdna_fh, $source_cdnafile);
+
+      open(my $source_cdna_fh, "cat $source_cdnafile |");
       open(my $target_cdna_fh, "| gzip -n -9 -c > $target_cdnafile");
       while(<$source_cdna_fh>) {
         if (/^\>(\S+)(.*)/) {
@@ -1024,6 +1026,39 @@ sub copy_wormpep_files {
     } else {
       $log->error("ERROR: Could not find transcript file for $gspecies ($source_cdnafile)\n");
     }
+
+
+    #Coding Transcripts file
+    my $source_transcdnafile = $wb->sequences . "/coding_transcripts.dna.gz";
+    my $target_transfile; 
+    my $test_val;
+    if (-e $source_transcdnafile) {
+      my $target_transfile = "$tgt/$gspecies.$bioproj.${WS_version_name}.Coding_transcripts.fa.gz";
+      open(my $source_trans_fh, "gunzip -c $source_transcdnafile |");
+      open(my $target_trans_fh, "| gzip -n -9 -c > $target_transfile");
+      while(<$source_trans_fh>) {
+	chomp;
+        if (/^>(([A-Z0-9_cel]+\.[1-9]\d{0,3})[A-Za-z]?)/) {
+	  my $IDVal1 = $2;
+	  my $IDVal2 = $_;
+          if (exists $gene_ids{$IDVal1}) {
+            print $target_trans_fh "\n$IDVal2 gene=$gene_ids{$IDVal1}\n";
+	  }	
+	  else {
+	    print $target_trans_fh "\n$IDVal2\n";
+	  }
+	} 
+	elsif (/(\S+)/) {
+	  print $target_trans_fh "$1\n";
+	}
+      }
+      close($target_trans_fh) or $log->log_and_die("Could not successfully close $target_transfile\n");
+    } 
+    else {
+      $log->error("ERROR: Could not find transcript file for $gspecies ($source_transcdnafile)\n");
+    }
+    if ($debug) {print "Finished processing $source_transcdnafile to $target_transfile\n\n"}
+    #end
   }
 
   #continue with Tier III processing.
@@ -1787,6 +1822,7 @@ GSPECIES.BIOPROJ.WSREL.genomic_softmasked.fa.gz
 GSPECIES.BIOPROJ.WSREL.annotations.gff3.gz
 GSPECIES.BIOPROJ.WSREL.protein.fa.gz
 GSPECIES.BIOPROJ.WSREL.CDS_transcripts.fa.gz
+GSPECIES.BIOPROJ.WSREL.Coding_transcripts.fa.gz
 
 
 []acedb
