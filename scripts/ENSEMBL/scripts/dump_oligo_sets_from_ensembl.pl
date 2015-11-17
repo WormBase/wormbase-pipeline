@@ -3,24 +3,38 @@
 use strict;
 
 use Getopt::Long;
-use Bio::EnsEMBL::Registry;
-
+use Bio::EnsEMBL::DBSQL::DBAdaptor;
+use Bio::EnsEMBL::Funcgen::DBSQL::DBAdaptor;
 
 my ($species, 
-    $reg_conf, 
+    $core_host,
+    $core_port,
+    $core_user, 
+    $core_dbname,
+    $fgen_host,
+    $fgen_port,
+    $fgen_user, 
+    $fgen_dbname,
     %p2g_map, $p2g_file, 
     $pname_file, %wb_oset_names,
     $choose_best,
     $acefile, $ace_fh,
     $verbose);
 
-&GetOptions('regconf=s'       => \$reg_conf,
-            'species=s'       => \$species,
-            'probe2genemap=s' => \$p2g_file,
-            'wbprobenames=s'  => \$pname_file,
-            'choosebest'      => \$choose_best,
-            'verbose'         => \$verbose,
-            'acefile=s'       => \$acefile,
+&GetOptions(
+  'corehost=s'      => \$core_host,
+  'coreport=s'      => \$core_port,
+  'coreuser=s'      => \$core_user,
+  'coredbname=s'    => \$core_dbname,
+  'fgenhost=s'      => \$fgen_host,
+  'fgenport=s'      => \$fgen_port,
+  'fgenuser=s'      => \$fgen_user,
+  'fgendbname=s'    => \$fgen_dbname,
+  'probe2genemap=s' => \$p2g_file,
+  'wbprobenames=s'  => \$pname_file,
+  'choosebest'      => \$choose_best,
+  'verbose'         => \$verbose,
+  'acefile=s'       => \$acefile,
     );
 
 if (defined $p2g_file) {
@@ -30,21 +44,28 @@ if (defined $pname_file) {
   &parse_probename_file($pname_file, \%wb_oset_names);
 }
 
-my $reg = "Bio::EnsEMBL::Registry";
 
-$reg->load_all($reg_conf);
+my $core_db = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
+  -host => $core_host,
+  -port => $core_port,
+  -user => $core_user, 
+  -dbname => $core_dbname);
 
-my $a_adap = $reg->get_adaptor($species,
-                               'funcgen',
-                               'Array');
+my $fgen_db = Bio::EnsEMBL::Funcgen::DBSQL::DBAdaptor->new(
+  -host => $fgen_host,
+  -port => $fgen_port,
+  -user => $fgen_user, 
+  -dbname => $fgen_dbname,
+  -dnadb => $core_db,
+    );
 
-my $p_adap = $reg->get_adaptor($species,
-                               'funcgen',
-                               'Probe');
 
-my $sl_adap = $reg->get_adaptor($species, 
-                                'core',
-                                'Slice');
+
+
+my $a_adap = $fgen_db->get_ArrayAdaptor;
+my $p_adap = $fgen_db->get_ProbeAdaptor;
+my $sl_adap = $core_db->get_SliceAdaptor;
+
 
 my %arrays_by_vendor;
 
