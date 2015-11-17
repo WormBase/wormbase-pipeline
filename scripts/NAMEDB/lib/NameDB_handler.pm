@@ -37,8 +37,10 @@ sub new
 
     bless ($db, $class);
 
+    $path||="$ENV{CVS_DIR}/scripts/NAMEDB";
+
     #read in clone list to validate CDS names with
-    my $clone_file = "$path/Projects/C_elegans/clonelist";
+    my $clone_file = "$path/clonelist";
 	
     #untaint file
     unless( $clone_file =~ m/^(.+)$/ ) {
