@@ -162,14 +162,13 @@ $uniprot_dbh = &get_uniprot_dbh($uniprot_cred);
 #
 # subcategory_type_id = 3 => EC number
 #
-$uniprot_sql = "SELECT dbe.accession, dct.type, dsct.type, dsc.text "
-    . "FROM dbentry dbe, dbentry_2_description dbe2desc, description_category dc, cv_description_category_type dct, description_subcategory dsc, cv_desc_subcategory_type dsct "
-    . "WHERE dbe.dbentry_id = dbe2desc.dbentry_id " 
-    . "AND dbe2desc.dbentry_2_description_id = dc.dbentry_2_description_id "
-    . "AND dc.category_id = dsc.category_id "
-    . "AND dc.category_type_id = dct.category_type_id "
-    . "AND dsc.subcategory_type_id = dsct.subcategory_type_id "
-    . "AND dbe.accession = ?";
+$uniprot_sql = "SELECT e.accession, cs.catg_type, cs.subcatg_type, ds.descr "
+    . "FROM dbentry e "
+    . "  JOIN dbentry_2_desc ds on (ds.dbentry_id = e.dbentry_id) "
+    . "  JOIN cv_desc cs on (cs.desc_id = ds.desc_id) "
+    . "WHERE cs.catg_type = 'RecName' " 
+    . "AND cs.subcatg_type in ('EC', 'Full') "
+    . "AND e.accession = ?";
 
 $uniprot_sth = $uniprot_dbh->dbc->prepare($uniprot_sql);
 print STDERR "Reading UniParc for mapping of ENA protein ids to EC numbers\n" if $verbose;
