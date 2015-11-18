@@ -60,7 +60,9 @@ my $fgen_db = Bio::EnsEMBL::Funcgen::DBSQL::DBAdaptor->new(
     );
 
 
+$species = $core_db->get_MetaContainer->get_production_name;
 
+die "Could nit get species from core db\n" if not $species;
 
 my $a_adap = $fgen_db->get_ArrayAdaptor;
 my $p_adap = $fgen_db->get_ProbeAdaptor;
@@ -227,9 +229,9 @@ foreach my $vendor (sort { $b cmp $a } keys %arrays_by_vendor) {
 sub write_ace {
   my ($platform, $chr, $chr_len, $res_hash) = @_;
 
-  if ($species eq 'elegans' and $chr !~ /^CHROMOSOME/) {
+  if ($species =~ 'elegans' and $chr !~ /^CHROMOSOME/) {
     $chr = "CHROMOSOME_${chr}";
-  } elsif ($species eq 'briggsae' and $chr !~ /^chr/) {
+  } elsif ($species =~ 'briggsae' and $chr !~ /^chr/) {
     $chr = "chr${chr}";
   }
 
