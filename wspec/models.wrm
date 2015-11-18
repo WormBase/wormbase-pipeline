@@ -3701,7 +3701,7 @@
           Nonspecies_source ?Text
           Chemical_synthesis #Evidence
           Endogenous_in ?Species #Evidence
-          Biofunction_role Metabolite ?Text #Evidence
+          Biofunction_role Metabolite #Evidence
                            Regulator ?Text #Evidence
                            Structural_component ?Text #Evidence
                            Cofactor ?Text #Evidence
@@ -3783,7 +3783,7 @@
 // WS249
 // WS250
 // WS251
-
+// WS252
 
 
 
