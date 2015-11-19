@@ -405,7 +405,7 @@ sub generate_data_from_fasta {
       
       $idF = $1;
       if ($source eq 'trinity') {
-	($ID) = ($idF =~ /(\S+?)_/); # get the SRA ID from the Trinity sequence ID
+	$ID = $idF; 
       }
       $retrieved++;
       $seq = "";
@@ -417,7 +417,7 @@ sub generate_data_from_fasta {
 	next;
       }
       
-      print OUT_DNA "\n>$idF\n" if $dna;
+      print OUT_DNA ">$idF\n" if $dna;
       
     } else { # sequence line
       chomp;
