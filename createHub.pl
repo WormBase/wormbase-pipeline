@@ -63,6 +63,13 @@ foreach my $species (@species_list) {
       $_ =~ s/^"//g;
       $_ =~ s/"$//g;
     }
+
+    # Deal with study/project being wrong way round
+    if($parts[6] =~ /^(ERS|SRS)/ && $parts[5] =~ /^(ERP|SRP)/) {
+      my $temp = $parts[5];
+      $parts[5] = $parts[6];
+      $parts[6] = $temp;
+    }
  
     # Create the unique track ID
     my $track_id = sprintf("%03d", $counter) . "_" . $parts[5];
@@ -101,11 +108,15 @@ foreach my $species (@species_list) {
     # Generate the URL
     my $url = "http://ngs.sanger.ac.uk/production/parasites/wormbase/RNASeq_alignments/$species/$parts[5].bw";
 
+    # Re-format the WB life stage
+    $parts[10] =~ s/^WBls_/WBls:/ if $parts[10];
+
     # Create the sample description
     my $desc = sprintf(
                 'ENA Sample ID: <a href="http://www.ebi.ac.uk/ena/data/view/%s">%s</a><br />
-                 %s',
-              $parts[5], $parts[5], $proj_desc);
+                 %s%s%s',
+              $parts[5], $parts[5], $parts[9] ? "ChEBI: <a href=\"https://www.ebi.ac.uk/chebi/searchId.do?chebiId=$parts[9]\">$parts[9]</a><br />" : '',
+              $parts[10] ? "WormBase Life Stage: <a href=\"http://www.wormbase.org/species/all/life_stage/$parts[10]\">$parts[10]</a><br />" : '',  $proj_desc);
     $desc =~ s/\n//g;
     $desc .= "<br /><br />This data comes from URL: $url";
     mkdir "myHub/$species/doc" unless -d "myHub/$species/doc";
@@ -137,7 +148,8 @@ sub get_reference {
   my $response = $ua->get($url);
   if ($response->is_success) {
     my $result = XMLin($response->decoded_content);
-    my $text = encode_entities("$result->{resultList}->{result}->{authorString} ") . "<a href=\"http://europepmc.org/abstract/MED/$pmid\">" . encode_entities("$result->{resultList}->{result}->{title}") . "</a> <em>" . encode_entities($result->{resultList}->{result}->{journalTitle}) . "</em>" . encode_entities(", $result->{resultList}->{result}->{pubYear};$result->{resultList}->{result}->{journalVolume}($result->{resultList}->{result}->{issue}):$result->{resultList}->{result}->{pageInfo}");      # encode_entities will encode any symbolic characters (such as ligatures in author names) into the correct HTML
+    my $text = encode_entities("$result->{resultList}->{result}->{authorString} ") . "<a href=\"http://europepmc.org/abstract/MED/$pmid\">" . encode_entities("$result->{resultList}->{result}->{title}") . "</a> <em>" . encode_entities($result->{resultList}->{result}->{journalTitle}) . "</em>" . encode_entities(", $result->{resultList}->{result}->{pubYear}");      # encode_entities will encode any symbolic characters (such as ligatures in author names) into the correct HTML
+    $text .= encode_entities(";$result->{resultList}->{result}->{journalVolume}($result->{resultList}->{result}->{issue}):$result->{resultList}->{result}->{pageInfo}") if $result->{resultList}->{result}->{journalVolume} && $result->{resultList}->{result}->{issue} && $result->{resultList}->{result}->{pageInfo};
     return $text;
   }
 }
@@ -149,7 +161,7 @@ sub get_ENA_project {
   my $response = $ua->get($url);
   if ($response->is_success) {
     my $result = XMLin($response->decoded_content);
-    my $text = "Project Description<br />$result->{STUDY}->{DESCRIPTOR}->{STUDY_DESCRIPTION}";
+    my $text = $result->{STUDY}->{DESCRIPTOR}->{STUDY_DESCRIPTION} ? "Project Description<br />$result->{STUDY}->{DESCRIPTOR}->{STUDY_DESCRIPTION}" : '';
     return $text;
   }
 }
