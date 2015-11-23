@@ -3,6 +3,7 @@ use strict;
 use lib $ENV{'CVS_DIR'};
 use lib "$ENV{'CVS_DIR'}/NAMEDB/lib";
 use NameDB_handler;
+use Wormbase;
 use Getopt::Long;
 use Log_files;
 
