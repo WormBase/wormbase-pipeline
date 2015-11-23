@@ -105,8 +105,10 @@ sub parse_misc_elegans_files {
 # Brugia malayi specific files
 sub parse_brugia_data {
   my %files_to_load = (
-                    $wormbase->misc_dynamic.'/misc_TIGR_brugia.ace' => 'TIGR_gene_models',
-                    $wormbase->misc_static.'/brugia_bacs.ace.gz'    => 'Brugia BACS',
+                    $wormbase->misc_dynamic.'/misc_TIGR_brugia.ace'         => 'TIGR_gene_models',
+                    $wormbase->misc_static.'brugiaV4_upittSL1s.ace.gz',
+                    $wormbase->misc_static.'/brugia_bacs.ace.gz'            => 'Brugia BACS',
+                    $wormbase->misc_static.'/brugia_bac_mappings.ace.gz'    => 'Brugia BAC mappings',
   );
   $log->write_to("Loading files to ".$wormbase->autoace."\n==================================\n");
   foreach my $file (sort keys %files_to_load) {

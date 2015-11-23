@@ -1,9 +1,9 @@
 #!/usr/local/bin/perl -w
 use strict;
-use lib '../blib/lib';
-use lib '/nfs/WWWdev/SANGER_docs/lib/Projects/C_elegans';
 use lib $ENV{'CVS_DIR'};
+use lib "$ENV{'CVS_DIR'}/NAMEDB/lib";
 use NameDB_handler;
+use Wormbase;
 use Getopt::Long;
 use Log_files;
 
@@ -55,7 +55,7 @@ $log->write_to("loading $file to $DB\n\n");
 $log->write_to("FORCE mode is ON!\n\n") if $force;
 $log->write_to("TEST mode is ON!\n\n") if $test;
 
-my $db = NameDB_handler->new($DB,$USER,$PASS,'/nfs/WWWdev/SANGER_docs/cgi-bin');
+my $db = NameDB_handler->new($DB,$USER,$PASS);
 
 $db->setDomain('Gene');
 

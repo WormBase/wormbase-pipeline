@@ -1,9 +1,7 @@
 #!/software/bin/perl -w
 use strict;
-use lib '../blib/lib';
-use lib '/nfs/WWWdev/SANGER_docs/lib/Projects/C_elegans';
 use lib $ENV{'CVS_DIR'};
-use NameDB_handler;
+
 use Getopt::Long;
 use Log_files;
 use Ace;

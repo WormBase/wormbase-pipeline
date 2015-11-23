@@ -405,7 +405,7 @@ sub generate_data_from_fasta {
       
       $idF = $1;
       if ($source eq 'trinity') {
-	($ID) = ($idF =~ /(\S+?)_/); # get the SRA ID from the Trinity sequence ID
+	$ID = $idF; 
       }
       $retrieved++;
       $seq = "";
@@ -417,7 +417,7 @@ sub generate_data_from_fasta {
 	next;
       }
       
-      print OUT_DNA "\n>$idF\n" if $dna;
+      print OUT_DNA ">$idF\n" if $dna;
       
     } else { # sequence line
       chomp;
@@ -458,7 +458,7 @@ sub output_seq {
   
   if ($source eq 'trinity') {
     print OUT_ACE "Properties cDNA cDNA_EST\n";
-    print OUT_ACE "Method \"$source\"\n";
+    print OUT_ACE "Method \"EST_${source}\"\n";
   } else {
     die "can't determine the type from the ID line for\n";
   }

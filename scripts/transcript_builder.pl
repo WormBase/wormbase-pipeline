@@ -170,7 +170,7 @@ foreach my $chrom ( @chromosomes ) {
   close $GFF;
   
   # read BLAT data
-  my @BLAT_methods = qw( BLAT_EST_BEST BLAT_mRNA_BEST BLAT_OST_BEST BLAT_RST_BEST);
+  my @BLAT_methods = qw( BLAT_EST_BEST BLAT_mRNA_BEST BLAT_OST_BEST BLAT_RST_BEST BLAT_Trinity_BEST);
   foreach my $method (@BLAT_methods) {
     # need to check that the GFF file for this methos exists; not all species
     # have all methods

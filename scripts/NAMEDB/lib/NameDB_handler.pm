@@ -37,7 +37,7 @@ sub new
 
     bless ($db, $class);
 
-    $path||="$ENV{CVS_DIR}/scripts/NAMEDB";
+    $path||="$ENV{CVS_DIR}/NAMEDB";
 
     #read in clone list to validate CDS names with
     my $clone_file = "$path/clonelist";

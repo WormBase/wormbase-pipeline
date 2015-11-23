@@ -1,8 +1,8 @@
 #!/software/bin/perl -w
 use strict;
-use lib '../blib/lib';
-use lib '/nfs/WWWdev/SANGER_docs/lib/Projects/C_elegans';
 use lib $ENV{'CVS_DIR'};
+use lib "$ENV{'CVS_DIR'}/NAMEDB/lib";
+
 use NameDB_handler;
 use Getopt::Long;
 use Log_files;
@@ -112,7 +112,7 @@ if ($ns) {
     $log->log_and_die("OPTIONS ERROR: You need to supply both a username and password for the MySQL database with -user <username> -pass <password>.\n");
   }
   $log->write_to("Contacting NameServer.....\n");
-  $db = NameDB_handler->new($DB,$USER,$PASS,'/nfs/WWWdev/SANGER_docs/data/');
+  $db = NameDB_handler->new($DB,$USER,$PASS);
   $db->setDomain('Gene');
 }
 

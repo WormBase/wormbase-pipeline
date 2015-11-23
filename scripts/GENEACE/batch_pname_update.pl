@@ -10,7 +10,8 @@
 #
 
 use lib $ENV{'CVS_DIR'};
-use lib '/nfs/WWWdev/SANGER_docs/lib/Projects/C_elegans';
+use lib "$ENV{'CVS_DIR'}/NAMEDB/lib";
+
 use lib '/software/worm/lib/perl';
 use NameDB_handler;
 use Wormbase;
@@ -89,7 +90,7 @@ die "-pass option is mandatory\n" unless $PASS;
 die "-file option is mandatory\n" unless $file;
 
 my $DB = $wormbase->test ? 'test_wbgene_id;utlt-db:3307' : 'wbgene_id;shap:3303';
-my $db = NameDB_handler->new($DB,$USER,$PASS,'/nfs/WWWdev/SANGER_docs/data');
+my $db = NameDB_handler->new($DB,$USER,$PASS);
 $db->setDomain($DOMAIN);
 
 open (DATA, "<$file");
