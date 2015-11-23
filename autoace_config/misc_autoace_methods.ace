@@ -2605,7 +2605,7 @@ Display
 EMBL_feature	
 EMBL_dump_info ID_template "\%s"
 EMBL_dump_info ID_division "INV"
-EMBL_dump_info DE_format "Caenorhabditis elegans cosmid \%s"
+EMBL_dump_info DE_format "\%s"
 EMBL_dump_info OS_line "Caenorhabditis elegans"
 EMBL_dump_info OC_line "Eukaryota\; Metazoa\; Nematoda\; Chromadorea\; Rhabditida\; Rhabditoidea\;"
 EMBL_dump_info OC_line "Rhabditidae; Peloderinae; Caenorhabditis."
@@ -2620,7 +2620,7 @@ Display
 EMBL_feature    
 EMBL_dump_info   ID_template "\%s"
 EMBL_dump_info   ID_division "INV"
-EMBL_dump_info   DE_format "Caenorhabditis elegans chromosome \%s"
+EMBL_dump_info   DE_format "\%s"
 EMBL_dump_info   OS_line "Caenorhabditis elegans"
 EMBL_dump_info   OC_line "Eukaryota\; Metazoa\; Nematoda\; Chromadorea\; Rhabditida\; Rhabditoidea\;"
 EMBL_dump_info   OC_line "Rhabditidae\; Peloderinae\; Caenorhabditis."
@@ -2637,7 +2637,7 @@ Display
 EMBL_feature 
 EMBL_dump_info ID_template "\%s"
 EMBL_dump_info ID_division "INV"
-EMBL_dump_info DE_format "Caenorhabditis briggsae supercontig \%s"
+EMBL_dump_info DE_format "\%s"
 EMBL_dump_info OS_line "Caenorhabditis briggsae AF16"
 EMBL_dump_info OC_line "Eukaryota\; Metazoa\; Nematoda\; Chromadorea\; Rhabditida\; Rhabditoidea\;"
 EMBL_dump_info OC_line "Rhabditidae; Peloderinae; Caenorhabditis."
@@ -2649,7 +2649,6 @@ EMBL_dump_info CC_line "The total nuclear genome content decreased from cb25 to 
 EMBL_dump_info CC_line "Assembly_name: CB4\nAssembly_program: Phusion\nSeq_technoloy: capillary (whole-genome-shotgun)\nSeq_coverage: 10x"
 EMBL_dump_info CC_line "Annotation details:"
 EMBL_dump_info CC_line "Coding seqences below are the result of integration and manual review of the following data : computer analysis using the programs Genefinder (version 980506\; P. Green, unpublished data), FGENESH (Salamov and Solovyev 2000), TWINSCAN (Korf et al. 2001), and the Ensembl annotation pipeline (Clamp et al. 2003)\; similarity to other proteins from BlastX analyses (http:\/\/blast.wustl.edu)\; sequence conservation with C. elegans using Jim Kent's WABA alignment program (Genome Research 10:1115-1125, 2000)\; individual C. briggsae GenBank submissions\; and personal communications with C. briggsae researchers. tRNAs are predicted using the program tRNAscan-SE (Lowe, T.M. and Eddy, S.R., 1997, Nucl. Acids. Res., 25, 955-964).
-EMBL_dump_info CC_line "For a graphical representation of this sequence and its analysis see:- http:"
 EMBL_dump_info source_organism "Caenorhabditis briggsae"
 EMBL_dump_info gene_from_name
 
@@ -2658,7 +2657,7 @@ Display
 EMBL_feature
 EMBL_dump_info ID_template "\%s"
 EMBL_dump_info ID_division "INV"
-EMBL_dump_info DE_format "Brugia malayi supercontig \%s"
+EMBL_dump_info DE_format "\%s"
 EMBL_dump_info OS_line "Brugia malayi FR3"
 EMBL_dump_info OC_line "Eukaryota\; Metazoa\; Nematoda\; Chromadorea\; Spirurida\; Filarioidea\;"
 EMBL_dump_info OC_line "Onchocercidae\; Brugia."
@@ -2669,9 +2668,37 @@ EMBL_dump_info CC_line "7426 of the 13279 supercontigs fell below 2001bp in leng
 EMBL_dump_info CC_line "Assembly_name: B_malayi-3.1\nSeq_technology: capillary+next-gen (whole-genome-shotgun)\nSeq_coverage: 20x"
 EMBL_dump_info CC_line "Annotation details:"
 EMBL_dump_info CC_line "Coding seqences below are the result of integration and manual review of the following data : RNASeq data (Ghedin E.,Berriman M. and Michalski M, unpublished) using cufflinks (Trapnell S et all)\; similarity to other proteins from BlastX analyses (http:\/\/blast.wustl.edu)\; the previous B. malayi curation efforts (Ghedin E. et. al, Science 317:1756-1769, 2002)\; gene predictions by Augustus (Stanke M., Schffmann O., Morgenstern B., Waack S., BMC Bioinformatics 7-62, 2006)\; GenBlastG aligned ortholog proteins from C.elegans (She R. et al., Bioinformatics, 2011)\;and personal communications with B. malayi researchers. tRNAs are predicted using the program tRNAscan-SE (Lowe T.M. and Eddy S.R., 1997, Nucl. Acids. Res., 25, 955-964)."
-EMBL_dump_info CC_line "For a graphical representation of this sequence and its analysis see:- http:"
 EMBL_dump_info source_organism "Brugia malayi"
 EMBL_dump_info gene_from_name
+
+Method : "sratti_EMBL-dump"
+Display
+EMBL_feature
+EMBL_dump_info ID_template "\%s"
+EMBL_dump_info ID_division "INV"
+EMBL_dump_info DE_format "\%s"
+EMBL_dump_info OS_line "Strongyloides ratti"
+EMBL_dump_info OC_line "Eukaryota\; Metazoa\; Nematoda\; Chromadorea\; Rhabditida\;"
+EMBL_dump_info OC_line "Panagrolaimoidea\; Strongyloididae\; Strongyloides."
+EMBL_dump_info RL_submission "Submitted (DD-MMM-YYYY) to the INSDC."
+EMBL_dump_info source_organism "Strongyloides ratti"
+EMBL_dump_info gene_from_name
+
+
+Method : "ovolvulus_EMBL-dump"
+Display
+EMBL_feature
+EMBL_dump_info ID_template "\%s"
+EMBL_dump_info ID_division "INV"
+EMBL_dump_info DE_format "Onchocerca volvulus assembly O_volvulus_Cameroon_v3, %s"
+EMBL_dump_info OS_line "Onchocerca volvulus"
+EMBL_dump_info OC_line "Eukaryota\; Metazoa\; Nematoda\; Chromadorea\; Spirurida\; Filarioidea\;"
+EMBL_dump_info OC_line "Onchocercidae\; Onchocerca."
+EMBL_dump_info RL_submission "Submitted (DD-MMM-YYYY) to the INSDC."
+EMBL_dump_info source_organism "Onchocerca volvulus"
+EMBL_dump_info gene_from_name
+
+
 
 ////////////////////////////////////////////
 // Miscellaneous methods that are Fmapped //
