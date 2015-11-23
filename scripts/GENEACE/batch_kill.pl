@@ -1,13 +1,14 @@
 #!/software/bin/perl -w
 use strict;
-use lib '../blib/lib';
-use lib '/nfs/WWWdev/SANGER_docs/lib/Projects/C_elegans';
 use lib $ENV{'CVS_DIR'};
+use lib "$ENV{'CVS_DIR'}/NAMEDB/lib";
+
 use NameDB_handler;
 use Getopt::Long;
 use Log_files;
 use Ace;
 use Wormbase;
+
 =pod
 
 =head batch_kill.pl
@@ -83,7 +84,7 @@ elsif (defined$load) { $log->write_to("2) Output has been scheduled for auto-loa
 
 if ($ns) {
 $log->write_to("Contacting NameServer.....\n");
-$db = NameDB_handler->new($DB,$USER,$PASS,'/nfs/WWWdev/SANGER_docs/data/');
+$db = NameDB_handler->new($DB,$USER,$PASS);
 $db->setDomain($domain);
 }
 my $ace = Ace->connect('-path', $database) or $log->log_and_die("cant open $database: $!\n");

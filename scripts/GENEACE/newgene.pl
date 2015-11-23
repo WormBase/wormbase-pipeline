@@ -11,7 +11,8 @@
 
 use strict;
 use lib $ENV{'CVS_DIR'};
-use lib "/nfs/WWWdev/SANGER_docs/lib/Projects/C_elegans/";
+use lib "$ENV{'CVS_DIR'}/NAMEDB/lib";
+
 use Log_files;
 use Wormbase;
 use Getopt::Long;
@@ -165,7 +166,7 @@ if( $update_nameDB ) {
     die "You must specify both a username and password when using the nameDB option!\n\n";
   }
   #verify if valid name
-  $namedb = NameDB_handler->new($DB,$USER,$PASS,'/nfs/WWWdev/SANGER_docs/htdocs');
+  $namedb = NameDB_handler->new($DB,$USER,$PASS);
   $namedb->setDomain('Gene');
 }
 

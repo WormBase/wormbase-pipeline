@@ -12,7 +12,8 @@
 
 use strict;
 use lib $ENV{'CVS_DIR'};
-use lib '/nfs/WWWdev/SANGER_docs/lib/Projects/C_elegans';
+use lib "$ENV{'CVS_DIR'}/NAMEDB/lib";
+
 use lib '/software/worm/lib/perl';
 
 use Wormbase;
@@ -127,7 +128,7 @@ open(INPUT, $input_file) || die "Can't open inputfile!";
 # setup the nameserver
 
 my $DB = $test ? 'test_wbgene_id;utlt-db:3307' : 'wbgene_id;shap:3303';
-my $db = NameDB_handler->new($DB,$ndbUser,$ndbPass,'/nfs/WWWdev/SANGER_docs/data');
+my $db = NameDB_handler->new($DB,$ndbUser,$ndbPass);
 my $geneAceDB = Ace->connect(-path => $geneace_dir) or die Ace->error;
 $db->setDomain('Variation');
 

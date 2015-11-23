@@ -1,10 +1,9 @@
 #!/usr/local/bin/perl -w
 use lib $ENV{'CVS_DIR'};
+use lib "$ENV{'CVS_DIR'}/NAMEDB/lib";
 use lib '/software/worm/lib/perl/';
-use lib '/nfs/WWWdev/SANGER_docs/lib/Projects/C_elegans/';
+
 use strict;
-use lib '../blib/lib';
-use lib '../lib';
 use NameDB;
 use Getopt::Long;
 use Ace;
@@ -74,7 +73,7 @@ my $WBUSERS = {
 	      };
 
 my $acedb = "/nfs/wormpub/DATABASES/geneace";
-my $db = NameDB->connect($DB,$USER,$PASS, '/nfs/WWWdev/SANGER_docs/htdocs');
+my $db = NameDB->connect($DB,$USER,$PASS);
 
 my $ace = Ace->connect('-path', $acedb) or die("cant open $acedb: $!\n");
 my $idObj = $ace->fetch('Gene', $id);
