@@ -1417,6 +1417,32 @@ GFF_feature "expressed_sequence_match"
 GFF_SO "SO:0000102" // expressed_sequence_match
 Remark "This method describes EST contigs of non-elegans nematode species from the Edinburgh NemBase project"
 
+Method : "BLAT_Trinity_BEST"
+Remark   "This method describes BEST Trinity contigs made from a selection of short read libraries."
+Colour   PALEVIOLET
+Show_up_strand  
+Score_by_width  
+Score_bounds     50.000000 100.000000
+Overlap 
+Right_priority   3.5350000
+Join_blocks     
+Blixem_N        
+GFF_feature      "expressed_sequence_match"
+GFF_SO   "SO:0000102"
+
+Method : "BLAT_Trinity_OTHER"
+Remark   This method describes OTHER Trinity contigs made from a selection of short read libraries."
+Colour   PURPLE
+Score_by_width  
+Score_bounds     50.000000 100.000000
+Overlap 
+Right_priority   3.8550000
+Join_blocks     
+Blixem_N        
+GFF_feature      "expressed_sequence_match"
+GFF_SO   "SO:0000102"
+
+
 
 			//////////
 			// WABA //
