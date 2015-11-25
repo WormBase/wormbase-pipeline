@@ -67,15 +67,15 @@ my $seq_obj  = Sequence_extract->invoke($database, undef, $wormbase) if $intron;
 #The mol_types available for each species is different
 #defaults lists - can be overridden by -types
 
-my %mol_types = ( 'elegans'          => [qw( EST mRNA ncRNA OST tc1 RST )],
-		  'briggsae'         => [qw( mRNA EST )],
-		  'remanei'          => [qw( mRNA EST )],
-		  'brenneri'         => [qw( mRNA EST )],
-		  'japonica'         => [qw( mRNA EST )],
-		  'brugia'           => [qw( mRNA EST )],
-		  'pristionchus'     => [qw( mRNA EST )],
-                  'ovolvulus'        => [qw( mRNA EST )],
-                  'sratti'           => [qw( mRNA EST )],
+my %mol_types = ( 'elegans'          => [qw( EST mRNA ncRNA OST tc1 RST Trinity)],
+		  'briggsae'         => [qw( mRNA EST Trinity)],
+		  'remanei'          => [qw( mRNA EST Trinity)],
+		  'brenneri'         => [qw( mRNA EST Trinity)],
+		  'japonica'         => [qw( mRNA EST Trinity)],
+		  'brugia'           => [qw( mRNA EST Trinity)],
+		  'pristionchus'     => [qw( mRNA EST Trinity)],
+                  'ovolvulus'        => [qw( mRNA EST Trinity)],
+                  'sratti'           => [qw( mRNA EST Trinity)],
 		  'nematode'         => [qw( EST )],
 		  'nembase'          => [qw( EST )],
 		  'washu'            => [qw( EST )],
@@ -227,7 +227,7 @@ if ( $run ) {
       my @bsub_opts = (-J => "BLAT_run_${species}_${species}_${moltype}_${chunk_num}",
                        -M => 1000,
                        -R => 'select[mem>=1000] rusage[mem=1000]',
-                       -o => sprintf("BLAT_run_%s/%s_%s_%s_%d.lsfout", $lsfdir, $species, $species, $moltype, $chunk_num));
+		       -o => "$lsfdir/BLAT_run_${species}_${moltype}_${chunk_num}.lsfout");
 
       $lsf->submit(@bsub_opts, $cmd);
     }
