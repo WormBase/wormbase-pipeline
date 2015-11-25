@@ -118,22 +118,24 @@ $uniprot_dbh->dbc->disconnect_if_idle;
 $uniprot_dbh = &get_uniprot_dbh($uniprot_cred);
 
 # dbid = 1 => ENA protein_id
+# dbid = 58 => ENA protein_id on CON records
 # dbid = 24 => Uniprot isoform id
 $uniprot_sql = 'SELECT e.UPI, e.AC, e.DBID '
     . 'FROM uniparc.xref@uapro e '
     . "WHERE taxid = $org_id "
     . "AND  deleted = 'N' "
-    . 'AND  dbid in (1,24)';
+    . 'AND  dbid in (1,24, 58)';
 
 $uniprot_sth = $uniprot_dbh->dbc->prepare($uniprot_sql);
 print STDERR "Reading UniParc for mapping of ENA protein ids to UP isoform ids\n" if $verbose;
 $uniprot_sth->execute;
 while (my @results = $uniprot_sth->fetchrow_array) {
   my ($upi, $acc, $db_id) = @results;
-  if ($db_id == 1) {
+  if ($db_id == 1 or $db_id == 58) {
     # ena protein id; ignore if it's not one of ours
     if (exists $resultsHash{$acc}) {
       $uniparc_mapping{$upi}->{protein_id} = $acc;
+    } else {
     }
   } else {
     $uniparc_mapping{$upi}->{isoform_id} = $acc;
