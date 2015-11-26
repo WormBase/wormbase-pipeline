@@ -6,8 +6,6 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2015-05-15 10:58:35 $
 
 use strict;
 use lib $ENV{"CVS_DIR"};
