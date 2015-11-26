@@ -1,38 +1,161 @@
 
 use strict;
 use YAML;
+use Getopt::Long;
 
+my ($write_configs, 
+    $update_cores,
+    $xref_parsing,
+    $xref_mapping,
+    $xref_loading,
+    $all_stages,
+    $verbose,
+    @species);
 
-foreach my $var (qw(WORMBASEVERSION PARASITEVERSION ENSEMBLVERSION ENSEMBL_CVS_ROOT_DIR PARASITE_CONF)) {
+foreach my $var (qw(WORMBASE_VERSION PARASITE_VERSION ENSEMBL_VERSION ENSEMBL_CVS_ROOT_DIR PARASITE_CONF PARASITE_SCRATCH WORM_CODE)) {
   if (not exists $ENV{$var}) {
     die "$var environment variable not set. You must set up your environment before running this script\n";
   }
 }
 
-my $WORMBASEVERSION      =  $ENV{WORMBASEVERSION};
-my $PARASITEVERSION      = $ENV{PARASITEVERSION};
-my $ENSEMBLVERSION       = $ENV{ENSEMBLVERSION};
+my $WORMBASE_VERSION     = $ENV{WORMBASE_VERSION};
+my $PARASITE_VERSION     = $ENV{PARASITE_VERSION};
+my $ENSEMBL_VERSION      = $ENV{ENSEMBL_VERSION};
 my $ENSEMBL_CVS_ROOT_DIR = $ENV{ENSEMBL_CVS_ROOT_DIR};
 my $PARASITE_CONF        = $ENV{PARASITE_CONF};
+my $PARASITE_SCRATCH     = $ENV{PARASITE_SCRATCH};
+my $WORM_CODE            = $ENV{WORM_CODE};
 
-my $templates = &read_templates();
+&GetOptions("species=s" => \@species,
+            "writeconfig" => \$write_configs,
+            "updatecores" => \$update_cores,
+            "xrefparsing" => \$xref_parsing,
+            "xrefmapping" => \$xref_mapping,
+            "xrefloading" => \$xref_loading,
+            "allstages"   => \$all_stages,
+            "verbose"     => \$verbose,
+    );
 
-&write_config($templates->{WORM_LITE}, "$PARASITE_CONF/ensembl_lite.wb_update.conf");
-&write_config($templates->{STAGING_REGISTRY}, "$PARASITE_CONF/staging_pipelines.registry.pm" );
-&write_config($templates->{COMPARA_REGISTRY}, "$PARASITE_CONF/compara.registry.pm" );
+
+&write_configs(@species) if $write_configs or $all_stages;
+&update_cores(@species) if $update_cores or $all_stages;
+&xref_parsing(@species) if $xref_parsing or $all_stages;
+&xref_mapping(@species) if $xref_mapping or $all_stages;
+&xref_loading(@species) if $xref_loading or $all_stages;
 
 
-&write_xref_schema("$ENSEMBL_CVS_ROOT_DIR/ensembl/misc-scripts/xref_mapping");
-
-my $ylite_conf = YAML::LoadFile("$PARASITE_CONF/ensembl_lite.wb_update.conf");
-foreach my $spe (keys %$ylite_conf) {
-  next if $spe eq 'generics';
-  my $template = $templates->{XREF_INPUT};
-  &write_config($template, 
-                "$PARASITE_CONF/xref_mapping.$spe.input", 
-                { before => "COREDBNAME", after => $ylite_conf->{$spe}->{core_database}->{dbname} });
+#####################################################
+sub write_configs {
+  my $templates = &read_templates();
+  
+  &write_config($templates->{WORM_LITE}, "$PARASITE_CONF/ensembl_lite.wb_update.conf");
+  &write_config($templates->{STAGING_REGISTRY}, "$PARASITE_CONF/staging_pipelines.registry.pm" );
+  &write_config($templates->{COMPARA_REGISTRY}, "$PARASITE_CONF/compara.registry.pm" );
+  
+  
+  &write_xref_schema("$ENSEMBL_CVS_ROOT_DIR/ensembl/misc-scripts/xref_mapping");
+  
+  my $ylite_conf = YAML::LoadFile("$PARASITE_CONF/ensembl_lite.wb_update.conf");
+  foreach my $spe (keys %$ylite_conf) {
+    next if $spe eq 'generics';
+    my $template = $templates->{XREF_INPUT};
+    &write_config($template, 
+                  "$PARASITE_CONF/xref_mapping.$spe.input", 
+                  { before => "COREDBNAME", 
+                    after => $ylite_conf->{$spe}->{core_database}->{dbname} },
+                  { before => "SPECIES",
+                    after => $spe });
+  }
 }
 
+#####################################################
+sub update_cores {
+  my @species = @_;
+
+  foreach my $spe (@species) {
+    my $cmd = "perl $WORM_CODE/scripts/ENSEMBL/scripts/worm_lite.pl -yfile $PARASITE_CONF/ensembl_lite.wb_update.conf -load_genes -species $spe";
+    &write_log("Running: $cmd\n");
+    system($cmd) and die "Command failure: $cmd\n";
+
+    $cmd = "perl $WORM_CODE/scripts/ENSEMBL/scripts/worm_lite.pl -yfile $PARASITE_CONF/ensembl_lite.wb_update.conf -load_meta -species $spe";
+
+    &write_log("Running: $cmd\n");
+    system($cmd) and die "Command failure: $cmd\n";
+  }
+}
+
+#####################################################
+sub xref_parsing {
+  my @species = @_;
+
+  foreach my $spe (@species) {
+
+    my $xref_attr = &parse_xref_inputconf("$PARASITE_CONF/xref_mapping.$spe.input");
+    
+    my $cmd = sprintf("cd %s/ensembl/misc-scripts/xref_mapping && perl xref_parser.pl --host %s --port %s --user %s --pass %s --dbname %s --download_dir %s -species %s -drop_db -delete_downloaded -create -stats > %s 2>&1",
+                      $ENSEMBL_CVS_ROOT_DIR,
+                      $xref_attr->{xref}->{host},
+                      $xref_attr->{xref}->{port},
+                      $xref_attr->{xref}->{user},
+                      $xref_attr->{xref}->{password},
+                      $xref_attr->{xref}->{dbname},
+                      "$PARASITE_SCRATCH/xrefs/sources/$spe",
+                      $spe,
+                      "$PARASITE_SCRATCH/xrefs/logs/parsing.$spe.WS${WORMBASE_VERSION}.out");
+    
+    &write_log("Running: $cmd\n");
+    system($cmd) and die "Command failure: $cmd\n";
+    
+    my $backup = sprintf("%s/xrefs/dbbackups/%s.post_parsing.sql.gz", 
+                         $PARASITE_SCRATCH, 
+                         $xref_attr->{xref}->{dbname});
+    my $backup_cmd = sprintf("mysqldump --host %s --port %s --user %s --pass %s %s | gzip > %s", 
+                             $xref_attr->{xref}->{host},
+                             $xref_attr->{xref}->{port},
+                             $xref_attr->{xref}->{user},
+                             $xref_attr->{xref}->{password},
+                             $xref_attr->{xref}->{dbname},
+                             $backup);
+    &write_log("Running: $cmd\n");
+    system($backup_cmd) and die "Could not backup xref_database after parsing\n";
+  }
+}
+
+#####################################################
+sub xref_mapping {
+  my @species = @_;
+
+  foreach my $spe (@species) {
+    my $xref_conf = "$PARASITE_CONF/xref_mapping.$spe.input";
+
+    my $cmd = sprintf("cd %s/ensembl/misc-scripts/xref_mapping && perl xref_mapper.pl -file %s > %s 2>&1",
+                      $ENSEMBL_CVS_ROOT_DIR,
+                      $xref_conf,
+                      "$PARASITE_SCRATCH/xrefs/logs/mapping.$spe.WS${WORMBASE_VERSION}.out");
+
+    &write_log("Running: $cmd\n");
+    system($cmd) and die "Command failure: $cmd\n";
+
+  }
+}
+
+#####################################################
+sub xref_loading {
+  my @species = @_;
+
+  foreach my $spe (@species) {
+    my $xref_conf = "$PARASITE_CONF/xref_mapping.$spe.input";
+
+    my $cmd = sprintf("cd %s/ensembl/misc-scripts/xref_mapping && perl xref_mapper.pl -file %s -upload > %s 2>&1",
+                      $ENSEMBL_CVS_ROOT_DIR,
+                      $xref_conf,
+                      "$PARASITE_SCRATCH/xrefs/logs/loading.$spe.WS${WORMBASE_VERSION}.out");
+    system($cmd) and die "Failed to run xref_mapping for $spe\n";
+  }
+}
+
+
+######################################################
 ######################################################
 sub read_templates {
   my (%templates, $current);
@@ -57,16 +180,18 @@ sub read_templates {
 sub write_config {
   my ($template, $file, @replacements) = @_;
   
-  my %vhosts = ( STAGING => ($PARASITEVERSION % 2) ? "mysql-ps-staging-1" : "mysql-ps-staging-2",
+  my %vhosts = ( STAGING => ($PARASITE_VERSION % 2) ? "mysql-ps-staging-1" : "mysql-ps-staging-2",
                  PROD    => "mysql-ps-prod",
                  PAN     => "mysql-pan-1" );
   
-  push @replacements,  ( { before => "ENSEMBLVERSION", 
-                           after => $ENSEMBLVERSION },
-                         { before => "PARASITEVERSION", 
-                           after => $PARASITEVERSION },
-                         { before => "WORMBASEVERSION", 
-                           after => $WORMBASEVERSION },
+  push @replacements,  ( { before => "ENSEMBL_VERSION", 
+                           after => $ENSEMBL_VERSION },
+                         { before => "PARASITE_VERSION", 
+                           after => $PARASITE_VERSION },
+                         { before => "PARASITE_SCRATCH", 
+                           after => $PARASITE_SCRATCH },
+                         { before => "WORMBASE_VERSION", 
+                           after => $WORMBASE_VERSION },
                          { before => "ENSEMBL_CVS_ROOT_DIR",
                            after => $ENSEMBL_CVS_ROOT_DIR }
   );
@@ -116,7 +241,7 @@ sub write_xref_schema {
   my $conf_script = "$xref_code_root/xref_config2sql.pl";
   my $conf_sql = "$xref_code_root/sql/populate_metadata.sql";
 
-  my $wsrel = "WS".$WORMBASEVERSION;
+  my $wsrel = "WS".$WORMBASE_VERSION;
   
   my $new_conf = "${conf_ini}.${wsrel}";
   
@@ -178,6 +303,48 @@ sub get_connection_url {
   return $url;
 }
 
+###########################################
+sub parse_xref_inputconf {
+  my ($input_conf) = @_;
+    
+  my ($header, %xref_attr);
+  open(my $fh, $input_conf) or die "Could not open $input_conf for reading\n";
+
+  while(<$fh>) {
+    /^(\S+)$/ and do {
+      my ($k, $v) = split(/=/, $1);
+      
+      if (not $header) {
+        $header = $k;
+        if (defined $v) {
+          $xref_attr{$header}->{$k} = $v;
+        }
+        next;
+      }
+      
+      
+      if (defined $v) {
+        $xref_attr{$k} = $v;
+      } else {
+        $xref_attr{$k} = 1;
+      }
+    };
+      
+    /^\s*$/ and do {
+      $header = "";
+      next;
+    };
+  }
+
+  return \%xref_attr;
+}
+
+###########################################
+sub write_log {
+  my ($msg) = @_;
+
+  $verbose and print STDERR "$msg\n";
+}
 
 __DATA__
 
@@ -194,86 +361,86 @@ generics:
     port: PANPORT
     user: PANUSERRO
     dbname: ensembl_production_parasite
-  meta.genebuild.version: WSWORMBASEVERSION
+  meta.genebuild.version: WSWORMBASE_VERSION
 caenorhabditis_elegans:
   seleno: WBGene00015553
-  gff3: /nfs/ftp/pub/databases/wormbase/releases/WORMBASEVERSION/species/c_elegans/PRJNA13758/c_elegans.PRJNA13758.WORMBASEVERSION.annotations.gff3.gz
+  gff3: /nfs/ftp/pub/databases/wormbase/releases/WORMBASE_VERSION/species/c_elegans/PRJNA13758/c_elegans.PRJNA13758.WORMBASE_VERSION.annotations.gff3.gz
   core_database:
     host: STAGINGHOST
     port: STAGINGPORT
     user: STAGINGUSERRW
     pass: STAGINGPASSRW
-    dbname: caenorhabditis_elegans_core_ENSEMBLVERSION_WORMBASEVERSION
+    dbname: caenorhabditis_elegans_core_ENSEMBL_VERSION_WORMBASE_VERSION
 caenorhabditis_briggsae:
   seleno: WBGene00028139
-  gff3: /nfs/ftp/pub/databases/wormbase/releases/WORMBASEVERSION/species/c_briggsae/PRJNA10731/c_briggsae.PRJNA10731.WORMBASEVERSION.annotations.gff3.gz  
+  gff3: /nfs/ftp/pub/databases/wormbase/releases/WORMBASE_VERSION/species/c_briggsae/PRJNA10731/c_briggsae.PRJNA10731.WORMBASE_VERSION.annotations.gff3.gz  
   core_database:
     host: STAGINGHOST
     port: STAGINGPORT
     user: STAGINGUSERRW
     pass: STAGINGPASSRW
-    dbname: caenorhabditis_briggsae_core_ENSEMBLVERSION_WORMBASEVERSION
+    dbname: caenorhabditis_briggsae_core_ENSEMBL_VERSION_WORMBASE_VERSION
 caenorhabditis_brenneri:
   seleno: WBGene00158831
-  gff3: /nfs/ftp/pub/databases/wormbase/releases/WORMBASEVERSION/species/c_brenneri/PRJNA20035/c_brenneri.PRJNA20035.WORMBASEVERSION.annotations.gff3.gz
+  gff3: /nfs/ftp/pub/databases/wormbase/releases/WORMBASE_VERSION/species/c_brenneri/PRJNA20035/c_brenneri.PRJNA20035.WORMBASE_VERSION.annotations.gff3.gz
   core_database:
     host: STAGINGHOST
     port: STAGINGPORT
     user: STAGINGUSERRW
     pass: STAGINGPASSRW
-    dbname: caenorhabditis_brenneri_core_ENSEMBLVERSION_WORMBASEVERSION
+    dbname: caenorhabditis_brenneri_core_ENSEMBL_VERSION_WORMBASE_VERSION
 caenorhabditis_remanei:
   seleno: WBGene00068657
-  gff3: /nfs/ftp/pub/databases/wormbase/releases/WORMBASEVERSION/species/c_remanei/PRJNA53967/c_remanei.PRJNA53967.WORMBASEVERSION.annotations.gff3.gz
+  gff3: /nfs/ftp/pub/databases/wormbase/releases/WORMBASE_VERSION/species/c_remanei/PRJNA53967/c_remanei.PRJNA53967.WORMBASE_VERSION.annotations.gff3.gz
   core_database:
     host: STAGINGHOST
     port: STAGINGPORT
     user: STAGINGUSERRW
     pass: STAGINGPASSRW
-    dbname: caenorhabditis_remanei_core_ENSEMBLVERSION_WORMBASEVERSION
+    dbname: caenorhabditis_remanei_core_ENSEMBL_VERSION_WORMBASE_VERSION
 caenorhabditis_japonica:
   seleno: WBGene00122465
-  gff3: /nfs/ftp/pub/databases/wormbase/releases/WORMBASEVERSION/species/c_japonica/PRJNA12591/c_japonica.PRJNA12591.WORMBASEVERSION.annotations.gff3.gz 
+  gff3: /nfs/ftp/pub/databases/wormbase/releases/WORMBASE_VERSION/species/c_japonica/PRJNA12591/c_japonica.PRJNA12591.WORMBASE_VERSION.annotations.gff3.gz 
   core_database:
     host: STAGINGHOST
     port: STAGINGPORT
     user: STAGINGUSERRW
     pass: STAGINGPASSRW
-    dbname: caenorhabditis_japonica_core_ENSEMBLVERSION_WORMBASEVERSION
+    dbname: caenorhabditis_japonica_core_ENSEMBL_VERSION_WORMBASE_VERSION
 pristionchus_pacificus:  
-  gff3: /nfs/ftp/pub/databases/wormbase/releases/WORMBASEVERSION/species/p_pacificus/PRJNA12644/p_pacificus.PRJNA12644.WORMBASEVERSION.annotations.gff3.gz 
+  gff3: /nfs/ftp/pub/databases/wormbase/releases/WORMBASE_VERSION/species/p_pacificus/PRJNA12644/p_pacificus.PRJNA12644.WORMBASE_VERSION.annotations.gff3.gz 
   core_database:
     host: STAGINGHOST
     port: STAGINGPORT
     user: STAGINGUSERRW
     pass: STAGINGPASSRW
-    dbname: pristionchus_pacificus_prjna12644_core_PARASITEVERSION_ENSEMBLVERSION_WORMBASEVERSION
+    dbname: pristionchus_pacificus_prjna12644_core_PARASITE_VERSION_ENSEMBL_VERSION_WORMBASE_VERSION
 brugia_malayi:
   seleno: WBGene00222286
-  gff3: /nfs/ftp/pub/databases/wormbase/releases/WORMBASEVERSION/species/b_malayi/PRJNA10729/b_malayi.PRJNA10729.WORMBASEVERSION.annotations.gff3.gz
+  gff3: /nfs/ftp/pub/databases/wormbase/releases/WORMBASE_VERSION/species/b_malayi/PRJNA10729/b_malayi.PRJNA10729.WORMBASE_VERSION.annotations.gff3.gz
   core_database:
     host: STAGINGHOST
     port: STAGINGPORT
     user: STAGINGUSERRW
     pass: STAGINGPASSRW
-    dbname: brugia_malayi_prjna10729_core_PARASITEVERSION_ENSEMBLVERSION_WORMBASEVERSION
+    dbname: brugia_malayi_prjna10729_core_PARASITE_VERSION_ENSEMBL_VERSION_WORMBASE_VERSION
 onchocerca_volvulus:
   seleno: WBGene00241445
-  gff3: /nfs/ftp/pub/databases/wormbase/releases/WORMBASEVERSION/species/o_volvulus/PRJEB513/o_volvulus.PRJEB513.WORMBASEVERSION.annotations.gff3.gz 
+  gff3: /nfs/ftp/pub/databases/wormbase/releases/WORMBASE_VERSION/species/o_volvulus/PRJEB513/o_volvulus.PRJEB513.WORMBASE_VERSION.annotations.gff3.gz 
   core_database:
     host: STAGINGHOST
     port: STAGINGPORT
     user: STAGINGUSERRW
     pass: STAGINGPASSRW
-    dbname: onchocerca_volvulus_prjeb513_core_PARASITEVERSION_ENSEMBLVERSION_WORMBASEVERSION
+    dbname: onchocerca_volvulus_prjeb513_core_PARASITE_VERSION_ENSEMBL_VERSION_WORMBASE_VERSION
 strongyloides_ratti:
-  gff3: /nfs/ftp/pub/databases/wormbase/releases/WORMBASEVERSION/species/s_ratti/PRJEB125/s_ratti.PRJEB125.WORMBASEVERSION.annotations.gff3.gz
+  gff3: /nfs/ftp/pub/databases/wormbase/releases/WORMBASE_VERSION/species/s_ratti/PRJEB125/s_ratti.PRJEB125.WORMBASE_VERSION.annotations.gff3.gz
   core_database:
     host: STAGINGHOST
     port: STAGINGPORT
     user: STAGINGUSERRW
     pass: STAGINGPASSRW
-    dbname: strongyloides_ratti_prjeb125_core_PARASITEVERSION_ENSEMBLVERSION_WORMBASEVERSION
+    dbname: strongyloides_ratti_prjeb125_core_PARASITE_VERSION_ENSEMBL_VERSION_WORMBASE_VERSION
 END_WORM_LITE_TEMPLATE
 
 BEGIN_STAGING_REGISTRY_TEMPLATE
@@ -281,7 +448,7 @@ use Bio::EnsEMBL::Registry;
 Bio::EnsEMBL::Registry->no_version_check(1);
 Bio::EnsEMBL::Registry->no_cache_warnings(1);
 {
-  Bio::EnsEMBL::Registry->load_registry_from_url('STAGINGURLRW/ENSEMBLVERSION');
+  Bio::EnsEMBL::Registry->load_registry_from_url('STAGINGURLRW/ENSEMBL_VERSION');
 
   Bio::EnsEMBL::DBSQL::DBAdaptor->new(
     -host    => 'PANHOST',
@@ -301,8 +468,8 @@ use Bio::EnsEMBL::Utils::ConfigRegistry;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
 
-Bio::EnsEMBL::Registry->load_registry_from_url('STAGINGURLRO/ENSEMBLVERSION');
-Bio::EnsEMBL::Registry->load_registry_from_url('PRODURLRW/ENSEMBLVERSION');
+Bio::EnsEMBL::Registry->load_registry_from_url('STAGINGURLRO/ENSEMBL_VERSION');
+Bio::EnsEMBL::Registry->load_registry_from_url('PRODURLRW/ENSEMBL_VERSION');
 
 Bio::EnsEMBL::Compara::DBSQL::DBAdaptor->new(
     -host => 'PANHOST'
@@ -328,17 +495,17 @@ host=PRODHOST
 port=PRODPORT
 user=PRODUSERRW
 password=PRODPASSRW
-dbname=xref_parasite_SPECIES_PARASITEVERSION
-dir=/nfs/nobackup/ensemblgenomes/wormbase/parasite/production/xrefs/mapping/SPECIES
+dbname=xref_parasite_SPECIES_WORMBASE_VERSION
+dir=PARASITE_SCRATCH/xrefs/mapping/SPECIES
 
-species=caenorhabditis_elegans
+species=SPECIES
 taxon=wormbase
 host=STAGINGHOST
 port=STAGINGPORT
 user=STAGINGUSERRW
 password=STAGINGPASSRW
 dbname=COREDBNAME
-dir=/nfs/nobackup/ensemblgenomes/wormbase/parasite/production/xrefs/mapping/SPECIES
+dir=PARASITE_SCRATCH/xrefs/mapping/SPECIES
 
 farm
 queue=production-rh6
