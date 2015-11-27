@@ -1251,23 +1251,19 @@ sub add_last_rev
 	}
       }
     
-      if (!@cdses) {
-	my @pseuds = $cdb->fetch(-query=>"find Pseudogene ${refgene}*");
-	foreach my $pseud (@pseuds){
-	  if ($pseud eq $refgene || $pseud =~ /${refgene}[a-z]$/) {
-	    print LR "\nPseudogene : \"$pseud\"\n";
-	    print LR "Last_reviewed now $person\n\n";	
-	  }
+      my @pseuds = $cdb->fetch(-query=>"find Pseudogene ${refgene}*");
+      foreach my $pseud (@pseuds){
+	if ($pseud eq $refgene || $pseud =~ /${refgene}[a-z]$/) {
+	  print LR "\nPseudogene : \"$pseud\"\n";
+	  print LR "Last_reviewed now $person\n\n";	
 	}
-	
-	if (!@pseuds) {
-	  my @trans = $cdb->fetch(-query=>"find Transcript ${refgene}*");
-	  foreach my $trans (@trans){
-	    if ($trans eq $refgene || $trans =~ /${refgene}[a-z]$/) {
-	      print LR "\nTranscript : \"$trans\"\n";
-	      print LR "Last_reviewed now $person\n\n";
-	    }
-	  }
+      }
+      
+      my @trans = $cdb->fetch(-query=>"find Transcript ${refgene}*");
+      foreach my $trans (@trans){
+	if ($trans eq $refgene || $trans =~ /${refgene}[a-z]$/) {
+	  print LR "\nTranscript : \"$trans\"\n";
+	  print LR "Last_reviewed now $person\n\n";
 	}
       }
       close LR;
