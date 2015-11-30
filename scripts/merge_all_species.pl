@@ -171,6 +171,21 @@ foreach my $spDB (values %accessors) {
 }
 
 
+
+
+$log->write_to("\nNow loading Oligo_set mappings . . .\n");
+foreach my $spDB (values %accessors) {
+  my $species = $spDB->species;
+
+  my $file = $wormbase->misc_dynamic . "/oligo_set_mappings/oligo_set_mappings.${species}.ace";
+  if (-e $file) {
+    $log->write_to("   loading $file\n");
+    $wormbase->load_to_database($wormbase->orgdb, $file, "merge_all_species", $log);
+  } else {
+    $log->write_to("   not loading $file (not found for that species)\n");
+  }
+}
+
 $log->write_to("\nNow loading briggsae TEC-RED homol data . . .\n");
 my $briggsaeDB = Wormbase->new( 
 			       -debug   => $wormbase->debug,
