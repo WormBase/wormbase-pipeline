@@ -1243,7 +1243,7 @@ sub add_last_rev
 
       open (LR,">$output") or die "cant open $output\n";
 
-      my @cdses = $cdb->fetch(-query=>"find CDS ${refgene}*");
+      my @cdses = $cdb->fetch(-query => "find CDS ${refgene}* WHERE Method = \"curated\"");
       foreach my $cds (@cdses){
 	if ($cds eq $refgene || $cds =~ /${refgene}[a-z]$/) {
 	  print LR "\nCDS : \"$cds\"\n";
