@@ -1228,7 +1228,7 @@ sub add_last_rev
       $obj ||= $cdb->fetch(Transcript => "$refgene");
       $obj ||= $cdb->fetch(Pseudogene => "$refgene");
       return &error_warning("Invalid ID","$refgene is not a valid model name") unless $obj;
-      $class = $obj->class->name;
+      $class = $obj->class;
       my $method = $obj->Method->name;
       
       if ($class eq 'CDS' && $method ne "curated") {return &error_warning("Only curated CDS models can have the Last_reviewed added in this way.")}
