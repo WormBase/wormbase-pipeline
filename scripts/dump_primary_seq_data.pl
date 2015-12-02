@@ -142,6 +142,9 @@ clear\n
 query find Sequence where method = EST_$subspecies & RST* & !Ignore\n
 Write $EST_dir/RST.ace\n
 clear\n
+query find Sequence where method = RNASeq_trinity & !Ignore\n
+Write $EST_dir/Trinity.ace\n
+clear\n
 query find Sequence TC*\n
 Write $EST_dir/tc1.ace\n
 clear\n
@@ -188,6 +191,9 @@ Dna -mismatch $EST_dir/OST\n
 clear\n
 query find Sequence where method = EST_$subspecies & RST* & !Ignore\n
 Dna -mismatch $EST_dir/RST\n
+clear\n
+query find Sequence where method = RNASeq_trinity & !Ignore\n
+Dna -mismatch $EST_dir/Trinity\n
 clear\n
 query find Sequence TC*\n
 Dna -mismatch $EST_dir/tc1\n
