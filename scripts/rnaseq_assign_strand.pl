@@ -140,16 +140,16 @@ while(<>) {
         $l2_bits_on  = 0x090;
         $l2_bits_off = 0x060;
       } else {
-        # @l1 should be read 2, which should map to opposite strand to gene, i.e. forward strand
         # @l2 should be read 1, which should map to same strand as gene, i.e. reverse strand
+        # @l1 should be read 2, which should map to opposite strand to gene, i.e. forward strand
 
-        # required: for @l2, switch on 0x010,0x020 (0x030) and switch off 0x40,Ox80 (0x0C0)
-        #           for @l1, switch off 0x10,0x20 (0x030) and switch on 0x40,Ox80 (0x0C0)
+        # required: for @l2, switch on 0x010,0x040 (0x050) and switch off 0x20,Ox80 (0x0A0)
+        #           for @l1, switch off 0x010,0x040 (0x050) and switch on 0x20,Ox80 (0x0A0)
 
-        $l1_bits_on  = 0x0C0;
-        $l1_bits_off = 0x030;
-        $l2_bits_on  = 0x030;
-        $l2_bits_off = 0x0C0;
+        $l1_bits_on  = 0x0A0;
+        $l1_bits_off = 0x050;
+        $l2_bits_on  = 0x050;
+        $l2_bits_off = 0x0A0;
       }
         
       $l1[1] |= $l1_bits_on;
