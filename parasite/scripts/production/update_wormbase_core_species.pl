@@ -91,7 +91,7 @@ sub xref_parsing {
   foreach my $spe (@species) {
 
     my $xref_attr = &parse_xref_inputconf("$PARASITE_CONF/xref_mapping.$spe.input");
-    
+
     my $cmd = sprintf("cd %s/ensembl/misc-scripts/xref_mapping && perl xref_parser.pl --host %s --port %s --user %s --pass %s --dbname %s --download_dir %s -species %s -drop_db -delete_downloaded -create -stats > %s 2>&1",
                       $ENSEMBL_CVS_ROOT_DIR,
                       $xref_attr->{xref}->{host},
@@ -109,14 +109,14 @@ sub xref_parsing {
     my $backup = sprintf("%s/xrefs/dbbackups/%s.post_parsing.sql.gz", 
                          $PARASITE_SCRATCH, 
                          $xref_attr->{xref}->{dbname});
-    my $backup_cmd = sprintf("mysqldump --host %s --port %s --user %s --pass %s %s | gzip > %s", 
+    my $backup_cmd = sprintf("mysqldump --host=%s --port=%s --user=%s --password=%s %s | gzip > %s", 
                              $xref_attr->{xref}->{host},
                              $xref_attr->{xref}->{port},
                              $xref_attr->{xref}->{user},
                              $xref_attr->{xref}->{password},
                              $xref_attr->{xref}->{dbname},
                              $backup);
-    &write_log("Running: $cmd\n");
+    &write_log("Running: $backup_cmd\n");
     system($backup_cmd) and die "Could not backup xref_database after parsing\n";
   }
 }
@@ -145,12 +145,31 @@ sub xref_loading {
 
   foreach my $spe (@species) {
     my $xref_conf = "$PARASITE_CONF/xref_mapping.$spe.input";
+    my $xref_attr = &parse_xref_inputconf($xref_conf);
 
     my $cmd = sprintf("cd %s/ensembl/misc-scripts/xref_mapping && perl xref_mapper.pl -file %s -upload > %s 2>&1",
                       $ENSEMBL_CVS_ROOT_DIR,
                       $xref_conf,
                       "$PARASITE_SCRATCH/xrefs/logs/loading.$spe.WS${WORMBASE_VERSION}.out");
     system($cmd) and die "Failed to run xref_mapping for $spe\n";
+
+    # check and cleanup
+    my $dba = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
+      -host => $xref_attr->{xref}->{host},
+      -port => $xref_attr->{xref}->{port},
+      -user => $xref_attr->{xref}->{user},
+      -password => $xref_attr->{xref}->{password},
+      -dbname => $xref_attr->{xref}->{dbname});
+
+    #
+    # delete UniProt_gn object_xref
+    #
+    $dba->dbc->do("DELETE object_xref.* " .
+                  "FROM  object_xref, xref, external_db " .
+                  "WHERE external_db.external_db_id = xref.external_db_id " .
+                  "AND xref.xref_id = object_xref.xref_id " .
+                  "AND db_name = 'Uniprot_gn'");
+    
   }
 }
 
@@ -324,9 +343,9 @@ sub parse_xref_inputconf {
       
       
       if (defined $v) {
-        $xref_attr{$k} = $v;
+        $xref_attr{$header}->{$k} = $v;
       } else {
-        $xref_attr{$k} = 1;
+        $xref_attr{$header} = 1;
       }
     };
       
