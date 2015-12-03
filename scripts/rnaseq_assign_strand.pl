@@ -221,7 +221,7 @@ sub read_genome {
 sub read_annotation {
   my ($annot_file) = @_;
 
-  my $open_cmd = ($genome_file =~ /\.gz$/) ? "gunzip -c $annot_file |" : "$annot_file";
+  my $open_cmd = ($annot_file =~ /\.gz$/) ? "gunzip -c $annot_file |" : "$annot_file";
   
   my (%cds_by_strand, %cds);
   open(my $fh, "$open_cmd");
