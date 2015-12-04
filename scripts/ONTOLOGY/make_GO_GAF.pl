@@ -49,12 +49,18 @@ my $db = Ace->connect(-path => $acedbpath,  -program => $tace)
     or $log->log_and_die("Connection failure: ". Ace->error);
 $db->date_style('ace');
 
-my (%paper_info, %go_aspect);
+my (%paper_links, %go_aspect);
 
 $log->write_to("Fetching Paper data...\n") if $debug;
-my @aql_results = $db->aql('select a, a->Database[2], a->Database[3]  from a in class paper');
+my @aql_results = $db->aql('select a, a->Name, a->Database[2], a->Database[3]  from a in class paper');
 foreach my $res (@aql_results) {
-  $paper_info{$res->[0]} = [$res->[1], $res->[2]];
+  my ($wbpap, $nm, $db, $dbf) = @$res;
+  if ($nm and $nm =~ /doi(\S+)/) {
+    $paper_links{$wbpap}->{DOI} = $1;
+  }
+  if ($db and ($db eq 'PMID' or $db eq 'DOI')) {
+    $paper_links{$wbpap}->{$db} = $dbf;
+  }
 }
 
 $log->write_to("Fetching GO type data...\n") if $debug;
@@ -157,8 +163,12 @@ foreach my $suf (0..9) {
     if ($obj->Reference) {
       my $wbpaper = $obj->Reference->name;
       @reference = ("WB_REF:$wbpaper");
-      if ($paper_info{$wbpaper}) {
-        push @reference, join(":", @{$paper_info{$wbpaper}}),
+      if (exists $paper_links{$wbpaper}) {
+        if (exists $paper_links{$wbpaper}->{PMID}) {
+          push @reference, "PMID:" . $paper_links{$wbpaper}->{PMID};
+        } elsif (exists $paper_links{$wbpaper}->{DOI}) {
+          push @reference, "DOI:" . $paper_links{$wbpaper}->{DOI};
+        }
       }
     } elsif ($obj->GO_reference) {
       my ($prefix) = $obj->GO_reference(2);
@@ -200,7 +210,8 @@ foreach my $suf (0..9) {
             } elsif ($dbname eq 'Panther') {
               $dbname = 'PANTHER';
             } elsif ($dbfield eq 'UniProtKB-KW' or 
-                     $dbfield eq 'UniProtKB-SubCell') {
+                     $dbfield eq 'UniProtKB-SubCell' or 
+                     $dbfield eq 'UniRule') {
               $dbname = $dbfield;
             } else {
               # do nothing; dbname is already correct
