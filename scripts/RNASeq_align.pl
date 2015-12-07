@@ -432,12 +432,13 @@ sub make_fpkm {
   my @ls;
   foreach my $gene_id (keys %controls_fpkm) {
     if (!$printed_title_line) {
-	print CONTROLS "### Gene\t";
+      print CONTROLS "### Gene\t";
       foreach my $ls (keys %{$controls_fpkm{$gene_id}}) {
 	print CONTROLS "$ls count\t$ls mean\t$ls median\t";
 	push @ls, $ls;
       }
-	print CONTROLS "Total stages count\tTotal stages mean\tTotal/ stages median\n";
+      print CONTROLS "Total stages count\tTotal stages mean\tTotal/ stages median\n";
+      $printed_title_line = 1;
     }
     print CONTROLS "$gene_id\t";
     my @total_values=($gene_id);
