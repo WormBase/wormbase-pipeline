@@ -270,7 +270,7 @@ sub make_fpkm {
   # open a .ace file to hold the FPKM expression levels of genes, transcripts and CDSs
   my $misc_dynamic = $wormbase->misc_dynamic;
   my $expression_file = "$misc_dynamic/RNASeq_expression_levels_${species}.ace";
-  my $controls_file = "$misc_dynamic/RNASeq_controls_FPKM_${species}.ace";
+  my $controls_file = "$misc_dynamic/RNASeq_controls_FPKM_${species}.dat";
   my $old_expression_file_size = -s $expression_file;
   open (EXPRACE, "> $expression_file") || $log->log_and_die("Can't open $expression_file\n");
   
