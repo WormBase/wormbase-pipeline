@@ -230,7 +230,7 @@ sub make_fpkm {
   # now write out a table of what has worked
   # and make the expresssion tarball for Wen to put into SPELL
   # and write out .ace files for the FPKM expression levels of genes, transcripts, pseudogenes and CDSs
-  # and (for each gene) get a mean and median expression value for each main life stage, plus an overall mean and median value
+  # and (for each gene) get a mean and median expression value for each main life stage, plus an overall mean and median value and write it to both an ACE file and a text file for the FTP site.
 
   my %life_stage_names = (
 			  'WBls:0000003' => 'Embryo',
@@ -270,12 +270,13 @@ sub make_fpkm {
   # open a .ace file to hold the FPKM expression levels of genes, transcripts and CDSs
   my $misc_dynamic = $wormbase->misc_dynamic;
   my $expression_file = "$misc_dynamic/RNASeq_expression_levels_${species}.ace";
+  my $controls_file = "$misc_dynamic/RNASeq_controls_FPKM_${species}.ace";
   my $old_expression_file_size = -s $expression_file;
   open (EXPRACE, "> $expression_file") || $log->log_and_die("Can't open $expression_file\n");
   
   # write a manifest file for the SPELL data for Wen and Raymond
   open (MANIFEST, "> SPELL_manifest.dat") || $log->log_and_die("Can't open SPELL_manifest.dat\n");
-  
+
   foreach my $experiment_accession (keys %{$data}) {
     
     $log->write_to("$experiment_accession");
@@ -414,18 +415,38 @@ sub make_fpkm {
   } # foreach SRX
   $log->write_to("\n");
 
+  # open file to hold the 'controls' FPKM values to be put in the FTP site.
+  open (CONTROLS, "> $controls_file")  || $log->log_and_die("Can't open $controls_file\n");
+  print CONTROLS "### This file contains median and mean values across a range of life stages of the FPKM expression values from RNASeq short read experiments that have been identified in the literature as being 'controls'\n";
+  print CONTROLS "### The literature and descriptions of all known RNASeq read data for $species was examined to find those described as the 'control' in a project.\n";
+  print CONTROLS "### The reads from the control data were aligned to the genome using the program 'STAR' and the FPKM of each gene was calculated from the alignments using the program 'cufflinks'.\n";
+  print CONTROLS "### For each of a set of life-stages (and for the total), the mean and median FPKM values from the data were calculated and written to this file.\n";
+  print CONTROLS "###\n";
+  print CONTROLS "### Gene\tEmbryo count\tEmbryo mean\tEmbryo median\tL1 count\tL1 mean\tL1 median\tL2 count\tL2 mean\tL2 median\tL3 count\tL3 mean\tL3 median\tL4 count\tL4 mean\tL4 median\tDauer count\tDauer mean\tDauer median\tAdult count\tAdult mean\tAdult median\tMixed stages count\tMixed stages mean\tMixed stages median\tTotal stages count\tTotal stages mean\tTotal/ stages median\n";
+  
   # write out the mean and median values of the controls
-  my %seen_control_life_stage=(); # only want to write out Analysis & Condituion objects for the controls once
+  my %seen_control_life_stage=(); # only want to write out Analysis & Condition objects for the controls once
   my $full_name = $wormbase->full_name;
   my $Ntotal;
-
+  my $printed_title_line = 0;
+  my @ls;
   foreach my $gene_id (keys %controls_fpkm) {
-    my @total_values=();
-    foreach my $life_stage (keys %{$controls_fpkm{$gene_id}}) {
+    if (!$printed_title_line) {
+	print CONTROLS "### Gene\t";
+      foreach my $ls (keys %{$controls_fpkm{$gene_id}}) {
+	print CONTROLS "$ls count\t$ls mean\t$ls median\t";
+	push @ls, $ls;
+      }
+	print CONTROLS "Total stages count\tTotal stages mean\tTotal/ stages median\n";
+    }
+    print CONTROLS "$gene_id\t";
+    my @total_values=($gene_id);
+    foreach my $life_stage (@ls) {
       my @fpkm_values = @{$controls_fpkm{$gene_id}{$life_stage}};
       my $median_value = median(@fpkm_values);
       my $mean_value = mean(@fpkm_values);
       my $median_analysis = "RNASeq.$species.$life_stage.control_median";
+      print CONTROLS scalar @fpkm_values."\t$mean_value\t$median_value\t";
       print EXPRACE "\nGene : \"$gene_id\"\n";
       print EXPRACE "RNASeq_FPKM  \"$life_stage\"  \"$median_value\"  From_analysis \"$median_analysis\"\n";
       my $mean_analysis = "RNASeq.$species.$life_stage.control_mean";
@@ -470,6 +491,7 @@ sub make_fpkm {
     my $median_value = median(@total_values);
     my $mean_value = mean(@total_values);
     $Ntotal = scalar @total_values;
+    print CONTROLS "$Ntotal\t$mean_value\t$median_value\n";
 
     my $all_life_stages = "WBls:0000002"; # all stages Ce
     if ($species ne 'elegans') {$all_life_stages = "WBls:0000101"} # all stages nematode
@@ -508,6 +530,7 @@ sub make_fpkm {
 
   close(MANIFEST);
   close(EXPRACE);
+  close(CONTROLS);
   
   $status = $wormbase->run_script("acezip.pl -file $expression_file", $log);
   my $expression_file_size = -s $expression_file;
