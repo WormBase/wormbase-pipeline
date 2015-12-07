@@ -422,7 +422,6 @@ sub make_fpkm {
   print CONTROLS "### The reads from the control data were aligned to the genome using the program 'STAR' and the FPKM of each gene was calculated from the alignments using the program 'cufflinks'.\n";
   print CONTROLS "### For each of a set of life-stages (and for the total), the mean and median FPKM values from the data were calculated and written to this file.\n";
   print CONTROLS "###\n";
-  print CONTROLS "### Gene\tEmbryo count\tEmbryo mean\tEmbryo median\tL1 count\tL1 mean\tL1 median\tL2 count\tL2 mean\tL2 median\tL3 count\tL3 mean\tL3 median\tL4 count\tL4 mean\tL4 median\tDauer count\tDauer mean\tDauer median\tAdult count\tAdult mean\tAdult median\tMixed stages count\tMixed stages mean\tMixed stages median\tTotal stages count\tTotal stages mean\tTotal/ stages median\n";
   
   # write out the mean and median values of the controls
   my %seen_control_life_stage=(); # only want to write out Analysis & Condition objects for the controls once
