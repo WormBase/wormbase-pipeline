@@ -162,7 +162,7 @@ END
 
   # special case for Trinity
   if (not -e "$EST_dir/Trinity.ace") {
-    $wormbase->run_command("touch $EST_dir/Trinity.ace");
+    $wormbase->run_command("touch $EST_dir/Trinity.ace", $log);
   }
   $log->write_to("$subspecies Transcripts dumped\n\n");
 }
@@ -217,7 +217,7 @@ END
 
   # special case for Trinity
   if (not -e "$EST_dir/Trinity") {
-    $wormbase->run_command("touch $$EST_dir/Trinity");
+    $wormbase->run_command("touch $EST_dir/Trinity", $log);
   }
   
   $log->write_to("$subspecies .ace data dumped.\n\n");
