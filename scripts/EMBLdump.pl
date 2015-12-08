@@ -450,6 +450,7 @@ if ($dump_modified) {
       print $out_fh "RG   WormBase Consortium\n";
       print $out_fh "RA   WormBase;\n";
       print $out_fh "RT   ;\n";
+      printf $out_fh "RL   Submitted (%s) to the INSDC.\n", &get_insdc_date(); 
       print $out_fh "RL   WormBase Group, European Bioinformatics Institute,\n";
       print $out_fh "RL   Cambridge, CB10 1SA, UK. Email: help\@wormbase.org\n";
       print $out_fh "XX\n";
@@ -570,6 +571,19 @@ exit(0);
 ###################################################
 #                 SUBROUTINES                     #
 ###################################################
+
+sub get_insdc_date {
+
+  my @abbr = qw(JAN FEB MAR APR MAY JUN JUL AUG SEP OCT NOV DEC);
+
+  my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =
+      localtime(time);
+
+  $year += 1900;
+  $mon = $abbr[$mon];
+
+  return sprintf("%02d-%s-%d", $mday, $mon, $year);
+}
 
 
 ############################
