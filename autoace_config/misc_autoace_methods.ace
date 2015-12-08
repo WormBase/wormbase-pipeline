@@ -1023,25 +1023,21 @@ GFF_SO "SO:0000120" "predicted_CDS_ace2so" // protein_coding_primary_transcript,
 
 Method : "TIGR_BEST"
 Colour RED
-Strand_sensitive Show_up_strand
-Join_blocks
-Display_gaps
-Gapped
+Strand_sensitive Show_up_strand DARKRED
+CDS_colour RED
+Bumpable
+Show_text
 Blixem Blixem_N
-GFF_source "TIGR_BEST"
-GFF_feature "nucleotide_match"
-GFF_SO "SO:0000347" // nucleotide_match
+GFF_SO "SO:0000120" predicted_CDS_ace2so // predicted CDSes
 
 Method : "TIGR_OTHER"
 Colour ORANGE
-Strand_sensitive Show_up_strand
-Join_blocks
-Display_gaps
-Gapped
+Strand_sensitive Show_up_strand ORANGE
+CDS_colour RED
+Bumpable
+Show_text
 Blixem Blixem_N
-GFF_source "TIGR_OTHER"
-GFF_feature "nucleotide_match"
-GFF_SO "SO:0000347" // nucleotide_match
+GFF_SO "SO:0000120" predicted_CDS_ace2so // predicted CDSes
 
 Method : "BLAT_TC1_BEST" 
 Colour BROWN
