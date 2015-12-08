@@ -1431,7 +1431,7 @@ GFF_feature      "expressed_sequence_match"
 GFF_SO   "SO:0000102"
 
 Method : "BLAT_Trinity_OTHER"
-Remark   This method describes OTHER Trinity contigs made from a selection of short read libraries."
+Remark   "This method describes OTHER Trinity contigs made from a selection of short read libraries."
 Colour   PURPLE
 Score_by_width  
 Score_bounds     50.000000 100.000000
