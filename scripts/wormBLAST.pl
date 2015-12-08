@@ -491,7 +491,6 @@ sub update_dna {
   $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/repeat_rule.conf", $log );
   $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/blastx_rule.conf", $log );
   $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/blastp_rule.conf", $log );
-  $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/protein_rule.conf", $log );
 
   if ($do_blats) {
     $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/blat_rule.conf", $log );
