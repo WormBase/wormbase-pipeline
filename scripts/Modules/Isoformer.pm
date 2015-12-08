@@ -1501,7 +1501,6 @@ sub fix {
   if (! $self->{interactive}) {return}
 
   my $new_name='';
-  my %tofix;
 
   my @f = split /\s+/, $userinput;
 
@@ -1687,6 +1686,196 @@ sub fix {
   }
   if ($target_exists) {
     print "\n*** Now make History for $biotype $target\n";
+  }
+
+}
+
+###############################################################################
+# convert a CDS to an Pseudogene using the spcified non-coding isoformer structure
+# pseud isoformer_1 AC3.3 - fix specified object to CDS, converting it to a Pseudogene
+
+# check that the isoformer object exists
+# check that the isoformer object is a non-coding transcript
+# check that the target object exists
+# check that the target object is a CDS
+# rename the isoformer object to the target CDS name
+# check that the Gene tag is populated correctly
+# warn the user if the Gene tag is not populated
+# warn the user if History should be made
+# set the Last_reviewed tag
+
+sub pseud {
+  my ($self, $userinput) = @_;
+
+  if (! $self->{interactive}) {return}
+
+  my $new_name='';
+
+  my @f = split /\s+/, $userinput;
+
+  my $biotype;
+  my $subject = $f[1];
+  my $target = $f[2];
+  my $subject_obj;
+  my $target_obj;
+  my $target_exists = 0;
+  my $gene_obj;
+  my $gene;
+  my $g_species = $self->{wormbase}->full_name();
+
+  my $CDS_name = $self->{CDS_name};
+  my $ncRNA_name = $self->{ncRNA_name};
+
+  if (!defined $subject || ! defined $target) {
+    print "pseudogene what to what?\n";
+    return;
+  }
+
+  # check name looks OK and get biotype
+  if ($subject =~ /^${ncRNA_name}_\d+/ || $subject =~ /${ncRNA_name}_WBGene\d+/) {
+    $biotype = 'Transcript';
+    $subject_obj = $self->{db}->fetch(Transcript => "$subject");
+  } else {
+    print "pseudogene what?\n";
+    return;
+  }
+  
+  if (! defined $subject_obj) {
+    print "\n*** Can't find '$subject' - have you saved your session?\n";
+    return;
+  }
+
+  my $personid = $self->person();
+
+  my ($day, $mon, $yr)  = (localtime)[3,4,5];
+  my $date = sprintf("%02d%02d%02d",$yr-100, $mon+1, $day);
+
+
+  # test to see if the Gene tag is set in the subject
+  $gene_obj = $subject_obj->Gene;
+  if (defined $gene_obj) {
+    $gene = $gene_obj->name;
+  }
+
+  # check if target exists
+  my $message = '';
+  $target_obj = $self->{db}->fetch(CDS => "$target");
+
+  # start making the new Pseudogene target object, using the structure of the Transcript subject
+  # get the Sequence
+  my $subject_sequence_obj = $subject_obj->Sequence;
+  my $subject_sequence_name = $subject_sequence_obj->name;
+  # get the subject location
+  my @clone_locations;
+  my $subject_start;
+  my $subject_end;
+  @clone_locations = $subject_sequence_obj->Transcript;
+  foreach my $subject_location ( @clone_locations ) {
+    next unless ($subject_location->name eq $subject);
+    $subject_start = $subject_location->right->name;
+    $subject_end = $subject_location->right->right->name;
+    last;
+  }
+  # write the new target location
+  $self->aceout("\nSequence : $subject_sequence_name\n");
+  $self->aceout("Pseudogene $target $subject_start $subject_end\n\n");
+
+  # write the new target exons
+  $self->aceout("\nPseudogene : $target\n");
+  foreach ($subject_obj->Source_exons) {
+    my ($start,$end) = $_->row(0);
+    $self->aceout("Source_exons ".$start->name." ".$end->name."\n");
+  }
+  $self->aceout("Species \"$g_species\"\n");
+
+  # if the CDS exists, then transfer data across to the new Pseudogene object
+  if (defined $target_obj) {
+    $target_exists = 1;
+
+    # transfer Remarks, etc tags
+    foreach ($target_obj->Remark) {
+      my ($remark, $evidence, $evidence_value1, $evidence_value2) = $_->row(0);
+      my @evidence_type = $_->at('[1]');
+      my @evidence_value = $_->at('[2]');
+      foreach my $evidence_type (@evidence_type) {
+	my $value = shift @evidence_value;
+	$self->aceout("Remark \"". $remark->name ."\"");
+	$self->aceout(" \"". $evidence_type->name."\"") if ($evidence_type);
+	$self->aceout(" \"". $value->name."\"") if ($value);
+	$self->aceout("\n");
+      }
+    }
+    foreach ($target_obj->Isoform) {
+      my ($isoform, $evidence, $evidence_value1, $evidence_value2) = $_->row(0);
+      $self->aceout("Isoform \"". $isoform->name ."\"");
+      $self->aceout(" \"". $evidence->name."\"") if ($evidence);
+      $self->aceout(" \"". $evidence_value1->name."\"") if ($evidence_value1);
+      $self->aceout(" \"". $evidence_value2->name."\"") if ($evidence_value2);
+      $self->aceout("\n");
+    }
+    foreach ($subject_obj->Evidence) { # for Michael
+      my ($isoform, $evidence, $evidence_value1, $evidence_value2) = $_->row(0);
+      $self->aceout("Evidence \"". $isoform->name ."\"");
+      $self->aceout(" \"". $evidence->name."\"") if ($evidence);
+      $self->aceout(" \"". $evidence_value1->name."\"") if ($evidence_value1);
+      $self->aceout(" \"". $evidence_value2->name."\"") if ($evidence_value2);
+      $self->aceout("\n");
+    }
+  }
+
+  my $DB_remark = $target_obj->DB_remark;
+  $self->aceout("DB_remark \"$DB_remark\"\n") if (defined $DB_remark && $DB_remark ne '');
+  $self->aceout("Gene $gene\n") if (defined $gene);
+  my $Brief_identification = $target_obj->Brief_identification;
+  $Brief_identification += " Pseudogene.";
+  $self->aceout("Brief_identification \"$Brief_identification\"\n") if (defined $Brief_identification);
+  $self->aceout("Coding_pseudogene\n");
+  $self->aceout("Method Pseudogene\n");
+
+  my $remark;
+  my $USER = $ENV{USER};
+  $remark = "Remark \"[$date $USER] Converted this from a CDS to a Pseudogene based on the structure derived from the the RNASeq splice data";
+  $self->aceout("$remark Curator_confirmed $personid\n");
+  $self->aceout("$remark From_analysis RNASeq\n");
+
+			 
+  $self->aceout("\n\n");
+  
+  # delete the old CDS target
+  $self->aceout("\n\n-D CDS $target\n\n");
+  
+  $message .= "\n*** Pseudogene: conversion done and structure updated for $target\n";
+    
+
+
+
+  # do we need to make any existing object into an isoform?
+  if ($target =~ /(\S+?)b$/) { # making the 'b' isoform
+    my $orig_structure = $1;
+    my $orig_structure_obj;
+    my $orig_structure_class;
+    $orig_structure_obj = $self->{db}->fetch(Pseudogene => "$orig_structure");
+    $orig_structure_class = 'Pseudogene';
+    if (defined $orig_structure_obj) {
+      my $personid = $self->person();
+      $self->aceout("\n-R $orig_structure_class $orig_structure ${orig_structure}a\n");
+      $self->aceout("\n");
+      $self->aceout("\n$orig_structure_class : ${orig_structure}a\n");
+      $self->aceout("Isoform Curator_confirmed $personid\n");
+      $self->aceout("\n");
+      $message .= "\n*** Pseudogene: $orig_structure renamed to ${orig_structure}a\n";
+    } else {
+      $message .= "\n*** Well this is odd, can't find Pseudogene '$orig_structure' to rename to the 'a' isoform!\n";
+    }
+  }
+
+  print $message;
+
+  if (!defined $gene_obj && !$target_exists) {
+    print "\n*** Now set the Gene tag\n";
+  }
+  if ($target_exists) {
+    print "\n*** Now make History for CDS $target\n";
   }
 
 }
