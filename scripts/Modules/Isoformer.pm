@@ -1827,14 +1827,14 @@ sub pseud {
   $self->aceout("DB_remark \"$DB_remark\"\n") if (defined $DB_remark && $DB_remark ne '');
   $self->aceout("Gene $gene\n") if (defined $gene);
   my $Brief_identification = $target_obj->Brief_identification;
-  $Brief_identification += " Pseudogene.";
+  $Brief_identification .= " Pseudogene.";
   $self->aceout("Brief_identification \"$Brief_identification\"\n") if (defined $Brief_identification);
   $self->aceout("Coding_pseudogene\n");
   $self->aceout("Method Pseudogene\n");
 
   my $remark;
   my $USER = $ENV{USER};
-  $remark = "Remark \"[$date $USER] Converted this from a CDS to a Pseudogene based on the structure derived from the the RNASeq splice data";
+  $remark = "Remark \"[$date $USER] Converted this from a CDS to a Pseudogene based on the new structure derived from the the RNASeq splice data.\"";
   $self->aceout("$remark Curator_confirmed $personid\n");
   $self->aceout("$remark From_analysis RNASeq\n");
 
@@ -1844,10 +1844,6 @@ sub pseud {
   # delete the old CDS target
   $self->aceout("\n\n-D CDS $target\n\n");
   
-  $message .= "\n*** Pseudogene: conversion done and structure updated for $target\n";
-    
-
-
 
   # do we need to make any existing object into an isoform?
   if ($target =~ /(\S+?)b$/) { # making the 'b' isoform
@@ -1869,6 +1865,10 @@ sub pseud {
     }
   }
 
+  $message .= "\n*** Pseudogene: conversion done and structure updated for $target\n";
+
+  $message .= "\n*** Now change class of $target in the Nameserver\n";
+    
   print $message;
 
   if (!defined $gene_obj && !$target_exists) {
