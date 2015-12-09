@@ -144,6 +144,7 @@ while (1) {
       print "clean\n                : an alias for 'clear'";
       print "what                   : reports the isoformer object that are saved in the database\n";
       print "fix isoformer_1 AC3.3c : fix isoformer_1 to CDS/Transcript, creating it if necessary\n";
+      print "pseudogene non_coding_transcript_1 AC3.3 : convert the CDS to a Pseudogene, using the isoformer structure\n";
       print "check AC3.3c           : check if the specified object's structure looks OK\n";
       print "\n";
       next
@@ -164,6 +165,10 @@ while (1) {
     }
     if ($userinput =~ /^fix\b/) {
       &fix($userinput);
+      next;
+    }
+    if ($userinput =~ /^pseud/) { # can be any match to 'pseud*'
+      &pseud($userinput);
       next;
     }
     if ($userinput =~ /^check\b/) {
@@ -261,6 +266,36 @@ sub fix {
   my ($userinput) = @_;
 
   $Iso->fix($userinput);
+
+  open (TARGET, ">$output") or die "cant open $output\n";
+  print TARGET $Iso->aceout();
+  $Iso->aceclear();
+  close TARGET;
+
+  my $return_status = system("xremote -remote 'parse $output'");
+  if ( ( $return_status >> 8 ) != 0 ) {
+    die("WARNING - X11 connection appears to be lost\n");
+  }
+}
+
+###############################################################################
+# convert a CDS to an Pseudogene using the spcified non-coding isoformer structure
+# pseud isoformer_1 AC3.3 - fix specified object to CDS, converting it to a Pseudogene
+
+# check that the isoformer object exists
+# check that the isoformer object is a non-coding transcript
+# check that the target object exists
+# check that the target object is a CDS
+# rename the isoformer object to the target CDS name
+# check that the Gene tag is populated correctly
+# warn the user if the Gene tag is not populated
+# warn the user if History should be made
+# set the Last_reviewed tag
+
+sub pseud {
+  my ($userinput) = @_;
+
+  $Iso->pseud($userinput);
 
   open (TARGET, ">$output") or die "cant open $output\n";
   print TARGET $Iso->aceout();
