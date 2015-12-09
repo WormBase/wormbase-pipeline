@@ -167,7 +167,7 @@ while (1) {
       &fix($userinput);
       next;
     }
-    if ($userinput =~ /^pseud\b/) {
+    if ($userinput =~ /^pseud/) { # can be any match to 'pseud*'
       &pseud($userinput);
       next;
     }
