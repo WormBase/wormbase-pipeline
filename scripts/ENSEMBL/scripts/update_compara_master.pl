@@ -8,6 +8,7 @@ use Bio::EnsEMBL::Compara::Method;
 use Bio::EnsEMBL::Compara::GenomeDB;
 use Bio::EnsEMBL::Compara::SpeciesSet;
 
+use Bio::EnsEMBL::ApiVersion;
 
 my (
   @species,
@@ -138,7 +139,8 @@ my @genome_dbs;
 foreach my $core_db (@core_dbs) {
 
   my $prod_name = $core_db->get_MetaContainer->get_production_name();
-
+  print $core_db->get_assembly_name, "\n";
+  next;
   my $gdb;
   eval {
     $gdb = $compara_dbh->get_GenomeDBAdaptor->fetch_by_name_assembly($prod_name);
@@ -157,12 +159,18 @@ foreach my $core_db (@core_dbs) {
       $gdb->locator($loc);
     }
     $compara_dbh->get_GenomeDBAdaptor->store($gdb);
+    &update_dnafrags($compara_dbh, $gdb, $core_db) unless $no_dnafrags;
   } else {
     print STDERR "Updating existing GenomeDB for $prod_name\n";
     # update the assembly and genebuild data
     my $gdb_tmp =  Bio::EnsEMBL::Compara::GenomeDB->new(-db_adaptor => $core_db);
-    $gdb->assembly($gdb_tmp->assembly);
-    $gdb->genebuild($gdb_tmp->genebuild);
+    my $genebuild = $gdb_tmp->genebuild;
+    my $assembly = $gdb_tmp->assembly;
+    my $old_assembly = $gdb->assembly;
+    
+    $gdb->genebuild($genebuild);
+    $gdb->assembly($assembly);
+
     if ($locators) {
       my $loc = sprintf("Bio::EnsEMBL::DBSQL::DBAdaptor/host=%s;port=%s;user=%s;pass=%s;dbname=%s;disconnect_when_inactive=1", 
                         $core_db->dbc->host, 
@@ -174,9 +182,11 @@ foreach my $core_db (@core_dbs) {
     }
 
     $compara_dbh->get_GenomeDBAdaptor->update($gdb);
-  }
 
-  &update_dnafrags($compara_dbh, $gdb, $core_db) unless $no_dnafrags;
+    if ($assembly ne $old_assembly and not $no_dnafrags) {
+      &update_dnafrags($compara_dbh, $gdb, $core_db) unless $no_dnafrags;
+    }
+  }
 
   push @genome_dbs, $gdb;
 }
@@ -186,7 +196,10 @@ foreach my $core_db (@core_dbs) {
 # Make the species set
 #
 print STDERR "Storing Species set for collection\n";
-my $ss = Bio::EnsEMBL::Compara::SpeciesSet->new( -genome_dbs => \@genome_dbs );
+my $ss = Bio::EnsEMBL::Compara::SpeciesSet->new( -genome_dbs => \@genome_dbs, 
+                                                 -name => "collection-${collection_name}",
+                                                 -first_release => software_version());
+
 $ss->add_tag("name", "collection-${collection_name}");
 $compara_dbh->get_SpeciesSetAdaptor->store($ss);
 
@@ -195,15 +208,15 @@ $compara_dbh->get_SpeciesSetAdaptor->store($ss);
 #
 if ($create_tree_mlss) {
   # For orthologs
-  system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara $master_dbname --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type ENSEMBL_ORTHOLOGUES --f --pw") 
+  system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara $master_dbname --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type ENSEMBL_ORTHOLOGUES --f --pw  -use_genomedb_ids") 
       and die "Could not create MLSS for orthologs\n";
   
   # For same-species paralogues
-  system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara $master_dbname --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type ENSEMBL_PARALOGUES --f --sg") 
+  system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara $master_dbname --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type ENSEMBL_PARALOGUES --f --sg --use_genomedb_ids") 
       and die "Could not create MLSS for within-species paralogs\n"; 
   
 # For protein trees
-  system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara $master_dbname --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type PROTEIN_TREES --f") 
+  system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara $master_dbname --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type PROTEIN_TREES --f --name protein_trees_${collection_name} ") 
       and die "Could not create MLSS for protein trees\n";
 }
 
