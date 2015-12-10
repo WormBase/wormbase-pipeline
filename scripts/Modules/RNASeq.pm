@@ -2199,7 +2199,8 @@ sub align_star {
   my $bam_stranded_hits = "$exptDir/hits.stranded";
   my $introns_done_file = "$RNASeqSRADir/$experiment_accession/Introns/Intron.ace.done";
 
-  if ($self->{new_genome} || !-e $bam_done_file || !-e $srr_done_file || !-e $trimmomatic_done_file) { 
+  if ($self->{new_genome} || !-e $bam_done_file || !-e $srr_done_file) { 
+#  if ($self->{new_genome} || !-e $bam_done_file || !-e $srr_done_file || !-e $trimmomatic_done_file) { 
 
     if ($self->{new_genome} || !-e $srr_done_file) { 
       $self->get_SRA_files($experiment_accession);
@@ -2220,7 +2221,7 @@ sub align_star {
       my $status = $self->{wormbase}->run_command("touch $solid_done_file", $log); # set flag to indicate we have finished this
     }
 
-    if (!-e $trimmomatic_done_file) {$self->trimmomatic($experiment_accession)}
+#    if (!-e $trimmomatic_done_file) {$self->trimmomatic($experiment_accession)}
 
     if ($self->{new_genome} || !-e $bam_done_file) {
       chdir "$RNASeqSRADir/$experiment_accession"; # get into the correct experiment directory
