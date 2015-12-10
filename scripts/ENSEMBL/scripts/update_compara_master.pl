@@ -139,8 +139,7 @@ my @genome_dbs;
 foreach my $core_db (@core_dbs) {
 
   my $prod_name = $core_db->get_MetaContainer->get_production_name();
-  print $core_db->get_assembly_name, "\n";
-  next;
+
   my $gdb;
   eval {
     $gdb = $compara_dbh->get_GenomeDBAdaptor->fetch_by_name_assembly($prod_name);
