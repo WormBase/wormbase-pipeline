@@ -37,6 +37,8 @@ my %species_info = (
     elegans =>  [
       [
         "RA   Sulson J.E., Waterston R.;",
+        "RT   ;",
+        "RL   Submitted (03-MAR-2003) to the INSDC.",
         "RL   Nematode Sequencing Project: Sanger Institute, Hinxton, Cambridge",
         "RL   CB10 1SA, UK and The Genome Institute at Washington University,", 
         "RL   St. Louis, MO 63110, USA.",
@@ -112,7 +114,7 @@ my %species_info = (
         "RA   Grant W.N., Streit A., Viney M., Berriman M.;", 
         "RT   \"Sequencing and analysis of the genomes of the parasitic nematode",
         "RT   Strongyloides ratti and its close relatives for drug and vaccine discovery\"",
-        "RL   ",
+        "RL   Unpublished.",
       ],
     ],
 
