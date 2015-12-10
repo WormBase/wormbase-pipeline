@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# RNASeq_align.pl
+# test_RNASeq.pl
 # 
 # by Gary Williams                        
 #
@@ -436,12 +436,16 @@ sub make_fpkm {
 	print CONTROLS "$ls count\t$ls mean\t$ls median\t";
 	push @ls, $ls;
       }
-      print CONTROLS "Total stages count\tTotal stages mean\tTotal/ stages median\n";
+      print CONTROLS "Total stages count\tTotal stages mean\tTotal stages median\n";
       $printed_title_line = 1;
     }
     print CONTROLS "$gene_id\t";
     my @total_values=($gene_id);
     foreach my $life_stage (@ls) {
+      if (!exists $controls_fpkm{$gene_id}{$life_stage}) {
+	print CONTROLS "0\t0\t0\t";
+	next;
+      }
       my @fpkm_values = @{$controls_fpkm{$gene_id}{$life_stage}};
       my $median_value = median(@fpkm_values);
       my $mean_value = mean(@fpkm_values);
