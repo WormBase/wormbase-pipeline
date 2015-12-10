@@ -491,7 +491,7 @@ Bio::EnsEMBL::Registry->load_registry_from_url('STAGINGURLRO/ENSEMBL_VERSION');
 Bio::EnsEMBL::Registry->load_registry_from_url('PRODURLRW/ENSEMBL_VERSION');
 
 Bio::EnsEMBL::Compara::DBSQL::DBAdaptor->new(
-    -host => 'PANHOST'
+    -host => 'PANHOST',
     -port => 'PANPORT',
     -user => 'PANUSERRW',
     -pass => 'PANPASSRW',
