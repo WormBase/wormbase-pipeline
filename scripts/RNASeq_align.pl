@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# test_RNASeq.pl
+# RNASeq_align.pl
 # 
 # by Gary Williams                        
 #
