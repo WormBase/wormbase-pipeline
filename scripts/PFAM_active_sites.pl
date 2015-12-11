@@ -117,7 +117,7 @@ sub update_database {
 	foreach my $table (@tables){
 		$log->write_to("\tfetching $table.txt\n");
 	
-                my $ftp = Net::FTP->new('ftp.sanger.ac.uk',Debug => 0)
+                my $ftp = Net::FTP->new('ftp.ebi.ac.uk',Debug => 0)
                   ||$log->log_and_die("Cannot connect to some.host.name: $@\n");
                 $ftp->login("anonymous",'-anonymous@')
                   ||$log->log_and_die("Cannot login ${\$ftp->message}\n");
