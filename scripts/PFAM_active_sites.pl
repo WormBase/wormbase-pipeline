@@ -21,6 +21,7 @@ my ($help, $debug, $test, $verbose, $store, $wormbase);
 my $species = 'elegans';
 my $port= 3306;
 my $server='farmdb1';
+my $dbname = "worm_pfam";
 my $tmpDir='/tmp';
 my ($user, $pass, $update);
 
@@ -34,7 +35,8 @@ GetOptions ('help'       => \$help,
 	    'pass:s'     => \$pass,
 	    'update'     => \$update,
             'port=s'     => \$port,
-            'server=s'   => \$server,
+            'host=s'     => \$server,
+            'dbname=s'   => \$dbname, 
             'tmpdir=s'   => \$tmpDir
            );
 
@@ -58,17 +60,17 @@ my $log = Log_files->make_build_log($wormbase);
 $log->write_to("Getting PFAM active sites for $species\n");
 
 
-$log->write_to("\tconnecting to worm_pfam:$server as $user\n");
-my $DB = DBI -> connect("DBI:mysql:worm_pfam:$server;port=$port;mysql_local_infile=1", $user, $pass, {RaiseError => 1})
+$log->write_to("\tconnecting to $server:$dbname as $user\n");
+my $DB = DBI -> connect("DBI:mysql:$dbname:$server;port=$port;mysql_local_infile=1", $user, $pass, {RaiseError => 1})
     or  $log->log_and_die("cannot connect to db, $DBI::errstr");
 
 &update_database if $update;
 
 my $sth_f = $DB->prepare ( 	q{	
-	SELECT pfamseq.pfamseq_id, pfamseq.sequence, pfamseq_markup.residue, markup_key.label, pfamseq_markup.annotation 
-	FROM pfamseq,pfamseq_markup, markup_key 
+	SELECT pfamseq.pfamseq_id, pfamseq.sequence, pfamseq_markup.residue, markup_key.label
+	FROM pfamseq,pfamseq_markup,markup_key 
 	WHERE pfamseq.ncbi_taxid = ?
-	AND pfamseq.auto_pfamseq = pfamseq_markup.auto_pfamseq 
+	AND pfamseq.pfamseq_acc = pfamseq_markup.pfamseq_acc
 	AND pfamseq_markup.auto_markup = markup_key.auto_markup;
 	  	  } );
 
@@ -82,20 +84,16 @@ my %aa2pepid = $wormbase->FetchData('aa2pepid');
 $log->write_to("\twriting output\n");
 open (ACE,">".$wormbase->acefiles."/PFAM_active_sites.ace") or $log->log_and_die("cant open ".$wormbase->acefiles."/PFAM_active_sites.ace :$!");
 foreach (@$ref_results) {
-	my ($seq_id, $seq, $residue, $method, $annotation) = @$_;
-	($method) = $method =~ /^(\S+)/;
-	if($method eq "Active") {
-		if($annotation and ($annotation !~ /NULL/)) {
-			$method = $annotation;
-		}else {
-			$method = 'Active_site';
-		}
+	my ($seq_id, $seq, $residue, $label) = @$_;
+        my $method = "Pfam";
+        next if $label =~ /active site/i;
+
+        if ($label =~ /^(\S+)\s+predicted active site/i) {
+          $method = $1;
 	}
 	if( $aa2pepid{$seq} ){
-		my $pepid = $wormbase->wormpep_prefix.":".$wormbase->pep_prefix.&pad($aa2pepid{$seq});
-		
+		my $pepid = $wormbase->wormpep_prefix.":".$wormbase->pep_prefix.&pad($aa2pepid{$seq});		
 		print ACE "\nProtein : \"$pepid\"\n";
-		$log->write_to("can't find method for $seq_id, $seq, $residue, $method, $annotation \n") unless $method;
 		print ACE "Motif_homol Active_site \"$method\" 0 $residue $residue 1 1\n"; 
 	}
 	else {
@@ -113,7 +111,7 @@ sub update_database {
 	$log->write_to("\n\nUpdating database from PFAM ftp site\n");
 	
 
-	my @tables = qw(pfamseq ncbi_taxonomy markup_key pfamseq_markup);
+	my @tables = qw(pfamseq markup_key pfamseq_markup);
 	foreach my $table (@tables){
 		$log->write_to("\tfetching $table.txt\n");
 	
@@ -132,19 +130,38 @@ sub update_database {
                     $wormbase->run_command("echo \"SET FOREIGN_KEY_CHECKS=0;\"> $tmpDir/${table}.sql",$log);
 		    $wormbase->run_command("zcat $tmpDir/$table.sql.gz >> $tmpDir/${table}.sql", $log);
                     $wormbase->run_command("echo \"SET FOREIGN_KEY_CHECKS=1;\">> $tmpDir/${table}.sql",$log);
-		    $wormbase->run_command("mysql -h $server -P$port -u$user -p$pass worm_pfam < $tmpDir/${table}.sql", $log);
+		    $wormbase->run_command("mysql -h $server -P$port -u$user -p$pass $dbname < $tmpDir/${table}.sql", $log);
 		    $wormbase->run_command("rm -f $tmpDir/${table}.sql.gz", $log);
 		    $wormbase->run_command("rm -f $tmpDir/${table}.sql", $log);
-		} else {$log->write_to("\tcouldn't update the $table table schema\n");}
-
-		if ($ftp->get("${table}.txt.gz","$tmpDir/${table}.txt.gz")){
-		  $log->write_to("\tunzippping $tmpDir/$table.txt\n");
-		  $wormbase->run_command("gunzip -f $tmpDir/$table.txt.gz", $log);
-		} elsif ($ftp->get("${table}.txt","$tmpDir/${table}.txt")){
-		  $log->write_to("\tgzip archive abscent....using $table.txt.\n");
 		} else {
-		  $log->log_and_die("Couldn't find $table file to download :(\n");
-		}
+                  $log->write_to("\tcouldn't update the $table table schema\n");
+                }
+
+                if ($table eq 'pfamseq') {
+                  # treat this one specially; it is massive
+                  if ($ftp->get("${table}.txt.gz","$tmpDir/${table}.txt.gz")){
+                    $log->write_to("Parsing nematode proteins out of pfammseq...\n");
+                    open(my $fh, "gunzip -c $tmpDir/${table}.txt.gz |") or 
+                        $log->log_and_die("Could not open gunzip stream to $tmpDir/${table}.txt.gz");
+                    open(my $outfh, ">$tmpDir/${table}.txt") or 
+                        $log->log_and_die("Could not open $tmpDir/${table}.txt for writing\n");
+                    while(<$fh>) {
+                      if (/Nematoda/) {
+                        print $outfh $_;
+                      }
+                    }
+                    close($outfh) or $log->log_and_die("Could not close $tmpDir/${table}.txt after writing\n");
+                  }
+                } else {
+                  if ($ftp->get("${table}.txt.gz","$tmpDir/${table}.txt.gz")){
+                    $log->write_to("\tunzippping $tmpDir/$table.txt\n");
+                    $wormbase->run_command("gunzip -f $tmpDir/$table.txt.gz", $log);
+                  } elsif ($ftp->get("${table}.txt","$tmpDir/${table}.txt")){
+                    $log->write_to("\tgzip archive abscent....using $table.txt.\n");
+                  } else {
+                    $log->log_and_die("Couldn't find $table file to download :(\n");
+                  }
+                }
 
                 $ftp->quit;
 
@@ -164,9 +181,10 @@ sub update_database {
                   $DB->do("UPDATE pfamseq SET description=REPLACE(description,'\"','')");
 	        }
 		# clean up files
-		
-		$wormbase->run_command("rm -f $tmpDir/$table.txt", $log);
 
+		foreach my $f ("$tmpDir/$table.txt", "$tmpDir/$table.txt.gz") {
+                  unlink $f if -e $f;
+                }
 	      }
 	$log->write_to("Database update complete\n\n");
 }
