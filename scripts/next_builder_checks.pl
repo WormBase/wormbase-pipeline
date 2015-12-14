@@ -571,16 +571,16 @@ sub classes_to_check {
 				   },
 		 'brugia' => {
 			       Ace2SO => 'coding_transcript_ace2so',
-			       CDS => 'Bm9558e',
+			       CDS => 'Bm7483',
 			       Condition => 'RNASeq.brugia.ERP000948.adult_female',
 			       Feature => 'WBsf899556',
-			       Feature_data => '1512607:Dust',
-			       Gene => 'WBGene00220262', # misses Ortholog Ortholog_other Other_name
+			       Feature_data => 'Bm_v4_Chr4_scaffold_001:Dust',
+			       Gene => 'WBGene00220262',
 			       Gene_name => 'Bma-aagr-4',
-			       Homol_data => '1512607:wublastx_brenneri',
+			       Homol_data => 'Bm_v4_Chr4_scaffold_001:wublastx_brenneri',
 			       Method => 'BLAT_EST_BEST',
-			       Protein => 'BM:BM00001',
-			       #Pseudogene => '',
+			       Protein => 'BM:BM32546',
+			       Pseudogene => 'Bm477',
 			       Transcript => 'Bm1',
 			     },
 		 'ovovlulus' => {
@@ -736,8 +736,8 @@ sub allow_lower_value {
 
   # these are allowed to have a count of zero
   my @allowed_missing = (
-			 "WBGene00220262 : GO_term", # brugia Gene
-			 "Bm9558e : Predicted", # brugia CDS
+			 "WBGene00224517 : GO_term", # brugia Gene
+			 "Bm4256 : Predicted", # brugia CDS
 			 "WBGene00000273 : Ortholog_other", # elegans Gene
 			 "WBPaper00024671:AFD_vs_AWB_downregulated : Gene", # elegans Expression_cluster
 			 "WBGene00051012 : Expr_pattern", # remanei Gene
@@ -770,35 +770,6 @@ sub not_usually_missing {
   my ($name) = @_;
 
   my @usually_missing = (
-
-			 "Bmal_v3_scaffold481:wublastx_fly",
-			 "Bmal_v3_scaffold481:wublastx_human",
-			 "Bmal_v3_scaffold481:wublastx_yeast",
-			 "Bmal_v3_scaffold56:wublastx_yeast",
-			 "Bmal_v3_scaffold1819:wublastx_fly",
-			 "Bmal_v3_scaffold1819:wublastx_pristionchus",
-			 "Bmal_v3_scaffold1819:wublastx_yeast",
-			 "Bmal_v3_scaffold1229:wublastx_brenneri",
-			 "Bmal_v3_scaffold1229:wublastx_briggsae",
-			 "Bmal_v3_scaffold1229:wublastx_brugia",
-			 "Bmal_v3_scaffold1229:wublastx_fly",
-			 "Bmal_v3_scaffold1229:wublastx_human",
-			 "Bmal_v3_scaffold1229:wublastx_japonica",
-			 "Bmal_v3_scaffold1229:wublastx_pristionchus",
-			 "Bmal_v3_scaffold1229:wublastx_remanei",
-			 "Bmal_v3_scaffold1229:wublastx_slimSwissProt",
-			 "Bmal_v3_scaffold1229:wublastx_worm",
-			 "Bmal_v3_scaffold1229:wublastx_yeast",
-			 "Bmal_v3_scaffold1007:wublastx_brenneri",
-			 "Bmal_v3_scaffold1007:wublastx_briggsae",
-			 "Bmal_v3_scaffold1007:wublastx_fly",
-			 "Bmal_v3_scaffold1007:wublastx_human",
-			 "Bmal_v3_scaffold1007:wublastx_japonica",
-			 "Bmal_v3_scaffold1007:wublastx_pristionchus",
-			 "Bmal_v3_scaffold1007:wublastx_remanei",
-			 "Bmal_v3_scaffold1007:wublastx_slimSwissProt",
-			 "Bmal_v3_scaffold1007:wublastx_worm",
-			 "Bmal_v3_scaffold1007:wublastx_yeast",
 
 			 "OVOC_OO_000008:wublastx_yeast",
 			 "OVOC_OO_000054:wublastx_fly",
