@@ -84,17 +84,18 @@ my $outio = Bio::SeqIO->new(-format => 'fasta',
                             -file   => ">$rnafile");
 
 $log->write_to("Writing transcript sequence...\n") if $debug;
-
+my %skipped;
 while( my $obj = shift @transcripts) {    
   
   my $gene = $obj->Gene;
+  my $method = $obj->Method;
+
   if (not $gene) {
-    $log->write_to("Ignoring transcript $obj that does not have parent gene\n");
+    $skipped{$method}++;
     next;
   }
   my $cgc_name = $gene->CGC_name;
 
-  my $method = $obj->Method;
   my $brief_id = $method->GFF_feature;
   if (not $brief_id) {
     $log->write_to("No type set for $obj - setting to ncRNA, but this should be fixed\n");
@@ -130,6 +131,10 @@ while( my $obj = shift @transcripts) {
 }   
 $db->close;
 $wormbase->check_files($log);
+
+foreach my $meth (sort keys %skipped) {
+  $log->write_to(sprintf("Ignored %d transcripts with method %s, because had no gene connection\n", $skipped{$meth}, $meth));
+}
 
 &add_rnacentral_xrefs() unless $no_rnacentral;
 
