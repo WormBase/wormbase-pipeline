@@ -106,7 +106,7 @@ if($clones) {
   } elsif ($wb->species eq 'japonica') {
     @clones = qw(Cjap.Contig2 Cjap.Contig7087 Cjap.Contig772 Cjap.Contig7751 Cjap.Contig8547 Cjap.Contig91 Cjap.Contig9449 Cjap.Contig981 Cjap.Contig9854);
   } elsif ($wb->species eq 'brugia') {
-    @clones = qw(Bmal_v3_scaffold968 Bmal_v3_scaffold481 Bmal_v3_scaffold56 Bmal_v3_scaffold921 Bmal_v3_scaffold1819 Bmal_v3_scaffold1229 Bmal_v3_scaffold1007 Bmal_v3_scaffold2080);
+    @clones = qw(Bm_024 Bm_013 Bm_007 Bm_008 Bm_014 Bm_v4_Chr4_scaffold_001); # chromosome Y, the wolbachia insertions, the mitochondrial insertions and one chromosome
   } elsif ($wb->species eq 'pristionchus') {
     @clones = qw(Ppa_Contig0 Ppa_Contig10 Ppa_Contig15 Ppa_Contig30 Ppa_Contig100 Ppa_Contig200);
   } elsif ($wb->species eq 'ovolvulus') {
