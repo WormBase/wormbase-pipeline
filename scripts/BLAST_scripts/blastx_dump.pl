@@ -118,32 +118,36 @@ my %logic2prefix = (
 $logicname='wormpepx' if $test;
 die "ERROR: bad logicname\n" unless $logic2type{$logicname};
 
-my %cds2wormpep=%{&read_table()};
+
+my %cds2wormpep = &get_cds_to_wormpep();
 
 # iterate over all superlinks
 while (my $link = shift @superlinks){
-    print STDERR "iterating over: ",$link->seq_region_name,"\n" if $ENV{TEST};
-
-    # get all ProteinAlignFeatures on it
-    my @dafs =  @{ $feature_adaptor->fetch_all_by_Slice($link,$logicname) };
-    @dafs    =  ($feature_adaptor->fetch_by_dbID($ENV{TEST_FEATURE}) ) if $ENV{TEST_FEATURE}; # 5970637
-
-    my $type=$logic2type{$logicname} || die "cannot find $logicname\n";
-    my $prefix=$logic2prefix{$logicname};
-
-    &seq_ace($link->seq_region_name,$type,$link->length);
-    
-    my @features=&remove_selfhits(\@dafs,$link);
-    undef @dafs;
-    @features=&filter_features(\@features,$link->length);
-    while (my $f= shift @features){
-        my $hname=$f->hseqname;
-        $f->hseqname($prefix.$hname);
-        &feature2ace($f,$type);
+  print STDERR "iterating over: ",$link->seq_region_name,"\n" if $ENV{TEST};
+  
+  # get all ProteinAlignFeatures on it
+  my @dafs =  @{ $feature_adaptor->fetch_all_by_Slice($link,$logicname) };
+  @dafs    =  ($feature_adaptor->fetch_by_dbID($ENV{TEST_FEATURE}) ) if $ENV{TEST_FEATURE}; # 5970637
+  
+  my $type=$logic2type{$logicname} || die "cannot find $logicname\n";
+  my $prefix=$logic2prefix{$logicname};
+  
+  &seq_ace($link->seq_region_name,$type,$link->length);
+  
+  my @features=&remove_selfhits(\@dafs,$link);
+  undef @dafs;
+  
+  @features=&filter_features(\@features,$link->length);
+  while (my $f= shift @features){
+    my $hname=$f->hseqname;
+    if (exists $cds2wormpep{$hname}) {
+      $f->hseqname($prefix. $cds2wormpep{$hname} );
+      &feature2ace($f,$type);
     }
-
-    print $outf "\n";
-    last if $ENV{TEST};
+  }
+  
+  print $outf "\n";
+  last if $ENV{TEST};
 }
 
 # create the Sequence link
@@ -162,8 +166,8 @@ sub feature2ace {
     # flip coordinates if - strand
     &_feature_flip($f) if ($f->strand < 0);
 
-    my $blasthit_id=($cds2wormpep{$f->hseqname}||$f->hseqname);
-
+    my $blasthit_id = $f->hseqname; 
+    
     my $part1 = "Pep_homol\t\"$blasthit_id\" \"$org\"  %.3f %d %d %d %d";
     my $debug_block="// DEBUG: strand(%s) cigar(%s) pvalue(%s) dbID(%s)" if $ENV{TEST};
     my $blocks=&cigar2ace($f);
@@ -224,45 +228,43 @@ sub cigar2ace {
 
 # flip start and stop
 sub _feature_flip {
-    my ($f)=@_;
-    my $t=$f->start;
-    $f->start($f->end);
-    $f->end($t);
+  my ($f)=@_;
+  my $t=$f->start;
+  $f->start($f->end);
+  $f->end($t);
 }
 
 #################
 # to remove selfhits
 sub remove_selfhits {
-    my ($features,$link,$wormbase)=@_;
-    my (%cds2wormpep,@results);
+  my ($features,$link,$wormbase)=@_;
+  my (@results);
+  
+  my @index=&build_search_struct($link->get_all_Genes()); # using a dirty search structure
 
-    %cds2wormpep=%{&read_table()};
-    die('cannot fetch cds2wormpep') unless %cds2wormpep;
-
-    my @index=&build_search_struct($link->get_all_Genes()); # using a dirty search structure
-
-    FEATURE: while (my $feature = shift @$features){
-        my $name=($cds2wormpep{$feature->hseqname}||$feature->hseqname );
-
-        if ($selfhits) { # should probably not do this
-
-            print STDERR "processing selfhits for: ${\$feature->hseqname} ($name)\n" if $ENV{TEST};
-            foreach my $hit(&search(\@index,$feature)){
-                my %ids;
-                map {$ids{$cds2wormpep{$_}}=1} @{$hit->{ids}};
-                # kick it if it is the same
-                map {print STDERR "-- found $_\n"} keys %ids if $ENV{TEST};
-                if ($ids{$feature->hseqname} || $ids{$cds2wormpep{$feature->hseqname}}){
-                    print STDERR "kicking: ",$feature->dbID," ", $feature->hseqname," ",$feature->start," ",$feature->end," ",$feature->p_value,"\n" 
-			if $ENV{TEST};
-                    next FEATURE;
-                }
-            }
+  while (my $feature = shift @$features){
+    my $name=($cds2wormpep{$feature->hseqname}||$feature->hseqname );
+    if ($selfhits) { # should probably not do this
+      
+      print STDERR "processing selfhits for: ${\$feature->hseqname} ($name)\n" if $ENV{TEST};
+      my %ids;
+      foreach my $hit (&search(\@index,$feature)){
+        foreach my $id (@{$hit->{ids}}) {
+          $ids{$id} = 1;
+          print STDERR " Registered overlap with $id\n" if $ENV{TEST};
         }
-        $feature->hseqname($name);
+      }
+
+      if (exists $ids{$feature->hseqname}) {
+        print STDERR "kicking: ",$feature->dbID," ", $feature->hseqname," ",$feature->start," ",$feature->end," ",$feature->p_value,"\n" 
+            if $ENV{TEST};
+        next;
+      } else {
         push @results,$feature;
-    }   
-    return @results;
+      }
+    }
+  }   
+  return @results;
 }
 
 # build sorted search list
@@ -324,32 +326,19 @@ sub filter_features {
     return @_filtered;
 }
 
-sub get_latest_pep {
-   my @species =qw(wormpep remapep brigpep ppapep jappep brepep brugpep ovolpep srapep);
-   my @history_files;
-   SPECIES: foreach my $s (@species){
-       my @files = sort {$b cmp $a} glob($ENV{'WORMPUB'}."/BUILD/WORMPEP/$s*/*history*");
-           foreach my $file(@files){
-               next if $file=~/666|665/;
-                           push (@history_files,$file);
-               next SPECIES;
-           }
-   }
-   return @history_files;
-}
 
-# create mapping file
-sub read_table {
-    my ($wormbase)=@_;
-    my %mapping;
-    my @files=&get_latest_pep;
-    foreach my $f(@files){
-       my $file= new IO::File $f, 'r' || die(@!);
-       while (<$file>){
-         my @a=split;
-         $mapping{$a[0]}=$a[1];
-       }
-       $file->close;
+#########################################
+sub get_cds_to_wormpep {
+
+  my %map;
+  my %accessors = $wormbase->species_accessors;
+  foreach my $wb ($wormbase, values %accessors) {
+    my %hash;
+    $wb->FetchData('cds2wormpep',\%hash);
+    foreach my $k (keys %hash) {
+      $map{$k} = $hash{$k};
     }
-    return \%mapping;
+  }
+    
+  return %map;
 }
