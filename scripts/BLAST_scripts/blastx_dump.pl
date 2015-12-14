@@ -127,17 +127,18 @@ while (my $link = shift @superlinks){
   
   # get all ProteinAlignFeatures on it
   my @dafs =  @{ $feature_adaptor->fetch_all_by_Slice($link,$logicname) };
-  @dafs    =  ($feature_adaptor->fetch_by_dbID($ENV{TEST_FEATURE}) ) if $ENV{TEST_FEATURE}; # 5970637
+  #@dafs    =  ($feature_adaptor->fetch_by_dbID($ENV{TEST_FEATURE}) ) if $ENV{TEST_FEATURE}; # 5970637
   
   my $type=$logic2type{$logicname} || die "cannot find $logicname\n";
   my $prefix=$logic2prefix{$logicname};
   
   &seq_ace($link->seq_region_name,$type,$link->length);
   
-  my @features=&remove_selfhits(\@dafs,$link);
+  my @features = &remove_selfhits(\@dafs,$link);
   undef @dafs;
   
   @features=&filter_features(\@features,$link->length);
+
   while (my $f= shift @features){
     my $hname=$f->hseqname;
     if (exists $cds2wormpep{$hname}) {
@@ -262,6 +263,8 @@ sub remove_selfhits {
       } else {
         push @results,$feature;
       }
+    } else {
+      push @results,$feature;
     }
   }   
   return @results;
