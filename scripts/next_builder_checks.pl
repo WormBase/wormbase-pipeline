@@ -106,7 +106,7 @@ if($clones) {
   } elsif ($wb->species eq 'japonica') {
     @clones = qw(Cjap.Contig2 Cjap.Contig7087 Cjap.Contig772 Cjap.Contig7751 Cjap.Contig8547 Cjap.Contig91 Cjap.Contig9449 Cjap.Contig981 Cjap.Contig9854);
   } elsif ($wb->species eq 'brugia') {
-    @clones = qw(Bmal_v3_scaffold968 Bmal_v3_scaffold481 Bmal_v3_scaffold56 Bmal_v3_scaffold921 Bmal_v3_scaffold1819 Bmal_v3_scaffold1229 Bmal_v3_scaffold1007 Bmal_v3_scaffold2080);
+    @clones = qw(Bm_024 Bm_013 Bm_007 Bm_008 Bm_014 Bm_v4_Chr4_scaffold_001); # chromosome Y, the wolbachia insertions, the mitochondrial insertions and one chromosome
   } elsif ($wb->species eq 'pristionchus') {
     @clones = qw(Ppa_Contig0 Ppa_Contig10 Ppa_Contig15 Ppa_Contig30 Ppa_Contig100 Ppa_Contig200);
   } elsif ($wb->species eq 'ovolvulus') {
@@ -571,16 +571,16 @@ sub classes_to_check {
 				   },
 		 'brugia' => {
 			       Ace2SO => 'coding_transcript_ace2so',
-			       CDS => 'Bm9558e',
+			       CDS => 'Bm7483',
 			       Condition => 'RNASeq.brugia.ERP000948.adult_female',
 			       Feature => 'WBsf899556',
-			       Feature_data => '1512607:Dust',
-			       Gene => 'WBGene00220262', # misses Ortholog Ortholog_other Other_name
+			       Feature_data => 'Bm_v4_Chr4_scaffold_001:Dust',
+			       Gene => 'WBGene00220262',
 			       Gene_name => 'Bma-aagr-4',
-			       Homol_data => '1512607:wublastx_brenneri',
+			       Homol_data => 'Bm_v4_Chr4_scaffold_001:wublastx_brenneri',
 			       Method => 'BLAT_EST_BEST',
-			       Protein => 'BM:BM00001',
-			       #Pseudogene => '',
+			       Protein => 'BM:BM32546',
+			       Pseudogene => 'Bm477',
 			       Transcript => 'Bm1',
 			     },
 		 'ovovlulus' => {
@@ -736,8 +736,8 @@ sub allow_lower_value {
 
   # these are allowed to have a count of zero
   my @allowed_missing = (
-			 "WBGene00220262 : GO_term", # brugia Gene
-			 "Bm9558e : Predicted", # brugia CDS
+			 "WBGene00224517 : GO_term", # brugia Gene
+			 "Bm4256 : Predicted", # brugia CDS
 			 "WBGene00000273 : Ortholog_other", # elegans Gene
 			 "WBPaper00024671:AFD_vs_AWB_downregulated : Gene", # elegans Expression_cluster
 			 "WBGene00051012 : Expr_pattern", # remanei Gene
@@ -770,35 +770,6 @@ sub not_usually_missing {
   my ($name) = @_;
 
   my @usually_missing = (
-
-			 "Bmal_v3_scaffold481:wublastx_fly",
-			 "Bmal_v3_scaffold481:wublastx_human",
-			 "Bmal_v3_scaffold481:wublastx_yeast",
-			 "Bmal_v3_scaffold56:wublastx_yeast",
-			 "Bmal_v3_scaffold1819:wublastx_fly",
-			 "Bmal_v3_scaffold1819:wublastx_pristionchus",
-			 "Bmal_v3_scaffold1819:wublastx_yeast",
-			 "Bmal_v3_scaffold1229:wublastx_brenneri",
-			 "Bmal_v3_scaffold1229:wublastx_briggsae",
-			 "Bmal_v3_scaffold1229:wublastx_brugia",
-			 "Bmal_v3_scaffold1229:wublastx_fly",
-			 "Bmal_v3_scaffold1229:wublastx_human",
-			 "Bmal_v3_scaffold1229:wublastx_japonica",
-			 "Bmal_v3_scaffold1229:wublastx_pristionchus",
-			 "Bmal_v3_scaffold1229:wublastx_remanei",
-			 "Bmal_v3_scaffold1229:wublastx_slimSwissProt",
-			 "Bmal_v3_scaffold1229:wublastx_worm",
-			 "Bmal_v3_scaffold1229:wublastx_yeast",
-			 "Bmal_v3_scaffold1007:wublastx_brenneri",
-			 "Bmal_v3_scaffold1007:wublastx_briggsae",
-			 "Bmal_v3_scaffold1007:wublastx_fly",
-			 "Bmal_v3_scaffold1007:wublastx_human",
-			 "Bmal_v3_scaffold1007:wublastx_japonica",
-			 "Bmal_v3_scaffold1007:wublastx_pristionchus",
-			 "Bmal_v3_scaffold1007:wublastx_remanei",
-			 "Bmal_v3_scaffold1007:wublastx_slimSwissProt",
-			 "Bmal_v3_scaffold1007:wublastx_worm",
-			 "Bmal_v3_scaffold1007:wublastx_yeast",
 
 			 "OVOC_OO_000008:wublastx_yeast",
 			 "OVOC_OO_000054:wublastx_fly",
@@ -836,21 +807,60 @@ sub not_expected_to_be_undefined {
   my ($name) = @_;
 
   my @expected_to_be_undefined = (
-				  "Bmal_v3_scaffold968:inverted",
-				  "Bmal_v3_scaffold968:RNASeq_stranded_reads:1",
-				  "Bmal_v3_scaffold481:RNASeq_stranded_reads:1",
-				  "Bmal_v3_scaffold56:RNASeq_stranded_reads:1",
-				  "Bmal_v3_scaffold921:inverted",
-				  "Bmal_v3_scaffold921:RNASeq_stranded_reads:1",
-				  "Bmal_v3_scaffold1819:inverted",
-				  "Bmal_v3_scaffold1819:RNASeq_stranded_reads:1",
-				  "Bmal_v3_scaffold1229:Confirmed_intron_RNASeq",
-				  "Bmal_v3_scaffold1229:inverted",
-				  "Bmal_v3_scaffold1229:RNASeq_stranded_reads:1",
-				  "Bmal_v3_scaffold1007:inverted",
-				  "Bmal_v3_scaffold1007:RNASeq_stranded_reads:1",
-				  "Bmal_v3_scaffold2080:inverted",
-				  "Bmal_v3_scaffold2080:RNASeq_stranded_reads:1",
+                                  'Bm_024:RNASeq_stranded_reads:1',
+                                  'Bm_013:RNASeq_stranded_reads:1',
+                                  'Bm_007:RNASeq_stranded_reads:1'
+                                  'Bm_007:RNASeq_stranded_reads:2'
+                                  'Bm_007:RNASeq_stranded_reads:3'
+                                  'Bm_008:RNASeq_stranded_reads:1',
+                                  'Bm_008:RNASeq_stranded_reads:2',
+                                  'Bm_014:RNASeq_stranded_reads:1',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:1',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:2',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:3',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:4',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:5',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:6',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:7',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:8',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:9',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:10',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:11',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:12',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:13',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:14',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:15',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:16',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:17',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:18',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:19',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:20',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:21',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:22',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:23',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:24',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:25',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:26',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:27',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:28',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:29',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:30',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:31',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:32',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:33',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:34',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:35',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:36',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:37',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:38',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:39',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:40',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:41',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:42',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:43',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:44',
+                                  'Bm_v4_Chr4_scaffold_001:RNASeq_stranded_reads:45',
+
 				  "Crem_Contig0:RNASeq_stranded_reads:16",
 				  "OVOC_OO_000001:RNASeq_stranded_reads:1",
 				  "OVOC_OO_000001:RNASeq_stranded_reads:2",

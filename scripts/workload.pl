@@ -82,8 +82,8 @@ my $mysql = DBI -> connect($dbsn, $dbuser, $dbpass, {RaiseError => 1})
 
 # open an ACE connection
 #print "Connecting to Ace\n";
-#my $database = "/nfs/wormpub/DATABASES/geneace";
-my $database = $wormbase->database('current');
+my $database = "/nfs/wormpub/DATABASES/geneace";
+#my $database = $wormbase->database('current');
 my $ace = Ace->connect (-path => $database) || die "cannot connect to database at $database\n";
 
 
@@ -151,7 +151,8 @@ my %dates = (
 	     249 => ['2015-03-06', '2015-05-01'], # to 01-May-2015
 	     250 => ['2015-05-01', '2015-06-31'], # to 31-Jul-2015
 	     251 => ['2015-06-31', '2015-10-02'], # to 02-Oct-2015
-	     252 => ['2015-10-02', '2015-12-04'], # (probable dates in the future ...)
+	     252 => ['2015-10-02', '2015-12-04'], # to 04-Dec-2015
+	     253 => ['2015-12-04', '2016-02-04'], # (probable dates in the future ...)
 	    );
 
 

@@ -447,7 +447,9 @@ sub copy_dna_files{
           }
           
           close($write_fh) or die "Could not close $tgt after writing\n";
-          
+
+          unlink "${tgt}.gz" if -e "${tgt}.gz";
+
           $wormbase->run_command("gzip -n -9 $tgt", $log)
               and die "Could not gzip $tgt after copying\n";
         };          

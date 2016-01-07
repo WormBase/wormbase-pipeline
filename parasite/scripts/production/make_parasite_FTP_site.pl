@@ -11,6 +11,12 @@ my $DUMP_GENOME_SCRIPT = "dump_genome.pl";
 my $DUMP_TRANSCRIPTS_SCRIPT = "dump_transcripts.pl";
 my $DUMP_GFF3_SCRIPT = "dump_gff3.pl";
 
+my $SCRIPT_LOC = "$FindBin::Bin/../../../scripts/ENSEMBL/scripts";
+foreach my $script ($DUMP_GENOME_SCRIPT, $DUMP_TRANSCRIPTS_SCRIPT, $DUMP_GFF3_SCRIPT) {
+  die "Could not find $script in $SCRIPT_LOC\n" if not -e "$SCRIPT_LOC/$script";
+}
+
+
 my $WORMBASE_CORE = {
   'brugia_malayi_prjna10729'           => 1,
   'onchocerca_volvulus_prjeb513'       => 1,
@@ -166,7 +172,7 @@ sub write_file {
   } else {
     $verbose and print STDERR "    Dumping file using $script\n";
 
-    my $this_cmd = "$FindBin::Bin/$script -host $host -port $port -user $user -outfile $outdir/$fname";
+    my $this_cmd = "perl $SCRIPT_LOC/$script -host $host -port $port -user $user -outfile $outdir/$fname";
 
     system($this_cmd) and die "Could not successfully run $this_cmd\n";
     system("gzip -9 -n $outdir/$fname") and die "Could not successfully gzip $outdir/$fname\n";

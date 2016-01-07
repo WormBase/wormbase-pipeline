@@ -67,14 +67,11 @@ while( my $slice = shift @slices) {
   my $slice_name = $slice->seq_region_name();
   my $slice_size = $slice->length;
 
-  print STDERR "Proccesing slice ", $slice->seq_region_name, "\n";
-
   if (not defined $out_fh) {
     my $sl_file = "$dumpdir/${slice_name}.gff3";
     open($out_fh, ">$sl_file") or die "Could not open $sl_file for writing\n";  
   }
 
-	
   print $out_fh "##gff-version 3\n";
   print $out_fh "##sequence-region $slice_name 1 $slice_size\n";
   

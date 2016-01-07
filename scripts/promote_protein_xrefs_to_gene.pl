@@ -46,7 +46,6 @@ GetOptions(
 my $to_promote = {
   UniProt => {
       UniProtAcc => [['UniProt', 'UniProtAcc']],
-      UniProtID  => [['UniProt', 'UniProtID']],
   },
   KEGG => {
     KEGG_id => [['KEGG', 'KEGG_id'],
@@ -106,13 +105,11 @@ foreach my $g (sort keys %gene_info) {
   foreach my $db (sort keys %{$gene_info{$g}}) {
     foreach my $dbf (sort keys %{$gene_info{$g}->{$db}}) {
       my @vals = keys %{$gene_info{$g}->{$db}->{$dbf}};
-      if (scalar(@vals) == 1) {
+      foreach my $val (@vals) {
         foreach my $pair (@{$to_promote->{$db}->{$dbf}}) {
           my ($to_db, $to_dbf) = @$pair;
-          print $ace_fh "Database $to_db $to_dbf $vals[0]\n";
+          print $ace_fh "Database $to_db $to_dbf $val\n";
         }
-      } else {
-        $log->write_to("Skipping $db:$dbf for $g because it has multiple vals: @vals\n");
       }
     }
   }
