@@ -148,6 +148,8 @@ foreach my $core_db (@core_dbs) {
     # not present; create it
     print STDERR "Creating new GenomeDB for $prod_name\n";
     $gdb = Bio::EnsEMBL::Compara::GenomeDB->new(-db_adaptor => $core_db);
+    $gdb->last_release(undef);
+    $gdb->first_release(software_version());
     if ($locators) {
       my $loc = sprintf("Bio::EnsEMBL::DBSQL::DBAdaptor/host=%s;port=%s;user=%s;pass=%s;dbname=%s;disconnect_when_inactive=1", 
                         $core_db->dbc->host, 
@@ -169,6 +171,8 @@ foreach my $core_db (@core_dbs) {
     
     $gdb->genebuild($genebuild);
     $gdb->assembly($assembly);
+    $gdb->last_release(undef);
+    $gdb->first_release(software_version());
 
     if ($locators) {
       my $loc = sprintf("Bio::EnsEMBL::DBSQL::DBAdaptor/host=%s;port=%s;user=%s;pass=%s;dbname=%s;disconnect_when_inactive=1", 
@@ -194,13 +198,27 @@ foreach my $core_db (@core_dbs) {
 #
 # Make the species set
 #
-print STDERR "Storing Species set for collection\n";
-my $ss = Bio::EnsEMBL::Compara::SpeciesSet->new( -genome_dbs => \@genome_dbs, 
-                                                 -name => "collection-${collection_name}",
-                                                 -first_release => software_version());
 
-$ss->add_tag("name", "collection-${collection_name}");
-$compara_dbh->get_SpeciesSetAdaptor->store($ss);
+my $collection_ss = $compara_dbh->get_SpeciesSetAdaptor->fetch_collection_by_name($collection_name);
+
+# Already have a species set for this collection. Need to check that it is up-to-date
+if ($collection_ss) {
+
+    my %collection_gdb_ids = (map {$_->dbID => $_} @{$collection_ss->genome_dbs});
+    my %new_gdb_ids = (map {$_->dbID => $_} @genome_dbs);
+                               
+    if (grep { not exists $collection_gdb_ids{$_} } keys %new_gdb_ids or
+        grep { not exists $new_gdb_ids{$_} } keys %collection_gdb_ids) {
+      # mismatch between collection species set and new species set. 
+      $compara_dbh->get_SpeciesSetAdaptor->update_collection($collection_name, $collection_ss, \@genome_dbs);
+    } else {
+      # hunky dory, no update necessary
+    }
+
+} else {
+  $collection_ss = $compara_dbh->get_SpeciesSetAdaptor->update_collection($collection_name, undef, \@genome_dbs);
+}
+
 
 #
 # Finally, add the protein-tree MLSSs
@@ -217,6 +235,24 @@ if ($create_tree_mlss) {
 # For protein trees
   system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara $master_dbname --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type PROTEIN_TREES --f --name protein_trees_${collection_name} ") 
       and die "Could not create MLSS for protein trees\n";
+
+  # Enable all the GenomeDBs of the collection
+  # And the SpeciesSets they are part of ...
+  my $mlssa = $compara_dbh->get_MethodLinkSpeciesSetAdaptor;
+  my $ssa = $compara_dbh->get_SpeciesSetAdaptor;
+
+  foreach my $gdb (@{$collection_ss->genome_dbs}) {
+    foreach my $ss (@{$ssa->fetch_all_by_GenomeDB($gdb)}) {
+      # ... if all the species in the set are enabled
+      next if grep {not $_->is_current} @{$ss->genome_dbs};
+      $ssa->make_object_current($ss);
+      # And now the MLSSs that use the species-set
+      foreach my $mlss (@{$compara_dbh->get_MethodLinkSpeciesSet->fetch_all_by_species_set_id($ss->dbID)}) {
+        next if $mlss->is_current;
+        $mlssa->make_object_current($mlss);
+      }
+    }
+  }
 }
 
 print STDERR "Updated database\n";
