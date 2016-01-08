@@ -1027,19 +1027,19 @@ sub process_feature_class{
   print "\n\nChecking Feature class for errors:\n";
   print LOG "\n\nChecking Feature class for errors:\n";
 
-  # find features that have SMAPPED sequence but no flanking_seqs
+  # find features that have Mapping_target but no flanking_seqs
   #   if ( $feature ->Sequence && ! defined $feature ->Flanking_sequences ) {
-  #       print LOG "WARNING: Feature $features has a Sequence tag but not Flanking_sequences\n";
+  #       print LOG "WARNING: Feature $features has a Mapping_target tag but not Flanking_sequences\n";
   #   }
   # }   
 
-  # find features that have flanking_seqs but no SMAPPED sequence
-  foreach my $feature ($db->fetch(-query=>'Find Feature WHERE Flanking_sequences AND NOT Sequence')){
-    print LOG "ERROR: $feature has Flanking_sequences tag but has no Sequence tag\n"; 
+  # find features that have flanking_seqs but no Mapping_target
+  foreach my $feature ($db->fetch(-query=>'Find Feature WHERE Flanking_sequences AND NOT Mapping_target')){
+    print LOG "ERROR: $feature has Flanking_sequences tag but has no Mapping_target tag\n"; 
   }
 
   foreach my $feature ($db->fetch(-query=>'Find Feature WHERE Sequence AND NOT Flanking_sequences')){
-    print LOG "WARNING: $feature has Sequence but no Flanking_sequences tag\n"; 
+    print LOG "WARNING: $feature has Mapping_target but no Flanking_sequences tag\n"; 
   }
 
 }
