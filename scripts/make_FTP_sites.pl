@@ -447,7 +447,9 @@ sub copy_dna_files{
           }
           
           close($write_fh) or die "Could not close $tgt after writing\n";
-          
+
+          unlink "${tgt}.gz" if -e "${tgt}.gz";
+
           $wormbase->run_command("gzip -n -9 $tgt", $log)
               and die "Could not gzip $tgt after copying\n";
         };          
@@ -930,6 +932,19 @@ sub copy_misc_files{
     } else {
       $log->write_to("Warning: gene expression file for $g_species not found ($src)\n");
     }
+
+    # controls FPKM file
+    my $con_src = $wormbase->misc_dynamic . "/RNASeq_controls_FPKM_${species}.dat";
+
+    if (-e $con_src) {
+      mkpath($tgt_dir,1,0775);
+      my $con_target = "$tgt_dir/$g_species.$bioproj.$WS_version_name.RNASeq_controls_FPKM.dat";
+      $wormbase->run_command("cp -f $con_src $con_target", $log);
+    } else {
+      $log->write_to("Warning: controls gene expression file for $g_species not found ($con_src)\n");
+    }
+
+
   }
 
   $runtime = $wormbase->runtime;
@@ -1778,6 +1793,7 @@ GSPECIES.BIOPROJ.WSREL.xrefs.txt.gz
 
 [TIER2:pristionchus]species/GSPECIES/BIOPROJ/annotation
 GSPECIES.BIOPROJ.WSREL.SRA_gene_expression.tar.gz
+GSPECIES.BIOPROJ.WSREL.RNASeq_controls_FPKM.dat
 
 # for all species
 [ALL]species/GSPECIES/BIOPROJ

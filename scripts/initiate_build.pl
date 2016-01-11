@@ -72,8 +72,6 @@ $wormbase->run_command('cp -rf '.$ENV{CVS_DIR}.'/../wspec '.$wormbase->autoace.'
       and $log->log_and_die("Failed to update wspec dir; stopping\n");
 $wormbase->run_command('cp -rf '.$ENV{CVS_DIR}.'/../wquery '.$wormbase->autoace.'/wquery', 'no_log')
       and $log->log_and_die("Failed to update wspec dir; stopping\n");
-$wormbase->run_command('cp -rf '.$ENV{CVS_DIR}.'/../autoace_config '.$wormbase->autoace.'/autoace_config', 'no_log')
-      and $log->log_and_die("Failed to update wspec dir; stopping\n");
 
 ## update database.wrm 
 eval {

@@ -22,7 +22,7 @@ use Storable;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase,$noload);
+my ($help, $debug, $test, $verbose, $store, $wormbase,$noload, $acefile);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
@@ -30,6 +30,7 @@ GetOptions ("help"       => \$help,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
 	    "noload"     => \$noload,
+            "acefile=s"  => \$acefile,
             );
 
 
@@ -40,176 +41,68 @@ if ( $store ) {
                              -test    => $test,
 			     );
 }
-
-# Display help if required
-&usage("Help") if ($help);
-
-# in test mode?
-if ($test) {
-  print "In test mode\n" if ($verbose);
-
-}
-
-# establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
-#################################
-# Set up some useful paths      #
-#################################
+$acefile = $wormbase->acefiles . "/pfam_motifs.ace" if not defined $acefile;
+my $pfam_motifs = "/tmp/Pfam_motifs.".$wormbase->species.".gz";
+$wormbase->run_command("wget -q -O $pfam_motifs ftp://ftp.ebi.ac.uk/pub/databases/Pfam/current_release/Pfam-A.seed.gz", $log);
 
-my $ace_dir         = $wormbase->autoace;     # AUTOACE DATABASE DIR
+open(my $pfam_fh, "gunzip -c $pfam_motifs |")  or 
+    $log->log_and_die("Could not open gunzip stream to $pfam_motifs");
 
-my $rundate         = $wormbase->rundate;
-my $runtime         = $wormbase->runtime;
+open (my $out_fh,">$acefile") or $log->log_and_die("Cannot open $acefile for writing\n");
 
+my (%rec);
 
-
-
-
-
-#Get the latest version
-my $pfam_motifs_gz = "/tmp/Pfam_motifs.".$wormbase->species.".gz";
-$log->write_to("Attempting to wget the latest version\n");
-`wget -q -O $pfam_motifs_gz ftp://ftp.sanger.ac.uk/pub/databases/Pfam/current_release/Pfam-A.full.gz` and die "$0 Couldnt get Pfam-A.full.gz \n";
-
-`gunzip -f $pfam_motifs_gz` and die "gunzip failed\n";
-
-my $pfam_motifs = "/tmp/Pfam_motifs.".$wormbase->species;
-$log->write_to("Opening file $pfam_motifs\n");
-print "\n\nOpening file $pfam_motifs . . \n";
-open (PFAM,"<$pfam_motifs") or die "cant open $pfam_motifs\n";
-
-
-my $acefile = "$ace_dir/acefiles/pfam_motifs.ace";
-
-open (PFAMOUT,">$acefile") or die "cant write to $ace_dir/acefiles/pfam_motifs.ace\n";
-
-my ($text,$pfam,$id);
-
-print "\treading data . . . \n";
 my $pfcount = 0;
-while (<PFAM>){
-  chomp;
-  if ($_ =~ /^\/\//){
-    if (defined $pfam){
-      $pfcount++;
-      print PFAMOUT "Motif : \"PFAM:$pfam\"\n";
-      print PFAMOUT "Title \"$text\"\n";
-      print PFAMOUT "Database \"Pfam\" \"Pfam_ID\" \"$pfam\"\n";
-      print PFAMOUT "Database \"Pfam\" \"short_name\" \"$id\"\n";
-      print PFAMOUT "\n";
-      undef $pfam;
-      $text = "";
-    }
-    else{
-       die "gone through a record without picking up pfam\n";
-    }
-  }
-  #get the id
-  elsif($_ =~ m/^\#=GF AC\s+(PF\d{5})/  ){ 
-    $pfam = $1;
-  }
-  
-  #get the description
-  elsif($_ =~ m/^\#=GF DE\s+(.*$)/  ) {
-    $text = $1;
-    $text =~ s/\"//g;
-  }
+while (<$pfam_fh>){
 
-  #get the ID
-  elsif($_ =~ m/^\#=GF ID\s+(.*$)/  ) {
-    $id = $1;
+  if(/^\#=GF AC\s+(PF\d{5})/  ){ 
+    $rec{acc} = $1;
+    next;
+  } 
+
+  if(/^\#=GF ID\s+(.*$)/  ) {
+    my $id = $1;
     $id =~ s/\"//g;
-  }         
-        
- }
-  
-$log->write_to("added $pfcount PFAM motifs\n");
+    $rec{id} = $id;
+    next;
+  }    
 
-print "finished at ",`date`,"\n";
-close PFAM;
-close PFAMOUT;
+  if($_ =~ m/^\#=GF DE\s+(.*$)/  ) {
+    my $title = $1;
+    $title =~ s/\"//g;
+    $rec{title} = $title;
+    next;
+  } 
+
+
+  if (/^\/\//){
+    if (exists $rec{acc} and exists $rec{id} and exists $rec{title}) {      
+      print $out_fh "Motif : \"PFAM:$rec{acc}\"\n";
+      print $out_fh "Title \"$rec{title}\"\n";
+      print $out_fh "Database \"Pfam\" \"Pfam_ID\" \"$rec{acc}\"\n";
+      print $out_fh "Database \"Pfam\" \"short_name\" \"$rec{id}\"\n";
+      print $out_fh "\n";
+      $pfcount++;
+    } else{
+      $log->write_to("Skipping $rec{acc} due to missing id/desc\n");
+    }
+    %rec = ();
+  }
+}
+$log->write_to("added $pfcount PFAM motifs\n");
+unlink $pfam_motifs;
+
+close($out_fh) or $log->log_and_die("Could not close $acefile after writing\n");
 
 unless ($noload) {
-  $wormbase->load_to_database($wormbase->autoace, "$ace_dir/acefiles/pfam_motifs.ace", 'pfam_motifs', $log);
+  $wormbase->load_to_database($wormbase->autoace, $acefile, 'pfam_motifs', $log);
 }
 
-# tidy up and exit
-  $wormbase->run_command("rm $pfam_motifs",$log);
+
 $log->mail();
-print "Finished.\n" if ($verbose);
 exit(0);
 
 
-##############################################################
-#
-# Subroutines
-#
-################################################################
-
-
-sub usage {
-  my $error = shift;
-
-  if ($error eq "Help") {
-    # Normal help menu
-    system ('perldoc',$0);
-    exit (0);
-  }
-}
-
-
-
-
 __END__
-
-=pod
-
-=head2 NAME GetPFAM_motifs.pl
-
-=head1 USAGE
-
-=over 4
-
-=item GetPFAM_motifs.pl
-
-=back
-
-This script:
-
-wgets the latest version of ftp.sanger.ac.uk/pub/databases/Pfam/Pfam-A.full.gz
-unzips it then parses it to produce an ace file of format
-
-Motif : "PFAM:PF00351"
-
-Title "Biopterin-dependent aromatic amino acid hydroxylase"
-
-Database" "Pfam" "Pfam_ID" "PF00351"
-
-
-writes to ~wormpub/BUILD_DATA/MISC_DYNAMIC/misc_pfam_motifs.ace
-
-=head4 OPTIONAL arguments:
-
-=over 4
-  
-=back
- 
-
-=head1 REQUIREMENTS
-
-=over 4
-
-=item This script must run on a machine which can see the /wormsrv2 disk.
-
-=back
-
-=head1 AUTHOR
-
-=over 4
-
-=item Anthony Rogers (ar2@sanger.ac.uk)
-
-=back
-
-=cut

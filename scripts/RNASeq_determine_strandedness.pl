@@ -21,13 +21,14 @@ use Getopt::Long;
 use Log_files;
 use Storable;
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $species);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $species, $specified_experiment);
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
             "test"       => \$test,
             "verbose"    => \$verbose,
             "store:s"    => \$store,
             "species:s"  => \$species, # the default is elegans
+	    "srx:s"      => \$specified_experiment,
 	   );
 
 
@@ -62,11 +63,19 @@ my $data = $RNASeq->get_transcribed_long_experiments();
 my $data_count = scalar keys %{$data};
 print "Have $data_count transcribed long experiments in total\n";
 
-# only want to look at the experiments that we have not looked at before
+# only want to look at the experiments that we have not looked at before or a specified experiment
 my $filtered;
-foreach my $expt (keys %{$data}) {
-  if (!exists $data->{$expt}{'strandedness'}) {
-    $filtered->{$expt} = $data->{$expt};
+if (defined $specified_experiment) {
+  if (exists $data->{$specified_experiment}) {
+    $filtered->{$specified_experiment} = $data->{$specified_experiment};
+  } else {
+    $log->log_and_die("$specified_experiment is an unknown experiment accession.\n");
+  }
+} else {
+  foreach my $expt (keys %{$data}) {
+    if (!exists $data->{$expt}{'strandedness'}) {
+      $filtered->{$expt} = $data->{$expt};
+    }
   }
 }
 $data = $filtered;

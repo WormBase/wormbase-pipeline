@@ -1228,7 +1228,7 @@ sub add_last_rev
       $obj ||= $cdb->fetch(Transcript => "$refgene");
       $obj ||= $cdb->fetch(Pseudogene => "$refgene");
       return &error_warning("Invalid ID","$refgene is not a valid model name") unless $obj;
-      $class = $obj->class->name;
+      $class = $obj->class;
       my $method = $obj->Method->name;
       
       if ($class eq 'CDS' && $method ne "curated") {return &error_warning("Only curated CDS models can have the Last_reviewed added in this way.")}
@@ -1243,7 +1243,7 @@ sub add_last_rev
 
       open (LR,">$output") or die "cant open $output\n";
 
-      my @cdses = $cdb->fetch(-query=>"find CDS ${refgene}*");
+      my @cdses = $cdb->fetch(-query => "find CDS ${refgene}* WHERE Method = \"curated\"");
       foreach my $cds (@cdses){
 	if ($cds eq $refgene || $cds =~ /${refgene}[a-z]$/) {
 	  print LR "\nCDS : \"$cds\"\n";
@@ -1251,23 +1251,19 @@ sub add_last_rev
 	}
       }
     
-      if (!@cdses) {
-	my @pseuds = $cdb->fetch(-query=>"find Pseudogene ${refgene}*");
-	foreach my $pseud (@pseuds){
-	  if ($pseud eq $refgene || $pseud =~ /${refgene}[a-z]$/) {
-	    print LR "\nPseudogene : \"$pseud\"\n";
-	    print LR "Last_reviewed now $person\n\n";	
-	  }
+      my @pseuds = $cdb->fetch(-query=>"find Pseudogene ${refgene}*");
+      foreach my $pseud (@pseuds){
+	if ($pseud eq $refgene || $pseud =~ /${refgene}[a-z]$/) {
+	  print LR "\nPseudogene : \"$pseud\"\n";
+	  print LR "Last_reviewed now $person\n\n";	
 	}
-	
-	if (!@pseuds) {
-	  my @trans = $cdb->fetch(-query=>"find Transcript ${refgene}*");
-	  foreach my $trans (@trans){
-	    if ($trans eq $refgene || $trans =~ /${refgene}[a-z]$/) {
-	      print LR "\nTranscript : \"$trans\"\n";
-	      print LR "Last_reviewed now $person\n\n";
-	    }
-	  }
+      }
+      
+      my @trans = $cdb->fetch(-query=>"find Transcript ${refgene}*");
+      foreach my $trans (@trans){
+	if ($trans eq $refgene || $trans =~ /${refgene}[a-z]$/) {
+	  print LR "\nTranscript : \"$trans\"\n";
+	  print LR "Last_reviewed now $person\n\n";
 	}
       }
       close LR;

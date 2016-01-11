@@ -1500,15 +1500,22 @@ sub trimmomatic {
     my $cmd='';
     if ($have_paired_reads) {
       my $next_paired_file = shift @files2;
-      $fastq_file .= " $next_paired_file"; # space character between the paired file names
-      my ($output_paired_file) = ($fastq_file =~ s/.fastq/.P.qtrim/g);
-      my ($output_unpaired_file) = ($fastq_file =~ s/.fastq/.U.qtrim/g);
+      #$fastq_file .= " $next_paired_file"; # space character between the paired file names
+      my $out_paired_one = $fastq_file;
+      $out_paired_one =~ s/\.fastq/\.P\.qtrim/;
+      my $out_paired_two = $next_paired_file;
+      $out_paired_two =~ s/\.fastq/\.P\.qtrim/;
+      my $out_unpaired_one = $fastq_file;
+      $out_unpaired_one =~ s/\.fastq/\.U\.qtrim/;
+      my $out_unpaired_two = $next_paired_file;
+      $out_unpaired_two =~ s/\.fastq/\.U\.qtrim/;
 
       # For paired-ended data:
-      $cmd = "$ENV{WORM_PACKAGES}/java7/bin/java -jar $ENV{WORM_PACKAGES}/trinity/trinity-plugins/Trimmomatic/trimmomatic.jar PE -threads 2 -phred33 $fastq_file $output_paired_file $output_unpaired_file ILLUMINACLIP:$ENV{WORM_PACKAGES}/trinity/trinity-plugins/Trimmomatic/adapters/TruSeq3-PE.fa:2:30:10 SLIDINGWINDOW:4:5 LEADING:5 TRAILING:5 MINLEN:25";
+      $cmd = "$ENV{WORM_PACKAGES}/java7/bin/java -jar $ENV{WORM_PACKAGES}/trinity/trinity-plugins/Trimmomatic/trimmomatic.jar PE -threads 2 -phred33 $fastq_file $next_paired_file $out_paired_one $out_unpaired_one $out_paired_two $out_unpaired_two ILLUMINACLIP:$ENV{WORM_PACKAGES}/trinity/trinity-plugins/Trimmomatic/adapters/TruSeq3-PE.fa:2:30:10 SLIDINGWINDOW:4:5 LEADING:5 TRAILING:5 MINLEN:25";
 
     } else {
-      my ($output_file) = ( $fastq_file =~ s/.fastq/.P.qtrim/g);
+      my $output_file = $fastq_file;
+      $output_file =~ s/\.fastq/\.P\.qtrim/;
 
       # For single-ended data
       $cmd = "$ENV{WORM_PACKAGES}/java7/bin/java -jar $ENV{WORM_PACKAGES}/trinity/trinity-plugins/Trimmomatic/trimmomatic-0.30.jar SE -phred33 $fastq_file $output_file ILLUMINACLIP:$ENV{WORM_PACKAGES}/trinity/trinity-plugins/Trimmomatic/adapters/TruSeq3-SE:2:30:10 LEADING:5 TRAILING:5 SLIDINGWINDOW:4:5 MINLEN:25";
@@ -2192,7 +2199,8 @@ sub align_star {
   my $bam_stranded_hits = "$exptDir/hits.stranded";
   my $introns_done_file = "$RNASeqSRADir/$experiment_accession/Introns/Intron.ace.done";
 
-  if ($self->{new_genome} || !-e $bam_done_file || !-e $srr_done_file || !-e $trimmomatic_done_file) { 
+  if ($self->{new_genome} || !-e $bam_done_file || !-e $srr_done_file) { 
+#  if ($self->{new_genome} || !-e $bam_done_file || !-e $srr_done_file || !-e $trimmomatic_done_file) { 
 
     if ($self->{new_genome} || !-e $srr_done_file) { 
       $self->get_SRA_files($experiment_accession);
@@ -2213,7 +2221,7 @@ sub align_star {
       my $status = $self->{wormbase}->run_command("touch $solid_done_file", $log); # set flag to indicate we have finished this
     }
 
-    if (!-e $trimmomatic_done_file) {$self->trimmomatic($experiment_accession)}
+#    if (!-e $trimmomatic_done_file) {$self->trimmomatic($experiment_accession)}
 
     if ($self->{new_genome} || !-e $bam_done_file) {
       chdir "$RNASeqSRADir/$experiment_accession"; # get into the correct experiment directory

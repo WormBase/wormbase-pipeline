@@ -582,12 +582,14 @@ sub writeace {
     my $tile = $tiles[$tile_idx-1];
 
     my $vseq = "${chromosome_prefix}${chromosome}:RNASeq:$tile_idx";
-
-    printf VIRT "S_Child Feature_data %s %d %d\n", $vseq, $tile->{start}, $tile->{end};
-
-    print ACE "\nFeature_data : \"$vseq\"\n";
-    foreach my $seg (@{$tile->{segs}}) {
-      print ACE "Feature RNASeq @$seg \"Region of RNASeq reads\"\n";
+    
+    if (@{$tile->{segs}}) {
+      printf VIRT "S_Child Feature_data %s %d %d\n", $vseq, $tile->{start}, $tile->{end};
+      
+      print ACE "\nFeature_data : \"$vseq\"\n";
+      foreach my $seg (@{$tile->{segs}}) {
+	print ACE "Feature RNASeq @$seg \"Region of RNASeq reads\"\n";
+      }
     }
   }
 
@@ -597,11 +599,13 @@ sub writeace {
 
     my $vseq = "${chromosome_prefix}${chromosome}:RNASeq_stranded_reads:$tile_idx";
 
-    printf VIRT "S_Child Feature_data %s %d %d\n", $vseq, $tile->{start}, $tile->{end};
+    if (@{$tile->{P_segs}}) {
+      printf VIRT "S_Child Feature_data %s %d %d\n", $vseq, $tile->{start}, $tile->{end};
 
-    print PACE "\nFeature_data : \"$vseq\"\n";
-    foreach my $seg (@{$tile->{P_segs}}) {
-      print PACE "Feature RNASeq_stranded @$seg \"Region of forward sense RNASeq reads\"\n";
+      print PACE "\nFeature_data : \"$vseq\"\n";
+      foreach my $seg (@{$tile->{P_segs}}) {
+	print PACE "Feature RNASeq_stranded @$seg \"Region of forward sense RNASeq reads\"\n";
+      }
     }
   }
 
@@ -610,12 +614,14 @@ sub writeace {
 
     my $vseq = "${chromosome_prefix}${chromosome}:RNASeq_stranded_reads:$tile_idx";
 
-    printf VIRT "S_Child Feature_data %s %d %d\n", $vseq, $tile->{start}, $tile->{end};
-
-    print MACE "\nFeature_data : \"$vseq\"\n";
-    foreach my $seg (@{$tile->{M_segs}}) {
-      my ($st, $en, $sc) = @$seg;
-      print MACE "Feature RNASeq_stranded $en $st $sc \"Region of reverse sense RNASeq reads\"\n"; # reverse the start and end positions for reverse strand
+    if (@{$tile->{M_segs}}) {
+      printf VIRT "S_Child Feature_data %s %d %d\n", $vseq, $tile->{start}, $tile->{end};
+      
+      print MACE "\nFeature_data : \"$vseq\"\n";
+      foreach my $seg (@{$tile->{M_segs}}) {
+	my ($st, $en, $sc) = @$seg;
+	print MACE "Feature RNASeq_stranded $en $st $sc \"Region of reverse sense RNASeq reads\"\n"; # reverse the start and end positions for reverse strand
+      }
     }
   }
 
@@ -624,11 +630,13 @@ sub writeace {
 
     my $vseq = "${chromosome_prefix}${chromosome}:RNASeq_forward_reads:$tile_idx";
 
-    printf VIRT "S_Child Feature_data %s %d %d\n", $vseq, $tile->{start}, $tile->{end};
-
-    print FACE "\nFeature_data : \"$vseq\"\n";
-    foreach my $seg (@{$tile->{F_segs}}) {
-      print FACE "Feature RNASeq_F_asymmetry @$seg \"Region of forward asymmetric RNASeq reads\"\n";
+    if (@{$tile->{F_segs}}) {
+      printf VIRT "S_Child Feature_data %s %d %d\n", $vseq, $tile->{start}, $tile->{end};
+      
+      print FACE "\nFeature_data : \"$vseq\"\n";
+      foreach my $seg (@{$tile->{F_segs}}) {
+	print FACE "Feature RNASeq_F_asymmetry @$seg \"Region of forward asymmetric RNASeq reads\"\n";
+      }
     }
   }
 
@@ -637,11 +645,13 @@ sub writeace {
 
     my $vseq = "${chromosome_prefix}${chromosome}:RNASeq_reverse_reads:$tile_idx";
 
-    printf VIRT "S_Child Feature_data %s %d %d\n", $vseq, $tile->{start}, $tile->{end};
-
-    print RACE "\nFeature_data : \"$vseq\"\n";
-    foreach my $seg (@{$tile->{R_segs}}) {
-      print RACE "Feature RNASeq_R_asymmetry @$seg \"Region of reverse asymmetric RNASeq reads\"\n";
+    if (@{$tile->{R_segs}}) {
+      printf VIRT "S_Child Feature_data %s %d %d\n", $vseq, $tile->{start}, $tile->{end};
+      
+      print RACE "\nFeature_data : \"$vseq\"\n";
+      foreach my $seg (@{$tile->{R_segs}}) {
+	print RACE "Feature RNASeq_R_asymmetry @$seg \"Region of reverse asymmetric RNASeq reads\"\n";
+      }
     }
   }
 

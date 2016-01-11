@@ -120,10 +120,13 @@ sub dump_BLAT_ace_data {
 #  $EST_dir = $EST_dir.$subspecies;
  
   # Remove stale data if it exists on disk.
-  my @types = ('mRNA','ncRNA','EST','OST','tc1','RST');
+  my @types = ('mRNA','ncRNA','EST','OST','tc1','RST','Trinity');
   foreach my $type (@types) {
-    $wormbase->run_command ("rm $EST_dir${type}", $log) if (-e $EST_dir."${type}");
-    $log->write_to("Removed $EST_dir${type}\n\n")  if (-e $EST_dir."${type}" && $debug);
+    my $file = "$EST_dir/${type}.ace";
+    if (-e $file) {
+      $wormbase->run_command ("rm $file", $log);
+      $log->write_to("Removed $file\n\n");
+    }
   }
 
   my $command=<<END;
@@ -142,6 +145,9 @@ clear\n
 query find Sequence where method = EST_$subspecies & RST* & !Ignore\n
 Write $EST_dir/RST.ace\n
 clear\n
+query find Sequence where method = RNASeq_trinity & !Ignore\n
+Write $EST_dir/Trinity.ace\n
+clear\n
 query find Sequence TC*\n
 Write $EST_dir/tc1.ace\n
 clear\n
@@ -153,6 +159,11 @@ END
   open (DB, "| $tace $dbdir") || die "Couldn't open $dbdir\n";
   print DB $command;
   close DB;
+
+  # special case for Trinity
+  if (not -e "$EST_dir/Trinity.ace") {
+    $wormbase->run_command("touch $EST_dir/Trinity.ace", $log);
+  }
   $log->write_to("$subspecies Transcripts dumped\n\n");
 }
 
@@ -167,10 +178,12 @@ sub dump_BLAT_data {
 #  $EST_dir = $EST_dir.$subspecies;
 
   # Remove stale data if it exists on disk.
-  my @types = ('mRNA','ncRNA','EST','OST','tc1','RST');
+  my @types = ('mRNA','ncRNA','EST','OST','tc1','RST','Trinity');
   foreach my $type (@types) {
-    $wormbase->run_command ("rm $EST_dir${type}", $log) if (-e $EST_dir."${type}");
-    $log->write_to("Removed $EST_dir${type}\n\n")  if (-e $EST_dir."${type}" && $debug);
+    if (-e "$EST_dir/$type") {
+      $wormbase->run_command ("rm $EST_dir/$type", $log);
+      $log->write_to("Removed $EST_dir/$type\n\n");
+    }
   }
 
   my $command=<<END;
@@ -189,6 +202,9 @@ clear\n
 query find Sequence where method = EST_$subspecies & RST* & !Ignore\n
 Dna -mismatch $EST_dir/RST\n
 clear\n
+query find Sequence where method = RNASeq_trinity & !Ignore\n
+Dna -mismatch $EST_dir/Trinity\n
+clear\n
 query find Sequence TC*\n
 Dna -mismatch $EST_dir/tc1\n
 clear\n
@@ -198,6 +214,12 @@ END
   open (DB, "| $tace $dbdir") || die "Couldn't open $dbdir\n";
   print DB $command;
   close DB;
+
+  # special case for Trinity
+  if (not -e "$EST_dir/Trinity") {
+    $wormbase->run_command("touch $EST_dir/Trinity", $log);
+  }
+  
   $log->write_to("$subspecies .ace data dumped.\n\n");
 }
 

@@ -37,6 +37,8 @@ my %species_info = (
     elegans =>  [
       [
         "RA   Sulson J.E., Waterston R.;",
+        "RT   ;",
+        "RL   Submitted (03-MAR-2003) to the INSDC.",
         "RL   Nematode Sequencing Project: Sanger Institute, Hinxton, Cambridge",
         "RL   CB10 1SA, UK and The Genome Institute at Washington University,", 
         "RL   St. Louis, MO 63110, USA.",
@@ -112,7 +114,7 @@ my %species_info = (
         "RA   Grant W.N., Streit A., Viney M., Berriman M.;", 
         "RT   \"Sequencing and analysis of the genomes of the parasitic nematode",
         "RT   Strongyloides ratti and its close relatives for drug and vaccine discovery\"",
-        "RL   ",
+        "RL   Unpublished.",
       ],
     ],
 
@@ -450,6 +452,7 @@ if ($dump_modified) {
       print $out_fh "RG   WormBase Consortium\n";
       print $out_fh "RA   WormBase;\n";
       print $out_fh "RT   ;\n";
+      printf $out_fh "RL   Submitted (%s) to the INSDC.\n", &get_insdc_date(); 
       print $out_fh "RL   WormBase Group, European Bioinformatics Institute,\n";
       print $out_fh "RL   Cambridge, CB10 1SA, UK. Email: help\@wormbase.org\n";
       print $out_fh "XX\n";
@@ -570,6 +573,19 @@ exit(0);
 ###################################################
 #                 SUBROUTINES                     #
 ###################################################
+
+sub get_insdc_date {
+
+  my @abbr = qw(JAN FEB MAR APR MAY JUN JUL AUG SEP OCT NOV DEC);
+
+  my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =
+      localtime(time);
+
+  $year += 1900;
+  $mon = $abbr[$mon];
+
+  return sprintf("%02d-%s-%d", $mday, $mon, $year);
+}
 
 
 ############################

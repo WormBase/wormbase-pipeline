@@ -198,7 +198,7 @@ if ($confirm) {
 $wormbase->run_script( 'map_operons.pl'                          , $log) if $operon;
 if ($enaprotxrefs) {
   $wormbase->run_script( "get_ena_submission_xrefs.pl -proteinxrefs", $log);
-  if ($species eq 'elegans') {
+  if ($wormbase->species eq 'elegans') {
     $wormbase->run_script( 'generate_dbxref_file.pl -nocodingtrans -enaupload', $log);  
   }
 }
