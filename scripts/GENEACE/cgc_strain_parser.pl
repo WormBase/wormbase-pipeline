@@ -222,16 +222,14 @@ while(<INPUT>){
   while($genotype =~ m/$reg_exp/){
     my $transgene = $1;
 
-    print TRANSGENEREPORT "\nTransgene : $transgene\n";
-    print TRANSGENEREPORT "Strain : $strain\n";
-    print TRANSGENEREPORT "Description : $description\n";
-
     if (exists $Transgene_ids{$transgene}) {
       print STRAIN "Transgene \"$Transgene_ids{$transgene}\"\n";
       # delete all transgene references next time round, for safety
       print DELETE_STRAIN  "-D Transgene\n";
-      print TRANSGENEREPORT "WBID : $Transgene_ids{$transgene}\n"; 
     } else {
+      print TRANSGENEREPORT "\nTransgene : $transgene\n";
+      print TRANSGENEREPORT "Strain : $strain\n";
+      print TRANSGENEREPORT "Description : $description\n";
       print TRANSGENEREPORT "WBID : NONE\n"; 
     }
     $genotype =~ s/$reg_exp//;
