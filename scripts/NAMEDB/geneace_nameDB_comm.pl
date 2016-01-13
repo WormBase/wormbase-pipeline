@@ -56,7 +56,7 @@ my $DB      = 'wbgene_id;shap;3303';
 my $PASS    = 'wormpub';
 my $USER    = 'wormpub';
 my $DOMAIN  = 'Gene';
-my $db = NameDB_handler->new($DB,$USER,$PASS,$wormbase->wormpub . '/DATABASES/NameDB');
+my $db = NameDB_handler->new($DB,$USER,$PASS);
 
 # get nameserver data
 my $query = 'SELECT pi.object_public_id, si.name_type_id, si.object_name
