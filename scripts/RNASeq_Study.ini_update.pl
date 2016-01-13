@@ -44,14 +44,15 @@ my %updated_files;
 # So for all nematode species:
 # http://www.ebi.ac.uk/ena/data/warehouse/search?query=tax_tree(6231)%20AND%20library_strategy=%22RNA-Seq%22&result=read_run&fields=study_accession,secondary_study_accession,study_title,experiment_accession,library_source,library_selection,center_name,scientific_name,tax_id&display=report
 
+my %species_files_seen; # keep track on which species have been pulled out of the ENA
+my %studies_not_seen; # note which studies have not been pulled out of the ENA
+my %experiments_not_seen; # note which experiments have not been pulled out of the ENA
+my %novel_experiments; # note new experiments in existing Studies
 
 my %phyla=('6231' => 'nematoda', '6157' => 'platyhelminthes');
 foreach my $phylum (keys %phyla) { # nematode and platyhelminth
   my %data = &get_phylup_data($phylum);
   my $phylum_name = $phyla{$phylum};
-
-###  # Exclude all C. elegans studies.
-###  delete $data{'Caenorhabditis elegans'};
 
   # Create an ini file for all species with at least one study
   foreach my $species (keys %data) {
@@ -59,6 +60,7 @@ foreach my $phylum (keys %phyla) { # nematode and platyhelminth
     $species_file =~ s/ /_/g;
     $species_file .= ".ini";
     my $path = "$dir/${phylum_name}/$species_file";
+    $species_files_seen{"${phylum_name}/$species_file"} = 1;
     if (!-e $path) {system("touch $path")}
     my $ini = Config::IniFiles->new( -file => $path, -allowempty => 1);
     my @existing_studies = $ini->Sections;
@@ -90,7 +92,7 @@ foreach my $phylum (keys %phyla) { # nematode and platyhelminth
 	my ($experiment_accession, $library_source, $library_selection, $secondary_sample_accession) = @{$expt};
 	if ($library_source ne 'GENOMIC') {$not_genomic = 1}
       }
-
+      
       if ($not_genomic) {
 	# only write these if this is a new study, otherwise they would be overwritten
 	if (!grep /^$secondary_study_accession$/, @existing_studies) {
@@ -104,7 +106,7 @@ foreach my $phylum (keys %phyla) { # nematode and platyhelminth
 	  $ini->newval($secondary_study_accession, 'longLabel', '');
 	  $ini->newval($secondary_study_accession, 'shortLabel', '');
 	  $ini->newval($secondary_study_accession, 'ArrayExpress_ID', '');
-
+	  
 	  $ini->newval($secondary_study_accession, 'scientific_name', $species);
 	  $ini->newval($secondary_study_accession, 'secondary_study_accession', $secondary_study_accession);
 	  foreach my $param (qw(study_accession study_title center_name tax_id)) {
@@ -115,26 +117,45 @@ foreach my $phylum (keys %phyla) { # nematode and platyhelminth
 	  # we can't get this field from the 'read_run' results section of the ENA warehouse, it has to be a separate query
 	  my $study_description = &get_study_description($secondary_study_accession);
 	  $ini->newval($secondary_study_accession, 'study_description', $study_description);
+	}
+	
+	my %samples = ();
+	my %new_samples = ();
+	foreach my $expt (@experiments) {
+	  my ($experiment_accession, $library_source, $library_selection, $secondary_sample_accession) = @{$expt};
 	  
-	  my %samples = ();
-	  foreach my $expt (@experiments) {
-	    my ($experiment_accession, $library_source, $library_selection, $secondary_sample_accession) = @{$expt};
-	    #	$ini->newval($secondary_study_accession, 'experiment_accession', "$experiment_accession");
-# always TRANSCRIPTOMIC	    $ini->newval($secondary_study_accession, "library_source_$experiment_accession", "$library_source");
-	    $ini->newval($secondary_study_accession, "library_selection_$experiment_accession", "$library_selection");      
-	    $ini->newval($secondary_study_accession, "library_sample_$experiment_accession", "$secondary_sample_accession");      
-	    $samples{$secondary_sample_accession} = 1;
+	  # see if this is a new Experiment in an existing study
+	  if (! $ini->exists($secondary_study_accession, "library_selection_$experiment_accession") && grep /^$secondary_study_accession$/, @existing_studies) {
+	    push @{$novel_experiments{"${phylum_name}/$species_file"}}, $experiment_accession;
 	  }
 	  
-	  foreach my $secondary_sample_accession (keys %samples) {
+	  if (! $ini->exists($secondary_study_accession, "library_selection_$experiment_accession")) {
+	    $new_samples{$secondary_sample_accession} = 1; # note this experiment is being written and so we will need the sample tags as well
+	  }
+	  
+	  $ini->newval($secondary_study_accession, "library_selection_$experiment_accession", "$library_selection");      
+	  $ini->newval($secondary_study_accession, "library_sample_$experiment_accession", "$secondary_sample_accession");      	  
+	  $samples{$secondary_sample_accession} = 1;
+	}
+	
+	foreach my $secondary_sample_accession (keys %samples) {
+	  if (exists $new_samples{$secondary_sample_accession}) {
 	    $ini->newval($secondary_study_accession, "sample_Colour_$secondary_sample_accession", '');
 	    $ini->newval($secondary_study_accession, "sample_ChEBI_ID_$secondary_sample_accession", '');
 	    $ini->newval($secondary_study_accession, "sample_WormBaseLifeStage_$secondary_sample_accession", '');
 	  }
 	}
+	
       }
     }
     $ini->RewriteConfig;
+
+    # check to see if all the Studies pulled out of the ENA match the Studies in the .ini file for this species
+    foreach my $study (@existing_studies) {
+      if (! exists $data{$species}{$study}) {
+	push @{$studies_not_seen{"${phylum_name}/$species_file"}}, $study; 
+      }
+    }
   }
 }
 
@@ -144,6 +165,34 @@ foreach my $file (sort {$a cmp $b} keys %updated_files) {
   print "\t$file\n";
 }
 print "\n";
+
+# check that all the species files are still in use
+foreach my $phylum (keys %phyla) { # nematode and platyhelminth
+  my $phylum_name = $phyla{$phylum};
+  opendir(my $dh, "$dir/$phylum_name") || die "can't opendir $dir/$phylum_name: $!";
+  while(my $file = readdir $dh) {
+    if ($file eq '.' || $file eq '..') {next}
+    if ($file =~ /~$/) {next} #  ignore emacs backup files
+    if (! exists $species_files_seen{"$phylum_name/$file"}) {
+      print "WARNING: File '$phylum_name/$file' no longer holds data found in the ENA (has the species name changed?)\n";
+    }
+  }
+  closedir $dh;
+}
+
+# check that all studies are still in use
+foreach my $sp (keys %studies_not_seen) {
+  foreach my $st (@{$studies_not_seen{$sp}}) {
+    print "WARNING: Study '$st' in '$sp' is no longer found in the ENA\n";
+  }
+}
+
+# report novel experiments in existing Studies
+foreach my $sp (keys %novel_experiments) {
+  foreach my $ex (@{$novel_experiments{$sp}}) {
+    print "WARNING: Experiment '$ex' in '$sp' has been recently added to an existing Study\n";
+  }
+}
 
 ###########################################################
 
