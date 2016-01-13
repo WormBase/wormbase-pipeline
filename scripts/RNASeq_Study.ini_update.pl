@@ -19,7 +19,7 @@ GetOptions ("help"       => \$help,
             "dir:s"      => \$dir, # the ouput directory
 );
 
-if (!defined $dir) {$dir = glob("~/Parasite_config");}
+if (!defined $dir) {die "-dir output directory is not defined\n";}
 mkdir $dir, 0755;
 mkdir "$dir/nematoda", 0755;
 mkdir "$dir/platyhelminthes", 0755;
