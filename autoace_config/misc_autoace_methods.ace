@@ -23,9 +23,9 @@
 //      DECIDED WHERE IT SHOULD GO ON THE Fmap VIA Right_priority        //
 //									 // 
 // iii) IF GFF3 DUMPING FOR THE OBJECT(s) ASSOCIATED WITH THE METHOD IS	 // 
-//      NOT SIMPLE (i.e. HIERARCHICAL), YOU WILL NEED TO CONNECT IT TO //
-//      THE APPROPRIATE Ace2SO OBJECT				 //
-//								 //
+//      NOT SIMPLE (i.e. HIERARCHICAL), YOU WILL NEED TO CONNECT IT TO   //
+//      THE APPROPRIATE Ace2SO OBJECT				         //
+//								         //
 ///////////////////////////////////////////////////////////////////////////
 
 				//////////////////////////////
@@ -73,6 +73,7 @@ SO_children
 ///////////////////////////////////////
 
 Method : "operon"
+Remark "Nematode Operon is a closely spaced gene clusters similar to bacterial operons where trans-splicing is usually present."
 Colour DARKGRAY 
 Show_up_strand	
 Width 1.000000
@@ -82,6 +83,7 @@ GFF_feature "operon"
 GFF_SO "SO:0000178" // operon
 
 Method : "Deprecated_operon"
+Remark "Is an operon that was previously seen as an active operon."
 Colour PURPLE 
 Show_up_strand
 Width 1.300000
@@ -90,7 +92,8 @@ GFF_source "deprecated_operon"
 GFF_feature "deprecated_operon"
 GFF_SO "SO:0000178" // operon
 
-Method : "Gene" 
+Method : "Gene"
+Remark "A WormBase gene has a stable identifier and is used to collect curated data together. These genes can correspond to either a cloned or uncloned loci. The gene is mapped to the genome as a \"span\" if data is sufficient to enable accurate mapping and this placement allows for the association and calculation of additional meta data."
 Colour LIGHTRED
 Show_up_strand	
 Width 1.000000
@@ -99,7 +102,8 @@ GFF_source "gene"
 GFF_feature "gene"
 GFF_SO "SO:0000704" "gene_ace2so" // gene
 
-Method : "Transposon_gene" 
+Method : "Transposon_gene"
+Remark "A gene that has been classified as being of Transposon in origin." 
 Colour LIGHTRED
 Show_up_strand	
 Width 1.000000
@@ -109,6 +113,7 @@ GFF_feature "gene"
 GFF_SO "SO:0000111" "transposon_gene_ace2so" // transposable_element_gene
 
 Method : "curated" 
+Remark "This corresponds to a Coding Sequence that has been manually curated and classified as a protein coding ORF."
 Colour DARKBLUE
 CDS_colour DARKBLUE
 Show_up_strand	
@@ -118,7 +123,8 @@ EMBL_feature "CDS"
 GFF_source "curated"
 GFF_SO "SO:0000120" "curated_CDS_ace2so" // protein_coding_primary_transcript, but Ace2SO has "No_span" set, so unused
 
-Method : "history" 
+Method : "history"
+Remark "This history classification is used when the annotation has been retired or superseded."
 Colour GRAY
 CDS_colour MAGENTA
 Show_up_strand GRAY
@@ -128,6 +134,7 @@ GFF_source "history"
 GFF_SO "SO:0000120" "nc_transcript_ace2so" //  protein_coding_primary_transcript
 
 Method : "history_pseudogene"
+Remark "This corresponds to a pseudogene that has either been re-classified or modified from the structure represented by this annotation."
 Colour GRAY
 CDS_colour MAGENTA
 Show_up_strand GRAY
@@ -137,6 +144,7 @@ GFF_source "history"
 GFF_SO "SO:0000516" "nc_transcript_ace2so" // pseudogenic_transcript
 
 Method : "history_transcript"
+Remark "This corresponds to a transcript that has either been re-classified or modified from the structure represented by this annotation."
 Colour GRAY
 CDS_colour MAGENTA
 Show_up_strand GRAY
@@ -145,7 +153,8 @@ Show_text
 GFF_source "history"
 GFF_SO "SO:0000483" "nc_transcript_ace2so" // nc_primary_transcript
 
-Method : "history_operon" 
+Method : "history_operon"
+Remark "This corresponds to an operon that has either been modified from the structure represented by this annotation."
 Colour GRAY
 CDS_colour MAGENTA
 Show_up_strand GRAY
@@ -156,6 +165,7 @@ GFF_feature "operon"
 GFF_SO "SO:0000178" // operon
 
 Method : "history_transposon"
+Remark "This corresponds to a transposon that has either been re-classified or modified from the structure represented by this annotation."
 Colour GRAY
 Show_up_strand GRAY
 Bumpable	
@@ -164,7 +174,8 @@ GFF_source "history"
 GFF_feature "transposable_element"
 GFF_SO "SO:0000101" // transposable_element
 
-Method : "history_feature" 
+Method : "history_feature"
+Remark " This corresponds to a Feature that has been retired"
 Colour GRAY
 CDS_colour MAGENTA
 Show_up_strand GRAY
@@ -173,7 +184,8 @@ Show_text
 GFF_source "history"
 GFF_SO "SO:0000110" // sequence_feature
 
-Method : "Pseudogene" 
+Method : "Pseudogene"
+Remark "A gene that closely resembles a known functional gene but has been assessed and classified as non-functional" 
 Colour DARKGRAY
 Show_up_strand	
 Width 1.500000
@@ -184,6 +196,7 @@ GFF_source "Pseudogene"
 GFF_SO "SO:0000516" "nc_transcript_ace2so" // pseudogenic_transcript
 
 Method : "Coding_transcript" 
+Remark "An automatically generated transcript object produced by building UTRs onto the curated CDS structure utilising sequence data from a variety of sources."
 Colour DARKGREEN
 Show_up_strand
 Width 1.5
@@ -192,16 +205,18 @@ GFF_source "Coding_transcript"
 GFF_feature "protein_coding_primary_transcript"
 GFF_SO "SO:0000234" "coding_transcript_ace2so" // mRNA
 
-Method : "Non_coding_transcript"  // Use for isoforms of coding genes which don't translate
+Method : "non_coding_transcript"  // Use for isoforms of coding genes which don't translate
+Remark "An Isoform from a coding loci that does not translate or has abnormal splicing."
 Colour DARKGRAY
 Show_up_strand	
 Show_text	
 EMBL_feature "misc_RNA"
-GFF_source "Non_coding_transcript"
+GFF_source "non_coding_transcript"
 GFF_feature "nc_primary_transcript"
 GFF_SO "SO:0000483" "nc_transcript_ace2so" // nc_primary_transcript
 
-Method : "Transposon" 
+Method : "Transposon"
+Remark "A curated genomic span for visualisation and collection of meta data pertaining to one Transposable unit embedded in the genome." 
 Colour DARKGRAY
 Width 2.000000
 Show_text	
@@ -211,6 +226,7 @@ GFF_feature "transposable_element"
 GFF_SO "SO:0000101" "transposable_element_ace2so" // transposable_element
 
 Method : "Transposon_CDS"
+Remark "A coding sequence that appears to belong to a Transposon related gene."
 Colour DARKGRAY
 CDS_colour DARKGRAY
 Show_up_strand	
@@ -220,7 +236,8 @@ GFF_source "Transposon_CDS"
 GFF_feature "transposable_element_CDS"
 GFF_SO "SO:0000234" "nc_transcript_ace2so" // mRNA
 
-Method : "Transposon_Pseudogene" 
+Method : "Transposon_Pseudogene"
+Remark "A Pseudogenic transcript that appears to belong to a Transposon related gene."
 Colour DARKGRAY
 Show_up_strand	
 Width 1.500000
@@ -233,6 +250,7 @@ GFF_feature "transposable_element_pseudogene"
 GFF_SO "SO:0000516" "nc_transcript_ace2so" // pseudogenic_transcript
 
 Method : "ncRNA" 
+Remark "An RNA transcript that does not encode for a protein rather the RNA molecule is the gene product"
 Colour GREEN
 Show_up_strand	
 Width 2.000000
@@ -243,6 +261,7 @@ GFF_feature "ncRNA"
 GFF_SO "SO:0000655" "nc_transcript_ace2so" // ncRNA
 
 Method : "7kncRNA" 
+Remark "This specific set of ncRNA genes was produced by the modENCODE project."
 Colour RED
 Show_up_strand	
 Width 2.000000
@@ -258,13 +277,14 @@ Colour GREEN
 Show_up_strand 
 Width 2.000000
 Show_text
-Remark "SO:0000252" 
+Remark "RNA that comprises part of a ribosome, and that can provide both structural scaffolding and catalytic activity (SO:0000252)." 
 GFF_source "rRNA"
 GFF_feature "rRNA"
 EMBL_feature "rRNA"
 GFF_SO "SO:0000252" "nc_transcript_ace2so" // rRNA
 
-Method : "rRNA_Pseudogene" 
+Method : "rRNA_Pseudogene"
+Remark "A specific catagory for rRNA Pseudogenes" 
 Colour DARKGRAY
 Show_up_strand	
 Width 1.500000
@@ -279,13 +299,14 @@ Colour GREEN
 Show_up_strand	
 Bumpable	
 Show_text
-Remark "SO:0000253"
+Remark "RNA that encodes a Transfer RNA (tRNA) (SO:0000253)"
 EMBL_feature "tRNA"
 GFF_source "tRNA"
 GFF_feature "tRNA"
 GFF_SO "SO:0000253" "nc_transcript_ace2so" // tRNA
 
-Method : "tRNAscan-SE-1.23" 
+Method : "tRNAscan-SE-1.23"
+Remark "A predicted Transfer RNA (tRNA)."
 Colour GREEN
 Show_up_strand	
 Bumpable	
@@ -295,7 +316,8 @@ GFF_source "tRNA"
 GFF_feature "tRNA"
 GFF_SO "SO:0000253" "nc_transcript_ace2so" // tRNA
 
-Method : "tRNAscan-SE-1.3" 
+Method : "tRNAscan-SE-1.3"
+Remark "A predicted Transfer RNA (tRNA)."
 Colour GREEN
 Show_up_strand	
 Bumpable	
@@ -306,6 +328,7 @@ GFF_feature "tRNA"
 GFF_SO "SO:0000253" "nc_transcript_ace2so" // tRNA
 
 Method : "tRNA_Pseudogene" 
+Remark "A specific catagory of tRNA Pseudogenes" 
 Colour DARKGRAY
 Show_up_strand	
 Width 1.500000
@@ -321,7 +344,7 @@ Show_up_strand
 Width 2.000000
 Show_text 
 EMBL_feature "scRNA"
-Remark "SO:0000013"
+Remark "A small non coding RNA sequence, present in the cytoplasm (SO:0000013)."
 GFF_source "scRNA"
 GFF_feature "scRNA"
 GFF_SO "SO:0000013" "nc_transcript_ace2so" // scRNA
@@ -332,12 +355,13 @@ Show_up_strand
 Width 2.000000
 Show_text 
 EMBL_feature "snRNA"
-Remark "SO:0000274"
+Remark "A small nuclear RNA molecule involved in pre-mRNA splicing and processing (SO:0000274)."
 GFF_source "snRNA"
 GFF_feature "snRNA"
 GFF_SO "SO:0000274" "nc_transcript_ace2so" // snRNA
 
-Method : "snlRNA" 
+Method : "snlRNA"
+Remark "An RNA that has been observed to be similar to other small nuclear RNA genes but has been classified as snRNA-like."
 Colour GREEN
 Show_up_strand 
 Width 2.000000
@@ -353,40 +377,40 @@ Show_up_strand
 Width 2.000000
 Show_text 
 EMBL_feature "snoRNA"
-Remark "SO:0000275"
+Remark "small nucleolar RNA which are associated with the eukaryotic nucleus as components of small nucleolar ribonucleoproteins (SO:0000275)."
 GFF_source "snoRNA"
 GFF_feature "snoRNA"
 GFF_SO "SO:0000275" "nc_transcript_ace2so" // snoRNA
 
-Method : "miRNA" //Small, ~22-nt, RNA molecule that is the endogenous transcript of a miRNA gene
+Method : "miRNA"
 Colour GREEN
 Show_up_strand 
 Width 2.000000
 Show_text 
 EMBL_feature "miRNA"
-Remark "SO:0000276"
+Remark "Small, ~22-nt, RNA molecule that is the endogenous transcript of a miRNA gene (SO:0000276)"
 GFF_source "miRNA_mature" //expanded to be more descriptive
 GFF_feature "miRNA" //Changed inline with SO:0000276
 GFF_SO "SO:0000276" "nc_transcript_ace2so" // miRNA
 
-Method : "miRNA_primary_transcript" // A primary transcript encoding a micro RNA.
+Method : "miRNA_primary_transcript"
 Colour GREEN
 Show_up_strand 
 Width 2.000000
 Show_text 
 EMBL_feature "prim_transcript"
-Remark "SO:0000647"
+Remark "A primary transcript encoding a micro RNA (SO:0000647)"
 GFF_source "miRNA_primary_transcript"
 GFF_feature "miRNA_primary_transcript"
 GFF_SO "SO:0000647" "nc_transcript_ace2so" // miRNA_primary_transcript
 
-Method : "pre_miRNA" //The 60-70 nucleotide region remain after Drosha processing of the primary transcript, that folds back upon itself to form a hairpin structure.
+Method : "pre_miRNA"
 Colour GREEN
 Show_up_strand 
 Width 2.000000
 Show_text 
 EMBL_feature "precursor_RNA"
-Remark "SO:0001244"
+Remark "The 60-70 nucleotide region remain after Drosha processing of the primary transcript, that folds back upon itself to form a hairpin structure (SO:0001244)"
 GFF_source "pre_miRNA"
 GFF_feature "pre_miRNA"
 GFF_SO "SO:0001244" "nc_transcript_ace2so" // pre_miRNA
@@ -397,7 +421,7 @@ Show_up_strand
 Width 2.000000
 Show_text 
 EMBL_feature "stRNA"
-Remark "SO:0000649"
+Remark "Small temporal RNA, ~21 nucleotides molecule that regulate temporal development (SO:0000649)."
 GFF_source "stRNA"
 GFF_feature "stRNA"
 GFF_SO "SO:0000649" "nc_transcript_ace2so" // stRNA
@@ -408,7 +432,7 @@ Show_up_strand
 Width 2.000000
 Show_text 
 EMBL_feature "antisense_RNA"
-Remark "Antisense RNA is RNA that is transcribed from the coding, rather than the template, strand of DNA. It is therefore complementary to mRNA. (SO:0000644)"
+Remark "Antisense RNA is RNA that is transcribed from the coding, rather than the template, strand of DNA. It is therefore complementary to mRNA (SO:0000644)."
 GFF_source "asRNA"
 GFF_feature "asRNA"
 GFF_SO "SO:0000644" "nc_transcript_ace2so" // asRNA
@@ -419,7 +443,7 @@ Show_up_strand
 Width 2.000000
 Show_text 
 EMBL_feature "lincRNA"
-Remark "large intervening non-coding RNA (SO:0001463)"
+Remark "large intervening non-coding RNA (SO:0001463)."
 GFF_source "lincRNA"
 GFF_feature "lincRNA"
 GFF_SO "SO:0001463" "nc_transcript_ace2so" // lincRNA
@@ -430,7 +454,7 @@ Show_up_strand
 Width 2.000000
 Show_text 
 EMBL_feature "piRNA"
-Remark "A small non coding RNA, part of a silencing system that prevents the spreading of selfish genetic elements. (SO:0001035)"
+Remark "A small non coding RNA, part of a silencing system that prevents the spreading of selfish genetic elements (SO:0001035)."
 GFF_source "piRNA"
 GFF_feature "piRNA"
 GFF_SO "SO:0001035" "nc_transcript_ace2so" // piRNA
@@ -754,6 +778,7 @@ GFF_SO "SO:0001059"
 ////////////////////////////
 
 Method : "fgenesh"
+Remark "Gene models predicted by fgenesh"
 Colour DARKRED
 CDS_colour DARKRED
 Show_up_strand DARKRED
@@ -762,6 +787,7 @@ Show_text
 GFF_SO "SO:0000120" "predicted_CDS_ace2so" // protein_coding_primary_transcript, but No_span
 
 Method : "jigsaw" 
+Remark "Gene models predicted by jigsaw"
 Colour ORANGE
 CDS_colour ORANGE
 Show_up_strand ORANGE
@@ -770,6 +796,7 @@ Show_text
 GFF_SO "SO:0000120" "predicted_CDS_ace2so" // protein_coding_primary_transcript, but No_span
 
 Method : "genBlastG" // homology-based predictions for Tier II species from Jack Chen's group
+Remark "Gene models predicted by genBlastG (a homology-based predictions for non-elegans species from Jack Chen's Lab)."
 Colour GREEN
 CDS_colour GREEN
 Show_up_strand GREEN
@@ -778,6 +805,7 @@ Show_text
 GFF_SO "SO:0000120" "predicted_CDS_ace2so" // protein_coding_primary_transcript, but No_span
 
 Method : "Genefinder" 
+Remark "Gene models predicted by Genefinder"
 Colour DARKGRAY
 CDS_colour DARKGRAY
 Show_up_strand DARKGRAY
@@ -786,6 +814,7 @@ Show_text
 GFF_SO "SO:0000120" "predicted_CDS_ace2so" // protein_coding_primary_transcript, but No_span
 
 Method : "ensembl"
+Remark "Gene models predicted by ensembl"
 Colour ORANGE
 CDS_colour ORANGE
 Show_up_strand ORANGE
@@ -794,6 +823,7 @@ Show_text
 GFF_SO "SO:0000120" "predicted_CDS_ace2so" // protein_coding_primary_transcript, but No_span
 
 Method : "twinscan" 
+Remark "Gene models predicted by twinscan" 
 Colour DARKGREEN
 CDS_colour DARKGREEN
 Show_up_strand DARKGREEN
@@ -802,12 +832,18 @@ Show_text
 GFF_SO "SO:0000120" "predicted_CDS_ace2so" // protein_coding_primary_transcript, but No_span
 
 Method : "mGene"
+Remark "Gene models predicted by mGene"
 Colour	BROWN
 CDS_colour	BROWN
 Show_up_strand	BROWN
 Bumpable
 Show_text
 GFF_SO "SO:0000120" "predicted_CDS_ace2so" // protein_coding_primary_transcript, but No_span
+
+
+////////////////////////////
+//  RNASeq data methods   //
+////////////////////////////
 
 Method : "Polysome" // Polysome RNASeq tags aligned to the genome fromm the paper by Lamm, Fire et al. 2011
 Colour LIGHTRED
@@ -2814,7 +2850,8 @@ GFF_source "Chronogram"
 GFF_feature "reagent"
 GFF_SO "SO:0000695" // reagent
 
-Method : "Orfeome" 
+Method : "Orfeome"
+Remark "A set of Three Prime UTRs produced by the UTRome project." 
 Colour	BLUE
 Width 1.000000
 Show_text	
@@ -2891,6 +2928,14 @@ GFF_SO "SO:0000006" // PCR_product
 ///////////////////////////
 // Miscellaneous methods //
 ///////////////////////////
+
+Method : "hand_built"
+Remark "A temporary method used in acedb when curators are producing new gene structures." 
+Colour DARKBLUE
+Show_up_strand	
+Bumpable	
+Show_text	
+
 
 Method : "mRNA" //??
 Colour DARKRED
@@ -3356,7 +3401,8 @@ Show_text
 // Repeat methods //
 ////////////////////
 
-Method : "RepeatMasker" 
+Method : "RepeatMasker"
+Remark "A region of the genome masked using the RepeatMasker programme utilising a custom repeat library." 
 Colour RED
 Score_by_width	
 Score_bounds 50.000000 500.000000
@@ -3409,13 +3455,6 @@ Intron_min 450
 Exon_min 33
 Intron_cost -1.500000 55.000000
 Inter_gene_cost -5.000000
-
-
-Method : "hand_built" 
-Colour DARKBLUE
-Show_up_strand	
-Bumpable	
-Show_text	
 
 Method : "UTR"
 Colour CERISE
@@ -3654,7 +3693,7 @@ Right_priority 2.55
 Method : "Transposon_Pseudogene"
 Right_priority 2.55
 
-Method : "Non_coding_transcript"
+Method : "non_coding_transcript"
 Right_priority 2.55
 
 Method : "Transcript"
