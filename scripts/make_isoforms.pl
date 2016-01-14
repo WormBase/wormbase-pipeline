@@ -178,6 +178,8 @@ sub process_genes_in_sequence {
       $biotype = 'Transposon';
     } else {
       $biotype = 'Transcript'; # ncRNA
+      my $gene_class = $gene->Gene_class;
+      if ($gene_class eq 'rrn') {return} # Ribosomal RNA causes problems because there are thousands of possible isoforms found in these.
     }
     #print "sense = $sense biotype = $biotype\n";
 
