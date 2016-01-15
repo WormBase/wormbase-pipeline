@@ -174,6 +174,8 @@ sub process_genes_in_sequence {
       $biotype = "CDS";
     } elsif (defined $gene_pseudogene) {
       $biotype = 'Pseudogene';
+      my $gene_class = $gene->Gene_class;
+      if ($gene_class eq 'rrn') {next} # Ribosomal RNA causes problems because there are thousands of possible isoforms found in these.
     } elsif (defined $gene_transposon) {
       $biotype = 'Transposon';
     } else {
