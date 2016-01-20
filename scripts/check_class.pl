@@ -1,9 +1,9 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# dbcomp.pl
+# check_clss.pl
 #
 # Counts the number of objects in an ACEDB database for each Class stated in the config file
-# Compares this number to those from a second database.
+# Compares this number to those from a previous version of the database at the same stage in the Build
 #
 # Last updated by: $Author: mh6 $
 # Last updated on: $Date: 2014-02-13 17:10:13 $
@@ -29,7 +29,7 @@ $|=1;
 my ($help, $debug, $test, $verbose, $store, $wormbase);
 my ($database, $database1, $database2, $classes, $species, $stage);
 my ($dbname_0, $dbname_1, $dbname_2);
-my ($camace, $genace, $csh, $caltech, $misc_static, $briggsae, $incomplete, $data_sets, $pre_merge);
+my ($camace, $genace, $csh, $caltech, $misc_static, $briggsae, $incomplete, $data_sets, $pre_merge, $ftp_sites);
 
 GetOptions (
 	    "help"          => \$help,
@@ -48,6 +48,7 @@ GetOptions (
 	    "incomplete"    => \$incomplete,
 	    "data_sets"     => \$data_sets,
 	    "pre_merge"     => \$pre_merge,
+	    "ftp_sites"     => \$ftp_sites,
 	    "species:s"     => \$species,
 	    "stage:s"       => \$stage,
 	    );
@@ -113,6 +114,7 @@ $stage="unknown" if (!defined $stage);
  @classes = (@classes, &set_classes('incomplete')) if ($incomplete);
  @classes = (@classes, &set_classes('data_sets')) if ($data_sets);
  @classes = (@classes, &set_classes('pre_merge')) if ($pre_merge);
+ @classes = (@classes, &set_classes('ftp_sites')) if ($ftp_sites);
 
 $log->write_to("Checking $dbname_1 vs $dbname_2 for classes:\n@classes\n\n");
 
@@ -164,10 +166,12 @@ if (!$got_prev_results) {
   $dbname_1 = '';
 }
 
+# display header
 $log->write_to(sprintf("%-22s %7s %7s %7s %7s\n", "CLASS","($dbname_0)",$dbname_1,$dbname_2,"Difference"));
 
 my %seen;
 my $count = 0;
+my $errors = 0;
 foreach my $class (@classes) {
 
   ##################################################
@@ -183,11 +187,13 @@ foreach my $class (@classes) {
   if ($count2 == 0) {
     $err = "***** POSSIBLE ERROR *****";
     $log->error;
+    $errors++;
   } elsif (	# we expect the 'incomplete' classes to be less than in currentdb
       ($count2 < $count1 * 0.9 || 
       $count2 > $count1 * 1.1)) {
     $err = "***** POSSIBLE ERROR *****";
     $log->error;
+    $errors++;
   }
   $count++;
 
@@ -195,9 +201,9 @@ foreach my $class (@classes) {
   if ($seen{$class}) {next;}
   $seen{$class} = 1;
 
-  $log->write_to(sprintf("%-22s %7d %7d %7d %7d %s\n", $class,$count0,$count1,$count2,$diff,$err));
+  $log->write_to(sprintf("%-22s %7d %7d %7d %7d %s\n", $class,$count0,$count1,$count2,$diff,$err)) if ($err || $verbose);
 }
-
+$log->write_to("\n$count class counts checked, $errors potential errors found\n");
 
 # Email log file
 $log->mail();
@@ -587,6 +593,103 @@ sub set_classes {
 		"Movie",
 		"Structure_data",
 		);  
+# these classes are the ones available at the end of the Build, just before making the FTP_sites directory
+  } elsif ($mode eq "pre_merge") { 
+    @classes = (
+		"Sequence",
+		"CDS", 
+		"Transposon",
+		"Transcript",
+		"Pseudogene",
+		"PCR_product",
+		"Transposon_CDS",
+		"cDNA_sequence",
+		"${species}_CDS",
+		"${species}_pseudogenes",
+		"${species}_RNA_genes",
+		"Class",
+		"Model",
+		"Method",
+		"Clone",
+		"Coding_transcripts",
+		"Accession_number",
+		"Variation",
+		"Motif",
+		"Feature",
+		"Feature_data",
+		"Laboratory",
+		"Locus",
+		"Gene",
+		"Gene_class",
+		"Gene_name",
+		"Genome_Sequence",
+		"Map",
+		"Multi_pt_data",
+		"Picture",
+		"Pos_neg_data",
+		"Rearrangement",
+		"2_point_data",
+		"Strain",
+		"Operon",
+		"Analysis",
+		"Condition",
+		"GO_code",
+		"Peptide",
+		"Protein",
+		"Species",
+		"Transposon_family",
+		"Comment",
+		"Contig",
+		"Database",
+		"Display",
+		"DNA",
+		"Homol_data",
+		"NDB_Sequence",
+		"nematode_ESTs",
+		"SO_term",
+		"Table",
+		"Mass_spec_experiment",
+		"Mass_spec_peptide",
+		"Transgene",
+		"Expr_pattern",
+		"Expr_profile",
+		"Life_stage",
+		"Lineage",
+		"Cell",
+		"Cell_group",
+		"Paper",
+		"Author",
+		"Person",
+		"Person_name",
+		"LongText",
+		"Keyword",
+		"Oligo",
+		"Oligo_set",
+		"Phenotype",
+		"Phenotype_name",
+		"SK_map",
+		"Tree",
+		"TreeNode",
+		"Microarray",
+		"Microarray_results",
+		"Microarray_experiment",
+		"Expression_cluster",
+		"Anatomy_name",
+		"Anatomy_term",
+		"Anatomy_function",
+		"Homology_group",
+		"Antibody",
+		"RNAi",
+		"SAGE_tag",
+		"SAGE_experiment",
+		"GO_term",
+		"Interaction",
+		"Position_matrix",
+		"LongText",
+		"Movie",
+		"Structure_data",
+		);  
+
   }
 
 
