@@ -23,7 +23,7 @@ Filter "Genomic_Canonical AND (Species = C*briggsae)"
 Class cDNA_Sequence
 Visible
 Is_a_subclass_of Sequence
-Filter "((Method = EST_elegans) OR (Method = NDB))" 
+Filter "((Method = EST_elegans) OR (Method = NDB) OR (Method = EST_trinity))" 
 
 Class nematode_ESTs
 Visible
