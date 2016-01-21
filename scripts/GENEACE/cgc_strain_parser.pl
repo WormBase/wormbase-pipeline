@@ -315,7 +315,7 @@ while(<INPUT>){
     print DELETE_STRAIN  "-D Made_by $wperson\n";
   }
   else {
-    print STRAIN "Remark \"Made_by: $made_by\" CGC_data_submission\n";
+    print STRAIN "Remark \"Made_by: $made_by\" CGC_data_submission\n" if $made_by;
     print MISSINGPERSON "\"$made_by\" $strain\n";
     $log->write_to("$wperson is not a valid WBPerson\n\n");
   }
