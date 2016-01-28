@@ -1826,15 +1826,19 @@ sub pseud {
   my $DB_remark = $target_obj->DB_remark;
   $self->aceout("DB_remark \"$DB_remark\"\n") if (defined $DB_remark && $DB_remark ne '');
   $self->aceout("Gene $gene\n") if (defined $gene);
+
   my $Brief_identification = $target_obj->Brief_identification;
   $Brief_identification .= " Pseudogene.";
   $self->aceout("Brief_identification \"$Brief_identification\"\n") if (defined $Brief_identification);
   $self->aceout("Coding_pseudogene\n");
   $self->aceout("Method Pseudogene\n");
 
+  my $lab = $target_obj->From_laboratory;
+  $self->aceout("From_laboratory \"$lab\"\n") if (defined $lab && $lab ne '');
+  
   my $remark;
   my $USER = $ENV{USER};
-  $remark = "Remark \"[$date $USER] Converted this from a CDS to a Pseudogene based on the new structure derived from the the RNASeq splice data.\"";
+  $remark = "Remark \"[$date $USER] Converted this from a CDS to a Pseudogene based on the new structure derived from the RNASeq splice data.\"";
   $self->aceout("$remark Curator_confirmed $personid\n");
   $self->aceout("$remark From_analysis RNASeq\n");
 
