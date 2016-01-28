@@ -150,7 +150,8 @@ foreach my $phylum (keys %phyla) { # nematode and platyhelminth
 	    my $value = $data{$species}{$secondary_study_accession}{$param};
 	    $ini->newval($secondary_study_accession, $param, $value);
 	  }
-	  
+	  $ini->newval($secondary_study_accession, "Colour", '');
+
 	  # we can't get this field from the 'read_run' results section of the ENA warehouse, it has to be a separate query
 	  my $study_description = &get_study_description($secondary_study_accession);
 	  $ini->newval($secondary_study_accession, 'study_description', $study_description);
@@ -181,10 +182,9 @@ foreach my $phylum (keys %phyla) { # nematode and platyhelminth
 	
 	foreach my $secondary_sample_accession (keys %samples) {
 	  if (exists $new_samples{$secondary_sample_accession}) {
-	    $ini->newval($secondary_study_accession, "sample_Colour_$secondary_sample_accession", '');
-	    $ini->newval($secondary_study_accession, "sample_ChEBI_ID_$secondary_sample_accession", '');
 	    $ini->newval($secondary_study_accession, "sample_longLabel_$secondary_sample_accession", '');
 	    $ini->newval($secondary_study_accession, "sample_shortLabel_$secondary_sample_accession", '');
+	    $ini->newval($secondary_study_accession, "sample_ChEBI_ID_$secondary_sample_accession", '');
 	    $ini->newval($secondary_study_accession, "sample_WormBaseLifeStage_$secondary_sample_accession", '');
 	  }
 	}
