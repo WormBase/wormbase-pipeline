@@ -1881,8 +1881,8 @@
                       Associated_with_expression_pattern ?Expr_pattern XREF Associated_feature #Evidence 
                       Associated_with_Feature ?Feature XREF Associated_with_Feature #Evidence
                       Associated_with_construct ?Construct XREF Sequence_feature
+                      Associated_with_transcription_factor ?Transcription_factor XREF Associated_feature #Evidence
          Bound_by_product_of ?Gene XREF Gene_product_binds #Evidence //pad added this to show what gene it binds
-         Transcription_factor UNIQUE ?Transcription_factor XREF Binding_site 
          Confidential_remark ?Text //pad
          Remark ?Text #Evidence
          Method UNIQUE ?Method
@@ -1917,7 +1917,7 @@
                       Associated_with_gene ?Gene XREF Associated_transcription_factor #Evidence
                       Type Text #Evidence 
                       Remark Text #Evidence
-                      Binding_site ?Feature XREF Transcription_factor 
+                      Associated_feature ?Feature XREF Associated_with_transcription_factor #Evidence
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //
