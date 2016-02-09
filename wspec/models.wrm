@@ -3138,6 +3138,7 @@
                                        // default is "First_name Last_name"
              Full_name UNIQUE ?Person_name XREF Full_name_of // field for storing long name [030321 krb]
              Also_known_as ?Person_name XREF Other_name_of // new XREF added [030310 krb]
+        Principal_investigator // Tag used to identify a person who has a lab (used when CGC lab or not.)
         CGC_representative_for ?Laboratory XREF Representative
         Laboratory ?Laboratory XREF Registered_lab_members
         Affiliation Text // used for storing institute affiliations that aren't in their Address
