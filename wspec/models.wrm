@@ -3473,7 +3473,7 @@
                                  In_2_point ?2_point_data
                                  In_multi_point ?Multi_pt_data
                                  In_pos_neg_data ?Pos_neg_data
-                                // these are for when the locus is mapped
+                                 // these are for when the locus is mapped
                     Marked_rearrangement ?Rearrangement XREF By_variation
            Description Phenotype ?Phenotype XREF Variation #Phenotype_info
                        Phenotype_remark ?Text #Evidence
@@ -3503,9 +3503,9 @@
                   Nonsense UNIQUE Amber_UAG Text #Evidence
                                   Ochre_UAA Text #Evidence
                                   Opal_UGA Text #Evidence
-                  Ochre_UAA_or_Opal_UGA Text #Evidence
-                  Amber_UAG_or_Ochre_UAA Text #Evidence
-                  Amber_UAG_or_Opal_UGA Text #Evidence 
+                                  Ochre_UAA_or_Opal_UGA Text #Evidence
+                                  Amber_UAG_or_Ochre_UAA Text #Evidence
+                                  Amber_UAG_or_Opal_UGA Text #Evidence 
                   Splice_site UNIQUE  Donor Text #Evidence
                                       Acceptor Text #Evidence
                   Frameshift Text #Evidence
@@ -3785,6 +3785,7 @@
 // WS250
 // WS251
 // WS252
+// 
 
 
 
