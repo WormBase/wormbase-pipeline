@@ -1821,21 +1821,24 @@ sub pseud {
       $self->aceout(" \"". $evidence_value2->name."\"") if ($evidence_value2);
       $self->aceout("\n");
     }
+    my $DB_remark = $target_obj->DB_remark;
+    $self->aceout("DB_remark \"$DB_remark\"\n") if (defined $DB_remark && $DB_remark ne '');
+    my $Brief_identification = $target_obj->Brief_identification;
+    $Brief_identification .= " Pseudogene.";
+
+    my $lab = $target_obj->From_laboratory;
+    $self->aceout("From_laboratory \"$lab\"\n") if (defined $lab && $lab ne '');
   }
-
-  my $DB_remark = $target_obj->DB_remark;
-  $self->aceout("DB_remark \"$DB_remark\"\n") if (defined $DB_remark && $DB_remark ne '');
+  else {
+   my $Brief_identification = "Pseudogene";
+   $self->aceout("Brief_identification \"$Brief_identification\"\n") if (defined $Brief_identification);
+   my $lab = $subject_obj->From_laboratory;
+   $self->aceout("From_laboratory \"$lab\"\n") if (defined $lab && $lab ne '');
+  }
   $self->aceout("Gene $gene\n") if (defined $gene);
-
-  my $Brief_identification = $target_obj->Brief_identification;
-  $Brief_identification .= " Pseudogene.";
-  $self->aceout("Brief_identification \"$Brief_identification\"\n") if (defined $Brief_identification);
   $self->aceout("Coding_pseudogene\n");
   $self->aceout("Method Pseudogene\n");
 
-  my $lab = $target_obj->From_laboratory;
-  $self->aceout("From_laboratory \"$lab\"\n") if (defined $lab && $lab ne '');
-  
   my $remark;
   my $USER = $ENV{USER};
   $remark = "Remark \"[$date $USER] Converted this from a CDS to a Pseudogene based on the new structure derived from the RNASeq splice data.\"";
@@ -1844,10 +1847,11 @@ sub pseud {
 
 			 
   $self->aceout("\n\n");
-  
-  # delete the old CDS target
-  $self->aceout("\n\n-D CDS $target\n\n");
-  
+
+  if (defined $target_obj) {  
+    # delete the old CDS target
+    $self->aceout("\n\n-D CDS $target\n\n");
+  }  
 
   # do we need to make any existing object into an isoform?
   if ($target =~ /(\S+?)b$/) { # making the 'b' isoform
