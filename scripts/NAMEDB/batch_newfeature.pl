@@ -1,4 +1,7 @@
-use lib '/nfs/WWWdev/SANGER_docs/lib/Projects/C_elegans/';
+#!/usr/bin/env perl
+# create consecutive new features in the name server based on a number requested
+
+use lib "$ENV{'CVS_DIR'}/NAMEDB/lib";
 use lib $ENV{'CVS_DIR'};
 
 use strict;
@@ -8,7 +11,7 @@ use Getopt::Long;
 my($test,$request,$USER);
 
 GetOptions (	"test"       => \$test,
-		"request:i"  => \$request,
+		"request:i"  => \$request, # how many features to create
 		"user:s"     => \$USER
            );
 
@@ -21,8 +24,8 @@ my $last_id;
 my $DB = 'wbgene_id;shap;3303';
 $DB    = 'test_wbgene_id;utlt-db:3307' if $test;
 my $DOMAIN  = 'Feature';
-my $db = NameDB_handler->new($DB,$USER,$USER,"/nfs/WWWdev/SANGER_docs/data");
-    $db->setDomain('Feature');
+my $db = NameDB_handler->new($DB,$USER,$USER);
+$db->setDomain('Feature');
 
 my $c = 0;
 while( $c < $request ){
