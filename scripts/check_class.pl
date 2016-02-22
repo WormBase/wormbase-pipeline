@@ -594,7 +594,7 @@ sub set_classes {
 		"Structure_data",
 		);  
 # these classes are the ones available at the end of the Build, just before making the FTP_sites directory
-  } elsif ($mode eq "pre_merge") { 
+  } elsif ($mode eq "ftp_sites") { 
     @classes = (
 		"Sequence",
 		"CDS", 
