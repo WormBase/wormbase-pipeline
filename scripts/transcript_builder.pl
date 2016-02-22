@@ -132,6 +132,8 @@ my $prob_file = sprintf("%s/%s", $transcript_dir, $problem_fname);
 $log->write_to("Going to write problems to $prob_file\n") if ($verbose);
 open (my $prob_fh,">$prob_file") or $log->log_and_die("cant open $prob_file\n");
 
+my %ignored_EST_data = &get_ignored_EST_data();
+
 foreach my $chrom ( @chromosomes ) {
 
   my ($link_start,$link_end);
@@ -187,6 +189,8 @@ foreach my $chrom ( @chromosomes ) {
       $data[9] =~ s/\"//g;
       $data[9] =~ s/Sequence:// ;
       next if @test_est and not grep { $_ eq $data[9] } @test_est;
+      
+      next if ($ignored_EST_data{$data[9]}); # ignore anything with a Ignore tag set
 
       $cDNA{$data[9]}{$data[3]} = $data[4];
 
@@ -753,6 +757,24 @@ sub load_EST_data {
     }
     close PAIRS;
   }
+}
+
+
+sub get_ignored_EST_data {
+
+  my %ignored_EST_data;
+  my $cmd = "select cdna from cdna in class cDNA_sequence where exists_tag cdna->Ignore";
+
+  open (TACE, "echo '$cmd' | $tace $db |") or die "cant open tace to $db using $tace\n";
+  while ( <TACE> ) { 
+    chomp;
+    s/\"//g;#"
+    my @data = split;
+    next unless ($data[0]);
+    next if $data[0]=~/acedb/;
+    $ignored_EST_data{$data[0]} = 1;
+  }
+  return %ignored_EST_data;
 }
 
 sub load_features {
