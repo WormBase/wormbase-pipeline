@@ -121,6 +121,7 @@ else {
 	my $gg=$g->name; 
 	$log->write_to("Error: $qclass $gg has no method\n"); 
 	$seen{$gg}=1;
+	print "Finished test 1 $qclass\n";
       }
 
       my @no_se = $db->fetch (-query => "FIND $qclass where !Source_exons");
@@ -158,19 +159,59 @@ else {
 	$log->write_to("Error: $qclass $gg has no Species $s\n"); 
 	$seen{$gg}=1;
       }
-    }
 
-    # and a test only for CDS
-    my @no_CDS = $db->fetch (-query => "FIND CDS where !CDS");
-    foreach my $g (@no_CDS) {
-      my $gg=$g->name; 
-	if (exists $seen{$gg}) {
-	  $s=' (seen already)';
-	} else {
-	  $s='';
+      # and a test only for CDS
+      if ($qclass eq "CDS"){
+	my @no_CDS = $db->fetch (-query => "FIND $qclass where !CDS");
+	foreach my $g (@no_CDS) {
+	  my $gg=$g->name; 
+	  if (exists $seen{$gg}) {
+	    $s=' (seen already)';
+	  } else {
+	    $s='';
+	  }
+	  $log->write_to("Error: CDS $gg has no CDS tag $s\n");
 	}
-      $log->write_to("Error: CDS $gg has no CDS tag $s\n");
+	my @CDS_bad_method = $db->fetch (-query => 'FIND CDS; method != "history"; method != "curated"; method != "Transposon_CDS"');
+	foreach my $g (@CDS_bad_method) {
+	  my $gg=$g->name; 
+	  if (exists $seen{$gg}) {
+	    $s=' (seen already)';
+	  } else {
+	    $s='';
+	  }
+	  $log->write_to("Error: CDS $gg has a bad method tag $s\n");
+	}
+      }
+      
+      if ($qclass eq "Transcript") {
+	my @Trans_bad_method = $db->fetch (-query => 'FIND Transcript; method != "history_transcript"; method != "*RNA*"; method != "non_coding_transcript"; method != "non_coding_transcript_isoformer"');
+	foreach my $g (@Trans_bad_method) {
+	  my $gg=$g->name; 
+	  if (exists $seen{$gg}) {
+	    $s=' (seen already)';
+	  } else {
+	    $s='';
+	  }
+	  $log->write_to("Error: Transcript $gg has a bad method tag $s\n");
+	}
+      }
+      if ($qclass eq "Pseudogene") {
+	my @Pseudo_bad_method = $db->fetch (-query => 'FIND Pseudogene; method != "history_pseudogene"; method != "Pseudogene"; method != tRNA_pseudogene; method != Transposon_Pseudogene; method != rRNA_pseudogene');
+	foreach my $g (@Pseudo_bad_method) {
+	  my $gg=$g->name; 
+	  if (exists $seen{$gg}) {
+	    $s=' (seen already)';
+	  } else {
+	    $s='';
+	  }
+	  $log->write_to("Error: Transcript $gg has a bad method tag $s\n");
+	}
+      }
     }
+    
+
+
 
     print STDERR "Fetching all genes...\n" if $verbose;
     @Predictions = $db->fetch (-query => 'Find All_genes where (Species = "'.$wormbase->full_name.'")');
@@ -376,8 +417,9 @@ sub main_gene_checks {
     if ($method_test =~ (/transcript/) or ($method_test =~ (/RNA/)) && $gene_model_name =~ (/\w+\d+\.\d+\Z/)) {
       my $prob_prediction = $gene_model->at('Visible.Brief_identification');
       unless ($method_test =~ (/history_transcript/)) {push(@error3, "ERROR: The Transcript $gene_model does not have a Brief_identification and will throw an error in the build :(!\n") if (!defined($prob_prediction));
-					  }
+						     }
     }
+    
 
     ###################################
     #All gene predictions should have #
