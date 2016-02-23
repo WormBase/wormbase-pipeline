@@ -16,7 +16,7 @@ Visible
 Class 
 Class Sequence 
 From 1 
-Condition method = "*EST*" OR method = "*NDB*"
+Condition method = "*EST*" OR method = "*NDB*" OR method = "RNASeq_trinity"
  
 Colonne 2 
 Width 25 
