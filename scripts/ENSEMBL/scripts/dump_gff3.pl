@@ -45,7 +45,11 @@ my @slices;
 
 if (@dump_slice) {
   foreach (@dump_slice) {
-    push @slices, $sa->fetch_by_region('toplevel',$_);
+    my $sl = $sa->fetch_by_region('toplevel',$_);
+    if (not defined $sl) {
+      die "Could not fetch slice for $_\n";
+    }
+    push @slices, $sl;
   }
 }
 else {
@@ -119,9 +123,10 @@ while( my $slice = shift @slices) {
         $tr_obj->{cds_end}   = $translation->genomic_end();
         $tr_obj->{translation_stable_id} = $translation_gff_id;
 
-        my $all_t_exons = $transcript->get_all_translateable_Exons();
+        my $all_t_exons = $transcript->get_all_CDS();
         
         while (my $cds = shift @{$all_t_exons}) {
+
           push @{$tr_obj->{'cds'}}, {
             gff_id    => $translation_gff_id,
             seqname   => $slice_name,
