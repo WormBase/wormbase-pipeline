@@ -152,6 +152,13 @@ unless (-e $config) {
         next if $line =~ /^The cache1 is full/;
         $line =~ s/Do you want write access \? \(y or n\) //;
 
+	# if we need to add more partitions to the wspec/database.wrm file
+	if ($line =~ /ERROR -  Can't extend database. You need to add partitions/) {
+	  $log->write_to("ERROR In 'tace $acedb' with query '$query'\n");
+	  $log->write_to("$line\n");
+	  $log->log_and_die("You need to add more partition lines to wspec/database.wrm\n");
+	}
+
 	#############################
 	# Common curator error tags #
 	#############################
