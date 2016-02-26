@@ -125,6 +125,8 @@ while( my $slice = shift @slices) {
 
         my $all_t_exons = $transcript->get_all_CDS();
         
+        # Note that the get_all_CDS method returns exons with phases that
+        # have already been converted to GFF3 style. No need for conversion then. 
         while (my $cds = shift @{$all_t_exons}) {
 
           push @{$tr_obj->{'cds'}}, {
@@ -133,7 +135,7 @@ while( my $slice = shift @slices) {
             start     => $cds->seq_region_start(),
             end       => $cds->seq_region_end(),
             strand    => $cds->strand(),
-            phase     => (3-$cds->phase())%3, # phase/frame conversion to a sane system
+            phase     => $cds->phase(),
           };
         }
 
