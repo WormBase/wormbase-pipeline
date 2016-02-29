@@ -529,16 +529,18 @@ sub copy_gff_files{
 
     my $gff_dir = "$targetdir/species/$gspecies/$bioproj";
     mkpath($gff_dir,1,0775);
-    my $fname_prefix = "$gspecies.$bioproj.$WS_version_name.annotations";
+    my $fname_prefix = "$gspecies.$bioproj.$WS_version_name";
+
+    my $target_gtf_file  = "$gff_dir/${fname_prefix}.canonical_geneset.gtf.gz";
     
     if (-e $source_gff2_file) {
       #concatenated whole genome file require for all species
-      my $target = "$gff_dir/${fname_prefix}.gff2";
+      my $target = "$gff_dir/${fname_prefix}.annotations.gff2";
       $wormbase->run_command("rm -f $target", $log);
       $wormbase->run_command("cp -f -R $source_gff2_file $target", $log);
       $wormbase->run_command("gzip -n -9 -f $target",$log);
     } elsif (-e "${source_gff2_file}.gz") {
-      my $target = "$gff_dir/${fname_prefix}.gff2.gz";
+      my $target = "$gff_dir/${fname_prefix}.annotations.gff2.gz";
       $wormbase->run_command("cp -f -R ${source_gff2_file}.gz $target", $log);
     }else {
       $log->write_to("WARNING: No GFF2 file for $species ($source_gff2_file)\n");
@@ -546,17 +548,20 @@ sub copy_gff_files{
     
     if (-e $source_gff3_file) {
       #concatenated whole genome file require for all species
-      my $target = "$gff_dir/${fname_prefix}.gff3";
+      my $target = "$gff_dir/${fname_prefix}.annotations.gff3";
       $wormbase->run_command("rm -f $target", $log);
       $wormbase->run_command("cp -f -R $source_gff3_file $target", $log);
-      $wormbase->run_command("gzip -n -9 -f $target",$log);
+      $wormbase->run_command("gzip -n -9 -f $target",$log);      
+
+      $wb->run_script("GFF_post_process/extract_canonical_geneset.pl -infile $source_gff3_file -outfile $target_gtf_file", $log);
+
     } elsif (-e "${source_gff3_file}.gz") {
       my $target = "$gff_dir/${fname_prefix}.gff3.gz";
       $wormbase->run_command("cp -f -R ${source_gff3_file}.gz $target", $log);
+      $wb->run_script("GFF_post_process/extract_canonical_geneset.pl -infile ${source_gff3_file}.gz -outfile $target_gtf_file", $log);
     } else {
-      $log->write_to("WARNING: No GFF3 file for $species ($source_gff3_file)\n");
+      $log->error("ERROR: No GFF3 file for $species ($source_gff3_file)\n");
     }
-
   }
 
   # copy tierIIIs from current build dir
@@ -1676,7 +1681,7 @@ sub check_manifest {
           foreach my $ntsp (keys %t3_species) {
             $stanzas[-1]->{species}->{$ntsp} = 1;
           }
-        } elsif ($tsp eq 'TIER2') {
+        } elsif ($tsp eq 'CORE') {
           foreach my $ntsp (keys %t2_species) {
             $stanzas[-1]->{species}->{$ntsp} = 1;
           }
@@ -1778,20 +1783,21 @@ GSPECIES.BIOPROJ.WSREL.assembly.agp.gz
 GSPECIES.BIOPROJ.WSREL.wormpep_package.tar.gz
 GSPECIES.BIOPROJ.WSREL.transposon_transcripts.fa.gz
 
-[TIER2]species/GSPECIES/BIOPROJ/annotation
+[CORE]species/GSPECIES/BIOPROJ/annotation
 GSPECIES.BIOPROJ.WSREL.geneIDs.txt.gz
 GSPECIES.BIOPROJ.WSREL.orthologs.txt.gz
 
-[TIER2]species/GSPECIES/BIOPROJ
+[CORE]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.best_blastp_hits.txt.gz
 GSPECIES.BIOPROJ.WSREL.annotations.gff2.gz
 GSPECIES.BIOPROJ.WSREL.ncRNA_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.mRNA_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.pseudogenic_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.intergenic_sequences.fa.gz
+GSPECIES.BIOPROJ.WSREL.canonical_geneset.gtf.gz
 GSPECIES.BIOPROJ.WSREL.xrefs.txt.gz
 
-[TIER2:pristionchus]species/GSPECIES/BIOPROJ/annotation
+[CORE:pristionchus]species/GSPECIES/BIOPROJ/annotation
 GSPECIES.BIOPROJ.WSREL.SRA_gene_expression.tar.gz
 GSPECIES.BIOPROJ.WSREL.RNASeq_controls_FPKM.dat
 
@@ -1823,6 +1829,8 @@ gene_association.WSREL.wb.c_japonica
 gene_association.WSREL.wb.c_brenneri
 gene_association.WSREL.wb.b_malayi
 gene_association.WSREL.wb.p_pacificus
+gene_association.WSREL.wb.o_volvulus
+gene_association.WSREL.wb.s_ratti
 gene_association.WSREL.wb
 gene_ontology.WSREL.obo
 phenotype_association.WSREL.wb
