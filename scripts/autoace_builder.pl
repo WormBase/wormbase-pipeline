@@ -146,8 +146,10 @@ $wormbase->run_script( "processGFF.pl -$processGFF",                       $log 
 
 $wormbase->run_script("GetPFAM_motifs.pl", $log) if $load_interpro;
 $wormbase->run_script("GetInterPro_motifs.pl", $log) if $load_interpro;
+$wormbase->run_script("check_class.pl -stage load_interpro -classes Motif", $log) if $load_interpro;
 
 $wormbase->run_script( 'make_wormpep.pl -initial -all',                    $log ) if $make_wormpep;
+$wormbase->run_script("check_class.pl -stage make_wormpep -classes Protein,Peptide", $log) if $make_wormpep;
 
 &map_features_to_genome() if $map_features;
 
@@ -157,10 +159,12 @@ $wormbase->run_script( 'BLAT_controller.pl -dump', $log ) if $prep_blat;
 $wormbase->run_script( 'BLAT_controller.pl -run', $log )        if $run_blat;
 #//--------------------------- batch job submission -------------------------//
 $wormbase->run_script( 'BLAT_controller.pl -postprocess -process -intron -load', $log ) if $finish_blat;
+$wormbase->run_script("check_class.pl -stage finish_blat -classes Homol_data", $log) if $finish_blat;
 #//--------------------------- batch job submission -------------------------//
 # $build_dumpGFF.pl; (blat) is run chronologically here but previous call will operate
 
 $wormbase->run_script( 'batch_transcript_build.pl', $log) if $transcripts;
+$wormbase->run_script("check_class.pl -stage transcripts -classes Transcript", $log) if $transcripts;
 #requires GFF dump of transcripts (done within script if all goes well)
 
 $wormbase->run_script( 'WBGene_span.pl'                   , $log ) if $gene_span;
@@ -178,13 +182,15 @@ if ($cdna_files) {
 }
 
 ####### mapping part ##########
-&map_features                                                            if $map;
+&map_features                                                                           if $map;
 
-&map_alleles                                                             if $map_alleles;
+&map_alleles                                                                            if $map_alleles;
 
-&remap_misc_dynamic                                                      if $remap_misc_dynamic;
+&remap_misc_dynamic                                                                     if $remap_misc_dynamic;
 
-$wormbase->run_script("run_inverted.pl -all" , $log)                     if $repeats;
+$wormbase->run_script("run_inverted.pl -all" , $log)                                    if $repeats;
+$wormbase->run_script("check_class.pl -stage run_inverted -classes Feature_data", $log) if $repeats;
+
 
 #must have farm complete by this point.
 $wormbase->run_script( 'load_data_sets.pl -misc', $log) if $misc_data_sets;
@@ -349,6 +355,9 @@ sub map_features_to_genome {
     }
   }
 
+  # check count of classes loaded
+  $wormbase->run_script("check_class.pl -stage map_features -classes Sequence,Feature", $log);
+ 
 
   # all the rest is elegans-specific
   if ($wormbase->species ne 'elegans') {return}
@@ -389,7 +398,10 @@ sub map_features_to_genome {
     unlink $rnai_mappings if -e $rnai_mappings;
     $wormbase->run_script( "RNAi2Genome.pl -acefile $rnai_mappings", $log );
   }
-  
+ 
+  # check count of classes loaded
+  $wormbase->run_script("check_class.pl -stage map_features_elegans -classes PCR_product,Homol_data,Sequence", $log);
+ 
 }
 
 sub map_features {
