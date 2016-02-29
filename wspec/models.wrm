@@ -3478,15 +3478,6 @@
            Description Phenotype ?Phenotype XREF Variation #Phenotype_info
                        Phenotype_remark ?Text #Evidence
                        Phenotype_not_observed ?Phenotype XREF Not_in_Variation #Phenotype_info  //added by Wen to separate Not phenotype from real phenotypes 
-                       Nonsense UNIQUE Amber_UAG Text #Evidence
-                                       Ochre_UAA Text #Evidence
-                                       Opal_UGA Text #Evidence
-                       Missense Text #Evidence                // text fields stored details of codon change
-                       Silent Text #Evidence
-                       Splice_site Donor Text #Evidence
-                                   Acceptor Text #Evidence
-                       Frameshift Text #Evidence  // added sdm
-                       Readthrough Text #Evidence // klh WS228
            Reference ?Paper XREF Allele
            Remark ?Text #Evidence
            Method UNIQUE ?Method
