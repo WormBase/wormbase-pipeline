@@ -693,9 +693,22 @@ sub copy_compara {
     $log->write_to("Warning: no compara results moved to FTP site\n");
   }
 
+  # Copy hal file
   my $cactus=$wormbase->misc_static . '/core_worms.hal';
-  $wormbase->run_command("cp $cactus $targetdir/COMPARATIVE_ANALYSIS/");
-    
+  if (not -e $cactus) {
+    $log->error("ERROR: could not find $cactus file\n");
+  } else {
+    $wormbase->run_command("cp $cactus $targetdir/COMPARATIVE_ANALYSIS/");
+  }
+
+  # Copy RRID strain data
+  my $RRID_source = "$acedir/${WS_version_name}_RRIDs.dat";
+  if (not -e $RRID_source) {
+    $log->error("ERROR: could not find $RRID_source file\n");
+  } else {
+    $wormbase->run_command("cp $RRID_source $targetdir/COMPARATIVE_ANALYSIS/");
+  }
+  
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying comparative results\n\n");
 }
@@ -1843,3 +1856,5 @@ development_ontology.WSREL.obo
 []COMPARATIVE_ANALYSIS
 compara.WSREL.tar.gz
 wormpep_clw.WSREL.sql.gz
+core_worms.hal
+WSREL_RRIDs.dat
