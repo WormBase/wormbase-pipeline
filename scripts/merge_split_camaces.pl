@@ -48,7 +48,6 @@ my $verbose;               # Additional printout
 my $names;                 # option to just dump Public_name data for given species.
 my $altacefiles;           # alternative location for acefiles
 my $altblat;               # alternative location for blat data
-
   GetOptions (
 	      "all"           => \$all,
 	      "pad"           => \$pad,
