@@ -27,7 +27,7 @@ use Modules::Overlap;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $database, $output);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $database, $output, $species);
 
 
 GetOptions ("help"       => \$help,
@@ -36,6 +36,7 @@ GetOptions ("help"       => \$help,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
 	    "database:s" => \$database,
+            "species:s"  => \$species,
 	   );
 
 if ( $store ) {
@@ -43,6 +44,7 @@ if ( $store ) {
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
+                             -organism => $species,
 			   );
 }
 
@@ -79,7 +81,7 @@ $log->write_to("The following BLAT alignments span the introns of two or more CD
 $log->write_to("They should be inspected to see if the gene models should be merged or if the transcripts are chimeric or incompletely spliced operon transcripts\n\n");
 $log->write_to("The following transcripts have had the Ignore tag set and will not be used for building Coding_transcripts in transcript_builder.pl\n\n");
 
-my $species = $wormbase->species;
+$species = $wormbase->species;
 open (ACE, ">$output") || die "Can't open $output\n";
 
 my $regex = $wormbase->seq_name_regex;
