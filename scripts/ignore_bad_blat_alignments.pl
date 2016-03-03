@@ -73,6 +73,16 @@ my $gff_dir         = $wormbase->gff;         # AUTOACE GFF
 my $gff_splits_dir  = $wormbase->gff_splits;  # AUTOACE GFF SPLIT
 
 
+my %mol_types = ( 'elegans'          => [qw( EST mRNA OST RST Trinity)],
+                  'briggsae'         => [qw( mRNA EST Trinity)],
+                  'remanei'          => [qw( mRNA EST Trinity)],
+                  'brenneri'         => [qw( mRNA EST Trinity)],
+                  'japonica'         => [qw( mRNA EST Trinity)],
+                  'brugia'           => [qw( mRNA EST Trinity)],
+                  'pristionchus'     => [qw( mRNA EST Trinity)],
+                  'ovolvulus'        => [qw( mRNA EST Trinity)],
+                  'sratti'           => [qw( mRNA EST Trinity)],
+                );
 
 
 ##########################
@@ -92,19 +102,31 @@ foreach my $chromosome (@chromosomes) {
 
   my $ovlp = Overlap->new($database, $wormbase);
 
-  my @est_introns = $ovlp->get_intron_from_exons($ovlp->get_EST_BEST($chromosome));
-  my @rst_introns = $ovlp->get_intron_from_exons($ovlp->get_RST_BEST($chromosome));
-  my @ost_introns = $ovlp->get_intron_from_exons($ovlp->get_OST_BEST($chromosome));
-  my @mrn_introns = $ovlp->get_intron_from_exons($ovlp->get_mRNA_BEST($chromosome));
-  my @tri_introns = $ovlp->get_intron_from_exons($ovlp->get_Trinity_BEST($chromosome));
+  my @est_introns;
+  my @rst_introns;
+  my @ost_introns;
+  my @mrn_introns;
+  my @tri_introns;
+
+  my $est_match;
+  my $rst_match;
+  my $ost_match;
+  my $mrn_match;
+  my $tri_match;
+
+  if (grep /^EST$/, @{$mol_types{$species}}) {@est_introns = $ovlp->get_intron_from_exons($ovlp->get_EST_BEST($chromosome))};
+  if (grep /^RST$/, @{$mol_types{$species}}) {@rst_introns = $ovlp->get_intron_from_exons($ovlp->get_RST_BEST($chromosome))};
+  if (grep /^OST$/, @{$mol_types{$species}}) {@ost_introns = $ovlp->get_intron_from_exons($ovlp->get_OST_BEST($chromosome))};
+  if (grep /^mRNA$/, @{$mol_types{$species}}) {@mrn_introns = $ovlp->get_intron_from_exons($ovlp->get_mRNA_BEST($chromosome))};
+  if (grep /^Trinity$/, @{$mol_types{$species}}) {@tri_introns = $ovlp->get_intron_from_exons($ovlp->get_Trinity_BEST($chromosome))};
   
   my @CDS_introns = $ovlp->get_curated_CDS_introns($chromosome);
 
-  my $est_match = $ovlp->compare(\@est_introns, exact_match => 1, same_sense => 0);  # exact match to either sense
-  my $rst_match = $ovlp->compare(\@rst_introns, exact_match => 1, same_sense => 0);  # exact match to either sense
-  my $ost_match = $ovlp->compare(\@ost_introns, exact_match => 1, same_sense => 0);  # exact match to either sense
-  my $mrn_match = $ovlp->compare(\@mrn_introns, exact_match => 1, same_sense => 0);  # exact match to either sense
-  my $tri_match = $ovlp->compare(\@tri_introns, exact_match => 1, same_sense => 0);  # exact match to either sense
+  if (grep /^EST$/, @{$mol_types{$species}}) {$est_match = $ovlp->compare(\@est_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
+  if (grep /^RST$/, @{$mol_types{$species}}) {$rst_match = $ovlp->compare(\@rst_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
+  if (grep /^OST$/, @{$mol_types{$species}}) {$ost_match = $ovlp->compare(\@ost_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
+  if (grep /^mRNA$/, @{$mol_types{$species}}) {$mrn_match = $ovlp->compare(\@mrn_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
+  if (grep /^Trinity$/, @{$mol_types{$species}}) {$tri_match = $ovlp->compare(\@tri_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
 
 
   my %overlapping_hsps = (); # EST/RST/OST/mRNA/Trinity transcripts that match a CDS, keyed by transcript name, value is array of matching CDSs
@@ -114,30 +136,30 @@ foreach my $chromosome (@chromosomes) {
     my ($cds_id) = ($cds->[0] =~ /($regex)/); # get just the sequence name
     
 
-    if ($est_match->match($cds)) {
+    if ((grep /^EST$/, @{$mol_types{$species}}) && $est_match->match($cds)) {
       my @ids = $est_match->matching_IDs;
       foreach my $id (@ids) {
 	$overlapping_hsps{$id}{$cds_id} = 1;
       }
-    } elsif ($rst_match->match($cds)) {
+    } elsif ((grep /^RST$/, @{$mol_types{$species}}) && $rst_match->match($cds)) {
       my @ids = $rst_match->matching_IDs;
       foreach my $id (@ids) {
 	$overlapping_hsps{$id}{$cds_id} = 1;
       }
 
-    } elsif ($ost_match->match($cds)) {
+    } elsif ((grep /^OST$/, @{$mol_types{$species}}) && $ost_match->match($cds)) {
       my @ids = $ost_match->matching_IDs;
       foreach my $id (@ids) {
 	$overlapping_hsps{$id}{$cds_id} = 1;
       }
 
-    } elsif ($mrn_match->match($cds)) {
+    } elsif ((grep /^mRNA$/, @{$mol_types{$species}}) && $mrn_match->match($cds)) {
       my @ids = $mrn_match->matching_IDs;
       foreach my $id (@ids) {
 	$overlapping_hsps{$id}{$cds_id} = 1;
       }
 
-    } elsif ($tri_match->match($cds)) {
+    } elsif ((grep /^Trinity$/, @{$mol_types{$species}}) && $tri_match->match($cds)) {
       my @ids = $tri_match->matching_IDs;
       foreach my $id (@ids) {
 	$overlapping_hsps{$id}{$cds_id} = 1;
