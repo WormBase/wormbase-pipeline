@@ -86,7 +86,7 @@ my $regex = $wormbase->seq_name_regex;
 my @chromosomes = $wormbase->get_chromosome_names(-mito => 0, -prefix => 1);
 
 foreach my $chromosome (@chromosomes) {
-  $log->write_to(""\n\nChromosome: $chromosome\n");
+  $log->write_to("\n\nChromosome: $chromosome\n");
 
   my $ovlp = Overlap->new($database, $wormbase);
 
