@@ -335,18 +335,29 @@ sub load_genes {
   foreach my $ana (@{$dba->get_AnalysisAdaptor->fetch_all}) {
     $ana_hash{$ana->logic_name} = $ana;
   }
-  foreach my $logic ("wormbase", "wormbase_non_coding", "wormbase_pseudogene") {
+
+  my $cod_logic     = (exists $config->{gff_codinggene_logic}) 
+      ? $config->{gff_codinggene_logic} 
+      : "wormbase";
+  my $nc_logic      = (exists $config->{gff_noncodinggene_logic}) 
+      ? $config->{gff_noncodinggene_logic} 
+      : "wormbase_non_coding";
+  my $pseudo_logic  = (exists $config->{gff_pseudogene_logic}) 
+      ? $config->{gff_pseudogene_logic} 
+  : "wormbase_pseudogene";
+
+  foreach my $logic ($cod_logic, $nc_logic, $pseudo_logic) {
     if (not exists $ana_hash{$logic}) {
       my $ana = Bio::EnsEMBL::Analysis->new(-logic_name => $logic,
-                                            -gff_source => "WormBase",
+                                            -gff_source => "WormBase_imported",
                                             -module     => "WormBase");
       $dba->get_AnalysisAdaptor->store($ana);
       $ana_hash{$logic} = $ana;
     }
   }
-  my $cod_analysis    = $ana_hash{wormbase};
-  my $nc_analysis     = $ana_hash{wormbase_non_coding};
-  my $pseudo_analysis = $ana_hash{wormbase_pseudogene};
+  my $cod_analysis    = $ana_hash{$cod_logic};
+  my $nc_analysis     = $ana_hash{$nc_logic};
+  my $pseudo_analysis = $ana_hash{$pseudo_logic};
 
   my (@path_globs, @gff2_files, @gff3_files); 
 
@@ -376,7 +387,9 @@ sub load_genes {
                                      -dbh     => $dba,
                                      -debug   => ($debug) ? 1 : 0,
                                      -verbose => 1,
-      );
+                                     -ignoregffphases => (exists $config->{gff_ignore_phases}) 
+                                       ? $config->{gff_ignore_phases} 
+                                       : 0);
 
   my @genes;
   if (@gff2_files) {
@@ -412,17 +425,31 @@ sub load_genes {
     push @genes, @{ $wb2ens->parse_non_coding_genes_gff2_fh( $gff_fh, $pseudo_analysis, 'Pseudogene', 'pseudogene')};
 
   } elsif (@gff3_files) {
+    my $source_hash;
+    if ($config->{gff_sources}) {
+      $source_hash = {};
+      foreach my $source (split(/,/, $config->{gff_sources})) {
+        $source_hash->{$source} = 1;
+      }
+    } else {
+      $source_hash = { WormBase => 1, WormBase_imported => 1 };
+    }
+
     if (scalar(@gff3_files) == 1) {
-      @genes = @{$wb2ens->parse_genes_gff3( $gff3_files[0], $cod_analysis, $nc_analysis, $pseudo_analysis, { WormBase => 1, WormBase_imported => 1 } )};
+      @genes = @{$wb2ens->parse_genes_gff3( $gff3_files[0], $cod_analysis, $nc_analysis, $pseudo_analysis, $source_hash )};
     } else {
       open(my $gff_fh, "cat @gff3_files |") or die "Could not create GFF stream\n";
-      @genes = @{$wb2ens->parse_genes_gff3_fh( $gff_fh, $cod_analysis, $nc_analysis, $pseudo_analysis,{ WormBase => 1, WormBase_imported => 1 } )};
+      @genes = @{$wb2ens->parse_genes_gff3_fh( $gff_fh, $cod_analysis, $nc_analysis, $pseudo_analysis, $source_hash )};
     }
     if (scalar(@genes) == 0) {
       die "Could not extract any genes from GFF3 file. Exiting\n";
     }
   } else {
     die "No gff or gff3 files found - death\n";
+  }
+
+  if (exists $config->{fix_phases} and $config->{fix_phases}) {
+    $wb2ens->phase_fix(\@genes );
   }
 
   $wb2ens->write_genes( \@genes );
