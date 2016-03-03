@@ -54,7 +54,15 @@ $species = $wormbase->species;
 my $tace = $wormbase->tace;
 my $full_species_name = $wormbase->full_name;
 my $wormbase_version = $wormbase->get_wormbase_version_name;
-my $dbdir = ($database) ? $database : $wormbase->autoace;
+my $dbdir;
+
+if (defined $database) {
+  $dbdir = $database;
+}
+unless (defined $database) {
+  $dbdir = $wormbase->autoace;
+}
+
 if (not defined $outfile) {
   $outfile = $wormbase->acefiles . "/${wormbase_version}_RRIDs.dat";
 }
@@ -80,7 +88,7 @@ my @Unique_strains;
 my $out_fh;
 $log->write_to("Generating RRID Query\n");
 my $query = &generate_RRDID_query();
-$log->write_to("Retrieving RRID data from $database\n");
+$log->write_to("Retrieving RRID data from $dbdir\n");
 my $command = "Table-maker -p $query\nquit\n";
 my $count2;
 open(my $tacefh,  "echo '$command' | $tace $dbdir |");
@@ -117,7 +125,7 @@ $log->write_to("Finished Retrieving RRID data\n");
 
 
 my $query2 = &generate_RRDIDvar_query();
-$log->write_to("Retrieving RRID var  data from $database\n");
+$log->write_to("Retrieving RRID var  data from $dbdir\n");
 my $command2 = "Table-maker -p $query2\nquit\n";
 my $count3;
 open(my $tacefh2,  "echo '$command2' | $tace $dbdir |");
