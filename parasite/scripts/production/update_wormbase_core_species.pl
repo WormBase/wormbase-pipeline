@@ -4,11 +4,14 @@ use YAML;
 use Getopt::Long;
 use File::Path qw(mkpath);
 
+use Bio::EnsEMBL::DBSQL::DBAdaptor;
+
 my ($write_configs, 
     $update_cores,
     $xref_parsing,
     $xref_mapping,
     $xref_loading,
+    $xref_cleanup,
     $all_stages,
     $verbose,
     @species);
@@ -24,8 +27,12 @@ my $PARASITE_VERSION     = $ENV{PARASITE_VERSION};
 my $ENSEMBL_VERSION      = $ENV{ENSEMBL_VERSION};
 my $ENSEMBL_CVS_ROOT_DIR = $ENV{ENSEMBL_CVS_ROOT_DIR};
 my $PARASITE_CONF        = $ENV{PARASITE_CONF};
-my $PARASITE_SCRATCH     = $ENV{PARASITE_SCRATCH};
 my $WORM_CODE            = $ENV{WORM_CODE};
+my $PARASITE_SCRATCH     = $ENV{PARASITE_SCRATCH};
+
+my $WORK_DIR   = "$PARASITE_SCRATCH/core_update";
+my $LOG_DIR    = "$WORK_DIR/logs";
+my $BACKUP_DIR = "$WORK_DIR/dbbackups";
 
 &GetOptions("species=s" => \@species,
             "writeconfig" => \$write_configs,
@@ -33,6 +40,7 @@ my $WORM_CODE            = $ENV{WORM_CODE};
             "xrefparsing" => \$xref_parsing,
             "xrefmapping" => \$xref_mapping,
             "xrefloading" => \$xref_loading,
+            "xrefcleanup" => \$xref_cleanup,
             "allstages"   => \$all_stages,
             "verbose"     => \$verbose,
     );
@@ -43,6 +51,7 @@ my $WORM_CODE            = $ENV{WORM_CODE};
 &xref_parsing(@species) if $xref_parsing or $all_stages;
 &xref_mapping(@species) if $xref_mapping or $all_stages;
 &xref_loading(@species) if $xref_loading or $all_stages;
+&xref_cleanup(@species) if $xref_cleanup or $all_stages;
 
 
 #####################################################
@@ -84,6 +93,20 @@ sub update_cores {
 
     &write_log("Running: $cmd\n");
     system($cmd) and die "Command failure: $cmd\n";
+
+    my $xref_attr = &parse_xref_inputconf("$PARASITE_CONF/xref_mapping.$spe.input");
+
+    my $backup = sprintf("%s/%s.post_parsing.sql.gz", 
+                         $BACKUP_DIR,
+                         $xref_attr->{xref}->{dbname});
+    my $backup_cmd = sprintf("mysqldump --host=%s --port=%s --user=%s --password=%s %s | gzip > %s", 
+                             $xref_attr->{xref}->{host},
+                             $xref_attr->{xref}->{port},
+                             $xref_attr->{xref}->{user},
+                             $xref_attr->{xref}->{password},
+                             $xref_attr->{xref}->{dbname},
+                             $backup);
+
   }
 }
 
@@ -91,14 +114,11 @@ sub update_cores {
 sub xref_parsing {
   my @species = @_;
 
-  my $log_dir = "$PARASITE_SCRATCH/xrefs/logs";
-  my $backup_dir = "$PARASITE_SCRATCH/xrefs/dbbackups";
-
   foreach my $spe (@species) {
 
     my $xref_attr = &parse_xref_inputconf("$PARASITE_CONF/xref_mapping.$spe.input");
 
-    my $download_dir = "$PARASITE_SCRATCH/xrefs/sources/$spe";
+    my $download_dir = "$WORK_DIR/xrefs/sources/$spe";
     system("rm -fr $download_dir") and die "Could not remove $download_dir for re-parsing\n";
     mkpath($download_dir, { verbose => 0, mode => 0775 });
 
@@ -111,23 +131,23 @@ sub xref_parsing {
                       $xref_attr->{xref}->{dbname},
                       $download_dir,
                       $spe,
-                      "$log_dir/parsing.$spe.WS${WORMBASE_VERSION}.out");
+                      "$LOG_DIR/parsing.$spe.WS${WORMBASE_VERSION}.out");
     
     &write_log("Running: $cmd\n");
     system($cmd) and die "Command failure: $cmd\n";
     
-    my $backup = sprintf("%s/%s.post_parsing.sql.gz", 
-                         $backup_dir,
-                         $xref_attr->{xref}->{dbname});
+    my $backup = sprintf("%s/%s.pre_xref.sql.gz", 
+                         $BACKUP_DIR,
+                         $xref_attr->{species}->{dbname});
     my $backup_cmd = sprintf("mysqldump --host=%s --port=%s --user=%s --password=%s %s | gzip > %s", 
-                             $xref_attr->{xref}->{host},
-                             $xref_attr->{xref}->{port},
-                             $xref_attr->{xref}->{user},
-                             $xref_attr->{xref}->{password},
-                             $xref_attr->{xref}->{dbname},
+                             $xref_attr->{species}->{host},
+                             $xref_attr->{species}->{port},
+                             $xref_attr->{species}->{user},
+                             $xref_attr->{species}->{password},
+                             $xref_attr->{species}->{dbname},
                              $backup);
     &write_log("Running: $backup_cmd\n");
-    system($backup_cmd) and die "Could not backup xref_database after parsing\n";
+    system($backup_cmd) and die "Could not backup core database after parsing\n";
   }
 }
 
@@ -151,11 +171,24 @@ sub xref_mapping {
     my $cmd = sprintf("cd %s/ensembl/misc-scripts/xref_mapping && perl xref_mapper.pl -file %s > %s 2>&1",
                       $ENSEMBL_CVS_ROOT_DIR,
                       $xref_conf,
-                      "$PARASITE_SCRATCH/xrefs/logs/mapping.$spe.WS${WORMBASE_VERSION}.out");
+                      "$LOG_DIR/mapping.$spe.WS${WORMBASE_VERSION}.out");
 
     &write_log("Running: $cmd\n");
     system($cmd) and die "Command failure: $cmd\n";
 
+    
+    my $backup = sprintf("%s/%s.post_mapping.sql.gz", 
+                         $BACKUP_DIR,
+                         $xref_attr->{xref}->{dbname});
+    my $backup_cmd = sprintf("mysqldump --host=%s --port=%s --user=%s --password=%s %s | gzip > %s", 
+                             $xref_attr->{xref}->{host},
+                             $xref_attr->{xref}->{port},
+                             $xref_attr->{xref}->{user},
+                             $xref_attr->{xref}->{password},
+                             $xref_attr->{xref}->{dbname},
+                             $backup);
+    &write_log("Running: $backup_cmd\n");
+    system($backup_cmd) and die "Could not backup xref_database after parsing\n";
   }
 }
 
@@ -165,34 +198,78 @@ sub xref_loading {
 
   foreach my $spe (@species) {
     my $xref_conf = "$PARASITE_CONF/xref_mapping.$spe.input";
-    my $xref_attr = &parse_xref_inputconf($xref_conf);
 
     my $cmd = sprintf("cd %s/ensembl/misc-scripts/xref_mapping && perl xref_mapper.pl -file %s -upload > %s 2>&1",
                       $ENSEMBL_CVS_ROOT_DIR,
                       $xref_conf,
-                      "$PARASITE_SCRATCH/xrefs/logs/loading.$spe.WS${WORMBASE_VERSION}.out");
-    system($cmd) and die "Failed to run xref_mapping for $spe\n";
+                      "$LOG_DIR/loading.$spe.WS${WORMBASE_VERSION}.out");
+    system($cmd) and die "Failed to run xref_mapping for $spe\n";    
+  }
+}
+
+#####################################################
+sub xref_cleanup {
+
+  foreach my $spe (@species) {
+    my $xref_conf = "$PARASITE_CONF/xref_mapping.$spe.input";
+    my $xref_attr = &parse_xref_inputconf($xref_conf);
+
+    my $summary_sql = "SELECT db_name, count(*) " 
+        . "FROM object_xref, xref, external_db "
+        . "WHERE object_xref.xref_id = xref.xref_id "
+        . "AND xref.external_db_id = external_db.external_db_id "
+        . "GROUP BY db_name";
+    
+    my $log_file = "$LOG_DIR/xrefcheckandclean.$spe.WS${WORMBASE_VERSION}.out";
+    open(my $log_fh, ">$log_file") or die "Could not open $log_file for writing\n";
 
     # check and cleanup
     my $dba = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
-      -host => $xref_attr->{xref}->{host},
-      -port => $xref_attr->{xref}->{port},
-      -user => $xref_attr->{xref}->{user},
-      -password => $xref_attr->{xref}->{password},
-      -dbname => $xref_attr->{xref}->{dbname});
+      -host => $xref_attr->{species}->{host},
+      -port => $xref_attr->{species}->{port},
+      -user => $xref_attr->{species}->{user},
+      -pass => $xref_attr->{species}->{password},
+      -dbname => $xref_attr->{species}->{dbname});
 
     #
-    # delete UniProt_gn object_xref
+    # Summary before cleanup 
+    #
+    print $log_fh "Object Xref summary before cleanup:\n\n";
+
+    printf $log_fh "%-20s\t%10s\n", "DBNAME", "COUNT";
+    my $sth = $dba->dbc->prepare($summary_sql);
+    $sth->execute();
+    while( my $row = $sth->fetchrow_arrayref ) {
+      printf $log_fh "%-20s\t%10s\n", @$row;
+    }
+    $sth->finish;
+
+
+    #
+    # Cleanup 1 -  delete UniProt_gn object_xref
     #
     $dba->dbc->do("DELETE object_xref.* " .
                   "FROM  object_xref, xref, external_db " .
                   "WHERE external_db.external_db_id = xref.external_db_id " .
                   "AND xref.xref_id = object_xref.xref_id " .
                   "AND db_name = 'Uniprot_gn'");
-    
-  }
-}
 
+
+    #
+    # Summary after cleanup 
+    #
+    print $log_fh "\n\nObject Xref summary after cleanup:\n\n";
+
+    printf $log_fh "%-20s\t%10s\n", "DBNAME", "COUNT";
+    my $sth = $dba->dbc->prepare($summary_sql);
+    $sth->execute();
+    while( my $row = $sth->fetchrow_arrayref ) {
+      printf $log_fh "%-20s\t%10s\n", @$row;
+    }
+    $sth->finish;
+  }
+
+}
 
 ######################################################
 ######################################################
@@ -227,8 +304,8 @@ sub write_config {
                            after => $ENSEMBL_VERSION },
                          { before => "PARASITE_VERSION", 
                            after => $PARASITE_VERSION },
-                         { before => "PARASITE_SCRATCH", 
-                           after => $PARASITE_SCRATCH },
+                         { before => "WORK_DIR", 
+                           after => $WORK_DIR },
                          { before => "WORMBASE_VERSION", 
                            after => $WORMBASE_VERSION },
                          { before => "ENSEMBL_CVS_ROOT_DIR",
@@ -535,7 +612,7 @@ port=PRODPORT
 user=PRODUSERRW
 password=PRODPASSRW
 dbname=xref_parasite_SPECIES_WORMBASE_VERSION
-dir=PARASITE_SCRATCH/xrefs/mapping/SPECIES/WBPSPARASITE_VERSION
+dir=WORK_DIR/xrefs/mapping/SPECIES/WBPSPARASITE_VERSION
 
 species=SPECIES
 taxon=wormbase
@@ -544,7 +621,7 @@ port=STAGINGPORT
 user=STAGINGUSERRW
 password=STAGINGPASSRW
 dbname=COREDBNAME
-dir=PARASITE_SCRATCH/xrefs/mapping/SPECIES/WBPSPARASITE_VERSION
+dir=WORK_DIR/xrefs/mapping/SPECIES/WBPSPARASITE_VERSION
 
 farm
 queue=production-rh6
