@@ -22,51 +22,33 @@ use Storable;
 # variables and command-line options #
 ######################################
 
-my (  $debug, $test, $store, $wormbase, $species );
 my ( $infile, $outfile, %trans2gene, $gtf );
 
 GetOptions(
-  'debug=s'   => \$debug,
-  'test'      => \$test,
-  'store:s'   => \$store,
-  'species:s' => \$species,
   'infile:s'  => \$infile,
   'outfile:s' => \$outfile,
   'gtf'       => \$gtf,
 );
 
-if ($store) {
-    $wormbase = retrieve($store) or croak("Can't restore wormbase from $store\n");
-} 
-else {
-    $wormbase = Wormbase->new(
-        -debug => $debug,
-        -test  => $test,
-        -organism => $species,
-    );
-}
-
-
-my $log = Log_files->make_build_log($wormbase);
 
 if (not defined $infile or not defined $outfile) { 
-  $log->log_and_die("You must define -infile and -outfile\n");
+  die("You must define -infile and -outfile\n");
 }
 
 my ($gff_in_fh, $gff_out_fh);
 if ($infile =~ /\.gz$/) {
   open( $gff_in_fh, "gunzip -c $infile |" ) 
-      or $log->log_and_die("Could not open gzip stream to $infile\n");
+      or die("Could not open gzip stream to $infile\n");
 } else {
-  open($gff_in_fh, $infile) or $log->log_and_die("Could not open $infile for reading\n");
+  open($gff_in_fh, $infile) or die("Could not open $infile for reading\n");
 }
 
 if ($outfile =~ /\.gz/) {
   open($gff_out_fh, "| gzip -n -c > $outfile") 
-      or $log->log_and_die("Could not open gzip write stream to $outfile\n");
+      or die("Could not open gzip write stream to $outfile\n");
 } else {
   open($gff_out_fh, ">$outfile") 
-      or $log->log_and_die("Could not open $outfile for writing\n");
+      or die("Could not open $outfile for writing\n");
 }
 
 if ($gtf) {
@@ -83,7 +65,7 @@ while(<$gff_in_fh>) {
 
   my @l = split(/\t/, $_);
 
-  next if $l[1] ne 'WormBase';
+  next if ($l[1] ne 'WormBase' and $l[1] ne 'WormBase_imported');
 
   if (not $gtf) {
     print $gff_out_fh join("\t", @l), "\n";
@@ -100,7 +82,11 @@ while(<$gff_in_fh>) {
     my ($biotype) = $l[8] =~ /biotype=([^;]+)/;
     my ($locus)   = $l[8] =~ /locus=([^;]+)/;
 
-    $l[8] = "gene_id \"$id\"; gene_biotype \"$biotype\""; 
+    $l[8] = "gene_id \"$id\"";
+
+    if (defined $biotype) {
+      $l[8] .= "; gene_biotype \"$biotype\""; 
+    }
     if (defined $locus) {
       $l[8] .= " ; locus \"$locus\"";
     }
@@ -148,6 +134,5 @@ while(<$gff_in_fh>) {
     }
   }
 } 
-close($gff_out_fh) or $log->log_and_die("Could not close $outfile after writing\n");
-$log->mail();
+close($gff_out_fh) or die("Could not close $outfile after writing\n");
 exit(0);

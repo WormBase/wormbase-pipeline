@@ -553,12 +553,12 @@ sub copy_gff_files{
       $wormbase->run_command("cp -f -R $source_gff3_file $target", $log);
       $wormbase->run_command("gzip -n -9 -f $target",$log);      
 
-      $wb->run_script("GFF_post_process/extract_canonical_geneset.pl -infile $source_gff3_file -outfile $target_gtf_file", $log);
+      $wb->run_command("perl $ENV{CVS_DIR}/GFF_post_process/extract_canonical_geneset.pl -infile $source_gff3_file -outfile $target_gtf_file", $log);
 
     } elsif (-e "${source_gff3_file}.gz") {
       my $target = "$gff_dir/${fname_prefix}.gff3.gz";
       $wormbase->run_command("cp -f -R ${source_gff3_file}.gz $target", $log);
-      $wb->run_script("GFF_post_process/extract_canonical_geneset.pl -infile ${source_gff3_file}.gz -outfile $target_gtf_file", $log);
+      $wb->run_command("perl $ENV{CVS_DIR}/GFF_post_process/extract_canonical_geneset.pl -infile ${source_gff3_file}.gz -outfile $target_gtf_file", $log);
     } else {
       $log->error("ERROR: No GFF3 file for $species ($source_gff3_file)\n");
     }
