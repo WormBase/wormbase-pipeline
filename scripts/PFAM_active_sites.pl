@@ -1,7 +1,5 @@
 #!/usr/bin/env perl
-
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2013-08-06 16:00:58 $
+# create a local PFAM database from the FTP site and use it to extract the location of the active sites
 
 use strict;
 use Net::FTP;
@@ -166,23 +164,14 @@ sub update_database {
       # treat this one specially; it is massive
       if ($ftp->get("${table}.txt.gz","$tmpDir/${table}.txt.gz")){
         $log->write_to("Parsing nematode proteins out of pfamseq...\n");
-        open(my $fh, "gunzip -c $tmpDir/${table}.txt.gz |") or 
-            $log->log_and_die("Could not open gunzip stream to $tmpDir/${table}.txt.gz");
-        open(my $outfh, ">$tmpDir/${table}.txt") or 
-            $log->log_and_die("Could not open $tmpDir/${table}.txt for writing\n");
-        while(<$fh>) {
-          if (/Nematoda/) {
-            print $outfh $_;
-          }
-        }
-        close($outfh) or $log->log_and_die("Could not close $tmpDir/${table}.txt after writing\n");
-      }
+        $wormbase->run_command("zgrep Nematoda $tmpDir/${table}.txt.gz > $tmpDir/${table}.txt",$log);
+      }else{$log->log_and_die("could not download ${table}.txt.gz\n")}
     } else {
       if ($ftp->get("${table}.txt.gz","$tmpDir/${table}.txt.gz")){
         $log->write_to("\tunzippping $tmpDir/$table.txt\n");
         $wormbase->run_command("gunzip -f $tmpDir/$table.txt.gz", $log);
       } elsif ($ftp->get("${table}.txt","$tmpDir/${table}.txt")){
-        $log->write_to("\tgzip archive abscent....using $table.txt.\n");
+        $log->write_to("\tgzip archive absent....using $table.txt.\n");
       } else {
         $log->log_and_die("Couldn't find $table file to download :(\n");
       }
