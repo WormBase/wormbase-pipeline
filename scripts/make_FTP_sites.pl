@@ -881,6 +881,19 @@ sub copy_misc_files{
     }
   }
 
+  #
+  # OMIM xref data
+  #
+  if ($wormbase->species eq 'elegans') {
+    my $source = "$srcdir/${WS_version_name}_OMIMXREF.dat";
+    my $target = "$annotation_dir/${gspecies}.${bioproj}.${WS_version_name}.omim_xrefs.txt";
+    
+    if (-e $source) {
+      $wormbase->run_command("cp -f $source $target", $log);
+    } else {
+      $log->write_to("Warning: OMIM xref xref file not found\n");
+    }
+  }
 
   #
   # Oligo mapping
@@ -1789,6 +1802,7 @@ GSPECIES.BIOPROJ.WSREL.cdna2orf.txt.gz
 GSPECIES.BIOPROJ.WSREL.confirmed_genes.fa.gz
 GSPECIES.BIOPROJ.WSREL.TAR_gene_expression.tar.gz
 GSPECIES.BIOPROJ.WSREL.reuters_citation_index.xml.gz
+GSPECIES.BIOPROJ.WSREL.omim_xrefs.txt
 GSPECIES.BIOPROJ.WSREL.TSS.wig.tar.gz
 
 [elegans]species/GSPECIES/BIOPROJ
