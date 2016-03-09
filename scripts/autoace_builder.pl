@@ -31,7 +31,7 @@ my ( $gff_dump,     $processGFF, $gff_split );
 my $gene_span;
 my ( $load, $big_load, $tsuser );
 my ($map_features, $remap_misc_dynamic, $map, $map_alleles, $transcripts, $cdna_files, $misc_data_sets, $homol_data_sets, $nem_contigs);
-my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $names, $treefam, $ncbi_xrefs, $load_interpro, $RRID);
+my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $names, $treefam, $ncbi_xrefs, $load_interpro, $RRID, $omim);
 my ( $utr, $agp, $gff_munge, $gff3_munge, $extras , $ontologies, $interpolate, $check, $enaseqxrefs, $enagenexrefs, $enaprotxrefs, $xrefs);
 my ( $data_check, $buildrelease, $public,$finish_build, $gffdb, $autoace, $release, $user, $kegg, $prepare_gff_munge, $post_merge);
 
@@ -74,6 +74,7 @@ GetOptions(
            'proteinxrefs'   => \$enaprotxrefs,
            'xrefs'          => \$xrefs,
 	   'rrid'           => \$RRID,
+	   'omimxref'       => \$omim,
 	   'rna'            => \$rna,
 	   'dbcomp'         => \$dbcomp,
 	   'confirm'        => \$confirm,
@@ -276,11 +277,15 @@ if ($gff_munge or $gff3_munge) {
 }
 
 if ($xrefs) {
-    $wormbase->run_script( 'generate_dbxref_file.pl', $log);
+  $wormbase->run_script( 'generate_dbxref_file.pl', $log);
 }
 
 if ($RRID) {
-      $wormbase->run_script( 'generate_RRID_data.pl', $log);
+  $wormbase->run_script( 'generate_RRID_data.pl', $log);
+}
+
+if ($omim) {
+  $wormbase->run_script( 'generate_OMIM_xref.pl', $log);
 }
 
 &post_merge_steps                                                        if $post_merge;
