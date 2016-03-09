@@ -123,12 +123,10 @@ my %cds2wormpep = &get_cds_to_wormpep();
 
 # iterate over all superlinks
 while (my $link = shift @superlinks){
-  print STDERR "iterating over: ",$link->seq_region_name,"\n" if $ENV{TEST};
   
   # get all ProteinAlignFeatures on it
   my @dafs =  @{ $feature_adaptor->fetch_all_by_Slice($link,$logicname) };
   #@dafs    =  ($feature_adaptor->fetch_by_dbID($ENV{TEST_FEATURE}) ) if $ENV{TEST_FEATURE}; # 5970637
-  
   my $type=$logic2type{$logicname} || die "cannot find $logicname\n";
   my $prefix=$logic2prefix{$logicname};
   
@@ -141,8 +139,15 @@ while (my $link = shift @superlinks){
 
   while (my $f= shift @features){
     my $hname=$f->hseqname;
-    if (exists $cds2wormpep{$hname}) {
-      $f->hseqname($prefix. $cds2wormpep{$hname} );
+    my $newhseqname;
+    if ($logicname =~ /pep/ and exists $cds2wormpep{$hname}) {
+      $newhseqname = $prefix. $cds2wormpep{$hname};
+    } else {
+      $newhseqname = $prefix . $hname;
+    }
+
+    if (defined $newhseqname) {
+      $f->hseqname($newhseqname);
       &feature2ace($f,$type);
     }
   }
@@ -154,8 +159,6 @@ while (my $link = shift @superlinks){
 # create the Sequence link
 sub seq_ace {
     my ($name,$type,$length)=@_;
-    my $tmp_name=$name;
-    $tmp_name=~s/\.\d+$//;
     print $outf "Sequence : \"$name\"\n";
     print $outf "Homol_data \"$name:$type\" 1 $length\n\n";
     print $outf "Homol_data : \"$name:$type\"\n"
@@ -244,10 +247,7 @@ sub remove_selfhits {
   my @index=&build_search_struct($link->get_all_Genes()); # using a dirty search structure
 
   while (my $feature = shift @$features){
-    my $name=($cds2wormpep{$feature->hseqname}||$feature->hseqname );
     if ($selfhits) { # should probably not do this
-      
-      print STDERR "processing selfhits for: ${\$feature->hseqname} ($name)\n" if $ENV{TEST};
       my %ids;
       foreach my $hit (&search(\@index,$feature)){
         foreach my $id (@{$hit->{ids}}) {

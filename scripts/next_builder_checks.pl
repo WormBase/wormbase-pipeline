@@ -809,9 +809,9 @@ sub not_expected_to_be_undefined {
   my @expected_to_be_undefined = (
                                   'Bm_024:RNASeq_stranded_reads:1',
                                   'Bm_013:RNASeq_stranded_reads:1',
-                                  'Bm_007:RNASeq_stranded_reads:1'
-                                  'Bm_007:RNASeq_stranded_reads:2'
-                                  'Bm_007:RNASeq_stranded_reads:3'
+                                  'Bm_007:RNASeq_stranded_reads:1',
+                                  'Bm_007:RNASeq_stranded_reads:2',
+                                  'Bm_007:RNASeq_stranded_reads:3',
                                   'Bm_008:RNASeq_stranded_reads:1',
                                   'Bm_008:RNASeq_stranded_reads:2',
                                   'Bm_014:RNASeq_stranded_reads:1',

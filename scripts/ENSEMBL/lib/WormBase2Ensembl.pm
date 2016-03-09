@@ -539,6 +539,64 @@ sub translation_fix {
   return $fixed;
 }
 
+
+sub phase_fix {
+  my ($self, $g_ref) = @_;
+
+  $self->verbose and print STDERR "Fixing phases...\n";
+
+  foreach my $g (@$g_ref) {
+    foreach my $t (@{$g->get_all_Transcripts}) {
+      next if $t->biotype ne 'protein_coding';
+      
+      my $exon_h = $t->get_all_Exons; 
+      
+      next if $exon_h->[0]->phase < 0;
+
+      my $orig_phase = $exon_h->[0]->phase;
+      
+      my $seq = $t->translate->seq;
+      my ($stops) = $seq =~ tr/\*/\*/; 
+      
+      next if $stops == 0;
+
+      # find reading frame with fewest stops
+      my (%stops_by_phase, $best_phase);
+    
+      foreach my $phase (0, 1, 2) {
+        $exon_h->[0]->phase($phase);
+        
+        my $alt_seq = $t->translate->seq;
+        my ($alt_stops) = $alt_seq =~ tr/\*/\*/; 
+        $stops_by_phase{$phase} = $alt_stops;
+        
+        if (not defined $best_phase or $stops < $stops_by_phase{$best_phase}) {
+          $best_phase = $phase;
+        }
+      }
+      $exon_h->[0]->phase($orig_phase);
+
+      if ($stops_by_phase{$best_phase} == 0 and $orig_phase != $best_phase) {
+        $self->verbose and printf STDERR "Changing phase for %s from %d to %d\n", $t->stable_id, $exon_h->[0]->phase, $best_phase;
+        for(my $i=0; $i < @$exon_h; $i++) {
+          if ($exon_h->[$i]->phase >= 0) {
+            if ($i == 0) {
+              $exon_h->[$i]->phase( $best_phase );
+            } else {
+              $exon_h->[$i]->phase( $exon_h->[$i-1]->end_phase );
+            }
+            my $cds_len = $exon_h->seq_region_end - $exon_h->seq_region_start + 1;
+            if ($exon_h->[$i]->phase > 0) {
+              $cds_len += $exon_h->[$i]->phase;
+            }
+            $exon_h->[$i]->end_phase( $cds_len % 3 );
+          }
+        }
+      }
+    }
+  }
+}
+
 sub parse_simplefeature_gff {
   my ($self, $file, $analysis, $source, $type) = @_;
 
@@ -1036,6 +1094,7 @@ sub ignore_gff_phases {
     return $self->{_ignore_gff_phases};
   }
 }
+
 
 
 #####################################
