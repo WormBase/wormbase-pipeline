@@ -1410,6 +1410,29 @@ GFF_feature "expressed_sequence_match"
 GFF_SO "SO:0000102" // expressed_sequence_match
 Remark "This method is for non-primary alignments of C.elegans Tc1 transposon sequences to the genome of another nematode"
 
+Method : "BLAT_Caen_Trinity_BEST" 
+Colour "GREEN"
+Show_up_strand
+Score_by_width
+Score_bounds 50.000000 100.000000
+Join_blocks
+Blixem_N
+GFF_feature "expressed_sequence_match"
+GFF_SO "SO:0000102" // expressed_sequence_match
+Remark "This method describes the best location of Trinity transcripts from other Caenorhabditae sp aligned to geneome"
+
+Method : "BLAT_Caen_Trinity_OTHER" 
+Colour "PALEGREEN"
+Show_up_strand
+Score_by_width
+Score_bounds 50.000000 100.000000
+Overlap
+Join_blocks
+Blixem_N
+GFF_feature "expressed_sequence_match"
+GFF_SO "SO:0000102" // expressed_sequence_match
+Remark "This method describes the secondary location of Trinity transcrpts from other Caenorhabditae sp aligned to geneome"
+
 Method : "BLAT_NEMATODE" 
 Colour "GREEN"
 Score_by_width
