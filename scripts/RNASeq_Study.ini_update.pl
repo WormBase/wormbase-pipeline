@@ -64,7 +64,7 @@ my %updated_files;
 # %29 is )
 
 # To get all nematode and platyhelminth Studies:
-# http://www.ebi.ac.uk/ena/data/warehouse/search?query=%22tax_tree(6231)%20AND%20library_strategy=%22RNA-Seq%22%22&domain=read
+# http://www.ebi.ac.uk/ena/data/warehouse/search?query=%22tax_tree(6231)%20AND%20(library_strategy=%22RNA-Seq%22%22&domain=read
 # and
 # http://www.ebi.ac.uk/ena/data/warehouse/search?query=%22tax_tree(6157)%20AND%20library_strategy=%22RNA-Seq%22%22&domain=read
 
@@ -286,7 +286,7 @@ sub get_phylup_data {
 	$library_layout,
        ) = split /\t/, $line;
 #    if ($library_stategy ne 'RNA-Seq' && $scientific_name !~ /^Caenorhabditis/) {next}; # The Parasite project is only interested in $library_stategy = 'RNA-Seq', but WormBase likes the others as well
-    if ($library_stategy ne 'RNA-Seq') {next}; # The Parasite project is only interested in $library_stategy = 'RNA-Seq'
+    if ($library_stategy ne 'RNA-Seq' && $library_stategy ne 'EST') {next}; # The Parasite project is only interested in $library_stategy = 'RNA-Seq' or 'EST'
 
     $data{$scientific_name}{$secondary_study_accession}{study_accession} = $study_accession;
     $data{$scientific_name}{$secondary_study_accession}{study_title} = $study_title;
