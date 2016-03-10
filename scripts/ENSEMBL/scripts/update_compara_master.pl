@@ -253,6 +253,12 @@ if ($create_tree_mlss) {
       }
     }
   }
+
+  my $tree_mlss = $mlssa->fetch_by_method_link_type_species_set_name('PROTEIN_TREES', $collection_ss->name);
+  die "Could not fetch the tree MLSS" if not defined $tree_mlss;
+
+  my $update_query = 'UPDATE method_link_species_set SET url = "" WHERE method_link_species_set_id = ?';
+  $compara_dbh->dbc->do($update_query, undef, $tree_mlss->dbID);
 }
 
 print STDERR "Updated database\n";
