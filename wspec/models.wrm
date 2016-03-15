@@ -3679,7 +3679,7 @@
 ?Molecule Name ?Text               //WBMoleculeID
           Public_name ?Text
           Formula ?Text            //imported from ChEBI
-          Monoisotopic_mass ?Float //need to set up automated calculation based on formula
+          Monoisotopic_mass Float  //need to set up automated calculation based on formula
           IUPAC ?Text              //imported from ChEBI
           SMILES ?Text             //imported from ChEBI
           InChi ?Text              //imported from ChEBI
