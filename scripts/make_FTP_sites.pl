@@ -891,7 +891,21 @@ sub copy_misc_files{
     if (-e $source) {
       $wormbase->run_command("cp -f $source $target", $log);
     } else {
-      $log->write_to("Warning: OMIM xref xref file not found\n");
+      $log->write_to("Warning: OMIM xref file not found\n");
+    }
+  }
+
+  #
+  # CGC changes data
+  #
+  if ($wormbase->species eq 'elegans') {
+    my $source = "$srcdir/changed_CGC_names.dat";
+    my $target = "$annotation_dir/${gspecies}.${bioproj}.${WS_version_name}.changed_CGC_names.txt";
+    
+    if (-e $source) {
+      $wormbase->run_command("cp -f $source $target", $log);
+    } else {
+      $log->write_to("Warning: CGC changes file not found\n");
     }
   }
 
