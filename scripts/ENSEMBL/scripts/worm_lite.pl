@@ -42,7 +42,14 @@ die "You must supply a valid YAML config file\n" if not defined $yfile or not -e
 my $global_config = YAML::LoadFile($yfile);
 my $generic_config = $global_config->{generics};
 
-my $cvsDIR = $generic_config->{cvsdir};
+my $cvsDIR;
+$cvsDIR = $ENV{ENSEMBL_CVS_ROOT_DIR} if exists $ENV{ENSEMBL_CVS_ROOT_DIR};
+# explicit definition in the YAML file over-rides environment definition
+$cvsDIR = $generic_config->{cvsdir} if exists  $generic_config->{cvsdir};
+
+die "You must define a location of the Ensembl code " .
+    "either with cvsdir (in the YAML file) " .
+    "or ENSEMBL_CVS_ROOT_DIR in the environment\n" if not defined $cvsDIR; 
 
 if ($allspecies) {
   die "You cannot supply both -species and -allspecies!\n" if @species;
