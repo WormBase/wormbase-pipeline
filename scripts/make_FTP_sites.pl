@@ -106,7 +106,7 @@ my $blastx;
 my $dump_ko;
 my $md5;
 my $go_public;
-my $compara;
+my $multi_species;
 my $orthology_lists; # flatfiles of the orthologies fro CalTech
 my $assembly_manifest;
 my (%skip_species, @skip_species, @only_species, %only_species, $WS_version, $WS_version_name);
@@ -119,7 +119,7 @@ GetOptions ("help"          => \$help,
 	    "store:s"       => \$store,
 	    "acedb"         => \$acedb,
             "blastx"        => \$blastx,
-	    "compara"       => \$compara,
+	    "multi"        => \$multi_species,
 	    "dna"           => \$dna,
 	    "rna"           => \$rna,
 	    "wormpep"       => \$wormpep,
@@ -165,9 +165,9 @@ map { $skip_species{$_} = 1 } @skip_species;
 map { $only_species{$_} = 1 } @only_species;
 
 if ($all) {
-  $compara=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$blastx=$dump_ko=$md5=$assembly_manifest=$go_public=$orthology_lists=1;
+  $multi_species=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$blastx=$dump_ko=$md5=$assembly_manifest=$go_public=$orthology_lists=1;
 } elsif ($all_nopublic) {
-  $compara=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$blastx=$dump_ko=$md5=$assembly_manifest=$orthology_lists=1;
+  $multi_species=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$blastx=$dump_ko=$md5=$assembly_manifest=$orthology_lists=1;
 }
 
 if (not $WS_version) {
@@ -198,17 +198,17 @@ open (FTP_LOCK,">$lockfile") or $log->log_and_die("cant write lockfile $!\n");
 print FTP_LOCK "If this file exists something has failed in make_ftp_site.pl\n DO NOT continue until you know what happend and have fixed it\n\n";
 close FTP_LOCK;
 
-&copy_acedb_files if ($acedb);    # make a new directory for the WS release and copy across release files
+&copy_acedb_files if ($acedb);
 
 &copy_blastx if ($blastx);
 
-&copy_compara if ($compara);          # copies the comparative data to the FTP site
+&copy_multi_species if ($multi_species);
 
 &copy_dna_files if ($dna);
 
 &copy_rna_files if ($rna);
 
-&copy_wormpep_files if ($wormpep);    # copied from ~wormpub/WORMPEP
+&copy_wormpep_files if ($wormpep);
 
 &copy_gff_files if ($gff);
   		  
@@ -216,21 +216,21 @@ close FTP_LOCK;
 
 &copy_misc_files if ($misc);
 
-&copy_ontology_files if ($ont);       # make a new /ontology directory and copy files across
+&copy_ontology_files if ($ont);
 
-&copy_homol_data if ($homols);        # copies best blast hits files across
+&copy_homol_data if ($homols);
 
-&copy_xrefs if ($xrefs);              # copies xref file for elegans and briggsae
+&copy_xrefs if ($xrefs);
 
 &make_assembly_manifest if $assembly_manifest;
 
-&extract_confirmed_genes if ($genes); # make file of confirmed genes from autoace and copy across
+&extract_confirmed_genes if ($genes);
 
-&make_cDNA2ORF_list if ($cDNA);       # make file of cDNA -> ORF connections and add to FTP site
+&make_cDNA2ORF_list if ($cDNA);
 
-&make_geneID_list if ($geneIDs);      # make file of WBGene IDs -> CGC name & Sequence name and add to FTP site
+&make_geneID_list if ($geneIDs);
 
-&make_pcr_list if ($pcr);             # make file of PCR products -> WBGene IDs, CDS, CGC name
+&make_pcr_list if ($pcr);
 
 &extract_ko if ($dump_ko);
 
@@ -238,7 +238,7 @@ close FTP_LOCK;
 
 &make_gbrowse_gff if ($gbrowse_gff);
 
-&check_manifest if ($manifest);       # compares whats on the FTP site with what should be
+&check_manifest if ($manifest);
 
 &make_md5sums if ($md5);              # creates a file of md5sums for containing entries for all files in release
 
@@ -553,12 +553,11 @@ sub copy_gff_files{
       $wormbase->run_command("cp -f -R $source_gff3_file $target", $log);
       $wormbase->run_command("gzip -n -9 -f $target",$log);      
 
-      $wb->run_command("perl $ENV{CVS_DIR}/GFF_post_process/extract_canonical_geneset.pl -infile $source_gff3_file -outfile $target_gtf_file", $log);
-
+      $wb->run_command("perl $ENV{CVS_DIR}/GFF_post_process/extract_canonical_geneset.pl -infile $source_gff3_file -outfile $target_gtf_file -gtf", $log);
     } elsif (-e "${source_gff3_file}.gz") {
-      my $target = "$gff_dir/${fname_prefix}.gff3.gz";
+      my $target = "$gff_dir/${fname_prefix}.annotations.gff3.gz";
       $wormbase->run_command("cp -f -R ${source_gff3_file}.gz $target", $log);
-      $wb->run_command("perl $ENV{CVS_DIR}/GFF_post_process/extract_canonical_geneset.pl -infile ${source_gff3_file}.gz -outfile $target_gtf_file", $log);
+      $wb->run_command("perl $ENV{CVS_DIR}/GFF_post_process/extract_canonical_geneset.pl -infile ${source_gff3_file}.gz -outfile $target_gtf_file -gtf", $log);
     } else {
       $log->error("ERROR: No GFF3 file for $species ($source_gff3_file)\n");
     }
@@ -580,11 +579,14 @@ sub copy_gff_files{
     my $source = sprintf("%s/%s.gff3", $wb->gff, $species);
     my $zipped_source = $source . ".gz";
     my $target = sprintf("%s/%s.%s.%s.annotations.gff3.gz", $gff_dir, $gspecies, $bioproj, $WS_version_name);
+    my $target_gtf = sprintf("%s/%s.%s.%s.canonical_geneset.gtf.gz", $gff_dir, $gspecies, $bioproj, $WS_version_name);
 
     if (-e $source) {
       $wb->run_command("cat $source | gzip -n -9 > $target", $log);
+      $wb->run_command("perl $ENV{CVS_DIR}/GFF_post_process/extract_canonical_geneset.pl -infile $zipped_source -outfile $target_gtf -gtf", $log);
     } elsif (-e $zipped_source) {
       $wb->run_command("cp -f $zipped_source $target", $log);
+      $wb->run_command("perl $ENV{CVS_DIR}/GFF_post_process/extract_canonical_geneset.pl -infile $zipped_source -outfile $target_gtf -gtf", $log);
     } else {
       $log->error("ERROR: No GFF3 data found for species $species\n");
     }
@@ -645,72 +647,55 @@ sub copy_gff_files{
   $log->write_to("$runtime: Finished copying GFF files\n\n");
 }
 
-############################################
-# copy across comparative analysis
-############################################
+###############################################
+# copy across miscellaneous multi-species files
+###############################################
 
-sub copy_compara {
+sub copy_multi_species {
 
   my $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying clustal sql dump\n");
 
-  mkpath("$targetdir/COMPARATIVE_ANALYSIS",1,0775);
+  my $tgt_dir = "$targetdir/MULTI_SPECIES";
+  mkpath($tgt_dir,1,0775);
   
   my $chromdir = $wormbase->misc_output;
 
   my $clust_src = "$chromdir/wormpep_clw.sql.gz";
 
   if (-e $clust_src) {
-    my $target = "$targetdir/COMPARATIVE_ANALYSIS/wormpep_clw.${WS_version_name}.sql.gz";
+    my $target = "$tgt_dir/wormpep_clw.${WS_version_name}.sql.gz";
     $wormbase->run_command("cp -f -R $clust_src $target", $log);
 
   } else {
     $log->write_to("Warning: no clustal results found ($clust_src)\n");
   }
 
-
-  my @compara_tar_args;
-
-  my $acedir = $wormbase->acefiles;
-  my $compara_source = "$acedir/compara.ace";
-  if (not -e $compara_source) {
-    $log->error("ERROR: could not find compara.ace file\n");
-  } else {
-    push @compara_tar_args, " -C $acedir compara.ace";
-  }
-  
-  my $genomic_align_dir = $wormbase->misc_dynamic . "/SUPPLEMENTARY_GFF";
-  my @files = glob("$genomic_align_dir/*.genomic_alignment.gff3");
-  @files = map { $_ =~ /$genomic_align_dir\/(\S+)$/ and $1 } @files;
-  if (@files) {
-    push @compara_tar_args, " -C $genomic_align_dir @files";
-  }
-
-  if (@compara_tar_args) {
-    my $target = "$targetdir/COMPARATIVE_ANALYSIS/compara.$WS_version_name.tar.gz";
-    $wormbase->run_command("tar zcvf $target @compara_tar_args", $log);
-  } else {
-    $log->write_to("Warning: no compara results moved to FTP site\n");
-  }
-
-  # Copy hal file
-  my $cactus=$wormbase->misc_static . '/core_worms.hal';
-  if (not -e $cactus) {
-    $log->error("ERROR: could not find $cactus file\n");
-  } else {
-    $wormbase->run_command("cp $cactus $targetdir/COMPARATIVE_ANALYSIS/");
-  }
-
-  # Copy RRID strain data
-  my $RRID_source = "$acedir/${WS_version_name}_RRIDs.dat";
+  #
+  # RRID strain data
+  #
+  my $RRID_source = $wormbase->acefiles . "/${WS_version_name}_RRIDs.dat";
+  my $RRID_target = "$tgt_dir/strain_RRIDs.${WS_version_name}.dat.gz"; 
   if (not -e $RRID_source) {
     $log->error("ERROR: could not find $RRID_source file\n");
   } else {
-    $wormbase->run_command("cp $RRID_source $targetdir/COMPARATIVE_ANALYSIS/");
+    $wormbase->run_command("cat $RRID_source | gzip -c > $RRID_target", $log);
   }
   
+  #
+  # Disease data for ranjana
+  #
+  my $disease_source = $wormbase->acefiles . "/omim_db_data.ace";
+  my $disease_target = "$tgt_dir/human_disease.${WS_version_name}.ace.gz";
+  
+  if (not -e $disease_source) {
+    $log->error("ERROR: could not find $disease_source file\n");
+  } else {
+    $wormbase->run_command("cat $disease_source | gzip -c > $disease_target", $log);
+  }
+
   $runtime = $wormbase->runtime;
-  $log->write_to("$runtime: Finished copying comparative results\n\n");
+  $log->write_to("$runtime: Finished copying multi species files\n\n");
 }
 
 ############################################
@@ -928,27 +913,6 @@ sub copy_misc_files{
     $wormbase->run_command("cp -f $TARexpr $TARget", $log);
   } else {
     $log->write_to("Warning: gene expression file for $gspecies not found ($TARexpr)\n");
-  }
-
-  #
-  # Disease data for ranjana
-  #
-  # make the specific places for the files to be copied, probably overkill do create the local DISEASE dir?
-  my $ace_dir = $wormbase->autoace;
-  my $ace_disease_dir = "$ace_dir/DISEASE";
-  my $ftp_disease_dir = "$targetdir/DISEASE";
-
-  mkpath($ace_disease_dir,1,0775);
-  mkpath($ftp_disease_dir,1,0775);
-  my $Disease_source = $wormbase->acefiles."/omim_db_data.ace";
-  my $Disease_targ = "Human_disease_data";
-  
-  if (-e $Disease_source) {
-    $wormbase->run_command("cp -f $Disease_source $ace_disease_dir/$Disease_targ", $log);
-    $wormbase->run_command("cp -f $Disease_source $ftp_disease_dir/$Disease_targ", $log);
-  }
-  else {
-    $log->write_to("Warning: Disease data file for $gspecies not found ($Disease_source)\n");
   }
 
   #
@@ -1836,7 +1800,6 @@ GSPECIES.BIOPROJ.WSREL.ncRNA_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.mRNA_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.pseudogenic_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.intergenic_sequences.fa.gz
-GSPECIES.BIOPROJ.WSREL.canonical_geneset.gtf.gz
 GSPECIES.BIOPROJ.WSREL.xrefs.txt.gz
 
 [CORE:pristionchus]species/GSPECIES/BIOPROJ/annotation
@@ -1849,6 +1812,7 @@ GSPECIES.BIOPROJ.WSREL.genomic.fa.gz
 GSPECIES.BIOPROJ.WSREL.genomic_masked.fa.gz
 GSPECIES.BIOPROJ.WSREL.genomic_softmasked.fa.gz
 GSPECIES.BIOPROJ.WSREL.annotations.gff3.gz
+GSPECIES.BIOPROJ.WSREL.canonical_geneset.gtf.gz
 GSPECIES.BIOPROJ.WSREL.protein.fa.gz
 GSPECIES.BIOPROJ.WSREL.CDS_transcripts.fa.gz
 
@@ -1882,8 +1846,7 @@ disease_ontology.WSREL.obo
 development_association.WSREL.wb
 development_ontology.WSREL.obo
 
-[]COMPARATIVE_ANALYSIS
-compara.WSREL.tar.gz
+[]MULTI_SPECIES
 wormpep_clw.WSREL.sql.gz
-core_worms.hal
-WSREL_RRIDs.dat
+strain_RRIDs.WSREL.dat.gz
+human_disease.ace.gz
