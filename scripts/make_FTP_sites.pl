@@ -119,7 +119,7 @@ GetOptions ("help"          => \$help,
 	    "store:s"       => \$store,
 	    "acedb"         => \$acedb,
             "blastx"        => \$blastx,
-	    "multi"        => \$multi_species,
+	    "multi"         => \$multi_species,
 	    "dna"           => \$dna,
 	    "rna"           => \$rna,
 	    "wormpep"       => \$wormpep,
@@ -553,11 +553,11 @@ sub copy_gff_files{
       $wormbase->run_command("cp -f -R $source_gff3_file $target", $log);
       $wormbase->run_command("gzip -n -9 -f $target",$log);      
 
-      $wb->run_command("perl $ENV{CVS_DIR}/GFF_post_process/extract_canonical_geneset.pl -infile $source_gff3_file -outfile $target_gtf_file -gtf", $log);
+      $wb->run_command("perl $ENV{CVS_DIR}/GFF_post_process/extract_canonical_geneset.pl -infile $target -outfile $target_gtf_file -gtf", $log);
     } elsif (-e "${source_gff3_file}.gz") {
       my $target = "$gff_dir/${fname_prefix}.annotations.gff3.gz";
       $wormbase->run_command("cp -f -R ${source_gff3_file}.gz $target", $log);
-      $wb->run_command("perl $ENV{CVS_DIR}/GFF_post_process/extract_canonical_geneset.pl -infile ${source_gff3_file}.gz -outfile $target_gtf_file -gtf", $log);
+      $wb->run_command("perl $ENV{CVS_DIR}/GFF_post_process/extract_canonical_geneset.pl -infile $target -outfile $target_gtf_file -gtf", $log);
     } else {
       $log->error("ERROR: No GFF3 file for $species ($source_gff3_file)\n");
     }
@@ -583,10 +583,10 @@ sub copy_gff_files{
 
     if (-e $source) {
       $wb->run_command("cat $source | gzip -n -9 > $target", $log);
-      $wb->run_command("perl $ENV{CVS_DIR}/GFF_post_process/extract_canonical_geneset.pl -infile $zipped_source -outfile $target_gtf -gtf", $log);
+      $wb->run_command("perl $ENV{CVS_DIR}/GFF_post_process/extract_canonical_geneset.pl -infile $target -outfile $target_gtf -gtf", $log);
     } elsif (-e $zipped_source) {
       $wb->run_command("cp -f $zipped_source $target", $log);
-      $wb->run_command("perl $ENV{CVS_DIR}/GFF_post_process/extract_canonical_geneset.pl -infile $zipped_source -outfile $target_gtf -gtf", $log);
+      $wb->run_command("perl $ENV{CVS_DIR}/GFF_post_process/extract_canonical_geneset.pl -infile $target -outfile $target_gtf -gtf", $log);
     } else {
       $log->error("ERROR: No GFF3 data found for species $species\n");
     }
@@ -602,6 +602,9 @@ sub copy_gff_files{
     my $g_species = $wb->full_name('-g_species' => 1);
     my $species = $wb->species;
     my $bioproj = $wb->ncbi_bioproject;
+
+    next if exists $skip_species{$t3};
+    next if @only_species and not exists $only_species{$species};
 
     my $cur_ver_gff3_file = sprintf("%s/species/%s/%s/%s.%s.WS%s.annotations.gff3.gz", 
                                     $targetdir, 
