@@ -1849,4 +1849,4 @@ development_ontology.WSREL.obo
 []MULTI_SPECIES
 wormpep_clw.WSREL.sql.gz
 strain_RRIDs.WSREL.dat.gz
-human_disease.ace.gz
+human_disease.WSREL.ace.gz
