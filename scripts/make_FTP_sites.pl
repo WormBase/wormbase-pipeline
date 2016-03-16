@@ -668,39 +668,6 @@ sub copy_compara {
     $log->write_to("Warning: no clustal results found ($clust_src)\n");
   }
 
-
-  my @compara_tar_args;
-
-  my $acedir = $wormbase->acefiles;
-  my $compara_source = "$acedir/compara.ace";
-  if (not -e $compara_source) {
-    $log->error("ERROR: could not find compara.ace file\n");
-  } else {
-    push @compara_tar_args, " -C $acedir compara.ace";
-  }
-  
-  my $genomic_align_dir = $wormbase->misc_dynamic . "/SUPPLEMENTARY_GFF";
-  my @files = glob("$genomic_align_dir/*.genomic_alignment.gff3");
-  @files = map { $_ =~ /$genomic_align_dir\/(\S+)$/ and $1 } @files;
-  if (@files) {
-    push @compara_tar_args, " -C $genomic_align_dir @files";
-  }
-
-  if (@compara_tar_args) {
-    my $target = "$targetdir/COMPARATIVE_ANALYSIS/compara.$WS_version_name.tar.gz";
-    $wormbase->run_command("tar zcvf $target @compara_tar_args", $log);
-  } else {
-    $log->write_to("Warning: no compara results moved to FTP site\n");
-  }
-
-  # Copy hal file
-  my $cactus=$wormbase->misc_static . '/core_worms.hal';
-  if (not -e $cactus) {
-    $log->error("ERROR: could not find $cactus file\n");
-  } else {
-    $wormbase->run_command("cp $cactus $targetdir/COMPARATIVE_ANALYSIS/");
-  }
-
   # Copy RRID strain data
   my $RRID_source = "$acedir/${WS_version_name}_RRIDs.dat";
   if (not -e $RRID_source) {
