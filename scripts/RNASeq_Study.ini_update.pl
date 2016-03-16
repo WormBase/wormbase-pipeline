@@ -101,6 +101,7 @@ foreach my $phylum (keys %phyla) { # nematode and platyhelminth
     $species_files_seen{"${phylum_name}/$species_file"} = 1;
     if (!-e $path) {system("touch $path")}
     my $ini = Config::IniFiles->new( -file => $path, -allowempty => 1);
+    if (!defined $ini) {die "ERROR: INI not defined for $dir/${phylum_name}/$species_file\nDid you leave a '=' out of a line?\n"}
     my @existing_studies = $ini->Sections;
 
     foreach my $secondary_study_accession (keys $data{$species}) {
