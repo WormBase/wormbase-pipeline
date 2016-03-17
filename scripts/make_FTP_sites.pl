@@ -603,7 +603,7 @@ sub copy_gff_files{
     my $species = $wb->species;
     my $bioproj = $wb->ncbi_bioproject;
 
-    next if exists $skip_species{$t3};
+    next if exists $skip_species{$species};
     next if @only_species and not exists $only_species{$species};
 
     my $cur_ver_gff3_file = sprintf("%s/species/%s/%s/%s.%s.WS%s.annotations.gff3.gz", 
