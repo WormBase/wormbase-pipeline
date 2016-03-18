@@ -86,10 +86,10 @@ foreach my $species (@species_list) {
     if($ini{'study_accession'}) {
       my $ref = get_ENA_project($ini{'study_accession'});
       $proj_desc .= "<br />$ref<br />" if $ref;
-    }
-    if($study) {
-      my $ref = get_ENA_project($study);
-      $proj_desc .= "<br />$ref<br />" if $ref;
+      unless($ref) {
+        my $ref = get_ENA_project($study);
+        $proj_desc .= "<br />$ref<br />" if $ref;
+      }
     }
     if($ini{'pubmed'}) {
       my $ref = get_reference($ini{'pubmed'});
