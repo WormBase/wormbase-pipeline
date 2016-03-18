@@ -25,10 +25,25 @@ close(OUTFILE);
 open(OUTFILE, '>myHub/genomes.txt');
 close(OUTFILE);
 
-foreach my $species (@species_list) {
+foreach my $in_file (@species_list) {
  
-  warn "Species: $species";
+  warn "Species: $in_file";
   $counter = 0;
+
+  my $file = "./in/$in_file.ini";
+  open(INFILE, $file);
+
+  # Get the BioProject
+  my $bioproject;
+  foreach(<INFILE>) {
+    chomp;
+    $_ =~ /^general_bioproject=(.*?)$/;
+    $bioproject = $1 if $1;
+    last if $bioproject;
+  }
+  warn "Skipping as no BioProject" && next unless $bioproject;
+  my $species = $in_file . "_" . lc($bioproject);
+  warn "BioProject: $bioproject";
 
   # Write to genomes.txt
   open(OUTFILE, '>>myHub/genomes.txt');
@@ -43,8 +58,6 @@ foreach my $species (@species_list) {
   }
   close(OUTFILE);
  
-  my $file = "./in/$species.ini";
-  open(INFILE, $file);
   mkdir "myHub/$species" unless -d "myHub/$species";
   open(OUTFILE, ">myHub/$species/trackDb.txt");
 
@@ -54,9 +67,11 @@ foreach my $species (@species_list) {
 
   # Get each study
   my %studies;
-  my $current;
+  my $current = 'general';
+  seek(INFILE, 0, 0);
   foreach(<INFILE>) {
     chomp;
+    next if $_ =~ /^$/;
     if($_ =~ /^\[(.*)\]$/) {
       $current = $1;
     } else {
@@ -66,6 +81,7 @@ foreach my $species (@species_list) {
   
   # Get the details for each study
   foreach my $study (keys %studies) {
+    next if $study eq 'general';
     warn "-- Study: $study";
     my %ini;
     # Put the key value pairs into a hash
@@ -117,7 +133,7 @@ foreach my $species (@species_list) {
       $counter++;
       # Create the unique track ID
       my $track_id = sprintf("%03d", $counter) . "_" . $sample;
-      my $url = "http://ngs.sanger.ac.uk/production/parasites/wormbase/RNASeq_alignments/$species/$sample.bw";
+      my $url = sprintf("http://ngs.sanger.ac.uk/production/parasites/wormbase/RNASeq_alignments/%s/%s.bw", lc($species), $sample);
       # Create the sample description
       my $desc = sprintf(
                   'ENA Sample ID: <a href="http://www.ebi.ac.uk/ena/data/view/%s">%s</a><br />
