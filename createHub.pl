@@ -152,15 +152,8 @@ foreach my $in_file (@species_list) {
       open(HTMLOUT, ">myHub/$species/doc/$track_id.html");
       print HTMLOUT $desc;
       close(HTMLOUT);
-      # Process the colour
-      $ini{'Colour'} =~ s/ //g;
-      my @rgb = split(",", $ini{'Colour'});
-      my $hex = '#';
-      foreach my $col (@rgb) {
-        $hex .= sprintf("%02X", $col);
-      }
       # Create the trackDb text
-      $files .= sprintf("track %s\nparent %s\ntype bigWig\nbigDataUrl %s\nshortLabel %s\nlongLabel %s\ncolor %s\nhtml doc/%s\n\n", $track_id, $study, $url, $ini{"sample_shortLabel_$sample"}, $ini{"sample_longLabel_$sample"}, $hex, $track_id);
+      $files .= sprintf("track %s\nparent %s\ntype bigWig\nbigDataUrl %s\nshortLabel %s\nlongLabel %s\ncolor %s\nhtml doc/%s\n\n", $track_id, $study, $url, $ini{"sample_shortLabel_$sample"}, $ini{"sample_longLabel_$sample"}, $ini{'Colour'}, $track_id);
     }
   }
 
