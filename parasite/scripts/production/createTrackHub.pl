@@ -133,8 +133,17 @@ foreach my $in_file (@species_list) {
         push(@samples, $ini{$key}) unless grep{$_ eq $ini{$key}} @samples;
       }
     }
-    # Loop through each sample
+    # Put the tracks into some logical order
+    my %descriptions;
     foreach my $sample (@samples) {
+      $descriptions{$sample} = $ini{"sample_shortLabel_$sample"};
+    }
+    my @samples_ordered;
+    for my $k (sort {$descriptions{$a} cmp $descriptions{$b}} keys %descriptions) {
+      push(@samples_ordered, $k);
+    }
+    # Loop through each sample
+    foreach my $sample (@samples_ordered) {
       warn "  -- Sample: $sample";
       # Skip samples that do not have a description
       next unless $ini{"sample_shortLabel_$sample"} && $ini{"sample_longLabel_$sample"};
