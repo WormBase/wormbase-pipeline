@@ -136,6 +136,8 @@ foreach my $in_file (@species_list) {
     # Loop through each sample
     foreach my $sample (@samples) {
       warn "  -- Sample: $sample";
+      # Skip samples that do not have a description
+      next unless $ini{"sample_shortLabel_$sample"} && $ini{"sample_longLabel_$sample"};
       $counter++;
       # Create the unique track ID
       my $track_id = sprintf("%03d", $counter) . "_" . $sample;
@@ -159,7 +161,7 @@ foreach my $in_file (@species_list) {
       print HTMLOUT $desc;
       close(HTMLOUT);
       # Create the trackDb text
-      $files .= sprintf("track %s\nparent %s\ntype bigWig\nbigDataUrl %s\nshortLabel %s\nlongLabel %s\ncolor %s\nhtml doc/%s\n\n", $track_id, $study, $url, $ini{"sample_shortLabel_$sample"} || 'Unspecified', $ini{"sample_longLabel_$sample"} || 'Unspecified' , $ini{'Colour'} || "0,0,0", $track_id);
+      $files .= sprintf("track %s\nparent %s\ntype bigWig\nbigDataUrl %s\nshortLabel %s\nlongLabel %s\ncolor %s\nhtml doc/%s\n\n", $track_id, $study, $url, $ini{"sample_shortLabel_$sample"}, $ini{"sample_longLabel_$sample"}, $ini{'Colour'} || "0,0,0", $track_id);
     }
   }
 
