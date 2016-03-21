@@ -7,8 +7,14 @@ use LWP::UserAgent;
 use HTML::Entities;
 use XML::Simple;
 use JSON;
+use Getopt::Long qw(GetOptions);
 
-my @species_list = `ls ./in/*.ini | xargs -n1 basename`;
+my $in = "./in";
+my $out = "./out";
+
+GetOptions('in=s' => \$in, 'out=s' => \$out);
+
+my @species_list = `ls $in/*.ini | xargs -n1 basename`;
 foreach(@species_list) {
   chomp;
   $_ =~ s/\.ini//;
@@ -17,12 +23,12 @@ foreach(@species_list) {
 my $counter = 0;
 
 # Create the hub.txt file
-mkdir 'myHub' unless -d 'myHub';
-open(OUTFILE, '>myHub/hub.txt');
+mkdir $out unless -d $out;
+open(OUTFILE, ">$out/hub.txt");
 print OUTFILE "hub WBPS-RNASeq\nshortLabel RNA-Seq Alignments\nlongLabel RNA-Seq Alignments for WormBase ParaSite\ngenomesFile genomes.txt\nemail parasite-help\@sanger.ac.uk\n";
 close(OUTFILE);
 
-open(OUTFILE, '>myHub/genomes.txt');
+open(OUTFILE, ">$out/genomes.txt");
 close(OUTFILE);
 
 foreach my $in_file (@species_list) {
@@ -30,7 +36,7 @@ foreach my $in_file (@species_list) {
   warn "Species: $in_file";
   $counter = 0;
 
-  my $file = "./in/$in_file.ini";
+  my $file = "$in/$in_file.ini";
   open(INFILE, $file);
 
   # Get the BioProject
@@ -46,7 +52,7 @@ foreach my $in_file (@species_list) {
   warn "BioProject: $bioproject";
 
   # Write to genomes.txt
-  open(OUTFILE, '>>myHub/genomes.txt');
+  open(OUTFILE, ">>$out/genomes.txt");
   ## Use the REST API to lookup the assembly name
   my $url = "http://parasite.wormbase.org/api/info/assembly/$species?content-type=application/json";
   my $ua = LWP::UserAgent->new();
@@ -58,8 +64,8 @@ foreach my $in_file (@species_list) {
   }
   close(OUTFILE);
  
-  mkdir "myHub/$species" unless -d "myHub/$species";
-  open(OUTFILE, ">myHub/$species/trackDb.txt");
+  mkdir "$out/$species" unless -d "$out/$species";
+  open(OUTFILE, ">$out/$species/trackDb.txt");
 
   my $groups;
   my $files;
@@ -116,8 +122,8 @@ foreach my $in_file (@species_list) {
       }
     }
     $proj_desc =~ s/\n//g;
-    mkdir "myHub/$species/doc" unless -d "myHub/$species/doc";
-    open(HTMLOUT, ">myHub/$species/doc/$study.html");
+    mkdir "$out/$species/doc" unless -d "$out/$species/doc";
+    open(HTMLOUT, ">$out/$species/doc/$study.html");
     print HTMLOUT $proj_desc;
     close(HTMLOUT);
     # Get the unique sample IDs
@@ -148,8 +154,8 @@ foreach my $in_file (@species_list) {
                 $proj_desc);
       $desc =~ s/\n//g;
       $desc .= "<br /><br />This data comes from URL: $url";
-      mkdir "myHub/$species/doc" unless -d "myHub/$species/doc";
-      open(HTMLOUT, ">myHub/$species/doc/$track_id.html");
+      mkdir "$out/$species/doc" unless -d "$out/$species/doc";
+      open(HTMLOUT, ">$out/$species/doc/$track_id.html");
       print HTMLOUT $desc;
       close(HTMLOUT);
       # Create the trackDb text
