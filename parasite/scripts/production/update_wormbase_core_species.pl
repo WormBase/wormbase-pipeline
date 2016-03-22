@@ -248,10 +248,11 @@ sub xref_cleanup {
     #
     # Cleanup 1 -  delete UniProt_gn object_xref
     #
-    $dba->dbc->do("DELETE object_xref.* " .
-                  "FROM  object_xref, xref, external_db " .
+    $dba->dbc->do("DELETE object_xref.*, dependent_xref.* " .
+                  "FROM  object_xref, dependent_xref, xref, external_db " .
                   "WHERE external_db.external_db_id = xref.external_db_id " .
                   "AND xref.xref_id = object_xref.xref_id " .
+                  "AND object_xref.object_xref_id = dependent_xref.object_xref_id " .
                   "AND db_name = 'Uniprot_gn'");
 
 
