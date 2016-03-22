@@ -311,14 +311,14 @@ sub get_retired_cgc_details {
   if ($gene_obj->Status->name eq 'Dead') {
     print "Retired CGC_name in Dead gene\t$cgc\t$old_cgc_gene\n";
     my @merged_genes = $gene_obj->at("Identity.History.Version_change")->col(6);
-    
+#     e.g. WBGene00006456 in WS252
     foreach my $merged (@merged_genes) {
       if ($merged =~ /^WBGene/) {
 	my $merged_obj = $db->fetch(Gene => $merged);
 	my @other_names = $merged_obj->Other_name;
 	foreach my $other_name (@other_names) {
 	  if ($other_name eq $cgc) {
-	    $details .= ", $cgc has been assigned as an Other_name of $merged_obj";
+	    $details .= ", old gene merged in $merged_obj and $cgc has been assigned as an Other_name of $merged_obj";
 	  }
 	}
       }
