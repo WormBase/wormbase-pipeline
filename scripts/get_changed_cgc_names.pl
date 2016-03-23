@@ -221,21 +221,21 @@ sub output_changed_cgc {
 
   print OUT "# new CGC names\n";
   print OUT "# CGC_name\tGeneID\tSequenceID\tBiotype\tEvidence\n";
-  print OUT @no_previous_cgc_name;
+  print OUT sort @no_previous_cgc_name;
   print OUT "\n";
   
   print OUT "# Other changes\n";
 #  print OUT "# Genes with changed CGC names\n";
   print OUT "# old CGC\told GeneID\told SequenceID\told Biotype\tnew CGC\tnew GeneID\tnew SequenceID\tnew Biotype\n";
-  print OUT @changed_cgc_name_on_a_gene;
+  print OUT sort @changed_cgc_name_on_a_gene;
 #  print OUT "# removed CGC names\n";
-  print OUT @no_new_cgc_name;
+  print OUT sort @no_new_cgc_name;
 #  print OUT "# assigned Gene changed\n";
-  print OUT @geneid_different_to_prev;
+  print OUT sort @geneid_different_to_prev;
 #  print OUT "# Biotype changed\n";
-  print OUT @biotype_changed;
+  print OUT sort @biotype_changed;
 #  print OUT "# other changes\n";
-  print OUT @other;
+  print OUT sort @other;
   print OUT "\n";
 
     
