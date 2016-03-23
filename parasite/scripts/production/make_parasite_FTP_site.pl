@@ -7,21 +7,32 @@ use DBI;
 use FindBin;
 use File::Path;
 
-my $DUMP_GENOME_SCRIPT = "dump_genome.pl";
-my $DUMP_TRANSCRIPTS_SCRIPT = "dump_transcripts.pl";
-my $DUMP_GFF3_SCRIPT = "dump_gff3.pl";
+my $SCRIPT_LOC = "$FindBin::Bin/../../../scripts";
 
-my $SCRIPT_LOC = "$FindBin::Bin/../../../scripts/ENSEMBL/scripts";
+my $DUMP_GENOME_SCRIPT      = "ENSEMBL/scripts/dump_genome.pl";
+my $DUMP_TRANSCRIPTS_SCRIPT = "ENSEMBL/scripts/dump_transcripts.pl";
+my $DUMP_GFF3_SCRIPT        = "ENSEMBL/scripts/dump_gff3.pl";
+my $DUMP_GTF_SCRIPT         = "GFF_post_process/extract_canonical_geneset.pl";
+
+
 foreach my $script ($DUMP_GENOME_SCRIPT, $DUMP_TRANSCRIPTS_SCRIPT, $DUMP_GFF3_SCRIPT) {
   die "Could not find $script in $SCRIPT_LOC\n" if not -e "$SCRIPT_LOC/$script";
 }
 
 
-my $WORMBASE_CORE = {
+my $WORMBASE_GENOMES = {
   'brugia_malayi_prjna10729'           => 1,
   'onchocerca_volvulus_prjeb513'       => 1,
   'strongyloides_ratti_prjeb125'       => 1,
   'pristionchus_pacificus_prjna12644'  => 1,
+  'caenorhabditis_elegans'             => 1,
+  'caenorhabditis_briggsae'            => 1,
+  'caenorhabditis_brenneri'            => 1,
+  'caenorhabditis_remanei'             => 1,
+  'caenorhabditis_japonica'            => 1,
+  'caenorhabditis_sinica'              => 1,  
+  'caenorhabditis_tropicalis'          => 1,
+  'panagrellus_redivivus'              => 1,
 }; 
 
 my (
@@ -36,6 +47,7 @@ my (
   $cds_tran,
   $mrna_tran,
   $gff3,
+  $gtf,
   $all,
   $tl_out_dir,
   $wb_rel_num,
@@ -63,6 +75,7 @@ $wb_rel_num = "666";
   'cdstranscripts'   => \$cds_tran,
   'mrnatranscripts'  => \$mrna_tran,
   'gff3'             => \$gff3,
+  'gtf'              => \$gtf,
   'all'              => \$all,
   'outdir=s'         => \$tl_out_dir,
   'relnum=s'         => \$rel_num,
@@ -78,7 +91,7 @@ my $prev_release = "WBPS" . ($rel_num - 1);
 my $wb_release = "WS${wb_rel_num}";
 
 
-if ($g_nomask or $g_smask or $g_hmask or $cds_tran or $mrna_tran or $prot or $gff3 or $all) {
+if ($g_nomask or $g_smask or $g_hmask or $cds_tran or $mrna_tran or $prot or $gff3 or $gtf or $all) {
 
   my @genome_db_pairs = &get_databases($rel_num, @genomes);
 
@@ -98,54 +111,61 @@ if ($g_nomask or $g_smask or $g_hmask or $cds_tran or $mrna_tran or $prot or $gf
       }
     }
 
+
     &write_file($species, 
                 $bioproject,
                 $outdir, 
                 "genomic.fa", 
-                "$DUMP_GENOME_SCRIPT -dbname $dbname",
+                "$DUMP_GENOME_SCRIPT  -host $host -port $port -user $user -dbname $dbname",
                 $prevdir) if $g_nomask or $all;
-
+    
     &write_file($species, 
                 $bioproject,
                 $outdir, 
                 "genomic_softmasked.fa", 
-                "$DUMP_GENOME_SCRIPT -dbname $dbname -softmask",
+                "$DUMP_GENOME_SCRIPT  -host $host -port $port -user $user -dbname $dbname -softmask",
                 $prevdir) if $g_smask or $all;
-
+    
     &write_file($species, 
                 $bioproject,
                 $outdir, 
                 "genomic_masked.fa", 
-                "$DUMP_GENOME_SCRIPT -dbname $dbname -mask",
+                "$DUMP_GENOME_SCRIPT  -host $host -port $port -user $user -dbname $dbname -mask",
                 $prevdir) if $g_hmask or $all;
-
+    
     &write_file($species, 
                 $bioproject,
                 $outdir, 
                 "CDS_transcripts.fa", 
-                "$DUMP_TRANSCRIPTS_SCRIPT -dbname $dbname -cds",
+                "$DUMP_TRANSCRIPTS_SCRIPT  -host $host -port $port -user $user -dbname $dbname -cds",
                 $prevdir) if $cds_tran or $all;
-
+    
     &write_file($species, 
                 $bioproject,
                 $outdir, 
                 "mRNA_transcripts.fa", 
-                "$DUMP_TRANSCRIPTS_SCRIPT -dbname $dbname -mrna",
+                "$DUMP_TRANSCRIPTS_SCRIPT  -host $host -port $port -user $user -dbname $dbname -mrna",
                 $prevdir) if $mrna_tran or $all;
-
+    
     &write_file($species, 
                 $bioproject,
                 $outdir, 
                 "protein.fa", 
-                "$DUMP_TRANSCRIPTS_SCRIPT -dbname $dbname -pep",
+                "$DUMP_TRANSCRIPTS_SCRIPT  -host $host -port $port -user $user-dbname $dbname -pep",
                 $prevdir) if $prot or $all;
-
+    
     &write_file($species, 
                 $bioproject,
                 $outdir, 
                 "annotations.gff3", 
-                "$DUMP_GFF3_SCRIPT -dbname $dbname",
+                "$DUMP_GFF3_SCRIPT  -host $host -port $port -user $user -dbname $dbname",
                 $prevdir) if $gff3 or $all;
+    
+    &write_file($species,
+                $bioproject,
+                $outdir,
+                "canonical_geneset.gtf",
+                sprintf("%s -gtf -infile %s/%s.%s.%s.annotations.gff3.gz", $DUMP_GTF_SCRIPT, $outdir,$species, $bioproject,$release)) if $gtf or $all;
   }  
 }
 
@@ -168,14 +188,18 @@ sub write_file {
     die "Could not find $prevfile\n" if not -e $prevfile;
     $fname .= ".gz";
     $verbose and print STDERR "    Copying file from previous release ($prevfile)\n";
+    unlink "$outdir/$fname" if -e "$outdir/$fname";
     system("cp $prevfile $outdir/$fname") and die "Could not copy $prevfile to $outdir/$fname\n";
   } else {
     $verbose and print STDERR "    Dumping file using $script\n";
 
-    my $this_cmd = "perl $SCRIPT_LOC/$script -host $host -port $port -user $user -outfile $outdir/$fname";
+    my $this_cmd = "perl $SCRIPT_LOC/$script -outfile $outdir/$fname";
 
+    unlink "$outdir/$fname" if -e "$outdir/$fname";
     system($this_cmd) and die "Could not successfully run $this_cmd\n";
+    unlink "$outdir/${fname}.gz" if -e "$outdir/${fname}.gz";
     system("gzip -9 -n $outdir/$fname") and die "Could not successfully gzip $outdir/$fname\n";
+
   }
 }
 
@@ -200,7 +224,7 @@ sub get_databases {
 
       my $genome = $1;
       next if @genomes and not grep { $genome eq $_ } @genomes;
-      next if exists $WORMBASE_CORE->{$genome};
+      next if exists $WORMBASE_GENOMES->{$genome};
 
       push @dbs, [$genome, $db_name];
     }
@@ -234,10 +258,10 @@ sub make_md5sums {
 sub make_core_symlinks {
   my (@genomes) = @_;
 
-  foreach my $core_genome (keys %$WORMBASE_CORE) {
-    next if @genomes and not grep { $core_genome eq $_ } @genomes;
+  foreach my $wb_genome (keys %$WORMBASE_GENOMES) {
+    next if @genomes and not grep { $wb_genome eq $_ } @genomes;
 
-    my ($genus_pre, $genus_suf, $spe, $bioproject) = $core_genome =~ /(\S)(\S+)_(\S+)_(\S+)/; 
+    my ($genus_pre, $genus_suf, $spe, $bioproject) = $wb_genome =~ /(\S)(\S+)_(\S+)_(\S+)/; 
     $bioproject = uc($bioproject);
     
     my $ps_species_name = "${genus_pre}${genus_suf}_${spe}";
@@ -260,7 +284,7 @@ sub make_core_symlinks {
       my $link_fname_source = join(".", $wb_species_name, $bioproject, $wb_release, $fsuffix);
 
       system("cd $link_dir_dest && ln -s $link_dir_source/$link_fname_source $link_fname_dest") 
-          and die "Could not create symlink for $core_genome $fsuffix\n";
+          and die "Could not create symlink for $wb_genome $fsuffix\n";
     }
   }
 }
