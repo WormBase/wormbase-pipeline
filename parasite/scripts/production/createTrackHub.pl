@@ -164,6 +164,7 @@ foreach my $in_file (@species_list) {
                     get_life_stage_url($ini{"sample_WormBaseLifeStage_$sample"}), $ini{"sample_WormBaseLifeStage_$sample"}) : '',
                 $proj_desc);
       $desc =~ s/\n//g;
+      $desc =~ s/<br \/>/\n<br \/>\n/g;
       $desc .= "<br /><br />This data comes from URL: $url";
       mkdir "$out/$species/doc" unless -d "$out/$species/doc";
       open(HTMLOUT, ">$out/$species/doc/$track_id.html");
