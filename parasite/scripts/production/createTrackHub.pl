@@ -160,10 +160,11 @@ foreach my $in_file (@species_list) {
                     'ChEBI: <a href="https://www.ebi.ac.uk/chebi/searchId.do?chebiId=%s">%s</a><br />',
                     $ini{"sample_ChEBI_ID_$sample"}, $ini{"sample_ChEBI_ID_$sample"}) : '',
                 $ini{"sample_WormBaseLifeStage_$sample"} ? sprintf(
-                    'WormBase Life Stage: <a href="http://www.wormbase.org/species/all/life_stage/%s">%s</a><br />',
-                    $ini{"sample_WormBaseLifeStage_$sample"}, $ini{"sample_WormBaseLifeStage_$sample"}) : '',
+                    'WormBase Life Stage: <a href="%s">%s</a><br />',
+                    get_life_stage_url($ini{"sample_WormBaseLifeStage_$sample"}), $ini{"sample_WormBaseLifeStage_$sample"}) : '',
                 $proj_desc);
       $desc =~ s/\n//g;
+      $desc =~ s/<br \/>/\n<br \/>\n/g;
       $desc .= "<br /><br />This data comes from URL: $url";
       mkdir "$out/$species/doc" unless -d "$out/$species/doc";
       open(HTMLOUT, ">$out/$species/doc/$track_id.html");
@@ -212,6 +213,19 @@ sub get_ENA_project {
       $text = "Study Description<br />$formatted";
     }
     return $text;
+  }
+}
+
+sub get_life_stage_url {
+  my ($id) = @_;
+  my $url = "http://www.wormbase.org/rest/widget/life_stage/$id/overview?content-type=application%2Fjson";
+  my $ua = LWP::UserAgent->new();
+  my $response = $ua->get($url);
+  if ($response->is_success) {
+    return "http://www.wormbase.org/species/all/life_stage/$id";
+  } else {
+    $id =~ s/:/_/;
+    return "http://www.ebi.ac.uk/ols/beta/ontologies/wbls/terms?iri=http://purl.obolibrary.org/obo/$id";
   }
 }
  
