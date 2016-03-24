@@ -1944,7 +1944,7 @@ sub make_history
     print "written Sequence, From_laboratory, Gene_history etc.\n";
 
     print HIS "CDS\n" if ($biotype eq 'CDS');
-    print HIS "CDS_predicted_by ${\$obj->CDS_predicted_by}\n" if $obj->CDS_predicted_by;    
+    print HIS "CDS_predicted_by ${\$obj->CDS_predicted_by}\n" if ($biotype eq 'CDS' && $obj->CDS_predicted_by);
  
     print HIS "$pseudogene_type" if ($pseudogene_type);
 
