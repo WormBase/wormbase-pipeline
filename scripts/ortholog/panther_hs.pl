@@ -1,13 +1,14 @@
 #!/bin/env perl
-# this script will 
-open INF, 'blah.txt';
+# this script will convert PantherDB ortholog data
+# using a mapping file from UniProt to E!
+open INF, 'gene2uniprot.txt';
 
 my %u2e;
 
 while(<INF>){
   chomp;
   my @F=split;
-  $u2e{$F[1]}=$F[0];
+  $u2e{$F[1]}=$F[0] if $F[1];
 }
 
 my %sp2lin= (
