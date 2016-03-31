@@ -635,6 +635,7 @@
                   Rearrangement ?Rearrangement XREF Strain
                   Clone ?Clone XREF In_strain          
                   Transgene ?Transgene XREF Strain
+         Database ?Database ?Database_field ?Text
          Properties Inbreeding_state UNIQUE Selfed Text
                                             Isofemale Text
                                             Multifemale Text
