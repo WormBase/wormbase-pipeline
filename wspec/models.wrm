@@ -1676,7 +1676,10 @@
             Attributes Transcribed #Evidence
                        Fragment #Evidence
                        SubType UNIQUE processed_pseudogene #Evidence
-                                      unprocessed_pseudogene #Evidence 
+                                      unprocessed_pseudogene #Evidence
+                       Truncated_5 #Evidence
+                       Truncated_3 #Evidence
+                       Frameshifts UNIQUE Int
             Properties Isoform #Evidence
             Visible Gene UNIQUE ?Gene XREF Corresponding_pseudogene         // when Pseudogene is live
                     Gene_history UNIQUE ?Gene XREF Corresponding_pseudogene_history // when Pseudogene is dead
