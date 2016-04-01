@@ -21,18 +21,18 @@ foreach my $script ($DUMP_GENOME_SCRIPT, $DUMP_TRANSCRIPTS_SCRIPT, $DUMP_GFF3_SC
 
 
 my $WORMBASE_GENOMES = {
-  'brugia_malayi_prjna10729'           => 1,
-  'onchocerca_volvulus_prjeb513'       => 1,
-  'strongyloides_ratti_prjeb125'       => 1,
-  'pristionchus_pacificus_prjna12644'  => 1,
-  'caenorhabditis_elegans'             => 1,
-  'caenorhabditis_briggsae'            => 1,
-  'caenorhabditis_brenneri'            => 1,
-  'caenorhabditis_remanei'             => 1,
-  'caenorhabditis_japonica'            => 1,
-  'caenorhabditis_sinica'              => 1,  
-  'caenorhabditis_tropicalis'          => 1,
-  'panagrellus_redivivus'              => 1,
+  'brugia_malayi_prjna10729'             => 1,
+  'onchocerca_volvulus_prjeb513'         => 1,
+  'strongyloides_ratti_prjeb125'         => 1,
+  'pristionchus_pacificus_prjna12644'    => 1,
+  'caenorhabditis_elegans_prjna13758'    => 1,
+  'caenorhabditis_briggsae_prjna10731'   => 1,
+  'caenorhabditis_brenneri_prjna20035'   => 1,
+  'caenorhabditis_remanei_prjna248909'   => 1,
+  'caenorhabditis_japonica_prjna12591'   => 1,
+  'caenorhabditis_sinica_prjna194557'    => 1,  
+  'caenorhabditis_tropicalis_prjna53597' => 1,
+  'panagrellus_redivivus_prjna186477'    => 1,
 }; 
 
 my (
