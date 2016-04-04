@@ -90,7 +90,6 @@ while(<$tacefh>) {
   #print "$_\n";
   my $F;
   my @F = split"\t";
-  if ($test){print "$F[0] Main $count2\n";}
 
   #Store WBID :: Human readables in associated arrays.
   if (!grep (/$F[0]/, @Unique_genes))        {push @Unique_genes, $F[0];}
@@ -170,7 +169,8 @@ Hidden
 Class 
 Class Database_field 
 Right_of 2 
-Tag  HERE  
+Tag  HERE
+Condition "gene"  
  
 Colonne 4 
 Width 12 
