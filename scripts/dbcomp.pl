@@ -100,6 +100,10 @@ $log->write_to("Previous db      : $dbname_1 '$db_1'\n");
 $log->write_to("Current db       : $dbname_2 '$db_2'\n");
 $log->write_to("\n\n");
 				
+# open files for class and ID for use in QA when developing Datomic
+my $allout1 = $wormbase->compare."/WS${WS_previous}_all_classes.out";
+my $allout2 = $wormbase->compare."/WS${WS_current}_all_classes.out";
+
 # open two main output files to store results
 $errfile = $wormbase->compare."/WS${WS_previous}-WS${WS_current}.out";
 $outfile = $wormbase->compare."/WS${WS_previous}-WS${WS_current}.dbcomp";
@@ -299,6 +303,11 @@ sub diff {
 
   system ("cat /tmp/dbcomp_A_${counter} | sort > /tmp/look-1");
   system ("cat /tmp/dbcomp_B_${counter} | sort > /tmp/look-2");
+
+  # ID files for Datomic QA
+#  system ("cat /tmp/dbcomp_A_${counter} | sort >> $allout1");
+  system ("cat /tmp/dbcomp_B_${counter} | sort >> $allout2");
+
   open (COMM, "comm -3 /tmp/look-1 /tmp/look-2 |");
   while (<COMM>) {
       if (/^(\S+.+)/){
