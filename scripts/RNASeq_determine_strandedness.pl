@@ -146,6 +146,8 @@ foreach my $experiment_accession (keys %{$data}) {
   my $first_read_in_pair=0x0040;
   my $second_read_in_pair=0x0080;
   
+  my $percentage=100;
+
   my $samtools_view = "$Software/samtools/samtools view accepted_hits.bam '${chrom}:${start}-${end}'"; # look at the alignments in the selected region
   open (HITS, "$samtools_view |") || $log->log_and_die("can't run $samtools_view in determine_strandedness()\n");
   while (my $line = <HITS>) {
@@ -185,9 +187,11 @@ foreach my $experiment_accession (keys %{$data}) {
   if ($library_layout eq 'SINGLE') {
     if ($forward_count > 10 * $reverse_count && $forward_count > 50) {
       $strandedness = 'stranded';
-      
+      $percentage = $reverse_count * 100 / $forward_count;
+
     } elsif ($reverse_count > 10 * $forward_count && $reverse_count > 50) {
       $strandedness = 'reverse_stranded'; # reads are stranded, but in the opposite orientation to the genes
+      $percentage = $forward_count * 100 / $reverse_count;
       
     } elsif ($forward_count > 50 && $reverse_count > 50) {
       $strandedness = 'unstranded';
@@ -200,6 +204,8 @@ foreach my $experiment_accession (keys %{$data}) {
   } elsif ($library_layout eq 'PAIRED') {
     if ($forward_first > 10 * $reverse_first && $forward_first > 50) {
       $strandedness = 'stranded';
+      $percentage = $reverse_count * 100 / $forward_count;
+
       if ($reverse_second > 10 * $forward_second && $reverse_second > 50) {
 	$library_type = 'fr'; # first read mate is 'f'orward, second read mate is 'r'eversed
       } elsif ($forward_second > 10 * $reverse_second && $forward_second > 50) {
@@ -210,6 +216,8 @@ foreach my $experiment_accession (keys %{$data}) {
       
     } elsif ($reverse_first > 10 * $forward_first && $reverse_first > 50) {
       $strandedness = 'reverse_stranded'; # reads are stranded, but in the opposite orientation to the genes
+      $percentage = $forward_count * 100 / $reverse_count;
+
       if ($reverse_second > 10 * $forward_second && $reverse_second > 50) {
 	$library_type = 'rr'; # this is rarely used, I think
       } elsif ($forward_second > 10 * $reverse_second && $forward_second > 50) {
@@ -234,9 +242,10 @@ foreach my $experiment_accession (keys %{$data}) {
   }
   
   
-  $log->write_to("Experiment=$experiment_accession $study_accession $library_source $library_strategy $library_selection $library_layout $instrument_platform strand=$strandedness library_type=$library_type\nForward: $forward_count Reverse: $reverse_count\nForward first: $forward_first Forward second: $forward_second Reverse first: $reverse_first Reverse second: $reverse_second\n");
+  $log->write_to("Experiment=$experiment_accession $study_accession $library_source $library_strategy $library_selection $library_layout $instrument_platform strand=$strandedness library_type=$library_type\nForward: $forward_count Reverse: $reverse_count\nForward first: $forward_first Forward second: $forward_second Reverse first: $reverse_first Reverse second: $reverse_second Percentage: $percentage\n");
   
   $experiment_ini->newval($experiment_accession, 'strandedness', $strandedness);
+  $experiment_ini->newval($experiment_accession, 'strandedness_percent', $percentage);
   $experiment_ini->RewriteConfig;
   
   
