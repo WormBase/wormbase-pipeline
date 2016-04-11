@@ -204,7 +204,7 @@ foreach my $experiment_accession (keys %{$data}) {
   } elsif ($library_layout eq 'PAIRED') {
     if ($forward_first > 10 * $reverse_first && $forward_first > 50) {
       $strandedness = 'stranded';
-      $percentage = $reverse_count * 100 / $forward_count;
+      $percentage = $reverse_first * 100 / $forward_first;
 
       if ($reverse_second > 10 * $forward_second && $reverse_second > 50) {
 	$library_type = 'fr'; # first read mate is 'f'orward, second read mate is 'r'eversed
@@ -216,7 +216,7 @@ foreach my $experiment_accession (keys %{$data}) {
       
     } elsif ($reverse_first > 10 * $forward_first && $reverse_first > 50) {
       $strandedness = 'reverse_stranded'; # reads are stranded, but in the opposite orientation to the genes
-      $percentage = $forward_count * 100 / $reverse_count;
+      $percentage = $forward_first * 100 / $reverse_first;
 
       if ($reverse_second > 10 * $forward_second && $reverse_second > 50) {
 	$library_type = 'rr'; # this is rarely used, I think
