@@ -13,10 +13,12 @@
 
 
 use strict;
+use Getopt::Long;
+use Bio::SeqIO;
+use Bio::PrimarySeq;
+
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
-use Getopt::Long;
-use IO::Handle;
 use Log_files;
 use Storable;
 
@@ -120,9 +122,15 @@ sub dump_dna {
     $wormbase->remove_blank_lines("$dump_dir/$_.dna", 'no_log');
   }
 
-  unlink $genome_seq_file if -e $genome_seq_file;
-  foreach ($wormbase->get_chromosome_names(-mito => 1,-prefix=> 1)) {
-    $wormbase->run_command("cat $dump_dir/$_.dna >> $genome_seq_file",'no_log');
+
+  my $seqio = Bio::SeqIO->new(-format => 'fasta',
+                              -file => ">$genome_seq_file");
+  foreach my $chr ($wormbase->get_chromosome_names(-mito => 1,-prefix=> 1)) {
+    my $chr_file = "$dump_dir/$chr.dna";
+    my $sequence = &read_chromosome($chr_file);
+    my $seq = Bio::PrimarySeq->new(-id => $chr,
+                                   -seq => uc($sequence));
+    $seqio->write_seq($seq);
   }
 
   $log->write_to("Finished dumping DNA\n\n");
