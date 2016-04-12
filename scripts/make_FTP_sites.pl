@@ -1044,7 +1044,7 @@ sub copy_wormpep_files {
             printf $target_cdna_fh ">%s%s\n", $1, $2;
           }
         } elsif (/(\S+)/) {
-          print $target_cdna_fh "$1\n";
+          print $target_cdna_fh uc($1), "\n";
         }
       }
       close($target_cdna_fh) or $log->log_and_die("Could not successfully close $target_cdnafile\n");
