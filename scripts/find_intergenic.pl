@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/usr/bin/env perl
 #
 # find_intergenic.pl
 #
@@ -10,15 +10,19 @@
 # Last updated on: $Date: 2012-06-20 08:43:54 $        
 
 use strict;                                      
-use lib $ENV{'CVS_DIR'};
-use Wormbase;
 use Getopt::Long;
 use Carp;
-use Log_files;
 use Storable;
 use IO::Handle;
 use Cwd;
 use Ace;
+
+use Bio::SeqIO;
+use Bio::PrimarySeq;
+
+use lib $ENV{'CVS_DIR'};
+use Wormbase;
+use Log_files;
 use Sequence_extract;
 
 
@@ -62,10 +66,6 @@ $dbdir          = $wormbase->test ? $wormbase->database("current") : $wormbase->
 my $gffdir      = $wormbase->gff_splits;        # GFF directory
 my @chromosomes = $wormbase->get_chromosome_names; # chromosomes
 
-# in test mode?
-if ($test) {
-  print "In test mode\n" if ($verbose);
-}
 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
@@ -83,10 +83,6 @@ if (!defined($output)){
   $output = $wormbase->sequences."/intergenic_sequences.dna" unless $output;
 }
 
-##########################
-# MAIN BODY OF SCRIPT
-##########################
-
 
 ########################################
 # get transcripts out of the gff files #
@@ -98,7 +94,9 @@ my $no_sequences = 0;		# count number of sequences written out
 
 
 my $seq_obj = Sequence_extract->invoke($dbdir, undef, $wormbase);
-open (OUT, ">$output") || die "Failed to open output file $output";
+
+my $seqio = Bio::SeqIO->new(-format => 'fasta',
+                            -file   => ">$output");
 
 foreach my $chromosome (@chromosomes) {
 
@@ -131,20 +129,20 @@ foreach my $chromosome (@chromosomes) {
       }
       # NB store gene name with the start position, end position, strand, and operon status = 0
       $gene{$gene_name} = [$line[3], $line[4], $line[6], 0];
-      print "Gene : '$gene_name'\n" if ($verbose);
+      $log->write_to("Gene : '$gene_name'\n") if ($verbose);
     } elsif ($line[1] eq "operon" && $operons ne "include") {
       # if $operons eq "include" we don't want to take any notice of operons, so don't read them in
       ($gene_name) = ($line[8] =~ /Operon\s+\"(\S+)\"/);
       # NB store operon name with the start position, end position and strand, and operon status = 1
       $gene{$gene_name} = [$line[3], $line[4], $line[6], 1];
-      print "Operon : '$gene_name'\n" if ($verbose);
+      $log->write_to("Operon : '$gene_name'\n") if ($verbose);
     }
   }
   close ($GFF);
 
-####################################################
-# Sort by start position then operons before genes #
-####################################################
+  ####################################################
+  # Sort by start position then operons before genes #
+  ####################################################
 
   my @sorted_genes = sort { 
     $gene{$a}->[0] <=> $gene{$b}->[0]
@@ -153,16 +151,15 @@ foreach my $chromosome (@chromosomes) {
   } keys %gene;
 
 
-
-########################
-# produce output files #
-########################
+  ########################
+  # produce output files #
+  ########################
 
   my $last_end = 0;	        # the position of the end of the previous gene
   my $operon_end = -1;		# end position of last operon found
   my $operon_start = -1;	# start position of last operon found
   # name of previous gene
-  my $last_name = "start_of_chromosome_${chromosome}";
+  my $last_name = "startofsequence";
   my $last_strand = "";		# strand of the previous gene
   my $in_operon = 0;		# flag: true if in operon
   my $sequence;			# sequence of intergenic region
@@ -170,7 +167,7 @@ foreach my $chromosome (@chromosomes) {
   my $seq_start;		# position to start writing sequence from
   my $print_start;		# human-readable start coordinate
 
-  print "Produce output file\n" if ($verbose);
+  $log->write_to("Produce output file\n") if ($verbose);
 
   # debug count
   #my $count=0;
@@ -194,14 +191,14 @@ foreach my $chromosome (@chromosomes) {
       $in_operon = 0;
     }
 
-    print "name: $gene_name chromosome: $chromosome start: $start end: $end strand: $strand\n" if ($verbose);
+    $log->write_to("name: $gene_name chromosome: $chromosome start: $start end: $end strand: $strand\n") if ($verbose);
 
     # $operons eq "include" means we have no operon data (operons are totally ignored) and just output non-overlapping genes
     # $operons eq "no" means we simply treat operons like big genes and just output non-overlapping genes and operons
     # $operons eq "only" means we check to see if this is a gene within an operon before outputting
     if ((($operons eq "no" || $operons eq "include") && $start-1 > $last_end+1) ||
 	($operons eq  "only" && $in_operon && $operon_status == 0 && $start > $operon_start && $start-1 > $last_end+1)) {
-      print "intergenic region: $last_end+1 - $start-1 in_operon: $in_operon\n" if ($verbose);
+      $log->write_to("intergenic region: $last_end+1 - $start-1 in_operon: $in_operon\n") if ($verbose);
       if ($proximity <= 0) {
 	# just print the intergenic region
 	# get width of intergenic distance
@@ -210,10 +207,13 @@ foreach my $chromosome (@chromosomes) {
 	if ($seq_start eq "0") {$seq_start = "1";}
 	if ($seq_start eq "1") {$print_start = $seq_start;}
 	$print_start = $seq_start+1 unless ($seq_start eq "1"); # human-readable start coordinate
-	print OUT ">${last_name}_${gene_name} ${\$wormbase->chromosome_prefix}$chromosome $print_start, len: $width\n";
+
 	$sequence = $seq_obj->Sub_sequence("${\$wormbase->chromosome_prefix}$chromosome", "$seq_start", "$width");
-#	print OUT "$sequence\n";
-	fasta_write($sequence);
+
+        my $seq = Bio::PrimarySeq->new(-id   => "${last_name}_${gene_name}",
+                                       -desc => "$chromosome $print_start, len: $width", 
+                                       -seq  => uc($sequence));
+        $seqio->write_seq($seq);
 	$no_sequences++;
       } else {
 
@@ -231,15 +231,17 @@ foreach my $chromosome (@chromosomes) {
 	  $seq_start = $last_end;
 	  $print_start = $seq_start+1; # human-readable start coordinate
 	  my $prime =  ($last_strand eq "+") ? "3" : "5";
-	  print OUT ">$last_name.${prime}prime ${\$wormbase->chromosome_prefix}$chromosome $print_start, len: $width\n";
-	  # output sequence from end of gene to $width past the end
+
 	  $sequence = $seq_obj->Sub_sequence("${\$wormbase->chromosome_prefix}$chromosome", "$seq_start", "$width");
 	  if ($last_strand eq "-") {
-	    # get reverse-comp of sequence
 	    $sequence = $seq_obj->DNA_revcomp($sequence);
 	  }
-#	  print OUT "$sequence\n";
-	  fasta_write($sequence);
+
+          my $seq = Bio::PrimarySeq->new(-id   => "$last_name.${prime}prime",
+                                         -desc => "$chromosome $print_start, len: $width",
+                                         -seq  => uc($sequence));
+          
+          $seqio->write_seq($seq);
 	  $no_sequences++;
 
 	}
@@ -253,15 +255,17 @@ foreach my $chromosome (@chromosomes) {
 	  $seq_start = $start-$width-1;
 	  $print_start = $seq_start+1; # human-readable start coordinate
 	  my $prime =  ($strand eq "+") ? "5" : "3";
-	  print OUT ">$gene_name.${prime}prime ${\$wormbase->chromosome_prefix}$chromosome $print_start, len: $width\n";
 	  # output sequence from $width before the gene to the start
 	  $sequence = $seq_obj->Sub_sequence("${\$wormbase->chromosome_prefix}$chromosome", "$seq_start", "$width");
 	  if ($strand eq "-") {
-	    # get reverse-comp of sequence
 	    $sequence = $seq_obj->DNA_revcomp($sequence);
 	  }
-#	  print OUT "$sequence\n";
-	  fasta_write($sequence);
+
+          my $seq = Bio::PrimarySeq->new(-id   => "$gene_name.${prime}prime",
+                                         -desc => "$chromosome $print_start, len: $width",
+                                         -seq  => uc($sequence));
+          
+          $seqio->write_seq($seq);
 	  $no_sequences++;
 
 	}
@@ -302,7 +306,7 @@ foreach my $chromosome (@chromosomes) {
       # next if it is exactly at the end of the chromosome.
       next if $seq_start >= $seq_obj->{LENGTH}->{"${\$wormbase->chromosome_prefix}$chromosome"};
 
-      print OUT ">${last_name}_end_of_chromosome ${\$wormbase->chromosome_prefix}$chromosome $print_start, len: $width\n";
+      print OUT ">${last_name}_endofsequence ${\$wormbase->chromosome_prefix}$chromosome $print_start, len: $width\n";
       $sequence = $seq_obj->Sub_sequence("${\$wormbase->chromosome_prefix}$chromosome", "$seq_start", "$width");
 #      print OUT "$sequence\n";
       if ($sequence) {		# if the gene ends at the end of the chromosome there will not be a sequence after the gene
@@ -325,19 +329,19 @@ foreach my $chromosome (@chromosomes) {
 	    # get reverse-comp of sequence
 	    $sequence = $seq_obj->DNA_revcomp($sequence);
 	  }
-#	  print OUT "$sequence\n";
-	  fasta_write($sequence);
+
+          my $seq = Bio::PrimarySeq->new(-id   => ">$last_name.${prime}prime",
+                                         -desc => "$chromosome $print_start",
+                                         -seq  => uc($sequence));
+          $seqio->write_seq($seq);
 	  $no_sequences++;
 	}
       }
-
     }
   }
 }
 
-print "Finished Chromosome loop\n" if ($verbose);
-
-close (OUT);
+$log->write_to("Finished Chromosome loop\n") if ($verbose);
 
 
 ####################################
@@ -376,23 +380,6 @@ sub usage {
     system ('perldoc',$0);
     exit (0);
   }
-}
-
-############################################
-
-#################################
-# write to file in Fasta format #
-#################################
-
-sub fasta_write {
-    my $seq   = shift;
-    my $size     = length ($seq);
-    my $no_lines = int ($size / 60) +1;
-    for (my$i = 0; $i < $no_lines; $i++) {
-        my $linestart = $i * 60;
-        my $newline   = substr($seq,$linestart,60);
-        print OUT "$newline\n";
-    }
 }
 
 __END__
