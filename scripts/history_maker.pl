@@ -1508,6 +1508,7 @@ sub bless_prediction
     #$cds = &confirm_case($gene);
 
     my $obj = $db->fetch(CDS => "$gene");
+    print "$gene - $obj\n\n";
     return &error_warning("Invalid CDS","$gene is not a valid CDS name") unless $obj;
     my $method = $obj->Method->name;
     my $stem = $obj->Sequence->name;
@@ -1516,10 +1517,10 @@ sub bless_prediction
 
       &error_warning("Wrong method","Only Selected Predictions can be blessed");
       next;
-    } elsif ($exceptions eq "Link") {
-      &error_warning("Warning","This Prediction lies over clone boundaries.");
-      next;
-    }
+    } 
+        elsif ($exceptions eq "Link") {
+          &error_warning("Warning","This Prediction lies over clone boundaries or is placed on a scaffold so you may see co-ordinate issues.");
+        }
 
     my $new_gene;
     if ($form_gene2) {
