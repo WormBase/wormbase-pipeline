@@ -100,12 +100,9 @@ while (my $line = <GFF>) {
 
   my ($chromosome, $start, $end, $sense) = ($f[0], $f[3], $f[4], $f[6]);
 
-  $chromosome =~ s/^chr_//;
   $chromosome =~ s/^CHROMOSOME_//;
   if ($wormbase->species eq 'elegans') {
     $chromosome = "CHROMOSOME_${chromosome}";
-  } elsif ($wormbase->species eq 'briggsae') {
-    $chromosome = "chr${chromosome}";
   }
 
   my ($obj_name) = ($f[8] =~ /^\S+\s+\"(\S+)\"/);
