@@ -277,24 +277,20 @@ if ($host) { # contig sequences are contenated
 
 	my %sizes = (
 		     'chr_I'          => 150000000,
-		     'chr_I_random'   =>  70000000,
 		     'chr_II'         => 200000000,
-		     'chr_II_random'  =>  25000000,
 		     'chr_III'        => 400000000,
-		     'chr_III_random' =>   7000000,
 		     'chr_IV'         => 200000000,
-		     'chr_IV_random'  =>   4000000,
 		     'chr_V'          => 250000000,
-		     'chr_V_random'   =>  35000000,
 		     'chr_X'          => 250000000,
-		     'chr_Un'         => 100000000,
 		    );
-	$wormbase->check_file($file, $log,
-			      minsize => $sizes{$sequence},
-			      lines => ['^##', 
-					"^${sequence}\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
-			      gff => 1,
-			     );   
+	if (exists $sizes{$sequence}) {
+	  $wormbase->check_file($file, $log,
+				minsize => $sizes{$sequence},
+				lines => ['^##', 
+					  "^${sequence}\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
+				gff => 1,
+			       );   
+	}
       } else {
 	$wormbase->check_file($file, $log,
 			      lines => ['^##', 
