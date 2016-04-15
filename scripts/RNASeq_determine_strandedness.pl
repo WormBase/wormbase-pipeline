@@ -85,7 +85,7 @@ print "Have $data_count transcribed long experiments with no strandedness inform
 
 my %regions = ( # chromosome, start, end and sense of highly expressed region of orthologs of ama-1
 	       'brenneri'  => ['43', 207605, 224629, '-'                ], # CBN32550
-	       'briggsae'  => ['IV', 15412678, 15431288, '-'            ], # WBGene00027817 Cbr-rbp-1
+	       'briggsae'  => ['chrIV', 15412678, 15431288, '-'         ], # WBGene00027817 Cbr-rbp-1
 	       'brugia'    => ['Bm_v4_ChrX_scaffold_001', 19536809, 19549237, '-'], # Bma-ama-1
 	       'elegans'   => ['IV', 4248070, 4258173, '+'              ], # WBGene00000123 ama-1
 	       'japonica'  => ['17301', 25817, 31400, '-'               ], # Cjp-ama-1
