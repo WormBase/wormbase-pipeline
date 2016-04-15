@@ -99,12 +99,9 @@ while (my $line = <>) {
 
   my ($chromosome, $start, $end, $sense) = ($f[0], $f[3], $f[4], $f[6]);
 
-  $chromosome =~ s/^chr_//;
   $chromosome =~ s/^CHROMOSOME_//;
   if ($wormbase->species eq 'elegans') {
     $chromosome = "CHROMOSOME_${chromosome}";
-  } elsif ($wormbase->species eq 'briggsae') {
-    $chromosome = "chr${chromosome}";
   }
 
 
