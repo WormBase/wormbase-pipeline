@@ -29,7 +29,7 @@ use Getopt::Long;
 # check user is wormpub
 #######################
 
-my ($help, $debug, $test, $verbose, $store, $load, $wormbase,$ndbUser,$ndbPass, $path, $input_file);
+my ($help, $debug, $test, $verbose, $store, $load, $wormbase,$ndbUser,$ndbPass, $path, $input_file,$pg);
 GetOptions ('help'              => \$help,
             'debug=s'           => \$debug,
             'test'              => \$test,
@@ -40,6 +40,7 @@ GetOptions ('help'              => \$help,
             'ndbpass=s'         => \$ndbPass,
             'path=s'            => \$path,
             'cgcfile=s'         => \$input_file,
+            'pgpassword=s'      => \$pg,
        );
 
 
@@ -75,7 +76,7 @@ $input_file = "$path/cgc_strain_list_$rundate" if not defined $input_file;
 # get hash to convert CGC name to Gene ID
 ############################################
 my $ga = init Geneace($wormbase);
-my %Transgene_ids = %{$ga->transgene_ids()};
+my %Transgene_ids = %{$ga->transgene_ids($pg)};
 my %Gene_info = %{$ga -> gene_info()};
 my $last_gene_id_number = $ga ->get_last_gene_id();
 

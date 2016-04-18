@@ -39,25 +39,29 @@ sub curr_db {return $curr_db}
 sub test_geneace {return  '/nfs/wormpub/DATABASES/TEST_DBs/CK1TEST'}
 
 sub transgene_ids {
-  my ($this) = @_;
+  my ($this,$pgpasswd) = @_;
 
-  print "----- Doing Transgene name <-> Transgene ID conversion based on current_db ... -----\n\n";
+  use lib "/software/worm/lib/site_perl/5.14.1/"; # that will break at the EBI, but Mojolicious might be installed there
+  use Mojo::DOM58;
+  use LWP::UserAgent;    
+
+  print "----- Doing Transgene name <-> Transgene ID conversion based on CalTech PostGreSQL ... -----\n\n";
+
+  my $url = 'http://tazendra.caltech.edu/~postgres/cgi-bin/referenceform.cgi';
+  my $ua = LWP::UserAgent->new;
+  $ua->credentials('tazendra.caltech.edu:80','Restricted Files','wormbase', $pgpasswd);
+
+  my $response = $ua->post($url,{'pgcommand' =>'SELECT trp_publicname.trp_publicname, trp_name.trp_name FROM trp_name, trp_publicname WHERE trp_publicname.joinkey=trp_name.joinkey','perpage' => 'all','action' => 'Pg !'});
+
+  my $tree = Mojo::DOM58->new($response->content);
 
   my %tgid_map;
 
-  my $wb = $this->{wormbase};
-  my $tg_name_def = "$def_dir/transgene_ids.def";
-  
-  my $fh = $wb->table_maker_query($wb->database('current'), $tg_name_def);
-  while(<$fh>) {
-    chomp;
-    next if /acedb|\/\/|^\s*\n{0,1}$/;
-
-    if (/\"(\S+)\"\s+\"(\S+)\"/) {    
-      my ($wbtid, $public_name) = ($1, $2);
-    
-      $tgid_map{$public_name} = $wbtid;
-    }
+  for my $row ($tree->find('tr')->each){
+    my @td = $row->children->each;
+    if $td[1]->text=~/WBTr/
+    my ($wbtid, $public_name) = ($td[1]->text, $td[0]->text);
+    $tgid_map{$public_name} = $wbtid if $wbtid=~/WBTr\d+/;
   }
 
   return \%tgid_map;
