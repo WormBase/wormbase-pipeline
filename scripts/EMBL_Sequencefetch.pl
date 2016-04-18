@@ -458,7 +458,7 @@ sub output_seq {
   
   if ($source eq 'trinity') {
     print OUT_ACE "Properties cDNA cDNA_EST\n";
-    print OUT_ACE "Method \"EST_${source}\"\n";
+    print OUT_ACE "Method \"RNASeq_${source}\"\n";
   } else {
     die "can't determine the type from the ID line for\n";
   }
