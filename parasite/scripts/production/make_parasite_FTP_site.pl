@@ -25,6 +25,7 @@ my $WORMBASE_GENOMES = {
   'onchocerca_volvulus_prjeb513'         => 1,
   'strongyloides_ratti_prjeb125'         => 1,
   'pristionchus_pacificus_prjna12644'    => 1,
+  'caenorhabditis_angaria_prjna51225'    => 1,
   'caenorhabditis_elegans_prjna13758'    => 1,
   'caenorhabditis_briggsae_prjna10731'   => 1,
   'caenorhabditis_brenneri_prjna20035'   => 1,
