@@ -229,9 +229,9 @@ foreach my $vendor (sort { $b cmp $a } keys %arrays_by_vendor) {
 sub write_ace {
   my ($platform, $chr, $chr_len, $res_hash) = @_;
 
-  if ($species =~ 'elegans' and $chr !~ /^CHROMOSOME/) {
+  if ($species =~ 'elegans' and grep { $_ eq $chr } ('I', 'II', 'III', 'IV', 'V', 'X', 'MtDNA')) {
     $chr = "CHROMOSOME_${chr}";
-  } elsif ($species =~ 'briggsae' and $chr !~ /^chr/) {
+  } elsif ($species =~ 'briggsae' grep { $_ eq $chr } ('I', 'II', 'III', 'IV', 'V', 'X')) {
     $chr = "chr${chr}";
   }
 
