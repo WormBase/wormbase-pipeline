@@ -225,11 +225,6 @@ sub process_gene{
 	if ($species eq "elegans"){
 	  print OUT "Other_name \"CELE_$new\"\n";
 	}
-	if ($species eq "briggsae"){
-	  $new =~ s/CBG//;
-	  print OUT "Other_name \"CELE_$new\"\n";
-	  $new =~ s/^/CBG/;
-	}
 	print OUT "Species \"".$wormbase->full_name."\"\n";
 	  print OUT "Positive_clone $p_clone Inferred_automatically \"From sequence, transcript, pseudogene data\"\n" if ($species eq 'elegans');
 	print OUT "History Version_change 1 now $person Event Split_from $old_gene\n";

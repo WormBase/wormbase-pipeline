@@ -365,11 +365,6 @@ sub process_gene{
     if ($species eq "elegans"){
       print OUT "Other_name \"CELE_${seq}\"\n";
     }
-    if ($species eq "briggsae"){
-      $seq =~ s/CBG//;
-      print OUT "Other_name \"CELE_$seq\"\n";
-      $seq =~ s/^/CBG/;
-    }
     print OUT "Species \"${\$wormbase->full_name}\"\n";
     print OUT "History Version_change 1 now $person Event Created\n";
     print OUT "Method Gene\n";
