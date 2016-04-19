@@ -173,9 +173,6 @@ sub TSL {
 package Briggsae;
 our @ISA = qw(Species);
 
-sub chromosome_prefix {'chr'}
-sub chromosome_names {qw(I I_random II III III_random IV IV_random V V_random X X_random un)} # CB4
-
 sub pep_prefix {'CBP'}
 sub pepdir_prefix{'brig'};
 sub cds_regex{qr/^CBG\d{5}[a-z]*$/};
