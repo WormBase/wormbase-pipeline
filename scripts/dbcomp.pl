@@ -103,6 +103,7 @@ $log->write_to("\n\n");
 # open files for class and ID for use in QA when developing Datomic
 my $allout1 = $wormbase->compare."/WS${WS_previous}_all_classes.out";
 my $allout2 = $wormbase->compare."/WS${WS_current}_all_classes.out";
+$wormbase->run_command("rm -f $allout1 $allout2", $log);
 
 # open two main output files to store results
 $errfile = $wormbase->compare."/WS${WS_previous}-WS${WS_current}.out";
@@ -305,8 +306,7 @@ sub diff {
   system ("cat /tmp/dbcomp_B_${counter} | sort > /tmp/look-2");
 
   # ID files for Datomic QA
-#  system ("cat /tmp/dbcomp_A_${counter} | sort >> $allout1");
-  system ("cat /tmp/dbcomp_B_${counter} | sort >> $allout2");
+  datomic_check($counter);
 
   open (COMM, "comm -3 /tmp/look-1 /tmp/look-2 |");
   while (<COMM>) {
@@ -332,6 +332,50 @@ sub diff {
   print ERR "\/\/ -----------------------------\n";
   return($added, $removed);
 }
+
+###############################################
+# output IDs in class to a file for the Datomic quality control checks
+
+sub datomic_check {
+
+  my $counter = shift;
+
+  open (ONEIN, "</tmp/dbcomp_A_${counter}") || $log->log_and_die("Can't open /tmp/dbcomp_A_${counter}\n");
+  open (TWOIN, "</tmp/dbcomp_B_${counter}") || $log->log_and_die("Can't open /tmp/dbcomp_B_${counter}\n");
+
+  open (ONEOUT, ">>$allout1") || $log->log_and_die("Can't open $allout1\n");
+  open (TWOOUT, ">>$allout2") || $log->log_and_die("Can't open $allout2\n");
+
+  my @one = sort <ONEIN>; 
+  my @two = sort <TWOIN>; 
+  
+  foreach my $line (@one) {
+    chomp $line;
+    my @line = split /\s:\s/, $line;
+    if ($line[0] eq 'KeySet') {next}
+    $line[1] =~ s/"//g;
+    $line[1] = '"'.$line[1].'"';
+    print ONEOUT (join " : ", @line)."\n";
+  }
+
+  foreach my $line (@two) {
+    chomp $line;
+    my @line = split /\s:\s/, $line;
+    if ($line[0] eq 'KeySet') {next}
+    $line[1] =~ s/"//g;
+    $line[1] = '"'.$line[1].'"';
+    print TWOOUT (join " : ", @line)."\n";
+  }
+
+  close(ONEOUT);
+  close(TWOOUT);
+
+  close(ONEIN);
+  close(TWOIN);
+
+}
+
+
 
 ###############################################
 
