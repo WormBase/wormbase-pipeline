@@ -181,7 +181,7 @@ sub cds_regex_noend{qr/^CBG\d{5}[a-z]*/}; # for getting the CDS part of a Transc
 sub ncbi_tax_id {'6238'};
 sub ncbi_bioproject {'PRJNA10731'};
 sub bioproject_description {'C. briggsae Sequencing Consortium genome project'};
-sub assembly_type {'chromosome'};
+sub assembly_type {'contig'};
 sub seq_db {my $self = shift;return $self->database('briggsae');}
 sub short_name {'C. briggsae'}
 sub gspecies_name {'c_briggsae'}
