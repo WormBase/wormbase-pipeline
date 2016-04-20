@@ -52,7 +52,7 @@ my $gene_id; # stores assigned gene ID for later email
 
 my %valid_species = (
   elegans   => 1,
-  briggsae  => 1
+  briggsae  => 1,
   remanei   => 1,
   brenneri  => 1,
   japonica  => 1,
@@ -60,7 +60,7 @@ my %valid_species = (
   ovolvulus => 1,
   sratti    => 1,
 );
-my $list = join(',',keys %species_data);
+my $list = join(',',keys %valid_species);
 
 die "$species is not valid\nTry one of these: $list\n" unless $valid_species{$species};
 die "-seq option not valid if -input is specified\n"     if ($input && $seq);
@@ -158,9 +158,9 @@ if (defined $sneak){
 print "Creating $outfile\n" if $verbose;
 print "Warning this split has probably already been processed.\n" if -e $outfile;
 
-open(OUT, ">$outfile") || $log->log_and_die "Can't write to output file\n";
+open(OUT, ">$outfile") || $log->log_and_die("Can't write to $outfile\n");
 if ($sneak){
-  open(SN,  ">>$sneak") || $log->log_and_die "Can't write to $sneak file\n";
+  open(SN,  ">>$sneak") || $log->log_and_die("Can't write to $sneak file\n");
 }
 
 # find out highest gene number in case new genes need to be created
@@ -173,13 +173,13 @@ my $override;
 #######################################################################################
 
 if ($input){
-  open(IN, "<$input") || $log->log_and_die "Could not open $input\n";
+  open(IN, "<$input") || $log->log_and_die("Could not open $input\n");
 
   # process each gene in file, warning for errors
   while(<IN>){
     my($seq, $local_cgc) = split(/\s+/, $_);
 
-    print "\n\n$seq - $cgc\n" if $verbose;
+    printf("\n\n$seq - %s\n",$cgc||'no cgc name') if $verbose;
 
     &process_gene($seq,$local_cgc);
   }
@@ -199,7 +199,7 @@ close(OUT);
 # load information to geneace if -load is specified
 if ($load){
   my $command = "pparse $outfile\nsave\nquit\n";
-  open (GENEACE,"| $tace -tsuser newgene $database") || $log->log_and_die "Failed to open pipe to $database\n";
+  open (GENEACE,"| $tace -tsuser newgene $database") || $log->log_and_die("Failed to open pipe to $database\n");
   print GENEACE $command;
   close GENEACE;
   $wormbase->run_command("mv $outfile $backupsdir"."$outname\n");
