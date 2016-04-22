@@ -29,47 +29,41 @@ use Getopt::Long;
 # check user is wormpub
 #######################
 
-my ($help, $debug, $test, $verbose, $store, $load, $wormbase,$ndbUser,$ndbPass, $path, $input_file,$pg);
+my ($help, $debug, $test, $verbose, $load,$ndbUser,$ndbPass, $path, $input_file,$pg);
 GetOptions ('help'              => \$help,
             'debug=s'           => \$debug,
             'test'              => \$test,
             'verbose'           => \$verbose,
-            'store:s'           => \$store,
             'load'              => \$load,
             'ndbuser=s'         => \$ndbUser,
             'ndbpass=s'         => \$ndbPass,
             'path=s'            => \$path,
             'cgcfile=s'         => \$input_file,
             'pgpassword=s'      => \$pg,
-       );
+       )||die($@);
 
 
 &usage if ($help);
 my $user = `whoami`; chomp $user;
 if (!$test and $user ne "wormpub"){
-  print "\nYou have to be wormpub to run this script!\n\n";
-  exit(0);
+  die("You have to be wormpub to run this script!\n");
 }
 
-if ( $store ) {
-  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
-} else {
-  $wormbase = Wormbase->new();
-}
+my $wormbase = Wormbase->new();
 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
+$log->log_and_die("input file $input_file doesn't exist\n") unless -e $input_file;
 
 #######################
 # misc variables
 #######################
-
 my $geneace_dir = $wormbase->database('geneace');
 my $tace        = $wormbase->tace;
 my $rundate     = $wormbase->rundate;
 
-$path = $geneace_dir."/STRAIN_INFO" if not defined $path;
+$path = $geneace_dir.'/STRAIN_INFO' if not defined $path;
 $input_file = "$path/cgc_strain_list_$rundate" if not defined $input_file;
 
 ############################################
@@ -80,13 +74,9 @@ my %Transgene_ids = %{$ga->transgene_ids($pg)};
 my %Gene_info = %{$ga -> gene_info()};
 my $last_gene_id_number = $ga ->get_last_gene_id();
 
-
-
-
 ########################################################################
 # Set up various output files
 ######################################################################## 
-
 my $current_strain_ace      = "$path/cgc_strain_info_$rundate.ace";
 my $delete_strain_ace       = "$path/cgc_strain_info_$rundate.delete.ace";
 my $missingAuthors          = "$path/missingStrainAuthors_$rundate.txt";
@@ -108,8 +98,6 @@ print NEWGENES "// This file should *ONLY* be loaded to geneace when it has been
 print NEWGENES "// by hand.  If these Gene objects are ok, then they will need Gene IDs added.\n";
 print NEWGENES "// Some of these gene names might already exist if they are from non-elegans species.\n\n";
 
-
-
 ############################################
 # loop through strain data making ace files
 ############################################
@@ -124,10 +112,7 @@ my $strain_count = `grep Strain: $input_file | wc -l`;
 
 open(INPUT, $input_file) || die "Can't open inputfile!"; 
 
-
-
 # setup the nameserver
-
 my $DB = $test ? 'test_wbgene_id;utlt-db:3307' : 'wbgene_id;shap:3303';
 my $db = NameDB_handler->new($DB,$ndbUser,$ndbPass);
 my $geneAceDB = Ace->connect(-path => $geneace_dir) or die Ace->error;
@@ -154,9 +139,8 @@ while(<INPUT>){
     print STRAIN "\n\nStrain : \"$strain\"\n";
     print DELETE_STRAIN "\n\nStrain : \"$strain\"\n";
   }
-  my $species;
   m/\s+Species: (.+)Genotype:/;
-  $species = $1;
+  my $species = $1;
   $species =~ s/\s+$//g;
   if ($strain){
     print STRAIN "Species \"$species\"\n";
@@ -175,8 +159,7 @@ while(<INPUT>){
   my $description = $1;
   $description =~ s/\s{2,}/ /g;
   $description =~ s/\s+$//g;
-  # get rid of any quotation marks
-  $description =~ s/\"//g; #"
+  $description =~ s/\"//g; # get rid of any quotation marks
   # change any URLs present else the double back slash will be treated as a comment
   $description =~ s/http:\/\//URL: /g;
 
@@ -188,7 +171,7 @@ while(<INPUT>){
       print STRAIN "Remark \"$attribution\" $paper\n";
       $description =~ s/\s*Attribution: .* Paper_evidence WBPaper\d+//;
   }
-  print STRAIN "Remark \"$description\" Inferred_automatically \"From CGC strain data\"\n" unless ($description eq "");
+  print STRAIN "Remark \"$description\" Inferred_automatically \"From CGC strain data\"\n" unless ($description eq '');
   print DELETE_STRAIN  "-D Remark \n" unless ($description eq ""); 
 
   # find simple locus allele combinations e.g. spt-3(hc184)
@@ -236,7 +219,6 @@ while(<INPUT>){
     $genotype =~ s/$reg_exp//;
   }
 
-
   # find double barrelled alleles (revertants) e.g. daf-12(rh61rh412) 
   $reg_exp=qr/([Ca-z\-]{3,6}\-\d+\.{0,1}\d*)\(([a-z]{1,2}\d+)([a-z]{1,2}\d+)\)/;
   while($genotype =~ m/$reg_exp/){
@@ -275,7 +257,6 @@ while(<INPUT>){
     $genotype =~ s/\([a-z]{1,2}\d+\)//;
   }
 
-
   # find any skulking gene names missed by steps above, these are often where there is no allele name
   # or the allele name is wild-type, e.g. unc-24(+)
   while($genotype =~ m/([a-z]{3,4}\-\d+)/){
@@ -292,8 +273,8 @@ while(<INPUT>){
   my $mutagen = $1;
   $mutagen =~ s/\s{2,}/ /g;
   $mutagen =~ s/\s+$//g;
-  print STRAIN "Mutagen \"$mutagen\"\n" unless ($mutagen eq "");
-  print DELETE_STRAIN  "-D Mutagen \"$mutagen\"\n" unless ($mutagen eq "");
+  print STRAIN "Mutagen \"$mutagen\"\n" unless ($mutagen eq '');
+  print DELETE_STRAIN  "-D Mutagen \"$mutagen\"\n" unless ($mutagen eq '');
 
 
   m/Outcrossed: (.*?)Reference:/;
@@ -358,10 +339,10 @@ close(TRANSGENEREPORT);
 # 3. load updated CGC strain genotype to Geneace
 ##################################################
 
-my (@dir, @deleteACE, $last_delete_ace);
+my @deleteACE;
 
-opendir(DIR, "$path/") || die "Can't read directory";
-@dir=readdir DIR;
+opendir(DIR, "$path/") || die "Can't read directory $path\n";
+my @dir=readdir DIR;
 closedir (DIR);
 foreach (@dir){
   if ($_ =~ /^cgc_strain_info_\d+.delete.ace/){
@@ -369,7 +350,7 @@ foreach (@dir){
   }
 }
 @deleteACE=sort @deleteACE;
-$last_delete_ace=$deleteACE[-2];
+my $last_delete_ace=$deleteACE[-2];
 print "\n\nDelete_ace file from last update: $last_delete_ace\n\n";
 
 my $command=<<END;
@@ -383,14 +364,12 @@ save
 quit
 END
 
-
 # only load this data if -load specified     
 if($load){
   open (FH,"| $tace -tsuser \"CGC_strain_update\" $geneace_dir") || die "Failed to upload to test_Geneace";
   print FH $command;
   close FH;
 }
-
 
 print "\nThe script has run to completeion and is now going to end.  Goodnight\n\n";
 
