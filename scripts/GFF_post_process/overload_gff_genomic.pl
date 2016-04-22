@@ -77,7 +77,7 @@ while( <$gff_in_fh> ) {
   
   if (exists $acc{$fid}) {
     if ($gff3) {
-      $f[8] .= ";Note=Clone:$fid,Genbank=$acc{$fid}";
+      $f[8] .= ";Note=Clone:$fid,GenBank:$acc{$fid}";
     } else {
       $f[8] .= " ; Note \"Clone $fid\" ; Genbank \"$acc{$fid}\"";
     }
