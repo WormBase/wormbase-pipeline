@@ -99,11 +99,6 @@ if ($dumpace) { # dump the resulting analysis out as an ace file
 
 } else { # run the analysis
 
-  $log->write_to("Updating db_version of GenBlast analyses\n");
-  
-  &update_analysis_db_version();
-
-
   $log->write_to("Updating genBlastG input files for $database\n");
   
   # 1) create the split wormpep files
@@ -114,19 +109,24 @@ if ($dumpace) { # dump the resulting analysis out as an ace file
   # 2) set up the genome file and create the blast indices for it
   
   $log->write_to("Set up and index masked genome for genBlastG\n");
-  &set_up_genome();
+  my $genome_file = &set_up_genome();
+
+  # 3) update the analysis
+
+  $log->write_to("Updating db_file and db_version of GenBlast analyses\n");
+  &update_analysis($genome_file, $WS_version);
   
-  # 3) clean out all old GenBlast transcripts and exons
+  # 4) clean out all old GenBlast transcripts and exons
 
   $log->write_to("Clean out old genBlastG results\n");
   &clean_old_results();
 
-  # 4) clean out all input_ids for the GenBlast analysis
+  # 5) clean out all input_ids for the GenBlast analysis
   
   $log->write_to("Clean out any old genBlastG jobs\n");
   &clean_input_ids();
   
-  # 5) make new input_ids
+  # 6) make new input_ids
   
   $log->write_to("Set up Ensembl jobs for genBlastG analysis\n");
   &make_input_ids();
@@ -139,9 +139,11 @@ exit(0);
 
 
 #####################################################################################################
-sub update_analysis_db_version {
+sub update_analysis {
+  my ($genome_file, $db_version) = @_;
   foreach my $ana (@genblast_analyses) {
-    $ana->db_version($WS_version);
+    $ana->db_file($genome_file);
+    $ana->db_version($db_version);
     $ana->adaptor->update($ana);
   }
 }
@@ -309,7 +311,7 @@ sub set_up_genome {
   my $index_cmd = "$ENV{'WORM_PACKAGES'}/genBlastG/formatdb -i $target_dna_file -p F";
   $wormbase->run_command($index_cmd, $log);
 
-
+  return $target_dna_file;
 }
 
 #####################################################################################################

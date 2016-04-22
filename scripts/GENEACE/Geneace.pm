@@ -12,8 +12,8 @@ use strict;
 use Data::Dumper;
 
 # constant stuff (hopefully not modified anywhere)
-my $def_dir = '/nfs/wormpub/DATABASES/geneace/wquery';           # location of table-maker definitions
-my $curr_db = '/nfs/wormpub/DATABASES/current_DB';
+my $def_dir     = '/nfs/wormpub/DATABASES/geneace/wquery'; # location of table-maker definitions
+my $curr_db     = '/nfs/wormpub/DATABASES/current_DB';
 my $geneace_dir = '/nfs/wormpub/DATABASES/geneace';
 
 sub init {
@@ -59,9 +59,9 @@ sub transgene_ids {
 
   for my $row ($tree->find('tr')->each){
     my @td = $row->children->each;
-    if $td[1]->text=~/WBTr/
+    next unless $td[1]->text=~/WBTr/
     my ($wbtid, $public_name) = ($td[1]->text, $td[0]->text);
-    $tgid_map{$public_name} = $wbtid if $wbtid=~/WBTr\d+/;
+    $tgid_map{$public_name} = $wbtid;
   }
 
   return \%tgid_map;

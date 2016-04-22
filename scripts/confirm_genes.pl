@@ -620,13 +620,11 @@ sub create_transcript_file {
 	}else {
 		$prefix = $wormbase->chromosome_prefix."${chrom}_";
 	}
-	$wormbase->run_command("cd $gffdir; cat ${prefix}BLAT_EST_BEST.gff ${prefix}BLAT_mRNA_BEST.gff >  ${prefix}BLAT_TRANSCRIPT_BEST.gff", $log) unless (-e "$gffdir/${prefix}BLAT_TRANSCRIPT_BEST.gff");
+	$wormbase->run_command("cd $gffdir; cat ${prefix}BLAT_EST_BEST.gff ${prefix}BLAT_mRNA_BEST.gff ${prefix}BLAT_Trinity_BEST.gff >  ${prefix}BLAT_TRANSCRIPT_BEST.gff", $log) unless (-e "$gffdir/${prefix}BLAT_TRANSCRIPT_BEST.gff");
 
 	# only elegans has OSTs and RSTs
 	$wormbase->run_command("cd $gffdir; cat ${prefix}BLAT_OST_BEST.gff ${prefix}BLAT_RST_BEST.gff >>  ${prefix}BLAT_TRANSCRIPT_BEST.gff", $log) if ($wormbase->species eq 'elegans');
 
-	# and we are adding Trinity transcripts to some species
-	$wormbase->run_command("cd $gffdir; cat ${prefix}BLAT_Trinity_BEST.gff >>  ${prefix}BLAT_TRANSCRIPT_BEST.gff", $log) if (-e "$gffdir/${prefix}BLAT_Trinity_BEST.gff");
 }
 ################
 
