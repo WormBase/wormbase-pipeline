@@ -49,6 +49,7 @@ sub transgene_ids {
 
   my $url = 'http://tazendra.caltech.edu/~postgres/cgi-bin/referenceform.cgi';
   my $ua = LWP::UserAgent->new;
+  $ua->proxy('http','http://wwwcache.sanger.ac.uk:3128');
   $ua->credentials('tazendra.caltech.edu:80','Restricted Files','wormbase', $pgpasswd);
 
   my $response = $ua->post($url,{'pgcommand' =>'SELECT trp_publicname.trp_publicname, trp_name.trp_name FROM trp_name, trp_publicname WHERE trp_publicname.joinkey=trp_name.joinkey','perpage' => 'all','action' => 'Pg !'});
@@ -59,7 +60,7 @@ sub transgene_ids {
 
   for my $row ($tree->find('tr')->each){
     my @td = $row->children->each;
-    next unless $td[1]->text=~/WBTr/
+    next unless $td[1]->text=~/WBTr/;
     my ($wbtid, $public_name) = ($td[1]->text, $td[0]->text);
     $tgid_map{$public_name} = $wbtid;
   }
