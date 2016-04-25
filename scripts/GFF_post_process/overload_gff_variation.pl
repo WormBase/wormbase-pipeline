@@ -174,13 +174,17 @@ while (<$gff_in_fh>) {
       
       my @consequences = $variation->at('Affects.Predicted_CDS[2]');
       
-      if (grep { $_ =~ /Missense|Nonsense|Readthrough/ } @consequences){
-        # 2.) the missense
-        my @missense = $variation->at('Affects.Predicted_CDS[4]');
-        @missense = grep {/\sto\s/} @missense;
-        #print NEW " ; AAChange \"$missense[0]\"";
-        push @new_els, ['AAChange', $missense[0]] if $missense[0];
+      my $aachange;
+      foreach my $con (@consequences) {
+        if (grep { $con->name eq $_ } ('Missense', 'Nonsense')) {
+          my $aa = $con->right->right;
+          $aachange = $aa if $aa =~ /\s+to\s+/; 
+        } elsif ( $con eq 'Readthrough') {
+          my $aa = $con->right;
+          $aachange = $aa if $aa =~ /\s+to\s+/; 
+        }
       }
+      push @new_els, ['AAChange', $aachange] if defined $aachange;
     }
     
     my @new_el_strings;
