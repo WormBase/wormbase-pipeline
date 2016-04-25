@@ -77,13 +77,13 @@ foreach my $seq ( @{$sa->fetch_all($seq_level)}){
         }
 
 	foreach my $feature (@$repeats){
-	     printf OUT ("Motif_homol %s RepeatMasker %s %s %s ",
-	        $feature->display_id,$feature->score,$feature->seq_region_start,$feature->seq_region_end);
-	     if ($feature->strand>0){
-		     printf OUT ("%s %s\n",$feature->hstart,$feature->hend);
-	     } else { 
-		     printf OUT ("%s %s\n",$feature->hend,$feature->hstart);
-	     }
+          printf OUT ("Motif_homol %s RepeatMasker %s",  $feature->display_id,$feature->score );
+          if ($feature->strand < 0) {
+            printf OUT (" %s %s",$feature->end,$feature->start);
+          } else {
+            printf OUT (" %s %s",$feature->start,$feature->end);
+          }
+          printf OUT ("%s %s\n",$feature->hstart,$feature->hend);
 	}
 
         $repeats = $seq->get_all_RepeatFeatures('TRF');
