@@ -437,6 +437,7 @@ sub fetch_balancers {
       $rem =~ s/=/\%3D/g;
       $rem =~ s/&/\%26/g;
       $rem =~ s/,/\%2C/g;
+      $rem =~ s/\%/\%25/g;
 
       if ($rem =~ /^\S+:/ or $rem =~ /^\S+ \S+:/) {
         push @{$b->{notes}}, $rem;
