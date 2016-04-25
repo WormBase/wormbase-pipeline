@@ -179,7 +179,7 @@ while (<$gff_in_fh>) {
         my @missense = $variation->at('Affects.Predicted_CDS[4]');
         @missense = grep {/\sto\s/} @missense;
         #print NEW " ; AAChange \"$missense[0]\"";
-        push @new_els, ['AAChange', $missense[0]];
+        push @new_els, ['AAChange', $missense[0]] if $missense[0];
       }
     }
     
