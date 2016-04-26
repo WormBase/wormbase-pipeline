@@ -111,14 +111,24 @@ else {
     my $qclass;
     my @qclasses = ("Pseudogene", "Transcript", "CDS");
     my %seen;
+    
     my $s;
     foreach $qclass (@qclasses) {
       $log->write_to("\nQuick test of $qclass\n");
       %seen = ();
+      my %ignore;
+      
+      # the CDS and Transcript ghost objects with only an Evidence tag set are not interesting and should be ignored
+      my @evidence = $db->fetch (-query => "FIND $qclass where Evidence AND !method AND !species AND !sequence AND !Source_exons AND !gene AND !remark AND !Gene_history");
+      foreach my $g (@evidence) {
+	my $gg=$g->name; 
+	$ignore{$gg}=1;
+      }
 
       my @tmpbad_genes = $db->fetch (-query => "FIND $qclass where !method");
       foreach my $g (@tmpbad_genes) {
 	my $gg=$g->name; 
+	if ($ignore{$gg}) {next}
 	$log->write_to("Error: $qclass $gg has no method\n"); 
 	$seen{$gg}=1;
 	print "Finished test 1 $qclass\n";
@@ -127,6 +137,7 @@ else {
       my @no_se = $db->fetch (-query => "FIND $qclass where !Source_exons");
       foreach my $g (@no_se) {
 	my $gg=$g->name;
+	if ($ignore{$gg}) {next}
 	if (exists $seen{$gg}) {
 	  $s=' (seen already)';
 	} else {
@@ -139,6 +150,7 @@ else {
       my @no_Sparent_genes = $db->fetch (-query => "FIND $qclass where !S_parent");
       foreach my $g (@no_Sparent_genes) {
 	my $gg=$g->name; 
+	if ($ignore{$gg}) {next}
 	if (exists $seen{$gg}) {
 	  $s=' (seen already)';
 	} else {
@@ -151,6 +163,7 @@ else {
       my @no_species = $db->fetch (-query => "FIND $qclass where !Species");
       foreach my $g (@no_species) {
 	my $gg=$g->name; 
+	if ($ignore{$gg}) {next}
 	if (exists $seen{$gg}) {
 	  $s=' (seen already)';
 	} else {
@@ -165,6 +178,7 @@ else {
 	my @no_CDS = $db->fetch (-query => "FIND $qclass where !CDS");
 	foreach my $g (@no_CDS) {
 	  my $gg=$g->name; 
+	  if ($ignore{$gg}) {next}
 	  if (exists $seen{$gg}) {
 	    $s=' (seen already)';
 	  } else {
@@ -172,9 +186,10 @@ else {
 	  }
 	  $log->write_to("Error: CDS $gg has no CDS tag $s\n");
 	}
-	my @CDS_bad_method = $db->fetch (-query => 'FIND CDS; method != "history"; method != "curated"; method != "Transposon_CDS"');
+	my @CDS_bad_method = $db->fetch (-query => 'FIND CDS; method != "history"; method != "curated"; method != "Transposon_CDS"; method != "Genefinder"; method != "not_confirmed_isoformer"; method != "RNASEQ.Hillier"; method != "mGene"; method != "RNASEQ.Hillier.Aggregate"; method != "isoformer"; method != "jigsaw"; method != "twinscan"');
 	foreach my $g (@CDS_bad_method) {
 	  my $gg=$g->name; 
+	  if ($ignore{$gg}) {next}
 	  if (exists $seen{$gg}) {
 	    $s=' (seen already)';
 	  } else {
@@ -188,6 +203,7 @@ else {
 	my @Trans_bad_method = $db->fetch (-query => 'FIND Transcript; method != "history_transcript"; method != "*RNA*"; method != "non_coding_transcript"; method != "non_coding_transcript_isoformer"');
 	foreach my $g (@Trans_bad_method) {
 	  my $gg=$g->name; 
+	  if ($ignore{$gg}) {next}
 	  if (exists $seen{$gg}) {
 	    $s=' (seen already)';
 	  } else {
@@ -200,6 +216,7 @@ else {
 	my @Pseudo_bad_method = $db->fetch (-query => 'FIND Pseudogene; method != "history_pseudogene"; method != "Pseudogene"; method != tRNA_pseudogene; method != Transposon_Pseudogene; method != rRNA_pseudogene');
 	foreach my $g (@Pseudo_bad_method) {
 	  my $gg=$g->name; 
+	  if ($ignore{$gg}) {next}
 	  if (exists $seen{$gg}) {
 	    $s=' (seen already)';
 	  } else {
