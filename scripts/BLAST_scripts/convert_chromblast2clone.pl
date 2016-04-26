@@ -34,7 +34,7 @@ while (<>) {
 #Homol_data : "CHROMOSOME_I:wublastx_fly"
 #Pep_homol       "FLYBASE:CG16858" "wublastx_fly"  11.398 4571310 4571236 1492 1516
   
-  if(/^Homol_data\s+:\s+\"(\w+):(wublastx_\w+)/) {
+  if(/^Homol_data\s+:\s+\"([\w\.]+):(wublastx_\w+)/) { # matches both chromosome names and briggsae contig names like "cb25.fpc4228b"
     $seq = $1;
     $blastdb = $2;
     #print "\nHomol_data : \"$seq:$blastdb\"\n";
