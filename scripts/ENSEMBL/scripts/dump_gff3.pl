@@ -64,6 +64,7 @@ if ($num_jobs) {
 
 if (defined $out_file) {
   open($out_fh, ">$out_file") or die "Could not open $out_file for writing\n";
+  print $out_fh "##gff-version 3\n";
 }
 
 
@@ -71,12 +72,13 @@ while( my $slice = shift @slices) {
   my $slice_name = $slice->seq_region_name();
   my $slice_size = $slice->length;
 
+  $debug and print STDERR " Fetching and processing data for $slice_name...\n";
+
   if (not defined $out_fh) {
     my $sl_file = "$dumpdir/${slice_name}.gff3";
     open($out_fh, ">$sl_file") or die "Could not open $sl_file for writing\n";  
   }
 
-  print $out_fh "##gff-version 3\n";
   print $out_fh "##sequence-region $slice_name 1 $slice_size\n";
   
   # Get all the genes on this slice
@@ -209,8 +211,8 @@ while( my $slice = shift @slices) {
       my $feat = {
         seqname      => $pt->slice->seq_region_name,
         strand       => ($pt->strand > 0?'+':'-'),
-        hit_start    => $pe->seq_region_start,
-        hit_stop     => $pe->seq_region_end,
+        start        => $pe->seq_region_start,
+        end          => $pe->seq_region_end,
         score        => ($pe->score||'.'),
         phase        => (defined $pe->phase) ? (3 - $pe->phase) % 3 : ".",
         logic_name   => $pt->analysis->logic_name,
@@ -258,11 +260,11 @@ while( my $slice = shift @slices) {
           seqname      => $slice->seq_region_name,
           hit_id       => $feat->hseqname, 
           hit_start    => $feat->hstart,
-          hit_stop     => $feat->hend,
+          hit_end      => $feat->hend,
           display      => $feat->hseqname,
           strand       => ($feat->strand > 0?'+':'-'),
-          hit_start    => $feat->start,
-          hit_stop     => $feat->end,
+          start        => $feat->start,
+          end          => $feat->end,
           score        => $feat->score,
           phase        => ".",
           p_value      => $feat->p_value,
@@ -288,7 +290,6 @@ while( my $slice = shift @slices) {
   
   foreach my $logic (@logics) {
     my $features = $slice->get_all_DnaAlignFeatures($logic);
-    
     while(my $feat = shift @$features) {
       my $cigar_line = flipCigarReference($feat->cigar_string); # for Lincoln
       if ($feat->strand < 0) {
@@ -300,11 +301,11 @@ while( my $slice = shift @slices) {
         seqname      => $feat->slice->seq_region_name,
         hit_id       => $feat->hseqname,
         hit_start    => $feat->hstart,
-        hit_stop     => $feat->hend,
+        hit_end      => $feat->hend,
         display      => $feat->hseqname,
         strand       => ($feat->strand > 0?'+':'-'),
-        hit_start    => $feat->start,
-        hit_stop     => $feat->end,
+        start        => $feat->start,
+        end          => $feat->end,
         score        => $feat->score,
         phase        => ".",
         p_value      => $feat->p_value,
@@ -325,10 +326,10 @@ while( my $slice = shift @slices) {
     my $stripped_feature = {
       seqname     => $feature->slice->seq_region_name,
       strand      => ($feature->strand > 0?'+':'-'),
-      hit_start   => $feature->seq_region_start,
-      hit_stop    => $feature->seq_region_end,
+      start       => $feature->seq_region_start,
+      end         => $feature->seq_region_end,
       score       => ($feature->score||'.'),
-      phase        => ".",
+      phase       => ".",
       logic_name  => $feature->analysis->logic_name,
       display     => $feature->repeat_consensus->name,
       gff_source  => (defined $feature->analysis->gff_source) ? $feature->analysis->gff_source : "WormBase",
@@ -345,8 +346,8 @@ while( my $slice = shift @slices) {
     my $stripped_simpfeature = {
       seqname      => $simpfeature->slice->seq_region_name,
       strand       => ($simpfeature->strand > 0?'+':'-'),
-      hit_start    => $simpfeature->seq_region_start,
-      hit_stop     => $simpfeature->seq_region_end,
+      start        => $simpfeature->seq_region_start,
+      end          => $simpfeature->seq_region_end,
       score        => ($simpfeature->score||'.'),
       phase        => ".",
       logic_name   => $simpfeature->analysis->logic_name,
@@ -357,8 +358,7 @@ while( my $slice = shift @slices) {
   }
   
 
-  print $out_fh '#'x80;
-  print $out_fh "\n";
+  print $out_fh "###\n";
   close($out_fh) unless defined $out_file;
 }
 
@@ -474,15 +474,15 @@ sub dump_feature {
                      $feature{seqname},
                      $feature{gff_source},
                      $feature{feature_type},
-                     $feature{hit_start},
-                     $feature{hit_stop},
+                     $feature{start},
+                     $feature{end},
                      $feature{score},
                      $feature{strand},
                      $feature{phase});
   my @group;
   push @group, "ID=$feature{gff_id}" if $feature{gff_id};
   push @group, "Name=$feature{display}" if $feature{display};
-  push @group, "Target=$feature{hit_id} $feature{hit_start} $feature{hit_stop}" if $feature{hit_id};
+  push @group, "Target=$feature{hit_id} $feature{hit_start} $feature{hit_end}" if $feature{hit_id};
   push @group, "Gap=$feature{cigar}" if $feature{cigar};
 
   $gff_line .= "\t" . join(";", @group);
@@ -511,8 +511,13 @@ sub get_info {
 
     foreach my $acc (sort keys %domains) {
       my $dbe = $ensdb->get_DBEntryAdaptor->fetch_by_db_accession('InterPro', $acc );
-      if (defined $dbe) {
-        push @info, "method:InterPro accession:$acc description:" . $dbe->description;
+      if (defined $dbe and $dbe->description) {
+        my $desc = $dbe->description;
+        $desc =~ s/\&/\%26/g;
+        $desc =~ s/\,/\%2C/g;
+        $desc =~ s/\=/\%3D/g;
+        $desc =~ s/\;/\%3B/g;
+        push @info, "method:InterPro accession:$acc description:$desc";
       }
     }
 
@@ -685,7 +690,7 @@ sub filter_features {
   
   # put the feature in all bins between start and stop
   foreach my $f(@$features){
-    my ($_start,$_end)=sort {$a <=> $b } ($f->{hit_start},$f->{hit_stop});
+    my ($_start,$_end)=sort {$a <=> $b } ($f->{start},$f->{end});
     for (my $n=int($_start/$size);$n <=int($_end/$size);$n++){
       push @{$bins[$n]},$f;
     }
@@ -711,14 +716,14 @@ sub filter_features {
   }
   foreach my $hid (keys %hits_by_name) {
     foreach my $strand (keys %{$hits_by_name{$hid}}) {
-      my @hits = sort { $a->{hit_start} <=> $b->{hit_start} } @{$hits_by_name{$hid}->{$strand}};
+      my @hits = sort { $a->{start} <=> $b->{start} } @{$hits_by_name{$hid}->{$strand}};
 
       my @grouped_hits;
       while(my $hit = shift @hits) {
         if (@grouped_hits and
-            $hit->{hit_start} > $grouped_hits[-1]->[-1]->{hit_stop} and
-            (($strand eq '+' and $hit->{hit_start} > $grouped_hits[-1]->[-1]->{hit_stop}) or
-             ($strand eq '-' and $hit->{hit_stop} < $grouped_hits[-1]->[-1]->{hit_start}))) {
+            $hit->{start} > $grouped_hits[-1]->[-1]->{end} and
+            (($strand eq '+' and $hit->{start} > $grouped_hits[-1]->[-1]->{end}) or
+             ($strand eq '-' and $hit->{end} < $grouped_hits[-1]->[-1]->{start}))) {
           push @{$grouped_hits[-1]}, $hit;
         } else {
           push @grouped_hits, [$hit];
