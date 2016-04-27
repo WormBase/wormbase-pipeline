@@ -376,6 +376,7 @@ sub submit_and_collate {
     $out_file = "$dumpdir/collated_dump.gff3";
   }
   open(my $out_fh, ">$out_file") or die "Could not open $out_file for writing\n";
+  print $out_fh "##gff-version 3\n";
 
   my (@batches);
   my $idx = 0;
@@ -435,6 +436,7 @@ sub submit_and_collate {
   foreach my $gff3 (@gff3_files) {
     open(my $in_gff3, $gff3) or die "Could not open $gff3 for reading\n";
     while(<$in_gff3>) {
+      next if /^\#\#gff-version/;
       print $out_fh $_;
     }
   }
