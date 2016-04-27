@@ -477,7 +477,7 @@ sub update_dna {
   
   # worm_lite.pl magic
   my $species = $wormbase->species;
-  $wormbase->run_command( "perl $Bin/ENSEMBL/scripts/worm_lite.pl -yfile $yfile_name -setup -load_dna -load_genes -species $species", $log );
+  &run_command( "perl $Bin/ENSEMBL/scripts/worm_lite.pl -yfile $yfile_name -setup -load_dna -load_genes -species $species", $log );
   
   # create analys_tables and rules
   my $db_options = sprintf(
@@ -488,19 +488,19 @@ sub update_dna {
   my $pipeline_scripts = "$ensembl_code_dir/ensembl-pipeline/scripts";
   my $generic_conf_dir         = ($generic_config->{confdir}||die("please set a generic confdir in $yfile_name\n"));
   
-  $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/repeat_rule.conf", $log );
-  $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/blastx_rule.conf", $log );
+  &run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/repeat_rule.conf", $log );
+  &run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/blastx_rule.conf", $log );
   $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/blastp_rule.conf", $log );
 
   if ($do_blats) {
-    $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/blat_rule.conf", $log );
+    &run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/blat_rule.conf", $log );
   }
   if ($do_genblasts) {
-    $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/genblast_rule.conf", $log );
+    &run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/genblast_rule.conf", $log );
   }
 
-  $wormbase->run_command("perl $pipeline_scripts/make_input_ids $db_options -slice -slice_size 75000 -coord_system toplevel -logic_name submitslice75k -input_id_type SLICE75K",$log);
-  $wormbase->run_command("perl $pipeline_scripts/make_input_ids $db_options -translation_id -logic submittranslation", $log );
+  &run_command("perl $pipeline_scripts/make_input_ids $db_options -slice -slice_size 75000 -coord_system toplevel -logic_name submitslice75k -input_id_type SLICE75K",$log);
+  &run_command("perl $pipeline_scripts/make_input_ids $db_options -translation_id -logic submittranslation", $log );
 
   return 1;
 }
@@ -557,8 +557,8 @@ sub update_proteins {
                            $config->{core_database}->{port}
 			  );
   
-  $wormbase->run_command("perl $Bin/ENSEMBL/scripts/worm_lite.pl -yfile $yfile_name -load_genes -species $species", $log );
-  $wormbase->run_command("perl $ensembl_code_dir/ensembl-pipeline/scripts/make_input_ids $db_options -translation_id -logic submittranslation", $log );
+  &run_command("perl $Bin/ENSEMBL/scripts/worm_lite.pl -yfile $yfile_name -load_genes -species $species", $log );
+  &run_command("perl $ensembl_code_dir/ensembl-pipeline/scripts/make_input_ids $db_options -translation_id -logic submittranslation", $log );
 }
 
 =head2 delete_gene_by_translation [UNUSED]
@@ -818,6 +818,17 @@ sub get_regexp_of_database_names {
   $regexp .= ')';
 
   return $regexp;
+}
+
+
+#########################################
+# wrapper for running commands that we need to check the status of
+sub run_command {
+  my ($cmd, $log) = @_;
+
+  if ($wormbase->run_command($cmd, $log)) {
+    $log->log_and_die("Command died: $cmd\n");
+  }
 }
 
 __END__
