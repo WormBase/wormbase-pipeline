@@ -9,14 +9,7 @@ setenv EG_ENSEMBL_ROOT $WORM_PACKAGES/ensembl_genomes
 
 setenv PIPELINE_DIR $PIPELINE/interpro_scratch
 
-
-foreach lib_path  (${EG_ENSEMBL_ROOT}/eg-*/lib)
-    setenv PERL5LIB ${lib_path}:${PERL5LIB}
-end
-
-foreach lib_path  (${EG_ENSEMBL_ROOT}/eg-*/modules)
-    setenv PERL5LIB ${lib_path}:${PERL5LIB}
-end
+setenv PERL5LIB ${WORM_SW_ROOT}/packages/ensembl/branches/master/ensembl-production/modules:${PERL5LIB}
 
 setenv HIVE_URL  mysql://wormadmin:worms@${WORM_DBHOST}:${WORM_DBPORT}/${HIVEDB}
 
@@ -27,7 +20,6 @@ mysql --host=${WORM_DBHOST} --port=${WORM_DBPORT} --user=wormadmin --password=wo
 
 # setup the new pipelines
 
-init_pipeline.pl Bio::EnsEMBL::Hive::PipeConfig::InterProScanSeg_conf -registry ${ENSEMBL_REGISTRY} -hive_host ${WORM_DBHOST} -hive_port ${WORM_DBPORT} -hive_user wormadmin -hive_password worms -hive_dbname ${HIVEDB} -pipeline_dir ${PIPELINE_DIR} -ensembl_cvs_root_dir ${EG_ENSEMBL_ROOT} -script_dir ${EG_ENSEMBL_ROOT}/eg-proteinfeature/scripts -production_lookup 0 $*
-
+init_pipeline.pl Bio::EnsEMBL::Production::Pipeline::PipeConfig::InterProScan_conf -registry ${ENSEMBL_REGISTRY} -hive_host ${WORM_DBHOST} -hive_port ${WORM_DBPORT} -hive_user wormadmin -hive_password worms -hive_dbname ${HIVEDB} -pipeline_dir ${PIPELINE_DIR} -production_lookup 0 $*
 
 

@@ -109,8 +109,8 @@ else
     # to use the ensembl-geneomes version of perl which knows about Oracle (but not ACE.pm)
     #set path = (/nfs/panda/ensemblgenomes/perl/perlbrew/perls/5.14.2/bin/ ${path})
 
-    # use java version 1.6
-    setenv JAVA_HOME /sw/arch/pkg/jdk1.6
+    # use java version 1.8
+    setenv JAVA_HOME $WORM_PACKAGES/java8/
     setenv ANT_HOME /nfs/panda/ensemblgenomes/external/apache-ant
     setenv PATH ${JAVA_HOME}/bin:${ANT_HOME}/bin:${PATH}
 
