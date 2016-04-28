@@ -104,6 +104,14 @@ foreach my $phylum (keys %phyla) { # nematode and platyhelminth
     if (!defined $ini) {die "ERROR: INI not defined for $dir/${phylum_name}/$species_file\nDid you leave a '=' out of a line?\n"}
     my @existing_studies = $ini->Sections;
 
+    # add a [GENERAL] section if there is not one there already
+    if (!grep /^GENERAL$/, @existing_studies) {
+      print "Adding [GENERAL] section to $species\n";
+      $updated_files{"${phylum_name}/$species_file"} = 1;
+      $ini->AddSection('GENERAL');
+      $ini->newval('GENERAL', "general_bioproject", '');      	  
+    }
+
     foreach my $secondary_study_accession (keys $data{$species}) {
 
       # Each ini file should contain the following data from ENA, in per-study stanzas:
