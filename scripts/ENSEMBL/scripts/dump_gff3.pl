@@ -93,9 +93,9 @@ while( my $slice = shift @slices) {
       start     => $gene->seq_region_start(),
       end       => $gene->seq_region_end(),
       strand    => $gene->strand(),
-      note      => ($gene->status()||'PREDICTED' ). " " . $gene->biotype(),
       display     => $gene->stable_id(), # wrong but fixes db's without xref_mapping
       gff_source  => (defined $gene->analysis->gff_source) ? $gene->analysis->gff_source : "WormBase",
+      attribs   => { biotype => $gene->biotype },
         );
 
     my $all_transcripts = $gene->get_all_Transcripts();
@@ -109,11 +109,10 @@ while( my $slice = shift @slices) {
         start     => $transcript->start(),
         end       => $transcript->end(),
         strand    => $transcript->strand(),
-        note      => $transcript->biotype(),
-        info      => get_info($transcript),
         display     => $transcript->stable_id(),
         gff_source  => (defined $transcript->analysis->gff_source) ?  $transcript->analysis->gff_source : "WormBase",
         gff_type    => (defined $transcript->analysis->gff_feature ) ? $transcript->analysis->gff_feature : $transcript->biotype,
+        attribs     => { info => get_info($transcript) },
       };
 
       my $translation = $transcript->translation;
@@ -545,7 +544,7 @@ sub dump_gene {
                       $gene->{gff_id},
                       undef, 
                       $gene->{display}, 
-                      $gene->{note});
+                      $gene->{attribs});
   
   # Dump transcripts
   my $parent = $gene->{gff_id};
@@ -560,9 +559,8 @@ sub dump_gene {
                         $transcript->{gff_id}, 
                         undef,
                         ($transcript->{display} || undef), 
-                        undef, 
-                        ($transcript->{info}||undef),
-                        undef,$parent);
+                        $transcript->{attribs},
+                        $parent);
     
     # Store the parent of this transcript's exons
     foreach my $exon (@{$transcript->{exon}}) {
@@ -586,8 +584,6 @@ sub dump_gene {
                           undef,
                           undef,
                           undef,
-                          undef,
-                          undef,
                           @parents);
     }
   }
@@ -607,8 +603,6 @@ sub dump_gene {
                             undef, 
                             undef, 
                             undef, 
-                            undef, 
-                            undef, 
                             $transcript->{gff_id});
       }
     }
@@ -622,8 +616,6 @@ sub dump_gene {
                             $cds->{strand}, 
                             $cds->{gff_id}, 
                             $cds->{phase},
-                            undef, 
-                            undef,
                             undef,
                             undef,
                             $transcript->{gff_id});
@@ -641,8 +633,6 @@ sub dump_gene {
                             undef, 
                             undef, 
                             undef, 
-                            undef, 
-                            undef, 
                             $transcript->{gff_id});
       }
     }
@@ -655,7 +645,7 @@ sub dump_gene {
 
 # a template for a GFF line
 sub gff_line {
-  my ($seqid, $source, $type, $start, $end, $strand, $stable_id, $phase,$name, $note, $info,$alias,@parents) = @_;
+  my ($seqid, $source, $type, $start, $end, $strand, $stable_id, $phase, $name, $attribs, @parents) = @_;
   
   my $output = '';
   
@@ -670,9 +660,14 @@ sub gff_line {
     push @tags, "Parent=$parent";
   }
   push @tags, "Name=$name" if defined $name;
-  push @tags, "Note=$note" if defined $note;
-  push @tags, "info=$info" if defined $info;
-  push @tags, "Alias=$alias" if defined $alias;
+  if (defined $attribs) {
+    foreach my $k (sort keys %$attribs) {
+      if ($attribs->{$k}) {
+        push @tags, "$k=" . $attribs->{$k};
+      }
+    }
+  }
+
   $output .= join(';', @tags);
   $output .= "\n";
   
