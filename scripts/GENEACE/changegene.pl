@@ -30,7 +30,7 @@ my $person = "WBPerson2970"; # default
 my $load;                    # load results to geneace (default is to just write an ace file)
 my $verbose;                 # toggle extra (helpful?) output to screen
 my $store;
-my $species;
+my $species='elegans';
 
 # hash for class lookups
 my %change = ("CP" => ["CDS", "Pseudogene"],
@@ -55,7 +55,6 @@ GetOptions ("input=s"   => \$input,
 	    "species:s" => \$species
 );
 
-$species = 'elegans' unless $species;
 my $wormbase;
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
@@ -193,7 +192,7 @@ sub process_gene{
 
   # need to handle transposons differently
   if ($new eq "Transposon"){
-    print OUT "History Version_change $new_version now $person Event Transposon_in_origin\nTransposon_in_origin\nSuppressed\nRemark \"This gene was determined to be of Transposon in origin so has been supressed from the C. elegans protein set. Detailed information about the origin of this gene can be found in the corresponding Transposon object associated with this gene.\"\n\n";
+    print OUT "History Version_change $new_version now $person Event Transposon_in_origin\nTransposon_in_origin\nSuppressed\nRemark \"This gene was determined to be of Transposon in origin so has been supressed from the protein set. Detailed information about the origin of this gene can be found in the corresponding Transposon object associated with this gene.\"\n\n";
     
     print OUT "Gene $gene\n-D Gene_info\n\n";
     
