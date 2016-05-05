@@ -211,7 +211,7 @@ foreach my $chromosome (@chromosomes) {
 	$sequence = $seq_obj->Sub_sequence("${\$wormbase->chromosome_prefix}$chromosome", "$seq_start", "$width");
 
         my $seq = Bio::PrimarySeq->new(-id   => "${last_name}_${gene_name}",
-                                       -desc => "$chromosome $print_start, len: $width", 
+                                       -desc => "$chromosome $print_start, len:$width", 
                                        -seq  => uc($sequence));
         $seqio->write_seq($seq);
 	$no_sequences++;
@@ -238,7 +238,7 @@ foreach my $chromosome (@chromosomes) {
 	  }
 
           my $seq = Bio::PrimarySeq->new(-id   => "$last_name.${prime}prime",
-                                         -desc => "$chromosome $print_start, len: $width",
+                                         -desc => "$chromosome $print_start, len:$width",
                                          -seq  => uc($sequence));
           
           $seqio->write_seq($seq);
@@ -262,7 +262,7 @@ foreach my $chromosome (@chromosomes) {
 	  }
 
           my $seq = Bio::PrimarySeq->new(-id   => "$gene_name.${prime}prime",
-                                         -desc => "$chromosome $print_start, len: $width",
+                                         -desc => "$chromosome $print_start, len:$width",
                                          -seq  => uc($sequence));
           
           $seqio->write_seq($seq);
@@ -301,16 +301,18 @@ foreach my $chromosome (@chromosomes) {
       # get width of intergenic distance
       $width = 50000;
       $seq_start = $last_end;
-      $print_start = $seq_start+1; # human-readable start coordinate
+      $print_start = $seq_start + 1;
 
       # next if it is exactly at the end of the chromosome.
       next if $seq_start >= $seq_obj->{LENGTH}->{"${\$wormbase->chromosome_prefix}$chromosome"};
 
-      print OUT ">${last_name}_endofsequence ${\$wormbase->chromosome_prefix}$chromosome $print_start, len: $width\n";
       $sequence = $seq_obj->Sub_sequence("${\$wormbase->chromosome_prefix}$chromosome", "$seq_start", "$width");
-#      print OUT "$sequence\n";
-      if ($sequence) {		# if the gene ends at the end of the chromosome there will not be a sequence after the gene
-	fasta_write($sequence);
+
+      if ($sequence) {
+         my $seq = Bio::PrimarySeq->new(-id   => ">${last_name}_endofsequence",
+                                         -desc => "$chromosome $print_start len:$width",
+                                         -seq  => uc($sequence));
+	$seqio->write_seq($seq);
 	$no_sequences++;
       }
     } else {
@@ -321,7 +323,7 @@ foreach my $chromosome (@chromosomes) {
 	$seq_start = $last_end;
 	$print_start = $seq_start+1; # human-readable start coordinate
 	my $prime =  ($last_strand eq "+") ? "3" : "5";
-	print OUT ">$last_name.${prime}prime ${\$wormbase->chromosome_prefix}$chromosome $print_start\n";
+
 	# output sequence from end of gene to $width past the end
 	$sequence = $seq_obj->Sub_sequence("${\$wormbase->chromosome_prefix}$chromosome", "$seq_start", "$width");
 	if ($sequence) { # if the gene ends at the end of the chromosome there will not be a sequence after the gene
