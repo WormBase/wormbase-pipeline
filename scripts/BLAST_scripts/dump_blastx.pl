@@ -54,6 +54,7 @@ if ($store) {
 }
 
 my $log = Log_files->make_build_log($wormbase);
+
 $species = $wormbase->species;
 my @rerun = split /,/, $rerun if (defined $rerun);
 
@@ -89,7 +90,7 @@ $dumpdir ||= "$ENV{PIPELINE}/dumps";
 $database ||= "worm_ensembl_${species}";
 
 my $job_count;
-my @outfiles;
+my (@outfiles, @cmds);
 
 foreach my $db (keys %logic2type){
   my @chroms = @{$wormbase->get_binned_chroms(-bin_size => 20)};
@@ -100,13 +101,23 @@ foreach my $db (keys %logic2type){
     push @outfiles,$outfile;
     my $options="-database $database -logicname $db -outfile $outfile -store $storable -sequence $chrom";
     $options .= ' -self' if $logic2type{$db} eq lc(ref $wormbase);
-    my $cmd = "perl $ENV{CVS_DIR}/BLAST_scripts/blastx_dump.pl $options";
+
+    my $cmd;
+    if ($store) {
+      $cmd = $wormbase->build_cmd_line("BLAST_scripts/blastx_dump.pl $options", $store);
+    } else {
+      $cmd = $wormbase->build_cmd("BLAST_scripts/blastx_dump.pl $options");
+    }
+
     if (!defined $rerun || grep /^$job_count$/, @rerun) {
-      $lsf->submit($cmd);
+      push @cmds, $cmd;
     }
   }
 }
 
+foreach my $cmd (@cmds) {
+  $lsf->submit($cmd);
+}
 $lsf->wait_all_children( history => 1 );
 $log->write_to("All children have completed!\n");
 for my $job ( $lsf->jobs ) {
