@@ -449,6 +449,19 @@ sub count_isoforms{
   close (FILE);
   
   my $total_cds_count  = 0;
+
+  ##########################################################################################################
+  # WARNING: there are 3 pairs of genes in C. elegans that share a Sequence ID (B0564.1 Y105E8A.7 ZC416.8) #
+  # leading to an off by 3 calculation in the $no_isoform_count so could do the following:                 #
+  ##########################################################################################################
+  # my $no_isoform_count;
+  # if ($species eq 'elegans') {
+  #   $no_isoform_count = 3;
+  # }
+  # else {
+  #   $no_isoform_count = 0;
+  # }
+
   my $no_isoform_count = 0;
   my $isoform_count    = 0;
   my %new_name2x;
