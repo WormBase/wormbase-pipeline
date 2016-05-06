@@ -33,7 +33,7 @@ my ( $load, $big_load, $tsuser );
 my ($map_features, $remap_misc_dynamic, $map, $map_alleles, $transcripts, $cdna_files, $misc_data_sets, $homol_data_sets, $nem_contigs);
 my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $names, $treefam, $ncbi_xrefs, $load_interpro, $RRID, $omim);
 my ( $utr, $agp, $gff_munge, $gff3_munge, $extras , $ontologies, $interpolate, $check, $enaseqxrefs, $enagenexrefs, $enaprotxrefs, $xrefs);
-my ( $data_check, $buildrelease, $public,$finish_build, $gffdb, $autoace, $release, $user, $kegg, $prepare_gff_munge, $post_merge);
+my ( $data_check, $buildrelease, $public,$finish_build, $gffdb, $autoace, $release, $user, $kegg, $prepare_gff_munge, $post_merge, $gtf);
 
 
 GetOptions(
@@ -89,6 +89,7 @@ GetOptions(
            'prepmunge'      => \$prepare_gff_munge,
 	   'gff_munge'      => \$gff_munge,
 	   'gff3_munge'     => \$gff3_munge,
+           'gtf'            => \$gtf,
 	   'extras'         => \$extras,
 	   'ontologies'     => \$ontologies,
 	   'buildrelease'   => \$buildrelease,
@@ -276,6 +277,10 @@ if ($gff_munge or $gff3_munge) {
   }
 }
 
+if ($gtf) {
+  $wormbase->run_script("ENSEMBL/scripts/dump_gtf_from_gff3.pl", $log);
+}
+
 if ($xrefs) {
   $wormbase->run_script( 'generate_dbxref_file.pl', $log);
 }
@@ -305,7 +310,8 @@ $wormbase->run_script("finish_build.pl"                          , $log) if $fin
 if  ($gffdb && $autoace) {
   $wormbase->run_command("update_gffdb.csh -autoace"               , $log);
 }
-else {$wormbase->run_command("update_gffdb.csh"                  , $log) if $gffdb;
+else {
+  $wormbase->run_command("update_gffdb.csh"                  , $log) if $gffdb;
 }
 
 if ($load) {

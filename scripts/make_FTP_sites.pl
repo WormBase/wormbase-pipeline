@@ -526,40 +526,29 @@ sub copy_gff_files{
 
     my $source_gff2_file = $wb->processed_GFF_file();
     my $source_gff3_file = $wb->processed_GFF_file(1);
-
+    my $source_gtf_file = "${sequencesdir}/${species}.gtf";
+    
     my $gff_dir = "$targetdir/species/$gspecies/$bioproj";
     mkpath($gff_dir,1,0775);
     my $fname_prefix = "$gspecies.$bioproj.$WS_version_name";
-
-    my $target_gtf_file  = "$gff_dir/${fname_prefix}.canonical_geneset.gtf.gz";
     
-    if (-e $source_gff2_file) {
-      #concatenated whole genome file require for all species
-      my $target = "$gff_dir/${fname_prefix}.annotations.gff2";
-      $wormbase->run_command("rm -f $target", $log);
-      $wormbase->run_command("cp -f -R $source_gff2_file $target", $log);
-      $wormbase->run_command("gzip -n -9 -f $target",$log);
-    } elsif (-e "${source_gff2_file}.gz") {
-      my $target = "$gff_dir/${fname_prefix}.annotations.gff2.gz";
-      $wormbase->run_command("cp -f -R ${source_gff2_file}.gz $target", $log);
-    }else {
-      $log->write_to("WARNING: No GFF2 file for $species ($source_gff2_file)\n");
-    }
-    
-    if (-e $source_gff3_file) {
-      #concatenated whole genome file require for all species
-      my $target = "$gff_dir/${fname_prefix}.annotations.gff3";
-      $wormbase->run_command("rm -f $target", $log);
-      $wormbase->run_command("cp -f -R $source_gff3_file $target", $log);
-      $wormbase->run_command("gzip -n -9 -f $target",$log);      
+    my $target_gff2_file = "$gff_dir/${fname_prefix}.annotations.gff2.gz";
+    my $target_gff3_file = "$gff_dir/${fname_prefix}.annotations.gff3.gz";
+    my $target_gtf_file = "$gff_dir/${fname_prefix}.canonical_geneset.gtf.gz";
 
-      $wb->run_command("perl $ENV{CVS_DIR}/GFF_post_process/extract_canonical_geneset.pl -infile $target -outfile $target_gtf_file -gtf", $log);
-    } elsif (-e "${source_gff3_file}.gz") {
-      my $target = "$gff_dir/${fname_prefix}.annotations.gff3.gz";
-      $wormbase->run_command("cp -f -R ${source_gff3_file}.gz $target", $log);
-      $wb->run_command("perl $ENV{CVS_DIR}/GFF_post_process/extract_canonical_geneset.pl -infile $target -outfile $target_gtf_file -gtf", $log);
-    } else {
-      $log->error("ERROR: No GFF3 file for $species ($source_gff3_file)\n");
+    foreach my $fname_pair ([$source_gff2_file,  $target_gff2_file],
+                            [$source_gff3_file,  $target_gff3_file],
+                            [$source_gtf_file,   $target_gtf_file]) {
+      my ($source, $target) = @$fname_pair;
+      unlink $target if -e $target;
+
+      if (-e $source) {
+        $wormbase->run_command("cat $source | gzip -n > $target", $log);
+      } elsif (-e "${source}.gz") {
+        $wormbase->run_command("cp $source $target", $log);
+      } else {
+        $log->error("ERROR: Missing GFF file for $species ($source)\n");    
+      }
     }
   }
 
@@ -576,19 +565,23 @@ sub copy_gff_files{
     my $gff_dir = "$targetdir/species/$gspecies/$bioproj";
     mkpath($gff_dir,1,0775);
 
-    my $source = sprintf("%s/%s.gff3", $wb->gff, $species);
-    my $zipped_source = $source . ".gz";
-    my $target = sprintf("%s/%s.%s.%s.annotations.gff3.gz", $gff_dir, $gspecies, $bioproj, $WS_version_name);
+    my $source_gff3 = sprintf("%s/%s.gff3", $wb->gff, $species);
+    my $target_gff3 = sprintf("%s/%s.%s.%s.annotations.gff3.gz", $gff_dir, $gspecies, $bioproj, $WS_version_name);
+    my $source_gtf =  sprintf("%s/%s.gtf", $wb->gff, $species);
     my $target_gtf = sprintf("%s/%s.%s.%s.canonical_geneset.gtf.gz", $gff_dir, $gspecies, $bioproj, $WS_version_name);
 
-    if (-e $source) {
-      $wb->run_command("cat $source | gzip -n -9 > $target", $log);
-      $wb->run_command("perl $ENV{CVS_DIR}/GFF_post_process/extract_canonical_geneset.pl -infile $target -outfile $target_gtf -gtf", $log);
-    } elsif (-e $zipped_source) {
-      $wb->run_command("cp -f $zipped_source $target", $log);
-      $wb->run_command("perl $ENV{CVS_DIR}/GFF_post_process/extract_canonical_geneset.pl -infile $target -outfile $target_gtf -gtf", $log);
-    } else {
-      $log->error("ERROR: No GFF3 data found for species $species\n");
+    foreach my $fname_pair ([$source_gff3, $target_gff3],
+                            [$source_gtf, $target_gtf]) {
+      my ($source, $target) = @$fname_pair;
+      unlink $target if -e $target;
+
+      if (-e $source) {
+        $wb->run_command("cat $source | gzip -n -9 > $target", $log);
+      } elsif (-e "${source}.gz") {
+        $wb->run_command("cp -f ${source}.gz $target", $log);
+      } else {
+        $log->error("ERROR: Missing GFF for species $species : $source\n");
+      }
     }
   }
 
