@@ -154,6 +154,17 @@ foreach my $in_file (@species_list) {
       # Create the unique track ID
       my $track_id = sprintf("%03d", $counter) . "_" . $sample;
       my $url = sprintf("http://ngs.sanger.ac.uk/production/parasites/wormbase/RNASeq_alignments/%s/%s.bw", lc($species), $sample);
+      # Get the life stage URLs
+      my $life_stage = '';
+      if($ini{"sample_WormBaseLifeStage_$sample"}) {
+        my @stages = split(',', $ini{"sample_WormBaseLifeStage_$sample"});
+        my @urls;
+        foreach my $stage (@stages) {
+          $stage =~ s/ //;
+          push @urls, sprintf('<a href="%s">%s</a>', get_life_stage_url($stage), $stage);
+        }
+        $life_stage = sprintf("WormBase Life Stage: %s<br />", join('; ', @urls));
+      }
       # Create the sample description
       my $desc = sprintf(
                   'ENA Sample ID: <a href="http://www.ebi.ac.uk/ena/data/view/%s">%s</a><br />
@@ -162,9 +173,7 @@ foreach my $in_file (@species_list) {
                 $ini{"sample_ChEBI_ID_$sample"} ? sprintf(
                     'ChEBI: <a href="https://www.ebi.ac.uk/chebi/searchId.do?chebiId=%s">%s</a><br />',
                     $ini{"sample_ChEBI_ID_$sample"}, $ini{"sample_ChEBI_ID_$sample"}) : '',
-                $ini{"sample_WormBaseLifeStage_$sample"} ? sprintf(
-                    'WormBase Life Stage: <a href="%s">%s</a><br />',
-                    get_life_stage_url($ini{"sample_WormBaseLifeStage_$sample"}), $ini{"sample_WormBaseLifeStage_$sample"}) : '',
+                $life_stage,
                 $proj_desc);
       $desc =~ s/\n//g;
       $desc =~ s/<br \/>/\n<br \/>\n/g;
