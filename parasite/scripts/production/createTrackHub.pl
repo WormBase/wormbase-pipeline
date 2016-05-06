@@ -87,7 +87,7 @@ foreach my $in_file (@species_list) {
   
   # Get the details for each study
   foreach my $study (keys %studies) {
-    next if $study eq 'general';
+    next if $study =~ /'^general$'/i;
     warn "-- Study: $study";
     my %ini;
     # Put the key value pairs into a hash
