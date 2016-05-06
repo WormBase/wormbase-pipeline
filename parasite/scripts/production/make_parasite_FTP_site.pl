@@ -12,7 +12,7 @@ my $SCRIPT_LOC = "$FindBin::Bin/../../../scripts";
 my $DUMP_GENOME_SCRIPT      = "ENSEMBL/scripts/dump_genome.pl";
 my $DUMP_TRANSCRIPTS_SCRIPT = "ENSEMBL/scripts/dump_transcripts.pl";
 my $DUMP_GFF3_SCRIPT        = "ENSEMBL/scripts/dump_gff3.pl";
-my $DUMP_GTF_SCRIPT         = "GFF_post_process/extract_canonical_geneset.pl";
+my $DUMP_GTF_SCRIPT         = "ENSEMBL/scripts/dump_gtf_from_ensembl.pl";
 
 
 foreach my $script ($DUMP_GENOME_SCRIPT, $DUMP_TRANSCRIPTS_SCRIPT, $DUMP_GFF3_SCRIPT) {
@@ -166,7 +166,8 @@ if ($g_nomask or $g_smask or $g_hmask or $cds_tran or $mrna_tran or $prot or $gf
                 $bioproject,
                 $outdir,
                 "canonical_geneset.gtf",
-                sprintf("%s -gtf -infile %s/%s.%s.%s.annotations.gff3.gz", $DUMP_GTF_SCRIPT, $outdir,$species, $bioproject,$release)) if $gtf or $all;
+                "$DUMP_GTF_SCRIPT -host $host -port $port -user $user -dbname $dbname", 
+                $prevdir) if $gtf or $all;
   }  
 }
 
@@ -200,7 +201,6 @@ sub write_file {
     system($this_cmd) and die "Could not successfully run $this_cmd\n";
     unlink "$outdir/${fname}.gz" if -e "$outdir/${fname}.gz";
     system("gzip -9 -n $outdir/$fname") and die "Could not successfully gzip $outdir/$fname\n";
-
   }
 }
 
