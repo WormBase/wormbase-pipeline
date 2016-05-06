@@ -183,7 +183,7 @@ foreach my $in_file (@species_list) {
       print HTMLOUT $desc;
       close(HTMLOUT);
       # Create the trackDb text
-      $files .= sprintf("track %s\nparent %s\ntype bigWig\nbigDataUrl %s\nshortLabel %s\nlongLabel %s\ncolor %s\nhtml doc/%s\ndisplay %s\n\n", $track_id, $study, $url, $ini{"sample_shortLabel_$sample"}, $ini{"sample_longLabel_$sample"}, $ini{'Colour'} || "0,0,0", $track_id, $display);
+      $files .= sprintf("track %s\nparent %s\ntype bigWig\nbigDataUrl %s\nshortLabel %s\nlongLabel %s\ncolor %s\nhtml doc/%s\nvisibility %s\n\n", $track_id, $study, $url, $ini{"sample_shortLabel_$sample"}, $ini{"sample_longLabel_$sample"}, $ini{'Colour'} || "0,0,0", $track_id, $display);
     }
   }
 
