@@ -20,13 +20,14 @@ use Getopt::Long;
 use Log_files;
 use Storable;
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $species);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $species, $all);
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
             "test"       => \$test,
             "verbose"    => \$verbose,
             "store:s"    => \$store,
 	    "species:s"  => \$species,
+	    "all"        => \$all, # report not only the data used by the alignemnt pipeline, but also GENOMIC and everything else
 );
 
 
@@ -67,7 +68,8 @@ sub stats {
   my ($spec, $wb) = @_;
 
   my $RNASeq = RNASeq->new($wb, $log);
-
+  my $aligned = $RNASeq->get_transcribed_long_experiments();
+  my @aligned_expts = keys %{$aligned};
   my $expts = $RNASeq->get_all_experiments();
   my %total_studies;
   my %categories;
@@ -79,6 +81,7 @@ sub stats {
   my $run_count=0;
   
   foreach my $experiment (keys %{$expts}) {
+    if (! $all && !grep /$experiment/, @aligned_expts) {next} 
     my $study_accession = $expts->{$experiment}{study_accession};
     
     my $library_source = $expts->{$experiment}{library_source};
