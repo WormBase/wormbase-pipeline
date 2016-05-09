@@ -1784,6 +1784,7 @@ GSPECIES.BIOPROJ.WSREL.TSS.wig.tar.gz
 GSPECIES.BIOPROJ.WSREL.assembly.agp.gz
 GSPECIES.BIOPROJ.WSREL.wormpep_package.tar.gz
 GSPECIES.BIOPROJ.WSREL.transposon_transcripts.fa.gz
+GSPECIES.BIOPROJ.WSREL.transposons.fa.gz
 
 [CORE]species/GSPECIES/BIOPROJ/annotation
 GSPECIES.BIOPROJ.WSREL.geneIDs.txt.gz

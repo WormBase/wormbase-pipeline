@@ -170,6 +170,7 @@ if( $opt_l) {
   printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.ncrna_transcripts.fa.gz        - Spliced cDNA sequence for non-coding RNA transcripts\n";
   printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.pseudogenic_transcripts.fa.gz  - Spliced cDNA sequence for pseudogenic transcripts\n";
   printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.transposon_transcripts.fa.gz   - Spliced cDNA sequence for mRNAs and pseudogenes located in Transposons\n";
+  printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.transposons.fa.gz              - DNA sequence of curated and predicted Transposons\n";
   printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.intergenic_sequences.fa.gz     - DNA sequence between pairs of adjacent genes\n";
   printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.annotations.gff[2|3].gz        - Sequence features in either GFF2 or GFF3 format\n";
   printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.canonical_geneset.gtf.gz       - Genes, transcipts and CDSs in GTF (GFF2) format\n";

@@ -181,6 +181,7 @@ if ($cdna_files) {
   if ($wormbase->species eq 'elegans') {
     my @options = "-classmethod CDS:Transposon_CDS:Transposon-mRNA -classmethod Pseudogene:Transposon_Pseudogene:Transposon-pseudogenic_transcript";
     $wormbase->run_script( "fasta_dumper.pl @options -output $seqdir/transposon_transcripts.dna", $log);
+    $wormbase->run_script( "fasta_dumper.pl -classmethod Transposon:Transposon -output $seqdir/transposons.dna", $log);
   }
 }
 
