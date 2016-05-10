@@ -83,7 +83,7 @@ foreach my $seq ( @{$sa->fetch_all($seq_level)}){
           } else {
             printf OUT (" %s %s",$feature->start,$feature->end);
           }
-          printf OUT ("%s %s\n",$feature->hstart,$feature->hend);
+          printf OUT (" %s %s\n",$feature->hstart,$feature->hend);
 	}
 
         $repeats = $seq->get_all_RepeatFeatures('TRF');
