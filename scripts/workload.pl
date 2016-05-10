@@ -152,7 +152,7 @@ my %dates = (
 	     250 => ['2015-05-01', '2015-06-31'], # to 31-Jul-2015
 	     251 => ['2015-06-31', '2015-10-02'], # to 02-Oct-2015
 	     252 => ['2015-10-02', '2015-12-04'], # to 04-Dec-2015
-	     253 => ['2015-12-04', '2016-02-04'], # (probable dates in the future ...)
+	     253 => ['2015-12-04', '2016-02-19'], # to 19-Feb-2016
 	    );
 
 
@@ -371,7 +371,7 @@ sub get_removed {
 
   my %removed;
 
-  my $query="select log.log_what, log.log_when, prim.object_public_id  from identifier_log as log, primary_identifier as prim where log.log_when >= '$start_date' AND log.log_when < '$end_date' AND prim.object_id = log.object_id AND prim.domain_id = 1 AND (log.log_what = 'killed' OR log.log_what = 'mergedTo')";
+  my $query="select log.log_what, log.log_when, prim.object_public_id  from identifier_log as log, primary_identifier as prim where log.log_when > '$start_date' + INTERVAL 1 DAY AND log.log_when < '$end_date' + INTERVAL 1 DAY AND prim.object_id = log.object_id AND prim.domain_id = 1 AND (log.log_what = 'killed' OR log.log_what = 'mergedTo')";
 
   my $db_query = $mysql->prepare($query);
   $db_query->execute();
@@ -400,7 +400,7 @@ sub get_new {
 
   my %new;
 
-  my $query="select log.log_what, log.log_when, prim.object_public_id  from identifier_log as log, primary_identifier as prim where log.log_when >= '$start_date' AND log.log_when < '$end_date' AND prim.object_id = log.object_id AND prim.domain_id = 1 AND (log.log_what = 'created' OR log.log_what = 'splitFrom')";
+  my $query="select log.log_what, log.log_when, prim.object_public_id  from identifier_log as log, primary_identifier as prim where log.log_when > '$start_date' + INTERVAL 1 DAY AND log.log_when < '$end_date' + INTERVAL 1 DAY AND prim.object_id = log.object_id AND prim.domain_id = 1 AND (log.log_what = 'created' OR log.log_what = 'splitFrom')";
 
   my $db_query = $mysql->prepare($query);
   $db_query->execute();
