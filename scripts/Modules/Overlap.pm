@@ -1844,7 +1844,7 @@ sub get_blastx_homologies {
   my %GFF_data = 
    (
      method			=> "wublastx",
-     gff_source			=> "wublastx",
+     gff_source			=> "(proteins-BLASTX|proteins-BLASTX)", # use '|' and double the source name to force it to do a regex comparison to get a partial match excluding the species name at the start
      gff_type			=> "protein_match",
      homology			=> "1",	# this is a GFF with homology data that we need to store
      ID_after			=> "Target\\s+\"Protein:",
@@ -2060,8 +2060,8 @@ sub get_miRNA_primary {
   my %GFF_data = 
    (
      method			=> "miRNA_primary_transcript",
-     gff_source			=> "miRNA_precursor",
-     gff_type			=> "pre_miRNA",
+     gff_source			=> "miRNA_primary_transcript",
+     gff_type			=> "miRNA_primary_transcript",
      ID_after			=> 'Transcript\s+',
 
    );
