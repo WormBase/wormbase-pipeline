@@ -7,6 +7,7 @@ use FindBin qw($Bin);
 use lib "$Bin/../lib";
 
 use Getopt::Long;
+use Storable;
 
 use Wormbase;
 use Log_files;
