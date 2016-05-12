@@ -487,7 +487,7 @@ caenorhabditis_elegans:
     port: STAGINGPORT
     user: STAGINGUSERRW
     password: STAGINGPASSRW
-    dbname: caenorhabditis_elegans_core_ENSEMBL_VERSION_WORMBASE_VERSION
+    dbname: caenorhabditis_elegans_prjna13758_core_PARASITE_VERSION_ENSEMBL_VERSION_WORMBASE_VERSION
 caenorhabditis_briggsae:
   seleno: WBGene00028139
   gff3: /nfs/ftp/pub/databases/wormbase/releases/WSWORMBASE_VERSION/species/c_briggsae/PRJNA10731/c_briggsae.PRJNA10731.WSWORMBASE_VERSION.annotations.gff3.gz  
@@ -496,7 +496,7 @@ caenorhabditis_briggsae:
     port: STAGINGPORT
     user: STAGINGUSERRW
     password: STAGINGPASSRW
-    dbname: caenorhabditis_briggsae_core_ENSEMBL_VERSION_WORMBASE_VERSION
+    dbname: caenorhabditis_briggsae_prjna10731_core_PARASITE_VERSION_ENSEMBL_VERSION_WORMBASE_VERSION
 caenorhabditis_brenneri:
   seleno: WBGene00158831
   gff3: /nfs/ftp/pub/databases/wormbase/releases/WSWORMBASE_VERSION/species/c_brenneri/PRJNA20035/c_brenneri.PRJNA20035.WSWORMBASE_VERSION.annotations.gff3.gz
@@ -505,7 +505,7 @@ caenorhabditis_brenneri:
     port: STAGINGPORT
     user: STAGINGUSERRW
     password: STAGINGPASSRW
-    dbname: caenorhabditis_brenneri_core_ENSEMBL_VERSION_WORMBASE_VERSION
+    dbname: caenorhabditis_brenneri_prjna20035_core_PARASITE_VERSION_ENSEMBL_VERSION_WORMBASE_VERSION
 caenorhabditis_remanei:
   seleno: WBGene00068657
   gff3: /nfs/ftp/pub/databases/wormbase/releases/WSWORMBASE_VERSION/species/c_remanei/PRJNA53967/c_remanei.PRJNA53967.WSWORMBASE_VERSION.annotations.gff3.gz
@@ -514,7 +514,7 @@ caenorhabditis_remanei:
     port: STAGINGPORT
     user: STAGINGUSERRW
     password: STAGINGPASSRW
-    dbname: caenorhabditis_remanei_core_ENSEMBL_VERSION_WORMBASE_VERSION
+    dbname: caenorhabditis_remanei_prjna53967_core_PARASITE_VERSION_ENSEMBL_VERSION_WORMBASE_VERSION
 caenorhabditis_japonica:
   seleno: WBGene00122465
   gff3: /nfs/ftp/pub/databases/wormbase/releases/WSWORMBASE_VERSION/species/c_japonica/PRJNA12591/c_japonica.PRJNA12591.WSWORMBASE_VERSION.annotations.gff3.gz 
@@ -523,7 +523,7 @@ caenorhabditis_japonica:
     port: STAGINGPORT
     user: STAGINGUSERRW
     password: STAGINGPASSRW
-    dbname: caenorhabditis_japonica_core_ENSEMBL_VERSION_WORMBASE_VERSION
+    dbname: caenorhabditis_japonica_prjna12591_core_PARASITE_VERSION_ENSEMBL_VERSION_WORMBASE_VERSION
 pristionchus_pacificus:  
   gff3: /nfs/ftp/pub/databases/wormbase/releases/WSWORMBASE_VERSION/species/p_pacificus/PRJNA12644/p_pacificus.PRJNA12644.WSWORMBASE_VERSION.annotations.gff3.gz 
   core_database:
