@@ -126,7 +126,7 @@ Visible
 Class 
 Class Feature 
 From 1 
-Condition Transcription_factor
+Condition Associated_with_transcription_factor
  
 Colonne 2 
 Subtitle TF 
@@ -136,7 +136,7 @@ Visible
 Class 
 Class Transcription_factor 
 From 1 
-Tag Transcription_factor 
+Tag Associated_with_transcription_factor 
  
 Colonne 3 
 Subtitle Name 
