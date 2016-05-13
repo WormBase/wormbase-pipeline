@@ -134,6 +134,7 @@ if ($gene_xrefs) {
 
 if ($protein_xrefs) {
   my (%cds_xrefs, %pep_xrefs,%cds_product, %accession2clone, %cds2wormpep);
+  my $pepPrefix = $wormbase->pep_prefix;
 
   $wb->FetchData('accession2clone', \%accession2clone, $common_data_dir);
   $wb->FetchData('cds2wormpep', \%cds2wormpep, $common_data_dir);
@@ -162,19 +163,19 @@ if ($protein_xrefs) {
     if($cds2wormpep{$cds}) {
       if (defined $uniprot_ac and $uniprot_ac ne '.') {
         $cds_xrefs{$cds}->{dblinks}->{UniProt}->{UniProtAcc}->{$uniprot_ac} = 1;
-        $pep_xrefs{"WP:".$cds2wormpep{$cds}}->{dblinks}->{UniProt}->{UniProtAcc}->{$uniprot_ac} = 1;
+        $pep_xrefs{$pepPrefix.$cds2wormpep{$cds}}->{dblinks}->{UniProt}->{UniProtAcc}->{$uniprot_ac} = 1;
       }
       if (defined $uniprot_id and $uniprot_id ne '.') {
         $cds_xrefs{$cds}->{dblinks}->{UniProt}->{UniProtId}->{$uniprot_id} = 1;
-        $pep_xrefs{"WP:".$cds2wormpep{$cds}}->{dblinks}->{UniProt}->{UniProtId}->{$uniprot_id} = 1;
+        $pep_xrefs{$pepPrefix.$cds2wormpep{$cds}}->{dblinks}->{UniProt}->{UniProtId}->{$uniprot_id} = 1;
       }
       if (defined $uniprot_iso_acc and $uniprot_iso_acc ne '.') {
         $cds_xrefs{$cds}->{dblinks}->{UniProt}->{UniProtIsoformAcc}->{$uniprot_iso_acc} = 1;
-        $pep_xrefs{"WP:".$cds2wormpep{$cds}}->{dblinks}->{UniProt}->{UniProtIsoformAcc}->{$uniprot_iso_acc} = 1;
+        $pep_xrefs{$pepPrefix.$cds2wormpep{$cds}}->{dblinks}->{UniProt}->{UniProtIsoformAcc}->{$uniprot_iso_acc} = 1;
       }
       if (defined $ec_num and $ec_num ne '.') {
         $cds_xrefs{$cds}->{dblinks}->{KEGG}->{KEGG_id}->{$ec_num} = 1;
-        $pep_xrefs{"WP:".$cds2wormpep{$cds}}->{dblinks}->{KEGG}->{KEGG_id}->{$ec_num} = 1;
+        $pep_xrefs{$pepPrefix.$cds2wormpep{$cds}}->{dblinks}->{KEGG}->{KEGG_id}->{$ec_num} = 1;
       }
       if (defined $product_name and $product_name ne '.' and defined $uniprot_ac and $uniprot_ac ne'.') {
         $cds_product{$cds}->{$product_name}->{$uniprot_ac} = 1;
