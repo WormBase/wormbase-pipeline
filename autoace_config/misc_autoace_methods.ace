@@ -1479,7 +1479,6 @@ Show_up_strand
 Score_by_width  
 Score_bounds     50.000000 100.000000
 Overlap 
-Right_priority   3.5350000
 Join_blocks     
 Blixem_N        
 GFF_feature      "expressed_sequence_match"
@@ -1491,7 +1490,6 @@ Colour   PURPLE
 Score_by_width  
 Score_bounds     50.000000 100.000000
 Overlap 
-Right_priority   3.8550000
 Join_blocks     
 Blixem_N        
 GFF_feature      "expressed_sequence_match"
@@ -4061,6 +4059,9 @@ Right_priority 3.48
 Method : "BLAT_EST_BEST"
 Right_priority 3.53
 
+Method : "BLAT_Trinity_BEST"
+Right_priority   3.5350000
+
 Method : "RNASeq_Hillier.Adult_spe-9"
 Right_priority 3.55
 
@@ -4138,6 +4139,9 @@ Right_priority 3.85
 
 Method : "BLAT_EMBL_OTHER"
 Right_priority 3.85
+
+Method : "BLAT_Trinity_OTHER"
+Right_priority   3.8550000
 
 Method : "SAGE_tag"
 Right_priority 3.9
