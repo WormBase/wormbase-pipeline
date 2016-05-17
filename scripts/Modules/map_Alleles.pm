@@ -958,7 +958,12 @@ sub load_genes_and_cds {
 
   my ($exon, $intron);
 
-  foreach my $file (glob("$gdir/*_gene.gff"), glob("$gdir/*_curated.gff")) { 
+  foreach my $file (glob("$gdir/*_gene.gff"), 
+                    glob("$gdir/*_curated.gff"), 
+                    "$gdir/gene.gff", 
+                    "$gdir/curated.gff") {
+    next if not -e $file;
+
     my $fh = new IO::File $file, 'r';
 
     while(<$fh>) {
@@ -998,29 +1003,33 @@ sub load_genes_and_cds {
 
 # load UTRs
 sub load_utr{
-    my @files = glob "${\$wb->gff_splits}/*UTR.gff";
-    my %utrs;
-    foreach my $file(@files){
-        my $inf=new IO::File $file, 'r';
-        #print "processing: $file\n" if $wb->debug;
-        while (<$inf>) {
-            next if /\#/;
-            next if ! /UTR/;
-            s/\"//g;
-            my @fields=split;
-            my ($chromosome,$start,$stop,$type,$transcript)=($fields[0],$fields[3],$fields[4],$fields[2],$fields[-1]);
-            my $field={
-                chromosome => $chromosome,
-                start      => $start,
-                stop       => $stop,
-                type       => $type,
-                transcript => $transcript,
-            };
-            $utrs{$chromosome}||=[];
-            push @{$utrs{$chromosome}}, $field;
-        }
+  my $gff_dir = $wb->gff_splits;
+
+  my @files = (glob("$gff_dir/*_UTR.gff"), "$gff_dir/UTR.gff");
+  my %utrs;
+  foreach my $file(@files){
+    next if not -e $file;
+
+    my $inf=new IO::File $file, 'r';
+    #print "processing: $file\n" if $wb->debug;
+    while (<$inf>) {
+      next if /\#/;
+      next if ! /UTR/;
+      s/\"//g;
+      my @fields=split;
+      my ($chromosome,$start,$stop,$type,$transcript)=($fields[0],$fields[3],$fields[4],$fields[2],$fields[-1]);
+      my $field={
+        chromosome => $chromosome,
+        start      => $start,
+        stop       => $stop,
+        type       => $type,
+        transcript => $transcript,
+      };
+      $utrs{$chromosome}||=[];
+      push @{$utrs{$chromosome}}, $field;
     }
-    return \%utrs;
+  }
+  return \%utrs;
 }
              
 =head2 search_utr
@@ -1074,29 +1083,32 @@ sub print_utr{
 
 # load pseudogenes
 sub load_pseudogenes{
-    my @files = glob "${\$wb->gff_splits}/*Pseudogene.gff" ;
-    my %pgenes;
-    foreach my $file(@files){
-        my $inf=new IO::File $file, 'r';
-        #print "processing: $file\n" if $wb->debug;
-        while (<$inf>) {
-            next if /\#/;
-            next unless /Pseudogene/;
-            s/\"//g;
-            my @fields=split;
-            my ($chromosome,$start,$stop,$type1,$type2,$gene)=($fields[0],$fields[3],$fields[4],$fields[1],$fields[2],$fields[-1]);
-            next unless ($type1 eq 'Pseudogene' && $type2 eq 'Pseudogene');
-            my $field={
-                chromosome => $chromosome,
-                start      => $start,
-                stop       => $stop,
-                pgene      => $gene,
-            };
-            $pgenes{$chromosome}||=[];
-            push @{$pgenes{$chromosome}}, $field;
-        }
+  my $gff_dir = $wb->gff_splits;
+  my @files = (glob("$gff_dir/*_Pseudogene.gff"), "$gff_dir/Pseudogene.gff");
+  
+  my %pgenes;
+  foreach my $file(@files){
+    next if not -e $file;
+    my $inf=new IO::File $file, 'r';
+    #print "processing: $file\n" if $wb->debug;
+    while (<$inf>) {
+      next if /\#/;
+      next unless /Pseudogene/;
+      s/\"//g;
+      my @fields=split;
+      my ($chromosome,$start,$stop,$type1,$type2,$gene)=($fields[0],$fields[3],$fields[4],$fields[1],$fields[2],$fields[-1]);
+      next unless ($type1 eq 'Pseudogene' && $type2 eq 'Pseudogene');
+      my $field={
+        chromosome => $chromosome,
+        start      => $start,
+        stop       => $stop,
+        pgene      => $gene,
+      };
+      $pgenes{$chromosome}||=[];
+      push @{$pgenes{$chromosome}}, $field;
     }
-    return \%pgenes;
+  }
+  return \%pgenes;
 }
              
 =head2 search_pseudogene
@@ -1150,29 +1162,36 @@ sub print_pseudogenes{
 
 # load ncrna
 sub load_ncrnas{
-    my @types = map {"${\$wb->gff_splits}/*$_.gff "} ('miRNA','miRNA_primary_transcript','ncRNA','rRNA','scRNA','snoRNA','snRNA','snlRNA','stRNA','tRNA','piRNA','asRNA','lincRNA');
-    my @files = glob(join(' ',@types));
-    my %nc_rnas;
-    foreach my $file(@files){
-        my $inf=new IO::File $file, 'r';
-        #print "processing: $file\n" if $wb->debug;
-        while (<$inf>) {
-            next if /\#/;
-            next if ! /(mature_transcript|primary_transcript)/;
-            s/\"//g;
-            my @fields=split;
-            my ($chromosome,$start,$stop,$transcript)=($fields[0],$fields[3],$fields[4],$fields[-1]);
-            my $field={
-                chromosome => $chromosome,
-                start      => $start,
-                stop       => $stop,
-                transcript => $transcript,
-            };
-            $nc_rnas{$chromosome}||=[];
-            push @{$nc_rnas{$chromosome}}, $field;
-        }
+
+  my @files;
+  my $gff_dir = $wb->gff_splits;
+
+  foreach my $type ('miRNA','miRNA_primary_transcript','ncRNA','rRNA','scRNA','snoRNA','snRNA','snlRNA','stRNA','tRNA','piRNA','asRNA','lincRNA') {
+    push @files, (glob("$gff_dir/*_${type}.gff"), "$gff_dir/${type}.gff");
+  }
+  my %nc_rnas;
+  foreach my $file(@files){
+    next if not -e $file;
+
+    my $inf=new IO::File $file, 'r';
+    #print "processing: $file\n" if $wb->debug;
+    while (<$inf>) {
+      next if /\#/;
+      next if ! /(mature_transcript|primary_transcript)/;
+      s/\"//g;
+      my @fields=split;
+      my ($chromosome,$start,$stop,$transcript)=($fields[0],$fields[3],$fields[4],$fields[-1]);
+      my $field= {
+        chromosome => $chromosome,
+        start      => $start,
+        stop       => $stop,
+        transcript => $transcript,
+      };
+      $nc_rnas{$chromosome}||=[];
+      push @{$nc_rnas{$chromosome}}, $field;
     }
-    return \%nc_rnas;
+  }
+  return \%nc_rnas;
 }
              
 =head2 search_ncrna
