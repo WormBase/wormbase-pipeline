@@ -545,7 +545,7 @@ sub copy_gff_files{
       if (-e $source) {
         $wormbase->run_command("cat $source | gzip -n > $target", $log);
       } elsif (-e "${source}.gz") {
-        $wormbase->run_command("cp $source $target", $log);
+        $wormbase->run_command("cp -f ${source}.gz $target", $log);
       } else {
         $log->error("ERROR: Missing GFF file for $species ($source)\n");    
       }
