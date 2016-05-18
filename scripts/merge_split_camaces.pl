@@ -697,22 +697,27 @@ sub load_curation_data {
           "$blat_dir/virtual_objects.$species.blat.RST.$species.ace",
           "$blat_dir/virtual_objects.$species.blat.mRNA.$species.ace",
           "$blat_dir/virtual_objects.$species.blat.ncRNA.$species.ace",
+	  "$blat_dir/virtual_objects.$species.blat.Trinity.$species.ace",
           "$blat_dir/virtual_objects.$species.ci.EST.$species.ace",
           "$blat_dir/virtual_objects.$species.ci.OST.$species.ace",
           "$blat_dir/virtual_objects.$species.ci.RST.$species.ace",
           "$blat_dir/virtual_objects.$species.ci.mRNA.$species.ace",
           "$blat_dir/virtual_objects.$species.ci.ncRNA.$species.ace",
+	  "$blat_dir/virtual_objects.$species.ci.Trinity.$species.ace",
           "$blat_dir/$species.blat.${species}_EST.ace",
           "$blat_dir/$species.blat.${species}_OST.ace",
           "$blat_dir/$species.blat.${species}_RST.ace",
           "$blat_dir/$species.blat.${species}_mRNA.ace",
           "$blat_dir/$species.blat.${species}_ncRNA.ace",
+	  "$blat_dir/$species.blat.${species}_Trinity.ace",
           "$blat_dir/$species.good_introns.EST.ace",
           "$blat_dir/$species.good_introns.OST.ace",
           "$blat_dir/$species.good_introns.RST.ace",
           "$blat_dir/$species.good_introns.mRNA.ace",
           "$blat_dir/$species.good_introns.ncRNA.ace",
+          "$blat_dir/$species.good_introns.Trinity.ace",
 	 );
+
     my $BLATfile;
     foreach $BLATfile (@BLATfiles) {
       $log->write_to ("Looking for $BLATfile......................\n");
