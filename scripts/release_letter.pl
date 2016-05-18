@@ -60,11 +60,11 @@ my $log = Log_files->make_build_log($wormbase);
 # variables  #                                                                   
 ##############
 
-my $reports_dir     = $wormbase->reports;     # AUTOACE REPORTS
-my $tace = $wormbase->tace;
-my $ver     = $wormbase->get_wormbase_version;
-my $old_ver = $ver -1;
-$database = $wormbase->autoace if not defined $database;
+my $reports_dir = $wormbase->reports;     # AUTOACE REPORTS
+my $tace        = $wormbase->tace;
+my $ver         = $wormbase->get_wormbase_version;
+my $old_ver     = $ver -1;
+$database       = $wormbase->autoace if not defined $database;
 
 if ($opt_c) {
   $wormbase->release_composition($log);
@@ -348,11 +348,11 @@ sub write_cds_confirmation_status {
   my $pred = $hash->{predicted};
   my $pred_perc = ($pred / $total) * 100;
 
-  printf $fh "\n$species Gene model confirmation status (based on the EST/mRNA evidence)\n";
+  printf $fh "\n$species Gene model confirmation status (based on the EST/mRNA/RNASeq evidence)\n";
   print  $fh "------------------------------------------------------------\n";
-  printf $fh "Confirmed             %5d (%2.1f%%)	Every base of every exon has transcription evidence (mRNA/EST)\n", $conf, $conf_perc;
+  printf $fh "Confirmed             %5d (%2.1f%%)	Every base of every exon has transcription evidence (mRNA/EST/RNASeq)\n", $conf, $conf_perc;
   printf $fh "Partially_confirmed   %5d (%2.1f%%)	Some, but not all exon bases are covered by transcript evidence\n", $supp, $supp_perc;
-  printf $fh "Predicted             %5d (%2.1f%%)	No coverage by mRNA/EST evidence\n", $pred, $pred_perc;
+  printf $fh "Predicted             %5d (%2.1f%%)	No coverage by mRNA/EST/RNASeq evidence\n", $pred, $pred_perc;
 
 }
 
