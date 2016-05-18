@@ -145,7 +145,7 @@ GetOptions ("help"          => \$help,
             "allnopublic"    => \$all_nopublic,
             "wbversion=s"    => \$WS_version,
             'orthologylists'=> \$orthology_lists,
-    );
+    )||die(&usage);
 
 
 if ( $store ) {
@@ -157,7 +157,7 @@ if ( $store ) {
 }
 
 # Display help if required
-&usage("Help") if ($help);
+&usage if ($help);
 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
@@ -1629,13 +1629,7 @@ sub CheckSize {
 ##################################################################################
 
 sub usage {
-  my $error = shift;
-
-  if ($error eq "Help") {
-    # Normal help menu
     system ('perldoc',$0);
-    exit (0);
-  }
 }
 
 ##################################################################################
