@@ -3033,7 +3033,7 @@ Remark "RNASeq splice region. These are the regions spanned by the SRA RNASeq sh
 Colour BLACK
 Score_by_width
 Score_bounds 1.0 100.0
-Overlap_mode Bumpable
+Overlap_mode Overlap
 Strand_sensitive Show_up_strand
 GFF_source "RNASeq_splice"
 GFF_feature "intron"
