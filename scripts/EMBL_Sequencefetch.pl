@@ -145,7 +145,8 @@ Retrieving EMBL sequences as a full update.
 # Update sequence data for all WormBase species (depending upon options) using mfetch #
 #######################################################################################
 #Counters
-my ($retrieved,$retrievedseen);
+my $retrieved = 0;
+my $retrievedseen = 0;
 
 ####################################
 # Optionally just parse input file #

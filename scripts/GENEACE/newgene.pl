@@ -147,7 +147,7 @@ unless ($outdir) {
 }
 
 my $backupsdir = $outdir.'BACKUPS/';
-my $outname = defined($id) ? 'newgene_'.$id.'.ace' : 'newgene_'.$seq.'.ace';
+my $outname = defined($id) ? 'newgene_'.$id.'.ace' : defined($input) ? 'newgene_input.ace' : 'newgene_'.$seq.'.ace';
 my $outfile = $outdir.$outname;
 
 if (defined $sneak){
