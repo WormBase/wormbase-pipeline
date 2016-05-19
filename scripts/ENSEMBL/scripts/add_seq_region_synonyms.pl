@@ -18,11 +18,11 @@ my (
 
 &GetOptions(
   'dbname=s' => \$dbname,
-  'dbuser=s' => \$dbuser,
-  'dbhost=s' => \$dbhost,
-  'dbport=s' => \$dbport,
-  'dbpass=s' => \$dbpass,
-  'test'     => \$test,
+  'user=s' => \$dbuser,
+  'host=s' => \$dbhost,
+  'port=s' => \$dbport,
+  'pass=s' => \$dbpass,
+  'test'   => \$test,
 );
 
 my $db = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
