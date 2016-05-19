@@ -177,7 +177,8 @@ foreach my $in_file (@species_list) {
                 $proj_desc);
       $desc =~ s/\n//g;
       $desc =~ s/<br \/>/\n<br \/>\n/g;
-      $desc .= "<br /><br />This data comes from URL: $url";
+      my $ftp = sprintf("ftp://ngs.sanger.ac.uk/production/parasites/wormbase/RNASeq_alignments/%s", lc($species));
+      $desc .= sprintf('<br /><br />This data comes from URL: <a href="%s">%s</a><br />Download data (BAM and BigWig): <a href="%s">%s</a>', $url, $url, $ftp, $ftp);
       mkdir "$out/$species/doc" unless -d "$out/$species/doc";
       open(HTMLOUT, ">$out/$species/doc/$track_id.html");
       print HTMLOUT $desc;
