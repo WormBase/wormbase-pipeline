@@ -557,21 +557,35 @@ sub load_meta_table {
   my ($species, $config) = @_;
   
   my $db = $config->{core_database};
-  
-  my $mysql = "mysql -h $db->{host} -P $db->{port} -u $db->{user} --password=$db->{password} -D $db->{dbname}";
-  
-  print STDERR "Populating meta table for $db->{dbname}...\n";
-  foreach my $key (keys %$config) {
+
+  my $meta = $config->{meta};
+  if ($meta){ # allow both versions for a while
+    while (my ($k,$v)=each %$meta){
+      &update_meta($db,$k,$v);
+    }
+  }
+  else{
+   foreach my $key (keys %$config) {
     if ($key =~ /^meta\.(\S+)/) {
       my $db_key = $1;
       my $val = $config->{$key};
-      
-      system("$mysql -e 'DELETE FROM meta WHERE meta_key = \"$db_key\"'") 
-          and die "Could not delete $db_key from meta in $db->{dbname}\n";
-      system("$mysql -e 'INSERT INTO meta (meta_key,meta_value) VALUES (\"$db_key\",\"$val\");'") 
-          and die "Could not insert value for $db_key into meta\n";
+      &update_meta($db,$db_key,$val);      
     }
+   }
   }
+}
+
+sub update_meta{
+   my ($db,$db_key,$db_val)=@_;
+
+   my $mysql = "mysql -h $db->{host} -P $db->{port} -u $db->{user} --password=$db->{password} -D $db->{dbname}"; 
+ 
+   print STDERR "Populating meta table for $db->{dbname}...\n";
+
+   system("$mysql -e 'DELETE FROM meta WHERE meta_key = \"$db_key\"'") 
+       and die "Could not delete $db_key from meta in $db->{dbname}\n";
+   system("$mysql -e 'INSERT INTO meta (meta_key,meta_value) VALUES (\"$db_key\",\"$db_val\");'") 
+       and die "Could not insert value $db_val for $db_key into meta in $db->{dbname}\n";
 }
 
 #################################################
