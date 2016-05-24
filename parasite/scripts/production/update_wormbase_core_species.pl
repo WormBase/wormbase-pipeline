@@ -29,6 +29,7 @@ my $ENSEMBL_CVS_ROOT_DIR = $ENV{ENSEMBL_CVS_ROOT_DIR};
 my $PARASITE_CONF        = $ENV{PARASITE_CONF};
 my $WORM_CODE            = $ENV{WORM_CODE};
 my $PARASITE_SCRATCH     = $ENV{PARASITE_SCRATCH};
+my $PARASITE_STAGING     = $ENV{PARASITE_STAGING_MYSQL};
 
 my $WORK_DIR   = "$PARASITE_SCRATCH/core_update";
 my $LOG_DIR    = "$WORK_DIR/logs";
@@ -297,7 +298,7 @@ sub read_templates {
 sub write_config {
   my ($template, $file, @replacements) = @_;
   
-  my %vhosts = ( STAGING => ($PARASITE_VERSION % 2) ? "mysql-ps-staging-1" : "mysql-ps-staging-2",
+  my %vhosts = ( STAGING => $PARASITE_STAGING_MYSQL, 
                  PROD    => "mysql-ps-prod",
                  PAN     => "mysql-pan-1" );
   
