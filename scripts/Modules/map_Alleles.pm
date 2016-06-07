@@ -1166,7 +1166,7 @@ sub load_ncrnas{
   my @files;
   my $gff_dir = $wb->gff_splits;
 
-  foreach my $type ('miRNA','miRNA_primary_transcript','ncRNA','rRNA','scRNA','snoRNA','snRNA','snlRNA','stRNA','tRNA','piRNA','asRNA','lincRNA') {
+  foreach my $type ('miRNA', 'pre_miRNA', 'ncRNA','rRNA','scRNA','snoRNA','snRNA','snlRNA','stRNA','tRNA','piRNA','asRNA','lincRNA') {
     push @files, (glob("$gff_dir/*_${type}.gff"), "$gff_dir/${type}.gff");
   }
   my %nc_rnas;
@@ -1174,10 +1174,9 @@ sub load_ncrnas{
     next if not -e $file;
 
     my $inf=new IO::File $file, 'r';
-    #print "processing: $file\n" if $wb->debug;
     while (<$inf>) {
       next if /\#/;
-      next if ! /(mature_transcript|primary_transcript)/;
+
       s/\"//g;
       my @fields=split;
       my ($chromosome,$start,$stop,$transcript)=($fields[0],$fields[3],$fields[4],$fields[-1]);
