@@ -432,7 +432,9 @@
 //   
 //////////////////////////////////////////////////////////////////////////////////////
                    
-?Interaction Interaction_type Physical
+?Interaction Interaction_type Physical UNIQUE Proteinprotein
+                                              ProteinDNA
+                                              ProteinRNA
                               Predicted
                               Regulatory Change_of_localization
                                          Change_of_expression_level
