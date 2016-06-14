@@ -285,7 +285,7 @@ sub parse_genes_gff3_fh {
 
 
       my $slice = $self->slices->{$exons[0]->{seq}};
-      die "Could not find slice\n" if not defined $slice;
+      die "Could not find slice for $exons[0]->{seq}\n" if not defined $slice;
 
       @exons = reverse @exons if $strand eq '-';
 
