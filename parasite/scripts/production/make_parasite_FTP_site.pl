@@ -101,6 +101,12 @@ if ($g_nomask or $g_smask or $g_hmask or $cds_tran or $mrna_tran or $prot or $gf
 
     my ($species, $bioproject) = $genome =~ /^(\S+_\S+)_(\S+)/;
     $bioproject = uc($bioproject);
+
+    if ($bioproject !~ /^PRJ/) {
+      my ($pre, $suf) = $bioproject =~ /^(\S+)(PRJ\w+\d+)/;
+      $bioproject = "${pre}_${suf}";
+    }
+
     my $outdir = join("/", $tl_out_dir, $release, "species", $species, $bioproject);
     my $prevdir;
 
