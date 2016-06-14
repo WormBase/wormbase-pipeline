@@ -158,7 +158,7 @@ if ($g_nomask or $g_smask or $g_hmask or $cds_tran or $mrna_tran or $prot or $gf
                 $bioproject,
                 $outdir, 
                 "protein.fa", 
-                "$DUMP_TRANSCRIPTS_SCRIPT  -host $host -port $port -user $user-dbname $dbname -pep",
+                "$DUMP_TRANSCRIPTS_SCRIPT  -host $host -port $port -user $user -dbname $dbname -pep",
                 $prevdir) if $prot or $all;
     
     &write_file($species, 
