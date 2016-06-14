@@ -586,7 +586,7 @@ sub copy_gff_files{
   }
 
   # Finally, check the GFF3 only to generate a comparison report
-  my $report_file_name = sprintf("GFF3_comparison.WS%d-WS%d.txt", $WS_version - 1, $WS_version);
+  my $report_file_name = "GFF3_comparison";
   my $collated_report_file = sprintf("%s/%s", $wormbase->reports, $report_file_name);
   my @all_report_files;
 
@@ -634,14 +634,34 @@ sub copy_gff_files{
     $wormbase->run_command("cat @all_report_files > $collated_report_file", $log);
   }
 
-  my $target_report_dir = "$targetdir/REPORTS";
-  mkpath($target_report_dir, 1, 0775);
-  $wormbase->run_command("cp $collated_report_file $target_report_dir/", $log);
-
-
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying GFF files\n\n");
 }
+
+
+###############################################
+# copy across miscellaneous multi-species files
+###############################################
+
+sub copy_report_files {
+  my $runtime = $wormbase->runtime;
+  $log->write_to("$runtime: copying report files\n");
+
+  my $source_report_dir = $wormbase->reports;
+  my $target_report_dir = "$targetdir/REPORTS";
+  mkpath($target_report_dir, 1, 0775);
+
+  foreach my $file ("GFF3_comparison", 
+                    "all_classes") {
+    if (-e "$source_report_dir/$file") {
+      $wormbase->run_command("cat $source_report_dir/$file | gzip -n > $target_report_dir/${file}_report.$WS_version_name.txt.gz", $log); 
+    }   
+  }
+
+  $runtime = $wormbase->runtime;
+  $log->write_to("$runtime: Finished copying report files\n\n");
+}
+
 
 ###############################################
 # copy across miscellaneous multi-species files
