@@ -432,7 +432,7 @@
 //   
 //////////////////////////////////////////////////////////////////////////////////////
                    
-?Interaction Interaction_type Physical UNIQUE Proteinprotein
+?Interaction Interaction_type Physical UNIQUE ProteinProtein
                                               ProteinDNA
                                               ProteinRNA
                               Predicted
