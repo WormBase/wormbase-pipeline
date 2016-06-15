@@ -169,7 +169,7 @@ $log->write_to("Current db       : $dbname '$db'\n");
 $log->write_to("\n\n");
 				
 # open files for class and ID for use in QA when developing Datomic
-my $allout = $wormbase->compare."/WS${WS_current}_all_classes.out";
+my $allout = $wormbase->reports."/all_classes";
 
 &classes();
 
