@@ -100,6 +100,7 @@ my $dna;
 my $rna;
 my $xrefs;
 my $gff;
+my $reports;
 my $ests;
 my $gbrowse_gff;
 my $blastx;
@@ -124,6 +125,7 @@ GetOptions ("help"          => \$help,
 	    "rna"           => \$rna,
 	    "wormpep"       => \$wormpep,
 	    "gff"           => \$gff,
+            "reports"       => \$reports,
 	    "misc"          => \$misc,
             "ests"          => \$ests,
 	    "homols"        => \$homols,
@@ -165,9 +167,9 @@ map { $skip_species{$_} = 1 } @skip_species;
 map { $only_species{$_} = 1 } @only_species;
 
 if ($all) {
-  $multi_species=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$blastx=$dump_ko=$md5=$assembly_manifest=$go_public=$orthology_lists=1;
+  $multi_species=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$reports=$blastx=$dump_ko=$md5=$assembly_manifest=$go_public=$orthology_lists=1;
 } elsif ($all_nopublic) {
-  $multi_species=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$blastx=$dump_ko=$md5=$assembly_manifest=$orthology_lists=1;
+  $multi_species=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$reports=$blastx=$dump_ko=$md5=$assembly_manifest=$orthology_lists=1;
 }
 
 if (not $WS_version) {
@@ -211,6 +213,8 @@ close FTP_LOCK;
 &copy_wormpep_files if ($wormpep);
 
 &copy_gff_files if ($gff);
+
+&copy_report_files if ($reports);
   		  
 &copy_est_files if ($ests);
 
