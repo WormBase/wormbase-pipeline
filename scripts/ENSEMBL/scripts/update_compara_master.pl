@@ -225,40 +225,17 @@ if ($collection_ss) {
 #
 if ($create_tree_mlss) {
   # For orthologs
-  system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara $master_dbname --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type ENSEMBL_ORTHOLOGUES --f --pw  -use_genomedb_ids") 
+  system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara $master_dbname --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type ENSEMBL_ORTHOLOGUES --f --pw  -use_genomedb_ids --release") 
       and die "Could not create MLSS for orthologs\n";
   
   # For same-species paralogues
-  system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara $master_dbname --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type ENSEMBL_PARALOGUES --f --sg --use_genomedb_ids") 
+  system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara $master_dbname --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type ENSEMBL_PARALOGUES --f --sg --use_genomedb_ids --release") 
       and die "Could not create MLSS for within-species paralogs\n"; 
   
 # For protein trees
-  system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara $master_dbname --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type PROTEIN_TREES --f --name protein_trees_${collection_name} ") 
+  system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara $master_dbname --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type PROTEIN_TREES --f --name protein_trees_${collection_name} --release ") 
       and die "Could not create MLSS for protein trees\n";
 
-  # Enable all the GenomeDBs of the collection
-  # And the SpeciesSets they are part of ...
-  my $mlssa = $compara_dbh->get_MethodLinkSpeciesSetAdaptor;
-  my $ssa = $compara_dbh->get_SpeciesSetAdaptor;
-
-  foreach my $gdb (@{$collection_ss->genome_dbs}) {
-    foreach my $ss (@{$ssa->fetch_all_by_GenomeDB($gdb)}) {
-      # ... if all the species in the set are enabled
-      next if grep {not $_->is_current} @{$ss->genome_dbs};
-      $ssa->make_object_current($ss);
-      # And now the MLSSs that use the species-set
-      foreach my $mlss (@{$compara_dbh->get_MethodLinkSpeciesSet->fetch_all_by_species_set_id($ss->dbID)}) {
-        next if $mlss->is_current;
-        $mlssa->make_object_current($mlss);
-      }
-    }
-  }
-
-  my $tree_mlss = $mlssa->fetch_by_method_link_type_species_set_name('PROTEIN_TREES', $collection_ss->name);
-  die "Could not fetch the tree MLSS" if not defined $tree_mlss;
-
-  my $update_query = 'UPDATE method_link_species_set SET url = "" WHERE method_link_species_set_id = ?';
-  $compara_dbh->dbc->do($update_query, undef, $tree_mlss->dbID);
 }
 
 print STDERR "Updated database\n";
