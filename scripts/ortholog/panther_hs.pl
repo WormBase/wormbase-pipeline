@@ -9,6 +9,7 @@ while(<INF>){
   chomp;
   my @F=split;
   $u2e{$F[1]}=$F[0] if $F[1];
+  $u2e{$F[2]}=$F[0] if $F[2];
 }
 
 my %sp2lin= (
