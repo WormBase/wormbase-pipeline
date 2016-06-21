@@ -52,6 +52,7 @@ my (
   $all,
   $tl_out_dir,
   $wb_rel_num,
+  $wb_ftp_dir,
   $rel_num,
   $core_symlinks,
   $checksum, 
@@ -60,7 +61,6 @@ my (
     );
 
 $user = 'ensro';
-$tl_out_dir = ".";
 $rel_num = "666";
 $wb_rel_num = "666";
 
@@ -81,6 +81,7 @@ $wb_rel_num = "666";
   'outdir=s'         => \$tl_out_dir,
   'relnum=s'         => \$rel_num,
   'wbrelnum=s'       => \$wb_rel_num,
+  'wbftpdir=s'       => \$wb_ftp_dir,
   'checksum'         => \$checksum,
   'verbose'          => \$verbose,
   'coresymlinks'     => \$core_symlinks,
@@ -90,6 +91,12 @@ $wb_rel_num = "666";
 my $release = "WBPS${rel_num}";
 my $prev_release = "WBPS" . ($rel_num - 1);
 my $wb_release = "WS${wb_rel_num}";
+
+my $ftp_root = "/nfs/ftp/pub/databases/wormbase";
+
+$tl_out_dir      = "$ftp_root/staging/parasite/releases" if not defined $tl_out_dir;
+$prev_rel_tl_dir = "$ftp_root/parasite/releases" if not defined $prev_rel_tl_dir;
+$wb_ftp_dir      = "$ftp_root/releases" if not defined $wb_ftp_dir;
 
 
 if ($g_nomask or $g_smask or $g_hmask or $cds_tran or $mrna_tran or $prot or $gff3 or $gtf or $all) {
@@ -275,7 +282,7 @@ sub make_core_symlinks {
     my $wb_species_name = "${genus_pre}_${spe}";
 
     my $link_dir_dest = join("/", $tl_out_dir, $release, "species", $ps_species_name, $bioproject);
-    my $link_dir_source = "../../../../../../releases/$wb_release/species/$wb_species_name/$bioproject";
+    my $link_dir_source = "$wb_ftp_dir/$wb_release/species/$wb_species_name/$bioproject";
 
     mkpath $link_dir_dest if not -d $link_dir_dest;
 
@@ -291,8 +298,10 @@ sub make_core_symlinks {
       my $link_fname_dest = join(".", $ps_species_name, $bioproject, $release, $fsuffix);
       my $link_fname_source = join(".", $wb_species_name, $bioproject, $wb_release, $fsuffix);
 
+      unlink "$link_dir_dest/$link_fname_dest" if -l "$link_dir_dest/$link_fname_dest";
+
       system("cd $link_dir_dest && ln -s $link_dir_source/$link_fname_source $link_fname_dest") 
-          and die "Could not create symlink for $wb_genome $fsuffix\n";
+          and die "Could not create symlink to $link_dir_source/$link_fname_source in $link_dir_dest\n";
     }
   }
 }
