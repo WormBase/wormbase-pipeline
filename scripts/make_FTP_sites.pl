@@ -1086,11 +1086,13 @@ sub copy_wormpep_files {
     my $tgt = "$targetdir/species/$gspecies/$bioproj";
     mkpath($tgt,1,0775);
 
-    my $src_pep_file = $wb->sequences . "/$t3.prot.fas";
-    my $src_cdna_file = $wb->sequences . "/$t3.cdna.fas";
+    my $src_pep_file = $wb->sequences . "/$t3.prot.fa";
+    my $src_cds_file = $wb->sequences . "/$t3.cds.fa";
+    my $src_mrna_file = $wb->sequences . "/$t3.mrna.fa";
 
     my $tgt_pep_file = "$tgt/$gspecies.$bioproj.$WS_version_name.protein.fa.gz";
-    my $tgt_cdna_file = "$tgt/$gspecies.$bioproj.$WS_version_name.CDS_transcripts.fa.gz";
+    my $tgt_cds_file = "$tgt/$gspecies.$bioproj.$WS_version_name.CDS_transcripts.fa.gz";
+    my $tgt_mrna_file = "$tgt/$gspecies.$bioproj.$WS_version_name.mRNA_transcripts.fa.gz";
 
     if (-e $src_pep_file) {
       $wb->run_command("gzip -n -9 -c $src_pep_file > $tgt_pep_file", $log);
@@ -1098,10 +1100,16 @@ sub copy_wormpep_files {
       $log->write_to("Did not find $src_pep_file for $t3 - proceeding\n");
     }
 
-    if (-e $src_cdna_file) {
-      $wb->run_command("gzip -n -9 -c $src_cdna_file > $tgt_cdna_file", $log);
+    if (-e $src_cds_file) {
+      $wb->run_command("gzip -n -9 -c $src_cds_file > $tgt_cds_file", $log);
     } else {
-      $log->write_to("Did not find $src_cdna_file for $t3 - proceeding\n");
+      $log->write_to("Did not find $src_cds_file for $t3 - proceeding\n");
+    }
+
+    if (-e $src_mrna_file) {
+      $wb->run_command("gzip -n -9 -c $src_mrna_file > $tgt_mrna_file", $log);
+    } else {
+      $log->write_to("Did not find $src_mrna_file for $t3 - proceeding\n");
     }
   }
 
@@ -1812,7 +1820,6 @@ GSPECIES.BIOPROJ.WSREL.orthologs.txt.gz
 GSPECIES.BIOPROJ.WSREL.best_blastp_hits.txt.gz
 GSPECIES.BIOPROJ.WSREL.annotations.gff2.gz
 GSPECIES.BIOPROJ.WSREL.ncRNA_transcripts.fa.gz
-GSPECIES.BIOPROJ.WSREL.mRNA_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.pseudogenic_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.intergenic_sequences.fa.gz
 GSPECIES.BIOPROJ.WSREL.xrefs.txt.gz
@@ -1830,6 +1837,7 @@ GSPECIES.BIOPROJ.WSREL.annotations.gff3.gz
 GSPECIES.BIOPROJ.WSREL.canonical_geneset.gtf.gz
 GSPECIES.BIOPROJ.WSREL.protein.fa.gz
 GSPECIES.BIOPROJ.WSREL.CDS_transcripts.fa.gz
+GSPECIES.BIOPROJ.WSREL.mRNA_transcripts.fa.gz
 
 
 []acedb
