@@ -289,6 +289,7 @@ foreach my $key ( sort keys %CE_history ) {
           my ($stem, $iso) = ($cor_cds =~ /($re)(\w*)/);
 
           my $gname = (exists $CDS_cgc{$cor_cds}) ? uc($CDS_cgc{$cor_cds}) : $stem;
+          $gname=~s/([A-Z])([A-Z]{2})(-\S+-\S+)/$1\L$2\U$3/;
           $gname .= ", isoform $iso" if $iso;
           $gnames{$gname} = 1;
         }
