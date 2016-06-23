@@ -50,14 +50,16 @@ my (
   $gff3,
   $gtf,
   $all,
-  $tl_out_dir,
+  $tl_dir,
   $wb_rel_num,
-  $wb_ftp_dir,
   $rel_num,
-  $core_symlinks,
   $checksum, 
   $verbose,
-  $prev_rel_tl_dir,
+  $staging_tl_dir,
+  $production_tl_dir,
+  $staging,
+  $production,
+  $copy_previous,
     );
 
 $user = 'ensro';
@@ -78,26 +80,27 @@ $wb_rel_num = "666";
   'gff3'             => \$gff3,
   'gtf'              => \$gtf,
   'all'              => \$all,
-  'outdir=s'         => \$tl_out_dir,
   'relnum=s'         => \$rel_num,
   'wbrelnum=s'       => \$wb_rel_num,
-  'wbftpdir=s'       => \$wb_ftp_dir,
   'checksum'         => \$checksum,
   'verbose'          => \$verbose,
-  'coresymlinks'     => \$core_symlinks,
-  'prevreldir=s'     => \$prev_rel_tl_dir,  # copy data from previous release dir (if it exists)
+  'stagingdir=s'     => \$staging_tl_dir,
+  'releasedir=s'     => \$production_tl_dir,
+  'staging'          => \$staging,
+  'release'          => \$production,
+  'copyprevious'     => \$copy_previous,
     );
 
 my $release = "WBPS${rel_num}";
 my $prev_release = "WBPS" . ($rel_num - 1);
 my $wb_release = "WS${wb_rel_num}";
 
-my $ftp_root = "/nfs/ftp/pub/databases/wormbase";
+my $ftp_root = "/ebi/ftp/pub/databases/wormbase";
 
-$tl_out_dir      = "$ftp_root/staging/parasite/releases" if not defined $tl_out_dir;
-$prev_rel_tl_dir = "$ftp_root/parasite/releases" if not defined $prev_rel_tl_dir;
-$wb_ftp_dir      = "$ftp_root/releases" if not defined $wb_ftp_dir;
-
+$staging_tl_dir            = "$ftp_root/staging/parasite/releases" if not defined $staging_tl_dir;
+$production_tl_dir         = "$ftp_root/parasite/releases" if not defined $production_tl_dir;
+my $wb_ftp_root_staging    = "../../../../../../../releases";
+my $wb_ftp_root_production = "../../../../../../releases";
 
 if ($g_nomask or $g_smask or $g_hmask or $cds_tran or $mrna_tran or $prot or $gff3 or $gtf or $all) {
 
@@ -114,11 +117,11 @@ if ($g_nomask or $g_smask or $g_hmask or $cds_tran or $mrna_tran or $prot or $gf
       $bioproject = "${pre}_${suf}";
     }
 
-    my $outdir = join("/", $tl_out_dir, $release, "species", $species, $bioproject);
+    my $outdir = join("/", $tl_dir, $release, "species", $species, $bioproject);
     my $prevdir;
 
-    if ($prev_rel_tl_dir) {
-      $prevdir = join("/", $prev_rel_tl_dir, $prev_release, "species", $species, $bioproject);
+    if ($copy_previous) {
+      $prevdir = join("/", $production_tl_dir, $release, "species", $species, $bioproject);
       if (not -d $prevdir) {
         warn("Previous release data for $prevdir  not found. Will generate.\n");
         undef $prevdir;
@@ -184,8 +187,21 @@ if ($g_nomask or $g_smask or $g_hmask or $cds_tran or $mrna_tran or $prot or $gf
   }  
 }
 
-&make_md5sums() if $checksum;
-&make_core_symlinks(@genomes) if $core_symlinks;
+if ($staging) {
+  &make_core_symlinks($wb_ftp_root_staging, $staging_tl_dir,  @genomes);
+  &make_md5sums($staging_tl_dir);
+} 
+
+if ($production) {
+  if (-d "$staging_tl_dir/$release" and not -d "$production_tl_dir/$release") {
+    system("mv $staging_tl_dir/$release $production_tl_dir") and die "Could not mv $staging_tl_dir/$release to $production_tl_dir\n";
+  }
+  if (-d "$production_tl_dir/$release") {
+    &make_core_symlinks($wb_ftp_root_production, $production_tl_dir, @genomes);
+    &make_md5sums($production_tl_dir);
+  } 
+}
+
 
 ###############################
 
@@ -250,8 +266,9 @@ sub get_databases {
 
 #####################
 sub make_md5sums {
+  my ($tl_dir) = @_;
 
-  my $targetdir = "$tl_out_dir/$release";
+  my $targetdir = "$tl_dir/$release";
   my $checksum_file = "CHECKSUMS";
 
   my @files;
@@ -270,7 +287,7 @@ sub make_md5sums {
 
 #############################################
 sub make_core_symlinks {
-  my (@genomes) = @_;
+  my ($core_ftp_root, $this_tl_dir, @genomes) = @_;
 
   foreach my $wb_genome (keys %$WORMBASE_GENOMES) {
     next if @genomes and not grep { $wb_genome eq $_ } @genomes;
@@ -281,9 +298,8 @@ sub make_core_symlinks {
     my $ps_species_name = "${genus_pre}${genus_suf}_${spe}";
     my $wb_species_name = "${genus_pre}_${spe}";
 
-    my $link_dir_dest = join("/", $tl_out_dir, $release, "species", $ps_species_name, $bioproject);
-    my $link_dir_source = "$wb_ftp_dir/$wb_release/species/$wb_species_name/$bioproject";
-
+    my $link_dir_dest = join("/", $this_tl_dir, $release, "species", $ps_species_name, $bioproject);
+    my $link_dir_source = "$core_ftp_root/$wb_release/species/$wb_species_name/$bioproject";
     mkpath $link_dir_dest if not -d $link_dir_dest;
 
     foreach my $fsuffix( "genomic.fa.gz", 
