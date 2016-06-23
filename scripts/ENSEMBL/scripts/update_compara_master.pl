@@ -172,8 +172,10 @@ foreach my $core_db (@core_dbs) {
     $gdb->genebuild($genebuild);
     $gdb->assembly($assembly);
     $gdb->last_release(undef);
-    $gdb->first_release(software_version());
 
+    if ($assembly ne $old_assembly) {
+      $gdb->first_release(software_version());
+    }
     if ($locators) {
       my $loc = sprintf("Bio::EnsEMBL::DBSQL::DBAdaptor/host=%s;port=%s;user=%s;pass=%s;dbname=%s;disconnect_when_inactive=1", 
                         $core_db->dbc->host, 
