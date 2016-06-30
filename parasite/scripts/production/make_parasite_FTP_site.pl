@@ -50,7 +50,6 @@ my (
   $gff3,
   $gtf,
   $all,
-  $tl_dir,
   $wb_rel_num,
   $rel_num,
   $checksum, 
@@ -117,7 +116,7 @@ if ($g_nomask or $g_smask or $g_hmask or $cds_tran or $mrna_tran or $prot or $gf
       $bioproject = "${pre}_${suf}";
     }
 
-    my $outdir = join("/", $tl_dir, $release, "species", $species, $bioproject);
+    my $outdir = join("/", $staging_tl_dir, $release, "species", $species, $bioproject);
     my $prevdir;
 
     if ($copy_previous) {
