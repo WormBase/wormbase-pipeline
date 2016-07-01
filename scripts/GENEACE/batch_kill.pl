@@ -149,7 +149,7 @@ sub kill_gene {
       $db->kill_gene($gene) if $ns;
     }
     else {
-      $log->error("no such $domain $gene\n");
+      $log->error("no such $domain $gene in $database\n");
     }
   }
   #    elsif (!defined($gene) && !defined($person)&& !defined($remark)) {
