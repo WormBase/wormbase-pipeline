@@ -142,7 +142,7 @@ sub kill_gene {
       } elsif($domain eq 'Variation'){
 	print ACE "\nVariation : $gene\nStatus Dead Curator_confirmed $person\nRemark \"$remark\"\n";
       } elsif($domain eq 'Feature'){
-        print Ace "\nFeature : $gene\nDeprecated \"feature has been retired\" Curator_confirmed $person\nRemark \"$remark\"\n";
+        print ACE "\nFeature : $gene\nDeprecated \"feature has been retired\" Curator_confirmed $person\nRemark \"$remark\"\n";
       }
       #nameserver kill
       $log->write_to("NS->kill $gene\n");
