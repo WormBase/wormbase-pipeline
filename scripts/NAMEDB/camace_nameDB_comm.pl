@@ -45,8 +45,8 @@ if ( $store ) {
 
 my (%ace_genes, %server_genes, %all_gene_ids);
 
-my %exceptions = ('C05G5.6'=>1, 'T22C1.13'=>1, 'F22D3.9'=>1, 'C54G10.6'=>1, 'C11H1.12'=>1, 'T01B6.12'=>1); 
-#my @exceptions = ('C05G5.6', 'T22C1.13', 'F22D3.9', 'C54G10.6', 'C11H1.12',);
+my %exceptions = ('C05G5.6'=>1, 'T22C1.13'=>1, 'F22D3.9'=>1, 'C54G10.6'=>1, 'C11H1.12'=>1, 'T01B6.12'=>1, 'C40A11.10'=>1);
+
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
