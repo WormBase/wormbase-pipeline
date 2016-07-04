@@ -1,6 +1,9 @@
 #!/usr/bin/env perl -w
 # creates gene stubs from the core database on mysql-ps-prod-1
 # currently: fish, fly, mouse, human, yeast. but you can pass others as commandline
+#
+# Note: the 
+# 
 
 use lib $ENV{CVS_DIR};
 
@@ -24,7 +27,7 @@ my (
 
 &GetOptions(
   'urls=s@'       => \@server_urls,
-  'compara'       => \$compara_name,
+  'compara=s'     => \$compara_name, # should be defined as the division name (e.g. "parasite")
   "debug=s"       => \$debug,
   "test"          => \$test,
   "store=s"       => \$store,
@@ -60,6 +63,7 @@ my $member_adap = Bio::EnsEMBL::Registry->get_adaptor($compara_name,'compara','G
 my $mlss_adap =  Bio::EnsEMBL::Registry->get_adaptor($compara_name,'compara','MethodLinkSpeciesSet');
 my $homology_adap =  Bio::EnsEMBL::Registry->get_adaptor($compara_name,'compara','Homology');
 
+
 my $fh;
 if ($outfile) {
   open($fh, ">$outfile") or die "Could not open $outfile for writing\n";
@@ -67,8 +71,9 @@ if ($outfile) {
   $fh = \*STDOUT;
 }
 
+
 foreach my $genome (@mod_species) {
-    
+ 
   &write_ace_genes($genome, $fh) if $ace_genes;
   foreach my $wb_species (sort keys %wb_accessors) {
     &write_ace_orthologs($genome, $wb_species, $fh) if $ace_orthologs;
@@ -137,6 +142,8 @@ sub write_ace_genes {
 sub write_ace_orthologs {
   my ($m_genome, $wb_genome, $outfh) = @_;
 
+  print "Dumping orthologs for $m_genome $wb_genome\n";
+
   my $meta_adaptor = Bio::EnsEMBL::Registry->get_adaptor($m_genome,'core','MetaContainer');
 
   my $m_gdb = $genomedb_adap->fetch_by_name_assembly($m_genome);
@@ -169,7 +176,7 @@ sub write_ace_orthologs {
   my %homols;
 
   my @homols = @{$homology_adap->fetch_all_by_MethodLinkSpeciesSet($mlss)};
-  print STDERR "Fetched ", scalar(@homols), " orthologs between $m_genome and $wb_genome\n";
+
   my $i = 0;
   while (my $hom = shift @homols) {
     my ($m_gm, $wb_gm) =  map { $_->gene_member } @{$hom->get_all_Members};
