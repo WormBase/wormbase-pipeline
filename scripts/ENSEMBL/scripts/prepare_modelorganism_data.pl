@@ -108,7 +108,7 @@ sub write_ace_genes {
     if (defined $gene->display_xref) {
       $public_name =  $gene->display_xref->display_id;
       $public_name =~s/;//;
-      if (exists $cgc_names{$public_name}) {
+      if (exists $cgc_names{$public_name} or exists $cgc_names{lc($public_name)}) {
         $public_name = $SPECIES_INFO{$genome}->{prefix} . $public_name;
       }
     }
