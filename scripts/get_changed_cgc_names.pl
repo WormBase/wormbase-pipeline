@@ -247,57 +247,57 @@ sub output_changed_cgc {
 
   ##############################
   # output human-readable format
-  print OUT "# new CGC names\n";
-  print OUT "# CGC_name\tGeneID\tSequenceID\tBiotype\tEvidence\n";
-  print OUT sort @no_previous_cgc_name;
-  print OUT "\n";
+  print READABLE "# new CGC names\n";
+  print READABLE "# CGC_name\tGeneID\tSequenceID\tBiotype\tEvidence\n";
+  print READABLE sort @no_previous_cgc_name;
+  print READABLE "\n";
   
-  print OUT "# Other changes\n";
+  print READABLE "# Other changes\n";
   # Genes with changed CGC names
-  print OUT "# old CGC\told GeneID\told SequenceID\told Biotype\tnew CGC\tnew GeneID\tnew SequenceID\tnew Biotype\n";
-  print OUT sort @changed_cgc_name_on_a_gene;
+  print READABLE "# old CGC\told GeneID\told SequenceID\told Biotype\tnew CGC\tnew GeneID\tnew SequenceID\tnew Biotype\n";
+  print READABLE sort @changed_cgc_name_on_a_gene;
   # removed CGC names
-  print OUT sort @no_new_cgc_name;
+  print READABLE sort @no_new_cgc_name;
   # assigned Gene changed
-  print OUT sort @geneid_different_to_prev;
+  print READABLE sort @geneid_different_to_prev;
   # Biotype changed
-  print OUT sort @biotype_changed;
+  print READABLE sort @biotype_changed;
   # other changes
-  print OUT sort @other;
-  print OUT "\n";
+  print READABLE sort @other;
+  print READABLE "\n";
 
   #####################
   # output table format
   
-  print READABLE "# Genes with changed CGC names\n";
-  print READABLE "# old CGC\told GeneID\told SequenceID\told Biotype\tnew CGC\tnew GeneID\tnew SequenceID\tnew Biotype\n";
-  print READABLE sort @table_changed_cgc_name_on_a_gene;
-  print READABLE "\n";
+  print OUT "# Genes with changed CGC names\n";
+  print OUT "# old CGC\told GeneID\told SequenceID\told Biotype\tnew CGC\tnew GeneID\tnew SequenceID\tnew Biotype\n";
+  print OUT sort @table_changed_cgc_name_on_a_gene;
+  print OUT "\n";
   
-  print READABLE "# new CGC names\n";
-  print READABLE "# old CGC\told GeneID\told SequenceID\told Biotype\tnew CGC\tnew GeneID\tnew SequenceID\tnew Biotype\n";
-  print READABLE sort @table_no_previous_cgc_name;
-  print READABLE "\n";
+  print OUT "# new CGC names\n";
+  print OUT "# old CGC\told GeneID\told SequenceID\told Biotype\tnew CGC\tnew GeneID\tnew SequenceID\tnew Biotype\n";
+  print OUT sort @table_no_previous_cgc_name;
+  print OUT "\n";
   
-  print READABLE "# removed CGC names\n";
-  print READABLE "# old CGC\told GeneID\told SequenceID\told Biotype\tnew CGC\tnew GeneID\tnew SequenceID\tnew Biotype\n";
-  print READABLE sort @table_no_new_cgc_name;
-  print READABLE "\n";
+  print OUT "# removed CGC names\n";
+  print OUT "# old CGC\told GeneID\told SequenceID\told Biotype\tnew CGC\tnew GeneID\tnew SequenceID\tnew Biotype\n";
+  print OUT sort @table_no_new_cgc_name;
+  print OUT "\n";
   
-  print READABLE "# assigned Gene changed\n";
-  print READABLE "# old CGC\told GeneID\told SequenceID\told Biotype\tnew CGC\tnew GeneID\tnew SequenceID\tnew Biotype\n";
-  print READABLE sort @table_geneid_different_to_prev;
-  print READABLE "\n";
+  print OUT "# assigned Gene changed\n";
+  print OUT "# old CGC\told GeneID\told SequenceID\told Biotype\tnew CGC\tnew GeneID\tnew SequenceID\tnew Biotype\n";
+  print OUT sort @table_geneid_different_to_prev;
+  print OUT "\n";
   
-  print READABLE "# Biotype changed\n";
-  print READABLE "# old CGC\told GeneID\told SequenceID\told Biotype\tnew CGC\tnew GeneID\tnew SequenceID\tnew Biotype\n";
-  print READABLE sort @table_biotype_changed;
-  print READABLE "\n";
+  print OUT "# Biotype changed\n";
+  print OUT "# old CGC\told GeneID\told SequenceID\told Biotype\tnew CGC\tnew GeneID\tnew SequenceID\tnew Biotype\n";
+  print OUT sort @table_biotype_changed;
+  print OUT "\n";
   
-  print READABLE "# other changes\n";
-  print READABLE "# old CGC\told GeneID\told SequenceID\told Biotype\tnew CGC\tnew GeneID\tnew SequenceID\tnew Biotype\n";
-  print READABLE sort @table_other;
-  print READABLE "\n";
+  print OUT "# other changes\n";
+  print OUT "# old CGC\told GeneID\told SequenceID\told Biotype\tnew CGC\tnew GeneID\tnew SequenceID\tnew Biotype\n";
+  print OUT sort @table_other;
+  print OUT "\n";
 }
 
 ##########################################
