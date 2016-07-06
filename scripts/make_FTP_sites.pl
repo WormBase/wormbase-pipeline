@@ -1812,6 +1812,7 @@ GSPECIES.BIOPROJ.WSREL.TAR_gene_expression.tar.gz
 GSPECIES.BIOPROJ.WSREL.reuters_citation_index.xml.gz
 GSPECIES.BIOPROJ.WSREL.omim_xrefs.txt
 GSPECIES.BIOPROJ.WSREL.changed_CGC_names.txt
+GSPECIES.BIOPROJ.WSREL.readable_changed_CGC_names.txt
 GSPECIES.BIOPROJ.WSREL.TSS.wig.tar.gz
 
 [elegans]species/GSPECIES/BIOPROJ
