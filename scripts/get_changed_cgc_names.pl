@@ -24,7 +24,7 @@ use Storable;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $outfile, $database);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $readable_outfile, $table_outfile, $database);
 my ($RELEASE, $PREV_RELEASE);
 
 GetOptions ("help"       => \$help,
@@ -32,7 +32,8 @@ GetOptions ("help"       => \$help,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
-	    "outfile:s"  => \$outfile,
+	    "readable_outfile:s"  => \$readable_outfile, # human-readable format for people who like pretty outputs
+	    "table_outfile:s"  => \$table_outfile, # table format used to present the data in the web site
 	    "RELEASE:s"  => \$RELEASE, # optional - for use when looking at historical releases
 	    "database:s" => \$database, # ditto
 	    );
@@ -63,7 +64,8 @@ my $log = Log_files->make_build_log($wormbase);
 my $tace = $wormbase->tace;
 $database ||= $wormbase->autoace;
 
-$outfile ||= $wormbase->misc_output . "/changed_CGC_names.dat";
+$readable_outfile ||= $wormbase->misc_output . "/readable_changed_CGC_names.dat"; # human-readable format
+$table_outfile ||= $wormbase->misc_output . "/changed_CGC_names.dat"; # table format
 
 $RELEASE ||= $wormbase->get_wormbase_version;
 $PREV_RELEASE = $RELEASE - 1;
@@ -86,9 +88,11 @@ my $db = Ace->connect (-path => "$database",
 		       -program => $tace) || $log->log_and_die("Cannot connect to database at $database\n");
 
 
-open (OUT, "> $outfile") || $log->log_and_die("Can't open $outfile\n");
+open (READABLE, "> $readable_outfile") || $log->log_and_die("Can't open $readable_outfile\n");
+open (OUT, "> $table_outfile") || $log->log_and_die("Can't open $table_outfile\n");
 &output_changed_cgc();
 close OUT;
+close READABLE;
 
 $db->close();
 
@@ -173,12 +177,21 @@ sub output_changed_cgc {
   }
 
 
+  # human-readable data
   my @changed_cgc_name_on_a_gene;
   my @no_previous_cgc_name;
   my @no_new_cgc_name;
   my @geneid_different_to_prev;
   my @biotype_changed;
   my @other;
+
+  # table-format data
+  my @table_changed_cgc_name_on_a_gene;
+  my @table_no_previous_cgc_name;
+  my @table_no_new_cgc_name;
+  my @table_geneid_different_to_prev;
+  my @table_biotype_changed;
+  my @table_other;
 
   # find the genes whose CGC name has changed
   foreach my $cgc (keys %all_cgcs) {
@@ -194,7 +207,8 @@ sub output_changed_cgc {
 	  $all_cgcs{$new_cgc} = 0; # don't process this one again
 	  $new = "$new_cgc\t$cgc2gene->{$new_cgc}\t$sequence_name->{$new_cgc}\t$cgc2biotype->{$new_cgc}";
 	  my $details = get_cgc_name_changed_details($cgc); # see if the CGC_name is now an Other_name
-	  push @changed_cgc_name_on_a_gene, "$prev\t$new\tCGC name changed on this gene$details\n";
+	  push @changed_cgc_name_on_a_gene, "$prev\t$new\tCGC name changed on this gene$details\n"; # human-readable format
+	  push @table_changed_cgc_name_on_a_gene, "$prev\t$new\n"; # table format
 	} 
       }
     }
@@ -205,6 +219,9 @@ sub output_changed_cgc {
     my $prev = (exists $prev_cgc2gene->{$cgc}) ? "$cgc\t$prev_cgc2gene->{$cgc}\t$prev_sequence_name->{$cgc}\t$prev_cgc2biotype->{$cgc}" : ".\t.\t.\t.";
     my $new = (exists $cgc2gene->{$cgc}) ? "$cgc\t$cgc2gene->{$cgc}\t$sequence_name->{$cgc}\t$cgc2biotype->{$cgc}" : ".\t.\t.\t.";
     if ($prev ne $new) {
+
+      #######################
+      # human readable format
       if (!exists $prev_cgc2gene->{$cgc}) { # new CGC-name - get details
 	my $details = get_new_cgc_details($cgc);
 	push @no_previous_cgc_name, "$new\t$details\n"
@@ -216,29 +233,71 @@ sub output_changed_cgc {
       elsif ($prev_cgc2gene->{$cgc} ne $cgc2gene->{$cgc}) {push @geneid_different_to_prev, "$prev\t$new\tCGC_name assigned to a new gene\n"}
       elsif ($prev_cgc2biotype->{$cgc} ne $cgc2biotype->{$cgc}) {push @biotype_changed, "$prev\t$new\tBiotype changed\n"}
       else {push @other, "$prev\t$new\tSequence ID changed\n"} # can have a change in the Sequence name of a Gene
+
+      ##############
+      # table format
+      if (!exists $prev_cgc2gene->{$cgc}) {push @table_no_previous_cgc_name, "$prev\t$new\n"}
+      elsif (!exists $cgc2gene->{$cgc}) {push @table_no_new_cgc_name, "$prev\t$new\n"}
+      elsif ($prev_cgc2gene->{$cgc} ne $cgc2gene->{$cgc}) {push @table_geneid_different_to_prev, "$prev\t$new\n"}
+      elsif ($prev_cgc2biotype->{$cgc} ne $cgc2biotype->{$cgc}) {push @table_biotype_changed, "$prev\t$new\n"}
+      else {push @table_other, "$prev\t$new\n"} # can have a change in the Sequence name of a Gene
+
     }
   }
 
+  ##############################
+  # output human-readable format
   print OUT "# new CGC names\n";
   print OUT "# CGC_name\tGeneID\tSequenceID\tBiotype\tEvidence\n";
   print OUT sort @no_previous_cgc_name;
   print OUT "\n";
   
   print OUT "# Other changes\n";
-#  print OUT "# Genes with changed CGC names\n";
+  # Genes with changed CGC names
   print OUT "# old CGC\told GeneID\told SequenceID\told Biotype\tnew CGC\tnew GeneID\tnew SequenceID\tnew Biotype\n";
   print OUT sort @changed_cgc_name_on_a_gene;
-#  print OUT "# removed CGC names\n";
+  # removed CGC names
   print OUT sort @no_new_cgc_name;
-#  print OUT "# assigned Gene changed\n";
+  # assigned Gene changed
   print OUT sort @geneid_different_to_prev;
-#  print OUT "# Biotype changed\n";
+  # Biotype changed
   print OUT sort @biotype_changed;
-#  print OUT "# other changes\n";
+  # other changes
   print OUT sort @other;
   print OUT "\n";
 
-    
+  #####################
+  # output table format
+  
+  print OUT "# Genes with changed CGC names\n";
+  print OUT "# old CGC\told GeneID\told SequenceID\told Biotype\tnew CGC\tnew GeneID\tnew SequenceID\tnew Biotype\n";
+  print OUT sort @table_changed_cgc_name_on_a_gene;
+  print OUT "\n";
+  
+  print OUT "# new CGC names\n";
+  print OUT "# old CGC\told GeneID\told SequenceID\told Biotype\tnew CGC\tnew GeneID\tnew SequenceID\tnew Biotype\n";
+  print OUT sort @table_no_previous_cgc_name;
+  print OUT "\n";
+  
+  print OUT "# removed CGC names\n";
+  print OUT "# old CGC\told GeneID\told SequenceID\told Biotype\tnew CGC\tnew GeneID\tnew SequenceID\tnew Biotype\n";
+  print OUT sort @table_no_new_cgc_name;
+  print OUT "\n";
+  
+  print OUT "# assigned Gene changed\n";
+  print OUT "# old CGC\told GeneID\told SequenceID\told Biotype\tnew CGC\tnew GeneID\tnew SequenceID\tnew Biotype\n";
+  print OUT sort @table_geneid_different_to_prev;
+  print OUT "\n";
+  
+  print OUT "# Biotype changed\n";
+  print OUT "# old CGC\told GeneID\told SequenceID\told Biotype\tnew CGC\tnew GeneID\tnew SequenceID\tnew Biotype\n";
+  print OUT sort @table_biotype_changed;
+  print OUT "\n";
+  
+  print OUT "# other changes\n";
+  print OUT "# old CGC\told GeneID\told SequenceID\told Biotype\tnew CGC\tnew GeneID\tnew SequenceID\tnew Biotype\n";
+  print OUT sort @table_other;
+  print OUT "\n";
 }
 
 ##########################################
