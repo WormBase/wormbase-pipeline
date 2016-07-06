@@ -912,6 +912,14 @@ sub copy_misc_files{
     } else {
       $log->write_to("Warning: CGC changes file not found\n");
     }
+    my $readable_source = "$srcdir/readable_changed_CGC_names.dat";
+    my $readable_target = "$annotation_dir/${gspecies}.${bioproj}.${WS_version_name}.readable_changed_CGC_names.txt";
+    
+    if (-e $readable_source) {
+      $wormbase->run_command("cp -f $readable_source $readable_target", $log);
+    } else {
+      $log->write_to("Warning: readable CGC changes file not found\n");
+    }
   }
 
   #
