@@ -455,7 +455,9 @@
 //   
 //////////////////////////////////////////////////////////////////////////////////////
                                    
-?Interaction    Interaction_type ^type ENUM Physical
+?Interaction    Interaction_type ^type ENUM Physical ProteinProtein
+                                                     ProteinDNA
+                                                     ProteinRNA
                                             Predicted
                                             Regulatory Change_of_localization
                                                        Change_of_expression_level
@@ -3445,11 +3447,12 @@
                   Person ?Person //
                   Analysis ?Analysis
                   Corresponding_transgene UNIQUE ?Transgene OUTXREF Corresponding_variation
-                  Production_method Homologous_recombination //Homologous_recombination
-                                    NHEJ //Non-homologous DNA end-joining, imprecise DNA repair
+                  Production_method CRISPR_Cas9
+                                    Homologous_recombination //Homologous_recombination
                                     MosSci
+                                    MosDEL
+                                    NHEJ //Non-homologous DNA end-joining, imprecise DNA repair
                                     TALENs
-                                    CRISPR_Cas9
                                     ZFNNHEJ_repair //Zinc-finger nuclease
                                     ZFNHR_repair
                   Expr_pattern ?Expr_pattern OUTXREF Variation #Evidence
@@ -3807,3 +3810,4 @@
 // WS252
 // WS253
 // WS254
+// WS255
