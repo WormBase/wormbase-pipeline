@@ -29,7 +29,6 @@
 // -----------------------------------------------------------------------------
 //  "Name" this should always be implemented as Public_name or Similar
 //
-
 //
 //                                   PSEUDOACE
 //
@@ -659,6 +658,7 @@
                   Rearrangement  ?Rearrangement INXREF Strain
                   Clone ?Clone INXREF In_strain             
                   Transgene ?Transgene INXREF Strain
+         Database ?Database ^database ?Database_field ^field ?Text ^accession
          Properties Inbreeding_state UNIQUE Selfed // Text
                                             Isofemale // Text
                                             Multifemale // Text
@@ -1541,7 +1541,7 @@
 
 ?Sequence_collection Origin Evidence #Evidence
                             Name ?Text // name that the author gave this collection
-                            Species UNIQUE ?Species
+                            Species ?Species
                             Strain ?Strain
                             Laboratory ?Laboratory
                             DB_info Database ?Database ?Database_field ?Text
@@ -1692,6 +1692,11 @@
                                        Transposon_pseudogene ^transposon #Evidence //Pseudogene of Transposon origins
                 Attributes Transcribed #Evidence
                            Fragment #Evidence
+                           SubType UNIQUE processed_pseudogene #Evidence
+                                          unprocessed_pseudogene #Evidence
+                           Truncated_5 #Evidence
+                           Truncated_3 #Evidence
+                           Frameshifts UNIQUE Int
                 Properties Isoform #Evidence
                 Visible Gene UNIQUE ?Gene INXREF Corresponding_pseudogene         // when Pseudogene is live
                         Gene_history UNIQUE ?Gene INXREF Corresponding_pseudogene_history // when Pseudogene is dead
@@ -3502,15 +3507,6 @@
            Description Phenotype ?Phenotype INXREF Variation #Phenotype_info
                        Phenotype_remark ?Text #Evidence
                        Phenotype_not_observed ?Phenotype INXREF Not_in_Variation #Phenotype_info  //added by Wen to separate Not phenotype from real phenotypes 
-                       Nonsense UNIQUE ENUM Amber_UAG Text #Evidence
-                                            Ochre_UAA Text #Evidence
-                                            Opal_UGA Text #Evidence
-                       Missense Text #Evidence                          // text fields stored details of codon change
-                       Silent Text #Evidence
-                       Splice_site ENUM Donor Text #Evidence
-                                        Acceptor Text #Evidence
-                       Frameshift Text #Evidence  // added sdm
-                       Readthrough Text #Evidence // klh WS228
            Reference ?Paper INXREF Allele
            Remark ?Text #Evidence
 //           Method UNIQUE ?Method       // Becomes :locatable/method
@@ -3810,3 +3806,4 @@
 // WS251
 // WS252
 // WS253
+// WS254
