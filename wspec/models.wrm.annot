@@ -822,10 +822,9 @@
 ?Grid   Title   ?Text
         Layout  Columns UNIQUE Int
                 Lines_at UNIQUE Int ^x UNIQUE Int ^y  // x, y spacing
-                Space_at UNIQUE Int ^x UNIQUE Int ^y // x, y spacing
+                Space_at UNIQUE Int ^x UNIQUE Int ^y  // x, y spacing
                 No_stagger // default is with alternate lines staggered
-                Size UNIQUE Int ^x UNIQUE Int ^y
-                      // idea is to give box size here
+                Size UNIQUE Int ^x UNIQUE Int ^y      // idea is to give box size here
                 Labels  UNIQUE  A1_labelling
                     // label spaced blocks a-h down LHS, 1-12 across top
                                 XY_labelling UNIQUE Text ^x UNIQUE Text ^y
@@ -1196,8 +1195,27 @@
                       Gene_by_orthology ?Gene INXREF Potential_model
                       Phenotype ?Phenotype INXREF DO_term
                       WBProcess ?WBProcess INXREF DO_term
-//                      Reference ?Paper OUTXREF DO_term 
+//                      Reference ?Paper OUTXREF DO_term
+                      Reagent_info Associated_antibody ?Antibody INXREF Antibody_for_disease
+                      Associated_construct ?Construct INXREF Construct_for_disease
+                      Associated_transgene ?Transgene INXREF Transgene_for_disease 
          Version UNIQUE Text
+
+///////////////////////////////////////////////////////////////
+//
+//?PATO_termclass-ChrisWS251
+//
+////////////////////////////////////////////////////////////////
+
+?PATO_term Name ?Text
+           Definition ?Text
+           Alt_id ?Text
+           Synonym ?Text
+           Status UNIQUE Valid
+                         Obsolete
+           Child OUTXREF ?PATO_term
+           Parent INXREF ?PATO_term
+           Version UNIQUE Text
 
 //////////////////////////////////////////////////////////
 // ?AO_code class -  Raymond Lee 040203
@@ -2298,6 +2316,7 @@
           Historical_gene ?Gene Text
           Possible_pseudonym ?Antibody INXREF Possible_pseudonym_of
           Possible_pseudonym_of ?Antibody OUTXREF Possible_pseudonym
+          Antibody_for_disease ?DO_term OUTXREF Associated_antibody #Evidence
           Expr_pattern ?Expr_pattern INXREF Antibody_info
           Interactor ?Interaction INXREF Antibody
           Reference ?Paper OUTXREF Antibody
@@ -2618,7 +2637,8 @@
                          Marker_for   ?Text #Evidence 
                          Interactor ?Interaction INXREF Transgene
                 Associated_with Marked_rearrangement ?Rearrangement INXREF By_transgene
-                                Strain ?Strain OUTXREF Transgene 
+                                Strain ?Strain OUTXREF Transgene
+                Transgene_for_disease ?DO_term OUTXREF Associated_transgene #Evidence 
                 Reference ?Paper OUTXREF Transgene  
                 Species UNIQUE ?Species       
                 Remark ?Text #Evidence
@@ -2656,7 +2676,8 @@
                     Topic_output_indicator ?WBProcess INXREF Marker_construct
                     Expression_pattern ?Expr_pattern INXREF Construct
                     Interactor ?Interaction INXREF Construct
-           Reference ?Paper OUTXREF xxxx
+           Construct_for_disease ?DO_term OUTXREF Associated_construct #Evidence
+           Reference ?Paper 
            Person ?Person
            Laboratory ?Laboratory #Lab_Location
            Historical_gene ?Gene Text
@@ -2725,7 +2746,6 @@
                 Quantity_description ?Text #Evidence //Remark to describe what quantity describes, below
                 Quantity UNIQUE Int UNIQUE Int #Evidence
 //                Not #Evidence //This is being phased out but is needed for the next phase [06/08/10].
-                Anatomy_term ?Anatomy_term #Evidence 
                 Penetrance Incomplete Text #Evidence
                            Low Text #Evidence
                            High Text #Evidence
@@ -2735,7 +2755,7 @@
                 Semi_dominant #Evidence
                 Dominant #Evidence
                 Haplo_insufficient #Evidence
-                Caused_by ?Gene #Evidence
+                Caused_by_gene ?Gene #Evidence
                 Caused_by_other ?Text #Evidence
                 Rescued_by_transgene ?Transgene
                 Variation_effect ENUM Gain_of_function_undetermined_type #Evidence
@@ -2752,13 +2772,16 @@
                                       Probable_hypomorph_via_phenotype #Evidence
                                       Wild_allele #Evidence
                 Affected_by Molecule ?Molecule #Evidence // ?Molecule model Karen Yook
+                EQ_annotations Anatomy_term ?Anatomy_term ?PATO_term #Evidence
+                               Life_stage ?Life_stage ?PATO_term #Evidence
+                               GO_term ?GO_term ?PATO_term #Evidence
+                               Molecule_affected ?Molecule ?PATO_term #Evidence
                 Temperature_sensitive Heat_sensitive Text #Evidence
                                       Cold_sensitive Text #Evidence
                 Maternal UNIQUE ENUM Strictly_maternal #Evidence
                                      With_maternal_effect #Evidence
                 Paternal #Evidence
-                Phenotype_assay Life_stage ?Life_stage #Evidence
-                                Strain ?Strain #Evidence
+                Phenotype_assay Strain ?Strain #Evidence
                                 Treatment ?Text #Evidence
                                 Temperature ?Text #Evidence
                                 Genotype ?Text #Evidence
@@ -3007,10 +3030,17 @@
                                   Regulated_by_molecule ?Molecule OUTXREF Regulate_expr_cluster            // Wen WS228
                      Associated_with  Life_stage ?Life_stage                 // Wen WS228
                                       GO_term ?GO_term                       // Wen WS228
-                                      Anatomy_term ?Anatomy_term OUTXREF Expression_cluster #Evidence //Describes microarray experiments involving expression profiling in a particular tissue or cell Igor Dec 06
+                                      Anatomy_term ?Anatomy_term OUTXREF Expression_cluster #Expression_cluster_info  //Describes microarray experiments involving expression profiling in a particular tissue or cell Igor Dec 06
                                       WBProcess ?WBProcess INXREF Expression_cluster #Evidence
                      Remark ?Text #Evidence
      
+#Expression_cluster_info Expressed
+                         Depleted
+                         Enriched
+                         Dissection
+                         mRNA_tagging
+                         FACS
+
 
 //////////////////////////////////////////////////////////////////
 //  ?SAGE_tag class
@@ -3314,6 +3344,7 @@
                  Movie ?Movie INXREF Reference
 //                 DO_term ?DO_term NOXREF Reference #Evidence
                  GO_annotation ?GO_annotation INXREF Reference
+                 GO_term ?GO_term
        Curation_pipeline Phenotype2GO
        Keyword ?Text           // tad removed "nameholder"
        Remark ?Text #Evidence
