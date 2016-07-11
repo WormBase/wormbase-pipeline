@@ -1901,8 +1901,8 @@
                       Associated_with_expression_pattern ?Expr_pattern INXREF Associated_feature #Evidence 
                       Associated_with_Feature ?Feature INXREF Associated_with_Feature #Evidence
                       Associated_with_construct ?Construct INXREF Sequence_feature
+                      Associated_with_transcription_factor ?Transcription_factor OUTXREF Associated_feature #Evidence 
          Bound_by_product_of ?Gene OUTXREF Gene_product_binds #Evidence //pad added this to show what gene it binds
-         Transcription_factor UNIQUE ?Transcription_factor OUTXREF Binding_site 
          Confidential_remark ?Text //pad
          Remark ?Text #Evidence
 //         Method UNIQUE ?Method    // Becomes :locatable/method
@@ -1941,7 +1941,7 @@
                         Associated_with_gene ?Gene OUTXREF Associated_transcription_factor #Evidence
                         Type Text #Evidence 
                         Remark Text #Evidence
-                        Binding_site ?Feature INXREF Transcription_factor 
+                        Associated_feature ?Feature INXREF Associated_with_transcription_factor 
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -3162,6 +3162,7 @@
                                           // default is "First_name Last_name"
                 Full_name UNIQUE ?Text //?Person_name XREF Full_name_of // field for storing long name [030321 krb]
                 Also_known_as ?Text    //?Person_name XREF Other_name_of // new XREF added [030310 krb]
+        Principal_investigator
         CGC_representative_for ?Laboratory INXREF Representative
         Laboratory ?Laboratory INXREF Registered_lab_members
         Affiliation Text // used for storing institute affiliations that aren't in their Address
@@ -3496,7 +3497,7 @@
                                  In_2_point ?2_point_data NOXREF xxxx
                                  In_multi_point ?Multi_pt_data NOXREF xxxx
                                  In_pos_neg_data ?Pos_neg_data NOXREF xxxx
-                                // these are for when the locus is mapped
+                                 // these are for when the locus is mapped
                     Marked_rearrangement ?Rearrangement INXREF By_variation
            Description Phenotype ?Phenotype INXREF Variation #Phenotype_info
                        Phenotype_remark ?Text #Evidence
@@ -3808,3 +3809,4 @@
 // WS250
 // WS251
 // WS252
+// WS253
