@@ -13,8 +13,6 @@
 // -----------------------------------------------------------------------------
 //
 // ALL WormBase groups should be in sync with this set of models
-// Last edited by: $Author: pad $
-// Last edited on: $Date: 2014-07-17 23:45:31 $
 //
 //
 // Additional things to consider. If classes are added or new data in the ?Gene class
@@ -24,8 +22,8 @@
 //
 // Notes:
 //
-// Add a CVS tag line at the end of the file when the models are fully prepared for a 
-// WB build to start, this allows for one final CVS commit and message.
+// Add a Build tag line at the end of the file when the models are fully prepared for a 
+// WB build to start, this allows for one final commit and message.
 //
 // Tags that shouldn't be used:
 // -----------------------------------------------------------------------------
@@ -605,6 +603,7 @@
                 Type    ENUM Deletion
                              Duplication     Free_dup
                              Translocation
+                             Inversion
                              Compound    //    Text  --kill by tad
                              Introgression
                 Phenotype ?Phenotype OUTXREF Rearrangement #Phenotype_info
@@ -1609,6 +1608,7 @@
                 //3d_data ?3d_data XREF CDS
                 //Structure_data ?Structure_data XREF Corresponding_CDS #Evidence
                 RNASeq_FPKM ^rnaseq ?Life_stage ^stage Float ^fpkm #Evidence
+                Last_reviewed UNIQUE DateType UNIQUE ?Person
                 Remark ?Text #Evidence
         Associated_feature ?Feature INXREF Associated_with_CDS #Evidence
 //        Method UNIQUE ?Method   Becomes :locatable/method
@@ -1628,7 +1628,7 @@
                         Database ?Database ^database ?Database_field ^field UNIQUE ?Text ^accession
                 Origin  From_laboratory UNIQUE ?Laboratory                         // [020306 kj]
                         Species UNIQUE ?Species                                    // [020306 kj]
-                Visible Gene ?Gene INXREF Corresponding_transcript // for live transcripts
+                Visible Gene UNIQUE ?Gene INXREF Corresponding_transcript // for live transcripts
                         Gene_history UNIQUE ?Gene INXREF Corresponding_transcript_history // when Transcript is dead
                         Variation ?Variation INXREF Transcript // added to fit two alleles of RNA genes [021127 krb]
                         Matching_cDNA ?Sequence OUTXREF Matching_transcript #Evidence            // to attach non-coding RNA genes to matching ESTs
@@ -1709,6 +1709,7 @@
                         SAGE_tag ?SAGE_tag INXREF Pseudogene #SAGE_mapping_info
                         Microarray_results ?Microarray_results INXREF Pseudogene  //added for Microarray_results
                         RNASeq_FPKM ^rnaseq ?Life_stage ^stage Float ^fpkm #Evidence
+                        Last_reviewed UNIQUE DateType UNIQUE ?Person
                         Remark ?Text #Evidence    
                 Associated_feature ?Feature INXREF Associated_with_pseudogene #Evidence
                 Confidential_remark ?Text
@@ -2211,15 +2212,16 @@
               Type Reporter_gene ?Text FILL_DEFAULT
                    In_situ Text FILL_DEFAULT
                    Antibody ?Text FILL_DEFAULT
-                   Northern Text FILL_DEFAULT // Wen [krb 030425]
-                   Western Text  FILL_DEFAULT // Wen 
-                   RT_PCR Text  FILL_DEFAULT // Wen
-                   Localizome ?Text FILL_DEFAULT //added by Wen
+                   Northern Text FILL_DEFAULT
+                   Western Text  FILL_DEFAULT
+                   RT_PCR Text  FILL_DEFAULT
+                   RNASeq ?Analysis
+                   Localizome ?Text FILL_DEFAULT
                    Microarray ?Microarray_experiment
                    Tiling_array ?Analysis
                    EPIC ?Text FILL_DEFAULT
                    Cis_regulatory_element Text FILL_DEFAULT
-              Expression_cluster ?Expression_cluster INXREF Expr_pattern //added by Wen.for localizome
+              Expression_cluster ?Expression_cluster INXREF Expr_pattern //added for localizome
               Microarray_results ?Microarray_results INXREF Expr_Pattern
               Pattern ?Text
               Picture ?Picture INXREF Expr_pattern
@@ -2772,6 +2774,7 @@
                                       Probable_hypomorph_via_phenotype #Evidence
                                       Wild_allele #Evidence
                 Affected_by Molecule ?Molecule #Evidence // ?Molecule model Karen Yook
+                            Pathogen ?Species #Evidence
                 EQ_annotations Anatomy_term ?Anatomy_term ?PATO_term #Evidence
                                Life_stage ?Life_stage ?PATO_term #Evidence
                                GO_term ?GO_term ?PATO_term #Evidence
@@ -3414,7 +3417,6 @@
                             Type_of_mutation Substitution UNIQUE Text ^ref UNIQUE Text ^alt #Evidence // wild type and mutant sequence
                                              Insertion UNIQUE Text #Evidence
                                              Deletion UNIQUE Text #Evidence  
-                                             Inversion #Evidence
                                              Tandem_duplication #Evidence              
                             PCR_product ?PCR_product OUTXREF Variation  
                             SeqStatus UNIQUE Not_sequenced //[2006-02-17 ar2] to differentiate between mutations which have been sequenced and those which have not.
@@ -3457,7 +3459,7 @@
                           Acquires_merge ?Variation INXREF Merged_into
                           Split_from UNIQUE ?Variation INXREF Split_into
                           Split_into ?Variation OUTXREF Split_from
-                  Status ENUM UNIQUE Live #Evidence
+                  Status UNIQUE ENUM Live #Evidence
                                      Suppressed #Evidence
                                      Dead #Evidence
            Linked_to ?Variation OUTXREF Linked_to  // for being able to specify paired substitutions which are part of the same allele
@@ -3706,21 +3708,45 @@
 //
 //////////////////////////////////////////////////      
 
-?Molecule  Public_name ?Text
-//         Name ?Text
-           Synonym ?Text
-           DB_info Database ?Database ?Database_field ?Text
-           Regulate_expr_cluster ?Expression_cluster INXREF Regulated_by_molecule    // Wen WS228
-           WBProcess ?WBProcess INXREF Molecule
-           Affects_phenotype_of Variation ^affects-phenotype-of-variation ?Variation ?Phenotype #Evidence
-                                Strain ^affects-phenotype-of-strain ?Strain ?Phenotype #Evidence
-                                Transgene ^affects-phenotype-of-transgene ?Transgene ?Phenotype #Evidence
-                                RNAi ^affects-phenotype-of-rnai ?RNAi ?Phenotype #Evidence
-                                Rearrangement ^affects-phenotype-of-rearrangement ?Rearrangement ?Phenotype #Evidence  // KY [110602 pad]
-           Interaction ?Interaction INXREF Molecule_interactor                       // Chris WS244
-           Molecule_use ^use ?Text #Evidence
-           Reference ?Paper OUTXREF Molecule
-           Remark ?Text #Evidence
+
+?Molecule Public_name ?Text
+          Formula ?Text            //imported from ChEBI
+          Monoisotopic_mass Float //need to set up automated calculation based on formula
+          IUPAC ?Text              //imported from ChEBI
+          SMILES ?Text             //imported from ChEBI
+          InChi ?Text              //imported from ChEBI
+          InChiKey ?Text           //imported from ChEBI
+          Synonym ?Text            //mainly from CTD, but also from papers and ChEBI
+          DB_info Database ?Database ?Database_field ?Text
+          Status ENUM Detected #Evidence
+                      Predicted #Evidence
+          Detection_method ?Text #Evidence //NMR, MALDI-MS, HPLC-UV, shotgun lipidomics
+          Extraction_method ?Text #Evidence //MeOH, exometabolome, MeOH/Chloroform, 5% trichloroacetic acid
+          Nonspecies_source ?Text
+          Chemical_synthesis #Evidence
+          Endogenous_in ?Species #Evidence
+          Biofunction_role ENUM Metabolite ?Text #Evidence
+                                Regulator ?Text #Evidence
+                                Structural_component ?Text #Evidence
+                                Cofactor ?Text #Evidence
+                                Activator ?Text #Evidence
+                                Inhibitor ?Text #Evidence
+                                Product ?Text #Evidence
+                                Substrate ?Text #Evidence
+                                Ligand ?Text #Evidence
+                                Receptor ?Text #Evidence
+          Essential_for ?Species #Evidence
+          WBProcess ?WBProcess INXREF Molecule
+          Regulate_expr_cluster ?Expression_cluster INXREF Regulated_by_molecule
+          Affects_phenotype_of Variation ^affects-phenotype-of-variation ?Variation ?Phenotype #Evidence
+                               Strain ^affects-phenotype-of-strain ?Strain ?Phenotype #Evidence
+                               Transgene ^affects-phenotype-of-transgene ?Transgene ?Phenotype #Evidence
+                               RNAi ^affects-phenotype-of-rnai ?RNAi ?Phenotype #Evidence
+                               Rearrangement ^affects-phenotype-of-rearrangement ?Rearrangement ?Phenotype #Evidence
+          Interaction ?Interaction INXREF Molecule_interactor
+          Molecule_use ^use ?Text #Evidence
+          Reference ?Paper OUTXREF Molecule
+          Remark ?Text #Evidence
 
 
 //////////////////////////////////////////////////
@@ -3780,3 +3806,5 @@
 // WS248
 // WS249
 // WS250
+// WS251
+// WS252
