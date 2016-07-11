@@ -314,7 +314,8 @@
                  Status UNIQUE ENUM ^status Live #Evidence
                                             Suppressed #Evidence
                                             Dead #Evidence   
-        Gene_info Gene_class UNIQUE ?Gene_class OUTXREF Genes
+        Gene_info Biotype UNIQUE ?SO_term
+                  Gene_class UNIQUE ?Gene_class OUTXREF Genes
                   Laboratory ?Laboratory
                   Cloned_by #Evidence      // mt3 acreditation of person who cloned gene [060829 ar2]
                   Reference_allele ?Variation #Evidence
@@ -622,9 +623,9 @@
                 Remark ?Text #Evidence
                 Isolation       Author ?Author  // use Person where possible, else use Author
                                 Person ?Person
-                                Date DateType
+                                Date UNIQUE DateType
                                 Mutagen UNIQUE Text ^name UNIQUE Text ^dose // Text is dose
-                                Source_rearrangement ?Rearrangement OUTXREF Derived_rearrangement
+                                Source_rearrangement UNIQUE ?Rearrangement OUTXREF Derived_rearrangement
                                 Derived_rearrangement ?Rearrangement INXREF Source_rearrangement
                 Map ?Map OUTXREF Rearrangement #Map_position
                 Positive Gene_inside ?Gene OUTXREF Inside_rearr #Evidence
@@ -652,7 +653,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 ?Strain  Evidence #Evidence
-         Genotype Text
+         Genotype UNIQUE Text
          Other_name ?Text #Evidence
          Contains Gene   ?Gene INXREF Strain
                   Variation ?Variation INXREF Strain 
@@ -663,7 +664,7 @@
                                             Isofemale // Text
                                             Multifemale // Text
                                             Inbred // Text 
-                    Outcrossed Text
+                    Outcrossed UNIQUE Text
                     Mutagen Text
                     Strain_history Text
                     Date_first_frozen UNIQUE DateType
@@ -1047,9 +1048,9 @@
 ///////////////////////////////////////////////////////
 
 
-?GO_annotation  Gene ?Gene OUTXREF GO_annotation
-                GO_term ?GO_term OUTXREF GO_annotation
-                GO_code ?GO_code
+?GO_annotation  Gene UNIQUE ?Gene OUTXREF GO_annotation
+                GO_term UNIQUE ?GO_term OUTXREF GO_annotation
+                GO_code UNIQUE ?GO_code
                 Annotation_relation NOT
                                     colocalizes_with
                                     contributes_to
@@ -1070,9 +1071,9 @@
                                      GO_term_relation ?Text UNIQUE ?GO_term
                 Annotation_isoform ?Text ?Protein
                 Interacting_species ?Species ?Strain
-                Reference ?Paper OUTXREF GO_annotation
-                GO_reference ?Database ?Database_field ?Text
-                Contributed_by ?Analysis
+                Reference UNIQUE ?Paper OUTXREF GO_annotation
+                GO_reference UNIQUE ?Database ?Database_field ?Text
+                Contributed_by UNIQUE ?Analysis
                 Date_last_updated UNIQUE DateType
 
 ////////////////////////////////////////////////////////
@@ -1083,7 +1084,7 @@
 
 ?GO_term Name ?Text
          Definition ?Text
-         Term ?Text
+         Alt_id ?Text
          Synonym ENUM ^scope Broad ?Text
                              Exact ?Text
                              Narrow ?Text
@@ -1111,7 +1112,7 @@
                        Expr_pattern ?Expr_pattern INXREF GO_term
                        Picture ?Picture INXREF Cellular_component
                        GO_annotation ?GO_annotation INXREF GO_term
-         Version UNIQUE Text // UNIQUE Text // Lincoln, to store version number of GO - only on 3 parent_terms [krb 031028]    tad killed second text because not used
+         Version UNIQUE Text 
 
 ///////////////////////////////////////////////////////////////
 //
@@ -1130,8 +1131,8 @@
 ////////////////////////////////////////////////////////////////
 
 
-?SO_term SO_name ^name ?Text
-         SO_definition ^definition ?Text
+?SO_term SO_name UNIQUE ^name ?Text
+         SO_definition UNIQUE ^definition ?Text
          SO_synonym ^synonym ?Text
          SO_version ?Text
          Located_sequence_feature UNIQUE Junction
@@ -2182,11 +2183,12 @@
                             Protein ?Protein OUTXREF Expr_pattern
                             Protein_description Text   // information for Expr_patterns with unknown antigens [031105 krb]
 //              Homol Homol_homol ?Homol_data XREF Expr_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info //Expr_pattern mapping [060427 ar2]
-              Expressed_in Life_stage ?Life_stage OUTXREF Expr_pattern #Qualifier
-//                           Cell_group ?Cell_group OUTXREF Expr_pattern #Qualifier
-//                           Cell ?Cell OUTXREF Expr_pattern #Qualifier
-                           Anatomy_term ?Anatomy_term OUTXREF Expr_pattern #Qualifier
-                           GO_term ?GO_term OUTXREF Expr_pattern #GR_condition
+              Expression_data Life_stage ?Life_stage OUTXREF Expr_pattern #Qualifier
+                              Anatomy_term ?Anatomy_term OUTXREF Expr_pattern #Qualifier
+                              GO_term ?GO_term OUTXREF Expr_pattern #GR_condition
+                              Not_in_Life_stage ?Life_stage #Qualifier
+                              Not_in_Anatomy_term ?Anatomy_term #Qualifier
+                              Not_in_GO_term ?GO_term #GR_condition
               Subcellular_localization ?Text
               Type Reporter_gene ?Text FILL_DEFAULT
                    In_situ Text FILL_DEFAULT
@@ -2274,7 +2276,7 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-?Antibody Summary ?Text #Evidence
+?Antibody Summary UNIQUE ?Text #Evidence
           Other_name Text
           Gene ?Gene OUTXREF Antibody #Evidence
           Isolation Original_publication UNIQUE ?Paper
@@ -2349,7 +2351,7 @@
 //        Fate Cell_type ?Text             // e.g. muscle, neuron,hypodermis, gland
 //             Program ?Text               //division, differentiation, death, and differs between sexes
 //             Syncitial_cell ?Cell_group OUTXREF Nucleus //see Cell_group,
-//        Summary Text                     // the whole of old remark plus more to be added by Raymond
+//        Summary UNIQUE Text #Evidence // the whole of old remark plus more to be added by Raymond
 //        Embryo_division_time Text
 //        Remark ?Text #Evidence
 //        Lineage Parent UNIQUE ?Cell OUTXREF Daughter
@@ -2367,10 +2369,9 @@
 //        Tree_Node ?TreeNode NOXREF Cell
 //        Reference ?Paper OUTXREF Cell
 //        GO_term ?GO_term OUTXREF Cell ?GO_code #Evidence
-//        Data    Expr_pattern ?Expr_pattern NOXREF Cell
-//                Reconstruction ?Reconstruction OUTXREF Cell #ReconCellInfo
-//                Neurodata ?Cell #Neurodata
-//        // Atlas ?Atlas XREF Cell
+//        Data Reconstruction ?Reconstruction OUTXREF Cell #ReconCellInfo
+//             Neurodata ?Cell #Neurodata
+//        Atlas ?Atlas XREF Cell
 //        Link_diagram Text
  
 
@@ -2387,7 +2388,6 @@
 //                                Organ
 //                                Region
 //                                Lineage //put in for Lilncoln some time ago
-//                Expr_pattern ?Expr_pattern NOXREF Cell_group      
 //                Life_stage ?Life_stage OUTXREF Cell_group
 //                Anatomy_term ?Anatomy_term OUTXREF Cell_group
 //                Reference ?Paper OUTXREF Cell_group
@@ -2595,7 +2595,7 @@
 
 ?Transgene      Evidence #Evidence
                 Public_name UNIQUE ?Text     
-                Summary UNIQUE ?Text                               
+                Summary UNIQUE ?Text #Evidence
                 Synonym ?Text       
                 Corresponding_variation UNIQUE ?Variation INXREF Corresponding_transgene //put in to unambiguously associate the allele/transgene
                 Construction Construct   ?Construct INXREF Transgene_construct
@@ -2636,7 +2636,7 @@
 ?Construct Evidence #Evidence
            Public_name ?Text
            Other_name ?Text
-           Summary ?Text                      //genotype like [Pmyo-2::GFP]
+           Summary UNIQUE ?Text #Evidence        //genotype like [Pmyo-2::GFP]
            Sequence_feature ?Feature OUTXREF Associated_with_construct
            Driven_by_gene ?Gene OUTXREF Drives_construct #Evidence
            Gene ?Gene OUTXREF Construct_product #Evidence
@@ -2714,7 +2714,7 @@
 
 ////////////////////////////////////////////
 //
-// ?Phenotype_info Class
+// ?Phenotype_info class
 //
 ////////////////////////////////////////////
 
@@ -2738,16 +2738,19 @@
                 Caused_by ?Gene #Evidence
                 Caused_by_other ?Text #Evidence
                 Rescued_by_transgene ?Transgene
-                Loss_of_function UNIQUE ENUM Hypomorph #Evidence
-                                             Amorph #Evidence
-                                             Uncharacterised_loss_of_function #Evidence
-                Gain_of_function UNIQUE ENUM Dominant_negative #Evidence
-                                             Hypermorph #Evidence
-                                             Neomorph #Evidence
-                                             Uncharacterised_gain_of_function #Evidence
-                Other_allele_type UNIQUE ENUM Wild_type #Evidence
-                                              Isoallele #Evidence  
-                                              Mixed #Evidence       
+                Variation_effect ENUM Gain_of_function_undetermined_type #Evidence
+                                      Antimorph_gain_of_function #Evidence
+                                      Dominant_negative_gain_of_function #Evidence
+                                      Hypermorph_gain_of_function #Evidence
+                                      Neomorph_gain_of_function #Evidence
+                                      Loss_of_function_undetermined_extent #Evidence    
+                                      Null #Evidence
+                                      Predicted_null_via_sequence #Evidence
+                                      Probable_null_via_phenotype #Evidence
+                                      Hypomorph_reduction_of_function #Evidence
+                                      Predicted_hypomorph_via_sequence #Evidence
+                                      Probable_hypomorph_via_phenotype #Evidence
+                                      Wild_allele #Evidence
                 Affected_by Molecule ?Molecule #Evidence // ?Molecule model Karen Yook
                 Temperature_sensitive Heat_sensitive Text #Evidence
                                       Cold_sensitive Text #Evidence
@@ -3702,10 +3705,8 @@
 //
 //////////////////////////////////////////////////      
 
-?WBProcess      Name ?Text
-                Summary ?Text #Evidence
-                Process_term ?Text
-                Public_name UNIQUE ?Text
+?WBProcess      Public_name UNIQUE ?Text
+                Summary UNIQUE ?Text #Evidence
                 Other_name ?Text
                 Related_topic Specialisation_of ?WBProcess OUTXREF Generalisation_of
                               Generalisation_of ?WBProcess INXREF Specialisation_of
@@ -3746,4 +3747,5 @@
 // WS246
 // WS247
 // WS248
-// 
+// WS249
+// WS250
