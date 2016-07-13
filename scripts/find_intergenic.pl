@@ -2,7 +2,10 @@
 #
 # find_intergenic.pl
 #
-# Return intergenic region sequences
+# Return intergenic region sequences, where "intergenic" is defined as maximal genomic regions containing no genes
+#
+# Note: due to gene clusters, and genes in the introns in other genes, the resulting number of regions will usually
+# be significantly lower than the total gene count
 #
 # by Gary Williams
 #
