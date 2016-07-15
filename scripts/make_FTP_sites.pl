@@ -980,8 +980,18 @@ sub copy_misc_files{
     } else {
       $log->write_to("Warning: controls gene expression file for $g_species not found ($con_src)\n");
     }
+  }
 
-
+  # protein domain file
+  while (my($k,$v)=each %accessors){
+     next if exist $skip_species{$k};
+     next if @only_species and not exists $only_species{$k};
+    
+     my $source = $v->misc_output . '/protein_domain.tvs';
+     my $target = "$targetdir/species/".$v->full_name(-g_species => 1).'/'.$v->ncbi_bioproject.'/annotation/'.
+                  $v->full_name(-gspecies => 1).'.'.$v->ncbi_bioproject.'.'.$WS_version_name.'.protein_domains.tsv';
+     if (-e $source){$wormbase->run_command("cp -f $source $target",$log)}
+     else{$log->write_to("cannot find $source file\n")}
   }
 
   $runtime = $wormbase->runtime;
