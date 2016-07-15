@@ -983,8 +983,8 @@ sub copy_misc_files{
   }
 
   # protein domain file
-  while (my($k,$v)=each %accessors){
-     next if exist $skip_species{$k};
+  while(my($k,$v)=each %accessors){
+     next if exists $skip_species{$k};
      next if @only_species and not exists $only_species{$k};
     
      my $source = $v->misc_output . '/protein_domain.tvs';
