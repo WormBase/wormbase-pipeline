@@ -4,8 +4,8 @@
 use feature qw(say);
 
 use Ace;
-use WormBase;
-use Getop::Long;
+use Wormbase;
+use Getopt::Long;
 use IO::File;
 use strict;
 
@@ -16,7 +16,7 @@ GetOptions(
   'store=s'   => \$store,
   'test'      => \$test,
   'debug=s'   => \$debug
-)||die()
+)||die();
 
 my $wb;
 
@@ -27,7 +27,8 @@ if ($store) {
 else { 
   $wb = Wormbase->new( -debug => $debug, 
                        -test => $test, 
-                       -organism => $species, 
+                       -organism => $species,
+		     )
 }
 
 my $log = Log_files->make_build_log($wb);
@@ -47,4 +48,4 @@ while (my $cds = $cdses->next){
                 map {"$_". ($_->fetch->Title?' "'.$_->fetch->Title.'"':'')} @motifs));
 }
 
-$log->mail()
+$log->mail();
