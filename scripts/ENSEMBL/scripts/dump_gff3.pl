@@ -322,18 +322,24 @@ while( my $slice = shift @slices) {
   
   my $features = $slice->get_all_RepeatFeatures;
   while(my $feature = shift @$features) {
+    
     my $stripped_feature = {
-      seqname     => $feature->slice->seq_region_name,
-      strand      => ($feature->strand > 0?'+':'-'),
-      start       => $feature->seq_region_start,
-      end         => $feature->seq_region_end,
-      score       => ($feature->score||'.'),
-      phase       => ".",
-      logic_name  => $feature->analysis->logic_name,
-      display     => $feature->repeat_consensus->name,
-      gff_source  => (defined $feature->analysis->gff_source) ? $feature->analysis->gff_source : "WormBase",
-      feature_type=> (defined $feature->analysis->gff_feature) ? $feature->analysis->gff_feature : 'repeat_region',
+      seqname      => $feature->slice->seq_region_name,
+      strand       => ($feature->strand > 0?'+':'-'),
+      start        => $feature->seq_region_start,
+      end          => $feature->seq_region_end,
+      score        => ($feature->score||'.'),
+      phase        => ".",
+      logic_name   => $feature->analysis->logic_name,
+      gff_source   => (defined $feature->analysis->gff_source) ? $feature->analysis->gff_source : "WormBase",
+      feature_type => (defined $feature->analysis->gff_feature) ? $feature->analysis->gff_feature : 'repeat_region',
     };
+
+    if ($feature->analysis->logic_name eq 'repeatmask') {
+      $stripped_feature->{attributes}->{repeat_class} = $feature->repeat_consensus->repeat_class;
+      $stripped_feature->{display} = $feature->repeat_consensus->name;
+    }
+
     print $out_fh dump_feature($stripped_feature);
   }
 
@@ -485,6 +491,12 @@ sub dump_feature {
   push @group, "Name=$feature{display}" if $feature{display};
   push @group, "Target=$feature{hit_id} $feature{hit_start} $feature{hit_end}" if $feature{hit_id};
   push @group, "Gap=$feature{cigar}" if $feature{cigar};
+
+  if (exists $feature{attributes}) {
+    foreach my $k (sort keys %{$feature{attributes}}) {
+      push @group, "$k=" . $feature{attributes}->{$k};
+    }
+  }
 
   $gff_line .= "\t" . join(";", @group);
   $gff_line .= "\n";

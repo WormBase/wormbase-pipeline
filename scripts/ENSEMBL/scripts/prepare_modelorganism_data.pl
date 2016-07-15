@@ -23,6 +23,7 @@ my (
   $wb, $debug, $test, $store,
   @server_urls, @mod_species, $outfile,
   $compara_name, $ace_orthologs, $ace_genes, $out_dir,
+  $ortholog_analysis,
     );
 
 &GetOptions(
@@ -35,11 +36,14 @@ my (
   "acegenes"      => \$ace_genes,
   "modspecies=s"  => \@mod_species,
   "outfile=s"     => \$outfile,
+  "analysis=s"    => \$ortholog_analysis, 
 )||die(@!);
 
 die "You must supply a list of server URLs containing the compara database and comparator species core databases\n" if not @server_urls;
 
-$compara_name = 'wbparasite' if not defined $compara_name;
+$compara_name = 'parasite' if not defined $compara_name;
+$ortholog_analysis = "ParaSite-Compara" if not defined $ortholog_analysis;
+
 @mod_species = keys %SPECIES_INFO if not @mod_species;
 
 if ( $store ) {
@@ -63,6 +67,8 @@ my $member_adap = Bio::EnsEMBL::Registry->get_adaptor($compara_name,'compara','G
 my $mlss_adap =  Bio::EnsEMBL::Registry->get_adaptor($compara_name,'compara','MethodLinkSpeciesSet');
 my $homology_adap =  Bio::EnsEMBL::Registry->get_adaptor($compara_name,'compara','Homology');
 
+my ($wb_version) = Bio::EnsEMBL::Registry->get_adaptor("caenorhabditis_elegans", 'core','MetaContainer')->single_value_by_key("genebuild.version");
+my ($db_version) = $genomedb_adap->dbc->dbname =~ /ensembl_compara_${compara_name}_(\d+)/;
 
 my $fh;
 if ($outfile) {
@@ -75,8 +81,15 @@ if ($outfile) {
 foreach my $genome (@mod_species) {
  
   &write_ace_genes($genome, $fh) if $ace_genes;
-  foreach my $wb_species (sort keys %wb_accessors) {
-    &write_ace_orthologs($genome, $wb_species, $fh) if $ace_orthologs;
+  if ($ace_orthologs) {
+    foreach my $wb_species (sort keys %wb_accessors) {
+      &write_ace_orthologs($genome, $wb_species, $fh);
+
+      print $fh "\nAnalysis : \"$ortholog_analysis\"\n";
+      print $fh "Description : \"Model organism orthologs predicted by the Ensembl Compara pipeline\"\n";
+      print $fh "Based_on_WB_Release \"wb_version\"\n";
+      print $fh "Based_on_DB_Release \"db_version\"\n";
+    }
   }
 }
 
@@ -195,11 +208,12 @@ sub write_ace_orthologs {
     print $outfh "Gene : \"$g\"\n";
     foreach my $spe (keys %{$homols{$g}}) {
       foreach my $og (keys %{$homols{$g}->{$spe}}) {
-        print $outfh "Ortholog \"$og\" \"$spe\" From_analysis ParaSite-Compara\n";
+        print $outfh "Ortholog \"$og\" \"$spe\" From_analysis $ortholog_analysis\n";
       }
     }
     print $outfh "\n";
   }
+
 }
 
 
