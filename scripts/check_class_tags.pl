@@ -28,8 +28,6 @@ GetOptions(
 	   'verbose:s'  => \$verbose,
 );
 
-$debug = 1; # during testing
-
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
