@@ -85,7 +85,7 @@ sub main {
 	$DB = 'test_wbgene_id;utlt-db;3307';
 	$sw->banner("This is the test server");
     } else {
-	$DB = 'wbgene_id;shap;3303';
+	$DB = 'nameserver_live;web-wwwdb-core-02;3449';
 	$sw->banner("This is the LIVE server");
     }
 

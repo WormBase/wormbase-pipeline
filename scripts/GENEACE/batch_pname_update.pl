@@ -89,7 +89,7 @@ die "-user option is mandatory\n" unless $USER;
 die "-pass option is mandatory\n" unless $PASS;
 die "-file option is mandatory\n" unless $file;
 
-my $DB = $wormbase->test ? 'test_wbgene_id;utlt-db:3307' : 'wbgene_id;shap:3303';
+my $DB = $wormbase->test ? 'test_wbgene_id;utlt-db:3307' : 'nameserver_live;web-wwwdb-core-02:3449';
 my $db = NameDB_handler->new($DB,$USER,$PASS);
 $db->setDomain($DOMAIN);
 

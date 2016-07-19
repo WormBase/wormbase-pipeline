@@ -16,7 +16,7 @@ my $sw = SangerWeb->new();
 if ($sw->is_dev()) {
     $DB = 'test_wbgene_id;utlt-db;3307';
 } else {
-    $DB = 'wbgene_id;shap;3303';
+    $DB = 'nameserver_live;web-wwwdb-core-02;3449';
 }
 
 print <<END;
@@ -24,8 +24,7 @@ Content-Type: text; charset=iso-8859-1
 
 END
 
-croak ("no user or database") unless ($DB and $USER);
-#print "USER:$USER<br>DB:$DB<br>";
+croak ('no user or database') unless ($DB and $USER);
 
 my $db = get_db_connection($USER,$DB);
 my $query =<<END;

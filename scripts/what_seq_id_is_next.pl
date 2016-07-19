@@ -21,14 +21,14 @@ use DBD::mysql;
 my ($wormbase, $debug, $test, $store, $species, $in,$out,$pw,$user,$seq);
 
 GetOptions (
-	    "debug=s"     => \$debug,   # send log emails only to one user
-	    "test"        => \$test,    # run against the test database on mcs4a
-	    "store:s"     => \$store,   # if you want to pass a Storable instead of recreating it
-	    "user:s"	  => \$user,    # mysql username
-	    "pass:s"	  => \$pw,    # mysql password
-	    "in:s"        => \$in,
-	    "out:s"       => \$out,
-	    "clone:s"     => \$seq,
+	    'debug=s'     => \$debug,   # send log emails only to one user
+	    'test'        => \$test,    # run against the test database on mcs4a
+	    'store:s'     => \$store,   # if you want to pass a Storable instead of recreating it
+	    'user:s'	  => \$user,    # mysql username
+	    'pass:s'	  => \$pw,    # mysql password
+	    'in:s'        => \$in,
+	    'out:s'       => \$out,
+	    'clone:s'     => \$seq,
 	   )||die(@!);
 
 if ( $store ) {
@@ -87,14 +87,13 @@ else {
 # MYSQL CONFIG VARIABLES
 my ($port,$host,$database,);
 if ($test) {
-$host = "mcs4a";
-$database = "test_wbgene_id";
-$port = "3307";
-}
-else {
-$host = "shap";
-$database = "wbgene_id";
-$port = "3303";
+ $host = 'utlt-db';
+ $database = 'test_wbgene_id';
+ $port = 3307;
+}else {
+ $host = 'web-wwwdb-core-02';
+ $database = 'nameserver_live';
+ $port = 3449;
 }
 
 
@@ -110,7 +109,7 @@ my $counter = "-1";
 foreach my $clone (@clones) {
   $counter ++;
   $log->write_to ("$clone $genes[$counter] - ID assigned = ");
-  print OUT "-R Transcript ",$genes[$counter]," ";
+  print OUT '-R Transcript ',$genes[$counter]," ";
   my ($query_handle,$name);
   $myquery = "select distinct(object_name) from secondary_identifier where object_name LIKE \"$clone.%\" order by object_id";
   $query_handle = $connect->prepare($myquery);

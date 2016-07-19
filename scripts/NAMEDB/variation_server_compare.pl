@@ -53,7 +53,7 @@ while(<$TABLE>) {
 close($TABLE) or $log->log_and_die("Could not successfully complete TM query\n");
 
 #connect to name server and set domain to 'Gene'
-my $DB      = 'wbgene_id;shap;3303';
+my $DB      = 'nameserver_live;web-wwwdb-core-02;3449';
 my $PASS    = 'wormpub';
 my $USER    = 'wormpub';
 my $DOMAIN  = 'Variation';

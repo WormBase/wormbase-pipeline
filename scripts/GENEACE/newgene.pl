@@ -116,7 +116,7 @@ if( $update_nameDB ) {
     print "Using the TEST server $DB\n";
   }
   else { # or live
-    $DB = 'wbgene_id;shap;3303';
+    $DB = 'nameserver_live;web-wwwdb-core-02;3449';
     print "Using the LIVE server $DB\n";
   }
   unless (defined($USER) && defined($PASS)) {

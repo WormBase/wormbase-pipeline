@@ -71,7 +71,7 @@ if (!defined $species) {$species = 'elegans'}
 my $prefix = $wormbase->pepdir_prefix . "pep";;
 
 # mysql database parameters
-my $dbsn = "DBI:mysql:dbname=wbgene_id;host=shap;port=3303";
+my $dbsn = 'DBI:mysql:dbname=nameserver_live;host=web-wwwdb-core-02;port=3449';
 my $dbuser = $USER;
 my $dbpass = $USER;
 

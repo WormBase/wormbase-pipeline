@@ -100,7 +100,7 @@ if ($test) {
   $log->write_to("TEST mode is ON!\n\n");
   $DB = 'test_wbgene_id;utlt-db;3307';
 } else {
-  $DB = 'wbgene_id;shap;3303';
+  $DB = 'nameserver_live;web-wwwdb-core-02;3449';
 }
 my $wormbase = Wormbase->new("-organism" =>$species);
 my $database = "/nfs/wormpub/DATABASES/geneace";

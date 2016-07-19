@@ -33,7 +33,7 @@ GetOptions('database:s' => \$DB,
 	  ) or die $USAGE;
 
 unless ($DB) {
-	$DB = 'wbgene_id;shap;3303';
+	$DB = 'nameserver_live;web-wwwdb-core-02;3449';
 	$DB = 'test_wbgene_id;utlt-db;3307' if $test;
 }
 $USER ||= $ENV{NAMEDB_USER};

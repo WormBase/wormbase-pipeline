@@ -21,7 +21,7 @@ my $first_id = undef;
 my $last_id;
 
 #connect to name server and set domain to 'Feature'
-my $DB = 'wbgene_id;shap;3303';
+my $DB = 'nameserver_live;web-wwwdb-core-02;3449';
 $DB    = 'test_wbgene_id;utlt-db:3307' if $test;
 my $DOMAIN  = 'Feature';
 my $db = NameDB_handler->new($DB,$USER,$USER);

@@ -42,7 +42,7 @@ if ( $store ) {
 }
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
-my $DB = $wormbase->test ? 'test_wbgene_id;utlt-db:3307' : 'wbgene_id;shap:3303';
+my $DB = $wormbase->test ? 'test_wbgene_id;utlt-db:3307' : 'nameserver_live;web-wwwdb-core-02:3449';
 my $db = NameDB_handler->new($DB,$USER,$PASS);
 $db->setDomain($DOMAIN);
 

@@ -15,11 +15,11 @@ use Storable;
 
 my ($help, $debug, $test, $store, $database, $def);
 
-my $ndb = "wbgene_id";
-my $nhost = "shap";
-my $nport = "3303";
-my $nuser = "wormpub";
-my $npass = "wormpub";
+my $ndb = 'nameserver_live';
+my $nhost = 'web-wwwdb-core-02';
+my $nport = 3449;
+my $nuser = 'wormpub';
+my $npass = 'wormpub';
 
 GetOptions (	"help"       => \$help,
             	"debug=s"    => \$debug,

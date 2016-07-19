@@ -88,7 +88,7 @@ sub main {
   if ($sw->is_dev()) {
     $DB = 'test_wbgene_id;utlt-db;3307';
   } else {
-    $DB = 'wbgene_id;shap;3303';
+    $DB = 'nameserver_live;web-wwwdb-core-02;3449';
   }
 
   $SSO_USER = $sw->username();	## for SSO

@@ -113,7 +113,7 @@ my $strain_count = `grep Strain: $input_file | wc -l`;
 open(INPUT, $input_file) || die "Can't open inputfile!"; 
 
 # setup the nameserver
-my $DB = $test ? 'test_wbgene_id;utlt-db:3307' : 'wbgene_id;shap:3303';
+my $DB = $test ? 'test_wbgene_id;utlt-db:3307' : 'nameserver_live;web-wwwdb-core-02:3449';
 my $db = NameDB_handler->new($DB,$ndbUser,$ndbPass);
 my $geneAceDB = Ace->connect(-path => $geneace_dir) or die Ace->error;
 $db->setDomain('Variation');

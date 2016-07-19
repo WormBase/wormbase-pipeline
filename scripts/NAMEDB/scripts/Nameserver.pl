@@ -91,9 +91,9 @@ sub main {
   # determine if live or WWWdev and select database accordingly
   if ($sw->is_dev()) {
     $DB = 'test_wbgene_id;utlt-db;3307';
-    $sw->banner("This is the test server");
+    $sw->banner('This is the test server');
   } else {
-    $DB = 'wbgene_id;shap;3303';
+    $DB = 'nameserver_live;web-wwwdb-core-02;3449';
   }
 
   $SSO_USER = $sw->username();	## for SSO
@@ -112,7 +112,7 @@ sub main {
 				 '-domain'  => '.sanger.ac.uk')
 	       );
 
-    $sw->redirect("https://enigma.sanger.ac.uk/sso/login");
+    $sw->redirect('https://enigma.sanger.ac.uk/sso/login');
     $sw->redirect_delay(5);
     print $sw->header({'title'  => "WormBase Gene ID Server $DB"});
     print qq(<b>You need to log in to use this resource. You will shortly be redirected to a log in page...</b>);
@@ -148,7 +148,7 @@ sub main {
   print_javascript();
   print_selector($action);
 
-  if ($action eq "query") {
+  if ($action eq 'query') {
     &query($lookup);
 
   } elsif ($action =~ /new_gene/) {

@@ -22,7 +22,7 @@ my $domain = $q->param('domain')||'Gene';
 
 print $q->header('application/json');
 
-my $dbh=DBI->connect('DBI:mysql:database=wbgene_id;host=shap;port=3303','mh6','mh6')or die $DBI::errstr;
+my $dbh=DBI->connect('DBI:mysql:database=nameserver_live;host=web-wwwdb-core-02;port=3449','mh6','mh6')or die $DBI::errstr;
 my $sth=$dbh->prepare('SELECT object_public_id,name_type_name,object_name,object_live FROM primary_identifier pi LEFT JOIN  secondary_identifier using (object_id) LEFT JOIN name_type nt USING(name_type_id) LEFT JOIN domain d ON (d.domain_id=pi.domain_id) WHERE domain_name=?');
 
 $sth->execute($valid_domains{$domain});
