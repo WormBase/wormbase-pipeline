@@ -24,7 +24,7 @@ my $log = Log_files->make_build_log($wb);
 my $db = Ace->connect(-path => $wb->autoace)||$log->log_and_die(Ace->error);
 
 my %species_accessors=$wb->species_accessors;
-$species_accessors{"$wb"} = $wb;
+$species_accessors{ref($wb)} = $wb;
 
 while (my($k,$v)=each %species_accessors){
 
