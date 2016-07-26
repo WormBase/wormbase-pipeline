@@ -40,7 +40,7 @@ my %accessors = $wormbase->tier3_species_accessors;
 while (my($species,$wb)=each %accessors){
   my $seqdir = $wb->sequences;
   my $gff3 = sprintf("%s/%s.gff3", $wb->sequences, $species);
-  my $prot = sprintf("%s/%s.prot.fas", $wb->sequences, $species);
+  my $prot = sprintf("%s/%s.prot.fa", $wb->sequences, $species);
 
   $log->write_to("Doing $species from $prot and $gff3\n");
 
