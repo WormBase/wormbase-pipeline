@@ -124,7 +124,7 @@ sub read_acedb_queries {
 	@queries = (
 	    ["The number of RNAi experiments with more than one associated Gene", 'find rnai COUNT gene > 1 AND uniquely_mapped', 4138],
 	    ["The number of RNAi results with connections to genes", 'find RNAi Gene', 4138],
-	    ["The number of microarray results with connections to genes", 'find microarray_results gene', 236700],
+	    ["The number of microarray results with connections to genes", 'find microarray_results gene', 340041],
 	    ["PCR products overlapping CDS", "find PCR_product Overlaps_CDS", 62852],
 	    ["The number of wormpep without pep_homol", 'find wormpep !pep_homol', 839],
 	    ["tRNAs not attached to parent properly", 'Transcript AND NEXT AND NOT NEXT', 0],
@@ -132,7 +132,7 @@ sub read_acedb_queries {
 	    ["Homol_data without Pep_homol", 'find Homol_data *wublastx* !Pep_homol', 0],
 	    ["Inverted repeat Feature_data without features", 'find Feature_data *inverted !feature', 0],
 	    ["TRF repeat Feature_data without features", 'find Feature_data *TRF !Feature', 0],
-	    ["Oligo_sets with overlapping_CDS", 'find Oligo_Set Overlaps_CDS', 197260],
+	    ["Oligo_sets with overlapping_CDS", 'find Oligo_Set Overlaps_CDS', 290113],
 	    ["operons without genes", 'find operon !contains Gene', 0],
 	    ["variation gene connection", 'find Variation Gene', 1205821],
 	    ["genes with structured description", 'find Gene Structured_description', 137137],
@@ -141,7 +141,7 @@ sub read_acedb_queries {
 	    ["Operons without parent ", 'find Operon CEO* !History AND !Canonical_parent',  0],
 	    ["GO_term without Term or Definition", 'find GO_term !(Term or Definition)',  4],
 	    ["Homol mapped Expression Patterns", 'find Expr_pattern where Homol_homol', 4506],
-	    ["Transposon Objects mapped in the database", 'find Transposon where Sequence', 737],
+	    ["Transposon Objects mapped in the database", 'find Transposon where Sequence', 11256],
 	    );
     }
     elsif( $species eq 'japonica'){  

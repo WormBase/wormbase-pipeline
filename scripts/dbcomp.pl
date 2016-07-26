@@ -70,15 +70,20 @@ my $log = Log_files->make_build_log($wormbase);
 my $WS_current  = $wormbase->get_wormbase_version;
 my $WS_previous = $WS_current - 1;
 my $exec        = $wormbase->tace;
+my $basedir         = $wormbase->basedir;
 
 #################################################################
 # Compare autoace to previous build unless -database specified
 #################################################################
 
-$dbname_1    = "WS${WS_previous}";
-$db_1        = $wormbase->database("WS${WS_previous}");
+#$dbname_1    = "WS${WS_previous}";
+#$db_1        = $wormbase->database("WS${WS_previous}");
+#Now have an elegans backup from the pre-merge
+my $sp = "elegans";
+$dbname_1    = "BUILD/elegans(WS${WS_previous})";
+$db_1        = "$basedir/elegans";
 
-$dbname_2    = "WS${WS_current}";
+$dbname_2    = "BUILD/autoace(WS${WS_current})";
 $db_2        = $wormbase->autoace;
 
 # First alternative database specified?
@@ -202,6 +207,17 @@ sub classes {
     ################################################## 
     
     my ($class_count_1,$class_count_2) = &count_class($query,$counter);
+    my $err = "CLEAR";
+    if ($class_count_2 == 0) {
+      $err = "***** POSSIBLE ERROR *****";
+      $log->error;
+    } 
+    elsif (
+	   ($class_count_2 < $class_count_1 * 0.9 || 
+	    $class_count_2 > $class_count_1 * 1.1)) {
+      $err = "***** POSSIBLE ERROR *****";
+      $log->error;
+    }
     
     $log->write_to(" Counting $dbname_1 : $class_count_1\n");  
     $log->write_to(" Counting $dbname_2 : $class_count_2\n");
@@ -217,10 +233,10 @@ sub classes {
     
     my ($added, $removed) = &diff($counter);
     my $diff = $added - $removed;
-    
-    #  printf OUT "| %6s |\n",$diff;
-    $log->write_to(" Diff $diff\n\n");
 
+    #  printf OUT "| %6s |\n",$diff;
+    $log->write_to(" Diff $diff\n $err\n\n");
+    
     printf OUT "| %7s ", $added;
     printf OUT "| %7s ", $removed;
     printf OUT "| %7s |\n",$diff;
