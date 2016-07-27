@@ -301,7 +301,7 @@ if ($omim) {
 #run some checks
 $wormbase->run_script( "post_build_checks.pl -a"                 , $log) if $check;
 $wormbase->run_script( "data_checks.pl -ace -gff"                , $log) if $data_check;
-$wormbase->run_script( "dbcomp.pl"                               , $log) if $data_check;
+$wormbase->run_script( "dbcomp.pl -post_gff"                     , $log) if $data_check;
 $wormbase->run_script( "build_release_files.pl"                  , $log) if $buildrelease;
 &public_sites                                                            if $public;
 &release                                                                 if $release;

@@ -27,7 +27,7 @@ $|=1;
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($database, $database2, $mail_paulsternberg);
+my ($database, $database2, $mail_paulsternberg, $post_gff, $pre_rel);
 our ($errfile,$outfile); 
 our ($db_1, $db_2, $dbname_1, $dbname_2);
 
@@ -40,6 +40,8 @@ GetOptions (
 	    "database=s"    => \$database,
 	    "database2=s"   => \$database2,
 	    "mail_paulsternberg" => \$mail_paulsternberg,
+	    "post_gff"      => \$post_gff,
+	    "pre_rel"       => \$pre_rel,
 	    );
 
 if ( $store ) {
@@ -75,13 +77,21 @@ my $basedir         = $wormbase->basedir;
 #################################################################
 # Compare autoace to previous build unless -database specified
 #################################################################
+unless ((defined $pre_rel) || (defined$database) || (defined$post_gff)) {
+  $log->log_and_die("One of the work options needs to be specified -database/-post_gff/-pre_rel\n")
+} 
 
-#$dbname_1    = "WS${WS_previous}";
-#$db_1        = $wormbase->database("WS${WS_previous}");
+if ($pre_rel) {
+  $dbname_1    = "WS${WS_previous}";
+  $db_1        = $wormbase->database("WS${WS_previous}");
+}
+
 #Now have an elegans backup from the pre-merge
-my $sp = "elegans";
-$dbname_1    = "BUILD/elegans(WS${WS_previous})";
-$db_1        = "$basedir/elegans";
+if ($post_gff){
+  my $sp = "elegans";
+  $dbname_1    = "BUILD/elegans(WS${WS_previous})";
+  $db_1        = "$basedir/elegans";
+}
 
 $dbname_2    = "BUILD/autoace(WS${WS_current})";
 $db_2        = $wormbase->autoace;
@@ -89,7 +99,8 @@ $db_2        = $wormbase->autoace;
 # First alternative database specified?
 if ($database) {
     $dbname_1  = "$database";
-    $db_1      = "$database"; 
+    $db_1      = "$database";
+    unless (-e "$database" ) {$log->log_and_die("\nERROR: database appears to be invalid\n")} 
 }
 
 # Second alternative database specified?
