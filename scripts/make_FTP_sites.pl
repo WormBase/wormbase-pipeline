@@ -745,6 +745,9 @@ sub make_orthologylists{
        if (-e $ofile and -s $ofile){
          $wormbase->run_command("touch $ofile && gzip -9 -n $ofile", $log);
        }
+       else {
+	 $log->write_to("Data problem with $ofile\n");
+       }
   }
 } 
 
@@ -987,9 +990,9 @@ sub copy_misc_files{
      next if exists $skip_species{$k};
      next if @only_species and not exists $only_species{$k};
     
-     my $source = $v->misc_output . '/protein_domain.tsv';
+     my $source = $v->misc_output . '/protein_domains.tsv';
      my $target = "$targetdir/species/".$v->full_name(-g_species => 1).'/'.$v->ncbi_bioproject.'/annotation/'.
-                  $v->full_name(-gspecies => 1).'.'.$v->ncbi_bioproject.'.'.$WS_version_name.'.protein_domains.tsv';
+                  $v->full_name(-g_species => 1).'.'.$v->ncbi_bioproject.'.'.$WS_version_name.'.protein_domains.tsv';
      if (-e $source){$wormbase->run_command("cp -f $source $target",$log)}
      else{$log->write_to("ERROR: cannot find $source file\n")}
   }
