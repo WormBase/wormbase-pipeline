@@ -383,7 +383,8 @@ sub main_gene_checks {
 	#print "CDS : \"$gene_model\"\nStart_not_found 1\n\n" if $debug;
 	$start_tag_val = 1;
       }
-      unless (($incomplete) || ($gene_model->name eq "K04G2.11")) {
+      #Known non-AUG mRNAs
+      unless (($incomplete) || ($gene_model->name eq "K04G2.11") || ($gene_model->name eq "C54A12.4")) {
 	push(@error2,"ERROR: $gene_model Start_not_found tag present\n"); 
 	print "ERROR: $gene_model Start_not_found tag present\n" if ($verbose);
       }
