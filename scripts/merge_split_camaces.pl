@@ -113,6 +113,17 @@ unless ($split || $merge || $update || $names ) {
     $log->log_and_die("ERROR you havent specified a main function split/merge/update!!!\n");
   }
 
+# Paths to the directories should not have a / at the end.
+if ($altblat) {
+  if ($altblat =~ /\/$/) {
+    $log->log_and_die("ERROR: your path names end in a / loading will fail silently!!!\n");
+  }
+}
+if ($altacefiles) {
+  if ($altacefiles =~ /\/$/) {
+    $log->log_and_die("ERROR: your path names end in a / loading will fail silently!!!\n");
+  }
+}
 
 # directory paths
 my $wormpub = $wormbase->wormpub;
@@ -689,7 +700,7 @@ sub load_curation_data {
       $blat_dir = $altblat;
       $log->write_to ("Using $altblat for the BLAT data as you defined it ;)\n");
     }
-
+    
     my @BLATfiles;
     push (@BLATfiles,
           "$blat_dir/virtual_objects.$species.blat.EST.$species.ace",
