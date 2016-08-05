@@ -1856,11 +1856,12 @@ GSPECIES.BIOPROJ.WSREL.genomic.fa.gz
 GSPECIES.BIOPROJ.WSREL.genomic_masked.fa.gz
 GSPECIES.BIOPROJ.WSREL.genomic_softmasked.fa.gz
 GSPECIES.BIOPROJ.WSREL.annotations.gff3.gz
-GSPECIES.BIOPROJ.WSREL.canonical_geneset.gtf.gz
 GSPECIES.BIOPROJ.WSREL.protein.fa.gz
 GSPECIES.BIOPROJ.WSREL.CDS_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.mRNA_transcripts.fa.gz
 
+[ALL:elegans_hawaii]species/GSPECIES/BIOPROJ
+GSPECIES.BIOPROJ.WSREL.canonical_geneset.gtf.gz
 
 []acedb
 files_in_tar
