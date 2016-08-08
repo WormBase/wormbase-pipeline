@@ -791,7 +791,7 @@
         Expression_construct    Pattern ?Text   // archaic
         Construct ?Construct INXREF Clone
         cDNA_group Contains ?Clone OUTXREF Contains Text
-                   Contained_in ?Clone INXREF Contained_in
+                   Contained_in ?Clone OUTXREF Contained_in
                    Best_match UNIQUE ?Text
         Expr_pattern ?Expr_pattern INXREF Clone
         Used_in_RNAi ?RNAi INXREF Clone           // Chris WS244
@@ -1906,7 +1906,7 @@
                       Associated_with_operon ?Operon OUTXREF Associated_feature #Evidence
                       Associated_with_Interaction ?Interaction INXREF Feature_interactor
                       Associated_with_expression_pattern ?Expr_pattern INXREF Associated_feature #Evidence 
-                      Associated_with_Feature ?Feature INXREF Associated_with_Feature #Evidence
+                      Associated_with_Feature ?Feature OUTXREF Associated_with_Feature #Evidence
                       Associated_with_construct ?Construct INXREF Sequence_feature
                       Associated_with_transcription_factor ?Transcription_factor OUTXREF Associated_feature #Evidence 
          Bound_by_product_of ?Gene OUTXREF Gene_product_binds #Evidence //pad added this to show what gene it binds
@@ -2666,6 +2666,7 @@
            Public_name ?Text
            Other_name ?Text
            Summary UNIQUE ?Text #Evidence        //genotype like [Pmyo-2::GFP]
+           Database ?Database ^database ?Database_field ^field ?Text ^accession
            Sequence_feature ?Feature OUTXREF Associated_with_construct
            Driven_by_gene ?Gene OUTXREF Drives_construct #Evidence
            Gene ?Gene OUTXREF Construct_product #Evidence
@@ -3309,6 +3310,7 @@
                           Biography #Evidence
                           Interview #Evidence
                           Lectures #Evidence
+                          Retraction_of_publication #Evidence
                           Interactive_tutorial #Evidence
                           Retracted_publication #Evidence
                           Technical_report #Evidence
@@ -3507,10 +3509,10 @@
                                  In_pos_neg_data ?Pos_neg_data NOXREF xxxx
                                  // these are for when the locus is mapped
                     Marked_rearrangement ?Rearrangement INXREF By_variation
-           Description Phenotype ?Phenotype INXREF Variation #Phenotype_info
+           Description Phenotype ?Phenotype OUTXREF Variation #Phenotype_info
                        Phenotype_remark ?Text #Evidence
-                       Phenotype_not_observed ?Phenotype INXREF Not_in_Variation #Phenotype_info  //added by Wen to separate Not phenotype from real phenotypes 
-           Reference ?Paper INXREF Allele
+                       Phenotype_not_observed ?Phenotype OUTXREF Not_in_Variation #Phenotype_info  //added by Wen to separate Not phenotype from real phenotypes 
+           Reference ?Paper OUTREF Allele
            Remark ?Text #Evidence
 //           Method UNIQUE ?Method       // Becomes :locatable/method
            Supporting_data Movie ?Movie INXREF Variation #Evidence  //Carol [060421 ar2] 
