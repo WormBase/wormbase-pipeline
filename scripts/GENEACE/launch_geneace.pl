@@ -32,6 +32,6 @@ if (-e $file) {
 } 
 else {
   print "\nTesting for write access.\n\nStatus: Free\n\n";
-$wormbase->run_command("~acedb/RELEASE.2011_01_13/bin.LINUX_64/xace -nosplash -tsuser mt3 ~wormpub/DATABASES/geneace",);
+$wormbase->run_command("/software/worm/acedb/current/bin/xace -nosplash -tsuser mt3 ~wormpub/DATABASES/geneace",);
 }
 exit;
