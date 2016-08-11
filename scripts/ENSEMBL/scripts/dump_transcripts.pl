@@ -14,17 +14,19 @@ my $dbpass = "";
 my ($database,$outfile);
 
 my ($cds, $pep, $mrna) = (0,0,0);
+my ($ebi_header_prefix, $species_string);
 
 GetOptions( 
-  'host=s'        => \$dbhost,
-  'port=s'        => \$dbport,
-  'user=s'        => \$dbuser,
-  'pass=s'        => \$dbpass,
-  'dbname=s'      => \$database,
-  'mrna'          => \$mrna,
-  'cds'           => \$cds, 
-  'pep'           => \$pep,
-  'outfile=s'     => \$outfile) or die(@!);
+  'host=s'           => \$dbhost,
+  'port=s'           => \$dbport,
+  'user=s'           => \$dbuser,
+  'pass=s'           => \$dbpass,
+  'dbname=s'         => \$database,
+  'mrna'             => \$mrna,
+  'cds'              => \$cds, 
+  'pep'              => \$pep,
+  'ebiblastheader=s' => \$ebi_header_prefix,
+  'outfile=s'        => \$outfile) or die(@!);
 
 if (not $mrna and not $cds and not $pep or
     $cds + $mrna + $pep > 1) {
@@ -39,6 +41,10 @@ my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(
         -port   => $dbport,
     );
 
+if (defined $ebi_header_prefix) {
+  $species_string = ucfirst( $db->get_MetaContainer->get_production_name );
+}
+
 my $seqio = (defined $outfile) 
     ? Bio::SeqIO->new(-format => 'fasta', -file => ">$outfile")
     : Bio::SeqIO->new(-format => 'fasta', -fh => \*STDOUT);
@@ -49,6 +55,8 @@ foreach my $gene(@genes){
   my $gene_id = $gene->stable_id();
   foreach my $trans (@{$gene->get_all_Transcripts()}) {
     my $trans_id = $trans->stable_id;
+    my $slice_id = $trans->slice->name;
+    my $status = lc($trans->status);
 
     my ($id, $desc_text, $seqstring);
     
@@ -56,19 +64,38 @@ foreach my $gene(@genes){
       next unless $trans->biotype eq 'protein_coding';
 
       my $tr = $trans->translation;
-      $id = $tr->stable_id;
-      $desc_text = "transcript_id=$trans_id gene_id=$gene_id";
+      if (defined $ebi_header_prefix) {
+        $id = join(":", $ebi_header_prefix, $species_string, $tr->stable_id);
+        $desc_text = sprintf("pep:%s %s gene:%s transcript:%s species:%s", 
+                             $status, $slice_id, $gene_id, $trans_id, $species_string);
+      } else {
+        $id = $tr->stable_id;
+        $desc_text = "transcript:$trans_id gene:$gene_id";
+      }
       $seqstring = $trans->translation()->seq;
     } elsif ($cds) {
       next unless $trans->biotype eq 'protein_coding';
 
-      $id = $trans_id;
+      if (defined $ebi_header_prefix) {
+        $id = join(":", $ebi_header_prefix, $species_string, $trans_id);
+        $desc_text = sprintf("cds:%s %s gene:%s transcript:%s species:%s", 
+                             $status, $slice_id, $gene_id, $trans_id, $species_string);
+      } else {
+        $id = $trans_id;
+        $desc_text = "gene:$gene_id";
+      }      
       $seqstring = $trans->translateable_seq();
-      $desc_text = "gene_id=$gene_id";
     } elsif ($mrna) {
-      $id = $trans_id;
+      if (defined $ebi_header_prefix) {
+        $id = join(":", $ebi_header_prefix, $species_string, $trans_id);
+        $desc_text = sprintf("cdna:%s %s gene:%s transcript:%s species:%s", 
+                             $status, $slice_id, $gene_id, $trans_id, $species_string);
+      } else {
+        $id = $trans_id;
+        $desc_text = "gene:$gene_id";
+      }
+
       $seqstring = $trans->seq->seq();
-      $desc_text = "gene_id=$gene_id";
     }
 
     my $seq = Bio::PrimarySeq->new(-id => $id,
