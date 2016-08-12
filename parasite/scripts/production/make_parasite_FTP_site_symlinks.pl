@@ -117,7 +117,6 @@ sub make_core_symlinks {
                          "CDS_transcripts.fa.gz", 
                          "mRNA_transcripts.fa.gz", 
                          "protein.fa.gz", 
-                         "ncRNA_transcripts.fa.gz",
                          "annotations.gff3.gz",
                          "canonical_geneset.gtf.gz") {
       my $link_fname_dest = join(".", $ps_species_name, $bioproject, $release, $fsuffix);
