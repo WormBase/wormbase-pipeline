@@ -16,17 +16,18 @@ my $dbport = "4331";
 my $dbpass = "";
 
 
-my ($database, $mask, $softmask, $outfile);
+my ($database, $mask, $softmask, $outfile, $ebi_header_prefix, $species_string);
 
 GetOptions (
-  'host=s'     => \$dbhost,
-  'port=s'     => \$dbport,
-  'user=s'     => \$dbuser,
-  'pass=s'     => \$dbpass,
-  'dbname=s'   => \$database,
-  "softmask"   => \$softmask,
-  "mask"       => \$mask,  
-  "outfile:s"  => \$outfile,
+  'host=s'           => \$dbhost,
+  'port=s'           => \$dbport,
+  'user=s'           => \$dbuser,
+  'pass=s'           => \$dbpass,
+  'dbname=s'         => \$database,
+  "softmask"         => \$softmask,
+  "mask"             => \$mask, 
+  "ebiblastheader=s" => \$ebi_header_prefix,
+  "outfile:s"        => \$outfile,
 	    );
 my $db = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
   -user   => $dbuser, 
@@ -35,6 +36,11 @@ my $db = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
   -pass   => $dbpass,
   -dbname => $database,
     ) or die "Can't connect to Database $database";
+
+
+if (defined $ebi_header_prefix) {
+  $species_string = ucfirst( $db->get_MetaContainer->get_production_name );
+}
 
 my $seqio = (defined $outfile) 
     ? Bio::SeqIO->new(-format => 'fasta', -file => ">$outfile")
@@ -67,9 +73,22 @@ sub print_seq {
     $ens_slice = $ens_slice->get_repeatmasked_seq;
   }
 
+  my ($id, $desc);
+  if (defined $ebi_header_prefix) {
+    $id = join(":", $ebi_header_prefix, $species_string, $seq_name);
+    $desc = sprintf("dna:%s %s species:%s",
+                    $ens_slice->coord_system->name,
+                    $ens_slice->name,
+                    $species_string);
+
+  } else {
+    $id = $seq_name;
+    $desc = "1-" . $ens_slice->seq_region_length;
+  }
+
   my $seqobj = Bio::PrimarySeq->new(-seq => $ens_slice->seq,
-                                    -id => $seq_name,
-                                    -desc => "1-" . $ens_slice->seq_region_length);
+                                    -id => $id,
+                                    -desc => $desc);
 
   $seqio->write_seq($seqobj);
 }
