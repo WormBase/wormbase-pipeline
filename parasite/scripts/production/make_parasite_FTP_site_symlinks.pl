@@ -3,6 +3,7 @@
 
 use strict;
 use Getopt::Long;
+use File::Path;
 
 my $WORMBASE_GENOMES = {
   'brugia_malayi_prjna10729'             => 1,
