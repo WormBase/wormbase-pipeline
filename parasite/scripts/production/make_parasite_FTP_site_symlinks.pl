@@ -122,7 +122,8 @@ sub make_core_symlinks {
       my $link_fname_dest = join(".", $ps_species_name, $bioproject, $release, $fsuffix);
       my $link_fname_source = join(".", $wb_species_name, $bioproject, $wb_release, $fsuffix);
 
-      unlink "$link_dir_dest/$link_fname_dest" if -l "$link_dir_dest/$link_fname_dest";
+      unlink "$link_dir_dest/$link_fname_dest" 
+          if -e "$link_dir_dest/$link_fname_dest" or -l "$link_dir_dest/$link_fname_dest";
 
       system("cd $link_dir_dest && ln -s $link_dir_source/$link_fname_source $link_fname_dest") 
           and die "Could not create symlink to $link_dir_source/$link_fname_source in $link_dir_dest\n";
