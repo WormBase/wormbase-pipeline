@@ -64,10 +64,23 @@ foreach my $gene(@genes){
       next unless $trans->biotype eq 'protein_coding';
 
       my $tr = $trans->translation;
+      
+      my $pep_desc;
+      if (defined $trans->description && $trans->description ne '' && $trans->description ne $trans->stable_id) {
+        $pep_desc = $trans->description;
+      } elsif (defined $gene) {
+        $pep_desc = $gene->description;
+      }
+      if($pep_desc) {
+        $pep_desc = $1 if $pep_desc =~ /(.*).\s\[.*\]/;
+        $pep_desc =~ s/\"/\\"/g;
+        $pep_desc = sprintf('description:"%s"', $pep_desc);
+      }
+      
       if (defined $ebi_header_prefix) {
         $id = join(":", $ebi_header_prefix, $species_string, $tr->stable_id);
-        $desc_text = sprintf("pep:%s %s gene:%s transcript:%s species:%s", 
-                             $status, $slice_id, $gene_id, $trans_id, $species_string);
+        $desc_text = sprintf("pep:%s %s gene:%s transcript:%s species:%s %s", 
+                             $status, $slice_id, $gene_id, $trans_id, $species_string, $pep_desc ? $pep_desc : '');
       } else {
         $id = $tr->stable_id;
         $desc_text = "transcript:$trans_id gene:$gene_id";
