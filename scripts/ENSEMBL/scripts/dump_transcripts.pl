@@ -55,7 +55,7 @@ foreach my $gene(@genes){
   my $gene_id = $gene->stable_id();
   foreach my $trans (@{$gene->get_all_Transcripts()}) {
     my $trans_id = $trans->stable_id;
-    my $slice_id = $trans->slice->name;
+    my $slice_id = $trans->feature_Slice->name;
     my $status = lc($trans->status);
 
     my ($id, $desc_text, $seqstring);
