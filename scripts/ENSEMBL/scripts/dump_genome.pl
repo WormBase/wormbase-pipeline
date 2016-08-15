@@ -76,7 +76,8 @@ sub print_seq {
   my ($id, $desc);
   if (defined $ebi_header_prefix) {
     $id = join(":", $ebi_header_prefix, $species_string, $seq_name);
-    $desc = sprintf("dna:%s %s species:%s",
+    $desc = sprintf("%s:%s %s species:%s",
+                    $mask ? 'dna_rm' : 'dna',
                     $ens_slice->coord_system->name,
                     $ens_slice->name,
                     $species_string);
