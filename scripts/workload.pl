@@ -199,6 +199,12 @@ foreach my $release (200 .. $release2) {
       if ($line =~ /^\s*$/) {next}
       my @f = split /\s+/, $line;
       my $protein = shift @f;
+
+      # fudge to get around the change in the protein format in sratti before WS250 when it gained an extra '0' in the ID (SRP1577 changed to SRP01577)
+      if ($species eq 'sratti' && $release < 250) {
+	$protein =~ s/SRP/SRP0/;
+      }
+
       foreach my $sequence (@f) {
 	# get the sequence name of the gene by removing any isoform letters
 	if ($sequence =~ s/(\S+?)([a-z])$/$1/) {
