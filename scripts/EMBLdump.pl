@@ -774,7 +774,7 @@ sub process_feature_table {
           $prod_name = "small nucleolar RNA $pname";
         } elsif ($rclass eq 'snRNA') {
           $prod_name = "small nuclear RNA $pname";
-        } elsif ($rclass eq 'lincRNA') {
+        } elsif ($rclass eq 'lncRNA') {
           $prod_name = "long non-coding RNA $pname";
         } else {
           $prod_name = "Unclassified non-coding RNA $pname";
