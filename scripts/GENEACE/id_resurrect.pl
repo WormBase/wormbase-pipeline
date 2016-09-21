@@ -21,11 +21,12 @@ Options:
   --user      username
   --password  password
   --seq_name Sequence_name that was removed from geneace
+  --species   species name (a.e. elegans)
 
   id_resurrect.pl -user ar2 -password <ar2 pswd> -id WBGene00000001 -domain Gene -species brugia -load
   optional  (-test -database).  Will default to live nameserver, -test will change to test database.
   
-  Valid DOMAINS are domains currently in the nameserver (ie 'Gene' and 'Variation' at time of writing)  
+  Valid DOMAINS are domains currently in the nameserver (ie 'Gene','Feature' and 'Variation' at time of writing)  
   
 END
 
@@ -76,10 +77,8 @@ my $acedb = "/nfs/wormpub/DATABASES/geneace";
 my $db = NameDB->connect($DB,$USER,$PASS);
 
 my $ace = Ace->connect('-path', $acedb) or die("cant open $acedb: $!\n");
-my $idObj = $ace->fetch('Gene', $id);
+my $idObj = $ace->fetch($domain, $id);
 
-my $ver = $idObj->Version->name;
-$ver++;
 
 my $clone;
 my $seq_name;
@@ -89,14 +88,6 @@ if (defined $force) {
     $seq_name = $force;
   }
 }
-
-  unless  (defined $force)  {
-    $seq_name = $idObj->Sequence_name->name;
-    if ($seq_name =~ /(\S+)\.\d+/) {
-      $clone = $1;
-    }
-    else {$clone = $seq_name;}
-  }
 
 
 unless ($output) {$output = "/tmp/idressurect_${id}.ace";}
@@ -116,23 +107,36 @@ unless ($db->idExists($id)) {
 if ($db->idResurrect($id)) {
 	print "$id resurrected\n";
 }
-print OUT "Gene : \"$id\"\n";
-print OUT "Version $ver\n";
-print OUT "Live\n";
+print  OUT "$domain : \"$id\"\n";
+print  OUT "Live\n";
 
-print OUT "Sequence_name $seq_name\n";
-if (defined $$WBUSERS{$USER}) {
-print OUT "History Version_change $ver now WBPerson". $$WBUSERS{$USER}." Event Resurrected\n";
-}
-else {
-print OUT "History Version_change $ver now WBPerson1983 Event Resurrected\n";
-}
+if($domain eq 'Gene'){
+ unless  (defined $force)  {
+    $seq_name = $idObj->Sequence_name->name if $idObj->Sequence_name;
+    if ($seq_name =~ /(\S+)\.\d+/) {
+      $clone = $1;
+    }
+    else {$clone = $seq_name;}
+ }
 
-if ($species eq "elegans") {
+ my $ver = $idObj->Version->name;
+ $ver++;
+
+ print OUT "Version $ver\n";
+ print OUT "Sequence_name $seq_name\n";
+ if (defined $$WBUSERS{$USER}) {
+  print OUT "History Version_change $ver now WBPerson". $$WBUSERS{$USER}." Event Resurrected\n";
+ }
+ else {
+  print OUT "History Version_change $ver now WBPerson1983 Event Resurrected\n";
+ }
+
+ if ($species eq "elegans") {
   print OUT "Positive_clone $clone Inferred_automatically \"From sequence, transcript, pseudogene data\"\n";
+ }
+ print OUT "Remark \"[$rundate ${USER}] Gene Resurrected via id_ressurect.pl Additional comments:\"\n";
+ print OUT "Method Gene";
 }
-print OUT "Remark \"[$rundate ${USER}] Gene Resurrected via id_ressurect.pl Additional comments:\"\n";
-print OUT "Method Gene";
 
 if ($load) {
   print "Output file created and loaded into $acedb : $output\n";
