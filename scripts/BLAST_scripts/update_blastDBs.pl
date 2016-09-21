@@ -167,7 +167,7 @@ if ($fly) {
 	$ver++;
 	my $source_file = "$blastdir/gadfly${ver}.pep";
 	move("$fly_download", "$source_file") or $log->log_and_die("can't move $fly_download: $!\n");
-
+        system('perl -i -ne "print unless /^\n/" '.$source) && $log->log_and_die($!); # strip empty lines from the fasta file
 
 	my $record_count = 0;	
 	my $problem_count =0;
