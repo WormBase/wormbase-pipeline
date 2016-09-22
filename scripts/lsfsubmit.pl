@@ -52,7 +52,11 @@ if (not $job_id) {
       open(my $bhist, "bhist -l $job_id |");
       while(<$bhist>) {
         /Exited with exit code (\d+)/ and do {
-          $error_code = $1;
+          $error_code = "exit code $1";
+          last;
+        };
+        /Exited by signal (\d+)/ and do {
+          $error_code = "signal $1";
           last;
         };
         /Done successfully/ and do {
@@ -68,7 +72,7 @@ if (not $job_id) {
   if (not defined $error_code) {
     print STDERR "ERROR: Unable to determine exit code for submitted job ($job_id) - investigate\n";
   } elsif ($error_code) {
-    print STDERR "ERROR: job terminated abnormally (exit code $error_code)\n";
+    print STDERR "ERROR: job terminated abnormally ($error_code)\n";
   } else {
     print STDERR "SUCCESSFULLY COMPLETE\n";
   }
