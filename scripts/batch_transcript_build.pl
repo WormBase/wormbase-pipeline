@@ -23,7 +23,7 @@ my $database;
 my $builder_script = "transcript_builder.pl";
 my $scratch_dir = "/tmp";
 my $gff_dir;
-my ($store, $debug, $test, @no_run, $no_load, $species, @outfile_names);
+my ($store, $debug, $test, @no_run, $no_load, $species, @outfile_names, $mem);
 
 GetOptions (
 	    "database:s"    => \$database,
@@ -34,7 +34,8 @@ GetOptions (
 	    "test"          => \$test,
 	    "no_run:s"      => \@no_run,
             "noload"        => \$no_load,
-	    "species:s"	    => \$species
+	    "species:s"	    => \$species,
+	    "mem:s"         => \$mem,
 
 	   );
 
@@ -46,6 +47,10 @@ if ( $store ) {
                              -test    => $test,
                              -organism => $species
 			     );
+}
+
+unless (defined $mem){
+  $mem = 3500;
 }
 
 my $log = Log_files->make_build_log($wormbase);
@@ -104,18 +109,21 @@ if (@no_run) {
     $cmd = $wormbase->build_cmd($cmd);
     my @bsub_options = (-e => "$err",
                         -o => '/dev/null',
-                        -M => "3500", 
-                        -R => "\"select[mem>3500] rusage[mem=3500]\"",
+                        -M => "$mem", 
+                        -R => "\"select[mem>$mem] rusage[mem=$mem]\"",
                         -J => $job_name);
     $lsf->submit(@bsub_options, $cmd);
     push @outfile_names, sprintf("%s/%s", $wormbase->transcripts, $outfname);
   }  
   $lsf->wait_all_children( history => 1 );
   $log->write_to("All transcript builder jobs have completed!\n");
+  my $critical_error = 0;
   for my $job ( $lsf->jobs ) {
     $log->error("Job $job (" . $job->history->command . ") exited non zero\n") if $job->history->exit_status != 0;
+    $critical_error++ if ($job->history->exit_status != 0);
   }
   $lsf->clear;   
+  $log->log_and_die("There were $critical_error critical errors in the transcript_builder jobs, please check and re-run with -mem 6000 if you suspect memory issues.\n") if $critical_error ne 0;
 }
 
 
