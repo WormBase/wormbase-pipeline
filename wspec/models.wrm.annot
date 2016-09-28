@@ -3512,7 +3512,7 @@
            Description Phenotype ?Phenotype OUTXREF Variation #Phenotype_info
                        Phenotype_remark ?Text #Evidence
                        Phenotype_not_observed ?Phenotype OUTXREF Not_in_Variation #Phenotype_info  //added by Wen to separate Not phenotype from real phenotypes 
-           Reference ?Paper OUTREF Allele
+           Reference ?Paper OUTXREF Allele
            Remark ?Text #Evidence
 //           Method UNIQUE ?Method       // Becomes :locatable/method
            Supporting_data Movie ?Movie INXREF Variation #Evidence  //Carol [060421 ar2] 
