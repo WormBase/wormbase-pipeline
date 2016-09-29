@@ -154,6 +154,9 @@ sub gene_description_sources {
 sub gene_description_filter_regexps {
 
   return ( '^(Protein \S+\s*)+$',
+           ';\s*Uncharacterized protein\s*;',
+           '^Uncharacterized protein;\s*',
+           ';\s*Uncharacterized protein',           
            '^Uncharacterized protein\s*\S+\s*',
            '^Uncharacterized protein\s*',
            '^Putative uncharacterized protein\s*\S+\s*',
