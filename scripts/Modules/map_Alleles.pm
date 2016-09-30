@@ -791,16 +791,16 @@ sub get_cds {
           next;
         } elsif (defined $insertion and not defined $deletion and
                  (length($insertion) % 3 != 0)) {
-          my $str = sprintf("%d insertion at CDS position %d-%d\n", length($insertion), $cds_start, $cds_end); 
+          my $str = sprintf("%d bp insertion at CDS position %d-%d", length($insertion), $cds_start, $cds_end); 
           $cds{$hit->{name}}{"Frameshift \"$str\""}{$k} = 1;
         } elsif (defined $deletion and not defined $insertion and
                  $a_len % 3 != 0) {
-          my $str = sprintf("%d deletion at CDS position %d-%d\n", $a_len, $cds_start, $cds_end);
+          my $str = sprintf("%d bp deletion at CDS position %d-%d", $a_len, $cds_start, $cds_end);
           $cds{$hit->{name}}{"Frameshift \"$str\""}{$k} = 1;
           next;
         } elsif (defined $deletion and defined $insertion and 
                  (length($insertion) - $a_len) % 3 != 0) {
-          my $str = sprintf("Unbalanced insertion/deletion at CDS position %d-%d\n", $cds_start, $cds_end);
+          my $str = sprintf("Unbalanced insertion/deletion at CDS position %d-%d", $cds_start, $cds_end);
           $cds{$hit->{name}}{"Frameshift \"$str\""}{$k} = 1;
           next;
         }
