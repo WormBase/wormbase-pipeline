@@ -24,7 +24,8 @@ while(<>){
     next unless /WBGene/;
     my ($from)=$_=~/(WBGene\d+)/;
     my @F=split;
-    my ($to) = grep{$_=~!/WBGene/}($F[0],$F[1]);
+    my ($to) = grep{not $_=~/WBGene/}($F[0],$F[1]);
+    next unless ($F[2]=~/^LDO$|^O$/);
     next unless $to;
 
     my ($thing) = $to=~/^(\w+)\|/;
