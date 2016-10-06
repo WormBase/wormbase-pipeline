@@ -40,6 +40,7 @@ my ($all,
     $add_utr,
     $add_supplementary,
     $overload_genomic,
+    $overload_transposon,
     $overload_species,
     $overload_mass_spec,
     $overload_cds,
@@ -70,6 +71,7 @@ GetOptions (
   "overload_sage"      => \$overload_sage,
   "overload_pcr"       => \$overload_pcr,
   "overload_genomic"   => \$overload_genomic,
+  "overload_transposon" => \$overload_transposon,
   "add_landmark"       => \$add_landmark,
   "add_motifs"         => \$add_motifs,
   "add_gmap2pmap"      => \$add_gmap2pmap,
@@ -80,7 +82,6 @@ GetOptions (
   "workdir=s"   => \$working_dir,
   "force"       => \$force,
   "gff3"        => \$gff3,
-
   "debug=s"     => \$debug,
   "test"        => \$test,
   "verbose"     => \$verbose,
@@ -215,6 +216,12 @@ if ($overload_sage or $all) {
   }
 }
 
+############################################################
+# Adds decorations (Family) to the Transposon span lines
+############################################################
+if ($overload_transposon or $all) {
+    &run_munging_script("GFF_post_process/overload_gff_transposon.pl");
+}
 
 #############################################################
 # Append pre-computed landmarks, gmap2pmap, protein-motifs and UTRs to the ends of the files
