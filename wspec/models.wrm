@@ -2190,18 +2190,19 @@
                               Not_in_Anatomy_term ?Anatomy_term #Qualifier
                               Not_in_GO_term ?GO_term #GR_condition 
               Subcellular_localization ?Text
-              Type Reporter_gene ?Text
+              Type Antibody ?Text
+                   Cis_regulatory_element Text
+                   EPIC ?Text 
+                   Genome_editing ?Text
                    In_situ Text
-                   Antibody ?Text
-                   Northern Text
-                   Western Text
-                   RT_PCR Text
-                   RNASeq ?Analysis
                    Localizome ?Text
                    Microarray ?Microarray_experiment
+                   Northern Text
+                   Reporter_gene ?Text
+                   RNASeq ?Analysis
+                   RT_PCR Text
                    Tiling_array ?Analysis
-                   EPIC ?Text 
-                   Cis_regulatory_element Text
+                   Western Text
               Expression_cluster ?Expression_cluster XREF Expr_pattern //added for localizome
               Microarray_results ?Microarray_results XREF Expr_Pattern
               Pattern ?Text
