@@ -3302,6 +3302,7 @@
             Email #Evidence
             WormBook #Evidence
             Other #Evidence
+            Micropublication #Evidence
        Refers_to Gene ?Gene XREF Reference #Evidence
                  Allele ?Variation XREF Reference #Evidence
                  Rearrangement ?Rearrangement XREF Reference #Evidence
