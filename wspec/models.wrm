@@ -2645,7 +2645,7 @@
            Sequence_feature ?Feature XREF Associated_with_construct
            Driven_by_gene ?Gene XREF Drives_construct #Evidence
            Gene ?Gene XREF Construct_product #Evidence
-           3_UTR ?Gene #Evidence
+           UTR_3 ?Gene #Evidence
            Fusion_reporter ?Text              // Fluorescent proteins GFP, RFP, mCherry, etc.
            Other_reporter ?Text               // to add reporters, tags that arent included in model
            Purification_tag ?Text             // FLAG, HA, Myc, TAP, etc.  
