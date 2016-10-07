@@ -1564,10 +1564,10 @@
                                                 Partially_confirmed
                                                 Confirmed
                 Isoform #Evidence
+                Artificial_intron UNIQUE Ribosomal_slippage
+                                         Low_quality_sequence
                 Start_not_found UNIQUE Int //UNIQUE added by MH6 WS228
                 End_not_found
-                Merge Text  // ar2 270106 added by request for StLoius
-                Split Text  // ar2 270106 added by request for StLoius
      Visible Gene UNIQUE ?Gene XREF Corresponding_CDS // when live 
              Gene_history UNIQUE ?Gene XREF Corresponding_CDS_history // when dead
              Corresponding_transcript ?Transcript XREF Corresponding_CDS #Evidence  // links CDS' to new-style ?Transcript objects, 1-to-1 relationship
