@@ -2732,6 +2732,7 @@
                 Quantity_description ?Text #Evidence //Remark to describe what quantity describes, below
                 Quantity UNIQUE Int UNIQUE Int #Evidence
                 Not #Evidence //This is being phased out but is needed for the next phase [06/08/10].
+                Image ?Picture #Evidence
                 Penetrance Incomplete Text #Evidence
                            Low Text #Evidence
                            High Text #Evidence
@@ -2769,6 +2770,7 @@
                                 With_maternal_effect #Evidence
                 Paternal #Evidence
                 Phenotype_assay Strain ?Strain #Evidence
+                                Control_strain ?Strain #Evidence
                                 Treatment ?Text #Evidence
                                 Temperature ?Text #Evidence
                                 Genotype ?Text #Evidence
