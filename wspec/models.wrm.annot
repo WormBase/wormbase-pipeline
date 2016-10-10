@@ -3543,8 +3543,8 @@
                     Coding_exon #Evidence
                     Noncoding_exon #Evidence 
                     Promoter #Evidence
-                    UTR_3 #Evidence
-                    UTR_5 #Evidence 
+                    UTR_3 ^three-prime-utr #Evidence
+                    UTR_5 ^five-prime-utr #Evidence 
                     Regulatory_feature #Evidence
                     Genomic_neighbourhood #Evidence
 
