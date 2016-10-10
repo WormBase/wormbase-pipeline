@@ -1570,7 +1570,7 @@ sub sort_bam_file {
   my $log = $self->{log};
   
   my $failed = 0;
-  my $status = $self->{wormbase}->run_command($self->{Software}."/samtools/samtools sort -m 3500000000 $bamfile $bamfile.sorted", $log); # 3.5Gb
+  my $status = $self->{wormbase}->run_command($self->{Software}."/samtools/samtools sort -m 3500000000 $bamfile -o $bamfile.sorted", $log); # 3.5Gb
   $failed = $status;
   $status = $self->{wormbase}->run_command("mv $bamfile.sorted.bam $bamfile", $log);
   return ($failed & $status);
