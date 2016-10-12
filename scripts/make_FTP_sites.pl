@@ -308,6 +308,7 @@ sub copy_acedb_files{
   
   # Copy across the models.wrm file
   $wormbase->run_command("cp $ace_dir/wspec/models.wrm $ftp_acedb_dir/models.wrm.$WS_version_name", $log);
+  $wormbase->run_command("cp $ace_dir/wspec/models.wrm.annot $ftp_acedb_dir/models.wrm.$WS_version_name.annot", $log);
 
   # copy some miscellaneous files across
   my $old_release = $WS_version -1;
