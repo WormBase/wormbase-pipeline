@@ -173,7 +173,7 @@ if ($chunk_id) { # getting the alignments for a set of chromosomes
 			 -J => 'rnaseq_alignments',
 			 -e => $err,
 			 -o => $out,
-			 -g => "/RNASeq/$species", # add this job to the LSF group '/RNASeq/$species'
+#			 -g => "/RNASeq/$species", # add this job to the LSF group '/RNASeq/$species'
 		      );
     $lsf->submit(@bsub_options, $cmd);
   }  
