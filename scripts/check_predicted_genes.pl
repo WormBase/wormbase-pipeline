@@ -200,7 +200,7 @@ else {
       }
       
       if ($qclass eq "Transcript") {
-	my @Trans_bad_method = $db->fetch (-query => 'FIND Transcript; method != "history_transcript"; method != "*RNA*"; method != "non_coding_transcript"; method != "non_coding_transcript_isoformer" ; method != "cufflinks"');
+	my @Trans_bad_method = $db->fetch (-query => 'FIND Transcript; method != "history_transcript"; method != "*RNA*"; method != "non_coding_transcript"; method != "non_coding_transcript_isoformer" ; method != "cufflinks"; method != "TIGR_BEST"');
 	foreach my $g (@Trans_bad_method) {
 	  my $gg=$g->name; 
 	  if ($ignore{$gg}) {next}
