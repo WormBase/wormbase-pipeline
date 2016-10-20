@@ -186,7 +186,7 @@ else {
 	  }
 	  $log->write_to("Error: CDS $gg has no CDS tag $s\n");
 	}
-	my @CDS_bad_method = $db->fetch (-query => 'FIND CDS; method != "history"; method != "curated"; method != "Transposon_CDS"; method != "Genefinder"; method != "not_confirmed_isoformer"; method != "RNASEQ.Hillier"; method != "mGene"; method != "RNASEQ.Hillier.Aggregate"; method != "isoformer"; method != "jigsaw"; method != "twinscan"');
+	my @CDS_bad_method = $db->fetch (-query => 'FIND CDS; method != "history"; method != "curated"; method != "Transposon_CDS"; method != "Genefinder"; method != "not_confirmed_isoformer"; method != "RNASEQ.Hillier"; method != "mGene"; method != "RNASEQ.Hillier.Aggregate"; method != "isoformer"; method != "jigsaw"; method != "twinscan" ; method != "ensembl"');
 	foreach my $g (@CDS_bad_method) {
 	  my $gg=$g->name; 
 	  if ($ignore{$gg}) {next}
@@ -200,7 +200,7 @@ else {
       }
       
       if ($qclass eq "Transcript") {
-	my @Trans_bad_method = $db->fetch (-query => 'FIND Transcript; method != "history_transcript"; method != "*RNA*"; method != "non_coding_transcript"; method != "non_coding_transcript_isoformer"');
+	my @Trans_bad_method = $db->fetch (-query => 'FIND Transcript; method != "history_transcript"; method != "*RNA*"; method != "non_coding_transcript"; method != "non_coding_transcript_isoformer" ; method != "cufflinks"');
 	foreach my $g (@Trans_bad_method) {
 	  my $gg=$g->name; 
 	  if ($ignore{$gg}) {next}
