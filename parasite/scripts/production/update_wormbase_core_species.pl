@@ -298,7 +298,7 @@ sub read_templates {
 sub write_config {
   my ($template, $file, @replacements) = @_;
   
-  my %vhosts = ( STAGING => $PARASITE_STAGING_MYSQL, 
+  my %vhosts = ( STAGING => $PARASITE_STAGING, 
                  PROD    => "mysql-ps-prod",
                  PAN     => "mysql-pan-1" );
   
