@@ -186,7 +186,7 @@ else {
 	  }
 	  $log->write_to("Error: CDS $gg has no CDS tag $s\n");
 	}
-	my @CDS_bad_method = $db->fetch (-query => 'FIND CDS; method != "history"; method != "curated"; method != "Transposon_CDS"; method != "Genefinder"; method != "not_confirmed_isoformer"; method != "RNASEQ.Hillier"; method != "mGene"; method != "RNASEQ.Hillier.Aggregate"; method != "isoformer"; method != "jigsaw"; method != "twinscan" ; method != "ensembl"');
+	my @CDS_bad_method = $db->fetch (-query => 'FIND CDS; method != "history"; method != "curated"; method != "Transposon_CDS"; method != "Genefinder"; method != "not_confirmed_isoformer"; method != "RNASEQ.Hillier"; method != "mGene"; method != "RNASEQ.Hillier.Aggregate"; method != "isoformer"; method != "jigsaw"; method != "twinscan" ; method != "ensembl" ; method != "Trinity_CDS"');
 	foreach my $g (@CDS_bad_method) {
 	  my $gg=$g->name; 
 	  if ($ignore{$gg}) {next}
