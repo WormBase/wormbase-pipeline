@@ -575,7 +575,7 @@ sub Find_Next_CDS_ID {
     }
     $maxnumber++;
     # check it has never been used as a CDS
-    while (qx(fgrep -c $clone"\.$maxnumber" /nfs/wormpub/BUILD/WORMPEP/wormpep_current/wormpep.history*)) {$maxnumber++}
+    while ($self->check_history_seqname("${clone}.${maxnumber}")) {$maxnumber++}
     $self->{next_cds_id}{$clone} = $clone . '.' . $maxnumber;
 
 
@@ -598,7 +598,7 @@ sub Find_Next_CDS_ID {
     }
     $maxnumber += 100;
     # check it has never been used as a CDS
-    while (qx(fgrep -c $prefix"\.$maxnumber" /nfs/wormpub/BUILD/WORMPEP/wormpep_current/wormpep.history*)) {$maxnumber += 100}
+    while ($self->check_history_seqname("${prefix}${maxnumber}")) {$maxnumber += 100}
     $self->{next_cds_id}{$prefix} = $prefix . $maxnumber;
 
 
@@ -615,7 +615,7 @@ sub Find_Next_CDS_ID {
     }
     $maxnumber++;
     # check it has never been used as a CDS
-    while (qx(fgrep -c $prefix"\.$maxnumber" /nfs/wormpub/BUILD/WORMPEP/wormpep_current/wormpep.history*)) {$maxnumber++}
+    while ($self->check_history_seqname("${prefix}${maxnumber}")) {$maxnumber++}
     $self->{next_cds_id} = $prefix . $maxnumber;
   }
 
@@ -623,6 +623,24 @@ sub Find_Next_CDS_ID {
 
 
 ######################################
+# check the wormpep history file to see if the sequence name has been used in the past for a CDS
+# return 1 if it is found
+sub check_history_seqname {
+  my ($self, $seqname) = @_;
+  my $result=0;
+
+  my $version = $self->get_history_version($self->{wormbase}->database('current'));
+  my $pepname = $self->{wormbase}->pepdir_prefix . 'pep';
+  if (!-e "/nfs/wormpub/BUILD/WORMPEP/${pepname}$version/${pepname}.history${version}") {$version--;}
+  open (PEP, "< /nfs/wormpub/BUILD/WORMPEP/${pepname}$version/${pepname}.history${version}") || die "ERROR Can't find /nfs/wormpub/BUILD/WORMPEP/${pepname}$version/${pepname}.history${version}\n";
+  while (my $line = <PEP>) {
+    my @f = split /\s+/, $line;
+    if ($f[0] =~ /^${seqname}[a-z]*$/) {return 1;}
+  }
+  close(PEP);
+  return $result;
+}
+
 ######################################
 ######################################
 ######################################
