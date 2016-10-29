@@ -96,7 +96,9 @@ my $acedb = Ace->connect('-path' => $database) or Ace->error;
 while(<GENES>){
     chomp;
     my $gene = $_;
+    print "Processing:$gene\n";
     unless ($gene =~ /WBGene\d{8}$/) { warn "$_ bad gene format\n";next; }
+    
 
     my $geneObj = $acedb->fetch('Gene',$gene);
     unless ($geneObj->Species->name  eq $wormbase->full_name) { warn "$gene is not a ".$wormbase->full_name('-gspecies' => 1). " gene\n";next;}

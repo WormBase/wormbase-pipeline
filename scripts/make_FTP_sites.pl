@@ -110,6 +110,7 @@ my $go_public;
 my $multi_species;
 my $orthology_lists; # flatfiles of the orthologies fro CalTech
 my $assembly_manifest;
+my $repeats; # copy repeatmasker libraries
 my (%skip_species, @skip_species, @only_species, %only_species, $WS_version, $WS_version_name);
 
 GetOptions ("help"          => \$help,
@@ -146,7 +147,8 @@ GetOptions ("help"          => \$help,
 	    "all"            => \$all,
             "allnopublic"    => \$all_nopublic,
             "wbversion=s"    => \$WS_version,
-            'orthologylists'=> \$orthology_lists,
+            'orthologylists' => \$orthology_lists,
+            'repeatmasker'   => \$repeat,
     )||die(&usage);
 
 
@@ -245,6 +247,8 @@ close FTP_LOCK;
 &check_manifest if ($manifest);
 
 &make_md5sums if ($md5);              # creates a file of md5sums for containing entries for all files in release
+
+&copy_repeats if $repeat;
 
 $wormbase->run_command("chmod -R ug+w $targetdir", $log);  
 
@@ -379,6 +383,36 @@ sub copy_xrefs {
   }
 
   $log->write_to("$runtime: Finished copying/zipping xrefs\n\n");
+}
+
+##################################################
+# copy the repeatmasker libraries
+##################################################
+sub copy_repeats {
+  my $runtime = $wormbase->runtime;
+  $log->write_to("$runtime: copying/zipping repeatmasker files\n");
+
+  my %accessors = ($wormbase->species_accessors);
+  $accessors{elegans} = $wormbase;
+
+  foreach my $wb (values %accessors) {
+    next if exists $skip_species{$wb->species};
+    next if @only_species and not exists($only_species{$wb->species});
+
+    my $gspecies = $wb->full_name('-g_species'=>1);
+    my $bioproj = $wb->ncbi_bioproject;
+
+    my $file = $wb->repeatmasker_library;
+
+    my $out_file = "$targetdir/species/$gspecies/$bioproj/annotation/$gspecies.${bioproj}.${WS_version_name}.repeats.fa.gz";
+    if (-e $file) {
+      $wormbase->run_command("cat $xref_file | gzip -n -9 -c > $out_file", $log);
+    } else {
+      $log->error("ERROR: Could not find file $file\n");
+    }
+  }
+
+  $log->write_to("$runtime: Finished copying/zipping repeatmasker files\n\n");
 }
 
 
