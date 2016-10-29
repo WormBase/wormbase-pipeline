@@ -1,4 +1,4 @@
-#!/usr/local/ensembl/bin/perl -w
+#!/usr/bin/env perl
 #
 # Last edited by: $Author: klh $
 # Last edited on: $Date: 2015-03-09 16:31:34 $
@@ -67,7 +67,6 @@ if( $human ) { &process_human; }
 if($uniprot or $swissprot or $trembl) {
   #get current ver.
   my $cver = determine_last_vers('slimswissprot');
-  my $cver_tr = determine_last_vers('slimtrembl');
   
   #find latest ver
   my $reldate_file = "/ebi/ftp/pub/databases/uniprot/knowledgebase/reldate.txt";
@@ -88,7 +87,7 @@ if($uniprot or $swissprot or $trembl) {
       } else {
         $log->write_to("Not updating swissprot ($newver)");
       }
-      if ($newver != $cver_tr and ($uniprot or $trembl)) {
+      if ($newver != $cver and ($uniprot or $trembl)) {
         &process_trembl($newver);
       } else { 
         $log->write_to("\tNot updating trembl ($newver)\n"); 
@@ -136,7 +135,7 @@ if ($fly) {
     my $page_download = '/tmp/page_download';
     my $fly_version;
     $log->write_to("\tdownloading flybase listing\n");
-    $wormbase->run_command("wget -O $page_download ftp://flybase.net/genomes/Drosophila_melanogaster/current/fasta/", $log);
+    $wormbase->run_command("wget -O $page_download ftp://flybase.net/genomes/Drosophila_melanogaster/current/fasta/md5sum.txt", $log);
     open (PAGE, "<$page_download") || $log->log_and_die("Can't open $page_download\n");
     while (my $line = <PAGE>) {
       if ($line =~ /dmel-all-translation-r(\d+)\.(\d+)\.fasta.gz/) {
@@ -165,55 +164,55 @@ if ($fly) {
     	#update the file
 	$log->write_to("\tupdating flybase . . .\n");
 	$ver++;
-	my $source_file = "$blastdir/gadfly${ver}.pep";
-	move("$fly_download", "$source_file") or $log->log_and_die("can't move $fly_download: $!\n");
-        system('perl -i -ne "print unless /^\n/" '.$source) && $log->log_and_die($!); # strip empty lines from the fasta file
+	my $pepfile = "$blastdir/gadfly${ver}.pep";
 
 	my $record_count = 0;	
 	my $problem_count =0;
 	my ($gadID, $FBname, $FBgn);
 	my $count;
 	my %genes;
-	my $seqs = Bio::SeqIO->new('-file'=>$source_file, '-format'=>'fasta') or $log->log_and_die("cant open SeqIO from $fly_download:$!\n");
-      SEQ:while (my $seq = $seqs->next_seq){
+	my $seqs = Bio::SeqIO->new('-file'  => $fly_download, 
+                                   '-format'=>'fasta') or $log->log_and_die("cant open SeqIO from $fly_download:$!\n");
+        SEQ:while (my $seq = $seqs->next_seq){
 	  $count++;
 	  $record_count++;
 	  
 	  my %fields = $seq->primary_seq->desc =~ /(\w+)=(\S+)/g;
-
+          
 	  if ($fields{name}){
-             $FBname = $fields{name};
-	     $FBname =~ s/;//g;
+            $FBname = $fields{name};
+            $FBname =~ s/;//g;
 	  }
 	  ($FBgn) = $fields{'parent'} =~ /(FBgn\d+)/;
 	  foreach ( split(/,/,$fields{'dbxref'}) ) {
-	      my($key, $value) = split(/:/);
-	      if( $key eq 'FlyBase_Annotation_IDs') {
-		  ($gadID) = $value =~ /(\w+)-/;
-	      }
+            my($key, $value) = split(/:/);
+            if( $key eq 'FlyBase_Annotation_IDs') {
+              ($gadID) = $value =~ /(\w+)-/;
+            }
 	  }
 	  
 	  # some old style names still exist eg pp-CT*****.  In these cases
 	  # we need to use the 1st field of the "from_gene" fields.
-
+          
 	  if( $gadID ){
-	      if($genes{$gadID}) {
-		  next SEQ if(length($genes{$gadID}->{'pep'}) > $seq->length);
-	      }
-	      $genes{$gadID}->{'fbname'} = $FBname if $FBname;
-	      $genes{$gadID}->{'fbgn'} = $FBgn if ($FBgn);
-	      $genes{$gadID}->{'pep'} = $seq->seq;
+            if($genes{$gadID}) {
+              next SEQ if(length($genes{$gadID}->{'pep'}) > $seq->length);
+            }
+            $genes{$gadID}->{'fbname'} = $FBname if $FBname;
+            $genes{$gadID}->{'fbgn'} = $FBgn if ($FBgn);
+            $genes{$gadID}->{'pep'} = $seq->seq;
 	  }
 	  else {
-	      # report problems?
-	      $log->write_to("PROBLEM : $_\n");
+            # report problems?
+            $log->write_to("PROBLEM : $_\n");
 	  }
-      }
+        }
 	
 	my $acefile  = "$acedir/flybase.ace";
-	my $pepfile  = "$blastdir/gadfly${ver}.pep.tmp"; # output initally goes to tmp file
 	open (ACE,">$acefile") or die "cant open $acefile\n"; 
-	open (PEP,">$pepfile") or die "cant open $pepfile $!\n";
+
+        my $seqs_out = Bio::SeqIO->new('-file'   => ">$pepfile", 
+                                       '-format' => 'fasta');
 	
 	foreach my $gadID (keys %genes){
 	    #print ace file
@@ -230,16 +229,14 @@ if ($fly) {
 	    print ACE "\nPeptide : \"FLYBASE:$gadID\"\n";
 	    print ACE $genes{$gadID}->{'pep'}."\n";
 
-	    print PEP "\n>$gadID\n".$wormbase->format_sequence($genes{$gadID}->{'pep'})."\n";
+            my $outseq = Bio::PrimarySeq->new( -id => $gadID, 
+                                               -seq => $genes{$gadID}->{'pep'} );
+            $seqs_out->write_seq($outseq);
 	}
 	
 	#write database file
 	close ACE;
-	close PEP;
 	
-	#Now overwrite source file with newly formatted file
-	
-	system("mv $pepfile $source_file") && die "Couldn't write peptide file $source_file\n";
 	my $redundant = scalar keys %genes;
 	$log->write_to("\t$record_count ($redundant) proteins\nflybase updated\n\n");
     }
