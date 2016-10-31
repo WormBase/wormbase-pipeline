@@ -1556,11 +1556,12 @@ sub Copy_db_remark {
   my $db_remark = $obj->DB_remark;
 
   my $fh = $self->{out};
-  print $fh "\n// Copy_db_remark\n";
-  print $fh "$new_class : $new_seqname\n";
-  print $fh "DB_remark \"$db_remark\"\n";
-  print $fh "\n";
-
+  if (defined $db_remark && $db_remark ne '') {
+    print $fh "\n// Copy_db_remark\n";
+    print $fh "$new_class : $new_seqname\n";
+    print $fh "DB_remark \"$db_remark\"\n";
+    print $fh "\n";
+  }
 
 }
 
