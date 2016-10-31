@@ -454,14 +454,13 @@ sub main_gene_checks {
       }
     }
     
-    #    my $artificial_intron_Ribosomal_slippage = $gene_model->Ribosomal_slippage;
-    #    my $artificial_intron_Low_quality_sequence = $gene_model->Low_quality_sequence;
+    my $artificial_intron_Ribosomal_slippage = $gene_model->Ribosomal_slippage;
+    my $artificial_intron_Low_quality_sequence = $gene_model->Low_quality_sequence;
     if (!exists $checked_small_intron{$gene_model_name}) {
       for ($i=1; $i<@exon_coord2; $i++) {
 	my $intron_size = ($exon_coord1[$i] - $exon_coord2[$i-1] -1); 
 	if (($intron_size < 25) && ($method_test eq 'curated')) {
-	  #	  if ($intron_size < 4 && !$artificial_intron_Ribosomal_slippage && !$artificial_intron_Low_quality_sequence) {
-	  if ($intron_size < 4) {
+	  if ($intron_size < 4 && !$artificial_intron_Ribosomal_slippage && !$artificial_intron_Low_quality_sequence) {
 	    push(@error4,"ERROR: $gene_model has a very small intron ($intron_size bp) and no Ribosomal_slippage or Low_quality_sequence tag\n");
 	  } else {
 	    push(@error4,"ERROR: $gene_model has a small intron ($intron_size bp)\n");
