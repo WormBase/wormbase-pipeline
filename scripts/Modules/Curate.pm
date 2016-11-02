@@ -1111,7 +1111,7 @@ sub merge_gene {
     } else {
       foreach my $letter (@used_letters) {
 	my $cdsl = $cds . $letter;
-	&Make_history($class, $cdsl);
+	$self->Make_history($class, $cdsl);
 	$unused{$gene}{$cds . $letter} = 1;
       }
     }
