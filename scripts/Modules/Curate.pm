@@ -1487,7 +1487,7 @@ sub Update_CDS_structure {
   my ($starts, $ends) = $self->get_Source_exons($class, $source_model); 
 
   my ($start_not_found, $end_not_found, $premature_stops) = $self->start_and_stop_sanity_check($class, $source_model, $sequence, $start, $end, $starts, $ends);
-  if ($premature_stops && $class eq 'CDS') {print "WANRING: $source_model has premature STOP codons\n\n"; $self->force('elegans');}
+  if ($premature_stops && $class eq 'CDS') {print "WARNING: $source_model has premature STOP codons\n\n"; $self->force('elegans');}
   if ($start_not_found && $class eq 'CDS') {print "WARNING: $source_model has START_NOT_FOUND\n\n";  $self->force('elegans');}
   if ($end_not_found && $class eq 'CDS') {print "WARNING: $source_model has END_NOT_FOUND\n\n";  $self->force('elegans');}
 
