@@ -216,7 +216,7 @@ sub filter_alleles {
       next;
     }
     
-    # The bit below is commented out, as there are sadly some alleles connected to sequences without source that can't be moved :-( updated this commented out code to avoid iues in the future.
+    # The bit below is commented out, as there are sadly some alleles connected to sequences without source that cannot be moved :-( updated this commented out code to avoid iues in the future.
     
     #   # connected sequence has no source
     #        elsif ( !defined $allele->Mapping_target->name && !defined $weak_checks) { 
@@ -242,6 +242,13 @@ sub filter_alleles {
       $errors++;
       next;
     }       
+    
+    elsif ( $allele->Flanking_sequences->name =~ /nn/i or
+            $allele->Flanking_sequences->right->name =~ /nn/i) {
+      $log->write_to("ERROR: $allele ($name) has Ns in flanks (Remark: $remark)\n");
+      $errors++;
+      next;
+    }
     
     elsif (defined $allele->Type_of_mutation and $allele->Type_of_mutation eq 'Substitution') {
       if ($aggressive) {
@@ -307,7 +314,6 @@ sub map {
       }
     }
     
-
     my $target_seq = $x->Mapping_target->name;
     my $left_flank = $x->Flanking_sequences->name;
     my $right_flank = $x->Flanking_sequences->right->name;
