@@ -1284,10 +1284,6 @@ sub load_ncrnas{
     }
   }
 
-  my @hits = @{$nc_rnas{"CHROMOSOME_I"}};
-  @hits = @hits[0..10];
-  map { print "DEBUG : " . $_->{transcript} . "\n" } @hits;
-
   return \%nc_rnas;
 }
              
