@@ -60,6 +60,8 @@ my $status;
 #my $database = $wormbase->database('current');
 my $database = $wormbase->autoace;
 
+if ($results) {$check = 1} # don't want to remove the cufflinks results if writing results
+
 my $RNASeq = RNASeq->new($wormbase, $log, $new_genome, $check);
 
 if ($analyse && $results) {$log->log_and_die("Please run this script using '-analyse' and then the '-results' option.\n")}
@@ -67,11 +69,6 @@ if ($analyse && $results) {$log->log_and_die("Please run this script using '-ana
 $log->write_to("Get experiments from config\n");
 my $data = $RNASeq->get_transcribed_long_experiments();
 
-# if -new_genome is set remove all the existing data so it must be aligned again
-# otherwise, unless -check is set, remove only the cufflinks data
-$log->write_to("Remove old experiment files\n");
-$RNASeq->remove_old_experiment_files($data);
-  
   
 if ($analyse) {
   analyse();
@@ -91,6 +88,11 @@ exit(0);
 
 sub analyse {
 
+  # if -new_genome is set remove all the existing data so it must be aligned again
+  # otherwise, unless -check is set, remove only the cufflinks data
+  $log->write_to("Remove old experiment files\n");
+  $RNASeq->remove_old_experiment_files($data);
+  
   my $masked = 0;
   $log->write_to("Set up genome\n");
   $RNASeq->setup_genome_for_star();
