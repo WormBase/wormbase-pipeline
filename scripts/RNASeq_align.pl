@@ -56,7 +56,6 @@ my $log = Log_files->make_build_log($wormbase);
 ######################################
 
 my $status;
-my $data;
 
 #my $database = $wormbase->database('current');
 my $database = $wormbase->autoace;
@@ -65,6 +64,15 @@ my $RNASeq = RNASeq->new($wormbase, $log, $new_genome, $check);
 
 if ($analyse && $results) {$log->log_and_die("Please run this script using '-analyse' and then the '-results' option.\n")}
 
+$log->write_to("Get experiments from config\n");
+my $data = $RNASeq->get_transcribed_long_experiments();
+
+# if -new_genome is set remove all the existing data so it must be aligned again
+# otherwise, unless -check is set, remove only the cufflinks data
+$log->write_to("Remove old experiment files\n");
+$RNASeq->remove_old_experiment_files($data);
+  
+  
 if ($analyse) {
   analyse();
 } elsif ($results) {
@@ -91,15 +99,6 @@ sub analyse {
     $log->write_to("Make GTF file\n");
     $RNASeq->run_make_gtf_transcript($database);
   }
-  
-  $log->write_to("Get experiments from config\n");
-  my $data = $RNASeq->get_transcribed_long_experiments();
-  
-  # if -new_genome is set remove all the existing data so it must be aligned again
-  # otherwise, unless -check is set, remove only the cufflinks data
-  $log->write_to("Remove old experiment files\n");
-  $RNASeq->remove_old_experiment_files($data);
-  
   
   # create the LSF Group "/RNASeq/$species" which is now limited to running 30 jobs at a time
   $status = system("bgadd -L 30 /RNASeq/$species"); 
