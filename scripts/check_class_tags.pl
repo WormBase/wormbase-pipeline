@@ -1,4 +1,5 @@
-#!/software/bin/perl -w
+#!/use/bin/env perl
+#
 # check_class_tags.pl
 #
 # by Gary Williams
@@ -37,85 +38,213 @@ if ( $store ) {
 			     );
 }
 
-# Display help if required
-&usage("Help") if ($help);
 
-# in test mode?
-if ($test) {
-  print "In test mode\n" if ($verbose);
-
-}
-
-# establish log file.
 my $log = Log_files->make_build_log($wormbase);
-
-
-############################################
-# Get paths and versions
-############################################
-
 my $tace = $wormbase->tace;
 
 
 $species = $wormbase->species;
 my $version = $wormbase->get_wormbase_version;
-my $prev_version = $version-1;
-my $prev_prev_version = $version-2;
-
 
 $database ||= $wormbase->autoace;
+
+my $count = 0;
+my $errors = 0;
+
+my $file = $wormbase->build_data . "/COMPARE/${species}_class_tags_count.dat"; # file holding pparse details from previous Builds
+$log->write_to("Checking ".$wormbase->full_name.": - ".$database."\n\n");
+
+my $DATA = {};
+
+&read_counts($file);
+my ($prev_version, $prev_prev_version) = &get_previous_two_versions();
 
 my $dbname_0    = "WS${prev_prev_version}";
 my $dbname_1    = "WS${prev_version}";
 my $dbname_2    = "WS${version}";
 
-my $count = 0;
-my $errors = 0;
+my $check = &get_classes_and_ids_to_check();
 
+$log->write_to(sprintf("%-22s %-22s %-22s %7s %7s %7s %10s\n", "CLASS","ID", "TAG","($dbname_0)",$dbname_1,$dbname_2,"Difference"));
 
-my $file = $wormbase->build_data . "/COMPARE/${species}_class_tags_count.dat"; # file holding pparse details from previous Builds
-
-
-$log->write_to("Checking ".$wormbase->full_name.": - ".$database."\n\n");
-
-
-my %check = &get_classes_and_ids_to_check();
-
-&print_header(%check);
-
-&check_classes_and_ids(%check);
-
+&check_classes_and_ids($check);
 $log->write_to("\n$count class counts checked, $errors potential errors found\n");
+
+&store_counts($file);
 
 $log->mail;
 exit;
 
-
-
-
+    
 ##############################################################
-#
-# Subroutines
-#
 ##############################################################
+sub get_previous_two_versions {
+  
+  my ($prev_v, $prev_prev_v);
 
-sub usage {
-    my $error = shift;
-
-    if ( $error eq "Help" ) {
-
-        # Normal help menu
-        system( 'perldoc', $0 );
-        exit(0);
+  for(my $v = $version-1; $v >= $version - 10; $v--) {
+    if (exists $DATA->{$species}->{$v}) {
+      if (not defined $prev_v) {
+        $prev_v = $v;
+      } elsif (not defined $prev_prev_v) {
+        $prev_prev_v = $v;
+      }
     }
+  }
+
+  $prev_v = 0 if not defined $prev_v;
+  $prev_prev_v = 0 if not defined $prev_prev_v;
+  
+  return ($prev_v, $prev_prev_v);
+}
+
+
+
+#####################################################3
+sub check_classes_and_ids {
+  my ($check) = @_;
+
+  delete $DATA->{$species}->{$version} if exists $DATA->{$species}->{$version};
+
+  foreach my $class (keys %$check) {
+    my $id = $check->{$class};
+    # I've been lazy and hold the Sequence clone IDs as a array-ref, and the IDs of the other classes as scalars. So check which this is.
+    if (ref($id)) {
+      foreach my $i (sort @{$id}) {
+	$log->write_to("Checking tags in $class : \"$i\"\n") if $debug;
+	&check_for_missing_tags($class, $i);
+      }
+    } else {
+      $log->write_to("Checking tags in $class : \"$id\"\n") if $debug;
+      &check_for_missing_tags($class, $id);
+    }
+  }
 }
 
 ##################################################################
-# these are the classes that we wish to check for differences in the numbers of tags
-# the example IDs are pretty much chosen at random - if you find a better one to check, feel free to change it.
+# check for differences in the numbers of all tags in an object
+# the tace command show -a gives a output that is easy to parse, like:
 
+#Sequence : "AC3"
+#DNA	 "AC3" 38951
+#Gene_child	 "WBGene00195634" 30835 30983
+#Gene_child	 "WBGene00199275" 25396 25250
+#CDS_child	 "AC3.1:wp98" 5575 7013
+#CDS_child	 "AC3.3" 18739 17380
+#Transcript	 "AC3.14" 30835 30983
+#Transcript	 "AC3.15" 25396 25250
+#Transcript	 "AC3.16" 17679 17828
+####################################################################
+sub check_for_missing_tags {
+
+  my ($class, $id) = @_;
+
+  my @db_slurp = get_tace($class, $id, $database);
+  @db_slurp = grep {!/^(acedb\>|\/\/)$/} @db_slurp; # remove tace stuff from output
+  map {$_ =~ s/^(\S+).*/$1/} @db_slurp; # replace each element of the array with the first word of each element
+  map {$_ =~ s/\n//} @db_slurp; # remove newline
+
+  foreach my $tag (@db_slurp) {
+    $DATA->{$species}->{$version}->{$class}->{$id}->{$tag}++;
+  }
+
+  my $this_counts      = $DATA->{$species}->{$version}->{$class}->{$id};
+  my $prev_counts      = (exists $DATA->{$species}->{$prev_version}) ?  $DATA->{$species}->{$prev_version}->{$class}->{$id} : {};
+  my $prev_prev_counts = (exists $DATA->{$species}->{$prev_prev_version}) ?  $DATA->{$species}->{$prev_prev_version}->{$class}->{$id} : {};  
+
+  ##################################################
+  # Calculate difference between databases         #
+  ##################################################
+
+  my @tags = uniq (keys %$this_counts, keys %$prev_counts, keys %$prev_prev_counts); 
+
+  foreach my $tag (sort @tags) {
+    my $count2 = $this_counts->{$tag} || 0;
+    my $count1 = (exists $prev_counts->{$tag}) ? $prev_counts->{$tag} : 0;
+    my $count0 = (exists $prev_prev_counts->{$tag}) ? $prev_prev_counts->{$tag} : 0;
+
+    my $diff = $count2 - $count1;
+    my $err = "";
+    if ($count2 == 0) {
+      $err = "***** POSSIBLE ERROR *****";
+      $log->error;
+      $errors++;
+    } elsif (
+	     ($count2 < $count1 * 0.9 || 
+	      $count2 > $count1 * 1.1)) {
+      $err = "***** POSSIBLE ERROR *****";
+      $log->error;
+      $errors++;
+    }
+    
+    $log->write_to(sprintf("%-22s %-22s %-22s %7d %7d %7d %10d %s\n", $class, $id, $tag, $count0, $count1, $count2, $diff, $err)) if ($err || $verbose);
+  }
+
+}
+
+##################################################################
+sub get_tace {
+  my ($class, $id, $database) = @_;
+  my @slurp;
+
+  my $cmd = "find $class $id\nshow -a\nquit\n";
+  open (TACE, "echo '$cmd' | $tace $database |");
+  while (<TACE>) {
+    chomp;
+    next if ($_ eq "");
+    next if (/^acedb\>/);
+    next if (/^\/\//);
+    push @slurp, $_;
+  }
+  close TACE;
+
+  return @slurp;
+}
+
+##################################################################
+sub read_counts {
+  my ($file) = @_;
+  
+  if (open (my $fh, $file)) {
+    while (<$fh>) {
+      next if not /\S/;
+      chomp;
+      my ($cc_species, $cc_version, $cc_class, $cc_id, $cc_tag, $cc_count) = split(/\s+/, $_);
+      $DATA->{$cc_species}->{$cc_version}->{$cc_class}->{$cc_id}->{$cc_tag} = $cc_count;
+    }
+  }
+}  
+
+
+
+##################################################################
+sub store_counts {
+  my ($file) = @_;
+  
+  open(my $fh, ">$file") or $log->log_and_die("Could not open $file for writing\n");
+  
+  foreach my $sp (sort keys %$DATA) {
+    foreach my $v (sort { $a <=> $b } keys %{$DATA->{$sp}}) {
+      foreach my $cl (sort keys %{$DATA->{$sp}->{$v}}) {
+        foreach my $id (sort keys %{$DATA->{$sp}->{$v}->{$cl}}) {
+          foreach my $tg (sort keys %{$DATA->{$sp}->{$v}->{$cl}->{$id}}) {
+            my $cnt = $DATA->{$sp}->{$v}->{$cl}->{$id}->{$tg};
+
+            print $fh join("\t", $sp, $v, $cl, $id, $tg, $cnt), "\n";
+          } 
+        }
+      }
+    }                   
+  }
+
+  close($fh);
+}
+
+
+
+
+##################################################################
 sub get_classes_and_ids_to_check {
-
 
   my %classes = (
 		 'elegans' => {
@@ -305,273 +434,9 @@ sub get_classes_and_ids_to_check {
                              },
 		);
 
-  
-  return %{$classes{$species}};
+  return $classes{$species};
 }
 
-
-##################################################################
-# print the header
-
-sub print_header {
-
-  my (%check) = @_; # key=class, value=id
-
-
-  my %results_0; 			# results from the last but one release
-  my %results_1;			# results from the last release
-  my $got_prev_results=0;
-  my $got_prev_prev_results=0;
-  for (my $version_count = 10; $version_count; $version_count--) { # go back up to 10 releases
-    %results_0 = ();
-    if (!$got_prev_results) {%results_1 = ()}
-    foreach my $class (keys %check) {
-      my $id = $check{$class};
-      %results_0 = &get_prev_count($species, $prev_prev_version, $class, $id);
-      if (!$got_prev_results) {%results_1 = &get_prev_count($species, $prev_version, $class, $id)}
-      if (keys %results_0) {last}
-    }
-    
-    # check to see if we have results from the previous release number we are currently checking
-    # (elegans is the only species done every release)
-    if (keys %results_1) {
-      $got_prev_results = 1;
-    }
-    if (keys %results_0) {
-	$got_prev_prev_results = 1;
-    }
-    
-    if ($got_prev_prev_results) {last}
-    
-    # go back another version
-    $prev_prev_version--;
-    $dbname_0    = "WS${prev_prev_version}";
-    if (!$got_prev_results) {
-      $prev_version--;
-      $dbname_1    = "WS${prev_version}";
-    }
-  }
-  
-  # display message if there are no previous results
-  if (!$got_prev_results) {
-    $log->write_to("\n\nNo results have been found for this species for the last 10 releases\n\n");
-    $dbname_0 = '';
-    $dbname_1 = '';
-  }
-  
-  # display header
-  $log->write_to(sprintf("%-22s %-22s %-22s %7s %7s %7s %10s\n", "CLASS","ID", "TAG","($dbname_0)",$dbname_1,$dbname_2,"Difference"));
-}
-##################################################################
-
-sub check_classes_and_ids {
-
-  my (%check) = @_;
-
-  foreach my $class (keys %check) {
-    my $id = $check{$class};
-    # I've been lazy and hold the Sequence clone IDs as a array-ref, and the IDs of the other classes as scalars. So check which this is.
-    if (ref($id)) {
-      foreach my $i (sort @{$id}) {
-	print "\nChecking tags in $class : \"$id\"\n" if ($verbose);
-	&check_for_missing_tags($class, $i);
-      }
-    } else {
-      print "\nChecking tags in $class : \"$id\"\n" if ($verbose);
-      &check_for_missing_tags($class, $id);
-    }
-  }
-}
-
-##################################################################
-# check for differences in the numbers of all tags in an object
-# the tace command show -a gives a output that is easy to parse, like:
-
-#Sequence : "AC3"
-#DNA	 "AC3" 38951
-#Gene_child	 "WBGene00195634" 30835 30983
-#Gene_child	 "WBGene00199275" 25396 25250
-#CDS_child	 "AC3.1:wp98" 5575 7013
-#CDS_child	 "AC3.3" 18739 17380
-#Transcript	 "AC3.14" 30835 30983
-#Transcript	 "AC3.15" 25396 25250
-#Transcript	 "AC3.16" 17679 17828
-#Pseudogene	 "AC3.9" 11805 13838
-#Pseudogene	 "AC3.13" 17199 16871
-#Pseudogene	 "AC3.12:wp227" 16245 15940
-#Genomic_non_canonical	 "WRM0623cH01" 1614 36865
-#PCR_product	 "cenix:116-g2" 9726 10433
-#PCR_product	 "cenix:137-a1" 27145 28341
-#PCR_product	 "cenix:18-a1" 30698 31254
-#Allele	 "WBVar00001390" 615 615
-#Allele	 "WBVar00001395" 3025 3025
-#Allele	 "WBVar00001400" 4819 4819
-#Oligo_set	 "Aff_AC3.1" 6262 7013
-#Oligo_set	 "Aff_AC3.2" 12439 13179
-#Oligo_set	 "Aff_AC3.3" 17979 17380
-#Feature_object	 "WBsf016834" 25468 25469
-#Feature_object	 "WBsf017331" 30436 30441
-#Feature_object	 "WBsf017332" 30455 30456
-#Homol_data	 "AC3:RNAi" 1 38951
-#Homol_data	 "AC3:SAGE" 1 38951
-#Source	 "CHROMOSOME_V"
-#Overlap_right	 "F15H10" 38848
-#Overlap_left	 "K07C5"
-#Clone_left_end	 "AC3" 1
-#Clone_left_end	 "F15H10" 24902
-#Clone_right_end	 "K07C5" 5515
-#Clone_right_end	 "AC3" 38951
-#Database	 "EMBL" "NDB_AC" "Z71177"
-#Database	 "EMBL" "NDB_SV" "Z71177.3"
-#DB_remark	 "[121025] Sequence correction: SNP 0 bases  @ 34693"
-#Keyword	 "HTG"
-#EMBL_dump_info	 EMBL_dump_method "worm_EMBL-dump"
-#From_author	 "McMurray AA"
-#From_laboratory	 "HX"
-#Date_directory	 "030414"
-#Species	 "Caenorhabditis elegans"
-#Strain	 "N2"
-#Clone	 "AC3"
-#Remark	 "[041026 pad] Genome sequencing error was corrected, removed a single G from position 29071 within the clone." Paper_evidence "WBPaper00024276"
-#Remark	 "[041026 pad] Genome sequencing error was corrected, removed a single G from position 29071 within the clone." Accession_evidence "NDB" "BJ109865"
-#Genomic_canonical	
-#MD5	 "e4ead5658016c4defc883e270a20638d"
-#Finished	 1995-12-21
-
-
-sub check_for_missing_tags {
-
-  my ($class, $id) = @_;
-
-  my @db_slurp = get_tace($class, $id, $database);
-  @db_slurp = grep {!/^(acedb\>|\/\/)$/} @db_slurp; # remove tace stuff from output
-  map {$_ =~ s/^(\S+).*/$1/} @db_slurp; # replace each element of the array with the first word of each element
-  map {$_ =~ s/\n//} @db_slurp; # remove newline
-
-
-  my %db_count;
-  
-  foreach my $tag (@db_slurp) {$db_count{$tag}++} # count the unique tags
-
-  my %prev_prev_count = &get_prev_count($species, $prev_prev_version, $class, $id);
-  my %prev_count      = &get_prev_count($species, $prev_version,      $class, $id);
-
-  
-  ##################################################
-  # Calculate difference between databases         #
-  ##################################################
-
-  my @tags = uniq (@db_slurp, keys %prev_count, keys %prev_prev_count); # make sure we don't miss any tags (see use List::MoreUtils qw(uniq);)
-
-  foreach my $tag (@tags) {
-    my $count0 = $prev_prev_count{$tag} || 0;
-    my $count1 = $prev_count{$tag} || 0;
-    my $count2 = $db_count{$tag} || 0;
-    &store_count($species, $version, $class, $id, $tag, $count2);
-    my $diff = $count2 - $count1;
-    my $err = "";
-    if ($count2 == 0) {
-      $err = "***** POSSIBLE ERROR *****";
-      $log->error;
-      $errors++;
-    } elsif (
-	     ($count2 < $count1 * 0.9 || 
-	      $count2 > $count1 * 1.1)) {
-      $err = "***** POSSIBLE ERROR *****";
-      $log->error;
-      $errors++;
-    }
-    $count++;
-    
-    $log->write_to(sprintf("%-22s %-22s %-22s %7d %7d %7d %10d %s\n", $class, $id, $tag, $count0, $count1, $count2, $diff, $err)) if ($err || $verbose);
-  }
-
-}
-
-##################################################################
-# open tace connection to get the object and slurp up the contents
-
-sub get_tace {
-  my ($class, $id, $database) = @_;
-  my @slurp;
-
-  my $cmd = "find $class $id\nshow -a\nquit\n";
-  open (TACE, "echo '$cmd' | $tace $database |");
-  while (<TACE>) {
-    chomp;
-    next if ($_ eq "");
-    next if (/^acedb\>/);
-    next if (/^\/\//);
-    push @slurp, $_;
-  }
-  close TACE;
-
-  return @slurp;
-}
-
-##################################################################
-# get the count of this class found in the previous Build
-# retuens a hash of the numbers of each tag in this object
-sub get_prev_count {
-  my ($species, $version, $class, $id) = @_;
-
-  my %results;
-
-  my $last_count = -1;		# -1 is a flag value indicating no results were found
-  if (open (TAG_COUNT, "< $file")) {
-    while (my $line = <TAG_COUNT>) {
-      chomp $line;
-      my ($cc_species, $cc_version, $cc_class, $cc_id, $cc_tag, $cc_count) = split /\t+/, $line;
-      # we don't want to get the count from any details that may have
-      # been stored by an earlier run of this script in this Build,
-      # but we want the most recent version's count apart from that,
-      # so get the most recent result that isn't from this Build.
-      if ($cc_version == $version && $cc_class eq $class && $cc_species eq $species && $cc_id eq $id) {
-	# store to get the last one in the previous build
-	$results{$cc_tag} = $cc_count;
-      } 
-    }
-    close (TAG_COUNT);
-  }
-  return %results;
-}
-
-##################################################################
-# now store the details for this Build
-sub store_count {
-
-  my ($species, $version, $class, $id, $tag, $count) = @_;
-
-
-  if (open (TAG_COUNT, ">> $file")) {
-    if ($version && $class && $species && $count && $tag) {
-      print TAG_COUNT "$species\t$version\t$class\t$id\t$tag\t$count\n";
-    } else {
-      if (!$count) {
-	$log->write_to("\n*** ERROR: There are zero $class=$id tag $tag in the database!\n\n");
-	$log->error;
-      } else {
-      $log->log_and_die("*** ERROR: Couldn't write to $file because some of the following is blank\nspecies=$species, version=$version, class=$class, id=$id, tag=$tag, count=$count\n\n");
-    }
-      $log->error;
-    }
-    close (TAG_COUNT);
-  } else {
-    $log->write_to("WARNING: Couldn't write to $file\n\n");
-  }
-}
-
-
-
-
-##################################################################
-##################################################################
-##################################################################
-##################################################################
-##################################################################
-##################################################################
-##################################################################
-##################################################################
 ##################################################################
 
 __END__
