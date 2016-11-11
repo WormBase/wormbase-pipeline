@@ -96,6 +96,8 @@ while (<$gff_in_fh>) {
       push @new_els, ['Status', 'Confirmed'] if $tp =~ /confirmed/i;
 
       push @new_els, ['RFLP'] if $tp =~ /RFLP/;
+      push @new_els, ['Engineered'] if $tp =~ /Engineered/;
+
       if ($tp eq 'Natural_variant') {
         $natural_variant = 1;
         if ($current_els[2] ne 'transposable_element_insertion_site' and 
