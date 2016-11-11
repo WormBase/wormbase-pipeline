@@ -122,8 +122,8 @@ sub read_acedb_queries {
     my $species = $wormbase->species;
     if($species eq 'elegans'){    
 	@queries = (
-	    ["The number of RNAi experiments with more than one associated Gene", 'find rnai COUNT gene > 1 AND uniquely_mapped', 104594],
-	    ["The number of RNAi results with connections to genes", 'find RNAi Gene', 4138],
+	    ["The number of RNAi experiments with more than one associated Gene", 'find rnai COUNT gene > 1', 15734],
+	    ["The number of RNAi results with connections to genes", 'find RNAi Gene', 104817],
 	    ["The number of microarray results with connections to genes", 'find microarray_results gene', 340041],
 	    ["PCR products overlapping CDS", "find PCR_product Overlaps_CDS", 62852],
 	    ["The number of wormpep without pep_homol", 'find wormpep !pep_homol', 839],
