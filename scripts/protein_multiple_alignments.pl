@@ -22,7 +22,7 @@ my ($debug,
     $rdb_name,
     $aligner_dir,
     $aligner_exe,
-    @species,
+    @run_species,
     $run_clustal,
     $dump_clustal,
     $ace_database,
@@ -31,15 +31,15 @@ my ($debug,
 GetOptions(
   'debug=s'          => \$debug,
   'store=s'          => \$store,
+  'runspecies=s'     => \@run_species,
   'test=s'           => \$test,
-  'extraspecies=s@'  => \@species,
   'host=s'           => \$rdb_host,
   'port=s'           => \$rdb_port,
   'user=s'           => \$rdb_user,
   'pass=s'           => \$rdb_pass,
   'acedb=s'          => \$ace_database,
   'dontclean'        => \$dontclean,
-  'alignerdir'       =>  \$aligner_dir,
+  'alignerdir'       => \$aligner_dir,
   'aligneerexe'      => \$aligner_exe,
   'run'              => \$run_clustal,
   'dump'             => \$dump_clustal,
@@ -68,8 +68,6 @@ $rdb_user = "wormadmin" if not defined $rdb_user;
 $rdb_pass = "worms" if not defined $rdb_pass;
 $ace_database = $wb->autoace if not defined $ace_database;
 
-my %species = map { $_ => 1 } @species;
-$species{elegans} = 1;
 
 $aligner_exe = "muscle" if not defined $aligner_exe;
 if (not defined $aligner_dir) {
@@ -92,12 +90,24 @@ if ($run_clustal) {
   my $scratch_dir = $wb->build_lsfout;
   my %job_info;
   
-  foreach my $species (sort keys %species) {
-    $log->write_to("Processing proteins for $species..\n");
-    if ($accessors{$species}->version != $wb->version) {
-      $log->write_to("Looks like $species was not (re)built. Will not re-run alignments\n");
-      next;
+  foreach my $species (sort keys %accessors) {
+    # if no runspecies were supplied at command line, we use the 
+    # database versions to work out which species to run
+
+    $log->write_to("Considering running $species...\n");
+    if (not @run_species) {
+      if ($accessors{$species}->version != $wb->version) {
+        $log->write_to(" Looks like $species was not (re)built. Will not re-run alignments\n");
+        next;
+      }
+    } else {
+      if (not grep { $species eq $_ } @run_species) {
+        $log->write_to(" Skipping $species because explicit list defined, and not part of that list\n");
+        next;
+      } 
     }
+
+    $log->write_to(" Running $species...\n");
 
     my $infile = sprintf("%s/%spep%s", 
                          $accessors{$species}->wormpep,
