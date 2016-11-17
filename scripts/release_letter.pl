@@ -205,11 +205,11 @@ if( $opt_l) {
   printf $rlfh "-=========== C. elegans data summary =================================================-\n";
   printf $rlfh "-=====================================================================================-\n\n";
   
-  &slurp_in_file($rlfh, "$reports_dir/genedata");
   &slurp_in_file($rlfh, "$reports_dir/chromosome_changes");
   if ($genome_has_changed) {
     &slurp_in_file($rlfh, "$reports_dir/composition");
   }
+  &slurp_in_file($rlfh, "$reports_dir/genedata");
   &slurp_in_file($rlfh, "$reports_dir/wormpep");
   &write_cds_confirmation_status($rlfh, $cds_status{elegans}, "C. elegans");
   
