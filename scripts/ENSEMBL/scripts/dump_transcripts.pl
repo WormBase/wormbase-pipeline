@@ -14,7 +14,7 @@ my $dbpass = "";
 my ($database,$outfile);
 
 my ($cds, $pep, $mrna) = (0,0,0);
-my ($ebi_header_prefix, $species_string);
+my ($ebi_header_prefix, $species_string, @test_genes);
 
 GetOptions( 
   'host=s'           => \$dbhost,
@@ -26,6 +26,7 @@ GetOptions(
   'cds'              => \$cds, 
   'pep'              => \$pep,
   'ebiblastheader=s' => \$ebi_header_prefix,
+  'testgene=s'       => \@test_genes,
   'outfile=s'        => \$outfile) or die(@!);
 
 if (not $mrna and not $cds and not $pep or
@@ -50,7 +51,14 @@ my $seqio = (defined $outfile)
     : Bio::SeqIO->new(-format => 'fasta', -fh => \*STDOUT);
 
 my $gene_adaptor = $db->get_GeneAdaptor();
-my @genes = @{$gene_adaptor->fetch_all()};
+my @genes;
+
+if (@test_genes) {
+  map { push @genes, $gene_adaptor->fetch_by_stable_id($_) } @test_genes;
+} else {
+  @genes = @{$gene_adaptor->fetch_all()};
+}
+
 foreach my $gene(@genes){
   my $gene_id = $gene->stable_id();
   foreach my $trans (@{$gene->get_all_Transcripts()}) {
