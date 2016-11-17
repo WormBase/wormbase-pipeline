@@ -773,6 +773,18 @@ GFF_feature "sequence_alteration"
 GFF_SO "SO:0001059"
 
 
+Method : "WGS_Rose"
+Remark	 "Whole Genome Sequencing Chu JS et al. (2014) BMC Genomics \"High-throughput capturing and characterization of mutations in essential genes of Caenorhabditis elegans.\""
+Colour	 ORANGE
+Strand_sensitive
+Width	 1.100000
+Right_priority	 1.100000
+Show_text
+GFF_source "Variation_project"
+GFF_feature "sequence_alteration"
+GFF_SO "SO:0001059"
+
+
 ////////////////////////////
 // Gene predicter methods //
 ////////////////////////////

@@ -25,11 +25,14 @@ my $test;        # If set, script will use TEST_BUILD directory under ~wormpub
 my $basedir;
 my $store;
 my $no_dump;
+my ($do_not_load, %do_not_load, $dry_run);
 
-GetOptions (	"debug=s"    => \$debug,
-		"test"       => \$test,
-		"store:s"    => \$store,
-                "nodump"     => \$no_dump,
+GetOptions ( "debug=s"     => \$debug,
+	     "test"        => \$test,
+	     "store:s"     => \$store,
+             "nodump"      => \$no_dump,
+             "donotload=s" => \$do_not_load,
+             "dryrun"      => \$dry_run,
 	   	);
 #this script is always run as elegans so no species option req.
 
@@ -47,6 +50,13 @@ my $log = Log_files->make_build_log($wormbase);
 
 my %accessors = $wormbase->species_accessors;
 my $WS_name         = $wormbase->get_wormbase_version_name();
+
+if (defined $do_not_load) {
+  open(my $fh, $do_not_load) or $log->log_and_die("Could not open file $do_not_load\n");
+  while(<$fh>) {
+    /^(\S+)/ and $do_not_load{$1} = 1;
+  }
+}
 
 if (not $no_dump) {
 
@@ -110,10 +120,8 @@ foreach my $spDB (values %accessors) {
   my @loaded;
   my $dir = $spDB->acefiles."/MERGE/".$spDB->species."/";
   next unless -e $dir;
-  push(@loaded,$spDB->species);
   foreach my $file ( &read_dir($dir) ) {
-    $log->write_to("    loading $file\n");
-    $wormbase->load_to_database($wormbase->orgdb, $file, "merge_all_species", $log);
+    push @loaded, &load($file);
   }
   $log->write_to("  Loaded ".join(', ',@loaded)." in to ".$wormbase->orgdb."\n");
 }
@@ -125,9 +133,9 @@ foreach my $spDB (values %accessors) {
   $log->write_to("  Load BLAT from $species . . .\n");
 
   my $logfile = $spDB->orgdb."/database/log.wrm";
-  open (LOG, "< $logfile") || die "Can't open $logfile : $!";
+  open (my $log_fh, $logfile) || die "Can't open $logfile : $!";
   my @acelist;
-  while (my $line = <LOG>) {
+  while (my $line = <$log_fh>) {
     chomp $line;
     if ($line =~ /Parsing\s+file\s+(.+)/) {
       my $acefile = $1;
@@ -141,14 +149,12 @@ foreach my $spDB (values %accessors) {
       }
     }
   }
-  close (LOG);
+  close ($log_fh);
 
   foreach my $file ( @acelist ) {
-    $log->write_to("    loading $file\n");
-    $wormbase->load_to_database($wormbase->orgdb, $file, "merge_all_species", $log);
+    &load( $file );
   }
 }
-
 
 
 
@@ -160,17 +166,14 @@ foreach my $spDB (values %accessors) {
   foreach my $f (@blastfiles){
     my $file = $f;		# don't use $f as it is a reference to the array element
     $file =~ s/SPECIES/$species/;
-    if (-e $spDB->acefiles."/$file") {
-      $log->write_to("    loading $file\n");
-      $wormbase->load_to_database($wormbase->orgdb, $spDB->acefiles."/$file", "merge_all_species", $log);
-    } 
-    else {
+    $file = $spDB->acefiles . "/" . $file;
+    if (-e $file) {
+      &load($file);
+    } else {
       $log->error("ERROR: Can't find $file\n");
     }
   }
 }
-
-
 
 
 $log->write_to("\nNow loading Oligo_set mappings . . .\n");
@@ -179,8 +182,7 @@ foreach my $spDB (values %accessors) {
 
   my $file = $wormbase->misc_dynamic . "/oligo_set_mappings/oligo_set_mappings.${species}.ace";
   if (-e $file) {
-    $log->write_to("   loading $file\n");
-    $wormbase->load_to_database($wormbase->orgdb, $file, "merge_all_species", $log);
+    &load($file);
   } else {
     $log->write_to("   not loading $file (not found for that species)\n");
   }
@@ -192,8 +194,10 @@ my $briggsaeDB = Wormbase->new(
 			       -test     => $wormbase->test,
 			       -organism => 'briggsae'
 			       );	
-$wormbase->load_to_database($wormbase->orgdb, $briggsaeDB->acefiles."/misc_briggsae_TEC_RED_homol.ace", "merge_all_species", $log);
-$wormbase->load_to_database($wormbase->orgdb, $briggsaeDB->acefiles."/misc_briggsae_TEC_RED_homol_data.ace", "merge_all_species", $log);
+foreach my $file ($briggsaeDB->acefiles."/misc_briggsae_TEC_RED_homol.ace", 
+                  $briggsaeDB->acefiles."/misc_briggsae_TEC_RED_homol_data.ace") {
+  &load($file);
+}
 
 
 $log->write_to("\nNow loading briggsae BAC end data . . .\n");
@@ -205,10 +209,9 @@ my $bac_end_dir = "BAC_ENDS";
 if (-d  "$brigdb/$bac_end_dir") {
   $log->write_to("\nLoading briggsae BAC ends from $brigdb/$bac_end_dir\n===========================\n");
   
-  foreach my $be_file ("briggsae_BAC_ends.fasta",
-                    "briggsae_BAC_end_homols.ace") {
-    $log->write_to("\tLoading $be_file\n");
-    $wormbase->load_to_database($wormbase->autoace,"$brigdb/$bac_end_dir/$be_file","BAC_ends", $log);
+  foreach my $file ("$brigdb/$bac_end_dir/briggsae_BAC_ends.fasta",
+                    "$brigdb/$bac_end_dir/briggsae_BAC_end_homols.ace") {
+    &load($file, "BAC_ends");
   }
 } else {
   $log->write_to("\tWARNING : $brigdb/$bac_end_dir dir not found; will NOT load BAC_END data\n");
@@ -236,5 +239,19 @@ sub read_dir {
   return @to_load;
 }
 	
-	
-	
+sub load {
+  my ($file, $tsuser) = @_;
+
+  $tsuser = "merge_all_species" if not defined $tsuser;
+  
+  if (not exists $do_not_load{$file}) {
+    $log->write_to("   loading $file\n");
+    if (not $dry_run) {
+      $wormbase->load_to_database($wormbase->orgdb, $file, "merge_all_species", $log);
+    }
+    return $file;
+  } else {
+    $log->write_to("   NOT loading $file\n");
+    return ();
+  }
+}

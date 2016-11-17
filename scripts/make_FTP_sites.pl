@@ -148,7 +148,7 @@ GetOptions ("help"          => \$help,
             "allnopublic"    => \$all_nopublic,
             "wbversion=s"    => \$WS_version,
             'orthologylists' => \$orthology_lists,
-            'repeatmasker'   => \$repeat,
+            'repeatmasker'   => \$repeats,
     )||die(&usage);
 
 
@@ -248,7 +248,7 @@ close FTP_LOCK;
 
 &make_md5sums if ($md5);              # creates a file of md5sums for containing entries for all files in release
 
-&copy_repeats if $repeat;
+&copy_repeats if $repeats;
 
 $wormbase->run_command("chmod -R ug+w $targetdir", $log);  
 
@@ -406,7 +406,7 @@ sub copy_repeats {
 
     my $out_file = "$targetdir/species/$gspecies/$bioproj/annotation/$gspecies.${bioproj}.${WS_version_name}.repeats.fa.gz";
     if (-e $file) {
-      $wormbase->run_command("cat $xref_file | gzip -n -9 -c > $out_file", $log);
+      $wormbase->run_command("cat $file | gzip -n -9 -c > $out_file", $log);
     } else {
       $log->error("ERROR: Could not find file $file\n");
     }

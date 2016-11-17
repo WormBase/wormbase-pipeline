@@ -132,7 +132,7 @@ package Elegans;
 
 our @ISA = qw(Species);
 
-sub repeatmasker_library{my($self)=@_;$self->misc_static.'REPEATMASKER/ELE/elegans.lib'}
+sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/ELE/elegans.lib'}
 sub chromosome_prefix {'CHROMOSOME_'}
 sub chromosome_names {qw(I II III IV V X)}
 sub mt_name {'MtDNA'}
@@ -175,7 +175,7 @@ sub TSL {
 package Briggsae;
 our @ISA = qw(Species);
 
-sub repeatmasker_library{my($self)=@_;$self->misc_static.'REPEATMASKER/BRI/briggsae_ws200_filtered.fas'}
+sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/BRI/briggsae_ws200_filtered.fas'}
 sub pep_prefix {'CBP'}
 sub pepdir_prefix{'brig'};
 sub cds_regex{qr/^CBG\d{5}[a-z]*$/};
@@ -207,7 +207,7 @@ package Remanei;
 use Carp;
 our @ISA = qw(Species);
 
-sub repeatmasker_library{my($self)=@_;$self->misc_static.'REPEATMASKER/REM/remanei_ws200_filtered.fas'}
+sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/REM/remanei_ws200_filtered.fas'}
 sub short_name {'C. remanei'}
 sub gspecies_name{'c_remanei'}
 sub long_name{'Caenorhabditis remanei'}
@@ -248,7 +248,7 @@ package Brenneri;
 use Carp;
 our @ISA = qw(Species);
 
-sub repeatmasker_library{my($self)=@_;$self->misc_static.'REPEATMASKER/BRE/brenneri_ws200_filtered.fas'}
+sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/BRE/brenneri_ws200_filtered.fas'}
 sub pep_prefix {'CN'}
 sub pepdir_prefix{'bre'};
 sub ncbi_tax_id {'135651'};
@@ -325,7 +325,7 @@ package Japonica;
 use Carp;
 our @ISA = qw(Species);
 
-sub repeatmasker_library{my($self)=@_;$self->misc_static.'REPEATMASKER/JAP/japonica_ws200_filtered.fas'}
+sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/JAP/japonica_ws200_filtered.fas'}
 sub pep_prefix {'JA'}
 sub pepdir_prefix{'jap'};
 sub ncbi_tax_id {'281687'};
@@ -367,7 +367,7 @@ package Pristionchus;
 use Carp;
 our @ISA = qw(Species);
 
-sub repeatmasker_library{my($self)=@_;$self->misc_static.'REPEATMASKER/PPA/ppa_repeats.fas'}
+sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/PPA/ppa_repeats.fas'}
 sub short_name {'P. pacificus'}
 sub gspecies_name{'p_pacificus'}
 sub long_name{'Pristionchus pacificus'}
@@ -405,7 +405,7 @@ package Brugia;
 use Carp;
 our @ISA = qw(Species);
 
-sub repeatmasker_library{my($self)=@_;$self->misc_static.'REPEATMASKER/BRU/brugia_ws236_filtered.fas'}
+sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/BRU/brugia_ws236_filtered.fas'}
 sub short_name {'B. malayi'}
 sub gspecies_name{'b_malayi'}
 sub long_name{'Brugia malayi'}
@@ -436,7 +436,7 @@ package Ovolvulus;
 use Carp;
 our @ISA = qw(Species);
 
-sub repeatmasker_library{my($self)=@_;$self->misc_static.'REPEATMASKER/ONV/onchocerca_volvulus_repeatModeller.fa.filtered'}
+sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/ONV/onchocerca_volvulus_repeatModeller.fa.filtered'}
 sub short_name {'O. volvulus'}
 sub gspecies_name{'o_volvulus'}
 sub long_name{'Onchocerca volvulus'}
@@ -464,7 +464,7 @@ package Sratti;
 use Carp;
 our @ISA = qw(Species);
 
-sub repeatmasker_library{my($self)=@_;$self->misc_static.'REPEATMASKER/SRA/SRAE.repeatLib.fa'}
+sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/SRA/SRAE.repeatLib.fa'}
 sub short_name {'S. ratti'}
 sub gspecies_name{'s_ratti'}
 sub long_name{'Strongyloides ratti'}
@@ -516,7 +516,7 @@ use Carp;
 
 our @ISA = qw(Species);
 
-sub repeatmasker_library{my($self)=@_;$self->misc_static.'REPEATMASKER/CAN/caenorhabditis_angaria_RepeatModeller.fa.classified'}
+sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/CAN/caenorhabditis_angaria_RepeatModeller.fa.classified'}
 sub short_name {'C. angaria'}
 sub gspecies_name{'c_angaria'}
 sub long_name{'Caenorhabditis angaria'}
@@ -532,7 +532,7 @@ package Csinica;
 use Carp;
 our @ISA = qw(Species);
 
-sub repeatmasker_library{my($self)=@_;$self->misc_static.'REPEATMASKER/C5/caenorhabditis_species5.fa.classified'}
+sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/C5/caenorhabditis_species5.fa.classified'}
 sub short_name {'C. sinica'}
 sub gspecies_name{'c_sinica'}
 sub long_name{'Caenorhabditis sinica'}
@@ -572,7 +572,7 @@ package Ctropicalis;
 use Carp;
 our @ISA = qw(Species);
 
-sub repeatmasker_library{my($self)=@_;$self->misc_static.'REPEATMASKER/C11/caenorhabditis_species11_repeatModeller.fa.classified'}
+sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/C11/caenorhabditis_species11_repeatModeller.fa.classified'}
 sub short_name {'C. tropicalis'}
 sub gspecies_name{'c_tropicalis'}
 sub long_name{'Caenorhabditis tropicalis'}
@@ -586,7 +586,7 @@ package Panagrellus;
 use Carp;
 our @ISA = qw(Species);
 
-sub repeatmasker_library{my($self)=@_;$self->misc_static.'REPEATMASKER/PRED/panagrellus_redivivus_RepeatModeller.fa.classified_marissa'}
+sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/PRED/panagrellus_redivivus_RepeatModeller.fa.classified_marissa'}
 sub short_name {'P. redivivus'}
 sub gspecies_name{'p_redivivus'}
 sub long_name{'Panagrellus redivivus'}
@@ -601,7 +601,7 @@ package Remanei_px356;
 use Carp;
 our @ISA = qw(Species);
 
-sub repeatmasker_library{my($self)=@_;$self->misc_static.'REPEATMASKER/REM/remanei_ws200_filtered.fas'}
+sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/REM/remanei_ws200_filtered.fas'}
 sub short_name {'C. remanei'}
 sub gspecies_name{'c_remanei'}
 sub long_name{'Caenorhabditis remanei'}
@@ -617,7 +617,7 @@ package Elegans_hawaii;
 use Carp;
 our @ISA = qw(Species);
 
-sub repeatmasker_library{my($self)=@_;$self->misc_static.'REPEATMASKER/ELE/elegans.lib'}
+sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/ELE/elegans.lib'}
 sub short_name {'C. elegans'}
 sub gspecies_name{'c_elegans'}
 sub long_name{'Caenorhabditis elegans'}

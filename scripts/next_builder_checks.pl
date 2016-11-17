@@ -219,7 +219,7 @@ if ($seq) {
     }
 
     #check composition is same as start of build
-    $wormbase->run_command("ls ".$wormbase->orgdb."/CHROMOSOMES/*.dna | grep -v masked |grep -v Mt| xargs composition > /tmp/comp", $log);
+    $wormbase->run_command("ls ".$wormbase->orgdb."/CHROMOSOMES/*.dna | grep -v masked | xargs composition > /tmp/comp", $log);
     if(compare($file,"/tmp/comp") == 0) { 
 	$log->write_to("composition same as start of build\n\n");
     }else {
