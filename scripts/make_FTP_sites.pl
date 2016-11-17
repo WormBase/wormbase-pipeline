@@ -169,9 +169,9 @@ map { $skip_species{$_} = 1 } @skip_species;
 map { $only_species{$_} = 1 } @only_species;
 
 if ($all) {
-  $multi_species=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$reports=$blastx=$dump_ko=$md5=$assembly_manifest=$go_public=$orthology_lists=1;
+  $multi_species=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$reports=$blastx=$dump_ko=$md5=$assembly_manifest=$go_public=$orthology_lists=$repeats=1;
 } elsif ($all_nopublic) {
-  $multi_species=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$reports=$blastx=$dump_ko=$md5=$assembly_manifest=$orthology_lists=1;
+  $multi_species=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$reports=$blastx=$dump_ko=$md5=$assembly_manifest=$orthology_lists=$repeats=1;
 }
 
 if (not $WS_version) {
@@ -244,11 +244,13 @@ close FTP_LOCK;
 
 &make_gbrowse_gff if ($gbrowse_gff);
 
+&copy_repeats if $repeats;
+
 &check_manifest if ($manifest);
 
 &make_md5sums if ($md5);              # creates a file of md5sums for containing entries for all files in release
 
-&copy_repeats if $repeats;
+
 
 $wormbase->run_command("chmod -R ug+w $targetdir", $log);  
 
@@ -1872,6 +1874,7 @@ GSPECIES.BIOPROJ.WSREL.transposons.fa.gz
 [CORE]species/GSPECIES/BIOPROJ/annotation
 GSPECIES.BIOPROJ.WSREL.geneIDs.txt.gz
 GSPECIES.BIOPROJ.WSREL.orthologs.txt.gz
+GSPECIES.BIOPROJ.WSREL.repeats.fa.gz
 
 [CORE]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.best_blastp_hits.txt.gz
@@ -1885,18 +1888,17 @@ GSPECIES.BIOPROJ.WSREL.xrefs.txt.gz
 GSPECIES.BIOPROJ.WSREL.SRA_gene_expression.tar.gz
 GSPECIES.BIOPROJ.WSREL.RNASeq_controls_FPKM.dat
 
-# for all species
 [ALL]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.genomic.fa.gz
 GSPECIES.BIOPROJ.WSREL.genomic_masked.fa.gz
 GSPECIES.BIOPROJ.WSREL.genomic_softmasked.fa.gz
 GSPECIES.BIOPROJ.WSREL.annotations.gff3.gz
-GSPECIES.BIOPROJ.WSREL.protein.fa.gz
-GSPECIES.BIOPROJ.WSREL.CDS_transcripts.fa.gz
-GSPECIES.BIOPROJ.WSREL.mRNA_transcripts.fa.gz
 
 [ALL:elegans_hawaii]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.canonical_geneset.gtf.gz
+GSPECIES.BIOPROJ.WSREL.protein.fa.gz
+GSPECIES.BIOPROJ.WSREL.CDS_transcripts.fa.gz
+GSPECIES.BIOPROJ.WSREL.mRNA_transcripts.fa.gz
 
 []acedb
 files_in_tar
