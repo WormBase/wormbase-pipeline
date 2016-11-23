@@ -64,7 +64,6 @@ foreach my $gene(@genes){
   foreach my $trans (@{$gene->get_all_Transcripts()}) {
     my $trans_id = $trans->stable_id;
     my $slice_id = $trans->feature_Slice->name;
-    my $status = lc($trans->status);
 
     my ($id, $desc_text, $seqstring);
     
@@ -87,8 +86,8 @@ foreach my $gene(@genes){
       
       if (defined $ebi_header_prefix) {
         $id = join(":", $ebi_header_prefix, $species_string, $tr->stable_id);
-        $desc_text = sprintf("pep:%s %s gene:%s transcript:%s species:%s", 
-                             $status, $slice_id, $gene_id, $trans_id, $species_string);
+        $desc_text = sprintf("%s gene:%s transcript:%s species:%s", 
+                             $slice_id, $gene_id, $trans_id, $species_string);
         $desc_text .= "description:$pep_desc" if $pep_desc;
       } else {
         $id = $tr->stable_id;
@@ -100,8 +99,8 @@ foreach my $gene(@genes){
 
       if (defined $ebi_header_prefix) {
         $id = join(":", $ebi_header_prefix, $species_string, $trans_id);
-        $desc_text = sprintf("cds:%s %s gene:%s transcript:%s species:%s", 
-                             $status, $slice_id, $gene_id, $trans_id, $species_string);
+        $desc_text = sprintf("%s gene:%s transcript:%s species:%s", 
+                             $slice_id, $gene_id, $trans_id, $species_string);
       } else {
         $id = $trans_id;
         $desc_text = "gene=$gene_id";
@@ -110,8 +109,8 @@ foreach my $gene(@genes){
     } elsif ($mrna) {
       if (defined $ebi_header_prefix) {
         $id = join(":", $ebi_header_prefix, $species_string, $trans_id);
-        $desc_text = sprintf("cdna:%s %s gene:%s transcript:%s species:%s", 
-                             $status, $slice_id, $gene_id, $trans_id, $species_string);
+        $desc_text = sprintf("%s gene:%s transcript:%s species:%s", 
+                             $slice_id, $gene_id, $trans_id, $species_string);
       } else {
         $id = $trans_id;
         $desc_text = "gene=$gene_id";
