@@ -84,7 +84,7 @@ sub print_seq {
 
   } else {
     $id = $seq_name;
-    $desc = "1-" . $ens_slice->seq_region_length;
+    $desc = sprintf("length=%d", $ens_slice->seq_region_length);
   }
 
   my $seqobj = Bio::PrimarySeq->new(-seq => $ens_slice->seq,
