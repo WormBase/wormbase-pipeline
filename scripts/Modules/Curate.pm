@@ -510,6 +510,7 @@ sub Next_CDS_ID {
 		       SRAE_chr1 => 'SRAE_1',
 		       SRAE_chr2 => 'SRAE_2',
 		       SRAE_chrX => 'SRAE_X',
+		       SRAE_chrM => 'SRAE_M',
 		      );
 
   if ($self->{species} eq 'elegans') {
