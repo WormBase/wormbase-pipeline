@@ -82,16 +82,17 @@ foreach my $gene(@genes){
       if($pep_desc) {
         $pep_desc = $1 if $pep_desc =~ /(.*).\s\[.*\]/;
         $pep_desc =~ s/\"/\\"/g;
-        $pep_desc = sprintf('description:"%s"', $pep_desc);
+        $pep_desc = sprintf('"%s"', $pep_desc);
       }
       
       if (defined $ebi_header_prefix) {
         $id = join(":", $ebi_header_prefix, $species_string, $tr->stable_id);
-        $desc_text = sprintf("pep:%s %s gene:%s transcript:%s species:%s %s", 
-                             $status, $slice_id, $gene_id, $trans_id, $species_string, $pep_desc ? $pep_desc : '');
+        $desc_text = sprintf("pep:%s %s gene:%s transcript:%s species:%s", 
+                             $status, $slice_id, $gene_id, $trans_id, $species_string);
+        $desc_text .= "description:$pep_desc" if $pep_desc;
       } else {
         $id = $tr->stable_id;
-        $desc_text = "transcript:$trans_id gene:$gene_id";
+        $desc_text = "transcript=$trans_id gene=$gene_id";
       }
       $seqstring = $trans->translation()->seq;
     } elsif ($cds) {
@@ -103,7 +104,7 @@ foreach my $gene(@genes){
                              $status, $slice_id, $gene_id, $trans_id, $species_string);
       } else {
         $id = $trans_id;
-        $desc_text = "gene:$gene_id";
+        $desc_text = "gene=$gene_id";
       }      
       $seqstring = $trans->translateable_seq();
     } elsif ($mrna) {
@@ -113,7 +114,7 @@ foreach my $gene(@genes){
                              $status, $slice_id, $gene_id, $trans_id, $species_string);
       } else {
         $id = $trans_id;
-        $desc_text = "gene:$gene_id";
+        $desc_text = "gene=$gene_id";
       }
 
       $seqstring = $trans->seq->seq();
