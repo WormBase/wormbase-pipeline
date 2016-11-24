@@ -27,7 +27,7 @@ use Coords_converter;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $species);
 my ($input, $output, $database, $directory, $load);
 
 GetOptions ("help"       => \$help,
@@ -40,14 +40,17 @@ GetOptions ("help"       => \$help,
 	    "database:s" => \$database,
 	    "directory:s"  => \$directory,
 	    "load"       => \$load,
-	    );
+            "species:s"  => \$species, # the default is elegans
+	   );
 
+$species = 'elegans' unless $species;
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
+			     -organism => $species,
 			     );
 }
 
@@ -65,8 +68,21 @@ my $log = Log_files->make_build_log($wormbase);
 
 # check parameters
 if (! defined $database) {$database = $wormbase->autoace}
-if (! defined $input && ! defined $directory) {$directory = $wormbase->misc_static . "/MASS-SPEC";}
+if (! defined $input && ! defined $directory) {$directory = $wormbase->misc_static . "/MASS-SPEC/$species/";} # /nfs/wormpub/BUILD_DATA/MISC_STATIC/ or /nfs/wormpub/TEST/BUILD_DATA/MISC_STATIC/
 if (! defined $output) {$output = $wormbase->acefiles."/mass-spec-data.ace";}
+
+my $wormpep_prefix = $wormbase->wormpep_prefix;  # colon prefix to indicate the database e.g. 'WP:' in elegans
+
+my $history_suffix = lc($wormpep_prefix);
+# japonica uses 'jp' not 'ja' to name the history objects - blame Phil for this!
+if ($wormpep_prefix eq 'ja') {$wormpep_prefix = 'jp'}
+if ($wormpep_prefix eq 'cn') {$wormpep_prefix = 'np'}
+
+my $pep_prefix = $wormbase->pep_prefix; # start of protein ID e.g. 'CE' in elegans
+
+my $pepdir_prefix = $wormbase->pepdir_prefix; # e.g. 'worm' or 'brug'
+
+my $cds_regex = $wormbase->cds_regex;
 
 ##########################
 # MAIN BODY OF SCRIPT
@@ -112,8 +128,8 @@ if (! defined $output) {$output = $wormbase->acefiles."/mass-spec-data.ace";}
 
 my $database_version = $wormbase->get_wormbase_version;
 if ($database_version == 666) {
-  print "In test - setting database version to 229 not 666\n";
-  $database_version = 229;
+  print "In test - setting database version to 257 not 666\n";
+  $database_version = 257;
 }
 
 # open an ACE connection to parse details for mapping to genome
@@ -131,7 +147,7 @@ print OUT "\n";			# blank line at start just in case we concatenate this to anot
 print "Reading wormpep sequences\n";
 my $wormpep = &get_wormpep_by_wp_id;
 
-print "Reading wormpep history file\n";
+print "Reading wormpep history file\n"; 
 # get the wormpep protein IDs used by previous version of the gene
 my $wormpep_history = &get_wormpep_history;
 
@@ -196,7 +212,7 @@ foreach my $CDS_name (keys %proteins) {
   if ($CDS_name !~ /^clone:/) {  
 
     # strip off any version number and we will search all versions
-    $CDS_name =~ s/:wp\d+//;
+    $CDS_name =~ s/:${history_suffix}\d+//;  # e.g. strip off ':wp256'
 
 
     my $CDS_name_isoform = $CDS_name; # set the CDS_name to the original name
@@ -535,7 +551,7 @@ sub parse_file {
 	# start getting the protein data
 	push @CDS_names, @{$cds_cgc_names->{$cgc_name}}; # get the list of CDS names for this CGC name
   
-      } elsif ($cgc_name =~ /^CE\d{5}$/) { # wormpep ID
+      } elsif ($cgc_name =~ /^${pep_prefix}\d{5}$/) { # wormpep ID starting with 'CE'  (in elegans)
 	if (!exists $wormpep2cds->{$cgc_name}) {
 	  if (! exists $wormpep_history_proteins->{$cgc_name}) {
 	    print "line $line has a non-existent wormpep ID\n";
@@ -547,7 +563,7 @@ sub parse_file {
 	  push @CDS_names, (split /\s+/, $wormpep2cds->{$cgc_name}); # the CDS names for this wormpep ID
 	}
 
-      } elsif ($cgc_name =~ /\S+\.\d+/) {	# standard Sequence style CDS name e.g. C25A7.2
+      } elsif ($cgc_name =~ /$cds_regex/) {	# standard Sequence style CDS name e.g. C25A7.2 (in elegans)
 	push @CDS_names, $cgc_name; # use CDS name as-is
 
       } elsif ($cgc_name =~ /clone:\S+/) { # this peptide doesn't match a CDS or gene - it is in an ORF somewhere on this clone
@@ -653,14 +669,14 @@ sub process_cds {
 #      } elsif (defined $versions[$latest_cds] && $latest_cds != 0) {
 
 #      if (defined $versions[$latest_cds]) {
-#	$CDS_name_isoform = $CDS_name_isoform . ":wp" . ($versions[$latest_cds] - 1);
+#	$CDS_name_isoform = $CDS_name_isoform . ":${history_suffix}" . ($versions[$latest_cds] - 1);
 #	print "$CDS_name_isoform is using history version $versions[$latest_cds]\n" if ($verbose);
 #      }
 
       # now get the name of the CDS that made the protein $wormpep_id
       $CDS_name_isoform = &get_protein_details($wormpep_id);
       if (! defined $CDS_name_isoform) {
-	print "$CDS_name : the protein $wormpep_id has no Corresponding_CDS\n";
+	# print "$CDS_name : the protein $wormpep_id has no Corresponding_CDS\n";
 	next;
       }
 
@@ -708,7 +724,7 @@ sub process_cds {
 	  # check to see if this peptide has a match in this experiment
 	  if (exists $experiment{$experiment_id}{HAS_PEPTIDE}{$ms_peptide}) {
 	    # the protein that this peptide in this experiment matches
-	    print OUT "Mass_spec_experiments \"$experiment_id\" Protein \"WP:$wormpep_id\"\n"; 
+	    print OUT "Mass_spec_experiments \"$experiment_id\" Protein \"${wormpep_prefix}:$wormpep_id\"\n"; 
 	    # count the number of times this peptide maps to a protein in this experiment
 	    $peptide_count{$ms_peptide}{$experiment_id}++;
 	  }
@@ -723,7 +739,7 @@ sub process_cds {
 	my $motif_out = "";	# holds the motif output, if any
 
 	print OUT "\n";
-	print OUT "Protein : \"WP:$wormpep_id\"\n";                                          
+	print OUT "Protein : \"${wormpep_prefix}:$wormpep_id\"\n";                                          
 	my $pos = $protein_positions{$ms_peptide}; # position in protein
 	my $len = length(&no_underscore($ms_peptide)); # length of peptide sequence
 	my $end = $pos+$len-1;
@@ -748,7 +764,7 @@ sub process_cds {
 		$motif_out .= "Motif : \"$pt_db:$CDS_name_isoform\"\n";
 		$motif_out .= "Title \"$experiment{$experiment_id}{'posttranslation_modification_type'}\"\n";
 		$motif_out .= "Database \"$pt_db\" \"${pt_db}_ID\" \"$CDS_name_isoform\"\n";
-		$motif_out .= "Pep_homol \"WP:$wormpep_id\"\n";
+		$motif_out .= "Pep_homol \"${wormpep_prefix}:$wormpep_id\"\n";
 		$motif_out .= "\n";
 		$motif_out .= "\n";
 	      }
@@ -999,7 +1015,7 @@ sub map_peptides_to_protein {
 
 sub get_wormpep_history {
   # get database version file
-  my $data_file = $wormbase->basedir . "/WORMPEP/wormpep${database_version}/wormpep.history$database_version";
+  my $data_file = $wormbase->basedir . "/WORMPEP/${pepdir_prefix}pep${database_version}/${pepdir_prefix}pep.history$database_version";
 
   my %wormpep_history;
 
@@ -1029,7 +1045,7 @@ sub get_wormpep_history_proteins {
     my @f = $wormpep_history->{$cds_id};
     my @g = @{$f[0][0]};
 #    if (defined $g[2] && $g[2] ne "") { # if this is an old version of the CDS, give the 'history' sequence name
-#      $cds_id .= ":wp" . ($g[2] - 1); 
+#      $cds_id .= ":${history_suffix}" . ($g[2] - 1); 
 #    }
     $wormpep_history_proteins{$g[0]} = $cds_id; # key = wormpep protein ID, value = cds_id
   }
@@ -1105,7 +1121,7 @@ sub get_previous_wormpep_ids {
 
 sub get_wormpep_by_wp_id {
 
-  my $data_file = $wormbase->basedir . "/WORMPEP/wormpep${database_version}/wormpep.fasta${database_version}";
+  my $data_file = $wormbase->basedir . "/WORMPEP/${pepdir_prefix}pep${database_version}/${pepdir_prefix}pep.fasta${database_version}";
   my $seq="";
   my $id="";
   my %wormpep;
@@ -1196,7 +1212,7 @@ sub get_protein_details {
   print "$protein_id\n" if ($verbose);
 
 
-  if ($protein_id !~ /^WP:/) {$protein_id = "WP:" . $protein_id}
+  if ($protein_id !~ /^${wormpep_prefix}:/) {$protein_id = "${wormpep_prefix}:" . $protein_id}
   my $protein_obj = $db->fetch("Protein" => $protein_id);
 
   if (! defined $protein_obj) {
@@ -1237,7 +1253,7 @@ sub get_uniprot {
     
     if (!defined $uniprot) {next;}
     
-    $wormpep =~ s/WP\://;
+    $wormpep =~ s/${wormpep_prefix}\://;
     
     $uniprot{$uniprot} = $wormpep;
     #print "$uniprot\t$wormpep\n";
@@ -1265,7 +1281,7 @@ Visible
 Class 
 Class Protein 
 From 1 
-Condition IS "WP:*"
+Condition IS "${wormpep_prefix}:*"
 
 Colonne 2 
 Width 12 
