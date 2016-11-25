@@ -167,7 +167,6 @@ my $peptide_id_count=1;
 my %peptides_used;		# quick record of the peptides that have been used, for debugging to produce small test outputs
 my %unique_peptides;		# non-redundant set of peptides used in all the experiments
 my %unique_clones;  		# non-redundant set of clones mapped to in all the experiments
-			
 
 # get the peptides used in each protein
 my %proteins;
@@ -204,6 +203,8 @@ my $final_count_not_ok = 0;
 print "Mapping peptides to genes\n";
 # go through the proteins mapping peptides to them
 foreach my $CDS_name (keys %proteins) {
+
+  my $not_found_peptides;         # href of peptides that we couldn't map to the gene			
   #print "Processing CDS $CDS_name\n";
 
   my $cds_processed_ok;
@@ -216,13 +217,13 @@ foreach my $CDS_name (keys %proteins) {
 
 
     my $CDS_name_isoform = $CDS_name; # set the CDS_name to the original name
-    $cds_processed_ok = &process_cds($CDS_name, $CDS_name, $wormpep_history, \%unique_clones, %proteins);
+    ($cds_processed_ok, $not_found_peptides) = &process_cds($CDS_name, $CDS_name, $wormpep_history, \%unique_clones, %proteins);
 
     # see if there is an isoform that we could investigate also
     if (!$cds_processed_ok) {
       $CDS_name_isoform = "${CDS_name}a";
       if (&has_current_history($wormpep_history, $CDS_name_isoform)) {
-	$cds_processed_ok = &process_cds($CDS_name, $CDS_name_isoform, $wormpep_history, \%unique_clones, %proteins);
+	($cds_processed_ok, $not_found_peptides) = &process_cds($CDS_name, $CDS_name_isoform, $wormpep_history, \%unique_clones, %proteins);
       }
     }
     
@@ -233,7 +234,7 @@ foreach my $CDS_name (keys %proteins) {
   # mapping to an ORF in the clone
 
   if ($CDS_name =~ /^clone:/) {  
-    $cds_processed_ok = &process_clones($CDS_name, \%unique_clones, %proteins);
+    ($cds_processed_ok, $not_found_peptides) = &process_clones($CDS_name, \%unique_clones, %proteins);
   }
 
 
@@ -242,7 +243,8 @@ foreach my $CDS_name (keys %proteins) {
 #    $log->write_to("We have found all the peptides in CDS: $CDS_name_isoform\n");
   } else {
     $final_count_not_ok++;
-    print "********* NOT MAPPED $CDS_name\n";
+    my @not_found_peptides = (keys %{$not_found_peptides});
+    print "********* NOT MAPPED $CDS_name with @not_found_peptides\n";
 #    $log->write_to("We have not found all the peptides in CDS: $CDS_name_isoform\n");
   }
 }
@@ -619,11 +621,13 @@ sub process_cds {
   # name.
   my ($CDS_name, $CDS_name_isoform, $wormpep_history, $unique_clones, %proteins) = @_;
 
+  my $not_found_peptides;  # href of peptides we couldn't map
+
   my $all_maps_to_genome_ok = 0;		# flag for mapping all peptides to the CDS genome position OK
 
   if (! defined $proteins{$CDS_name}) {
     print "process_cds() : Can't find any proteins for CDS $CDS_name\n";
-    return $all_maps_to_genome_ok
+    return ($all_maps_to_genome_ok, $not_found_peptides)
   }
 
   print "$CDS_name_isoform " . @{ $proteins{$CDS_name} } . "\n" if ($verbose);
@@ -648,7 +652,7 @@ sub process_cds {
     # check to see if the protein exists!!!
     if (defined $wormpep_seq) {
       # see if the peptides all map to this version of the wormpep protein sequence
-      ($all_peptides_mapped_ok, %protein_positions) = &map_peptides_to_protein($wormpep_seq, @peptides_in_protein);
+      ($all_peptides_mapped_ok, $not_found_peptides, %protein_positions) = &map_peptides_to_protein($wormpep_seq, @peptides_in_protein);
     } else {
       $all_peptides_mapped_ok = 0;
     }
@@ -798,7 +802,7 @@ sub process_cds {
 
   }
 
-  return $all_maps_to_genome_ok;
+  return ($all_maps_to_genome_ok, $not_found_peptides);
 }
 
 ##########################################
@@ -813,6 +817,7 @@ sub process_clones {
 
   my ($CDS_name, $unique_clones, %proteins) = @_;
 
+  my $not_found_peptides;   # href of peptides we couldn't map
 
   my @peptides_in_protein = @{ $proteins{$CDS_name} };
 
@@ -902,7 +907,7 @@ sub process_clones {
     foreach my $frame (1..6) {
       my $wormpep_seq = $wormpep_seq[$frame];
       # see if this peptide maps to this frame of the clone translation
-      ($this_peptide_mapped_ok, %protein_positions) = &map_peptides_to_protein($wormpep_seq, ($ms_peptide));
+      ($this_peptide_mapped_ok, $not_found_peptides, %protein_positions) = &map_peptides_to_protein($wormpep_seq, ($ms_peptide));
       if ($this_peptide_mapped_ok) {
 	$mapped_in_frame = $frame;
 	$log->write_to("The peptide $ms_peptide matched in frame $frame OK in $clone_desc\n") if ($verbose);
@@ -980,7 +985,7 @@ sub process_clones {
     }
   }     # foreach my $ms_peptide 
 
-  return 1;
+  return (1, $not_found_peptides);
 
 }
 
@@ -992,7 +997,8 @@ sub map_peptides_to_protein {
   my ($protein, @peptides) = @_;
   my %position;
   my $ok = 1;			# true if all the peptides map to this protein
-
+  my %not_found_peptides;
+  
   foreach my $peptide (@peptides) {
     my $no_underscore_peptide = &no_underscore($peptide); # remove the post-translation modification marker
     #print "mapping $no_underscore_peptide\nto $protein\n";
@@ -1002,10 +1008,14 @@ sub map_peptides_to_protein {
     my $pos = index($protein, $no_underscore_peptide);
     print "mapping result: $pos\n" if ($verbose);
     $position{$peptide} = $pos+1; # convert from offset=0 to offset=1;
-    if ($pos == -1) {$ok = 0;}	# set the flag if a peptide is not found in the protein
+    if ($pos == -1) {
+      $ok = 0;	# set the flag if a peptide is not found in the protein
+      $not_found_peptides{$no_underscore_peptide} = 1;
+    }
+    
   }
 
-  return ($ok, %position);
+  return ($ok, \%not_found_peptides, %position);
 }
 
 
