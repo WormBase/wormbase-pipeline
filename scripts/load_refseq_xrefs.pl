@@ -79,7 +79,7 @@ open(my $fh, $xreffile) or $log->log_and_die("Could not open $xreffile for readi
 while(<$fh>) {
   /^\#/ and next;
   my @l = split(/\t/, $_);
-  my ($entrez_gene, $locus_tag, $refseq_trans, $refseq_prot) = @l[0,1,2,4];
+  my ($entrez_gene, $locus_tag, $refseq_trans, $refseq_prot) = @l[0,1,2,3];
 
   if (exists $locus_tag{$locus_tag}) {
     my $g = $locus_tag{$locus_tag};
