@@ -1661,7 +1661,6 @@
                                               snoRNA UNIQUE Text           // Small Nucleolar RNAs
                                               snRNA UNIQUE Text            // Samll nuclear RNAs 
                                               snlRNA UNIQUE Text           // small nuclear like 
-                                              stRNA UNIQUE Text            // small temporal RNAs
                                               tRNA Type UNIQUE Text        // transfer RNAs
                                                    Anticodon UNIQUE Text   // The anticodon of the tRNA
                            Isoform #Evidence                               // Set if this is a RNA isoform
