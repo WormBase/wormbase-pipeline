@@ -19,7 +19,7 @@ done
 
 # Compress the archive then push to the EBI Archive Freezer
 echo "Creating release archive for the EBI Freezer"
-tar -zcvf release-8.tar.gz *.sql
+tar -zcvf release-${PARASITE_VERSION}.tar.gz *.sql
 rm *.sql
-ear-put release-8.tar.gz
+ear-put release-${PARASITE_VERSION}.tar.gz
 
