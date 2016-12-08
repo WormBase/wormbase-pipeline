@@ -1,7 +1,9 @@
 #!/software/bin/perl -w
 use strict;
 use lib $ENV{'CVS_DIR'};
+use lib "$ENV{'CVS_DIR'}/NAMEDB/lib";
 
+use NameDB_handler;
 use Getopt::Long;
 use Log_files;
 use Ace;
@@ -28,29 +30,52 @@ splitgene.pl -old WBGene00240141 -new OVOC13437 -who 2062 -id WBGene00255449 -lo
 
   -debug     limits to specified user <Optional>
   -load      loads the resulting .ace file into geneace.
+  -ns        update the nameserver (the content of the secnd WBGeneID column will be ignored)
+  -user      namedb user name
+  -pass      namedb password
+  -test      use the namedb test server
 
 e.g. perl batch_split.pl -file genesplits.txt
 
 
 =cut
 
-my ($USER, $test, $file, $debug, $load,);
+my ($USER, $test, $file, $debug, $load,$ns,$pass);
 GetOptions(
 	   'user:s'     => \$USER,
+           'password:s' => \$pass,
 	   'test'       => \$test,
 	   'file:s'     => \$file,
 	   'debug:s'    => \$debug,
 	   'load'       => \$load,
+           'ns'         => \$ns,
 	  ) or die;
-
 
 my $species;
 my $log;
+
 if (defined $USER) {$log = Log_files->make_log("NAMEDB:$file", $USER);}
 elsif (defined $debug) {$log = Log_files->make_log("NAMEDB:$file", $debug);}
 else {$log = Log_files->make_log("NAMEDB:$file");}
-my $DB;
-my $db;
+
+my ($DB,$db);
+
+if ($test) {
+  $log->write_to("TEST mode is ON!\n\n");
+  $DB = 'test_wbgene_id;utlt-db;3307';
+} else {
+  $DB = 'nameserver_live;web-wwwdb-core-02;3449';
+}
+
+if ($ns) {
+  unless ($USER && $pass) {
+    $log->log_and_die("OPTIONS ERROR: You need to supply both a username and password for the MySQL database with -user <username> -pass <password>.\n");
+  }
+  $log->write_to("Contacting NameServer ($DB).....\n");
+  $db = NameDB_handler->new($DB,$USER,$pass);
+  $db->setDomain('Gene');
+}
+
 my $wormbase = Wormbase->new("-organism" =>$species);
 my $database = "/nfs/wormpub/DATABASES/geneace";
 $log->write_to("Working.........\n-----------------------------------\n\n\n1) splitting genes in file [${file}]\n\n");
@@ -58,10 +83,9 @@ $log->write_to("TEST mode is ON!\n\n") if $test;
 
 my $ace = Ace->connect('-path', $database) or $log->log_and_die("cant open $database: $!\n");
 
-
-my $outdir = $database."/NAMEDB_Files/";
-my $backupsdir = $outdir."BACKUPS/";
-my $outname = "batch_split.ace";
+my $outdir = $database.'/NAMEDB_Files/';
+my $backupsdir = $outdir.'BACKUPS/';
+my $outname = 'batch_split.ace';
 my $outputfile = "$outdir"."$outname";
 my $output;
 my %gene_versions; # remember the latest version used in all genes altered in case a gene is being split more than once
@@ -69,26 +93,29 @@ my %gene_versions; # remember the latest version used in all genes altered in ca
 ##############################
 # warn/notify on use of -load.
 ##############################
-if (!defined$load) {$log->write_to("2) You have decided not to automatically load the output of this script\n\n");}
-elsif (defined$load) { $log->write_to("2) Output has been scheduled for auto-loading.\n\n");}
+if (!defined $load) {$log->write_to("2) You have decided not to automatically load the output of this script\n\n");}
+elsif (defined $load) { $log->write_to("2) Output has been scheduled for auto-loading.\n\n");}
 
-#open file and read
+# open file and read
 open (FILE,"<$file") or $log->log_and_die("can't open $file : $!\n");
 open (ACE,">$outputfile") or $log->log_and_die("cant write output: $!\n");
+
 my($oldgene,$newgene,$newname,$user);
+
 my $malformedcount=0;
 my $actualcount=0;
 my $count=0;
+
 while (<FILE>) {
   chomp;
   
-  #splitgene.pl -old WBGene00243151 -new OVOC13459 -who 2062 -id WBGene00255474 -load -species ovolvulus
-  if (/splitgene.pl\s+-old\s+(WBGene\d{8})\s+-new\s+(\w+)\s+-who\s+(\d+)\s+-id\s+(WBGene\d{8})\s+-load\s+-species\s+(\w+)/) { #gather info
-    #Captured string ($1) - WBGene00243151
-    #Captured string ($2) - OVOC13459
-    #Captured string ($3) - 2062
-    #Captured string ($4) - WBGene00255474
-    #Captured string ($5) - ovolvulus
+  # splitgene.pl -old WBGene00243151 -new OVOC13459 -who 2062 -id WBGene00255474 -load -species ovolvulus
+  if (/splitgene.pl\s+-old\s+(WBGene\d{8})\s+-new\s+(\S+)\s+-who\s+(\d+)\s+-id\s+(WBGene\d{8})\s+-load\s+-species\s+(\w+)/) { #gather info
+    # Captured string ($1) - WBGene00243151
+    # Captured string ($2) - OVOC13459
+    # Captured string ($3) - 2062
+    # Captured string ($4) - WBGene00255474
+    # Captured string ($5) - ovolvulus
     
     $oldgene = $1;
     $newname = $2;
@@ -108,11 +135,13 @@ while (<FILE>) {
 }
 
 close(ACE);
+
 $log->write_to("3) $actualcount gene pairs in file to be split\n\n");
 $log->write_to("4) $count gene pairs split ($malformedcount malformed_lines)\n\n");
-&load_data if ($load);
-$log->write_to("5) Check $outputfile file and load into geneace.\n") unless ($load);
+&load_data if $load;
+$log->write_to("5) Check $outputfile file and load into geneace.\n") unless $load;
 $log->mail();
+
 exit(0);
 
 ###############################################################################################
@@ -124,7 +153,11 @@ sub split_gene {
     $output = "";
     $ok = 1; # error status
 
-    #Does the split_into gene already exist?
+    if ($ns) {
+       $newgene = $db->split_gene($newname,'Sequence',$oldgene,$species);      
+    }
+
+    # does the split_into gene already exist?
     my $newgeneObj = $ace->fetch('Gene', $newgene);
     if ($newgeneObj) {
       $log->error("ERROR: $newgene already exists\n");
@@ -195,10 +228,10 @@ sub split_gene {
 }
 
 sub load_data {
-# load information to $database if -load is specified
-$wormbase->load_to_database("$database", "$outputfile", 'batch_split.pl', $log, undef, 1);
-$log->write_to("5) Loaded $outputfile into $database\n\n");
-$wormbase->run_command("mv $outputfile $backupsdir"."$outname". $wormbase->rundate. "\n"); #append date to filename when moving.
-$log->write_to("6) Output file has been cleaned away like a good little fellow\n\n");
-print "Finished!!!!\n";
+  # load information to $database if -load is specified
+  $wormbase->load_to_database("$database", "$outputfile", 'batch_split.pl', $log, undef, 1);
+  $log->write_to("5) Loaded $outputfile into $database\n\n");
+  $wormbase->run_command("mv $outputfile $backupsdir"."$outname". $wormbase->rundate. "\n"); #append date to filename when moving.
+  $log->write_to("6) Output file has been cleaned away like a good little fellow\n\n");
+  print "Finished!!!!\n";
 }

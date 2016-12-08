@@ -110,6 +110,7 @@ my $go_public;
 my $multi_species;
 my $orthology_lists; # flatfiles of the orthologies fro CalTech
 my $assembly_manifest;
+my $repeats; # copy repeatmasker libraries
 my (%skip_species, @skip_species, @only_species, %only_species, $WS_version, $WS_version_name);
 
 GetOptions ("help"          => \$help,
@@ -146,7 +147,8 @@ GetOptions ("help"          => \$help,
 	    "all"            => \$all,
             "allnopublic"    => \$all_nopublic,
             "wbversion=s"    => \$WS_version,
-            'orthologylists'=> \$orthology_lists,
+            'orthologylists' => \$orthology_lists,
+            'repeatmasker'   => \$repeats,
     )||die(&usage);
 
 
@@ -167,9 +169,9 @@ map { $skip_species{$_} = 1 } @skip_species;
 map { $only_species{$_} = 1 } @only_species;
 
 if ($all) {
-  $multi_species=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$reports=$blastx=$dump_ko=$md5=$assembly_manifest=$go_public=$orthology_lists=1;
+  $multi_species=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$reports=$blastx=$dump_ko=$md5=$assembly_manifest=$go_public=$orthology_lists=$repeats=1;
 } elsif ($all_nopublic) {
-  $multi_species=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$reports=$blastx=$dump_ko=$md5=$assembly_manifest=$orthology_lists=1;
+  $multi_species=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$reports=$blastx=$dump_ko=$md5=$assembly_manifest=$orthology_lists=$repeats=1;
 }
 
 if (not $WS_version) {
@@ -242,9 +244,13 @@ close FTP_LOCK;
 
 &make_gbrowse_gff if ($gbrowse_gff);
 
+&copy_repeats if $repeats;
+
 &check_manifest if ($manifest);
 
 &make_md5sums if ($md5);              # creates a file of md5sums for containing entries for all files in release
+
+
 
 $wormbase->run_command("chmod -R ug+w $targetdir", $log);  
 
@@ -308,6 +314,7 @@ sub copy_acedb_files{
   
   # Copy across the models.wrm file
   $wormbase->run_command("cp $ace_dir/wspec/models.wrm $ftp_acedb_dir/models.wrm.$WS_version_name", $log);
+  $wormbase->run_command("cp $ace_dir/wspec/models.wrm.annot $ftp_acedb_dir/models.wrm.$WS_version_name.annot", $log);
 
   # copy some miscellaneous files across
   my $old_release = $WS_version -1;
@@ -378,6 +385,36 @@ sub copy_xrefs {
   }
 
   $log->write_to("$runtime: Finished copying/zipping xrefs\n\n");
+}
+
+##################################################
+# copy the repeatmasker libraries
+##################################################
+sub copy_repeats {
+  my $runtime = $wormbase->runtime;
+  $log->write_to("$runtime: copying/zipping repeatmasker files\n");
+
+  my %accessors = ($wormbase->species_accessors);
+  $accessors{elegans} = $wormbase;
+
+  foreach my $wb (values %accessors) {
+    next if exists $skip_species{$wb->species};
+    next if @only_species and not exists($only_species{$wb->species});
+
+    my $gspecies = $wb->full_name('-g_species'=>1);
+    my $bioproj = $wb->ncbi_bioproject;
+
+    my $file = $wb->repeatmasker_library;
+
+    my $out_file = "$targetdir/species/$gspecies/$bioproj/annotation/$gspecies.${bioproj}.${WS_version_name}.repeats.fa.gz";
+    if (-e $file) {
+      $wormbase->run_command("cat $file | gzip -n -9 -c > $out_file", $log);
+    } else {
+      $log->error("ERROR: Could not find file $file\n");
+    }
+  }
+
+  $log->write_to("$runtime: Finished copying/zipping repeatmasker files\n\n");
 }
 
 
@@ -1837,6 +1874,7 @@ GSPECIES.BIOPROJ.WSREL.transposons.fa.gz
 [CORE]species/GSPECIES/BIOPROJ/annotation
 GSPECIES.BIOPROJ.WSREL.geneIDs.txt.gz
 GSPECIES.BIOPROJ.WSREL.orthologs.txt.gz
+GSPECIES.BIOPROJ.WSREL.repeats.fa.gz
 
 [CORE]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.best_blastp_hits.txt.gz
@@ -1850,18 +1888,17 @@ GSPECIES.BIOPROJ.WSREL.xrefs.txt.gz
 GSPECIES.BIOPROJ.WSREL.SRA_gene_expression.tar.gz
 GSPECIES.BIOPROJ.WSREL.RNASeq_controls_FPKM.dat
 
-# for all species
 [ALL]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.genomic.fa.gz
 GSPECIES.BIOPROJ.WSREL.genomic_masked.fa.gz
 GSPECIES.BIOPROJ.WSREL.genomic_softmasked.fa.gz
 GSPECIES.BIOPROJ.WSREL.annotations.gff3.gz
-GSPECIES.BIOPROJ.WSREL.protein.fa.gz
-GSPECIES.BIOPROJ.WSREL.CDS_transcripts.fa.gz
-GSPECIES.BIOPROJ.WSREL.mRNA_transcripts.fa.gz
 
 [ALL:elegans_hawaii]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.canonical_geneset.gtf.gz
+GSPECIES.BIOPROJ.WSREL.protein.fa.gz
+GSPECIES.BIOPROJ.WSREL.CDS_transcripts.fa.gz
+GSPECIES.BIOPROJ.WSREL.mRNA_transcripts.fa.gz
 
 []acedb
 files_in_tar

@@ -21,7 +21,6 @@ use Storable;
 ##############################
 
 my $all;                   # All
-my $es9;
 my $pad;                   # Use Paul's split
 my $gw3;                   # Use Gary's split
 my $mh6;                   # Use MH6 split
@@ -53,7 +52,6 @@ my $altblat;               # alternative location for blat data
 	      "pad"           => \$pad,
 	      "gw3"           => \$gw3,
 	      "mh6"           => \$mh6,
-	      "es9"           => \$es9,
 	      "curation"      => \$curation,
 	      "merge"         => \$merge,
 	      "split"         => \$split,
@@ -259,8 +257,8 @@ if ($update) {
 
 if ($split) {
   $log->write_to ("Removing old split databases and Copying $canonical database to the split database locations\n");
-  &split_databases unless ($nosplit);
   &create_public_name_data;
+  &split_databases unless ($nosplit);
   $log->write_to ("\nPhase 3 finished. All ~wormpub split curation databases for $species can now be used\n\nCheck all TransferDB log files for \"ended SUCCESSFULLY\"\n");
   print "Phase 3 finished. All ~wormpub split curation databases for $species can now be used\n\nCheck all TransferDB log files for \"ended SUCCESSFULLY\"\n" if ($debug);
 }
@@ -601,6 +599,7 @@ sub load_curation_data {
     if ($species eq "elegans") {
           push (@files,
 		"$wormpub/CURATION_DATA/Tiling_array_data/tiling_array.ace",
+		"$wormpub/BUILD_DATA/MISC_DYNAMIC/RNASeq_splice_elegans_high_qual.ace_WS${WS_version}",
 		"$wormpub/CURATION_DATA/assign_orientation.WS${WS_version}.ace",
 		"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_TEC_RED_homol.ace",
 		"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_21urna_homol.ace",
@@ -702,30 +701,35 @@ sub load_curation_data {
     }
     
     my @BLATfiles;
+    
+	  if ($species eq "elegans") {
+	    push (@BLATfiles,
+		  "$blat_dir/virtual_objects.$species.blat.OST.$species.ace",
+		  "$blat_dir/virtual_objects.$species.blat.RST.$species.ace",
+		  "$blat_dir/virtual_objects.$species.blat.ncRNA.$species.ace",
+		  "$blat_dir/virtual_objects.$species.ci.OST.$species.ace",
+		  "$blat_dir/virtual_objects.$species.ci.RST.$species.ace",
+		  "$blat_dir/virtual_objects.$species.ci.ncRNA.$species.ace",
+		  "$blat_dir/$species.blat.${species}_OST.ace",
+		  "$blat_dir/$species.blat.${species}_RST.ace",
+		  "$blat_dir/$species.blat.${species}_ncRNA.ace",
+		  "$blat_dir/$species.good_introns.OST.ace",
+		  "$blat_dir/$species.good_introns.RST.ace",
+		  "$blat_dir/$species.good_introns.ncRNA.ace",
+		 );
+	  }
     push (@BLATfiles,
           "$blat_dir/virtual_objects.$species.blat.EST.$species.ace",
-          "$blat_dir/virtual_objects.$species.blat.OST.$species.ace",
-          "$blat_dir/virtual_objects.$species.blat.RST.$species.ace",
           "$blat_dir/virtual_objects.$species.blat.mRNA.$species.ace",
-          "$blat_dir/virtual_objects.$species.blat.ncRNA.$species.ace",
 	  "$blat_dir/virtual_objects.$species.blat.Trinity.$species.ace",
           "$blat_dir/virtual_objects.$species.ci.EST.$species.ace",
-          "$blat_dir/virtual_objects.$species.ci.OST.$species.ace",
-          "$blat_dir/virtual_objects.$species.ci.RST.$species.ace",
           "$blat_dir/virtual_objects.$species.ci.mRNA.$species.ace",
-          "$blat_dir/virtual_objects.$species.ci.ncRNA.$species.ace",
 	  "$blat_dir/virtual_objects.$species.ci.Trinity.$species.ace",
           "$blat_dir/$species.blat.${species}_EST.ace",
-          "$blat_dir/$species.blat.${species}_OST.ace",
-          "$blat_dir/$species.blat.${species}_RST.ace",
           "$blat_dir/$species.blat.${species}_mRNA.ace",
-          "$blat_dir/$species.blat.${species}_ncRNA.ace",
 	  "$blat_dir/$species.blat.${species}_Trinity.ace",
           "$blat_dir/$species.good_introns.EST.ace",
-          "$blat_dir/$species.good_introns.OST.ace",
-          "$blat_dir/$species.good_introns.RST.ace",
           "$blat_dir/$species.good_introns.mRNA.ace",
-          "$blat_dir/$species.good_introns.ncRNA.ace",
           "$blat_dir/$species.good_introns.Trinity.ace",
 	 );
 

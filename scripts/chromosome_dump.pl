@@ -184,9 +184,6 @@ sub composition {
   print OUT " n $ns\n";
   close(OUT);
 
-  my $final_total = $total - $gaps;
-
-  $wormbase->run_command("echo $total $final_total > totals",$log);
   $wormbase->release_composition($log) if ($wormbase->species eq 'elegans');
 }
 
@@ -267,12 +264,12 @@ sub zip_files {
 sub execute_ace_command {
   my ($command,$exec,$dir)=@_;
   open (WRITEDB,"| $exec $dir ") or do {
-    $log->log_and_die("could not find $exec\n"); # throws only errors if it can't find the command
+    $log->log_and_die("could not find $exec\n");
     die();
   };
   print WRITEDB $command;
   close (WRITEDB) or do {
-	  $log->log_and_die("execute_ace_command failed\n"); # throws only errors if the command failed
+	  $log->log_and_die("execute_ace_command failed\n");
 	  die($!);
   }
 }

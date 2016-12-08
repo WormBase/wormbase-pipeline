@@ -31,21 +31,23 @@ my (
   $sfile,
   $no_dnafrags,
   $locators,
+  $keep_old_species_sets,
     ); 
     
 
 GetOptions(
-  "reg_conf=s"        => \$reg_conf,
-  "masterdbname=s"    => \$master_dbname,
-  "taxdbname=s"       => \$tax_dbname,
-  "collectionname=s"  => \$collection_name,
-  "comparacode=s"     => \$compara_code,
-  "recreate"          => \$recreatedb,
-  "treemlss"          => \$create_tree_mlss,
-  "species=s@"        => \@species,
-  "sfile=s"           => \$sfile,
-  "nodnafrags"        => \$no_dnafrags,
-  "locators"          => \$locators,
+  "reg_conf=s"         => \$reg_conf,
+  "masterdbname=s"     => \$master_dbname,
+  "taxdbname=s"        => \$tax_dbname,
+  "collectionname=s"   => \$collection_name,
+  "comparacode=s"      => \$compara_code,
+  "recreate"           => \$recreatedb,
+  "treemlss"           => \$create_tree_mlss,
+  "species=s@"         => \@species,
+  "sfile=s"            => \$sfile,
+  "nodnafrags"         => \$no_dnafrags,
+  "locators"           => \$locators,
+  "keepoldspeciessets" => \$keep_old_species_sets,
     );
 
 die("must specify registry conf file on commandline\n") unless($reg_conf);
@@ -201,24 +203,32 @@ foreach my $core_db (@core_dbs) {
 # Make the species set
 #
 
-my $collection_ss = $compara_dbh->get_SpeciesSetAdaptor->fetch_collection_by_name($collection_name);
+if ($keep_old_species_sets) {
+  my $collection_ss = $compara_dbh->get_SpeciesSetAdaptor->fetch_collection_by_name($collection_name);
 
-# Already have a species set for this collection. Need to check that it is up-to-date
-if ($collection_ss) {
-
+  # Already have a species set for this collection. Need to check that it is up-to-date
+  if ($collection_ss) {
+    
     my %collection_gdb_ids = (map {$_->dbID => $_} @{$collection_ss->genome_dbs});
     my %new_gdb_ids = (map {$_->dbID => $_} @genome_dbs);
-                               
+    
     if (grep { not exists $collection_gdb_ids{$_} } keys %new_gdb_ids or
         grep { not exists $new_gdb_ids{$_} } keys %collection_gdb_ids) {
       # mismatch between collection species set and new species set. 
+      print STDERR "Collection composition has changed - updating\n";
       $compara_dbh->get_SpeciesSetAdaptor->update_collection($collection_name, $collection_ss, \@genome_dbs);
+      exit(0);
     } else {
       # hunky dory, no update necessary
+      print STDERR "Collection composition unchanged - not updating\n";
     }
-
+    
+  } else {
+    $compara_dbh->get_SpeciesSetAdaptor->update_collection($collection_name, undef, \@genome_dbs);
+  }
 } else {
-  $collection_ss = $compara_dbh->get_SpeciesSetAdaptor->update_collection($collection_name, undef, \@genome_dbs);
+  &clean_out_mlss_data( $compara_dbh );
+  $compara_dbh->get_SpeciesSetAdaptor->update_collection($collection_name, undef, \@genome_dbs);
 }
 
 
@@ -295,5 +305,21 @@ sub update_dnafrags {
 
   foreach my $deprecated_dnafrag_id (keys %$old_dnafrags_by_id) {
     $compara_dba->dbc->do("DELETE FROM dnafrag WHERE dnafrag_id = ".$deprecated_dnafrag_id) ;
+  }
+}
+
+#########################################
+
+sub clean_out_mlss_data {
+  my ($compara_dba) = @_;
+
+  foreach my $table ('method_link_species_set',
+                     'method_link_species_set_tag',
+                     'species_set',
+                     'species_set_tag',
+                     'species_set_header') {
+
+    my $sth = $compara_dba->dbc->prepare("TRUNCATE TABLE $table");
+    $sth->execute();
   }
 }

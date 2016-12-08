@@ -1,8 +1,11 @@
 #!/usr/bin/env perl 
 
+use strict;
 use Getopt::Long qw(:config pass_through);
 
 my $bsubmem = 2;
+
+my ($queue, $pre_exec, $gpfs);
 
 &GetOptions('m=s'   => \$bsubmem, 
             'q=s'   => \$queue,
@@ -26,47 +29,50 @@ my ($job_id) = open_command_line($command);
 if (not $job_id) {
   print STDERR "ERROR: Could not get job_id from job, so unable to determine exit status - investigate\n";
 } else {
-  my $found = 0;
-    
-  while(not $found) {
-    # pause; wait for LSF to register the job as complete
-    sleep(10);
-    open(my $blist, "bjobs -d $job_id |");
-    while(<$blist>) {
-      /^(\d+)/ and do {
-        if ($1 eq $job_id) {
-          $found = 1;
-          last;
-        }
-      };
-    }
+  my $status;
+  # pause; wait for LSF to catch-up
+  sleep(10);
+
+  open(my $blist, "bjobs -a $job_id |");
+  while(<$blist>) {
+    /^(\d+)\s+\S+\s+(\S+)/ and do {
+      if ($1 eq $job_id) {
+        $status = $2;
+        last;
+      }
+    };
   }
-  
+
   my $error_code;
 
-  #
-  # bjobs -l sometimes takes a while to register the completion 
-  #
-  while(not defined $error_code) {
-    open(my $bjobs, "bjobs -l $job_id |");
-    while(<$bjobs>) {
-      /Exited with exit code (\d+)/ and do {
-        $error_code = $1;
-        last;
-      };
-      /Done successfully/ and do {
-        $error_code = 0;
-        last;
-      };
-    }
+  if (defined $status and $status eq "DONE") {
+    $error_code = 0;
+  } else {
+    while(not defined $error_code) {
+      open(my $bhist, "bhist -l $job_id |");
+      while(<$bhist>) {
+        /Exited with exit code (\d+)/ and do {
+          $error_code = "exit code $1";
+          last;
+        };
+        /Exited by signal (\d+)/ and do {
+          $error_code = "signal $1";
+          last;
+        };
+        /Done successfully/ and do {
+          $error_code = 0;
+          last;
+        };
+      }
 
-    sleep(10);
-  } 
+      sleep(10);
+    } 
+  }
   
   if (not defined $error_code) {
-    print STDERR "ERROR: Unable to determine exit code for submitted job - investigate\n";
+    print STDERR "ERROR: Unable to determine exit code for submitted job ($job_id) - investigate\n";
   } elsif ($error_code) {
-    print STDERR "ERROR: job terminated abnormally (exit code $error_code)\n";
+    print STDERR "ERROR: job terminated abnormally ($error_code)\n";
   } else {
     print STDERR "SUCCESSFULLY COMPLETE\n";
   }

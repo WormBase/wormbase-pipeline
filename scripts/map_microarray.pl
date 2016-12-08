@@ -1,10 +1,8 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/usr/bin/env perl
 #
 # map_microarray.pl
 #
 # Add information to Microarray_results objects based on overlaps in GFF files 
-#
-# by Dan
 #
 # Last updated by: $Author: klh $                      
 # Last updated on: $Date: 2013-10-14 10:16:24 $        
@@ -13,19 +11,17 @@ use strict;
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
-use Ace;
 
 ######################################
 # variables and command-line options #
 ######################################
-my $maintainers = "All";
-my $help;       # Help perldoc
-my $test;       # Test mode
-my $debug;      # Debug mode, verbose output to user running script
-my $noload;     
-my $store;	# specify a frozen configuration file
-my $species;
-my $outfile;
+my ($test, 
+    $debug,
+    $noload,     
+    $store,
+    $species,
+    $outfile,
+    $wb);
 
 GetOptions ("debug=s"   => \$debug,
 	    "test"      => \$test,
@@ -39,7 +35,6 @@ GetOptions ("debug=s"   => \$debug,
 ############################
 # recreate configuration   #
 ############################
-my $wb;
 if ($store){
   $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n");
 } else {
@@ -49,127 +44,121 @@ if ($store){
       );
 }
 
-###########################################
-# Variables Part II (depending on $wb)    #
-########################################### 
-
-my $dbdir= $wb->autoace;                    # Database path
-$outfile = $outfile ? $outfile : $wb->acefiles."/microarray_mappings.ace";
-my $tace = $wb->tace;                                  # tace executable path
-
 my $log = Log_files->make_build_log($wb);
 
-my $db = Ace->connect(-path=>$dbdir,
-                      -program =>$tace) || do { print "Connection failure: ",Ace->error; $log->log_and_die();};
+my $dbdir= $wb->autoace; 
+$outfile = $outfile ? $outfile : $wb->acefiles."/microarray_mappings.ace";
 
-if ($debug) {
-  my $count = $db->fetch(-query=> 'find PCR_product where Microarray_results');
-  $log->write_to("checking $count PCR_products...\n");
-
-  $count = $db->fetch(-query=> 'find Oligo_set where Microarray_results');
-  $log->write_to("checking $count Oligo_sets\n");
-}
-
-
-open (OUTPUT, ">$outfile") or $log->log_and_die("Can't open the output file $outfile\n");
+open (my $out_fh, ">$outfile") or $log->log_and_die("Can't open the output file $outfile\n");
 
 ###########################################
 # PCR_products and SMD_microarray results #
 ###########################################
 
-$log->write_to("Making CDS/Pseudogene/Transcript connections to Microarray_results objects based on PCR_products\n");
+foreach my $class ("PCR_product", "Oligo_set") {
+  my %data;
 
-my $i = $db->fetch_many(-query=> 'find PCR_product WHERE Microarray_results AND (Overlaps_CDS || Overlaps_pseudogene || Overlaps_transcript)');  
-while (my $object = $i->next) {
-  &process_object($object);
-  $object->DESTROY();
+  foreach my $pair (["CDS", "Overlaps_CDS"], 
+                    ["Pseudogene", "Overlaps_pseudogene"],
+                    ["Transcript", "Overlaps_transcript"]) {
+    my ($tclass, $overlap_q) = @$pair;
+
+    $log->write_to("Making $tclass connections to Microarray_results objects based on $class\n");
+                      
+    my $tm_def = &get_tm_def( $class, $tclass, $overlap_q );
+
+    my $tm_query = $wb->table_maker_query( $dbdir, $tm_def );
+    while(<$tm_query>) {
+      chomp;
+      s/\"//g; 
+      next if (/acedb/ or /\/\//);
+      next if /^\s*$/;
+      
+      my ($obj1, $mic_obj, $t_obj, $g_obj) = split(/\t/, $_);
+        
+      $data{$mic_obj}->{$tclass}->{$t_obj} = 1;
+      $data{$mic_obj}->{Gene}->{$g_obj} = 1;
+    }
+
+    unlink $tm_def;
+  }
+
+  foreach my $obj (sort keys %data) {
+    print $out_fh "\nMicroarray_results : \"$obj\"\n";
+    foreach my $tag (sort keys %{$data{$obj}}) {
+      foreach my $oobj (sort keys %{$data{$obj}->{$tag}}) {
+        print $out_fh "$tag $oobj\n";
+      }
+    }
+  }
+
 }
 
-###########################################
-# Oligo_sets and Aff_microarray results   #
-###########################################
+close($out_fh) or $log->log_and_die("Problem when closing output file (probably out of space)\n");
 
-$log->write_to("Making CDS/Pseudogene/Transcript connections to Microarray_results objects based on Oligo_set objects\n");
-
-$i = $db->fetch_many(-query=> 'find Oligo_set WHERE Microarray_results AND (Overlaps_CDS || Overlaps_transcript || Overlaps_pseudogene)');  
-
-while (my $object = $i->next) {
-  
-  &process_object($object);
-  $object->DESTROY();
-}
-
-
-close OUTPUT;
-$db->close;
 
 unless ($noload) {
   $log->write_to("Loading file to autoace\n");
   $wb->load_to_database($wb->autoace, $outfile, 'microarray_mappings', $log);
 }
 
-
-
 $log->mail();
-
 exit(0);
-
-##################################
-sub process_object {
-  my ($obj) = @_;
-    
-  # Microarray_results
-  
-  my $microarray_results = $obj->Microarray_results;  
-  my @CDSs               = $obj->Overlaps_CDS;
-  my @pseudogenes        = $obj->Overlaps_pseudogene;
-  my @transcripts        = $obj->Overlaps_transcript;
-
-  my %genes;
-
-  print OUTPUT "\nMicroarray_results : \"$microarray_results\"\n";
-  
-  if (@CDSs) {
-    foreach my $cds (@CDSs) {
-      my $gene = $obj->Overlaps_CDS->Gene;
-
-      print OUTPUT "CDS $cds\n";
-      if (defined $gene and not exists $genes{$gene}) {
-        print OUTPUT "Gene $gene\n";
-        $genes{$gene} = 1;
-      }
-    }    
-  }
-
-  if (@pseudogenes) {
-    foreach my $pseudogene (@pseudogenes) {
-      my $gene = $obj->Overlaps_pseudogene->Gene;
-      print OUTPUT "Pseudogene $pseudogene\n";
-      if (defined $gene and not exists $genes{$gene}) {
-        print OUTPUT "Gene $gene\n";
-        $genes{$gene} = 1;
-      }
-    }    
-  }
-
-  if (@transcripts) {
-    foreach my $transcript (@transcripts) {
-      my $gene = $obj->Overlaps_transcript->Gene;
-      $gene =  $obj->Overlaps_transcript->Corresponding_CDS->Gene unless ($gene);
-      print OUTPUT "Transcript $transcript\n";
-      if (defined $gene and not exists $genes{$gene}) {
-        print OUTPUT "Gene $gene\n" if (defined $gene);
-        $genes{$gene} = 1;
-      }
-    }    
-  }
-  
-  print OUTPUT "\n";
-
-}
 
 
 ############################################
+
+sub get_tm_def {
+  my ($qclass, $tclass, $overlapst) = @_;
+
+  my $txt = <<"END";
+Sortcolumn 1
+
+Colonne 1 
+Width 12 
+Optional 
+Visible 
+Class 
+Class $qclass
+From 1 
+
+Colonne 2
+Width 12
+Mandatory
+Visible
+Class
+Class Microarray_results
+From 1
+Tag Microarray_results
+ 
+Colonne 3 
+Width 12 
+Mandatory 
+Visible 
+Class 
+Class $tclass 
+From 1 
+Tag $overlapst 
+ 
+Colonne 4 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Gene 
+From 3 
+Tag Gene 
+
+END
+    
+  my $def_file = "/tmp/tm_def.$qclass.$tclass.$overlapst.$$.def";
+  open(my $fh, ">$def_file") or $log->log_and_die("Could not open $def_file for writing\n");
+  print $fh $txt;
+  close($fh) or $log->log_and_die("Could not close $def_file after writing\n");
+
+  return $def_file;
+}
+
 
 __END__
 

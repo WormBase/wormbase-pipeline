@@ -381,6 +381,18 @@ exit(0);
 # subroutines
 ################
 
+
+###########################
+# function to get a variation from GeneAce by Other_name
+#   - as that one is not stored in the NameDB
+#   - will only return *one* variationid at max
+#
+sub _getVariation_byOtherName {
+   my ($othername) = @_;
+   my ($variationid) = $geneAceDB->fetch(-query => "Variation; Other_name = $othername");
+   return "$variationid";
+}
+
 ###########################
 # function to find/get a variation id from the variation name server
 #   depends on the user/password from main, as well as the $test
@@ -390,6 +402,8 @@ sub _get_variationId {
 
 
     my $var = $db->idGetByTypedName('Public_name'=>$id)->[0];
+  
+    $var ||= _getVariation_byOtherName($id);
 
     print STDERR "found: $id -> $var\n" if ($var && $verbose);
 

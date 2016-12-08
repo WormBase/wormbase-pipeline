@@ -67,173 +67,115 @@ my $reports_dir     = $wormbase->reports;     # AUTOACE REPORTS
 # get data from ACEDB #
 #######################
 
-my @values;
-my $command;
+my $coding_cmd_prefix    = "query find Gene where Species = \"*elegans\" AND Live AND Corresponding_CDS\nspush\n";
+my $noncoding_cmd_prefix = "query find Gene where Species = \"*elegans\" AND Live AND NOT Corresponding_CDS AND Molecular_info\nspush\n";
+my $uncloned_cmd_prefix = "query find Gene where Species = \"*elegans\" AND Live AND NOT Molecular_info\nspush\n";
 
-$command  = "query find Gene where Species = \"*elegans\" AND Live\nspush\n"
-          . "query where Molecular_info\n"
-          . "spop\nspush\n"
-          . "query where Concise_description\n"
-          . "spop\nspush\n"
-          . "query where GO_term\n"
-          . "spop\nspush\n"
-          . "query where Disease_info\n"
-          . "spop\nspush\n"
-          . "query where Reference\n"
-          . "spop\nspush\n"
-          . "query where CGC_name\n"
-          . "spop\nspush\n"
-          . "query where RNAi_result\n"
-          . "spop\nspush\n"
-          . "query where Expr_pattern\n"
-          . "spop\nspush\n"
-          . "query where Interaction\n"
-          . "spop\nspush\n"
-          . "query where Microarray_results\n"
-          . "spop\nspush\n"
-          . "query where Allele\n"
-          . "quit\n";
+my $rest = "query where Concise_description\n"
+    . "spop\nspush\n"
+    . "query where Automated_description\n"
+    . "spop\nspush\n"
+    . "query where Disease_info\n"
+    . "spop\nspush\n"
+    . "query where Reference\n"
+    . "spop\nspush\n"
+    . "query where CGC_name\n"
+    . "spop\nspush\n"
+    . "query where RNAi_result\n"
+    . "spop\nspush\n"
+    . "query where Expr_pattern\n"
+    . "spop\nspush\n"
+    . "query where Interaction\n"
+    . "spop\nspush\n"
+    . "query where Microarray_results\n"
+    . "spop\nspush\n"
+    . "query where Allele\n"
+    . "quit\n";
+
+open (my $out_fh, ">$reports_dir/genedata") || die "Failed to open output file\n";
 
 # database connection
+my $coding_query = $coding_cmd_prefix . $rest;
+my $nc_query = $noncoding_cmd_prefix . $rest;
+my $uncloned_query = $uncloned_cmd_prefix . $rest;
 
-open (TACE,"echo '$command' | $tace $ace_dir |");
-while (<TACE>) {
-    chomp;
-    if (/\/\/ Found (\d+) objects/) {
-	push (@values,$1);
-    }
-}
-close TACE;
+my $values1 = &tace_query($coding_query);
+my $values2 = &tace_query($nc_query);
+my $values3 = &tace_query($uncloned_query);
 
-###########################################################
-# assign values (this is verbose for ease of maintenance) #
-###########################################################
 
-my $live_genes          = $values[0];
-my $molecular_info      = $values[1];
-my $concise_desc        = $values[2];
-my $go_term             = $values[3];
-my $disease_assoc       = $values[4];
-my $reference           = $values[5];
-my $CGC_name            = $values[6];
-my $RNAi_result         = $values[7];
-my $expr_pat            = $values[8];
-my $interactions        = $values[9];
-my $microarray_result   = $values[10];
-my $variations          = $values[11];
+printf $out_fh "\nC. elegans gene data (%d genes in total)\n", $values1->[0] + $values2->[0] + $values3->[0];
+print $out_fh "----------------------------------------------\n";
 
-my $percent_molecular_info      = ($molecular_info / $live_genes) * 100;
-my $percent_concise_desc        = ($concise_desc / $live_genes) * 100;
-my $percent_go_term             = ($go_term / $live_genes) * 100;
-my $percent_disease_assoc       = ($disease_assoc / $live_genes) * 100;
-my $percent_reference           = ($reference / $live_genes) * 100;
-my $percent_CGC_name            = ($CGC_name / $live_genes) * 100;
-my $percent_RNAi_result         = ($RNAi_result / $live_genes) * 100;
-my $percent_expr_pat            = ($expr_pat / $live_genes) * 100;
-my $percent_interaction         = ($interactions / $live_genes) * 100;
-my $percent_microarray_result   = ($microarray_result / $live_genes) * 100;
-my $percent_variation           = ($variations / $live_genes) * 100;
-
-##################
-# report to file #
-##################
-open (OUT, ">$reports_dir/genedata") || die "Failed to open output file\n";
-print OUT "Gene data set (Live C. elegans genes $values[0])\n";
-print OUT "------------------------------------------\n";
-printf OUT "Molecular info             %5d   (%2.1f%%)\n",  $molecular_info, $percent_molecular_info;
-printf OUT "Concise description        %5d   (%2.1f%%)\n",  $concise_desc, $percent_concise_desc;
-printf OUT "Human disease association  %5d   (%2.1f%%)\n",  $disease_assoc, $percent_disease_assoc;
-printf OUT "Approved Gene name         %5d   (%2.1f%%)\n",  $CGC_name, $percent_CGC_name;
-printf OUT "Reference                  %5d   (%2.1f%%)\n",  $reference, $percent_reference;
-printf OUT "RNAi results               %5d   (%2.1f%%)\n",  $RNAi_result, $percent_RNAi_result;
-printf OUT "Microarray results         %5d   (%2.1f%%)\n",  $microarray_result, $percent_microarray_result;
-printf OUT "Expression patterns        %5d   (%2.1f%%)\n",  $expr_pat,  $percent_expr_pat;
-printf OUT "Variations                 %5d   (%2.1f%%)\n",  $variations, $percent_variation;
-printf OUT "Interaction data           %5d   (%2.1f%%)\n",  $interactions,  $percent_interaction;
-close OUT;
-
-##################
-# Check the files
-##################
-
-$wormbase->check_file("$reports_dir/genedata", $log,
-minlines => 12,
-maxlines => 12,
-line1 => '^Gene data set \(Live C. elegans genes \d+\)',
-line2 => '^\-+',
-lines => ['^\S+.+\s+\d+\s+\(\d+(\.\d)*\%\)', '^\S+\s+\S+\s+\S+\s+\d+\s+\(\d+(\.\d)*\%\)'],
-);
-
+printf $out_fh "\nProtein-coding (%d genes):\n", $values1->[0];;
+&report_gene_data($out_fh, $values1);
+printf $out_fh "\nNon-coding RNA and pseudogene (%d genes):\n", $values2->[0];
+&report_gene_data($out_fh, $values2);
+printf $out_fh "\nUncloned (%d genes):\n", $values3->[0];
+&report_gene_data($out_fh, $values3);
 
 $log->mail();
-print "Finished.\n" if ($verbose);
 
 
-##############################################################
-#
-# Subroutines
-#
-##############################################################
+###########################################################
 
+sub tace_query {
+  my ($q) = @_;
 
+  my @results;
 
-##########################################
-
-sub usage {
-  my $error = shift;
-
-  if ($error eq "Help") {
-    # Normal help menu
-    system ('perldoc',$0);
+  open (my $tace_fh,"echo '$q' | $tace $ace_dir |");
+  while (<$tace_fh>) {
+    chomp;
+    if (/\/\/ Found (\d+) objects/) {
+      push (@results,$1);
+    }
   }
+  close($tace_fh);
+
+  return \@results;
 }
 
-##########################################
 
+sub report_gene_data {
+  my ($fh, $values) = @_;
+
+  my $live_genes          = $values->[0];
+  my $concise_desc        = $values->[1];
+  my $auto_desc           = $values->[2];
+  my $disease_assoc       = $values->[3];
+  my $reference           = $values->[4];
+  my $CGC_name            = $values->[5];
+  my $RNAi_result         = $values->[6];
+  my $expr_pat            = $values->[7];
+  my $interactions        = $values->[8];
+  my $microarray_result   = $values->[9];
+  my $variations          = $values->[10];
+  
+  my $percent_concise_desc        = sprintf("(%2.1f%%)", ($concise_desc / $live_genes) * 100);
+  my $percent_auto_desc           = sprintf("(%2.1f%%)", ($auto_desc / $live_genes) * 100);
+  my $percent_disease_assoc       = sprintf("(%2.1f%%)", ($disease_assoc / $live_genes) * 100);
+  my $percent_reference           = sprintf("(%2.1f%%)", ($reference / $live_genes) * 100);
+  my $percent_CGC_name            = sprintf("(%2.1f%%)", ($CGC_name / $live_genes) * 100);
+  my $percent_RNAi_result         = sprintf("(%2.1f%%)", ($RNAi_result / $live_genes) * 100);
+  my $percent_expr_pat            = sprintf("(%2.1f%%)", ($expr_pat / $live_genes) * 100);
+  my $percent_interaction         = sprintf("(%2.1f%%)", ($interactions / $live_genes) * 100);
+  my $percent_microarray_result   = sprintf("(%2.1f%%)", ($microarray_result / $live_genes) * 100);
+  my $percent_variation           = sprintf("(%2.1f%%)", ($variations / $live_genes) * 100);
+
+  printf $fh "  Curated description        %5d   %8s\n",  $concise_desc, $percent_concise_desc;
+  printf $fh "  Automated description      %5d   %8s\n",  $auto_desc, $percent_auto_desc;
+  printf $fh "  Human disease association  %5d   %8s\n",  $disease_assoc, $percent_disease_assoc;
+  printf $fh "  Approved Gene name         %5d   %8s\n",  $CGC_name, $percent_CGC_name;
+  printf $fh "  Reference                  %5d   %8s\n",  $reference, $percent_reference;
+  printf $fh "  RNAi results               %5d   %8s\n",  $RNAi_result, $percent_RNAi_result;
+  printf $fh "  Microarray results         %5d   %8s\n",  $microarray_result, $percent_microarray_result;
+  printf $fh "  Expression patterns        %5d   %8s\n",  $expr_pat,  $percent_expr_pat;
+  printf $fh "  Variations                 %5d   %8s\n",  $variations, $percent_variation;
+  printf $fh "  Interaction data           %5d   %8s\n",  $interactions,  $percent_interaction;
+}
 
 
 
 __END__
 
-=pod
-
-=head1 NAME 
-
-=over 4
-
-=item genestats.pl
-
-=back
-
-=head1 USAGE
-
-=over 4
-
-=item genestats.pl 
-
-=back
-
-Queries autoace to extract a number of counts for the Live gene class. Computes percentage values to 1 decimel place and
-write the report to autoace/REPORTS.
-
-=back
-
-=over 4
-
-=head1 REQUIREMENTS
-
-=over 4
-
-=item None.
-
-=back
-
-=head1 AUTHOR
-
-=over 4
-
-=item Daniel Lawson (dl1@sanger.ac.uk)
-
-=back
-
-=cut

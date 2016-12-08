@@ -155,6 +155,8 @@ my %dates = (
 	     253 => ['2015-12-04', '2016-02-19'], # to 19-Feb-2016
 	     254 => ['2016-02-19', '2016-04-29'], # to 29-Apr-2016
 	     255 => ['2016-04-29', '2016-07-01'], # to 01-Jul-2016
+	     256 => ['2016-07-01', '2016-09-02'], # to 02-Sep-2016
+	     257 => ['2016-09-02', '2016-10-28'], # to 01-Oct-2016
 	    );
 
 
@@ -199,6 +201,8 @@ foreach my $release (200 .. $release2) {
       if ($line =~ /^\s*$/) {next}
       my @f = split /\s+/, $line;
       my $protein = shift @f;
+
+
       foreach my $sequence (@f) {
 	# get the sequence name of the gene by removing any isoform letters
 	if ($sequence =~ s/(\S+?)([a-z])$/$1/) {

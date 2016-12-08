@@ -1,24 +1,37 @@
 #!/usr/bin/env perl
 
+use lib $ENV{'CVS_DIR'};
 use Ace;
 use Digest::MD5 qw(md5_hex);
 use Getopt::Long;
 use strict;
+use Species;
+use Wormbase;
+use Storable;
 
-my ($species,$database,$write,$species,$create,$outfile,$verbose,$autofix,);
+my ($database,$write,$species,$create,$outfile,$verbose,$autofix,$store,$wormbase,);
 
 GetOptions('species=s'  => \$species,
 	   'database=s' => \$database,
            'overwrite'  => \$write,
-	   'species:s'  => \$species,
 	   'create'     => \$create,
 	   'output:s'   => \$outfile,
 	   'verbose'    => \$verbose,
+	   'store:s'    => \$store,
 );
 
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} 
+else {
+  $wormbase = Wormbase->new( -organism  => $species,
+                           );
+}
 
-if (!defined $species) {$species = "Caenorhabditis brenneri";}
-elsif ($species !~ /\S+\s+\S+/){die "Need full species name not just $species\n";}
+
+my $full_species_name;
+if (!defined $species) {die "Need to specify -species\n";}
+else {$full_species_name = $wormbase->full_name;}
 
 unless (defined $outfile){$outfile = "md5sum.".$species.".ace";}
 open (OUTPUT, ">$outfile") if (($write) || ($create));
@@ -30,13 +43,13 @@ exit(0);
 
 
 sub check_md5sum{
-  print "Checking md5sum of genomic DNA of $species\n";
+  print "Checking md5sum of genomic DNA of $full_species_name\n";
   if ($write) {"print - $outfile";}
   else {print "\n\n";}
   my $good = 0;
   my $bad = 0;
   my $db = Ace->connect(-path => $database) or die "Failed to connect to $database\n";
-  my $query = "Find Sequence WHERE Species=\"$species\" AND Method=\"Genomic_canonical\"";
+  my $query = "Find Sequence WHERE Species=\"$full_species_name\" AND Method=\"Genomic_canonical\"";
   print "$query\n";
   my $seqIt = $db->fetch_many(-query => $query);
   while(my $seq=$seqIt->next){
@@ -60,9 +73,9 @@ sub check_md5sum{
 }
 
 sub create_md5sum{
-  print "Creating md5sums for genomic DNA of $species - $outfile\n\n";
+  print "Creating md5sums for genomic DNA of $full_species_name - $outfile\n\n";
   my $db = Ace->connect(-path => $database) or die "Failed to connect to $database\n";
-  my $query = "Find Sequence WHERE Species=\"$species\" AND Method=\"Genomic_canonical\"";
+  my $query = "Find Sequence WHERE Species=\"$full_species_name\" AND Method=\"Genomic_canonical\"";
   print "$query\n";
   my $seqIt = $db->fetch_many(-query => $query);
   while(my $seq=$seqIt->next){

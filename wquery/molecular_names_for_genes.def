@@ -16,7 +16,8 @@ Optional
 Visible 
 Class 
 Class Gene 
-From 1 
+From 1
+Condition WBGene* 
  
 Colonne 2 
 Subtitle CDS 

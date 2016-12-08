@@ -15,7 +15,7 @@ use Carp;
 use Log_files;
 use Storable;
 
-my ($help, $debug, $test, $store, $wormbase, $database);
+my ($help, $debug, $test, $store, $wormbase, $database, $species);
 my ( $gff3,$infile,$outfile,$changed_lines);
 
 GetOptions (
@@ -26,13 +26,15 @@ GetOptions (
   "infile:s"   => \$infile,
   "outfile:s"  => \$outfile,
   "database:s" => \$database,
+  "species:s"  => \$species,
 	    );
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
-  $wormbase = Wormbase->new( -debug   => $debug,
-                             -test    => $test,
+  $wormbase = Wormbase->new( -debug    => $debug,
+                             -test     => $test,
+			     -organism => $species,
 			     );
 }
 
@@ -190,8 +192,10 @@ sub get_previous_wormpep_ids {
  
   my @wormpep_ids;
   my @versions;
- 
-  my ($protein) = ($protein_name =~ /WP:(\S+)/);
+
+  my $wormpep_prefix = $wormbase->wormpep_prefix;  # colon prefix to indicate the database e.g. 'WP:' in elegans
+
+  my ($protein) = ($protein_name =~ /${wormpep_prefix}:(\S+)/);
 
   foreach my $line (@protein_history) {
     my ($cds_id, $wormpep_id, $version1, $version2) = @{$line};

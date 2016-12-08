@@ -81,7 +81,7 @@ if ($gff) {
     &read_GFF_queries;
     foreach my $query (@queries) {
         $log->write_to( "\nTEST   (grep GFF): " . $$query{'GFF'} . ' (' . $$query{'DESC'}  . ')');
-        my $actual = `cat $gff_dir/CHROMOSOME*.gff | grep -c \'$$query{'GFF'}\'`;
+        my $actual = `cat $gff_dir/CHROMOSOME*.gff3 | grep -c \'$$query{'GFF'}\'`;
         my $expect = $$query{'EXPECT'} ? $$query{'EXPECT'} : $autoace->count( -query => $$query{'QUERY'} );
         $log->write_to(" . . . ok") if ( &pass_check( $expect, $actual ) == 0 );
     }
@@ -122,8 +122,8 @@ sub read_acedb_queries {
     my $species = $wormbase->species;
     if($species eq 'elegans'){    
 	@queries = (
-	    ["The number of RNAi experiments with more than one associated Gene", 'find rnai COUNT gene > 1 AND uniquely_mapped', 4138],
-	    ["The number of RNAi results with connections to genes", 'find RNAi Gene', 4138],
+	    ["The number of RNAi experiments with more than one associated Gene", 'find rnai COUNT gene > 1', 15734],
+	    ["The number of RNAi results with connections to genes", 'find RNAi Gene', 104817],
 	    ["The number of microarray results with connections to genes", 'find microarray_results gene', 340041],
 	    ["PCR products overlapping CDS", "find PCR_product Overlaps_CDS", 62852],
 	    ["The number of wormpep without pep_homol", 'find wormpep !pep_homol', 839],
@@ -136,10 +136,10 @@ sub read_acedb_queries {
 	    ["operons without genes", 'find operon !contains Gene', 0],
 	    ["variation gene connection", 'find Variation Gene', 1205821],
 	    ["genes with structured description", 'find Gene Structured_description', 137137],
-	    ["genes with GO_term", 'find Gene GO_term', 12753],
+	    ["genes with GO_annotation", 'find Gene GO_annotation', 14448],
 	    ["CDSs with no source_exons", 'find CDS !Source_exons, method', 0],
 	    ["Operons without parent ", 'find Operon CEO* !History AND !Canonical_parent',  0],
-	    ["GO_term without Term or Definition", 'find GO_term !(Term or Definition)',  4],
+	    ["GO_term without Name or Definition", 'find GO_term !(Name or Definition)',  5],
 	    ["Homol mapped Expression Patterns", 'find Expr_pattern where Homol_homol', 4506],
 	    ["Transposon Objects mapped in the database", 'find Transposon where Sequence', 11256],
 	    );
@@ -256,19 +256,14 @@ sub read_GFF_queries {
     $queries[$i]{'QUERY'} = 'find Variation flanking_sequences AND method = "Substitution_allele"';
 
     $i++;
-    $queries[$i]{'DESC'}  = "Engineered_allele";
-    $queries[$i]{'GFF'}   = "\tEngineered_allele\t";
-    $queries[$i]{'QUERY'} = 'find Variation flanking_sequences AND method = "Engineered_allele"';
+    $queries[$i]{'DESC'}  = "Allele";
+    $queries[$i]{'GFF'}   = "\tAllele\t";
+    $queries[$i]{'QUERY'} = 'find Variation flanking_sequences AND method = "Allele"';
 
     $i++;
     $queries[$i]{'DESC'}  = "Transposon_insertion";
     $queries[$i]{'GFF'}   = "\ttransposable_element_insertion_site\t";
     $queries[$i]{'QUERY'} = 'find Variation flanking_sequences AND method = "Transposon_insertion"';
-
-    $i++;
-    $queries[$i]{'DESC'}  = "Engineered_allele";
-    $queries[$i]{'GFF'}   = "\tsequence_alteration\t";
-    $queries[$i]{'QUERY'} = 'find Variation flanking_sequences AND method = "Engineered_allele"';
 
     $i++;
     $queries[$i]{'DESC'}   = "RNAi primary locations";

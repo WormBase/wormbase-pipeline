@@ -41,15 +41,15 @@ GetOptions ("help"       => \$help,
             "initial"    => \$initial,
             "final"      => \$final,
             "table"      => \$table,
-            "fasta"		 => \$fasta,
+            "fasta"	 => \$fasta,
             "accession"  => \$accession,
             "history"    => \$history,
             "pepfile"    => \$pepfile,
-            "dna"		 => \$dna,
+            "dna"	 => \$dna,
             "pepace"	 => \$pepace,
             "additional" => \$additional,
-            "pid"		 => \$pid,
-            "all"		 => \$all,	    	
+            "pid"	 => \$pid,
+            "all"	 => \$all,	    	
            );
 
 if ( $store ) {
@@ -376,17 +376,19 @@ sub write_final_pep {
       $log->write_to("no sequence for $cds\n");
       next;
     }
-    print PEP ">$cds\t$PEP_PREFIX".&pad($cds2id{$cds});
-    print PEP "\t".$cds_info{$cds}->{'gene'} if $cds_info{$cds}->{'gene'};
-    print PEP "\tlocus:".$cds_info{$cds}->{'cgc'} if $cds_info{$cds}->{'cgc'};
-    print PEP "\tstatus:".$cds_info{$cds}->{'status'} if $cds_info{$cds}->{'status'};
-    print PEP "\tUniProt:".$cds_info{$cds}->{'unip'} if $cds_info{$cds}->{'unip'};
-    print PEP "\tprotein_id:".$cds_info{$cds}->{'pid'} if $cds_info{$cds}->{'pid'} ;
-    print PEP "\t".$cds_info{$cds}->{'brief'} if $cds_info{$cds}->{'brief'};
+    my @desc = (sprintf("wormpep=%s%s", $PEP_PREFIX, &pad($cds2id{$cds})));
+    push @desc, sprintf("gene=%s",  $cds_info{$cds}->{'gene'})        if $cds_info{$cds}->{'gene'};
+    push @desc, sprintf("locus=%s", $cds_info{$cds}->{'cgc'})         if $cds_info{$cds}->{'cgc'};
+    push @desc, sprintf("status=%s", $cds_info{$cds}->{'status'})     if $cds_info{$cds}->{'status'};
+    push @desc, sprintf("uniprot=%s", $cds_info{$cds}->{'unip'})      if $cds_info{$cds}->{'unip'};
+    push @desc, sprintf("insdc=%s", $cds_info{$cds}->{'pid'})         if $cds_info{$cds}->{'pid'} ;
+    push @desc, sprintf("product=\"%s\"", $cds_info{$cds}->{'brief'}) if $cds_info{$cds}->{'brief'};
+
     print "$cds\n";
-    print PEP "\n".$wormbase->format_sequence( $cds2aa{$cds} )."\n";
+    printf PEP ">%s %s\n", $cds, join(" ", @desc);
+    print PEP $wormbase->format_sequence( $cds2aa{$cds} )."\n";
   }
-  close PEP;
+  close(PEP) or $log->log_and_die("Could not successfully write wormpep file; probably disk full\n");
   
   &write_table;
   &count_isoforms if ($wormbase->species eq 'elegans');

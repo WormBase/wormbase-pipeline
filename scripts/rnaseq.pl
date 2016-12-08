@@ -139,7 +139,7 @@ if ($chunk_id) { # getting the alignments for a set of chromosomes
   }
 
   # create the LSF Group "/RNASeq/$species" which is now limited to running 15 jobs at a time
-  my $status = system("bgadd -L 15 /RNASeq/$species"); 
+#  my $status = system("bgadd -L 15 /RNASeq/$species"); 
 
   my @chromosomes = $wormbase->get_chromosome_names(-mito => 1, -prefix => 1);
 
@@ -173,7 +173,7 @@ if ($chunk_id) { # getting the alignments for a set of chromosomes
 			 -J => 'rnaseq_alignments',
 			 -e => $err,
 			 -o => $out,
-			 -g => "/RNASeq/$species", # add this job to the LSF group '/RNASeq/$species'
+#			 -g => "/RNASeq/$species", # add this job to the LSF group '/RNASeq/$species'
 		      );
     $lsf->submit(@bsub_options, $cmd);
   }  

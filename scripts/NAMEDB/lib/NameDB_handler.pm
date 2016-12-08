@@ -183,8 +183,8 @@ sub validate_name {
                                      },
                         'sratti' => {
                                      'CGC' => '^Sra-[a-z21]{3,4}-[1-9]\d*(\.\d+)?$',
-                                     'Sequence' => 'SRAE_[\dX]\d+$',
-                                     'Public_name' => '^Sra-[a-z21]{3,4}-[1-9]\d*(\.\d+)?$|^SRAE_[\dX]\d+$'
+                                     'Sequence' => 'SRAE_[\dXM]\d+$',
+                                     'Public_name' => '^Sra-[a-z21]{3,4}-[1-9]\d*(\.\d+)?$|^SRAE_[\dXM]\d+$'
                                      },
 		      };
 

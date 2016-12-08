@@ -154,7 +154,8 @@ my ($test,
     $private,
     $sequencelevel,
     $agp_file,
-    $clone2type, $gene2cgcname, $gene2gseqname, $trans2gene, $clone2dbid, $multi_gene_loci, $seleno_prots,
+    $clone2type, $gene2cgcname, $gene2gseqname, $trans2gene, $clone2dbid, 
+    $multi_gene_loci, $seleno_prots, $artificial_introns,
     $cds2proteinid_db, $cds2status_db, $trans2dbremark_db, $decorations_db,
     $cds2status_h, $cds2proteinid_h,  $trans2dbremark_h, $trans2briefid_h, $trans2type_h, $gclass2desc_h,
     $agp_segs,
@@ -212,9 +213,9 @@ if ($species eq 'sratti') {
   $sequencelevel = 0;
 }
 
-$decorations_db =  $wormbase->database('current') if not defined $decorations_db;
-$cds2proteinid_db = $decorations_db if not defined $cds2proteinid_db;
-$cds2status_db = $decorations_db if not defined $cds2status_db;
+$decorations_db    =  $wormbase->database('current') if not defined $decorations_db;
+$cds2proteinid_db  = $decorations_db if not defined $cds2proteinid_db;
+$cds2status_db     = $decorations_db if not defined $cds2status_db;
 $trans2dbremark_db = $decorations_db if not defined $trans2dbremark_db;
 
 ###############################
@@ -291,10 +292,11 @@ if ($dump_modified) {
   if (not $no_annotation) {
     $multi_gene_loci = &get_multi_gene_loci($gene2gseqname);
     
-    $trans2type_h = &fetch_transcript2type($dbdir);
-    $gclass2desc_h = &fetch_geneclass2desc($dbdir);
-    $trans2briefid_h = &fetch_transcript2briefid($dbdir);
-    $seleno_prots = &fetch_selenoproteins($dbdir);
+    $trans2type_h        = &fetch_transcript2type($dbdir);
+    $gclass2desc_h       = &fetch_geneclass2desc($dbdir);
+    $trans2briefid_h     = &fetch_transcript2briefid($dbdir);
+    $seleno_prots        = &fetch_selenoproteins($dbdir);
+    $artificial_introns  = &fetch_artificialintrons($dbdir);
 
     # Some information is not yet available in autoace (too early in the build)
     # By default, pull cds2status, trans2dbremark and protein_ids from current_DB,
@@ -774,7 +776,7 @@ sub process_feature_table {
           $prod_name = "small nucleolar RNA $pname";
         } elsif ($rclass eq 'snRNA') {
           $prod_name = "small nuclear RNA $pname";
-        } elsif ($rclass eq 'lincRNA') {
+        } elsif ($rclass eq 'lncRNA') {
           $prod_name = "long non-coding RNA $pname";
         } else {
           $prod_name = "Unclassified non-coding RNA $pname";
@@ -889,10 +891,15 @@ sub process_feature_table {
 
     if ($additional_qualifiers{$wb_isoform_name}) {
       foreach my $qk (keys %{$additional_qualifiers{$wb_isoform_name}}) {
-        foreach my $qual (@{$additional_qualifiers{$wb_isoform_name}->{$qk}}) {
-          my $qual_string = "/$qk=$qual";
-          my @wqs = split(/\n/, wrap('','',$qual_string));
-          push @{$revised_quals{$qk}}, \@wqs;
+        my @quals = @{$additional_qualifiers{$wb_isoform_name}->{$qk}};
+        if (not @quals) {
+          push @{$revised_quals{$qk}}, ["/$qk"];
+        } else {
+          foreach my $qual (@quals) {
+            my $qual_string = "/$qk=$qual";
+            my @wqs = split(/\n/, wrap('','',$qual_string));
+            push @{$revised_quals{$qk}}, \@wqs;
+          }
         }
       }
     }
@@ -975,6 +982,20 @@ sub add_additional_qualifiers {
       push @{$additional_qualifiers{$wb_isoform_name}->{transl_except}},  "(pos:$pos_str,aa:Sec)";
     }
   }
+
+  #
+  # Artificial introns
+  #
+  if (exists $artificial_introns->{$wb_isoform_name}) {
+    foreach my $tp (keys %{$artificial_introns->{$wb_isoform_name}}) {
+      if ($tp eq 'ribosomal_slippage') {
+        $additional_qualifiers{$wb_isoform_name}->{ribosomal_slippage} = [];
+      } elsif ($tp eq 'low_quality_sequence') {
+        $additional_qualifiers{$wb_isoform_name}->{artificial_location} = ['"low-quality sequence region"'];
+      }
+    }
+  }
+
 }
 
 
@@ -1242,6 +1263,32 @@ sub fetch_selenoproteins {
   $db->close();
 
   return \%selenos;
+}
+
+
+#####################
+sub fetch_artificialintrons {
+  my ($ref_db) = @_;
+  
+  my %results;
+  
+  if ($quicktest) {
+    return \%results;
+  }
+
+  my $db = Ace->connect(-path => $ref_db);
+  my $iter = $db->fetch_many(-query => "Find CDS WHERE Artificial_intron");
+  while(my $cds = $iter->next) {
+    my ($type) = $cds->Artificial_intron;
+
+    if ($type eq 'Ribosomal_slippage' or $type eq 'Low_quality_sequence') {
+      $results{$cds}->{lc($type)} = 1;
+    }
+  }
+
+  $db->close();
+
+  return \%results;
 }
 
 

@@ -1564,10 +1564,10 @@
                                                 Partially_confirmed
                                                 Confirmed
                 Isoform #Evidence
+                Artificial_intron UNIQUE Ribosomal_slippage
+                                         Low_quality_sequence
                 Start_not_found UNIQUE Int //UNIQUE added by MH6 WS228
                 End_not_found
-                Merge Text  // ar2 270106 added by request for StLoius
-                Split Text  // ar2 270106 added by request for StLoius
      Visible Gene UNIQUE ?Gene XREF Corresponding_CDS // when live 
              Gene_history UNIQUE ?Gene XREF Corresponding_CDS_history // when dead
              Corresponding_transcript ?Transcript XREF Corresponding_CDS #Evidence  // links CDS' to new-style ?Transcript objects, 1-to-1 relationship
@@ -1644,7 +1644,6 @@
                                           snoRNA UNIQUE Text           // Small Nucleolar RNAs
                                           snRNA UNIQUE Text            // Samll nuclear RNAs 
                                           snlRNA UNIQUE Text           // small nuclear like 
-                                          stRNA UNIQUE Text            // small temporal RNAs
                                           tRNA Type UNIQUE Text        // transfer RNAs
                                                Anticodon UNIQUE Text   // The anticodon of the tRNA
                        Isoform #Evidence                               // Set if this is a RNA isoform
@@ -2190,18 +2189,19 @@
                               Not_in_Anatomy_term ?Anatomy_term #Qualifier
                               Not_in_GO_term ?GO_term #GR_condition 
               Subcellular_localization ?Text
-              Type Reporter_gene ?Text
+              Type Antibody ?Text
+                   Cis_regulatory_element Text
+                   EPIC ?Text 
+                   Genome_editing ?Text
                    In_situ Text
-                   Antibody ?Text
-                   Northern Text
-                   Western Text
-                   RT_PCR Text
-                   RNASeq ?Analysis
                    Localizome ?Text
                    Microarray ?Microarray_experiment
+                   Northern Text
+                   Reporter_gene ?Text
+                   RNASeq ?Analysis
+                   RT_PCR Text
                    Tiling_array ?Analysis
-                   EPIC ?Text 
-                   Cis_regulatory_element Text
+                   Western Text
               Expression_cluster ?Expression_cluster XREF Expr_pattern //added for localizome
               Microarray_results ?Microarray_results XREF Expr_Pattern
               Pattern ?Text
@@ -2645,7 +2645,7 @@
            Sequence_feature ?Feature XREF Associated_with_construct
            Driven_by_gene ?Gene XREF Drives_construct #Evidence
            Gene ?Gene XREF Construct_product #Evidence
-           3_UTR ?Gene #Evidence
+           UTR_3 ?Gene #Evidence
            Fusion_reporter ?Text              // Fluorescent proteins GFP, RFP, mCherry, etc.
            Other_reporter ?Text               // to add reporters, tags that arent included in model
            Purification_tag ?Text             // FLAG, HA, Myc, TAP, etc.  
@@ -2731,6 +2731,7 @@
                 Quantity_description ?Text #Evidence //Remark to describe what quantity describes, below
                 Quantity UNIQUE Int UNIQUE Int #Evidence
                 Not #Evidence //This is being phased out but is needed for the next phase [06/08/10].
+                Image ?Picture #Evidence
                 Penetrance Incomplete Text #Evidence
                            Low Text #Evidence
                            High Text #Evidence
@@ -2768,6 +2769,7 @@
                                 With_maternal_effect #Evidence
                 Paternal #Evidence
                 Phenotype_assay Strain ?Strain #Evidence
+                                Control_strain ?Strain #Evidence
                                 Treatment ?Text #Evidence
                                 Temperature ?Text #Evidence
                                 Genotype ?Text #Evidence
@@ -3299,6 +3301,7 @@
             Email #Evidence
             WormBook #Evidence
             Other #Evidence
+            Micropublication #Evidence
        Refers_to Gene ?Gene XREF Reference #Evidence
                  Allele ?Variation XREF Reference #Evidence
                  Rearrangement ?Rearrangement XREF Reference #Evidence
@@ -3785,7 +3788,11 @@
 // WS250
 // WS251
 // WS252
-// 
+// WS253
+// WS254
+// WS255
+// WS256
+// WS257
 
 
 

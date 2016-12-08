@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# test_RNASeq.pl
+# RNASeq_align.pl
 # 
 # by Gary Williams                        
 #
@@ -20,7 +20,7 @@ use Log_files;
 use Storable;
 use List::Util qw(sum); # for mean()
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $species, $new_genome, $check, $runlocally, $notbuild);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $species, $new_genome, $check, $runlocally, $notbuild, $analyse, $results);
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
             "test"       => \$test,
@@ -31,6 +31,8 @@ GetOptions ("help"       => \$help,
 	    "check"      => \$check, # test to see if any cufflinks etc. results are missing
 	    "runlocally" => \$runlocally, # use the current machine to run the jobs instead of LSF (for getting the last few memory-hungry jobs done)
 	    "notbuild"   => \$notbuild, # don't try to make GTF or run cufflinks (for when it is run before doing the Build) 
+	    "analyse"    => \$analyse,  # firstly, run the alignments, finding Introns and cufflinks for each Experiment under LSF
+	    "results"    => \$results,  # secondly, compile the results from all of the Experiments and write out the resulting files
 	   );
 
 
@@ -54,176 +56,189 @@ my $log = Log_files->make_build_log($wormbase);
 ######################################
 
 my $status;
-my $data;
 
 #my $database = $wormbase->database('current');
 my $database = $wormbase->autoace;
 
+if ($results) {$check = 1} # don't want to remove the cufflinks results if writing results
+
 my $RNASeq = RNASeq->new($wormbase, $log, $new_genome, $check);
 
-my $masked = 0;
-$log->write_to("Set up genome\n");
-$RNASeq->setup_genome_for_star();
-
-if (!$notbuild) {
-  $log->write_to("Make GTF file\n");
-  $RNASeq->run_make_gtf_transcript($database);
-}
+if ($analyse && $results) {$log->log_and_die("Please run this script using '-analyse' and then the '-results' option.\n")}
 
 $log->write_to("Get experiments from config\n");
 my $data = $RNASeq->get_transcribed_long_experiments();
 
-# if -new_genome is set remove all the existing data so it must be aligned again
-# otherwise, unless -check is set, remove only the cufflinks data
-$log->write_to("Remove old experiment files\n");
-$RNASeq->remove_old_experiment_files($data);
-
-
-# create the LSF Group "/RNASeq/$species" which is now limited to running 15 jobs at a time
-$status = system("bgadd -L 15 /RNASeq/$species"); 
-
-my $lsf = LSF::JobManager->new();
-
-my $total = keys %{$data};
-my $count_done = 0;
-
-foreach my $experiment_accession (keys %{$data}) {
   
-  $count_done++;
-  
-  # only fire off a job when needed
-  if ($check && $RNASeq->check_all_done($experiment_accession, $notbuild)) {
-    print "($count_done of $total) Already finished $experiment_accession - not repeating this.\n";
-    next;    
-  }
-  
-  # for elegans and briggsae, request 8 Gb memory as 'samtools sort' can take at least 4.5Gb and probably more sometimes
-  # for the others, ask for 6 Gb of memory
-  my $memory = "6000";
-  if ($species ne 'elegans' && $species ne 'briggsae') {
-    $memory = "8000";
-  }
-  
-  my $job_name = "worm_".$wormbase->species."_RNASeq";
-  my $scratch_dir = $wormbase->logs;
-  my $err = "$scratch_dir/RNASeq_align.pl.lsf.${experiment_accession}.err";
-  my $out = "$scratch_dir/RNASeq_align.pl.lsf.${experiment_accession}.out";
-  my @bsub_options = (-e => "$err", -o => "$out");
-  push @bsub_options, (
-		       -M => $memory, # in EBI both -M and -R are in Mb
-		       -R => "select[mem>$memory] rusage[mem=$memory]",
-		       -J => $job_name,
-		       -g => "/RNASeq/$species", # add this job to the LSF group '/RNASeq/$species'
-		      );
-  my $cmd = "RNASeq_align_job.pl -expt $experiment_accession";
-  if ($check) {$cmd .= " -check";}
-  if ($new_genome) {$cmd .= " -new_genome";}
-  if ($notbuild) {$cmd .= " -notbuild";}
-  if ($database) {$cmd .= " -database $database";}
-  if ($species) {$cmd .= " -species $species";}
-  $log->write_to("$cmd\n");
-  print "($count_done of $total) Running: $cmd\n";
-  if ($runlocally) {
-    $cmd .= " -threads 4";
-    $wormbase->run_script($cmd, $log);
-  } else {
-    $cmd = $wormbase->build_cmd($cmd);
-    $lsf->submit(@bsub_options, $cmd);
-  }
+if ($analyse) {
+  analyse();
+} elsif ($results) {
+  results();
+} else {
+  $log->log_and_die("Please run this script with, firstly, the '-analyse' option and then secondly, the '-results' option.\n");
 }
 
-if (!$runlocally) {
-  sleep(30); # wait for a while to let the bhist command have a chance of finding all the jobss
-  $lsf->wait_all_children( history => 1 );
-  $log->write_to("This set of jobs have completed!\n");
-  for my $job ( $lsf->jobs ) {
-    if ($job->history->exit_status != 0) {
-      $log->write_to("Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . "\n");
+$log->mail();
+print "Finished.\n";
+exit(0);
+
+############################################################################
+# run an analysis for each Experiment
+############################################################################
+
+sub analyse {
+
+  # if -new_genome is set remove all the existing data so it must be aligned again
+  # otherwise, unless -check is set, remove only the cufflinks data
+  $log->write_to("Remove old experiment files\n");
+  $RNASeq->remove_old_experiment_files($data);
+  
+  my $masked = 0;
+  $log->write_to("Set up genome\n");
+  $RNASeq->setup_genome_for_star();
+  
+  if (!$notbuild) {
+    $log->write_to("Make GTF file\n");
+    $RNASeq->run_make_gtf_transcript($database);
+  }
+  
+  # create the LSF Group "/RNASeq/$species" which is now limited to running 30 jobs at a time
+  $status = system("bgadd -L 30 /RNASeq/$species"); 
+  
+  my $lsf = LSF::JobManager->new();
+  
+  my $total = keys %{$data};
+  my $count_done = 0;
+  
+  foreach my $experiment_accession (keys %{$data}) {
+    
+    $count_done++;
+    
+    # only fire off a job when needed
+    if ($check && $RNASeq->check_all_done($experiment_accession, $notbuild)) {
+      print "($count_done of $total) Already finished $experiment_accession - not repeating this.\n";
+      next;    
+    }
+    
+    # for elegans and briggsae, request 8 Gb memory as 'samtools sort' can take at least 4.5Gb and probably more sometimes
+    # for the others, ask for 6 Gb of memory
+    my $memory = "6000";
+    if ($species ne 'elegans' && $species ne 'briggsae') {
+      $memory = "8000";
+    }
+    
+    my $job_name = "worm_".$wormbase->species."_RNASeq";
+    my $scratch_dir = $wormbase->logs;
+    my $err = "$scratch_dir/RNASeq_align.pl.lsf.${experiment_accession}.err";
+    my $out = "$scratch_dir/RNASeq_align.pl.lsf.${experiment_accession}.out";
+    my @bsub_options = (-e => "$err", -o => "$out");
+    push @bsub_options, (
+			 -q => 'production-rh7',
+			 -M => $memory, # in EBI both -M and -R are in Mb
+			 -R => "select[mem>$memory] rusage[mem=$memory]",
+			 -J => $job_name,
+			 -g => "/RNASeq/$species", # add this job to the LSF group '/RNASeq/$species'
+			);
+    my $cmd = "RNASeq_align_job.pl -expt $experiment_accession";
+    if ($check) {$cmd .= " -check";}
+    if ($new_genome) {$cmd .= " -new_genome";}
+    if ($notbuild) {$cmd .= " -notbuild";}
+    if ($database) {$cmd .= " -database $database";}
+    if ($species) {$cmd .= " -species $species";}
+    $log->write_to("$cmd\n");
+    print "($count_done of $total) Running: $cmd\n";
+    if ($runlocally) {
+      $cmd .= " -threads 4";
+      $wormbase->run_script($cmd, $log);
+    } else {
+      $cmd = $wormbase->build_cmd($cmd);
+      $lsf->submit(@bsub_options, $cmd);
     }
   }
+  
+  if (!$runlocally) {
+    sleep(30); # wait for a while to let the bhist command have a chance of finding all the jobss
+    $lsf->wait_all_children( history => 1 );
+    $log->write_to("This set of jobs have completed!\n");
+    for my $job ( $lsf->jobs ) {
+      if ($job->history->exit_status != 0) {
+	$log->write_to("Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . "\n");
+      }
+    }
+  }
+  $lsf->clear;
 }
-$lsf->clear;
 
 ####################################################################################
 # all analyses have now run - munge results and put them where they are expected
 ####################################################################################
+sub results {
 
-# now sleep for 1 minute to give the file-system a chance to
-# sort out the files we have just written - was having intermittant
-# problems with one or two of the intron.ace files as if it hadn't
-# finished flushing the file buffers before the file was read in the
-# next sections.
-sleep 60;
+  if (!$notbuild) { # in the Build and have GTF and cufflinks done
+    print "Running FPKM analyses ...\n";
+    make_fpkm();
+  }
 
-if (!$notbuild) { # in the Build and have GTF and cufflinks done
-  make_fpkm();
-}
-
-# make the ace file of RNASeq spanned introns to load into acedb
-my $splice_file = $wormbase->misc_dynamic."/RNASeq_splice_${species}.ace";
-my $old_splice_file_size = -s $splice_file;
-chdir $RNASeq->{RNASeqSRADir};
-$status = $wormbase->run_command("rm -f $splice_file", $log);
-$status = $wormbase->run_command("cat */Introns/virtual_objects.${species}.RNASeq.ace > $splice_file", $log);
-$status = $wormbase->run_script("acezip.pl -file $splice_file", $log);
-$status = $wormbase->run_command("cat */Introns/Intron.ace > ${splice_file}.tmp", $log);
-$status = $wormbase->run_script("acezip.pl -file ${splice_file}.tmp", $log);
-# flatten the results of all libraries at a position into one entry
-open (FEAT, "< ${splice_file}.tmp") || $log->log_and_die("Can't open file ${splice_file}.tmp\n");
-open (FLAT, ">> $splice_file") || $log->log_and_die("Can't open file $splice_file\n");
-my %splice;
-while (my $line = <FEAT>) {
-  if ($line =~ /^Feature_data/ || $line =~ /^\s*$/) { # new clone
-    foreach my $start (keys %splice) {
-      foreach my $end (keys %{$splice{$start}}) {
-	my $total= 0;
-	my $string = "";
-	foreach my $library (keys %{$splice{$start}{$end}}) {
-	  my $value = $splice{$start}{$end}{$library};
-	  $total += $value;
-	  $string .= "$library $value "
+  # make the ace file of RNASeq spanned introns to load into acedb
+  print "Running Intron analyses ...\n";
+  my $splice_file = $wormbase->misc_dynamic."/RNASeq_splice_${species}.ace";
+  my $old_splice_file_size = -s $splice_file;
+  chdir $RNASeq->{RNASeqSRADir};
+  $status = $wormbase->run_command("rm -f $splice_file", $log);
+  $status = $wormbase->run_command("cat */Introns/virtual_objects.${species}.RNASeq.ace > $splice_file", $log);
+  $status = $wormbase->run_script("acezip.pl -file $splice_file", $log);
+  $status = $wormbase->run_command("cat */Introns/Intron.ace > ${splice_file}.tmp", $log);
+  $status = $wormbase->run_script("acezip.pl -file ${splice_file}.tmp", $log);
+  # flatten the results of all libraries at a position into one entry
+  open (FEAT, "< ${splice_file}.tmp") || $log->log_and_die("Can't open file ${splice_file}.tmp\n");
+  open (FLAT, ">> $splice_file") || $log->log_and_die("Can't open file $splice_file\n");
+  my %splice;
+  while (my $line = <FEAT>) {
+    if ($line =~ /^Feature_data/ || $line =~ /^\s*$/) { # new clone
+      foreach my $start (keys %splice) {
+	foreach my $end (keys %{$splice{$start}}) {
+	  my $total= 0;
+	  my $string = "";
+	  foreach my $library (keys %{$splice{$start}{$end}}) {
+	    my $value = $splice{$start}{$end}{$library};
+	    $total += $value;
+	    $string .= "$library $value "
+	  }
+	  # filter out any spurious introns with only 1 or 2 reads
+	  if ($total > 2) {print FLAT "Feature RNASeq_splice $start $end $total \"$string\"\n";}
 	}
-	# filter out any spurious introns with only 1 or 2 reads
-	if ($total > 2) {print FLAT "Feature RNASeq_splice $start $end $total \"$string\"\n";}
       }
+      # reset things for the new clone
+      %splice = ();
+      print FLAT $line;
+    } else {
+      my @feat = split /\s+/, $line;
+      $splice{$feat[2]}{$feat[3]}{$feat[5]} = $feat[4];
     }
-    # reset things for the new clone
-    %splice = ();
-    print FLAT $line;
-  } else {
-    my @feat = split /\s+/, $line;
-    $splice{$feat[2]}{$feat[3]}{$feat[5]} = $feat[4];
+  }
+  # and do the last clone
+  foreach my $start (keys %splice) {
+    foreach my $end (keys %{$splice{$start}}) {
+      my $total= 0;
+      my $string = "";
+      foreach my $library (keys %{$splice{$start}{$end}}) {
+	my $value = $splice{$start}{$end}{$library};
+	$total += $value;
+	$string .= "$library $value "
+      }
+      # filter out any spurious introns with only 1 or 2 reads
+      if ($total > 2) {print FLAT "Feature RNASeq_splice $start $end $total \"$string\"\n";}
+    }
+  }
+  close(FLAT);
+  close(FEAT);
+  $status = $wormbase->run_command("rm -f ${splice_file}.tmp", $log);
+  
+  my $splice_file_size = -s $splice_file;
+  if ($old_splice_file_size < $splice_file_size * 0.9 || $old_splice_file_size > $splice_file_size * 1.1) {
+    $log->error("WARNING: old splice file size: $old_splice_file_size, new splice file size: $splice_file_size\n");
   }
 }
-# and do the last clone
-foreach my $start (keys %splice) {
-  foreach my $end (keys %{$splice{$start}}) {
-    my $total= 0;
-    my $string = "";
-    foreach my $library (keys %{$splice{$start}{$end}}) {
-      my $value = $splice{$start}{$end}{$library};
-      $total += $value;
-      $string .= "$library $value "
-    }
-    # filter out any spurious introns with only 1 or 2 reads
-    if ($total > 2) {print FLAT "Feature RNASeq_splice $start $end $total \"$string\"\n";}
-  }
-}
-close(FLAT);
-close(FEAT);
-$status = $wormbase->run_command("rm -f ${splice_file}.tmp", $log);
-
-my $splice_file_size = -s $splice_file;
-if ($old_splice_file_size < $splice_file_size * 0.9 || $old_splice_file_size > $splice_file_size * 1.1) {
-  $log->error("WARNING: old splice file size: $old_splice_file_size, new splice file size: $splice_file_size\n");
-}
-
-
-
-
-$log->mail();
-print "Finished.\n" if ($verbose);
-exit(0);
 
 ############################################################################
 sub make_fpkm {

@@ -30,6 +30,7 @@ my %exclude = (
 	'Pristionchus pacificus'       => 1,
 	'Brugia malayi'                => 1,
         'Onchocerca volvulus'          => 1,
+        'Strongyloides ratti'          => 1,
 	) ;
 
 our $output; # file to write

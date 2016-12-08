@@ -298,7 +298,7 @@ sub read_templates {
 sub write_config {
   my ($template, $file, @replacements) = @_;
   
-  my %vhosts = ( STAGING => $PARASITE_STAGING_MYSQL, 
+  my %vhosts = ( STAGING => $PARASITE_STAGING, 
                  PROD    => "mysql-ps-prod",
                  PAN     => "mysql-pan-1" );
   
@@ -563,12 +563,14 @@ END_WORM_LITE_TEMPLATE
 
 BEGIN_STAGING_REGISTRY_TEMPLATE
 use Bio::EnsEMBL::Registry;
+use Bio::EnsEMBL::Production::DBSQL::DBAdaptor;
+
 Bio::EnsEMBL::Registry->no_version_check(1);
 Bio::EnsEMBL::Registry->no_cache_warnings(1);
 {
   Bio::EnsEMBL::Registry->load_registry_from_url('STAGINGURLRW/ENSEMBL_VERSION');
 
-  Bio::EnsEMBL::DBSQL::DBAdaptor->new(
+  Bio::EnsEMBL::Production::DBSQL::DBAdaptor->new(
     -host    => 'PANHOST',
     -port    => 'PANPORT',
     -user    => 'PANUSERRO',

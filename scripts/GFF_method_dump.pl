@@ -123,16 +123,34 @@ if ( @methods ) {
                           ($gff3) ? "3" : "2",
                           $file);
         
-        open (WRITEDB,"echo '$cmd' | $giface_client $host -port $port -userid wormpub -pass blablub |") or $log->log_and_die("$!\n");
-        while (my $line = <WRITEDB>) {
-          if ($line =~ 'ERROR') {
-            $log->error;
-            $log->write_to("ERROR detected while GFF dumping $sequence:\n\t$line\n\n");
-            print "ERROR detected while GFF dumping $sequence:\n\t$line\n\n";
+        #
+        # For reasons I cannot get to the bottom of, the client sometimes fails on larger 
+        # sequences, even though the server is still happy. So if we get a fail here, we
+        # try once again
+        #
+
+        foreach my $try (1,2) {
+          open (my $gif_out,"echo '$cmd' | $giface_client $host -port $port -userid wormpub -pass blablub |") or $log->log_and_die("$!\n");
+          while (my $line = <$gif_out>) {
+            if ($line =~ 'ERROR') {
+              $log->error;
+              $log->write_to("ERROR detected while GFF dumping $sequence:\n\t$line\n\n");
+              print "ERROR detected while GFF dumping $sequence:\n\t$line\n\n";
+            }
+          }
+          my $success = close($gif_out);
+          if ($success) {
+            last;
+          } else {
+            if ($try == 1) {
+              unlink $file if -e $file;
+              continue;
+            } else {
+              $log->log_and_die("Failed twice to run command '$cmd'\n");
+            }
           }
         }
-        close(WRITEDB) or $log->log_and_die("Could not successfully close command '$cmd'\n");
-        
+          
         my $check = &check_the_file($file, $sequence);
         if ($check) {
           $log->log_and_die("Something went wrong with dumping of $sequence: $check\n");

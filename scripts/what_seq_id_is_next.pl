@@ -41,6 +41,7 @@ if ( $store ) {
 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
+my $version = $wormbase->version;
 
 # there should be *only* one clone per line + a gene value in the input_file
 # like:
@@ -163,7 +164,7 @@ foreach my $clone (@clones) {
     $log->write_to("$new_id passes internal use test\n");
 
     # check to see if the ID has ever been used for a CDS
-    my $new      = `fgrep -c $root"\.$digit" /nfs/wormpub/BUILD/WORMPEP/wormpep_current/wormpep.history*`;
+    my $new      = `fgrep -c $root"\.$digit" /nfs/wormpub/BUILD/WORMPEP/wormpep_${version}./wormpep.history*`;
     if ($new > 0){
       $log->write_to("ROUND1 $new_id fails wormpep test trying again.......\n");
       $storedIDs{$new_id} = 1;

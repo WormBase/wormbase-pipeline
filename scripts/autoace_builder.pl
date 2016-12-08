@@ -31,7 +31,7 @@ my ( $gff_dump,     $processGFF, $gff_split );
 my $gene_span;
 my ( $load, $big_load, $tsuser );
 my ($map_features, $remap_misc_dynamic, $map, $map_alleles, $transcripts, $cdna_files, $misc_data_sets, $homol_data_sets, $nem_contigs);
-my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $names, $treefam, $ncbi_xrefs, $load_interpro, $RRID, $omim);
+my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $treefam, $ncbi_xrefs, $load_interpro, $RRID, $omim);
 my ( $utr, $agp, $gff_munge, $gff3_munge, $extras , $ontologies, $interpolate, $check, $enaseqxrefs, $enagenexrefs, $enaprotxrefs, $xrefs);
 my ( $data_check, $buildrelease, $public,$finish_build, $gffdb, $autoace, $release, $user, $kegg, $prepare_gff_munge, $post_merge, $gtf);
 
@@ -80,7 +80,6 @@ GetOptions(
 	   'confirm'        => \$confirm,
 	   'operon'         => \$operon,
 	   'repeats'        => \$repeats,
-	   'names'          => \$names,
 	   'treefam'        => \$treefam,
            'ncbi_xrefs'     => \$ncbi_xrefs,
 	   'utr'            => \$utr,
@@ -214,7 +213,7 @@ if ($enaprotxrefs) {
 }
 
 $wormbase->run_script( 'make_wormpep.pl -all -final'                  , $log) if $finish_wormpep;
-$wormbase->run_script( 'molecular_names_for_genes.pl'            , $log) if $names;
+
 $wormbase->run_script( 'get_treefam.pl'                          , $log) if $treefam;
 $wormbase->run_script( 'KEGG.pl', $log )                                 if $kegg;
 
@@ -589,6 +588,7 @@ sub make_UTR {
 }
 
 sub post_merge_steps {
+  $wormbase->run_script("molecular_names_for_genes.pl", $log);
   $wormbase->run_script("ONTOLOGY/update_GO_terms.pl", $log); 
   $wormbase->run_script('transfer_interpro_GO_terms.pl', $log );
   $wormbase->run_script("cluster_gene_connection.pl", $log);

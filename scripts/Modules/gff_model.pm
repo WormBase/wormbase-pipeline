@@ -62,7 +62,8 @@ sub store_exon {
     stop        => $stop,
     orientation => $orientation,
     chromosome  => $chromosome,
-    cds         => $cds_name
+    cds         => $cds_name,
+    phase       => $frame,
   };
 }
 
