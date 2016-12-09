@@ -11,10 +11,13 @@ do
   $PARASITE_STAGING_MYSQL mysqldump $DB > $DB.sql
   mysql-ps-rel-ensrw -e "CREATE DATABASE $DB"
   mysql-ps-rel-ensrw $DB < $DB.sql
+  mysql-ps-rel-ensrw mysqlcheck -o $DB
   mysql-ps-rest-rel-ensrw -e "CREATE DATABASE $DB"
   mysql-ps-rest-rel-ensrw $DB < $DB.sql
+  mysql-ps-rest-rel-ensrw mysqlcheck -o $DB
   mysql-ps-intrel-ensrw -e "CREATE DATABASE $DB"
   mysql-ps-intrel-ensrw $DB < $DB.sql
+  mysql-ps-intrel-ensrw mysqlcheck -o $DB
 done
 
 # Compress the archive then push to the EBI Archive Freezer
