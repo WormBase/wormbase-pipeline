@@ -184,7 +184,7 @@ exit(0);
 
 sub merge_gene {
   if($livegene and $deadgene and $user) {
-
+    print "\nMerging $deadgene into $livegene for USER: $user\n\n";
     my $output = "";
     my $ok = 1; # error status
 
