@@ -14,25 +14,15 @@ use Log_files;
 
 my ($wormbase,$debug,$test,$store,$all,$quick,$sourcedb,$noinit,$target);
 
-
-###########################################################################
-#
-# For MT3 just run: 
-# perl /nfs/wormpub/wormbase-pipeline/scripts/GENEACE/build_light.pl -all
-# or
-# bsub -q long -M 6000 -R "select[mem>6000] rusage[mem=6000]" COMMAND
-#
-###########################################################################
-
 GetOptions (
 	    "store"      => \$store,
 	    "test"       => \$test,
 	    "debug:s"    => \$debug,
-	    "all"        => \$all,
-	    "quick"      => \$quick,
-	    "source:s"   => \$sourcedb,
-	    "noinit"     => \$noinit,
-	    "target:s"   => \$target,
+	    "all"        => \$all,        # loads all the data
+	    "quick"      => \$quick,      # loads gene and gene annotation data
+	    "source:s"   => \$sourcedb,   # Allows you to specify an alternative source for ace files, defaults to build elegans.
+	    "noinit"     => \$noinit,     # skips the part where the existing database dir structure is removed and set up again. 
+	    "target:s"   => \$target,     # Alternative target database path (so you can keep working with the existing build_light).
 	   );
 
 if ($store) {
@@ -197,3 +187,84 @@ print "Diaskeda same Poli\n"; #we had alot of fun#
 $log->mail();
 exit(0);
 __END__
+
+=pod
+                                                                                           
+=head2   NAME - build_light.pl
+                                                                                           
+=head1 USAGE
+                                                                                           
+=over 4
+                                                                                           
+=item build_light.pl -[options]
+  
+=back
+  
+=head1 DESCRIPTION
+
+Script for MT3 to run to generate a stripped down build database containing mostly C. elegans data:
+
+
+Example1: perl /nfs/wormpub/wormbase-pipeline/scripts/GENEACE/build_light.pl -all
+
+   Standard run to remove the existing database and regenerate using the latest build data.
+
+
+Example2: bsub -q long -M 6000 -R "select[mem>6000] rusage[mem=6000]" perl build_light.pl -all
+
+   If you want to run under LSF.
+
+
+Example3: perl /nfs/wormpub/wormbase-pipeline/scripts/GENEACE/build_light.pl -all -target <New database path>
+
+   Creates a new database and leaves the old one in place.
+
+
+=head2 OPTIONAL SCREEN ENV:
+
+=over 4
+
+screen -S build_light (Optional, if you are worried your sanger tunnel will go down.)
+
+screen -d (detaches from the screen session)
+
+screen -r (reattaches to the screen session)
+
+=back
+
+=head2 MANDATORY arguments:
+
+=over 4
+
+=item -all
+
+Loads all the data, takes approx. 16hrs
+
+=item -quick
+
+Loads gene and gene annotation data 1-2hrs
+
+=back
+
+=head2 OPTIONAL arguments:
+
+=over 4
+
+=item -source <Path to database where . ace files are located>
+
+Allows you to specify an alternative source for ace files, defaults to build elegans.
+
+=item -noinit
+
+Skips the part where the existing database dir structure is removed and set up again. 
+
+=item -target <New database path>
+
+Alternative target database path (so you can keep working with the existing build_light).
+
+=back
+
+=head1 AUTHOR Paul Davis (pad@sanger.ac.uk)
+
+=cut
+	   
