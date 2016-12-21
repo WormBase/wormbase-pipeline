@@ -12,7 +12,17 @@ use Getopt::Long;
 use Storable;
 use Log_files;
 
-my ($wormbase,$debug,$test,$store,$all,$quick,$sourcedb,$noinit);
+my ($wormbase,$debug,$test,$store,$all,$quick,$sourcedb,$noinit,$target);
+
+
+###########################################################################
+#
+# For MT3 just run: 
+# perl /nfs/wormpub/wormbase-pipeline/scripts/GENEACE/build_light.pl -all
+# or
+# bsub -q long -M 6000 -R "select[mem>6000] rusage[mem=6000]" COMMAND
+#
+###########################################################################
 
 GetOptions (
 	    "store"      => \$store,
@@ -22,6 +32,7 @@ GetOptions (
 	    "quick"      => \$quick,
 	    "source:s"   => \$sourcedb,
 	    "noinit"     => \$noinit,
+	    "target:s"   => \$target,
 	   );
 
 if ($store) {
@@ -34,7 +45,14 @@ else {
 }
 
 my $log = Log_files->make_build_log($wormbase);
-my $dbdir = "/nfs/wormpub/DATABASES/build_light_full";
+my $dbdir;
+if ($target) {
+  $dbdir = $target;
+}
+else {
+  $dbdir = "/nfs/wormpub/DATABASES/build_light_full";
+}
+
 unless (defined $sourcedb) {
   $sourcedb = "/nfs/wormpub/BUILD/elegans";
 }
