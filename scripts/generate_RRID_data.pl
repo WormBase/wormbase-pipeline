@@ -151,7 +151,7 @@ open($out_fh, ">$outfile") or $log->log_and_die("Could not open $outfile for wri
 print "Output file opened $outfile\n";
 
 my $count;
-print $out_fh "#Version WS$wormbase_version\n#\n#\n# This file contains information on all non-wild isolate strains in the WS$wormbase_version release of WormBase.\n";
+print $out_fh "#Version $wormbase_version\n#\n#\n# This file contains information on all non-wild isolate strains in the WS$wormbase_version release of WormBase.\n";
 print $out_fh "# ID\tSpecies\tGenotype\tVariants\tGenes modified\tStrain Info\tMutagen\tComments\tReferences\tMade By\tURL\n";
 foreach my $strain (@Unique_strains) {
   $count++;
