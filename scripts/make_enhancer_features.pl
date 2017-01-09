@@ -19,7 +19,7 @@
 #(WBPaper ID)                     Defined_by_paper    ?Paper XREF Feature #Evidence
 #(Gene)                           Associated_with_gene       ?Gene       XREF Associated_feature #Evidence 
 #(TF)                             Bound_by_product_of ?Gene XREF Gene_product_binds #Evidence 
-#(TF)                             Transcription_factor UNIQUE ?Transcription_factor XREF Binding_site 
+#(TF)                             Associated_with_transcription_factor UNIQUE ?Transcription_factor XREF Binding_site 
 #(Caltech)                        Associated_with_expression_pattern         ?Expr_pattern XREF Associated_feature #Evidence
 #(date tagged remark)             Remark ?Text #Evidence
 #(enhancer, silencer, promoter, TF_binding_site, binding_site) Method UNIQUE ?Method
@@ -33,7 +33,7 @@
 #Remark ". [2013-07-23 gw3]"
 #Associated_with_gene 
 # Bound_by_product_of 
-# Transcription_factor 
+# Associated_with_transcription_factor 
 #Method  enhancer
 #        TF_binding_site
 #        regulatory_region
@@ -843,7 +843,7 @@ sub check_overlapping_features {
       if ($method =~ /bind/ && $ft_method =~ /bind/) {$stars = '** '} # two stars if they are both some sort of binding method
       if ($method eq $ft_method) {$stars = '***'} # three stars if the method is the same
       my $len = abs($end-$start);
-      my $TF = $ft->Transcription_factor;
+      my $TF = $ft->Associated_with_transcription_factor;
       my $TransFac = '';
       if (defined $TF) {
 	foreach my $TF_name (keys $TFs) {
