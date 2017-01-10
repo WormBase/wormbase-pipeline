@@ -2,19 +2,29 @@
 
 use strict;
 
+use Data::Dumper;
 use File::Basename;
 use File::Copy qw(copy);
+use Getopt::Long;
 use IO::Uncompress::Gunzip qw(gunzip);
 use Log::Log4perl qw(:easy);
-
-## TODO: Take arguments from the command line
-my $ftp_dir = "/ebi/ftp/pub/databases/wormbase/parasite/releases/current";
-my $jbrowse_path = "/homes/bbolt/dev/jbrowse/JBrowse-1.12.1";
-my $out_dir = "/homes/bbolt/dev/jbrowse/JBrowse-1.12.1/parasite";
-my $gff3_config_file = "/homes/bbolt/dev/wormbase-pipeline/parasite/scripts/production/jbrowse/gff3_tracks.tsv";
+use Pod::Usage qw(pod2usage);
 
 Log::Log4perl->easy_init($INFO);
 my $logger = get_logger();
+
+## Get the command line options
+if(!@ARGV) {
+  pod2usage(1);
+  exit;
+}
+my ($ftp_dir, $jbrowse_path, $out_dir, $gff3_config_file);
+GetOptions(
+    'ftp_dir=s'          => \$ftp_dir,
+    'jbrowse_path=s'     => \$jbrowse_path,
+    'out_dir=s'          => \$out_dir,
+    'gff3_config_file=s' => \$gff3_config_file
+  );
 
 ## Load the GFF3 config into memory - we only want to do this once
 my @gff3_config;
@@ -104,3 +114,18 @@ for my $species (@species) {
 
 
 ## Viewable at http://<path_to_jbrowse_server>/?data=parasite/schistosoma_mansoni_prjea36577/data/
+
+
+__END__
+
+=head1 NAME
+
+create_species_config.pl - produce a JBrowse configuration from a WormBase ParaSite FTP directory
+
+=head1 USAGE
+
+  create_species_config.pl                                \
+      --ftp_dir <path to filesystem location of FTP site> \
+      --jbrowse_path <path to JBrowse check out>          \
+      --out_dir <output directory>                        \
+      --gff3_config_file <path to GFF3 mapping file>
