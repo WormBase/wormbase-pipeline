@@ -18,12 +18,13 @@ if(!@ARGV) {
   pod2usage(1);
   exit;
 }
-my ($ftp_dir, $jbrowse_path, $out_dir, $gff3_config_file);
+my ($ftp_dir, $jbrowse_path, $out_dir, $gff3_config_file, $species_name);
 GetOptions(
     'ftp_dir=s'          => \$ftp_dir,
     'jbrowse_path=s'     => \$jbrowse_path,
     'out_dir=s'          => \$out_dir,
-    'gff3_config_file=s' => \$gff3_config_file
+    'gff3_config_file=s' => \$gff3_config_file,
+    'species=s'          => \$species_name
   );
 
 ## Load the GFF3 config into memory - we only want to do this once
@@ -45,9 +46,7 @@ close(FILE);
 opendir(DIR, "$ftp_dir/species/") or $logger->logdie("Cannot open species directory: $!");
 my @species = readdir(DIR);
 closedir(DIR);
-### TODO: For testing, we're just limiting to one species for now
-@species = qw(schistosoma_mansoni);
-###
+@species = qq($species_name) if $species_name;
 for my $species (@species) {
   next if $species =~ /^\.*$/;
   my $species_name = basename($species);
