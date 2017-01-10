@@ -12,11 +12,15 @@ use Getopt::Long qw(GetOptions);
 my $in = "./in";
 my $out = "./out";
 my $track_hub = 0;
+my $jbrowse = 0;
 
 GetOptions('in=s'      => \$in,
            'out=s'     => \$out,
-           'track_hub' => \$track_hub
+           'track_hub' => \$track_hub,
+           'jbrowse'   => \$jbrowse
           );
+          
+die "Can only output one of track hub or JBrowse at any time" if $track_hub && $jbrowse;
 
 my @species_list = `ls $in/*.ini | xargs -n1 basename`;
 foreach(@species_list) {
@@ -73,6 +77,13 @@ foreach my $in_file (@species_list) {
  
     mkdir "$out/$species" unless -d "$out/$species";
     open(OUTFILE, ">$out/$species/trackDb.txt");
+  }
+  
+  if($jbrowse) {
+    my $species_lc = lc $species;
+    mkdir "$out/$species_lc" unless -d "$out/$species_lc";
+    mkdir "$out/$species_lc/data" unless -d "$out/$species_lc/data";
+    open(OUTFILE, ">>$out/$species_lc/data/tracks.conf");
   }
 
   my $groups;
@@ -195,13 +206,35 @@ foreach my $in_file (@species_list) {
         print HTMLOUT $desc;
         close(HTMLOUT);
         # Create the trackDb text
-        $files .= sprintf("track %s\nparent %s\ntype bigWig\nbigDataUrl %s\nshortLabel %s\nlongLabel %s\ncolor %s\nhtml doc/%s\nvisibility %s\n\n", $track_id, $study, $url, $ini{"sample_shortLabel_$sample"}, $ini{"sample_longLabel_$sample"}, $ini{'Colour'} || "0,0,0", $track_id, $display);
+        $files .= sprintf("track %s\nparent %s\ntype bigWig\nbigDataUrl %s\nshortLabel %s\nlongLabel %s\ncolor %s\nhtml doc/%s\nvisibility %s\n\n",
+                          $track_id,
+                          $study,
+                          $url,
+                          $ini{"sample_shortLabel_$sample"},
+                          $ini{"sample_longLabel_$sample"},
+                          $ini{'Colour'} || "0,0,0",
+                          $track_id,
+                          $display
+                        );
+      }
+      if($jbrowse) {
+        $files .= sprintf("[tracks.%s]\nstoreClass = JBrowse/Store/SeqFeature/BigWig\ntype = JBrowse/View/Track/Wiggle/XYPlot\nurlTemplate = %s\nkey = %s\ncategory = RNA-Seq/%s\nautoscale = local\nyScalePosition = right\nstyle.pos_color = rgb(%s)\n\n",
+                          $track_id,
+                          $url,
+                          $ini{"sample_longLabel_$sample"},
+                          $study,
+                          $ini{'Colour'} || "0,0,0"
+                        );                     
       }
     }
   }
 
   if($track_hub) {
     print OUTFILE $groups, "\n";
+    print OUTFILE $files;
+    close(OUTFILE);
+  }
+  if($jbrowse) {
     print OUTFILE $files;
     close(OUTFILE);
   }
