@@ -36,7 +36,7 @@ foreach(<FILE>) {
     'type' => $parts[0],
     'category' => $parts[1],
     'trackLabel' => $parts[2],
-    'urltemplate' => $parts[3]
+    'trackType' => $parts[3]
   });
 }
 close(FILE);
@@ -94,14 +94,14 @@ for my $species (@species) {
     foreach my $gff3_track (@gff3_config) {
       $logger->info(sprintf("-- feature type %s", $gff3_track->{'type'}));
       my $sys_cmd = sprintf(
-        qq(perl %s/bin/flatfile-to-json.pl --gff "%s/%s/data_files/%s" --type %s --trackLabel "%s" --urltemplate "%s" --metadata '{"category": "%s"}' --out "%s/%s/data"),
+        qq(perl %s/bin/flatfile-to-json.pl --gff "%s/%s/data_files/%s" --type %s --trackLabel "%s" --trackType %s --metadata '{"category": "%s"}' --out "%s/%s/data"),
         $jbrowse_path,
         $out_dir,
         $prod_name,
         $gff3_file,
         $gff3_track->{'type'},
         $gff3_track->{'trackLabel'},
-        $gff3_track->{'urltemplate'},
+        $gff3_track->{'trackType'},
         $gff3_track->{'category'},
         $out_dir,
         $prod_name
