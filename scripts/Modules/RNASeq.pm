@@ -67,7 +67,7 @@ Gary gw3@ebi.ac.uk
 package RNASeq;
 
 use strict;             
-use XML::LibXML;
+#use XML::LibXML;
 use LWP;
 use lib $ENV{'CVS_DIR'};
 use Carp;
