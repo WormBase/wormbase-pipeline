@@ -9,13 +9,14 @@ use HTML::Entities;
 use JSON;
 use Log::Log4perl qw(:easy);
 use LWP::UserAgent;
+use Pod::Usage qw(pod2usage);
 use XML::Simple;
 
 Log::Log4perl->easy_init($INFO);
 my $logger = get_logger();
 
-my $in = "./in";
-my $out = "./out";
+my $in;
+my $out;
 my $track_hub = 0;
 my $jbrowse = 0;
 
@@ -24,6 +25,10 @@ GetOptions('in=s'      => \$in,
            'track_hub' => \$track_hub,
            'jbrowse'   => \$jbrowse
           );
+if(!$in || !$out || (!$track_hub && !$jbrowse)) {
+  pod2usage(1);
+  exit;
+}
           
 die "Can only output one of track hub or JBrowse at any time" if $track_hub && $jbrowse;
 
@@ -294,3 +299,17 @@ sub get_life_stage_url {
   }
 }
  
+
+__END__
+
+=head1 NAME
+
+create_rnaseq_track_conf.pl - takes the RNA-seq ini configuration files to produce either a complete track hub or JBrowse conf files
+
+=head1 USAGE
+
+  create_rnaseq_track_conf.pl           \
+      --in <path to ini files>          \
+      --out <path to track hub output>  \
+      [ --jbrowse ]                     \
+      [ --track_hub ]
