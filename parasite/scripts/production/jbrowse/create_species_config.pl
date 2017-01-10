@@ -83,14 +83,18 @@ for my $species (@species) {
     gunzip("$out_dir/$prod_name/data_files/$gff3_file.gz", "$out_dir/$prod_name/data_files/$gff3_file");
     foreach my $gff3_track (@gff3_config) {
       warn sprintf("-- feature type %s", $gff3_track->{'type'});
-      my $sys_cmd = sprintf(qq(perl %s/bin/flatfile-to-json.pl --gff %s --type %s --trackLabel "%s" --urltemplate "%s" --metadata '{"category": "%s"}' --out %s),
+      my $sys_cmd = sprintf(
+        qq(perl %s/bin/flatfile-to-json.pl --gff "%s/%s/data_files/%s" --type %s --trackLabel "%s" --urltemplate "%s" --metadata '{"category": "%s"}' --out "%s/%s/data"),
         $jbrowse_path,
-        "$out_dir/$prod_name/data_files/$gff3_file",
+        $out_dir,
+        $prod_name,
+        $gff3_file,
         $gff3_track->{'type'},
         $gff3_track->{'trackLabel'},
         $gff3_track->{'urltemplate'},
         $gff3_track->{'category'},
-        "$out_dir/$prod_name/data"
+        $out_dir,
+        $prod_name
       );
       `$sys_cmd`;
     }
