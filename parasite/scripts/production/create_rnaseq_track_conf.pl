@@ -2,12 +2,17 @@
 
 use strict;
 use warnings;
+
 use Data::Dumper;
-use LWP::UserAgent;
-use HTML::Entities;
-use XML::Simple;
-use JSON;
 use Getopt::Long qw(GetOptions);
+use HTML::Entities;
+use JSON;
+use Log::Log4perl qw(:easy);
+use LWP::UserAgent;
+use XML::Simple;
+
+Log::Log4perl->easy_init($INFO);
+my $logger = get_logger();
 
 my $in = "./in";
 my $out = "./out";
@@ -43,7 +48,7 @@ if($track_hub) {
 
 foreach my $in_file (@species_list) {
  
-  warn "Species: $in_file";
+  $logger->info("Species: $in_file");
   $counter = 0;
 
   my $file = "$in/$in_file.ini";
@@ -57,9 +62,9 @@ foreach my $in_file (@species_list) {
     $bioproject = $1 if $1;
     last if $bioproject;
   }
-  warn "Skipping as no BioProject" && next unless $bioproject;
+  $logger->info("Skipping as no BioProject") && next unless $bioproject;
   my $species = $in_file . "_" . lc($bioproject);
-  warn "BioProject: $bioproject";
+  $logger->info("BioProject: $bioproject");
 
   if($track_hub) {
     # Write to genomes.txt
@@ -106,8 +111,8 @@ foreach my $in_file (@species_list) {
   
   # Get the details for each study
   foreach my $study (keys %studies) {
-    next if $study =~ /'^general$'/i;
-    warn "-- Study: $study";
+    next if $study =~ /^general$/i;
+    $logger->info("-- Study: $study");
     my %ini;
     # Put the key value pairs into a hash
     foreach(split("\n", $studies{$study})) {
@@ -165,7 +170,7 @@ foreach my $in_file (@species_list) {
     }
     # Loop through each sample
     foreach my $sample (@samples_ordered) {
-      warn "  -- Sample: $sample";
+      $logger->info("  -- Sample: $sample");
       # Skip samples that do not have a description
       next unless $ini{"sample_shortLabel_$sample"} && $ini{"sample_longLabel_$sample"};
       $counter++;
