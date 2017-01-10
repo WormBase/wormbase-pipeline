@@ -2,4 +2,4 @@ gene,mRNA,exon,CDS,five_prime_UTR,three_prime_UTR,tRNA,rRNA,pseudogene,tRNA_pseu
 ncRNA,nucleotide_match	Genome Annotation	Predicted non-coding RNA (ncRNA)	
 repeat_region	Repeat Regions	Repeat Region	
 low_complexity_region	Repeat Regions	Low Complexity Region (Dust)	
-tandem_repeat	Repeat Regions	Tandem Repeat (TRF)s
+tandem_repeat	Repeat Regions	Tandem Repeat (TRFs)	
