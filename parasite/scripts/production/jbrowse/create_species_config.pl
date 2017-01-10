@@ -18,7 +18,7 @@ my $logger = get_logger();
 
 ## Load the GFF3 config into memory - we only want to do this once
 my @gff3_config;
-open(FILE, $gff3_config_file) or die "Cannot open GFF3 track configuration file";
+open(FILE, $gff3_config_file) or $logger->logdie("Cannot open GFF3 track configuration file: $!");
 foreach(<FILE>) {
   chomp;
   my @parts = split("\t", $_);
@@ -32,7 +32,7 @@ foreach(<FILE>) {
 close(FILE);
 
 ## Get all the species directories from the FTP site
-opendir(DIR, "$ftp_dir/species/") or die "Cannot open species directory";
+opendir(DIR, "$ftp_dir/species/") or $logger->logdie("Cannot open species directory: $!");
 my @species = readdir(DIR);
 closedir(DIR);
 ### TODO: For testing, we're just limiting to one species for now
@@ -43,7 +43,7 @@ for my $species (@species) {
   my $species_name = basename($species);
   
   ## Get all the genomes for a species
-  opendir(DIR, "$ftp_dir/species/$species") or die "Cannot open species directory";
+  opendir(DIR, "$ftp_dir/species/$species") or $logger->logdie("Cannot open species directory: $!");
   my @genomes = readdir(DIR);
   closedir(DIR);
   foreach my $genome (@genomes) {
@@ -55,7 +55,7 @@ for my $species (@species) {
     mkdir "$out_dir/$prod_name/data_files";
     
     ## Get a list of the available files for this genome
-    opendir(DIR, "$ftp_dir/species/$species/$bioproject") or die "Cannot open genome directory";
+    opendir(DIR, "$ftp_dir/species/$species/$bioproject") or $logger->logdie("Cannot open genome directory: $!");
     my @files = readdir(DIR);
     closedir(DIR);
 
