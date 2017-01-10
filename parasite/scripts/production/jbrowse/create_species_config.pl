@@ -113,7 +113,7 @@ for my $species (@species) {
 }
 
 
-## Viewable at http://<path_to_jbrowse_server>/?data=parasite/schistosoma_mansoni_prjea36577/data/
+## Viewable at http://<path_to_jbrowse_server>/?data=parasite/<production_name>/data/
 
 
 __END__
