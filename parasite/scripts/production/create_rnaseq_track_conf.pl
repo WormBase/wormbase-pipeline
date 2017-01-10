@@ -11,8 +11,12 @@ use Getopt::Long qw(GetOptions);
 
 my $in = "./in";
 my $out = "./out";
+my $track_hub = 0;
 
-GetOptions('in=s' => \$in, 'out=s' => \$out);
+GetOptions('in=s'      => \$in,
+           'out=s'     => \$out,
+           'track_hub' => \$track_hub
+          );
 
 my @species_list = `ls $in/*.ini | xargs -n1 basename`;
 foreach(@species_list) {
@@ -24,12 +28,14 @@ my $counter = 0;
 
 # Create the hub.txt file
 mkdir $out unless -d $out;
-open(OUTFILE, ">$out/hub.txt");
-print OUTFILE "hub WBPS-RNASeq\nshortLabel RNA-Seq Alignments\nlongLabel RNA-Seq Alignments for WormBase ParaSite\ngenomesFile genomes.txt\nemail parasite-help\@sanger.ac.uk\n";
-close(OUTFILE);
+if($track_hub) {
+  open(OUTFILE, ">$out/hub.txt");
+  print OUTFILE "hub WBPS-RNASeq\nshortLabel RNA-Seq Alignments\nlongLabel RNA-Seq Alignments for WormBase ParaSite\ngenomesFile genomes.txt\nemail parasite-help\@sanger.ac.uk\n";
+  close(OUTFILE);
 
-open(OUTFILE, ">$out/genomes.txt");
-close(OUTFILE);
+  open(OUTFILE, ">$out/genomes.txt");
+  close(OUTFILE);
+}
 
 foreach my $in_file (@species_list) {
  
@@ -51,21 +57,23 @@ foreach my $in_file (@species_list) {
   my $species = $in_file . "_" . lc($bioproject);
   warn "BioProject: $bioproject";
 
-  # Write to genomes.txt
-  open(OUTFILE, ">>$out/genomes.txt");
-  ## Use the REST API to lookup the assembly name
-  my $url = "http://parasite.wormbase.org/api/info/assembly/$species?content-type=application/json";
-  my $ua = LWP::UserAgent->new();
-  my $response = $ua->get($url);
-  if ($response->is_success) {
-    my $output = from_json($response->decoded_content);
-    my $assembly = $output->{'assembly_name'};
-    print OUTFILE "genome $assembly\ntrackDb $species/trackDb.txt\n\n";
-  }
-  close(OUTFILE);
+  if($track_hub) {
+    # Write to genomes.txt
+    open(OUTFILE, ">>$out/genomes.txt");
+    ## Use the REST API to lookup the assembly name
+    my $url = "http://parasite.wormbase.org/api/info/assembly/$species?content-type=application/json";
+    my $ua = LWP::UserAgent->new();
+    my $response = $ua->get($url);
+    if ($response->is_success) {
+      my $output = from_json($response->decoded_content);
+      my $assembly = $output->{'assembly_name'};
+      print OUTFILE "genome $assembly\ntrackDb $species/trackDb.txt\n\n";
+    }
+    close(OUTFILE);
  
-  mkdir "$out/$species" unless -d "$out/$species";
-  open(OUTFILE, ">$out/$species/trackDb.txt");
+    mkdir "$out/$species" unless -d "$out/$species";
+    open(OUTFILE, ">$out/$species/trackDb.txt");
+  }
 
   my $groups;
   my $files;
@@ -122,10 +130,12 @@ foreach my $in_file (@species_list) {
       }
     }
     $proj_desc =~ s/\n//g;
-    mkdir "$out/$species/doc" unless -d "$out/$species/doc";
-    open(HTMLOUT, ">$out/$species/doc/$study.html");
-    print HTMLOUT $proj_desc;
-    close(HTMLOUT);
+    if($track_hub) {
+      mkdir "$out/$species/doc" unless -d "$out/$species/doc";
+      open(HTMLOUT, ">$out/$species/doc/$study.html");
+      print HTMLOUT $proj_desc;
+      close(HTMLOUT);
+    }
     # Get the unique sample IDs
     my @samples;
     foreach my $key (keys %ini) {
@@ -179,20 +189,24 @@ foreach my $in_file (@species_list) {
       $desc =~ s/<br \/>/\n<br \/>\n/g;
       my $ftp = sprintf("ftp://ngs.sanger.ac.uk/production/parasites/wormbase/RNASeq_alignments/%s", lc($species));
       $desc .= sprintf('<br /><br />This data comes from URL: <a href="%s">%s</a><br />Download data (BAM and BigWig): <a href="%s">%s</a>', $url, $url, $ftp, $ftp);
-      mkdir "$out/$species/doc" unless -d "$out/$species/doc";
-      open(HTMLOUT, ">$out/$species/doc/$track_id.html");
-      print HTMLOUT $desc;
-      close(HTMLOUT);
-      # Create the trackDb text
-      $files .= sprintf("track %s\nparent %s\ntype bigWig\nbigDataUrl %s\nshortLabel %s\nlongLabel %s\ncolor %s\nhtml doc/%s\nvisibility %s\n\n", $track_id, $study, $url, $ini{"sample_shortLabel_$sample"}, $ini{"sample_longLabel_$sample"}, $ini{'Colour'} || "0,0,0", $track_id, $display);
+      if($track_hub) {
+        mkdir "$out/$species/doc" unless -d "$out/$species/doc";
+        open(HTMLOUT, ">$out/$species/doc/$track_id.html");
+        print HTMLOUT $desc;
+        close(HTMLOUT);
+        # Create the trackDb text
+        $files .= sprintf("track %s\nparent %s\ntype bigWig\nbigDataUrl %s\nshortLabel %s\nlongLabel %s\ncolor %s\nhtml doc/%s\nvisibility %s\n\n", $track_id, $study, $url, $ini{"sample_shortLabel_$sample"}, $ini{"sample_longLabel_$sample"}, $ini{'Colour'} || "0,0,0", $track_id, $display);
+      }
     }
   }
 
-  print OUTFILE $groups, "\n";
-  print OUTFILE $files;
+  if($track_hub) {
+    print OUTFILE $groups, "\n";
+    print OUTFILE $files;
+    close(OUTFILE);
+  }
 
   close(INFILE);
-  close(OUTFILE);
 
 }
 
