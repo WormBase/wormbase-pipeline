@@ -14,7 +14,6 @@ use Log_files;
 use Storable;
 use Bio::SeqIO;
 use Net::FTP;
-use Time::localtime;
 
 my ($test, $debug);
 my ($fly, $yeast, $human, $uniprot, $swissprot, $trembl, $cleanup, $all, $default);
@@ -335,7 +334,8 @@ sub process_human {
     my $ipi_file = "/ebi/ftp/pub/databases/IPI/last_release/current/ipi.HUMAN.fasta.gz";
     if (-e $ipi_file) {
       my @a = parse_dir(`ls -l $ipi_file`);
-      $remote_date = strftime "%m_%d",gmtime($a[0]->[3]);
+      my @x = localtime($a[0]->[3]);
+      $remote_date = strftime("%m_%d",@x);
     } else {
       my $login = "anonymous";
       my $passw = 'wormbase@sanger.ac.uk';
@@ -345,7 +345,7 @@ sub process_human {
       $filename = 'ipi.HUMAN.fasta.gz';
       my $ls = $ftp->dir("$filename");
       my @a = parse_dir($ls);
-      $remote_date = strftime "%m_%d",gmtime($a[0]->[3]);
+      $remote_date = strftime("%m_%d",localtime($a[0]->[3]));
     }
 
     if ($remote_date ne "${m}_${d}") {
