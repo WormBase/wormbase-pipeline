@@ -35,7 +35,7 @@ my ($test,
     $outfile,
     $no_header,
     $no_coding_transcripts,
-    $ena_upload,
+    $ebi_upload,
     );
 
 GetOptions (
@@ -47,7 +47,7 @@ GetOptions (
   "outfile:s"       => \$outfile,
   "noheader"        => \$no_header,
   "nocodingtrans"   => \$no_coding_transcripts,
-  "enaupload"       => \$ena_upload,
+  "ebiupload"       => \$ebi_upload,
     );
 
 
@@ -71,7 +71,7 @@ my $full_species_name = $wormbase->full_name;
 my $wormbase_version = $wormbase->get_wormbase_version_name;
 my $dbdir = ($database) ? $database : $wormbase->autoace;
 if (not defined $outfile) {
-  if ($ena_upload) {
+  if ($ebi_upload) {
     $outfile = $wormbase->acefiles . "/wormbase_xrefs." .$wormbase->get_wormbase_version_name . ".txt.gz";
   } else {
     $outfile = $wormbase->acefiles . "/DBXREFs.txt";
@@ -234,8 +234,8 @@ foreach my $g (sort keys %gene) {
 
 close($out_fh) or $log->log_and_die("Could not cleanly close output file\n");
 
-if ($ena_upload) {
-  &upload_to_ena();
+if ($ebi_upload) {
+  &upload_to_ebi();
 }
 
 $log->mail();
@@ -243,8 +243,11 @@ exit(0);
 
 
 #####################################################
-sub upload_to_ena {
+sub upload_to_ebi {
 
+  #
+  # First, upload to EBI ENA xref drop-box
+  #
   my ($ftp_host, $ftp_user, $ftp_pass, $ftp_dir);
 
   my $login_details_file = $wormbase->wormpub . "/ebi_resources/ENAXREFFTP.s";
@@ -272,6 +275,13 @@ sub upload_to_ena {
   $ftp->quit;
 
   $log->write_to("Successfully uploaded file $outfile to ENA Xref FTP drop-box\n");
+
+  #
+  # Secondly, copy the file to a reserved area on the FTP site - for UniProt to pick up xrefs
+  # 
+  my $location = $wormbase->ftp_site . "/collaboration/EBI/xrefs/";
+  $wormbase->run_command("cp $outfile $location", $log);
+  $wormbase->run_command("cd $location && ln -sf $outfile wormbase_xrefs.latest.txt.gz");
 }
 
 
