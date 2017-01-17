@@ -279,9 +279,11 @@ sub upload_to_ebi {
   #
   # Secondly, copy the file to a reserved area on the FTP site - for UniProt to pick up xrefs
   # 
-  my $location = $wormbase->ftp_site . "/collaboration/EBI/xrefs/";
-  $wormbase->run_command("cp $outfile $location", $log);
-  $wormbase->run_command("cd $location && ln -sf $outfile wormbase_xrefs.latest.txt.gz");
+  my $uni_file = join(".", "wormbase_xrefs", $wormbase->get_wormbase_version_name, $wormbase->ncbi_tax_id, "txt", "gz");
+  my $uni_symlink = join(".", "wormbase_xrefs", "latest", $wormbase->ncbi_tax_id, "txt", "gz");
+  my $dest_dir = $wormbase->ftp_site . "/collaboration/EBI/xrefs";
+  $wormbase->run_command("cp $outfile $dest_dir/$uni_file", $log);
+  $wormbase->run_command("cd $dest_dir && ln -sf $uni_file $uni_symlink");
 }
 
 
