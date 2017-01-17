@@ -79,10 +79,10 @@ sub map_introns_cDNA {
   }
   else {
     #this must overlap - check Splice Leader
-    if (not $self->check_features($cdna)) {
+    #if (not $self->check_features($cdna)) {
       #printf "REJECTING - failed feature check %s %s\n", $self->name, $cdna->name;
-      return 0;
-    }
+    #  return 0;
+    #}
 
     # count the number of contiguous introns which match
     my $matching_introns = $self->check_intron_match( $cdna );
