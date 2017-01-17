@@ -239,6 +239,47 @@ sub transcripts
     return @{$self->{'transcripts'}};
   }
 
+=head2 _sort_transcripts
+
+    Title   :   _sort_transcripts
+    Usage   :   $cds->_sort_transcripts
+    Function:   Sorts and renames the transcripts, to give a degree of consistency
+                between builds. Called by ->report
+=cut
+
+sub _sort_transcripts {
+  my ($self) = @_;
+
+  my @trans = @{$self->{'transcripts'}};
+
+  if (scalar(@trans) > 1) {
+
+    # sort by start, then end, then exon fingerprint. This is not perfect, but it will at 
+    # ensure that identical CDSs with unchanged evidence will end up with the transcripts
+    # that have been named the same between builds. Need rigourous transcript mapping 
+    # (i.e. comparing new transcripts with those produced in last build) to solve this 
+    # problem properly. 
+    my @fps;
+    foreach my $t (@trans) {
+      my @ex = map { $_->[0], $_->[1] } $t->sorted_exons;
+      my $fp = join(":", @ex);
+      push @fps, [$t, $t->start, $t->end, $fp];
+    }
+
+    @trans = map { $_->[0] } sort { $a->[1] <=> $b->[1] or $a->[2] <=> $b->[2] or $a->[3] cmp $b->[3] } @fps;
+
+    for( my $cnt = 1; $cnt <= scalar(@trans); $cnt++) {
+      my $tran = $trans[$cnt-1];
+      my $tname = $tran->name;
+      $tname =~ s/\.\d$//; 
+      $tname .= ".$cnt";
+      $tran->name($tname);
+    }
+
+    $self->{'transcripts'} = \@trans;
+  }
+}
+
 =head2 add_matching_cDNA
 
     Title   :   add_matching_cDNA
@@ -297,6 +338,8 @@ sub report
     my $cds2gene = shift;
 
     #$fh = STDOUT unless defined $fh;
+
+    $self->_sort_transcripts();
 
     print $fh "\nCDS : \"",$self->name,"\"\n";
     foreach (@{$self->{'matching_cdna'}}) {
