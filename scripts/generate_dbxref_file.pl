@@ -283,7 +283,7 @@ sub upload_to_ebi {
   my $uni_symlink = join(".", "wormbase_xrefs", "latest", $wormbase->ncbi_tax_id, "txt", "gz");
   my $dest_dir = $wormbase->ftp_site . "/collaboration/EBI/xrefs";
   $wormbase->run_command("cp $outfile $dest_dir/$uni_file", $log);
-  $wormbase->run_command("cd $dest_dir && ln -sf $uni_file $uni_symlink");
+  $wormbase->run_command("cd $dest_dir && ln -sf $uni_file $uni_symlink", $log);
 }
 
 
