@@ -1,8 +1,6 @@
-#!/usr/local/bin/perl5.8.0 -w          
-#
+#!/usr/bin/env perl
+
 # map_features.pl
-#
-# by Dan Lawson
 #
 # This maps features to the genome based on their flanking sequence.
 # Uses Ant's Feature_mapper.pm module
@@ -12,9 +10,8 @@
 # Last updated on: $Date: 2013-12-12 15:14:03 $        # quickly see when script was last changed and by whom
 
 
-$|=1;
 use strict;
-use lib $ENV{'CVS_DIR'};
+use lib $ENV{CVS_DIR};
 use Feature_mapper;
 use Wormbase;
 use Ace;
@@ -137,7 +134,7 @@ if ($database) {
   $dbdir = $database;
 }
 else {
-  $dbdir  = $wb->autoace;
+  $dbdir = $wb->autoace;
 }
 unless ($outdir) {$outdir = $wb->acefiles;}
 $log->write_to("// writing to ".$outdir."\n\n");
@@ -148,7 +145,7 @@ our ($WS_version) = $wb->get_wormbase_version_name;
 
 # coordinates for Feature_mapper.pm module
 
-my $mapper      = Feature_mapper->new($dbdir,undef, $wb);
+my $mapper = Feature_mapper->new($dbdir,undef, $wb);
 
 # sanity checks for the length of feature types
 my %sanity = (
@@ -245,6 +242,7 @@ foreach my $query (@features2map) {
         ];
       }
     }
+    $ace_db->close();
   }
   else {
     my $table_file = "/tmp/map_features_table_${query}_${species}.def";
