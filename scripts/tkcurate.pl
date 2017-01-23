@@ -265,12 +265,12 @@ sub submit {
   } elsif ($output =~ /-force/) {
     error_warning('WARNING', $output);
   } elsif ($output =~ /Nameserver/) {
-    confirm_message('Nameserver Action Required', "Nameserver Action Required\n$output");
+    wide_confirm_message('Nameserver Action Required', "Nameserver Action Required\n$output");
   } else {
     if ($noload) {
-      confirm_message("OK -noload so no change.", "OK -noload so no change.\n\n$output");
+      wide_confirm_message("OK -noload so no change.", "OK -noload so no change.\n\n$output");
     } else {
-      confirm_message("OK - that's been done.", "OK - that's been done.\n\n$output");
+      wide_confirm_message("OK - that's been done.", "OK - that's been done.\n\n$output");
     }
   }
 
@@ -348,11 +348,12 @@ sub error_warning {
   my ($title, $text) = @_;
   
   my $D = $mw->Dialog(
-			    -title => "$title",
-			    -text  => "$text",
-			    -default_button => 'ok',
-			    -buttons        => ['ok']
-			   );
+		      -width  => 100,
+		      -title => "$title",
+		      -text  => "$text",
+		      -default_button => 'ok',
+		      -buttons        => ['ok']
+		     );
   $D->configure(-background => 'Red',
 		-foreground => 'black');
   
@@ -364,11 +365,27 @@ sub confirm_message {
   my ($title, $text) = @_;
   
   my $D = $mw->Dialog(
-			    -title => "$title",
-			    -text  => "$text",
-			    -default_button => 'ok',
-			    -buttons        => ['ok']
-			   );
+		      -title => "$title",
+		      -text  => "$text",
+		      -default_button => 'ok',
+		      -buttons        => ['ok']
+		     );
+  $D->configure(-background => 'DarkSeaGreen', # was cyan PaleGreen
+		-foreground => 'black');
+  
+  my $choice = $D->Show;
+}
+#############################
+sub wide_confirm_message {
+  my ($title, $text) = @_;
+  
+  my $D = $mw->Dialog(
+		      -width  => 100,
+		      -title => "$title",
+		      -text  => "$text",
+		      -default_button => 'ok',
+		      -buttons        => ['ok']
+		     );
   $D->configure(-background => 'DarkSeaGreen', # was cyan PaleGreen
 		-foreground => 'black');
   
