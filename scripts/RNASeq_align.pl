@@ -19,6 +19,8 @@ use Getopt::Long;
 use Log_files;
 use Storable;
 use List::Util qw(sum); # for mean()
+use Time::localtime;
+use File::stat;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase, $species, $new_genome, $check, $runlocally, $notbuild, $analyse, $results);
 GetOptions ("help"       => \$help,
@@ -103,12 +105,13 @@ sub analyse {
   }
   
   # create the LSF Group "/RNASeq/$species" which is now limited to running 30 jobs at a time
-  $status = system("bgadd -L 30 /RNASeq/$species"); 
+  $status = system("bgadd -L 300 /RNASeq/$species"); 
   
   my $lsf = LSF::JobManager->new();
   
   my $total = keys %{$data};
   my $count_done = 0;
+  my @jobs_to_be_run;
   
   foreach my $experiment_accession (keys %{$data}) {
     
@@ -119,6 +122,7 @@ sub analyse {
       print "($count_done of $total) Already finished $experiment_accession - not repeating this.\n";
       next;    
     }
+    push @jobs_to_be_run, $experiment_accession;
     
     # for elegans and briggsae, request 8 Gb memory as 'samtools sort' can take at least 4.5Gb and probably more sometimes
     # for the others, ask for 6 Gb of memory
@@ -167,6 +171,25 @@ sub analyse {
     }
   }
   $lsf->clear;
+
+
+  # now check that all of the jobs ran successfully - we have had instances of jobs disappearing from the queue!
+  sanity_check(@jobs_to_be_run);
+
+}
+
+####################################################################################
+# sanity check that all of the jobs ran successfully - we have had instances of jobs disappearing from the queue!
+####################################################################################
+sub sanity_check {
+  my (@jobs_to_be_run) = @_;
+  foreach my $expt (@jobs_to_be_run) {
+    if (!$RNASeq->check_all_done($expt, 1)) {
+      $log->write_to("The job for experiment $expt did not complete correctly - please re-run the script with '-check' on the command-line\n");
+      $log->error(1);
+    }
+  }
+
 }
 
 ####################################################################################
@@ -182,7 +205,15 @@ sub results {
   # make the ace file of RNASeq spanned introns to load into acedb
   print "Running Intron analyses ...\n";
   my $splice_file = $wormbase->misc_dynamic."/RNASeq_splice_${species}.ace";
-  my $old_splice_file_size = -s $splice_file;
+
+  # get old splice_file size
+  my $old_splice_file = $splice_file . '.old';
+  # if splice_file is older than a month, then move it to be the 'old_splice_file' (because this script may be run more than once, overwriting the splice file)
+  if (-M $splice_file >= 30) {
+    system("mv $splice_file $old_splice_file");
+  }
+  my $old_splice_file_size = -s $old_splice_file;
+
   chdir $RNASeq->{RNASeqSRADir};
   $status = $wormbase->run_command("rm -f $splice_file", $log);
   $status = $wormbase->run_command("cat */Introns/virtual_objects.${species}.RNASeq.ace > $splice_file", $log);
@@ -313,7 +344,7 @@ sub make_fpkm {
     $log->write_to("\n");
     
     if (!exists $data->{$experiment_accession}{analysis}) {
-      $log->write_to("INFORMATION: this is not an error - $experiment_accession lacks an acedb Analysis object - this will not included in the SPELL expression data\n");
+      $log->write_to("INFORMATION: this is not an error - $experiment_accession lacks an acedb Analysis object - this will not be included in the SPELL expression data\n");
       next;
     }
     
