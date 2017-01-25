@@ -299,6 +299,10 @@ sub copy_acedb_files{
 
   opendir (RELEASE,"$ace_dir/release") or croak ("Could not open directory $ace_dir/release");
   while (defined($filename = readdir(RELEASE))) {
+    if ($filename =~  /passwd.wrm/) {
+      $wormbase->run_command("cp $ace_dir/wspec/passwd_anon.wrm $ftp_acedb_dir/passwd.wrm", $log);
+      next;
+    }
     if (($filename eq ".")||($filename eq "..")) { next;}
     if (($filename =~ /letter/)||($filename =~ /dbcomp/)) { next;}
     $wormbase->run_command("cp $ace_dir/release/$filename $ftp_acedb_dir/$filename", $log);

@@ -343,7 +343,7 @@ sub get_classes_and_ids_to_check {
 			       Homol_data => 'cb25.fpc2220b:wublastx_slimSwissProt',
 			       Method => 'cDNA_for_RNAi',
 			       Protein => 'ENSEMBL:ENSMUSP00000042619',
-			       #Pseudogene => '',
+			       Pseudogene => 'CBG25555',
 			       Sequence => ['cb25.fpc0002', 'cb25.fpc0011c', 'cb25.fpc0081', 'cb25.fpc0143a', 'chrI', 'chrII'],
 			       Transcript => 'CBG00122',
 			       Variation => 'WBVar00000752',

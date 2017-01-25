@@ -138,6 +138,7 @@ my($livegene,$deadgene,$user);
 my $count=0;
 while (<FILE>) {
   chomp;
+print "$_\n" if ($debug);
   unless (/\w/) {
     &merge_gene;
   }
@@ -310,7 +311,9 @@ sub merge_gene {
 	if (defined $dead_Orthologs) {
 	  my @row = $dead_Orthologs->row;
 	  my $row0=$row[0]->name;
+	  unless (defined $row[1]) {$log->log_and_die("\n\n!!!!!!!Missing ortholog species data in gene $deadgeneObj\n\n");}
 	  my $row1=$row[1]->name;
+	  unless (defined $row[2]) {$log->log_and_die("\n\n!!!!!!!Missing ortholog Evidence data in gene $deadgeneObj - $row0($row1)\n\n");}
 	  my $row2=$row[2]->name;
 	  my @col = $deadgeneObj->at("Gene_info.Ortholog.$row0.$row1.$row2")->col;
 	  $row1 = '"' . $row1 . '"'; # add quotes to the species name
@@ -333,6 +336,7 @@ sub merge_gene {
       if ($ns) {
 	#nameserver merge
 	$log->write_to("NS->merge $livegene $deadgene\n");
+	if ($debug) {print "merging $livegene $deadgene";}
 	if (my $ids = $db->merge_genes($livegene, $deadgene)){
 	  $log->write_to("Merge complete, $deadgene is DEAD and has been merged into gene $livegene\n");
 	}
