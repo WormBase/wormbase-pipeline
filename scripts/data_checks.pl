@@ -227,7 +227,7 @@ sub read_GFF_queries {
 
     $i++;
     $queries[$i]{'DESC'}  = "asRNAs";
-    $queries[$i]{'GFF'}   = "asRNA\tasRNA";
+    $queries[$i]{'GFF'}   = "asRNA\tantisense_RNA";
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes asRNA';
 
     $i++;
