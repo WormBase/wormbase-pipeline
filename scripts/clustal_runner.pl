@@ -111,7 +111,7 @@ while (my $line = <$infile>){
 
     $entry_no++;
     
-    my ($cds,$wpid,$gene)=split /\s+/,$line;
+    my ($cds,$wpid,$gene) = $line =~ /^\>(\S+)\s+wormpep=(\S+)\s+gene=(\S+)/;
     $seen{$wpid}++;
 
     #
