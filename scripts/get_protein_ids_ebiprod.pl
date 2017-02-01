@@ -85,13 +85,14 @@ $ena_dbh->dbc->disconnect_if_idle;
 
 my $uniprot_dbh = &get_uniprot_dbh($uniprot_cred);
 
-my $uniprot_sql =  "SELECT e.accession, e.name, p.protein_id "
-      . "FROM sptr.dbentry e, sptr.embl_protein_id p "
-      . "WHERE p.dbentry_id = e.dbentry_id "
-      . "AND e.deleted='N' "
-      . "AND e.merge_status <> 'R' "
-      . "AND e.entry_type in ('0', '1') "
-      . "AND e.tax_id = $org_id";
+my $uniprot_sql =  "SELECT e.accession, e.name, et.descr, p.protein_id "
+    . "FROM sptr.dbentry e, sptr.embl_protein_id p, sptr.cv_entry_type et "
+    . "WHERE p.dbentry_id = e.dbentry_id "
+    . "AND e.deleted='N' "
+    . "AND e.merge_status <> 'R' "
+    . "AND e.entry_type = et.entry_type_id " 
+    . "AND et.descr in ('Swiss-Prot', 'TrEMBL') " 
+    . "AND e.tax_id = $org_id";
 
 
 my $uniprot_sth = $uniprot_dbh->dbc->prepare($uniprot_sql);
@@ -99,10 +100,13 @@ print STDERR "Reading Uniprot database to get accessions and ids...\n" if $verbo
 $uniprot_sth->execute();
 
 while( (my @results) = $uniprot_sth->fetchrow_array) {
-  if (exists $resultsHash{$results[2]}) {
-    foreach my $el (@{$resultsHash{$results[2]}}) {
-      $el->{SWALL_AC} = $results[0];
-      $el->{SWALL_ID} = $results[1];
+  my ($uniacc, $uniname, $unitype, $pid) = @results;
+
+  if (exists $resultsHash{$pid}) {
+    foreach my $el (@{$resultsHash{$pid}}) {
+      $el->{SWALL_AC}   = $uniacc;
+      $el->{SWALL_ID}   = $uniname;
+      $el->{SWALL_TYPE} = ($unitype eq 'Swiss-Prot') ? "SP" : "TR";
     }
   }
 }
@@ -206,7 +210,7 @@ foreach my $entry (@resultsArr) {
          $entry->{AA_version},
          $entry->{AA_checksum},
          $entry->{AA_text},
-         exists($entry->{SWALL_AC}) ? $entry->{SWALL_AC} : ".",
+         exists($entry->{SWALL_AC}) ? $entry->{SWALL_TYPE} . ":" . $entry->{SWALL_AC} : ".",
          exists($entry->{SWALL_ID}) ? $entry->{SWALL_ID} : ".",
          exists($entry->{SWALL_ISOFORM}) ? $entry->{SWALL_ISOFORM} : ".",
          exists($entry->{EC}) ? $entry->{EC} : ".",

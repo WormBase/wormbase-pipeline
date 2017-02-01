@@ -156,6 +156,9 @@ if ($protein_xrefs) {
     next unless (defined $pid);
     $log->write_to("Potential New Protein: $_\n") if $uniprot_ac eq '.';
     
+    my ($unitype) = ($uniprot_ac =~ /^(\w{2}):/); 
+    $uniprot_ac =~ s/^\w{2}://; 
+     
     next unless exists $cds2wormpep{$cds}; # if ENA is slightly out of date w.r.t. our latest annotation
     
     push @{$cds_xrefs{$cds}->{Protein_id}}, [$accession2clone{$cloneacc}, $pid, $version];
@@ -164,14 +167,17 @@ if ($protein_xrefs) {
       if (defined $uniprot_ac and $uniprot_ac ne '.') {
         $cds_xrefs{$cds}->{dblinks}->{UniProt}->{UniProtAcc}->{$uniprot_ac} = 1;
         $pep_xrefs{$pepPrefix.$cds2wormpep{$cds}}->{dblinks}->{UniProt}->{UniProtAcc}->{$uniprot_ac} = 1;
-      }
-      if (defined $uniprot_id and $uniprot_id ne '.') {
-        $cds_xrefs{$cds}->{dblinks}->{UniProt}->{UniProtId}->{$uniprot_id} = 1;
-        $pep_xrefs{$pepPrefix.$cds2wormpep{$cds}}->{dblinks}->{UniProt}->{UniProtId}->{$uniprot_id} = 1;
+        if ($unitype eq 'SP') {
+          $cds_xrefs{$cds}->{dblinks}->{SwissProt}->{UniProtAcc}->{$uniprot_ac} = 1;
+          $pep_xrefs{$pepPrefix.$cds2wormpep{$cds}}->{dblinks}->{SwissProt}->{UniProtAcc}->{$uniprot_ac} = 1;          
+        } else {
+          $cds_xrefs{$cds}->{dblinks}->{TrEMBL}->{UniProtAcc}->{$uniprot_ac} = 1;
+          $pep_xrefs{$pepPrefix.$cds2wormpep{$cds}}->{dblinks}->{TrEMBL}->{UniProtAcc}->{$uniprot_ac} = 1;          
+        }
       }
       if (defined $uniprot_iso_acc and $uniprot_iso_acc ne '.') {
-        $cds_xrefs{$cds}->{dblinks}->{UniProt}->{UniProtIsoformAcc}->{$uniprot_iso_acc} = 1;
-        $pep_xrefs{$pepPrefix.$cds2wormpep{$cds}}->{dblinks}->{UniProt}->{UniProtIsoformAcc}->{$uniprot_iso_acc} = 1;
+        $cds_xrefs{$cds}->{dblinks}->{SwissProt}->{UniProtIsoformAcc}->{$uniprot_iso_acc} = 1;
+        $pep_xrefs{$pepPrefix.$cds2wormpep{$cds}}->{dblinks}->{SwissProt}->{UniProtIsoformAcc}->{$uniprot_iso_acc} = 1;
       }
       if (defined $ec_num and $ec_num ne '.') {
         $cds_xrefs{$cds}->{dblinks}->{KEGG}->{KEGG_id}->{$ec_num} = 1;
