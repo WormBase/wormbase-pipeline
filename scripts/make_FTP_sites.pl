@@ -620,9 +620,9 @@ sub copy_gff_files{
         $wb->run_command("cat $source | gzip -n -9 > $target", $log);
       } elsif (-e "${source}.gz") {
         $wb->run_command("cp -f ${source}.gz $target", $log);
-      } else {
-        $log->error("ERROR: Missing GFF for species $species : $source\n");
       }
+      # do not throw an error for missing GFF/GTF files here. This will be picked up 
+      # later by the manifest check
     }
   }
 
