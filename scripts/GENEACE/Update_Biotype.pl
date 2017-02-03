@@ -22,7 +22,7 @@ use Storable;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $single, $build, $species);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $single, $build, $species, $outfile, $report);
 
 
 GetOptions ("help"       => \$help,
@@ -31,8 +31,10 @@ GetOptions ("help"       => \$help,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
 	    "species:s"  => \$species,
-	    "single"     => \$single,
+	    "single:s"   => \$single,
 	    "build"      => \$build,
+	    "outfile:s"  => \$outfile, #full path to output file
+	    "report:s"   => \$report,
 	    );
 
 if ( $store ) {
@@ -44,17 +46,30 @@ if ( $store ) {
 			     );
 }
 
+my $output;
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
+
+if ($outfile) {
+  $output = $outfile;
+}
+else {
+  my $datestring = localtime();
+  $output = "/tmp/${species}_$datestring";
+}
+open (ACE,">$output") or $log->log_and_die("can't write output: $!\n");
+
 # Display help if required
 &usage("Help") if ($help);
 
 # in test mode?
 if ($test) {
-  print "In test mode\n" if ($verbose);
+  $log->write_to("In test mode\n") if ($verbose);
 
 }
 
-# establish log file.
-my $log = Log_files->make_build_log($wormbase);
+
 
 #################################
 # Set up some useful paths      #
@@ -92,6 +107,20 @@ else {
 my $tace            = $wormbase->tace;        # TACE PATH
 my $giface          = $wormbase->giface;      # GIFACE PATH
 
+#ncRNA BioType mapping
+
+my %rna2SOlookup = (
+'asRNA'   => 'SO:0000655',  # ncRNA_gene
+'lincRNA' => 'SO:0001641',  # lincRNA_gene
+'miRNA'   => 'SO:0001265',  # miRNA_gene
+'ncRNA'   => 'SO:0000655',  # ncRNA_gene
+'piRNA'   => 'SO:0001638',  # piRNA_gene
+'rRNA'    => 'SO:0001637',  # rRNA_gene
+'scRNA'   => 'SO:0001266',  # scRNA_gene
+'snoRNA'  => 'SO:0001267',  # snoRNA_gene
+'snRNA'   => 'SO:0001268',  # snRNA_gene
+'tRNA'    => 'SO:0001272',  # tRNA_gene
+);
 
 
 ##########################
@@ -102,7 +131,7 @@ my $giface          = $wormbase->giface;      # GIFACE PATH
 my $db = Ace->connect(-path=>$seqdb) or  $log->log_and_die("Couldn't connect to $seqdb\n". Ace->error);
 my $gdb =  Ace->connect(-path=>$geneace) or  $log->log_and_die("Couldn't connect to $geneace\n". Ace->error);
 
-
+$log->write_to("Using : $db for annotation data\n Using : $gdb for primary gene data.\n\n");
 
 # example of running anther script
 #$wormbase->run_script("other_script -options", $log);
@@ -114,7 +143,7 @@ $command .= "quit\n";
 my $ccount;
 my @SeqGenes;
 if ($single) {
-@SeqGenes = $db->fetch (-query => "FIND Gene WBGene00014836");
+@SeqGenes = $db->fetch (-query => "FIND Gene $single");
 }
 else {
   @SeqGenes = $db->fetch (-query => "FIND Gene");
@@ -123,7 +152,7 @@ my @Generef;
 my %biotype;
 foreach my $SeqGene(@SeqGenes) {
   $ccount ++;
-  print $SeqGene->name."\n" if ($verbose);
+  print "Checking".$SeqGene->name."\n" if ($verbose);
   push (@Generef,"$SeqGene->name");
   if ($SeqGene->Corresponding_CDS){
     $biotype{$SeqGene} = 'SO:0001217';
@@ -132,25 +161,35 @@ foreach my $SeqGene(@SeqGenes) {
   }
   if ($SeqGene->Corresponding_Pseudogene){
     $biotype{$SeqGene} = 'SO:0000336';
-    print "$SeqGene - Pseudogene\n"if ($verbose);
+    print "$SeqGene - Pseudogene\n" if ($verbose);
     next;
   }
   if ($SeqGene->Corresponding_Transcript){
     if (defined $biotype{$SeqGene}){
-      print "WARNING: $SeqGene Already defined as coding\n";
+      $log->write_to("WARNING: $SeqGene Already defined as coding\n");
       next;
     }
     else {
-      $biotype{$SeqGene} = 'SO:0001263';
-      print "$SeqGene - nonCoding\n"if ($verbose);
+      my $Transcript = $SeqGene->Corresponding_Transcript->name; 
+      my @Transcript_obj = $db->fetch (-query => "FIND Transcript $Transcript");
+      my $type = $Transcript_obj[0]->Transcript->name;
+      if (defined $rna2SOlookup{$type}) {
+	$biotype{$SeqGene} = $rna2SOlookup{$type};
+	print "$SeqGene - nonCoding with $rna2SOlookup{$type} ($type)\n" if ($verbose);
+      }
+      else {
+	$biotype{$SeqGene} = 'SO:0001263';
+	print "$SeqGene - nonCoding\n" if ($verbose);
+      }
       next
     }
   }
   else {
-    print "$SeqGene - No live annotation attached to this gene.\n"if ($verbose);
+    $log->write_to("Warning $SeqGene - No live annotation attached to this gene.\n") if ($verbose);
     if ($SeqGene->Corresponding_CDS_history) { 
-      print "$SeqGene - Has History annotation associated with it.\n"if ($verbose);
+      $log->write_to("Checked $SeqGene - Has History annotation associated with it.\n") if ($verbose);
     }
+    else {$log->write_to("Error - $SeqGene appears to be dangling, why is it in the database $db?\n");}
     next;
   }
 }
@@ -182,22 +221,22 @@ foreach my $WBGene(@WBGenes) {
       #test just for the hell of it#
       if ($WBGeneBio eq $finalbio) {
 	$mcount++;
-	#print "$WBGene - MATCH\n";
+	$log->write_to("$WBGene - MATCH\n");
       }
       elsif ($WBGeneBio ne $finalbio) {
-	print "//$WBGene - NO-MATCH Calculated::$finalbio Geneace:$WBGeneBio\n";
-	print "Gene : $WBGene\nBiotype $finalbio\n\n";
+	$log->write_to("$WBGene - NO-MATCH Calculated $finalbio Geneace:$WBGeneBio\n");
+	print ACE "Gene : $WBGene\nBiotype $finalbio\n\n";
 	$bcount++;
       }
       else {
-	print "missed: $WBGene\n";
+	$log->write_to("Warning missed round 1: $WBGene\n");
 	$missedcount++;
       }
     }
     else { 
-      print "//missed2: $WBGene\n";
+      $log->write_to("Warning missed round 2: $WBGene\n");
       # Need a biotype
-      print "Gene : \"$WBGene\"\nBiotype \"$biotype{$WBGene}\"\n\n";
+      print ACE "Gene : \"$WBGene\"\nBiotype \"$biotype{$WBGene}\"\n\n";
       $missedcount++;
 
 
@@ -210,7 +249,7 @@ foreach my $WBGene(@WBGenes) {
   else {
   #  no calculated biotype 
     if ($WBGene->Biotype) {
-      print "$WBGene - previously had a biotype of ".$WBGene->Biotype."\n";
+      $log->write_to("Warning $WBGene previously had a biotype of ".$WBGene->Biotype."\n");
       $qcount++;
     }
     else {
@@ -234,6 +273,7 @@ $log->write_to("$qcount genes previously had a biotype, but not now\n");
 $log->write_to("$ucount genes appear not to be cloned\n");
 $log->write_to("$missedcount genes not dealt with\n\n");
 $log->mail();
+close(ACE);
 print "Finished.\n" if ($verbose);
 exit(0);
 
