@@ -3,7 +3,7 @@
 # exporter to dump gene / transcript / protein info as GPI file
 #   specs: http://www.geneontology.org/page/gene-product-information-gpi-format
 #
-# uages:
+# usage:
 #   perl dump_gpi.pl -species elegans
 
 
@@ -140,3 +140,9 @@ sub uniprot_xref{
 }
 
 $log->mail;
+
+# returns status 13 when finishing, so try to clean up
+$outfile->close;
+$db->close;
+
+exit(0);
