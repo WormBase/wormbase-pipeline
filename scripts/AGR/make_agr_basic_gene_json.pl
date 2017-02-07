@@ -87,23 +87,21 @@ foreach my $sub_query (
     
     my $biotype = $obj->Biotype->name;
     
-    my ($symbol, @synonyms);
+    my ($symbol, %synonyms);
     my $seq_name = $obj->Sequence_name->name;
     if ($obj->CGC_name) {
       $symbol = $obj->CGC_name->name;
-      push @synonyms, $seq_name;
+      $synonyms{$seq_name} = 1;
     } else {
       $symbol = $seq_name;
     }
-    push @synonyms, map { $_->name } $obj->Other_name;
-    
-    
-    my ($concise_desc, $auto_desc);
+    map { $synonyms{$_->name} = 1 } $obj->Other_name;
+        
+    my $desc = "";
     if ($obj->Concise_description) {
-      $concise_desc = $obj->Concise_description->name;
-    }
-    if ($obj->Automated_description) {
-      $auto_desc = $obj->Automated_description->name; 
+      $desc = $obj->Concise_description->name;
+    } elsif ($obj->Automated_description) {
+      $desc = $obj->Automated_description->name; 
     }
     
     my @xrefs;
@@ -134,7 +132,7 @@ foreach my $sub_query (
     } elsif ($brief_id_name) {
       $name = $brief_id_name;
     } else {
-      $name = undef;
+      $name = "";
     }
     
     my @secondary_ids;
@@ -158,9 +156,9 @@ foreach my $sub_query (
       symbol             => $symbol,
       name               => $name,
       taxonId            => $taxid,
-      geneSynopsis       => defined($concise_desc) ? $concise_desc : $auto_desc,
+      geneSynopsis       => $desc,
       soTermId           => $biotype,
-      synonyms           => \@synonyms,
+      synonyms           => [sort keys %synonyms], 
       secondaryIds       => \@secondary_ids,
       crossReferences    => \@xrefs,
       geneLiteratureUrl  => "http://www.wormbase.org/species/c_elegans/gene/" . $obj->name ."-e-10",
