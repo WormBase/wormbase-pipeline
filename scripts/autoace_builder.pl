@@ -210,6 +210,7 @@ if ($enaprotxrefs) {
   if ($wormbase->species eq 'elegans') {
     $wormbase->run_script( 'generate_dbxref_file.pl -nocodingtrans -ebiupload', $log);  
   }
+  $wormbase->run_script( 'dump_gpi.pl', $log);
 }
 
 $wormbase->run_script( 'make_wormpep.pl -all -final'                  , $log) if $finish_wormpep;
