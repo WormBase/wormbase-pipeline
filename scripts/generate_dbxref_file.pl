@@ -78,7 +78,7 @@ if (not defined $outfile) {
   }
 }
 
-my (%wbgene, %gene, %cds, %transcds,%clone2acc, $out_fh);
+my (%wbgene, %gene, %cds, %transcds, %clone2acc, %clone2chr, $out_fh);
 
 $log->write_to("Generating sequence accession table\n");
 
@@ -87,12 +87,31 @@ my $command = "Table-maker -p $query\nquit\n";
 open(my $tacefh,  "echo '$command' | $tace $dbdir |");
 while(<$tacefh>) {
   chomp; s/\"//g;
-  my ($seq_name, $accession) = split(/\t/, $_);
+  my ($seq_name, $accession, $subseq, $parent) = split(/\t/, $_);
+
   next if not defined $accession;
+
   $clone2acc{$seq_name} = $accession;
+  
+  if (defined $parent) {
+    $clone2chr{$seq_name} = $parent;
+  }
 }
 close($tacefh) or $log->log_and_die("Could not close tace TM query\n");
 unlink($query);
+
+# want to associate every sequence name with the ENA accesssion of its top-level parent
+# i.e. for any feature on a clone, we want to give the accession of the chromosome
+#  that the clone belongs to
+foreach my $k (sort keys %clone2chr) {
+  my $seq = $k;
+  while(exists $clone2chr{$seq}) {
+    if (exists $clone2acc{$clone2chr{$seq}}) {
+      $clone2acc{$k} = $clone2acc{$clone2chr{$seq}};
+    }
+    $seq = $clone2chr{$seq};
+  }
+}
 
 $log->write_to("Generating protein-coding table\n");
 
@@ -327,28 +346,27 @@ sub generate_accession_query {
 Sortcolumn 1
 
 Colonne 1 
-Subtitle Genome sequence  
-Width 20 
+Width 12 
 Optional 
 Visible 
 Class 
 Class Sequence 
-From 1
-Condition Genomic_canonical OR Subsequence OR Source
+From 1 
+Condition Genomic_canonical OR Source OR Subsequence
  
 Colonne 2 
-Width 20 
+Width 12 
 Mandatory 
 Hidden 
 Class 
 Class Database 
 From 1 
-Tag Database      
-Condition "EMBL" OR "NDB"
+Tag Database  
+Condition EMBL OR NDB
  
 Colonne 3 
 Width 12 
-Optional 
+Mandatory 
 Hidden 
 Class 
 Class Database_field 
@@ -357,7 +375,6 @@ Tag HERE
 Condition NDB_AC
  
 Colonne 4 
-Subtitle Accession  
 Width 12 
 Optional 
 Visible 
@@ -365,6 +382,24 @@ Class
 Class Accession_number 
 Right_of 3 
 Tag HERE   
+ 
+Colonne 5 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Sequence 
+From 1 
+Tag Subsequence  
+ 
+Colonne 6 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Sequence 
+From 1 
+Tag Source  
  
 EOF
 

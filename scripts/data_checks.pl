@@ -227,7 +227,7 @@ sub read_GFF_queries {
 
     $i++;
     $queries[$i]{'DESC'}  = "asRNAs";
-    $queries[$i]{'GFF'}   = "asRNA\tasRNA";
+    $queries[$i]{'GFF'}   = "asRNA\tantisense_RNA";
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes asRNA';
 
     $i++;
@@ -257,12 +257,12 @@ sub read_GFF_queries {
 
     $i++;
     $queries[$i]{'DESC'}  = "Allele";
-    $queries[$i]{'GFF'}   = "\tAllele\t";
+    $queries[$i]{'GFF'}   = "\tAllele\tsequence_alteration";
     $queries[$i]{'QUERY'} = 'find Variation flanking_sequences AND method = "Allele"';
 
     $i++;
     $queries[$i]{'DESC'}  = "Transposon_insertion";
-    $queries[$i]{'GFF'}   = "\ttransposable_element_insertion_site\t";
+    $queries[$i]{'GFF'}   = "Allele\ttransposable_element_insertion_site\t";
     $queries[$i]{'QUERY'} = 'find Variation flanking_sequences AND method = "Transposon_insertion"';
 
     $i++;
@@ -282,7 +282,7 @@ sub read_GFF_queries {
 
     $i++;
     $queries[$i]{'DESC'}  = "Coding_transcripts";
-    $queries[$i]{'GFF'}   = "protein_coding_primary_transcript";
+    $queries[$i]{'GFF'}   = "Coding_transcript\tmRNA";
     $queries[$i]{'QUERY'} = 'find Transcript Method=Coding_transcript';
 
     $i++;
@@ -328,7 +328,7 @@ sub read_GFF_queries {
 
     $i++;
     $queries[$i]{'DESC'}  = "Non_coding_transcript isoforms";
-    $queries[$i]{'GFF'}   = "nc_primary_transcript";
+    $queries[$i]{'GFF'}   = "non_coding_transcript\tnc_primary_transcript";
     $queries[$i]{'QUERY'} = 'find Transcript; method = non_coding_transcript';
 
     $i++;
@@ -337,14 +337,14 @@ sub read_GFF_queries {
     $queries[$i]{'EXPECT'} = 136433;
     
     $i++;
-    $queries[$i]{'DESC'}  = "Expr_pattern mapped Expression Patterns";
-    $queries[$i]{'GFF'}   = "Expr_pattern";
-    $queries[$i]{'EXPECT'}= 4906;
+    $queries[$i]{'DESC'}   = "Expr_pattern mapped Expression Patterns";
+    $queries[$i]{'GFF'}    = "Expr_pattern\treagent";
+    $queries[$i]{'EXPECT'} = 2934;
 
     $i++;
-    $queries[$i]{'DESC'}  = "Chronogram mappings";
-    $queries[$i]{'GFF'}   = "Chronogram";
-    $queries[$i]{'EXPECT'}= 1973;    
+    $queries[$i]{'DESC'}   = "Chronogram mappings";
+    $queries[$i]{'GFF'}    = "Chronogram\treagent";
+    $queries[$i]{'EXPECT'} = 1974;    
     
     #	$i++;
     #	$queries[$i]{'DESC'}  = "";

@@ -1,4 +1,4 @@
-// $Id: passwd.wrm,v 1.11 2015-03-27 14:22:12 mh6 Exp $
+// $Id: passwd.wrm,v 1.11 2017-00-00 00:00:00 richard Exp $
 //
 //  wspec/passwd.wrm
 //
@@ -13,15 +13,8 @@
 //  and have permission 644 or possibly 600
 //
 
-wormpub
-wormbase
-klh
-mh6
-pad
-gw3
-mt3
-fr7
-mrussell
+// Specify the unix user name(s) of all who will need access
+   richard
 
 // On some platforms, the unix command getLogin fails,
 // In this case, anyone will have write access if you

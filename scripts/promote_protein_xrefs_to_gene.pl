@@ -44,8 +44,14 @@ GetOptions(
 # config 
 #################################################
 my $to_promote = {
-  UniProt => {
-      UniProtAcc => [['UniProt', 'UniProtAcc']],
+  #UniProt => {
+  #  UniProtAcc => [['UniProt', 'UniProtAcc']],
+  #},
+  SwissProt => {
+    UniProtAcc => [['SwissProt', 'UniProtAcc']],
+  },
+  TrEMBL => {
+    UniProtAcc => [['TrEMBL', 'UniProtAcc']],
   },
   KEGG => {
     KEGG_id => [['KEGG', 'KEGG_id'],

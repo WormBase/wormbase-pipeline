@@ -186,6 +186,7 @@ if( $opt_l) {
   printf $rlfh "        - G_SPECIES.BIOPROJECT.WS$ver.knockout_consortium_alleles.xml.gz  - Table of Knockout Consortium alleles\n";
   printf $rlfh "        - G_SPECIES.BIOPROJECT.WS$ver.SRA_gene_expression.tar.gz          - Tables of gene expression values computed from SRA RNASeq data\n";
   printf $rlfh "        - G_SPECIES.BIOPROJECT.WS$ver.TSS.wig.tar.gz                      - Wiggle plot files of Transcription Start Sites from the papers WBPaper00042246, WBPaper00042529, WBPaper00042354\n";
+  printf $rlfh "        - G_SPECIES.BIOPROJECT.WS$ver.repeats.fa..gz                      - Latest version of the repeat library for the genome, suitable for use with RepeatMasker\n";
 
   printf $rlfh "acedb DIR                -  Everything needed to generate a local copy of the The Primary database\n";
   printf $rlfh "     - database.WS$ver.*.tar.gz   - compressed acedb database for new release\n";

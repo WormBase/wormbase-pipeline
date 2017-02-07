@@ -83,6 +83,7 @@ my (%genes,
     %Straingenes,
     %Strainremarks,
     %Strainvars,
+    %wbpersonhuman,
     %Strainrefs);
 my @Unique_strains;
 my $out_fh;
@@ -98,10 +99,12 @@ while(<$tacefh>) {
   $count2++;
 
   unless (/\"/) {next;}
-  chomp; s/\"//g;
+  chomp; 
+  s/\"//g;
+  s/\\//g;
   #print "$_\n";
   my $F;
-  my @F = split"\t";
+  my @F = split"\t",$_,-1;
   if ($test){print "$F[0] Main $count2\n";}
 
   #Store WBID :: Human readables in associated arrays.
@@ -118,7 +121,8 @@ while(<$tacefh>) {
   #\Q\E makes it ignore special characters in the data.
   if ((exists $F[7])&&(!grep (/\Q$F[7]\E/, @{$Strainremarks{$F[0]}})&&($F[7] =~ /\S+/)))   {push @{$Strainremarks{$F[0]}}, $F[7];}
   if ((exists $F[8])&&($F[8] =~ /\S+/)&&(!grep (/$F[8]/, @{$Strainrefs{$F[0]}})))     {push @{$Strainrefs{$F[0]}}, $F[8];}
-  if (exists $F[9])   {push @{$strainmadeby{$F[0]}}, $F[9];}
+  if ((exists $F[9])&&($F[9] =~ /\S+/))   {push @{$strainmadeby{$F[0]}}, $F[9];}
+  if ((exists $F[10])&&($F[10] =~ /\S+/)) {push @{$wbpersonhuman{$F[9]}}, $F[10];}
   if ((exists $F[11])&&(!grep (/$F[11]/, @{$WBPaper2pmid{$F[8]}})))  {push @{$WBPaper2pmid{$F[8]}}, $F[11];}
 }
 $log->write_to("Finished Retrieving RRID data\n");
@@ -159,7 +163,7 @@ foreach my $strain (@Unique_strains) {
   # spit out array of genes - print "$strain: @{ $Straingenes{$strain} }\n";
 
   #(Identifying number/id perorganism,) 
-  print $out_fh "WB_$strain\t";
+  print $out_fh "WB-STRAIN\:$strain\t";
   #(name of organism,)
   if (defined$strainspecies{$strain}) {
     print $out_fh "\"$strainspecies{$strain}[0]\"\t";
@@ -232,21 +236,23 @@ foreach my $strain (@Unique_strains) {
   }
 
   if (defined $Strainrefs{$strain}) {
-    if (exists $WBPaper2pmid{$Strainrefs{$strain}[0]}) {
-      if (defined $WBPaper2pmid{$Strainrefs{$strain}[0]}[0]){
-	print $out_fh "$Strainrefs{$strain}[0]\(PMID:$WBPaper2pmid{$Strainrefs{$strain}[0]}[0]\)";
-	foreach my $i ( 1 .. $#{ $Strainrefs{$strain} } ) {
-	  if (exists $Strainrefs{$strain}[$i]){
-	    print $out_fh "|$Strainrefs{$strain}[$i]\(PMID:$WBPaper2pmid{$Strainrefs{$strain}[$i]}[0]\)";
-	  }
-	}
-      }
+    my $tmppaper = $Strainrefs{$strain}[0];
+    if ((exists $WBPaper2pmid{$tmppaper}) && ($WBPaper2pmid{$tmppaper}[0] =~ /\S+/)) {
+      print $out_fh "$Strainrefs{$tmppaper}(PMID:$WBPaper2pmid{$tmppaper}[0])";
     }
     else {
-      print $out_fh "$Strainrefs{$strain}[0]";
-      foreach my $i ( 1 .. $#{ $Strainrefs{$strain} } ) {
-	print $out_fh "|$Strainrefs{$strain}[$i]";
+      print $out_fh "$Strainrefs{$strain}[0]}(PMID:EMPTY)";
+    }
+    undef $tmppaper;
+    foreach my $i ( 1 .. $#{ $Strainrefs{$strain} } ) {
+      $tmppaper = $Strainrefs{$strain}[$i];
+      if ((exists $WBPaper2pmid{$tmppaper}) && ($WBPaper2pmid{$tmppaper}[0] =~ /\S+/)) {
+      print $out_fh "|$tmppaper(PMID:$WBPaper2pmid{$tmppaper}[0])";
+    }
+      else {
+	print $out_fh "|$Strainrefs{$strain}[0]}(PMID:EMPTY)";
       }
+      undef $tmppaper;
     }
     print $out_fh "\t";
   }
@@ -254,8 +260,9 @@ foreach my $strain (@Unique_strains) {
     print $out_fh "EMPTY\t";
   }
   
+
   if (defined $strainmadeby{$strain}) {
-    print $out_fh "$strainmadeby{$strain}[0]\t";
+    print $out_fh "$strainmadeby{$strain}[0]\($wbpersonhuman{$strainmadeby{$strain}[0]}[0]\)\t";
   }
   else {
     print $out_fh "EMPTY\t";
@@ -330,6 +337,17 @@ sub generate_RRDID_query {
       $log->log_and_die("Could not open $tmdef for writing\n");  
 
   my $condition = "";
+
+
+#Colonne 1 
+#Subtitle Strain 
+#Width 12 
+#Optional 
+#Visible 
+#Class 
+#Class Strain
+#Condition !Wild_isolate
+#From 1
 
   my $tablemaker_template = <<"EOF";
  
@@ -490,7 +508,7 @@ __END__
 =back
 
 This script gets sequence data for all species (currently hacked to store the taxid within the script)
-
+cccccc
 EMBL_Sequencefetch_species.pl
 
 MANDATORY arguments:

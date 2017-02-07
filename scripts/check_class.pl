@@ -330,6 +330,10 @@ sub set_classes {
 
   my @classes;
 
+  if ($mode eq 'pre_merge' && $species ne 'elegans') {
+    $mode = 'pre_merge_TierII';
+  }
+
 #
 # The following are useful sets of classes that are loaded from the
 # primary databases they will be missing some objects that are loaded
@@ -497,7 +501,7 @@ sub set_classes {
 		"Motif",
 		"Method",
 		);  
-# these classes are the ones available pre-merge of all species
+# these classes are the ones available pre-merge for elegans
   } elsif ($mode eq "pre_merge") { 
     @classes = (
 		"Sequence",
@@ -592,6 +596,63 @@ sub set_classes {
 		"LongText",
 		"Movie",
 		"Structure_data",
+		);  
+# these classes are the ones available pre-merge for elegansTierII species
+  } elsif ($mode eq "pre_merge_TierII") { 
+    @classes = (
+		"Sequence",
+		"CDS", 
+		"Transposon",
+		"Transcript",
+		"Pseudogene",
+		"Transposon_CDS",
+		"cDNA_sequence",
+		"${species}_CDS",
+		"${species}_pseudogenes",
+		"${species}_RNA_genes",
+		"Class",
+		"Model",
+		"Method",
+		"Coding_transcripts",
+		"Accession_number",
+		"Variation",
+		"Motif",
+		"Feature",
+		"Feature_data",
+		"Laboratory",
+		"Gene",
+		"Gene_class",
+		"Gene_name",
+		"Strain",
+		"Operon", # brugia has operons - leave this in here
+		"Analysis",
+		"Condition",
+		"Peptide",
+		"Protein",
+		"Species",
+		"Transposon_family",
+		"Comment",
+		"Database",
+		"Display",
+		"DNA",
+		"Homol_data",
+		"NDB_Sequence",
+		"nematode_ESTs",
+		"SO_term",
+		"Mass_spec_experiment", # brugia might have mass-spec data - leave this here
+		"Mass_spec_peptide", # brugia might have mass-spec data - leave this here
+		"Expr_pattern",
+		"Life_stage",
+		"Paper",
+		"Author",
+		"Person",
+		"LongText",
+		"Oligo_set",
+		"Microarray",
+		"Microarray_results",
+		"Microarray_experiment",
+		"Anatomy_term",
+		"LongText",
 		);  
 # these classes are the ones available at the end of the Build, just before making the FTP_sites directory
   } elsif ($mode eq "ftp_sites") { 

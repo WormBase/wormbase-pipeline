@@ -1826,7 +1826,7 @@ sub processed_GFF_file {
 sub submit_repos_hash_from_sequence_name {
   my ($self, $seqname) = @_;
 
-  my $hash = hex(substr(md5_hex($seqname), -2, 2)) % 64;
+  my $hash = (hex(substr(md5_hex($seqname), -2, 2)) % 64) + 1;
 
   return $hash;
 
