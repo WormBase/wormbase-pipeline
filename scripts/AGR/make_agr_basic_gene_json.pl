@@ -19,8 +19,8 @@ my %XREF_MAP = (
 
 
 
-my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($outfile, $acedbpath, $ws_version, $out_fh);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $species);
+my ($outfile, $acedbpath, $ws_version, $gtf_file, $out_fh, $locs);
 
 GetOptions ("help"        => \$help,
             "debug=s"     => \$debug,
@@ -29,6 +29,8 @@ GetOptions ("help"        => \$help,
 	    "store:s"     => \$store,
 	    "database:s"  => \$acedbpath,
 	    "outfile:s"   => \$outfile,
+            "gtf=s"       => \$gtf_file,
+            "species=s"   => \$species,
             "wsversion=s" => \$ws_version,
 	    );
 
@@ -48,13 +50,14 @@ my $full_name = $wormbase->full_name;
 
 $acedbpath = $wormbase->autoace unless $acedbpath;
 
-if (defined $outfile) {
-  open $out_fh, ">$outfile" or die "Could not open $outfile for writing\n";
-} else {
-  $out_fh = \*STDOUT;
+if (not defined $gtf_file) {
+  my $suffix = $wormbase->species . ".gtf";
+  $gtf_file = join("/", $wormbase->sequences, $suffix);
 }
 
 my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or die("Connection failure: ". Ace->error);
+
+$locs = &get_location_data($db, $gtf_file);
 
 my $base_query = 'FIND Gene WHERE Sequence AND Live AND Species = "Caenorhabditis elegans"';
 
@@ -73,11 +76,14 @@ foreach my $sub_query (
   " AND Corresponding_transcript AND NOT Corresponding_CDS",
     ) {
 
+
   my $it = $db->fetch_many(-query=> $base_query . $sub_query);
   my $i = 0;
   
   while (my $obj=$it->next) {
     $i++;
+
+    #last if $i % 10 == 0;
 
     print STDERR $obj->name, "\n";
     
@@ -151,6 +157,12 @@ foreach my $sub_query (
       }
     }
 
+    my @locs;
+    if (defined $locs and exists $locs->{$obj->name}) {
+      push @locs, $locs->{$obj->name};
+    }
+
+
     my $json_gene = {
       primaryId          => $obj->name,
       symbol             => $symbol,
@@ -161,9 +173,11 @@ foreach my $sub_query (
       synonyms           => [sort keys %synonyms], 
       secondaryIds       => \@secondary_ids,
       crossReferences    => \@xrefs,
+      genomeLocations    => \@locs,
       geneLiteratureUrl  => "http://www.wormbase.org/species/c_elegans/gene/" . $obj->name ."-e-10",
       #references         => \@pmids,
     };
+
     
     #print "$obj $seq_name $cgc_name @other_names\n";
     
@@ -175,6 +189,13 @@ my $data = {
   metaData => $meta_data,
   data => \@genes,
 };
+
+
+if (defined $outfile) {
+  open $out_fh, ">$outfile" or die "Could not open $outfile for writing\n";
+} else {
+  $out_fh = \*STDOUT;
+}
 
 my $json_obj = JSON->new;
 my $string = $json_obj->allow_nonref->canonical->pretty->encode($data);
@@ -199,4 +220,72 @@ sub get_rfc_date {
   }
   
   return $date;
+}
+
+##############################################
+
+sub get_location_data {
+  my ($acedb, $gtf) = @_;
+
+  #
+  # get the assembly name for the canonical bioproject
+  #
+
+  my ($assembly_name, $fh, %locs);
+  
+  my $species_obj = $acedb->fetch(-class => 'Species', -name => $wormbase->full_name);
+  my @seq_col = $species_obj->at('Assembly');
+        
+  foreach my $seq_col_name (@seq_col) {
+    my ($bioproj);
+
+    my $seq_col = $seq_col_name->fetch;
+    my $this_assembly_name = $seq_col->Name;
+
+    my @db = $seq_col->at('Origin.DB_info.Database');
+    foreach my $db (@db) {
+      if ($db->name eq 'NCBI_BioProject') {
+        $bioproj = $db->right->right->name;
+      }
+    }
+    
+    if (defined $bioproj and $wormbase->ncbi_bioproject eq $bioproj) {
+      $assembly_name = $this_assembly_name->name;
+      last;
+    }
+  }
+    
+  if (not defined $assembly_name) {
+    die "Could not find name of current assembly for " . $wormbase->species() . "\n";
+  }
+
+  #
+  # parse the GTF
+  #
+  
+  if ($gtf =~ /\.gz$/) {
+    open( $fh, "gunzip -c $gtf |") 
+        or die "Could not open gunzip stream GTF file $gtf\n";
+  } else {
+    open( $fh, $gtf) 
+        or die "Could not open GTF file $gtf\n";
+  }
+
+  while(<$fh>) {
+    /^\#/ and next;
+    
+    my @l = split(/\t/, $_);
+    next if $l[2] ne "gene";
+
+    my ($wbgid) = $l[8] =~ /gene_id\s+\"(\S+)\"/; 
+
+    $locs{$wbgid} = {
+      assembly       => $assembly_name,
+      chromosome     => $l[0],
+      startPosition  => $l[3] + 0, 
+      endPosition    => $l[4] + 0,
+    };
+  }
+      
+  return \%locs;
 }
