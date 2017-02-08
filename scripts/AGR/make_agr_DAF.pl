@@ -35,7 +35,6 @@ if ( $store ) {
 }
 
 my $tace = $wormbase->tace;
-my $log  = Log_files->make_build_log($wormbase);
 my $date = &get_GAF_date();
 my $taxid = $wormbase->ncbi_tax_id;
 my $full_name = $wormbase->full_name;
@@ -43,17 +42,15 @@ my $full_name = $wormbase->full_name;
 $acedbpath = $wormbase->autoace unless $acedbpath;
 
 if ($outfile) {
-  open($outfh, ">$outfile") or $log->log_and_die("cannot open $outfile : $!\n");  
+  open($outfh, ">$outfile") or die("cannot open $outfile : $!\n");  
 } else {
   $outfh = \*STDOUT;
 }
 
 
-$log->write_to("Connecting to database $acedbpath\n");
-my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or $log->log_and_die("Connection failure: ". Ace->error);
+my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or die("Connection failure: ". Ace->error);
 
 my ( $count, $it);
-
 
 &print_DAF_header($outfh);
 
@@ -85,6 +82,7 @@ while (my $obj=$it->next) {
           reference => "PMID:19029536",  # this is the reference for Ensembl Compara
           evidence => "IEA", 
           with => join("|", @ens,@omim),
+          date => "",
         };
         
         &print_DAF_line($outfh, $obj);
@@ -93,7 +91,7 @@ while (my $obj=$it->next) {
   }
 
   foreach my $doterm ($obj->Experimental_model) {
-    my (@papers);
+    my (@papers, $evi_date);
     foreach my $evi ($doterm->right->col) {
       if ($evi->name eq 'Paper_evidence') {
         foreach my $paper ($evi->col) {
@@ -106,7 +104,12 @@ while (my $obj=$it->next) {
           }
           push @papers, $pmid if $pmid;
         }
-      } 
+      } elsif ($evi->name eq 'Date_last_updated') {
+        $evi_date = $evi->right;
+        $evi_date->date_style('ace');
+        my ($y, $m, $d) = split(/\-/, $evi_date);
+        $evi_date = sprintf("%4d%02d%02d", $y, $m, $d);
+      }
     }
     foreach my $paper (@papers) {
       my $obj = {
@@ -118,6 +121,7 @@ while (my $obj=$it->next) {
         reference => "PMID:$paper", 
         assoc_type => 'causes_condition',
         sex => "hermaphrodite",
+        date => $evi_date,
       };
       &print_DAF_line($outfh, $obj);  
     }
@@ -125,7 +129,6 @@ while (my $obj=$it->next) {
 }
 
 $db->close;
-$log->mail;
 
 exit(0);
 
@@ -144,18 +147,18 @@ sub print_DAF_line {
   my ($fh, $obj) = @_;
 
   printf($fh "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", 
-         $taxid,
+         "taxon:$taxid",
          $obj->{object_type}, 
          "WB", 
          $obj->{object_id},
          $obj->{object_symbol},
          (exists $obj->{inferred_ga}) ? $obj->{inferred_ga} : "",
          (exists $obj->{product_id}) ? $obj->{product_id} : "",
+         (exists $obj->{exp_cond}) ? $obj->{exp_cond} : "",
          $obj->{assoc_type},
          (exists $obj->{qualifier}) ? $obj->{qualifier} : "",
          $obj->{do_id},
          (exists $obj->{with}) ? $obj->{with} : "",
-         (exists $obj->{mod_assoc_type}) ? $obj->{mod_assoc_type} : "",
          (exists $obj->{mod_assoc_type}) ? $obj->{mod_assoc_type} : "",
          (exists $obj->{mod_qualifier}) ? $obj->{mod_qualifier} : "",
          (exists $obj->{mod_genetic}) ? $obj->{mod_genetic} : "",
@@ -163,7 +166,7 @@ sub print_DAF_line {
          $obj->{evidence},
          $obj->{sex},
          $obj->{reference},
-         $date,
+         ($obj->{date}) ? $obj->{date} : $date,
          "WB");
 
 }
