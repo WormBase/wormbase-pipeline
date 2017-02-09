@@ -160,12 +160,6 @@ foreach my $sub_query (
       }
     }
 
-    my @locs;
-    if (defined $locs and exists $locs->{$obj->name}) {
-      push @locs, $locs->{$obj->name};
-    }
-
-
     my $json_gene = {
       primaryId          => $obj->name,
       symbol             => $symbol,
@@ -179,7 +173,15 @@ foreach my $sub_query (
     $json_gene->{synonyms}        =  [sort keys %synonyms] if keys %synonyms;
     $json_gene->{secondaryIds}    =  \@secondary_ids if @secondary_ids;
     $json_gene->{crossReferences} =  \@xrefs if @xrefs;
-    $json_gene->{genomeLocations} = \@locs if @locs;
+
+    if (defined $locs) {
+      if (exists $locs->{$obj->name}) {
+        $json_gene->{genomeLocations} = [$locs->{$obj->name}];
+      } else {
+        # do not include genes without a location for now
+        next;
+      }
+    }
 
     push @genes, $json_gene;
   }
