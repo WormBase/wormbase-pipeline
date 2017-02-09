@@ -14,7 +14,7 @@ use lib "$ENV{CVS_DIR}/ONTOLOGY";
 use GAF;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($outfile, $acedbpath, $include_iea, $outfh);
+my ($outfile, $acedbpath, $include_iea, $wb_version, $outfh);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
@@ -22,8 +22,9 @@ GetOptions ("help"       => \$help,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
 	    "database:s" => \$acedbpath,
-	    "outfile:s"   => \$outfile,
+	    "outfile:s"  => \$outfile,
             "electronic" => \$include_iea,
+            "wbversion"  => \$wb_version,
 	    );
 
 if ( $store ) {
@@ -36,10 +37,12 @@ if ( $store ) {
 
 my $tace = $wormbase->tace;
 my $date = &get_GAF_date();
+my $alt_date = join("/", $date =~ /^(\d{4})(\d{2})(\d{2})/);
 my $taxid = $wormbase->ncbi_tax_id;
 my $full_name = $wormbase->full_name;
 
 $acedbpath = $wormbase->autoace unless $acedbpath;
+$wb_version = $wormbase->get_wormbase_version_name unless $wb_version;
 
 if ($outfile) {
   open($outfh, ">$outfile") or die("cannot open $outfile : $!\n");  
@@ -53,6 +56,7 @@ my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or die("Connectio
 my ( $count, $it);
 
 &print_DAF_header($outfh);
+&print_DAF_column_headers($outfh);
 
 $it = $db->fetch_many(-query=>'find Gene Disease_info');
 
@@ -77,6 +81,7 @@ while (my $obj=$it->next) {
         my $obj =  {
           object_type => "gene",
           object_id => $g,
+          inferred_ga => "WB:$g",
           object_symbol =>  $obj->Public_name->name,
           do_id => $doterm,
           reference => "PMID:19029536",  # this is the reference for Ensembl Compara
@@ -115,6 +120,7 @@ while (my $obj=$it->next) {
       my $obj = {
         object_type => "gene",
         object_id => $g,
+        inferred_ga => "WB:$g",
         object_symbol =>  $obj->Public_name,
         do_id => $doterm,
         evidence => "IMP", 
@@ -138,9 +144,45 @@ sub print_DAF_header {
   my ($fh) = @_;
 
   print $fh "!daf-version 0.1\n";
-  print $fh "!Project_name: WormBase\n";
+  print $fh "!Date: $date\n";
+  print $fh "!Project_name: WormBase (WB) Version $wb_version\n";
+  print $fh "!URL: http://www.wormbase.org/\n";
+  print $fh "!Contact Email: wormbase-help\@wormbase.org\n";
+  print $fh "!Funding: NHGRI at US NIH, grant number U41 HG002223\n";
 
 }
+
+
+###########################################################3
+sub print_DAF_column_headers {
+  my ($fh) = @_;
+
+  my @col_headers  = (
+    'Taxon',
+    'DB Object Type',
+    'DB',
+    'DB Object ID',
+    'DB Object Symbol',
+    'Inferred gene association',
+    'Gene Product Form ID',
+    'Experimental conditions',
+    'Association type',
+    'Qualifier',
+    'DO ID',
+    'With',
+    'Modifier - assocation type',
+    'Modifier - Qualifier',
+    'Modifier - genetic',
+    'Modifier - experimental conditions',
+    'Evidence Code',
+    'genetic sex',
+    'DB:Reference',
+    'Date',
+    'Assigned By');
+
+  print $fh join("\t", @col_headers), "\n";
+}
+
 
 ###########################################################3
 sub print_DAF_line {
