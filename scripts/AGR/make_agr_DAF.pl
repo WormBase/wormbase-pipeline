@@ -13,19 +13,19 @@ use Log_files;
 use lib "$ENV{CVS_DIR}/ONTOLOGY";
 use GAF;
 
-my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($outfile, $acedbpath, $include_iea, $wb_version, $outfh);
+my ($debug, $test, $verbose, $store, $wormbase);
+my ($outfile, $acedbpath, $include_iea, $ws_version, $outfh);
 
-GetOptions ("help"       => \$help,
-            "debug=s"    => \$debug,
-	    "test"       => \$test,
-	    "verbose"    => \$verbose,
-	    "store:s"    => \$store,
-	    "database:s" => \$acedbpath,
-	    "outfile:s"  => \$outfile,
-            "electronic" => \$include_iea,
-            "wbversion"  => \$wb_version,
-	    );
+GetOptions (
+  "debug=s"     => \$debug,
+  "test"        => \$test,
+  "verbose"     => \$verbose,
+  "store:s"     => \$store,
+  "database:s"  => \$acedbpath,
+  "outfile:s"   => \$outfile,
+  "electronic"  => \$include_iea,
+  "wsversion=s" => \$ws_version,
+    );
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
@@ -42,7 +42,7 @@ my $taxid = $wormbase->ncbi_tax_id;
 my $full_name = $wormbase->full_name;
 
 $acedbpath = $wormbase->autoace unless $acedbpath;
-$wb_version = $wormbase->get_wormbase_version_name unless $wb_version;
+$ws_version = $wormbase->get_wormbase_version_name unless $ws_version;
 
 if ($outfile) {
   open($outfh, ">$outfile") or die("cannot open $outfile : $!\n");  
@@ -145,7 +145,7 @@ sub print_DAF_header {
 
   print $fh "!daf-version 0.1\n";
   print $fh "!Date: $date\n";
-  print $fh "!Project_name: WormBase (WB) Version $wb_version\n";
+  print $fh "!Project_name: WormBase (WB) Version $ws_version\n";
   print $fh "!URL: http://www.wormbase.org/\n";
   print $fh "!Contact Email: wormbase-help\@wormbase.org\n";
   print $fh "!Funding: NHGRI at US NIH, grant number U41 HG002223\n";
