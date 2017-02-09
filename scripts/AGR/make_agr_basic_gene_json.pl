@@ -92,7 +92,10 @@ foreach my $sub_query (
     next unless $obj->Species->name eq $full_name;
     
     my $biotype = $obj->Biotype->name;
-    
+    # temp hack to deal with data problem in WS258 (where some genes have "ncRNA" rather than "ncRNA_gene")
+    $biotype = "SO:0001263" if $biotype eq "SO:0000655";
+
+
     my ($symbol, %synonyms);
     my $seq_name = $obj->Sequence_name->name;
     if ($obj->CGC_name) {
@@ -166,21 +169,18 @@ foreach my $sub_query (
     my $json_gene = {
       primaryId          => $obj->name,
       symbol             => $symbol,
-      name               => $name,
-      taxonId            => $taxid,
-      geneSynopsis       => $desc,
       soTermId           => $biotype,
-      synonyms           => [sort keys %synonyms], 
-      secondaryIds       => \@secondary_ids,
-      crossReferences    => \@xrefs,
-      genomeLocations    => \@locs,
+      taxonId            => $taxid,
       geneLiteratureUrl  => "http://www.wormbase.org/species/c_elegans/gene/" . $obj->name ."-e-10",
-      #references         => \@pmids,
     };
 
-    
-    #print "$obj $seq_name $cgc_name @other_names\n";
-    
+    $json_gene->{name}            =  $name if $name;
+    $json_gene->{geneSynopsis}    =  $desc if $desc;
+    $json_gene->{synonyms}        =  [sort keys %synonyms] if keys %synonyms;
+    $json_gene->{secondaryIds}    =  \@secondary_ids if @secondary_ids;
+    $json_gene->{crossReferences} =  \@xrefs if @xrefs;
+    $json_gene->{genomeLocations} = \@locs if @locs;
+
     push @genes, $json_gene;
   }
 }
@@ -284,6 +284,7 @@ sub get_location_data {
       chromosome     => $l[0],
       startPosition  => $l[3] + 0, 
       endPosition    => $l[4] + 0,
+      strand         => $l[6],
     };
   }
       
