@@ -229,14 +229,12 @@ sub results {
       foreach my $start (keys %splice) {
 	foreach my $end (keys %{$splice{$start}}) {
 	  my $total= 0;
-	  my $string = "";
 	  foreach my $library (keys %{$splice{$start}{$end}}) {
 	    my $value = $splice{$start}{$end}{$library};
 	    $total += $value;
-	    $string .= "$library $value "
 	  }
 	  # filter out any spurious introns with only 1 or 2 reads
-	  if ($total > 2) {print FLAT "Feature RNASeq_splice $start $end $total \"$string\"\n";}
+	  if ($total > 2) {print FLAT "Feature RNASeq_splice $start $end $total \"RNASeq intron\"\n";}
 	}
       }
       # reset things for the new clone
@@ -251,14 +249,12 @@ sub results {
   foreach my $start (keys %splice) {
     foreach my $end (keys %{$splice{$start}}) {
       my $total= 0;
-      my $string = "";
       foreach my $library (keys %{$splice{$start}{$end}}) {
 	my $value = $splice{$start}{$end}{$library};
 	$total += $value;
-	$string .= "$library $value "
       }
       # filter out any spurious introns with only 1 or 2 reads
-      if ($total > 2) {print FLAT "Feature RNASeq_splice $start $end $total \"$string\"\n";}
+      if ($total > 2) {print FLAT "Feature RNASeq_splice $start $end $total \"RNASeq intron\"\n";}
     }
   }
   close(FLAT);
