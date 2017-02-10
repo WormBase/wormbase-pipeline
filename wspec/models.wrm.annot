@@ -328,7 +328,6 @@
                   Contained_in_operon ?Operon INXREF Contains_gene
                   Ortholog ?Gene OUTXREF Ortholog ?Species #Evidence
                   Paralog ?Gene OUTXREF Paralog ?Species #Evidence
-                  Ortholog_other ?Protein OUTXREF Ortholog_gene #Evidence // to allow Orthologues links to none ?Gene genes eg remanei (ar2 Nov06)
                   Structured_description Provisional_description ?Text #Evidence         // Erich [020322 krb]
 //                                         Detailed_description ?Text #Evidence            // Erich [020322 krb]
                                          Concise_description ?Text #Evidence             // Erich [020523 krb]
@@ -2035,7 +2034,6 @@
           Visible Corresponding_CDS ?CDS INXREF Corresponding_protein
                   Expr_pattern ?Expr_pattern INXREF Protein
                   Homology_group ?Homology_group INXREF Protein // added [031120 krb]
-                  Ortholog_gene ?Gene INXREF Ortholog_other #Evidence //[change Ortholog others to link to proteins rather than accessions]
                   // 3d_data ?3d_data XREF Protein
                   Interaction ?Interaction INXREF Interactor_overlapping_protein
                  // Structure_data ?Structure_data XREF Corresponding_protein #Evidence
@@ -3821,3 +3819,4 @@
 // WS256
 // WS257
 // WS258
+// WS259
