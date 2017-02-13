@@ -186,7 +186,7 @@ sub sanity_check {
   foreach my $expt (@jobs_to_be_run) {
     if (!$RNASeq->check_all_done($expt, 1)) {
       $log->write_to("The job for experiment $expt did not complete correctly - please re-run the script with '-check' on the command-line\n");
-      $log->error(1);
+      $log->error();
     }
   }
 
@@ -228,12 +228,8 @@ sub results {
     if ($line =~ /^Feature_data/ || $line =~ /^\s*$/) { # new clone
       foreach my $start (keys %splice) {
 	foreach my $end (keys %{$splice{$start}}) {
-	  my $total= 0;
-	  foreach my $library (keys %{$splice{$start}{$end}}) {
-	    my $value = $splice{$start}{$end}{$library};
-	    $total += $value;
-	  }
 	  # filter out any spurious introns with only 1 or 2 reads
+	  my $total = $splice{$start}{$end};
 	  if ($total > 2) {print FLAT "Feature RNASeq_splice $start $end $total \"RNASeq intron\"\n";}
 	}
       }
@@ -242,17 +238,13 @@ sub results {
       print FLAT $line;
     } else {
       my @feat = split /\s+/, $line;
-      $splice{$feat[2]}{$feat[3]}{$feat[5]} = $feat[4];
+      $splice{$feat[2]}{$feat[3]} += $feat[4];
     }
   }
   # and do the last clone
   foreach my $start (keys %splice) {
     foreach my $end (keys %{$splice{$start}}) {
-      my $total= 0;
-      foreach my $library (keys %{$splice{$start}{$end}}) {
-	my $value = $splice{$start}{$end}{$library};
-	$total += $value;
-      }
+      my $total = $splice{$start}{$end};
       # filter out any spurious introns with only 1 or 2 reads
       if ($total > 2) {print FLAT "Feature RNASeq_splice $start $end $total \"RNASeq intron\"\n";}
     }
