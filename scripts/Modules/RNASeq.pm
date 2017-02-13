@@ -1868,17 +1868,32 @@ sub get_introns {
   
 
   my %seqlength;
-  my %virtuals;
   
   my $coords = Coords_converter->invoke($database, 0, $self->{wormbase});
   
   my $output = "Intron.ace";
   my $junctions = "../$alignmentDir/junctions.gff";
+  my $virtual;
   my $old_virtual = "";
+  my $method = "RNASeq_splice";
+  my $text = "\"RNASeq intron\"";
+
+
   open (ACE, ">$output") || $log->log_and_die("Can't open the file $output\n");
   
   open(GFF, "<$junctions") || $log->log_and_die("Can't open the file $junctions\n");
+
+  my $vfile = "virtual_objects." . $self->{wormbase}->{species} . ".RNASeq.ace";
+  open(VIRT, ">$vfile") or $log->log_and_die("Could not open $vfile for writing\n");
+
+  my (@tiles, @whole_chromosome);
+
+
+  my $sequence = '';
+  my $sequence_len = 0;
+
   while (my $line = <GFF>) {
+
     if ($line =~ /^#/) {next}
     my @cols = split /\s+/, $line;
     my $chrom = $cols[0];
@@ -1890,49 +1905,139 @@ sub get_introns {
     # get the clone that this intron is on
     my ($clone, $clone_start, $clone_end) = $coords->LocateSpan($chrom, $start, $end);
     
-    # 2014-12-05 while we are converting elegans over to not using SUPERLINKS, simply use the chromosome coords if this si a SUPERLINK
-    if ($clone =~ /SUPERLINK/) {
-      ($clone, $clone_start, $clone_end) = ($chrom, $start, $end);
-    }
-    
-    if (not exists $seqlength{$clone}) {
-      $seqlength{$clone} = $coords->Superlink_length($clone);
-    }
-    
-    my $virtual = "${clone}:Confirmed_intron_RNASeq";
-    
-    if ($old_virtual ne $virtual) {
-      print ACE "\nFeature_data : \"$virtual\"\n";
-      $old_virtual = $virtual
-    }
-    
     if ($sense eq '-') {
       ($clone_end, $clone_start) = ($clone_start, $clone_end)
     }
     
-    # when we have changes to acedb that can deal with a Feature_data Confirmed_intron from RNASeq, then do this:
-    #    print ACE "Confirmed_intron $clone_start $clone_end RNASeq $experiment_accession $reads\n";
-    # until then we store it as a Feature_data Feature, which works quite well:
-    print ACE "Feature RNASeq_splice $clone_start $clone_end $reads $experiment_accession\n";
-    
+    if (not exists $seqlength{$clone}) { # new sequence
+ 
+      $self->write_tiles(\@tiles, \@whole_chromosome, $virtual, $sequence, $sequence_len); #  write the old data
+
+      $sequence = $clone;
+      $virtual = "${sequence}:Confirmed_intron_RNASeq";
+      $sequence_len = $self->initialise_tiles($sequence, \@tiles, $coords);
+      $seqlength{$sequence} = $sequence_len;
+
+    } else {
+
+      $self->store_feature_in_tile(\@tiles, \@whole_chromosome, $method, $clone_start, $clone_end, $reads, $text);
+
+    }
+
   }
+
+  # write the last sequence
+  $self->write_tiles(\@tiles, \@whole_chromosome, $virtual, $sequence, $sequence_len); #  write the old data
+
+
   close(GFF);
   close(ACE);
-  
-  # now add the Feature_data objects to the chromosome objects
-  my $vfile = "virtual_objects." . $self->{wormbase}->{species} . ".RNASeq.ace";
-  open(my $vfh, ">$vfile") or $log->log_and_die("Could not open $vfile for writing\n");
-  foreach my $clone (keys %seqlength) {
-    print $vfh "\nSequence : \"$clone\"\n";
-    my $virtual = "${clone}:Confirmed_intron_RNASeq";
-    printf $vfh "S_Child Feature_data $virtual 1 $seqlength{$clone}\n\n";
-  }
-  close($vfh);
+  close(VIRT);
   
   $self->{wormbase}->run_command("touch $done_file", $log); # set flag to indicate we have finished this
   
   return $status;
 }
+
+
+
+##########################################
+# find the tile to store the Feature in
+sub store_feature_in_tile {
+  my ($self, $tiles_aref, $whole_chromosome_aref, $method, $start, $end, $reads, $text) = @_;
+
+  my $found = 0;
+  for( my $tile_idx = 1; $tile_idx <= @{$tiles_aref}; $tile_idx++) {
+    my $tile = $tiles_aref->[$tile_idx-1];
+    if ($start < $end) {
+      if ($start > $tile->{start} && $end <= $tile->{end}) { # find the tile containing this forward Feature
+	push @{$tile->{segs}}, [$method, $start - $tile->{start} + 1, $end - $tile->{start}, $reads, $text];
+	$found = 1;
+      }
+    } else {
+      if ($end > $tile->{start} && $start <= $tile->{end}) { # find the tile containing this reverse Feature
+	push @{$tile->{segs}}, [$method, $start - $tile->{start} + 1, $end - $tile->{start}, $reads, $text];
+	$found = 1;
+      }
+    }
+  }
+  if (!$found) { # it falls between two tiles, so place it on the top-level Sequence
+    push @{$whole_chromosome_aref}, [$method, $start, $end, $reads, $text];
+  }
+}
+
+##########################################
+sub write_tiles {
+  my ($self, $tiles_aref, $whole_chromosome_aref, $virtual, $sequence, $sequence_len) = @_;
+
+
+  # output the new Sequence lines
+
+  my @sequence_out;
+  my @feature_out;
+
+  if (scalar @{$tiles_aref}) {
+    push @sequence_out, "\nSequence : \"${sequence}\"\n";
+
+    for(my $tile_idx = 1; $tile_idx <= @{$tiles_aref}; $tile_idx++) {
+      my $tile = $tiles_aref->[$tile_idx-1];
+      
+      my $vseq = "${virtual}:$tile_idx";
+      
+      if (@{$tile->{segs}}) {
+	push @sequence_out, "S_Child Feature_data ". $vseq ." ". $tile->{start} ." ". $tile->{end} ."\n";
+	
+	push @feature_out, "\nFeature_data : \"$vseq\"\n";
+	foreach my $seg (@{$tile->{segs}}) {
+	  push @feature_out, "Feature @$seg\n";
+	}
+      }
+    }
+  }
+
+
+  if (scalar @{$whole_chromosome_aref}) {
+    push @sequence_out, "\nSequence : \"${sequence}\"\n";
+    push @sequence_out, "S_Child Feature_data ${virtual} 1 $sequence_len\n";
+    push @feature_out, "\nFeature_data : ${virtual}\n";
+    foreach my $seg (@{$whole_chromosome_aref}) {
+      push @feature_out,  "Feature @$seg\n";
+    }
+  }
+
+  print VIRT @sequence_out;
+  print VIRT "\n"; # acezip.pl concatenates another line to the last line if this is not blank
+
+  print ACE @feature_out;
+  print ACE "\n";
+
+  @{$tiles_aref} = ();
+  @{$whole_chromosome_aref} = ();
+}
+
+
+##########################################
+sub initialise_tiles {
+  my ($self, $sequence, $tiles_aref, $coords) = @_;
+
+  my $log = $self->{log};
+
+  my $chr_len = $coords->Superlink_length($sequence);
+  if (!defined $chr_len) {$log->log_and_die("Can't find the length of the Sequence $sequence\n")}
+
+  for(my $i=0; $i < $chr_len; $i += 300000) {
+    my $chr_start = $i + 1;
+    my $chr_end = $chr_start + 300000 - 1;
+    $chr_end = $chr_len if $chr_end > $chr_len;
+    push @{$tiles_aref}, {
+		  start => $chr_start, 
+		  end   => $chr_end,
+		  segs  => [],
+    }
+  }
+  return $chr_len;
+}
+##########################################
 
 =head2
 
