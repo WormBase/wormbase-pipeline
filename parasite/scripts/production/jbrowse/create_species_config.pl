@@ -87,7 +87,7 @@ for my $species (@species) {
     close(TRACKJSON);
 
     ## Copy the functions file
-    copt("./includes/functions.conf",  "$out_dir/$prod_name/data/functions.conf");
+    copy("./includes/functions.conf",  "$out_dir/$prod_name/data/functions.conf");
 
     ## Process the FASTA
     $logger->info("Converting $fasta_file to JSON");
