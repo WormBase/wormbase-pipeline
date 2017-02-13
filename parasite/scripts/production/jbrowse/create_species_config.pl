@@ -80,6 +80,15 @@ for my $species (@species) {
       }
     }
 
+    ## Create trackList.json
+    $logger->info("Creating trackList.json");
+    open(TRACKJSON, ">$out_dir/$prod_name/data/trackList.json");
+    print TRACKJSON '{ "include" : ["functions.conf"] }';
+    close(TRACKJSON);
+
+    ## Copy the functions file
+    copt("./includes/functions.conf",  "$out_dir/$prod_name/data/functions.conf");
+
     ## Process the FASTA
     $logger->info("Converting $fasta_file to JSON");
     copy("$ftp_dir/species/$species/$bioproject/$fasta_file.gz", "$out_dir/$prod_name/data_files/$fasta_file.gz");
@@ -94,7 +103,7 @@ for my $species (@species) {
       $logger->info(sprintf("-- feature type %s", $gff3_track->{'type'}));
       (my $track_label = $gff3_track->{'trackLabel'}) =~ s/\s/_/g;
       my $sys_cmd = sprintf(
-        qq(perl %s/bin/flatfile-to-json.pl --gff "%s/%s/data_files/%s" --type %s --key "%s" --trackLabel "%s" --trackType %s --metadata '{ "category": "%s", "menuTemplate" : [{ "label" : "View gene at WormBase ParaSite", "action" : "newWindow", "url" : "/Gene/Summary?g={name}" }] }' --out "%s/%s/data"),
+        qq(perl %s/bin/flatfile-to-json.pl --gff "%s/%s/data_files/%s" --type %s --key "%s" --trackLabel "%s" --trackType %s --metadata '{ "category": "%s", "menuTemplate" : [{ "label" : "View gene at WormBase ParaSite", "action" : "newWindow", "url" : "/Gene/Summary?g={name}" }] }' %s --out "%s/%s/data"),
         $jbrowse_path,
         $out_dir,
         $prod_name,
@@ -104,6 +113,7 @@ for my $species (@species) {
         $track_label,
         $gff3_track->{'trackType'},
         $gff3_track->{'category'},
+	$gff3_track->{'type'} =~ /^gene/ ? qq(--clientConfig '{ "color" : "geneColor", "label" : "geneLabel" }') : '';
         $out_dir,
         $prod_name
       );
