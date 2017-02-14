@@ -113,7 +113,7 @@ for my $species (@species) {
         $track_label,
         $gff3_track->{'trackType'},
         $gff3_track->{'category'},
-	$gff3_track->{'type'} =~ /^gene/ ? qq(--clientConfig '{ "color" : "geneColor", "label" : "geneLabel" }') : '';
+	$gff3_track->{'type'} =~ /^gene/ ? qq(--clientConfig '{ "color" : "geneColor", "label" : "geneLabel" }') : '',
         $out_dir,
         $prod_name
       );
