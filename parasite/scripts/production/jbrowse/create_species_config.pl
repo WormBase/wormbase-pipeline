@@ -84,7 +84,7 @@ for my $species (@species) {
     ## Create trackList.json
     $logger->info("Creating trackList.json");
     open(TRACKJSON, ">$out_dir/$prod_name/data/trackList.json");
-    print TRACKJSON '{ "include" : ["functions.conf"] }';
+    print TRACKJSON '{ "include" : ["functions.conf"], "tracks" : [ ] }';
     close(TRACKJSON);
 
     ## Copy the functions file
