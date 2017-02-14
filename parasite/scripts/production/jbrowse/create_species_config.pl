@@ -121,6 +121,11 @@ for my $species (@species) {
       `$sys_cmd`;
     }
     
+    ## Create the search index
+    $logger->info("Running generate-names.pl to index feature names for search");
+    my $sys_cmd = sprintf('perl %s/bin/generate-names.pl --out %s/%s/data --compress --completionLimit 0', $jbrowse_path, $out_dir, $prod_name);
+    `$sys_cmd`;
+
   }
 }
 
