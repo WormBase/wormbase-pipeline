@@ -61,6 +61,7 @@ for my $species (@species) {
     my $prod_name = lc sprintf("%s_%s", $species_name, $bioproject);
     $logger->info("Working on $prod_name");
     mkdir "$out_dir/$prod_name";
+    mkdir "$out_dir/$prod_name/data";
     mkdir "$out_dir/$prod_name/data_files";
     
     ## Get a list of the available files for this genome
