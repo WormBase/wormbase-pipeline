@@ -86,7 +86,7 @@ sub classes {
 
         $value =~ s/^\"(.+)\"/$1/; 
 
-        print $fh "$class : \"$value\"\n";
+        print $fh "\"$class\", \"$value\"\n";
       }
     }
     close ($tace_fh);
