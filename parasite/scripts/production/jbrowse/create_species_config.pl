@@ -18,18 +18,18 @@ if(!@ARGV) {
   pod2usage(1);
   exit;
 }
-my ($ftp_dir, $jbrowse_path, $out_dir, $gff3_config_file, $species_name);
+my ($ftp_dir, $jbrowse_path, $out_dir, $worm_pipeline_dir, $species_name);
 GetOptions(
-    'ftp_dir=s'          => \$ftp_dir,
-    'jbrowse_path=s'     => \$jbrowse_path,
-    'out_dir=s'          => \$out_dir,
-    'gff3_config_file=s' => \$gff3_config_file,
-    'species=s'          => \$species_name
+    'ftp_dir=s'           => \$ftp_dir,
+    'jbrowse_path=s'      => \$jbrowse_path,
+    'out_dir=s'           => \$out_dir,
+    'worm_pipeline_dir=s' => \$worm_pipeline_dir,
+    'species=s'           => \$species_name
   );
 
 ## Load the GFF3 config into memory - we only want to do this once
 my @gff3_config;
-open(FILE, $gff3_config_file) or $logger->logdie("Cannot open GFF3 track configuration file: $!");
+open(FILE, "$worm_pipeline_dir/parasite/scripts/production/jbrowse/gff3_tracks.tsv") or $logger->logdie("Cannot open GFF3 track configuration file: $!");
 foreach(<FILE>) {
   chomp;
   my @parts = split("\t", $_);
@@ -61,6 +61,7 @@ for my $species (@species) {
     my $prod_name = lc sprintf("%s_%s", $species_name, $bioproject);
     $logger->info("Working on $prod_name");
     mkdir "$out_dir/$prod_name";
+    mkdir "$out_dir/$prod_name/data";
     mkdir "$out_dir/$prod_name/data_files";
     
     ## Get a list of the available files for this genome
@@ -80,11 +81,20 @@ for my $species (@species) {
       }
     }
 
+    ## Create trackList.json
+    $logger->info("Creating trackList.json");
+    open(TRACKJSON, ">$out_dir/$prod_name/data/trackList.json");
+    print TRACKJSON '{ "include" : ["functions.conf"], "tracks" : [ ] }';
+    close(TRACKJSON);
+
+    ## Copy the functions file
+    copy("$worm_pipeline_dir/parasite/scripts/production/jbrowse/includes/functions.conf",  "$out_dir/$prod_name/data/functions.conf");
+
     ## Process the FASTA
     $logger->info("Converting $fasta_file to JSON");
     copy("$ftp_dir/species/$species/$bioproject/$fasta_file.gz", "$out_dir/$prod_name/data_files/$fasta_file.gz");
     gunzip("$out_dir/$prod_name/data_files/$fasta_file.gz", "$out_dir/$prod_name/data_files/$fasta_file");
-    `perl $jbrowse_path/bin/prepare-refseqs.pl --fasta $out_dir/$prod_name/data_files/$fasta_file --out $out_dir/$prod_name/data`;
+    `perl $jbrowse_path/bin/prepare-refseqs.pl --fasta $out_dir/$prod_name/data_files/$fasta_file --out $out_dir/$prod_name/data --compress`;
     
     ## Process the GFF3 - note there are many feature types here which are extracted into single tracks, so we load them from an external file to make them configurable
     $logger->info("Converting $gff3_file to JSON");
@@ -94,7 +104,7 @@ for my $species (@species) {
       $logger->info(sprintf("-- feature type %s", $gff3_track->{'type'}));
       (my $track_label = $gff3_track->{'trackLabel'}) =~ s/\s/_/g;
       my $sys_cmd = sprintf(
-        qq(perl %s/bin/flatfile-to-json.pl --gff "%s/%s/data_files/%s" --type %s --key "%s" --trackLabel "%s" --trackType %s --metadata '{ "category": "%s", "menuTemplate" : [{ "label" : "View gene at WormBase ParaSite", "action" : "newWindow", "url" : "/Gene/Summary?g={name}" }] }' --out "%s/%s/data"),
+        qq(perl %s/bin/flatfile-to-json.pl --gff "%s/%s/data_files/%s" --type %s --key "%s" --trackLabel "%s" --trackType %s --metadata '{ "category": "%s", "menuTemplate" : [{ "label" : "View gene at WormBase ParaSite", "action" : "newWindow", "url" : "/Gene/Summary?g={name}" }] }' %s --out "%s/%s/data" --compress),
         $jbrowse_path,
         $out_dir,
         $prod_name,
@@ -104,12 +114,18 @@ for my $species (@species) {
         $track_label,
         $gff3_track->{'trackType'},
         $gff3_track->{'category'},
+	$gff3_track->{'type'} =~ /^gene/ ? qq(--clientConfig '{ "color" : "{geneColor}", "label" : "{geneLabel}" }') : '',
         $out_dir,
         $prod_name
       );
       `$sys_cmd`;
     }
     
+    ## Create the search index
+    $logger->info("Running generate-names.pl to index feature names for search");
+    my $sys_cmd = sprintf('perl %s/bin/generate-names.pl --out %s/%s/data --compress --completionLimit 0', $jbrowse_path, $out_dir, $prod_name);
+    `$sys_cmd`;
+
   }
 }
 
@@ -129,4 +145,4 @@ create_species_config.pl - produce a JBrowse configuration from a WormBase ParaS
       --ftp_dir <path to filesystem location of FTP site> \
       --jbrowse_path <path to JBrowse check out>          \
       --out_dir <output directory>                        \
-      --gff3_config_file <path to GFF3 mapping file>
+      --worm_pipeline_dir <path to check out of wormbase-pipeline repo>

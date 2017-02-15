@@ -1874,7 +1874,6 @@ sub get_introns {
   my $output = "Intron.ace";
   my $junctions = "../$alignmentDir/junctions.gff";
   my $virtual;
-  my $old_virtual = "";
   my $method = "RNASeq_splice";
   my $text = "\"RNASeq intron\"";
 
@@ -1902,27 +1901,22 @@ sub get_introns {
     my $sense = $cols[6];
     my $reads = $cols[7];
     
-    # get the clone that this intron is on
-    my ($clone, $clone_start, $clone_end) = $coords->LocateSpan($chrom, $start, $end);
-    
     if ($sense eq '-') {
-      ($clone_end, $clone_start) = ($clone_start, $clone_end)
+      ($end, $start) = ($start, $end);
     }
     
-    if (not exists $seqlength{$clone}) { # new sequence
+    if ($chrom ne $sequence) { # new sequence
  
       $self->write_tiles(\@tiles, \@whole_chromosome, $virtual, $sequence, $sequence_len); #  write the old data
 
-      $sequence = $clone;
+
+      $sequence = $chrom;
       $virtual = "${sequence}:Confirmed_intron_RNASeq";
       $sequence_len = $self->initialise_tiles($sequence, \@tiles, $coords);
-      $seqlength{$sequence} = $sequence_len;
-
-    } else {
-
-      $self->store_feature_in_tile(\@tiles, \@whole_chromosome, $method, $clone_start, $clone_end, $reads, $text);
 
     }
+
+    $self->store_feature_in_tile(\@tiles, \@whole_chromosome, $method, $start, $end, $reads, $text);
 
   }
 
@@ -1951,12 +1945,12 @@ sub store_feature_in_tile {
     my $tile = $tiles_aref->[$tile_idx-1];
     if ($start < $end) {
       if ($start > $tile->{start} && $end <= $tile->{end}) { # find the tile containing this forward Feature
-	push @{$tile->{segs}}, [$method, $start - $tile->{start} + 1, $end - $tile->{start}, $reads, $text];
+	push @{$tile->{segs}}, [$method, $start - $tile->{start} + 1, $end - $tile->{start} + 1, $reads, $text];
 	$found = 1;
       }
     } else {
       if ($end > $tile->{start} && $start <= $tile->{end}) { # find the tile containing this reverse Feature
-	push @{$tile->{segs}}, [$method, $start - $tile->{start} + 1, $end - $tile->{start}, $reads, $text];
+	push @{$tile->{segs}}, [$method, $start - $tile->{start} + 1, $end - $tile->{start} + 1, $reads, $text];
 	$found = 1;
       }
     }
