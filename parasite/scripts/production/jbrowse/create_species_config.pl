@@ -88,7 +88,8 @@ for my $species (@species) {
     close(TRACKJSON);
 
     ## Copy the functions file
-    copy("./includes/functions.conf",  "$out_dir/$prod_name/data/functions.conf");
+    my $script_root = dirname($gff3_config_file);
+    copy("$script_root/includes/functions.conf",  "$out_dir/$prod_name/data/functions.conf");
 
     ## Process the FASTA
     $logger->info("Converting $fasta_file to JSON");
