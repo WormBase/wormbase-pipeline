@@ -18,18 +18,18 @@ if(!@ARGV) {
   pod2usage(1);
   exit;
 }
-my ($ftp_dir, $jbrowse_path, $out_dir, $gff3_config_file, $species_name);
+my ($ftp_dir, $jbrowse_path, $out_dir, $worm_pipeline_dir, $species_name);
 GetOptions(
-    'ftp_dir=s'          => \$ftp_dir,
-    'jbrowse_path=s'     => \$jbrowse_path,
-    'out_dir=s'          => \$out_dir,
-    'gff3_config_file=s' => \$gff3_config_file,
-    'species=s'          => \$species_name
+    'ftp_dir=s'           => \$ftp_dir,
+    'jbrowse_path=s'      => \$jbrowse_path,
+    'out_dir=s'           => \$out_dir,
+    'worm_pipeline_dir=s' => \$worm_pipeline_dir,
+    'species=s'           => \$species_name
   );
 
 ## Load the GFF3 config into memory - we only want to do this once
 my @gff3_config;
-open(FILE, $gff3_config_file) or $logger->logdie("Cannot open GFF3 track configuration file: $!");
+open(FILE, "$worm_pipeline_dir/parasite/scripts/production/jbrowse/gff3_tracks.tsv") or $logger->logdie("Cannot open GFF3 track configuration file: $!");
 foreach(<FILE>) {
   chomp;
   my @parts = split("\t", $_);
@@ -88,8 +88,7 @@ for my $species (@species) {
     close(TRACKJSON);
 
     ## Copy the functions file
-    my $script_root = dirname($gff3_config_file);
-    copy("$script_root/includes/functions.conf",  "$out_dir/$prod_name/data/functions.conf");
+    copy("$worm_pipeline_dir/parasite/scripts/production/jbrowse/includes/functions.conf",  "$out_dir/$prod_name/data/functions.conf");
 
     ## Process the FASTA
     $logger->info("Converting $fasta_file to JSON");
@@ -146,4 +145,4 @@ create_species_config.pl - produce a JBrowse configuration from a WormBase ParaS
       --ftp_dir <path to filesystem location of FTP site> \
       --jbrowse_path <path to JBrowse check out>          \
       --out_dir <output directory>                        \
-      --gff3_config_file <path to GFF3 mapping file>
+      --worm_pipeline_dir <path to check out of wormbase-pipeline repo>
