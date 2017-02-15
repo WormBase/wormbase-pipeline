@@ -1945,12 +1945,12 @@ sub store_feature_in_tile {
     my $tile = $tiles_aref->[$tile_idx-1];
     if ($start < $end) {
       if ($start > $tile->{start} && $end <= $tile->{end}) { # find the tile containing this forward Feature
-	push @{$tile->{segs}}, [$method, $start - $tile->{start} + 1, $end - $tile->{start}, $reads, $text];
+	push @{$tile->{segs}}, [$method, $start - $tile->{start} + 1, $end - $tile->{start} + 1, $reads, $text];
 	$found = 1;
       }
     } else {
       if ($end > $tile->{start} && $start <= $tile->{end}) { # find the tile containing this reverse Feature
-	push @{$tile->{segs}}, [$method, $start - $tile->{start} + 1, $end - $tile->{start}, $reads, $text];
+	push @{$tile->{segs}}, [$method, $start - $tile->{start} + 1, $end - $tile->{start} + 1, $reads, $text];
 	$found = 1;
       }
     }
