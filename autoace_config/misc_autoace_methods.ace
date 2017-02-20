@@ -778,7 +778,6 @@ Remark	 "Whole Genome Sequencing Chu JS et al. (2014) BMC Genomics \"High-throug
 Colour	 ORANGE
 Strand_sensitive
 Width	 1.100000
-Right_priority	 1.100000
 Show_text
 GFF_source "Variation_project"
 GFF_feature "sequence_alteration"
@@ -2967,8 +2966,7 @@ Remark "A temporary method used in acedb when curators are producing new gene st
 Colour DARKBLUE
 Show_up_strand	
 Bumpable	
-Show_text	
-
+Show_text
 
 Method : "mRNA" //??
 Colour DARKRED
@@ -3606,6 +3604,9 @@ Method : "curation_remark"
 Right_priority 1.05
 
 //space
+	
+Method : "WGS_Rose"
+Right_priority	 1.100000
 
 Method : "operon"
 Right_priority 1.7
@@ -4237,6 +4238,12 @@ Method : "wublastx_brugia"
 Right_priority 4.72
 
 Method : "wublastx_pristionchus"
+Right_priority 4.75
+
+Method : "wublastx_ovolvulus"
+Right_priority 4.75
+
+Method : "wublastx_sratti"
 Right_priority 4.75
 
 Method : "wublastx_fly"
