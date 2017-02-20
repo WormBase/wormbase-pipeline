@@ -7,6 +7,7 @@ use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use Bio::EnsEMBL::Compara::Method;
 use Bio::EnsEMBL::Compara::GenomeDB;
 use Bio::EnsEMBL::Compara::SpeciesSet;
+use Bio::EnsEMBL::Compara::Utils::MasterDatabase;
 
 use Bio::EnsEMBL::ApiVersion;
 
@@ -162,11 +163,12 @@ foreach my $core_db (@core_dbs) {
       $gdb->locator($loc);
     }
     $compara_dbh->get_GenomeDBAdaptor->store($gdb);
-    &update_dnafrags($compara_dbh, $gdb, $core_db) unless $no_dnafrags;
+    Bio::EnsEMBL::Compara::Utils::MasterDatabase::update_dnafrags($compara_dbh, $gdb, $core_db) unless $no_dnafrags;
+    #&update_dnafrags($compara_dbh, $gdb, $core_db) unless $no_dnafrags;
   } else {
     print STDERR "Updating existing GenomeDB for $prod_name\n";
     # update the assembly and genebuild data
-    my $gdb_tmp =  Bio::EnsEMBL::Compara::GenomeDB->new(-db_adaptor => $core_db);
+    my $gdb_tmp =  Bio::EnsEMBL::Compara::GenomeDB->new_from_DBAdaptor( $core_db);
     my $genebuild = $gdb_tmp->genebuild;
     my $assembly = $gdb_tmp->assembly;
     my $old_assembly = $gdb->assembly;
@@ -191,7 +193,8 @@ foreach my $core_db (@core_dbs) {
     $compara_dbh->get_GenomeDBAdaptor->update($gdb);
 
     if ($assembly ne $old_assembly and not $no_dnafrags) {
-      &update_dnafrags($compara_dbh, $gdb, $core_db) unless $no_dnafrags;
+      Bio::EnsEMBL::Compara::Utils::MasterDatabase::update_dnafrags($compara_dbh, $gdb, $core_db) unless $no_dnafrags;
+      #&update_dnafrags($compara_dbh, $gdb, $core_db) unless $no_dnafrags;
     }
   }
 
