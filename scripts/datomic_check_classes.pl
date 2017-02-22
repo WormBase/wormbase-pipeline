@@ -85,6 +85,7 @@ sub classes {
         my ($class, $value) = ($1, $2);
 
         $value =~ s/^\"(.+)\"/$1/; 
+	$value =~ s/\\//g; # tace adds a backslash before unusual characters
 
         print $fh "\"$class\", \"$value\"\n";
       }
