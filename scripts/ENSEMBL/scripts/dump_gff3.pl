@@ -93,9 +93,9 @@ while( my $slice = shift @slices) {
       start     => $gene->seq_region_start(),
       end       => $gene->seq_region_end(),
       strand    => $gene->strand(),
-      display     => $gene->stable_id(), # wrong but fixes db's without xref_mapping
+      display => $gene->stable_id(), 
       gff_source  => (defined $gene->analysis->gff_source) ? $gene->analysis->gff_source : "WormBase",
-      attribs   => { biotype => $gene->biotype },
+      attribs   => { biotype => $gene->biotype, locus => (defined $gene->display_xref()) ? $gene->display_xref->display_id() : undef },
         );
 
     my $all_transcripts = $gene->get_all_Transcripts();
