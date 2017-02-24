@@ -42,7 +42,7 @@ if ($store) {
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
-$output||=$wormbase->reports . "/$wormbase.gpi";
+$output||=$wormbase->reports . "/" . $wormbase->species . ".gene_product_info.gpi";
 my $outfile = IO::File->new($output,'w')||$log->log_and_die(@!);
 
 $log->write_to("creating a GPI file at $output for ${\$wormbase->long_name}\n");

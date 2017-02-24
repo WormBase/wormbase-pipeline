@@ -374,13 +374,19 @@ sub copy_xrefs {
     my $gspecies = $wb->full_name('-g_species'=>1);
     my $bioproj = $wb->ncbi_bioproject;
 
-    my $xref_file = $wb->acefiles . "/DBXREFs.txt";
-    my $out_file = "$targetdir/species/$gspecies/$bioproj/$gspecies.${bioproj}.${WS_version_name}.xrefs.txt.gz";
+    my $in_prefix = $wb->reports . "/" . $wb->species . ".";
+    my $out_prefix = "$targetdir/species/$gspecies/$bioproj/$gspecies.${bioproj}.${WS_version_name}.";
 
-    if (-e $xref_file) {
-      $wormbase->run_command("cat $xref_file | gzip -n -9 -c > $out_file", $log);
-    } else {
-      $log->error("ERROR: Could not find xref file $xref_file\n");
+    foreach my $io_pair ([ "dbxrefs.txt", "xrefs.txt.gz" ],
+                         [ "gene_product_info.gpi", "gene_product_info.gpi.gz" ]) {
+      my ($in_suffix, $out_suffix) = @$io_pair;
+
+      my $in_file = $in_prefix . $in_suffix;
+      my $out_file = $out_prefix . $out_suffix;
+
+      if (-e $in_file) {
+        $wormbase->run_command("cat $in_file | gzip -n -9 -c > $out_file", $log);
+      }
     }
   }
 
