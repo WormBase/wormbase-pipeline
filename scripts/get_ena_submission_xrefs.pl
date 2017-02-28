@@ -2,7 +2,6 @@
 
 use strict;
 use Getopt::Long;
-use LWP::UserAgent;
 
 use lib $ENV{CVS_DIR};
 
@@ -133,7 +132,7 @@ if ($gene_xrefs) {
 
 
 if ($protein_xrefs) {
-  my (%cds_xrefs, %pep_xrefs,%cds_product, %accession2clone, %cds2wormpep);
+  my (%cds_xrefs, %cds_product, %accession2clone, %cds2wormpep, $gcrp_version);
   my $pepPrefix = $wb->wormpep_prefix . ':';
 
   $wb->FetchData('accession2clone', \%accession2clone, $common_data_dir);
@@ -150,10 +149,12 @@ if ($protein_xrefs) {
     my @data = split("\t",$_);
     
     next unless scalar(@data) == 11;
-    my($cloneacc, $pid, $version, $cds, $uniprot_ac, $uniprot_id, $uniprot_iso_acc, $ec_num, $product_name) 
-        = ($data[0],$data[2],$data[3],$data[5],$data[6],$data[7],$data[8],$data[9], $data[10]);  
+    my($cloneacc, $pid, $version, $cds, $uniprot_ac, $uniprot_iso_acc, $ec_num, $product_name, $gcrp) 
+        = ($data[0],$data[2],$data[3],$data[5],$data[6],$data[7],$data[8],$data[9],$data[10]);  
+
+    next if $cds eq '.';
+    next if $pid eq '.';
     
-    next unless (defined $pid);
     $log->write_to("Potential New Protein: $_\n") if $uniprot_ac eq '.';
     
     my ($unitype) = ($uniprot_ac =~ /^(\w{2}):/); 
@@ -163,57 +164,50 @@ if ($protein_xrefs) {
     
     push @{$cds_xrefs{$cds}->{Protein_id}}, [$accession2clone{$cloneacc}, $pid, $version];
     
-    if($cds2wormpep{$cds}) {
-      if (defined $uniprot_ac and $uniprot_ac ne '.') {
-        $cds_xrefs{$cds}->{dblinks}->{UniProt}->{UniProtAcc}->{$uniprot_ac} = 1;
-        $pep_xrefs{$pepPrefix.$cds2wormpep{$cds}}->{dblinks}->{UniProt}->{UniProtAcc}->{$uniprot_ac} = 1;
-        if ($unitype eq 'SP') {
-          $cds_xrefs{$cds}->{dblinks}->{SwissProt}->{UniProtAcc}->{$uniprot_ac} = 1;
-          $pep_xrefs{$pepPrefix.$cds2wormpep{$cds}}->{dblinks}->{SwissProt}->{UniProtAcc}->{$uniprot_ac} = 1;          
-        } else {
-          $cds_xrefs{$cds}->{dblinks}->{TrEMBL}->{UniProtAcc}->{$uniprot_ac} = 1;
-          $pep_xrefs{$pepPrefix.$cds2wormpep{$cds}}->{dblinks}->{TrEMBL}->{UniProtAcc}->{$uniprot_ac} = 1;          
-        }
+    if (defined $uniprot_ac and $uniprot_ac ne '.') {
+      $cds_xrefs{$cds}->{dblinks}->{UniProt}->{UniProtAcc}->{$uniprot_ac} = 1;
+      if ($unitype eq 'SP') {
+        $cds_xrefs{$cds}->{dblinks}->{SwissProt}->{UniProtAcc}->{$uniprot_ac} = 1;
+      } else {
+        $cds_xrefs{$cds}->{dblinks}->{TrEMBL}->{UniProtAcc}->{$uniprot_ac} = 1;
       }
-      if (defined $uniprot_iso_acc and $uniprot_iso_acc ne '.') {
-        $cds_xrefs{$cds}->{dblinks}->{SwissProt}->{UniProtIsoformAcc}->{$uniprot_iso_acc} = 1;
-        $pep_xrefs{$pepPrefix.$cds2wormpep{$cds}}->{dblinks}->{SwissProt}->{UniProtIsoformAcc}->{$uniprot_iso_acc} = 1;
-      }
-      if (defined $ec_num and $ec_num ne '.') {
-        $cds_xrefs{$cds}->{dblinks}->{KEGG}->{KEGG_id}->{$ec_num} = 1;
-        $pep_xrefs{$pepPrefix.$cds2wormpep{$cds}}->{dblinks}->{KEGG}->{KEGG_id}->{$ec_num} = 1;
-      }
-      if (defined $product_name and $product_name ne '.' and defined $uniprot_ac and $uniprot_ac ne'.') {
-        $cds_product{$cds}->{$product_name}->{$uniprot_ac} = 1;
-      }
+    }
+    if (defined $uniprot_iso_acc and $uniprot_iso_acc ne '.') {
+      $cds_xrefs{$cds}->{dblinks}->{SwissProt}->{UniProtIsoformAcc}->{$uniprot_iso_acc} = 1;
+    }
+    if (defined $ec_num and $ec_num ne '.') {
+      $cds_xrefs{$cds}->{dblinks}->{KEGG}->{KEGG_id}->{$ec_num} = 1;
+    }
+    if (defined $gcrp and $gcrp ne '.') {
+      $gcrp_version = $gcrp if not defined $gcrp_version;
+      $cds_xrefs{$cds}->{dblinks}->{UniProt_GCRP}->{UniProtAcc}->{$uniprot_ac} = 1;
+    }
+    if (defined $product_name and $product_name ne '.' and defined $uniprot_ac and $uniprot_ac ne'.') {
+      $cds_product{$cds}->{$product_name}->{$uniprot_ac} = 1;
     }
   }
   close($table_fh) or $log->log_and_die("Could not close the protein_id command/file\n");
   
-  foreach my $pair (["CDS",\%cds_xrefs], ["Protein", \%pep_xrefs]) {
-    my ($class, $hash) = @$pair;
+  foreach my $k (keys %cds_xrefs) {
+    print $acefh "CDS : \"$k\"\n";
     
-    foreach my $k (keys %$hash) {
-      print $acefh "$class : \"$k\"\n";
-
-      if (exists $hash->{$k}->{Protein_id}) {
-        foreach my $pidl (@{$hash->{$k}->{Protein_id}}) {
-          print $acefh "Protein_id\t@$pidl\n"; 
-        }
+    if (exists $cds_xrefs{$k}->{Protein_id}) {
+      foreach my $pidl (@{$cds_xrefs{$k}->{Protein_id}}) {
+        print $acefh "Protein_id\t@$pidl\n"; 
       }
-      
-      if (exists $hash->{$k}->{dblinks}) {
-        my $h = $hash->{$k}->{dblinks};
-        foreach my $db (sort keys %$h) {
-          foreach my $attr_k (sort keys %{$h->{$db}}) {
-            foreach my $attr_v (sort keys %{$h->{$db}->{$attr_k}}) {
-              print $acefh "Database $db $attr_k $attr_v\n";         
-            }
+    }
+    
+    if (exists $cds_xrefs{$k}->{dblinks}) {
+      my $h = $cds_xrefs{$k}->{dblinks};
+      foreach my $db (sort keys %$h) {
+        foreach my $attr_k (sort keys %{$h->{$db}}) {
+          foreach my $attr_v (sort keys %{$h->{$db}->{$attr_k}}) {
+            print $acefh "Database $db $attr_k $attr_v\n";         
           }
         }
       }
-      print $acefh "\n";
     }
+    print $acefh "\n";
   }
 
   if ($load_product_names) {
@@ -226,7 +220,11 @@ if ($protein_xrefs) {
       }
     }
   }
-  
+
+  if (defined $gcrp_version) {
+    print $acefh "\nDatabase : \"UniProt_GCRP\"\n";
+    print $acefh "Description : \"UniProt gene-centric reference proteome version $gcrp_version\n";
+  }
 
   close($acefh) or $log->log_and_die("Could not close $pidacefile properly\n");
   

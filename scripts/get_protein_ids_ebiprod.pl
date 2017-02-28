@@ -19,7 +19,8 @@ my ($org_id, $ena_cred, $uniprot_cred, $bioproject_id, $verbose);
 
 if (not defined $bioproject_id or
     not defined $ena_cred or
-    not defined $uniprot_cred) {
+    not defined $uniprot_cred or
+    not defined $org_id) {
   die "Incorrect invocation: you must supply -orgid, -enacred and -uniprotcred\n";
 }
 
@@ -62,16 +63,16 @@ print STDERR "Doing primary lookup of CDS entries in ENA ORACLE database...\n" i
 
 $ena_sth->execute or die "Can't execute statement: $DBI::errstr";
 
-my (@resultsArr, %resultsHash, %uniparc_mapping);
+my (%resultsHash, %uniparc_mapping, $gcrp_release, %gcrp_members);
 
 while ( ( my @results ) = $ena_sth->fetchrow_array ) {
-  push @{$resultsHash{$results[2]}}, {  
+  $resultsHash{$results[2]} =  {  
     NT_AC       => $results[0],
     NT_version  => $results[1],
     AA_PID      => $results[2],
     AA_version  => $results[3],
     AA_checksum => $results[4],
-    AA_text     => $results[5],
+    AA_stdname  => $results[5],
     AA_ID       => $results[6],
   };
 }
@@ -79,13 +80,42 @@ die $ena_sth->errstr if $ena_sth->err;
 $ena_sth->finish;
 $ena_dbh->dbc->disconnect_if_idle;
 
+
+my ($uniprot_dbh, $uniprot_sql, $uniprot_sth);
+
 #################
-# query uniprot 1 - get basic protein_id info
+# query uniprot 1 - get reference proteome information
+#################
+$uniprot_dbh = &get_uniprot_dbh($uniprot_cred);
+
+$uniprot_sql = "SELECT MAX(release) from sptr.gene_centric_entry WHERE tax_id = $org_id";
+$uniprot_sth = $uniprot_dbh->dbc->prepare($uniprot_sql);
+$uniprot_sth->execute();
+
+($gcrp_release) = $uniprot_sth->fetchrow_array;
+
+die $uniprot_sth->errstr if $uniprot_sth->err;
+$uniprot_sth->finish;
+
+$uniprot_sql = "SELECT DISTINCT(accession) from sptr.gene_centric_entry WHERE tax_id = $org_id and is_canonical = 1 AND release = '$gcrp_release'";
+$uniprot_sth = $uniprot_dbh->dbc->prepare($uniprot_sql);
+$uniprot_sth->execute();
+while( (my @results) = $uniprot_sth->fetchrow_array) {
+  my ($acc) = @results;
+  $gcrp_members{$acc} = 1;
+}
+
+die $uniprot_sth->errstr if $uniprot_sth->err;
+$uniprot_sth->finish;
+$uniprot_dbh->dbc->disconnect_if_idle;
+
+#################
+# query uniprot 2 - get basic protein_id info
 #################
 
-my $uniprot_dbh = &get_uniprot_dbh($uniprot_cred);
+$uniprot_dbh = &get_uniprot_dbh($uniprot_cred);
 
-my $uniprot_sql =  "SELECT e.accession, e.name, et.descr, p.protein_id "
+$uniprot_sql =  "SELECT e.accession, et.descr, p.protein_id "
     . "FROM sptr.dbentry e, sptr.embl_protein_id p, sptr.cv_entry_type et "
     . "WHERE p.dbentry_id = e.dbentry_id "
     . "AND e.deleted='N' "
@@ -95,19 +125,28 @@ my $uniprot_sql =  "SELECT e.accession, e.name, et.descr, p.protein_id "
     . "AND e.tax_id = $org_id";
 
 
-my $uniprot_sth = $uniprot_dbh->dbc->prepare($uniprot_sql);
+$uniprot_sth = $uniprot_dbh->dbc->prepare($uniprot_sql);
 print STDERR "Reading Uniprot database to get accessions and ids...\n" if $verbose;
 $uniprot_sth->execute();
 
 while( (my @results) = $uniprot_sth->fetchrow_array) {
-  my ($uniacc, $uniname, $unitype, $pid) = @results;
+  my ($uniacc,  $unitype, $pid) = @results;
 
   if (exists $resultsHash{$pid}) {
-    foreach my $el (@{$resultsHash{$pid}}) {
-      $el->{SWALL_AC}   = $uniacc;
-      $el->{SWALL_ID}   = $uniname;
-      $el->{SWALL_TYPE} = ($unitype eq 'Swiss-Prot') ? "SP" : "TR";
-    }
+    my $el = $resultsHash{$pid};
+    $el->{SWALL_AC}   = $uniacc;
+    $el->{SWALL_TYPE} = ($unitype eq 'Swiss-Prot') ? "SP" : "TR";
+    $el->{SWALL_GCRP} = $gcrp_release if exists $gcrp_members{$uniacc};
+  } elsif (exists $gcrp_members{$uniacc}) {
+    # these are entries in the GCRP, but not associated with a WormBase genome project annotation
+    # (either because they are on the Mitochondrion, or because they are independently curated
+    # by SwissProt. We will add these to the file, but without an associated parent sequence
+    $resultsHash{$pid} = {
+      AA_PID       => $pid,
+      SWALL_AC     => $uniacc,
+      SWALL_TYPE   => ($unitype eq 'Swiss-Prot') ? "SP" : "TR",
+      SWALL_GCRP   => $gcrp_release, 
+    };
   }
 }
 
@@ -116,7 +155,7 @@ $uniprot_sth->finish;
 $uniprot_dbh->dbc->disconnect_if_idle;
 
 ##################
-# query uniprot 2 - use UniParc to get Uniprot isoform identifiers
+# query uniprot 3 - use UniParc to get Uniprot isoform identifiers
 ###################
 
 $uniprot_dbh = &get_uniprot_dbh($uniprot_cred);
@@ -154,14 +193,14 @@ foreach my $upi (keys %uniparc_mapping) {
       exists $uniparc_mapping{$upi}->{isoform_id}) {
     my ($pid) = $uniparc_mapping{$upi}->{protein_id};
     my ($iid) = $uniparc_mapping{$upi}->{isoform_id};
-    foreach my $el (@{$resultsHash{$pid}}) {
-      $el->{SWALL_ISOFORM} = $iid;
+    if (exists $resultsHash{$pid}) {
+      $resultsHash{$pid}->{SWALL_ISOFORM} = $iid;
     }
   }
 }
 
 ##################
-# query uniprot 2 - get EC numbers
+# query uniprot 4 - get EC numbers
 ###################
 
 $uniprot_dbh = &get_uniprot_dbh($uniprot_cred);
@@ -178,16 +217,14 @@ $uniprot_sql = "SELECT e.accession, cs.catg_type, cs.subcatg_type, ds.descr "
 
 $uniprot_sth = $uniprot_dbh->dbc->prepare($uniprot_sql);
 print STDERR "Reading UniParc for mapping of ENA protein ids to EC numbers\n" if $verbose;
-foreach my $entry_a (values %resultsHash) {
-  foreach my $entry (@$entry_a) {
-    if (exists $entry->{SWALL_AC}) {
-      $uniprot_sth->execute($entry->{SWALL_AC});
-      while (my ($acc, $type, $subtype, $de_text) = $uniprot_sth->fetchrow_array) {
-        if ($subtype eq 'EC') {
-          $entry->{EC} = $de_text;
-        } elsif ($type eq 'RecName' and $subtype eq 'Full') {
-          $entry->{DE} = $de_text if $de_text !~ /^Uncharacterized protein/;
-        }
+foreach my $entry (values %resultsHash) {
+  if (exists $entry->{SWALL_AC}) {
+    $uniprot_sth->execute($entry->{SWALL_AC});
+    while (my ($acc, $type, $subtype, $de_text) = $uniprot_sth->fetchrow_array) {
+      if ($subtype eq 'EC') {
+        $entry->{EC} = $de_text;
+      } elsif ($type eq 'RecName' and $subtype eq 'Full') {
+        $entry->{DE} = $de_text if $de_text !~ /^Uncharacterized protein/;
       }
     }
   }
@@ -197,26 +234,48 @@ $uniprot_sth->finish;
 $uniprot_dbh->dbc->disconnect_if_idle;
 
 ##################
-# output results
+# Putting it all together
 ##################
 
-@resultsArr = sort { $a->{NT_AC} cmp $b->{NT_AC} or $a->{AA_PID} cmp $b->{AA_PID} } map { @$_ } values(%resultsHash);
-foreach my $entry (@resultsArr) {
+my @WBresults = grep { exists $_->{AA_stdname} } values(%resultsHash);
+my @nonWBresults =  grep { not exists $_->{AA_stdname} } values(%resultsHash);
+my %wb_swall;
+
+foreach my $entry (sort { $a->{NT_AC} cmp $b->{NT_AC} or $a->{AA_PID} cmp $b->{AA_PID} } @WBresults ) {
   
   printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", 
-         $entry->{NT_AC},
-         $entry->{NT_version},
-         $entry->{AA_PID},
-         $entry->{AA_version},
-         $entry->{AA_checksum},
-         $entry->{AA_text},
+         exists($entry->{NT_AC}) ? $entry->{NT_AC} : ".",
+         exists($entry->{NT_version}) ? $entry->{NT_version} : ".",
+         exists($entry->{AA_PID}) ? $entry->{AA_PID} : ".",
+         exists($entry->{AA_version}) ? $entry->{AA_version} : ".",
+         exists($entry->{AA_checksum}) ? $entry->{AA_checksum} : ".",
+         exists($entry->{AA_stdname}) ? $entry->{AA_stdname} : ".",
          exists($entry->{SWALL_AC}) ? $entry->{SWALL_TYPE} . ":" . $entry->{SWALL_AC} : ".",
-         exists($entry->{SWALL_ID}) ? $entry->{SWALL_ID} : ".",
          exists($entry->{SWALL_ISOFORM}) ? $entry->{SWALL_ISOFORM} : ".",
          exists($entry->{EC}) ? $entry->{EC} : ".",
          exists($entry->{DE}) ? $entry->{DE} : ".",
+         exists($entry->{SWALL_GCRP}) ? $entry->{SWALL_GCRP} : ".",
       );
+  $wb_swall{$entry->{SWALL_AC}} = 1 if exists $entry->{SWALL_AC};
 
+}
+foreach my $entry (sort { $a->{SWALL_AC} cmp $b->{SWALL_AC} or  $a->{AA_PID} cmp $b->{AA_PID} } @nonWBresults ) {
+  next if exists $wb_swall{$entry->{SWALL_AC}};
+
+  printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", 
+         ".",
+         ".",
+         $entry->{AA_PID}, 
+         ".",
+         ".",
+         ".",
+         exists($entry->{SWALL_AC}) ? $entry->{SWALL_TYPE} . ":" . $entry->{SWALL_AC} : ".",
+         exists($entry->{SWALL_ISOFORM}) ? $entry->{SWALL_ISOFORM} : ".",
+         exists($entry->{EC}) ? $entry->{EC} : ".",
+         exists($entry->{DE}) ? $entry->{DE} : ".",
+         exists($entry->{SWALL_GCRP}) ? $entry->{SWALL_GCRP} : ".",
+      );
+  $wb_swall{$entry->{SWALL_AC}} = 1;
 }
 
 
