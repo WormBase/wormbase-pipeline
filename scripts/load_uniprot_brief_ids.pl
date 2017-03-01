@@ -53,7 +53,9 @@ while(<$table_fh>) {
   
   next unless scalar(@data) == 11;
   my( $cds, $uniprot_ac, $product_name) 
-      = ($data[5],$data[6],$data[10]);  
+      = ($data[5],$data[6],$data[9]);  
+
+  next if $cds eq '.';
   
   if (defined $product_name and $product_name ne '.' and defined $uniprot_ac and $uniprot_ac ne'.') {
     $cds_product{$cds} = {

@@ -165,7 +165,7 @@ foreach my $sub_query (
       symbol             => $symbol,
       soTermId           => $biotype,
       taxonId            => $taxid,
-      geneLiteratureUrl  => "http://www.wormbase.org/species/c_elegans/gene/" . $obj->name ."-e-10",
+      geneLiteratureUrl  => "http://www.wormbase.org/species/c_elegans/gene/" . $obj->name ."#0e--10",
     };
 
     $json_gene->{name}            =  $name if $name;

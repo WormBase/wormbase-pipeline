@@ -72,9 +72,9 @@ my $wormbase_version = $wormbase->get_wormbase_version_name;
 my $dbdir = ($database) ? $database : $wormbase->autoace;
 if (not defined $outfile) {
   if ($ebi_upload) {
-    $outfile = $wormbase->acefiles . "/wormbase_xrefs." .$wormbase->get_wormbase_version_name . ".txt.gz";
+    $outfile = $wormbase->reports . "/wormbase_xrefs." .$wormbase->get_wormbase_version_name . ".txt.gz";
   } else {
-    $outfile = $wormbase->acefiles . "/DBXREFs.txt";
+    $outfile = $wormbase->reports . "/${species}.dbxrefs.txt";
   }
 }
 

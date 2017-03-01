@@ -612,7 +612,6 @@ foreach my $chrom ( @chromosomes ) {
 
 
   foreach my $cds (@cds_objs ) {
-    #$log->write_to("reporting : ".$cds->name."\n") if $wormbase->debug;
     $cds->report($out_fh, $coords, $wormbase->full_name, \%cds2gene);
   }
 
