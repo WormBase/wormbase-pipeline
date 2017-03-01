@@ -104,7 +104,7 @@ for my $species (@species) {
       $logger->info(sprintf("-- feature type %s", $gff3_track->{'type'}));
       (my $track_label = $gff3_track->{'trackLabel'}) =~ s/\s/_/g;
       my $sys_cmd = sprintf(
-        qq(perl %s/bin/flatfile-to-json.pl --gff "%s/%s/data_files/%s" --type %s --key "%s" --trackLabel "%s" --trackType %s --metadata '{ "category": "%s", "menuTemplate" : [{ "label" : "View gene at WormBase ParaSite", "action" : "newWindow", "url" : "/Gene/Summary?g={name}" }] }' %s --out "%s/%s/data" --compress),
+        qq(perl %s/bin/flatfile-to-json.pl --gff "%s/%s/data_files/%s" --type %s --key "%s" --trackLabel "%s" --trackType %s --nameAttributes name,id,alias,locus --metadata '{ "category": "%s", "menuTemplate" : [{ "label" : "View gene at WormBase ParaSite", "action" : "newWindow", "url" : "/Gene/Summary?g={name}" }] }' %s --out "%s/%s/data" --compress),
         $jbrowse_path,
         $out_dir,
         $prod_name,
