@@ -271,7 +271,7 @@ sub _sort_transcripts {
     for( my $cnt = 1; $cnt <= scalar(@trans); $cnt++) {
       my $tran = $trans[$cnt-1];
       my $tname = $tran->name;
-      $tname =~ s/\.\d$//; 
+      $tname =~ s/\.\d+$//; 
       $tname .= ".$cnt";
       $tran->name($tname);
     }
