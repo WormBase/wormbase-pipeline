@@ -301,7 +301,7 @@ if ($build) {
 	  }
 	  $log->write_to("Error: CDS $gg has no CDS tag $s\n");
 	}
-	my @CDS_bad_method = $db->fetch (-query => 'FIND CDS; method != "history"; method != "curated"; method != "Transposon_CDS"; method != "Genefinder"; method != "not_confirmed_isoformer"; method != "RNASEQ.Hillier"; method != "mGene"; method != "RNASEQ.Hillier.Aggregate"; method != "isoformer"; method != "jigsaw"; method != "twinscan" ; method != "ensembl" ; method != "Trinity_CDS"');
+	my @CDS_bad_method = $db->fetch (-query => 'FIND CDS; method != "history"; method != "curated"; method != "Transposon_CDS"; method != "Genefinder"; method != "not_confirmed_isoformer"; method != "RNASEQ.Hillier"; method != "mGene"; method != "RNASEQ.Hillier.Aggregate"; method != "isoformer"; method != "jigsaw"; method != "twinscan" ; method != "ensembl" ; method != "Trinity_CDS" ; method != "genBlastG"');
 	foreach my $g (@CDS_bad_method) {
 	  my $gg=$g->name; 
 	  if ($ignore{$gg}) {next}
@@ -501,7 +501,7 @@ sub main_gene_checks {
 	$start_tag_val = 1;
       }
       #Known non-AUG mRNAs
-      unless (($incomplete) || ($gene_model->name eq "K04G2.11") || ($gene_model->name eq "C54A12.4")) {
+      unless (($incomplete) || ($gene_model->name eq "K04G2.11") || ($gene_model->name eq "C54A12.4") || ($species ne 'elegans' && $method_test eq 'history')) {
 	push(@error2,"ERROR: $gene_model Start_not_found tag present\n"); 
 	print "ERROR: $gene_model Start_not_found tag present\n" if ($verbose);
       }
@@ -509,7 +509,7 @@ sub main_gene_checks {
     
     if ($gene_model->get('End_not_found')) {
       $end_tag = "present";
-      unless ($incomplete) {
+      unless ($incomplete || ($species ne 'elegans' && $method_test eq 'history')) {
 	push(@error2,"ERROR: $gene_model End_not_found tag present\n");
 	print "ERROR: $gene_model End_not_found tag present\n" if $verbose;
       }
