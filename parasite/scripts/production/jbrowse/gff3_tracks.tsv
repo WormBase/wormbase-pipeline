@@ -1,4 +1,4 @@
-gene,mRNA,exon,CDS,five_prime_UTR,three_prime_UTR,tRNA,rRNA,pseudogene,tRNA_pseudogene	Genome Annotation	Gene Models	CanvasFeatures
+gene,mRNA,exon,CDS,five_prime_UTR,three_prime_UTR,tRNA,rRNA,pseudogene,tRNA_pseudogene,antisense_RNA,lincRNA,miRNA,miRNA_primary_transcript,mRNA,piRNA,pre_miRNA,pseudogenic_rRNA,pseudogenic_transcript,pseudogenic_tRNA,scRNA,snoRNA,snRNA	Genome Annotation	Gene Models	CanvasFeatures
 ncRNA,nucleotide_match	Genome Annotation	Predicted non-coding RNA (ncRNA)	FeatureTrack
 repeat_region	Repeat Regions	Repeat Region	FeatureTrack
 low_complexity_region	Repeat Regions	Low Complexity Region (Dust)	FeatureTrack
