@@ -34,10 +34,11 @@ foreach(<FILE>) {
   chomp;
   my @parts = split("\t", $_);
   push(@gff3_config, {
-    'type' => $parts[0],
-    'category' => $parts[1],
-    'trackLabel' => $parts[2],
-    'trackType' => $parts[3]
+    'feature' => $parts[0],
+    'type' => $parts[1],
+    'category' => $parts[2],
+    'trackLabel' => $parts[3],
+    'trackType' => $parts[4]
   });
 }
 close(FILE);
@@ -86,25 +87,43 @@ for my $species (@species) {
     open(TRACKJSON, ">$out_dir/$prod_name/data/trackList.json");
     print TRACKJSON '{ "include" : ["functions.conf"], "tracks" : [ ] }';
     close(TRACKJSON);
-
+    
     ## Copy the functions file
     copy("$worm_pipeline_dir/parasite/scripts/production/jbrowse/includes/functions.conf",  "$out_dir/$prod_name/data/functions.conf");
-
-    ## Process the FASTA
-    $logger->info("Converting $fasta_file to JSON");
+    
+    ## Get the FASTA
+    $logger->info("Retrieving and unzipping $fasta_file.gz");
     copy("$ftp_dir/species/$species/$bioproject/$fasta_file.gz", "$out_dir/$prod_name/data_files/$fasta_file.gz");
     gunzip("$out_dir/$prod_name/data_files/$fasta_file.gz", "$out_dir/$prod_name/data_files/$fasta_file");
+    
+    ## Process the FASTA
+    $logger->info("Converting $fasta_file to JSON");
     `perl $jbrowse_path/bin/prepare-refseqs.pl --fasta $out_dir/$prod_name/data_files/$fasta_file --out $out_dir/$prod_name/data --compress`;
     
-    ## Process the GFF3 - note there are many feature types here which are extracted into single tracks, so we load them from an external file to make them configurable
-    $logger->info("Converting $gff3_file to JSON");
+    ## Get the GFF3
+    $logger->info("Retrieving and unzipping $gff3_file.gz");
     copy("$ftp_dir/species/$species/$bioproject/$gff3_file.gz", "$out_dir/$prod_name/data_files/$gff3_file.gz");
     gunzip("$out_dir/$prod_name/data_files/$gff3_file.gz", "$out_dir/$prod_name/data_files/$gff3_file");
+    
+    ## Create a stripped down version of the GFF3 to speed up processing
+    $logger->info("Creating stripped down GFF3 $gff3_file.short");
+    my @all_gff3_features = map { split(",", $_->{'feature'}) } @gff3_config;
+    open(GFF3IN, "$out_dir/$prod_name/data_files/$gff3_file") or $logger->die("Could not open GFF3\n");;
+    open(GFF3OUT, ">$out_dir/$prod_name/data_files/$gff3_file.short") or $logger->die ("Could not open outfile for writing\n");
+    while(<GFF3IN>) {
+      my @gff_elements = split("\t", $_);
+      print GFF3OUT $_ if($gff_elements[1] ~~ \@all_gff3_features);
+    }
+    close(GFF3IN);
+    close(GFF3OUT);
+
+    ## Process the GFF3 by converting to JSON
+    $logger->info("Converting $gff3_file.short to JSON");
     foreach my $gff3_track (@gff3_config) {
       $logger->info(sprintf("-- feature type %s", $gff3_track->{'type'}));
       (my $track_label = $gff3_track->{'trackLabel'}) =~ s/\s/_/g;
       my $sys_cmd = sprintf(
-        qq(perl %s/bin/flatfile-to-json.pl --gff "%s/%s/data_files/%s" --type %s --key "%s" --trackLabel "%s" --trackType %s --nameAttributes "name,id,alias,locus" --metadata '{ "category": "%s", "menuTemplate" : [{ "label" : "View gene at WormBase ParaSite", "action" : "newWindow", "url" : "/Gene/Summary?g={name}" }] }' %s --out "%s/%s/data" --compress),
+        qq(perl %s/bin/flatfile-to-json.pl --gff "%s/%s/data_files/%s.short" --type %s --key "%s" --trackLabel "%s" --trackType %s --nameAttributes "name,id,alias,locus" --metadata '{ "category": "%s", "menuTemplate" : [{ "label" : "View gene at WormBase ParaSite", "action" : "newWindow", "url" : "/Gene/Summary?g={name}" }] }' %s --out "%s/%s/data" --compress),
         $jbrowse_path,
         $out_dir,
         $prod_name,
