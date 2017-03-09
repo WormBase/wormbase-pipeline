@@ -423,7 +423,6 @@ sub parse_genes_gff3_fh {
         $tr->start($tr_st_off);
         $tr->end($tr_en_off);
         $tr->stable_id($tsid);
-        $tr->version(1);
 
         $transcript->translation($tr);
         $transcript->biotype('protein_coding');
@@ -1718,7 +1717,6 @@ sub _create_protein_coding_transcripts {
     }
     
     $translation->stable_id($transcript_id);
-    $translation->version(1);
     $transcript->translation($translation);
     $transcript->stable_id($transcript_id);
     $transcript->biotype('protein_coding');
@@ -1983,7 +1981,6 @@ sub _clone_Exon {
   $newexon->dbID       ($exon->dbID);
   $newexon->slice      ($exon->slice);
   $newexon->stable_id  ($exon->stable_id);
-  $newexon->version    ($exon->version);
 
   return $newexon;
 }
