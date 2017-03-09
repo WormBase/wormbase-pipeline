@@ -1,3 +1,4 @@
+
 #!/software/bin/perl -w
 #
 # generate_RRID_data.pl
@@ -123,7 +124,11 @@ while(<$tacefh>) {
   if ((exists $F[8])&&($F[8] =~ /\S+/)&&(!grep (/$F[8]/, @{$Strainrefs{$F[0]}})))     {push @{$Strainrefs{$F[0]}}, $F[8];}
   if ((exists $F[9])&&($F[9] =~ /\S+/))   {push @{$strainmadeby{$F[0]}}, $F[9];}
   if ((exists $F[10])&&($F[10] =~ /\S+/)) {push @{$wbpersonhuman{$F[9]}}, $F[10];}
-  if ((exists $F[11])&&(!grep (/$F[11]/, @{$WBPaper2pmid{$F[8]}})))  {push @{$WBPaper2pmid{$F[8]}}, $F[11];}
+  if ($F[11] =~ /\S+/) {
+    if ((exists $F[11])&&(!grep (/$F[11]/, @{$WBPaper2pmid{$F[8]}})))  {
+      push @{$WBPaper2pmid{$F[8]}}, $F[11];
+    }
+  }
 }
 $log->write_to("Finished Retrieving RRID data\n");
 
@@ -236,30 +241,31 @@ foreach my $strain (@Unique_strains) {
   }
 
   if (defined $Strainrefs{$strain}) {
-    my $tmppaper = $Strainrefs{$strain}[0];
-    if ((exists $WBPaper2pmid{$tmppaper}) && ($WBPaper2pmid{$tmppaper}[0] =~ /\S+/)) {
-      print $out_fh "$Strainrefs{$tmppaper}(PMID:$WBPaper2pmid{$tmppaper}[0])";
-    }
-    else {
-      print $out_fh "$Strainrefs{$strain}[0]}(PMID:EMPTY)";
-    }
-    undef $tmppaper;
-    foreach my $i ( 1 .. $#{ $Strainrefs{$strain} } ) {
-      $tmppaper = $Strainrefs{$strain}[$i];
+    my @refarray = @{$Strainrefs{$strain}}; 
+    foreach my $tmppaper (@refarray) {
       if ((exists $WBPaper2pmid{$tmppaper}) && ($WBPaper2pmid{$tmppaper}[0] =~ /\S+/)) {
-      print $out_fh "|$tmppaper(PMID:$WBPaper2pmid{$tmppaper}[0])";
-    }
-      else {
-	print $out_fh "|$Strainrefs{$strain}[0]}(PMID:EMPTY)";
+	if($tmppaper == $refarray[-1]  ) {
+	  print $out_fh "$tmppaper(PMID:$WBPaper2pmid{$tmppaper}[0])";
+	}
+	else {
+	  print $out_fh "$tmppaper(PMID:$WBPaper2pmid{$tmppaper}[0])|";
+	}
       }
-      undef $tmppaper;
+      else {
+	if($tmppaper == $refarray[-1]  ) {
+	  print $out_fh "$tmppaper(PMID:EMPTY)";
+	}
+	else {
+	  print $out_fh "$tmppaper(PMID:EMPTY)|";
+	}
+      }
     }
     print $out_fh "\t";
   }
   else {
     print $out_fh "EMPTY\t";
   }
-  
+
 
   if (defined $strainmadeby{$strain}) {
     print $out_fh "$strainmadeby{$strain}[0]\($wbpersonhuman{$strainmadeby{$strain}[0]}[0]\)\t";
@@ -508,7 +514,7 @@ __END__
 =back
 
 This script gets sequence data for all species (currently hacked to store the taxid within the script)
-cccccc
+
 EMBL_Sequencefetch_species.pl
 
 MANDATORY arguments:
