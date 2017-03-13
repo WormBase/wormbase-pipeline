@@ -255,7 +255,7 @@ sub usage {
 
 
 sub fetch_features {
-  my $tm_data = $wormbase->table_maker_query($database,$wormbase->basedir."/wquery/SCRIPT:transcriptmasker.def");
+  my $tm_data = $wormbase->table_maker_query($database,$wormbase->autoace."/wquery/SCRIPT:transcriptmasker.def");
   while( <$tm_data> ) {
     s/\"//g;  #"
     next if (/acedb/ or /\/\// or /^$/);
