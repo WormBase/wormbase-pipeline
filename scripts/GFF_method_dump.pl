@@ -144,7 +144,6 @@ if ( @methods ) {
           } else {
             if ($try == 1) {
               unlink $file if -e $file;
-              continue;
             } else {
               $log->log_and_die("Failed twice to run command '$cmd'\n");
             }
@@ -211,7 +210,6 @@ if ( @methods ) {
         } else {
           if ($try == 1) {
             unlink $file if -e $file;
-            continue;
           } else {
             $log->log_and_die("Failed twice to run command '$cmd'\n");
           }
