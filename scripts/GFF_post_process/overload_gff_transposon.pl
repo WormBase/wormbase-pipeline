@@ -15,7 +15,7 @@ use Ace;
  
 
 my ($debug,$test,$species,$store,$wormbase,$database);
-my ($infile,$outfile, $changed_lines);
+my ($infile,$outfile, $gff3, $changed_lines);
 
 GetOptions(
   'debug=s'       => \$debug,
@@ -24,6 +24,7 @@ GetOptions(
   'store:s'       => \$store,
   'infile:s'      => \$infile,
   'outfile:s'     => \$outfile,
+  'gff3'          => \$gff3,
   'database:s'    => \$database,
     );
 
@@ -46,6 +47,8 @@ if (not defined $infile or not defined $outfile) {
 open(my $gff_in_fh, $infile) or $log->log_and_die("Could not open $infile for reading\n");
 open(my $gff_out_fh, ">$outfile") or $log->log_and_die("Could not open $outfile for writing\n");  
 
+$changed_lines = 0;
+
 # fill some reference hashes
 my ($family_names) = &get_family_name_data();
 while (<$gff_in_fh>){
@@ -60,7 +63,11 @@ while (<$gff_in_fh>){
 
   if (exists $family_names->{$transposond}) {
     my $gfamily=$family_names->{$transposond}[0];
-    print $gff_out_fh ";Family=$gfamily\n";
+    if ($gff3) {
+      print $gff_out_fh ";Family=$gfamily\n";
+    } else {
+      print $gff_out_fh " ; Family \"$gfamily\"\n";
+    }
     $changed_lines++;
   }
   else {
