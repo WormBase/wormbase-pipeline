@@ -11,7 +11,7 @@ use Sequence_extract;
 use FileHandle;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase, $species, $database, $curate_test);
-my ($replace, $isoform, $newgene, $split, $merge, $to_cds, $to_pseudogene, $to_transcript, $to_transposon_cds, $delete);
+my ($replace, $isoform, $newgene, $split, $merge, $to_cds, $to_pseudogene, $to_transcript, $to_transposon_cds, $delete, $last_reviewed, $just_make_history, $check_gene_name);
 my ($noload, $force, $class, $oldseq, @newseq);
 
 
@@ -26,7 +26,7 @@ GetOptions ("help"              => \$help,
 
 	    "replace"           => \$replace,           # COMMAND: replace old structure by new structure
 	    "isoform"           => \$isoform,           # COMMAND: add a new isoform to an existing sequence name
-	    "create_gene"        => \$newgene,           # COMMAND: create a new gene
+	    "create_gene"       => \$newgene,           # COMMAND: create a new gene
 	    "split"             => \$split,             # COMMAND: split an existing locus to make a new gene(s)
 	    "merge"             => \$merge,             # COMMAND: merge existing loci
 	    "to_cds"            => \$to_cds,            # COMMAND: convert an object into a CDS class object
@@ -34,6 +34,9 @@ GetOptions ("help"              => \$help,
 	    "to_transcript"     => \$to_transcript,     # COMMAND: convert an object into a Transcript class object (you have to edit it if you want a Type other than ncRNA)
 	    "to_transposon_cds" => \$to_transposon_cds, # COMMAND: convert an object into a Transposon_CDS class object
 	    "delete"            => \$delete,            # COMMAND: delete an object (leaving a history object)
+	    "last_reviewed"     => \$last_reviewed,     # COMMAND: add a Last_reviewed tag
+	    "just_make_history"      => \$just_make_history,      # COMMAND: just create a history object
+	    "check_gene_name"   => \$check_gene_name,   # COMMAND: report any Gene_name for the object
 
 	    "class:s"           => \$class,             # class of things being curated - defaults to CDS
 	    "oldseq:s"          => \$oldseq,            # existing sequence name
@@ -127,6 +130,15 @@ if ($curate_test) {
 } elsif ($delete) {
   if (!defined $class) {$class = 'CDS'}
   $curate->delete_cmd($class, $oldseq);
+} elsif ($last_reviewed) {
+  if (!defined $class) {$class = 'CDS'}
+  $curate->last_reviewed_cmd($class, $oldseq);
+} elsif ($just_make_history) {
+  if (!defined $class) {$class = 'CDS'}
+  $curate->just_make_history_cmd($class, $oldseq);
+} elsif ($check_gene_name) {
+  if (!defined $class) {$class = 'CDS'}
+  $curate->check_gene_name_cmd($class, $oldseq);
 } else {
   die "command not recognised\n";
 }

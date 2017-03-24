@@ -56,6 +56,12 @@
   # Making a new locus: CDS, Pseudogene, Transposon, non-coding Transcript
   $created_seqname = $self->create($class, $seqname)
 
+  # Just make a new history object
+  $self->just_make_history($class, $seqname);
+
+  # Report any Gene_name for an object
+  $self->check_gene_name($class, $seqname);
+
 
 
 
@@ -303,6 +309,35 @@ die "ERROR NOT IMPLEMENTED YET\n";
 }
 
 ######################################
+# set the 'Last_reviewed' tag in the object
+# $self->last_reviewed_cmd($class, $old_seqname);
+sub last_reviewed_cmd {
+  my ($self, $class, $old_seqname) = @_;
+
+  if (!defined $old_seqname || $old_seqname eq '') {die "ERROR The existing object was not specified.\n";}
+  $self->cmd("LAST_REVIEWED CLASS $class EXISTING $old_seqname");
+}
+######################################
+# Just make a history object
+# $self->just_make_history_cmd($class, $old_seqname);
+sub just_make_history_cmd {
+  my ($self, $class, $old_seqname) = @_;
+
+  if (!defined $old_seqname || $old_seqname eq '') {die "ERROR The existing object was not specified.\n";}
+  $self->cmd("JUST_MAKE_HISTORY CLASS $class EXISTING $old_seqname");
+}
+
+######################################
+# Check Gene_name
+# $self->check_gene_name_cmd($class, $old_seqname);
+sub check_gene_name_cmd {
+  my ($self, $class, $old_seqname) = @_;
+
+  if (!defined $old_seqname || $old_seqname eq '') {die "ERROR The existing object was not specified.\n";}
+  $self->cmd("CHECK_GENE_NAME CLASS $class EXISTING $old_seqname");
+}
+
+######################################
 # execute one command line
 # $self->cmd($command_line);
 sub cmd {
@@ -346,6 +381,18 @@ sub cmd {
     # CHANGE_CLASS
   } elsif ($line[0] =~ /CHANGE_CLASS/) {
     $self->change_class(%line);
+
+    # LAST_REVIEWED
+  } elsif ($line[0] =~ /LAST_REVIEWED/) {
+    $self->last_reviewed(%line);
+
+    # MAKE_HISTORY
+  } elsif ($line[0] =~ /JUST_MAKE_HISTORY/) {
+    $self->just_make_history(%line);
+
+    # CHECK_GENE_NAME
+  } elsif ($line[0] =~ /CHECK_GENE_NAME/) {
+    $self->check_gene_name(%line);
   }
 }
 
@@ -444,11 +491,13 @@ sub SeqName2Gene {
     foreach my $thing (@cdses, @pseuds, @trans) {
       if ($thing =~ /^${seqname}$/ || $thing =~ /^${seqname}[a-z]$/) {
 	my $gene = $thing->Gene;
+	if (!defined $gene) {die "The Gene ID is not defined for $seqname\n"}
 	return $gene;
       }
     }
     
   }
+  return undef;
 }
 
 ######################################
@@ -1259,6 +1308,57 @@ sub change_class {
 
   print "In the Nameserver:\nChange class of $existing from $class to $new_class\n";
 
+}
+
+######################################
+# LAST_REVIEWED CLASS $class NEWCLASS EXISTING $old_seqname
+# Set the 'Last_reviewed' tag for the object
+
+sub last_reviewed {
+  my ($self, %line) = @_;
+
+  my $class = $line{CLASS};
+  my $existing = $line{EXISTING};
+
+  $self->Add_remark($class, $existing, "This $class has been inspected and looks satisfactory.");
+  $self->Last_reviewed($class, $existing);
+
+}
+
+######################################
+# JUST_MAKE_HISTORY CLASS $class NEWCLASS EXISTING $old_seqname
+# Simply make a History object for the specified object
+
+sub just_make_history {
+  my ($self, %line) = @_;
+
+  my $class = $line{CLASS};
+  my $existing = $line{EXISTING};
+
+  my $gene = $self->SeqName2Gene($existing);
+  if (!defined $gene) {die "ERROR Can't make a history object from $existing - it is not attached to a Gene\n"}
+  $self->Make_history($class, $existing);
+
+}
+
+######################################
+# CHECK_GENE_NAME CLASS $class NEWCLASS EXISTING $old_seqname
+# Report any Gene_name belonging to the Gene of the specified object
+
+sub check_gene_name {
+  my ($self, %line) = @_;
+
+  my $class = $line{CLASS};
+  my $existing = $line{EXISTING};
+
+  my $gene = $self->SeqName2Gene($existing);
+  if (!defined $gene) {die "ERROR Can't check Gene_name for $existing - it is not attached to a Gene\n"}
+  my $CGC_name = $self->get_CGC_name($gene);
+  if (defined $CGC_name && $CGC_name ne '') {
+    print "The $class object $existing has a Gene_name: '$CGC_name'\n";
+  } else {
+    print "The $class object $existing has not got a Gene_name\n";
+  }
 }
 
 ######################################

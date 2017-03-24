@@ -13,7 +13,7 @@ GetOptions (
 	   );
 if (!defined $species) {$species = 'elegans'}
 
-my @cmds = qw/Replace Isoform Split Merge To_CDS To_Pseudogene To_Transcript Create_Gene Delete/;
+my @cmds = qw/Replace Isoform Split Merge To_CDS To_Pseudogene To_Transcript Create_Gene Delete Last_reviewed Just_Make_History Check_Gene_name/;
 
 
 my $mw = MainWindow->new;
@@ -334,6 +334,21 @@ sub command_chosen {
     one_line_text($old);
     one_line_text($new);
     delete_text($status); add_text($status, "Delete the old structure")
+  } elsif ($selection eq 'Last_reviewed') {
+    inactivate_text($new);
+    one_line_text($old);
+    one_line_text($new);
+    delete_text($status); add_text($status, "Set the 'Last_reviewed' tag")
+  } elsif ($selection eq 'Just_Make_History') {
+    inactivate_text($new);
+    one_line_text($old);
+    one_line_text($new);
+    delete_text($status); add_text($status, "Just make a History object")
+  } elsif ($selection eq 'Check_Gene_name') {
+    inactivate_text($new);
+    one_line_text($old);
+    one_line_text($new);
+    delete_text($status); add_text($status, "Check for a CGC Gene name")
   } else {
     error_warning('ERROR', "Unknown command from command option menu: '$selection'");
     die ("Unknown command from command option menu: '$selection'\n");
