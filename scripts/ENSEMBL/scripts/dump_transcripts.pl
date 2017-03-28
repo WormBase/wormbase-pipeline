@@ -88,7 +88,7 @@ foreach my $gene(@genes){
         $id = join(":", $ebi_header_prefix, $species_string, $tr->stable_id);
         $desc_text = sprintf("%s gene:%s transcript:%s species:%s", 
                              $slice_id, $gene_id, $trans_id, $species_string);
-        $desc_text .= "description:$pep_desc" if $pep_desc;
+        $desc_text .= " description:$pep_desc" if $pep_desc;
       } else {
         $id = $tr->stable_id;
         $desc_text = "transcript=$trans_id gene=$gene_id";
