@@ -22,10 +22,6 @@ $VALID_USERS = {
 		'mt3' 		=> 2970,
 		'gw3' 		=> 4025,
 		'mh6' 		=> 4055,
-		'tbieri' 	=> 1849,
-		'jspieth' 	=> 615,
-		'pozersky' 	=> 1867,
-		'stlouis' 	=> 1,
 		'caltech' 	=> 1,
 		'cshl' 		=> 1,
 		'sanger' 	=> 1,
@@ -33,16 +29,16 @@ $VALID_USERS = {
 
 ## a list of valid SSO login names for each DB operation
 $VALID_API_USERS = {
-		    'query'		=> [qw(pad gw3 mh6 mt3 klh tbieri jspieth pozersky stlouis caltech cshl sanger)],
-		    'load_file'		=> [qw(pad gw3 mh6 mt3 klh tbieri jspieth pozersky stlouis caltech cshl sanger)],
-		    'merge_genes'	=> [qw(pad gw3 mt3 tbieri jspieth pozersky mh6)],
-		    'split_gene'	=> [qw(pad gw3 mt3 tbieri jspieth pozersky mh6)],
-		    'new_gene'		=> [qw(pad gw3 mt3 tbieri jspieth pozersky mh6)],
-		    'kill_gene'		=> [qw(pad gw3 mt3 tbieri jspieth pozersky mh6)],
-		    'add_name'		=> [qw(pad gw3 mt3 tbieri jspieth pozersky mh6)],
-		    'remove_name'	=> [qw(pad gw3 mt3 tbieri jspieth pozersky mh6)],
-		    'change_class'	=> [qw(pad gw3 mt3 tbieri jspieth pozersky mh6)],
-		    'dump_all'          => [qw(pad gw3 mt3 tbieri jspieth pozersky caltech mh6)],
+		    'query'		=> [qw(pad gw3 mh6 mt3 klh caltech cshl sanger)],
+		    'load_file'		=> [qw(pad gw3 mh6 mt3 klh caltech cshl sanger)],
+		    'merge_genes'	=> [qw(pad gw3 mt3 mh6)],
+		    'split_gene'	=> [qw(pad gw3 mt3 mh6)],
+		    'new_gene'		=> [qw(pad gw3 mt3 mh6)],
+		    'kill_gene'		=> [qw(pad gw3 mt3 mh6)],
+		    'add_name'		=> [qw(pad gw3 mt3 mh6)],
+		    'remove_name'	=> [qw(pad gw3 mt3 mh6)],
+		    'change_class'	=> [qw(pad gw3 mt3 mh6)],
+		    'dump_all'          => [qw(pad gw3 mt3 caltech mh6)],
 		   };
 
 ## a list of valid SSO login names able to add GCG name
@@ -60,10 +56,6 @@ $MAILS = {
 	  'mh6'			=>	'mh6@sanger.ac.uk',
 	  'mt3'			=>	'mt3@sanger.ac.uk',
           'klh'                 =>      'klh@sanger.ac.uk',
-	  'tbieri'		=>	'tbieri@watson.wustl.edu',
-	  'jspieth'	        =>	'jspieth@watson.wustl.edu',
-	  'pozersky'	        =>	'pozersky@watson.wustl.edu',
-	  'stlouis'	        =>	'stlouis@wormbase.org',
 	  'caltech'	        =>	'caltech@wormbase.org',
 	  'cshl'		=>	'cshl@wormbase.org',
 	  'sanger'		=>	'sanger@wormbase.org'

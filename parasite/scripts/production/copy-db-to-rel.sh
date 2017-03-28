@@ -3,7 +3,7 @@ cd /tmp/parasite-release
 
 # Dump all the databases into the tmp space
 echo "Dumping and loading databases"
-databaselist=$($PARASITE_STAGING_MYSQL -e 'SHOW DATABASES LIKE "%_core%_'${ENSEMBL_VERSION}'_%"')
+databaselist=$($PARASITE_STAGING_MYSQL -NB -e 'SHOW DATABASES LIKE "%_core%_'${ENSEMBL_VERSION}'_%"')
 databases=( `echo ${databaselist}` ensembl_compara_parasite_${PARASITE_VERSION}_${ENSEMBL_VERSION} ensembl_ontology_${ENSEMBL_VERSION} ensembl_website_${ENSEMBL_VERSION} ensemblgenomes_info_${EG_VERSION} ensemblgenomes_stable_ids_${PARASITE_VERSION}_${ENSEMBL_VERSION} )
 for DB in "${databases[@]}"
 do

@@ -48,7 +48,10 @@ my $outfile = IO::File->new($output,'w')||$log->log_and_die(@!);
 $log->write_to("creating a GPI file at $output for ${\$wormbase->long_name}\n");
 
 my $db = Ace->connect(-path => ($database ||$wormbase->autoace));
-my $genes = $db->fetch_many(-query => 'Find Gene;Species="'.$wormbase->long_name.'";Live;Corresponding_transcript') or $log->log_and_die(Ace->error);
+
+my $genes = $db->fetch_many(-query => 'Find Gene;Species="'.$wormbase->long_name.
+            '";Live;Corresponding_transcript OR Corresponding_CDS OR Corresponding_pseudogene')
+            or $log->log_and_die(Ace->error);
 
 print $outfile "!gpi-version: 1.2\n";
 
