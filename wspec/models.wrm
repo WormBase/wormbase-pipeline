@@ -2,7 +2,7 @@
 // models.wrm - main file defining tree class structures for the WormBase database
 // This file is read only when starting a new database or when you select 
 // "Read Models" or "Add Update File" from the main menus.
-// 
+// `
 // Explanation about class/object count limits
 // -----------------------------------------------------------------------------
 // Every single object specified in this file is represented in acedb by a key, 
@@ -773,8 +773,8 @@
        Used_in_RNAi ?RNAi XREF Clone           // Chris WS244
        Sequence_status Shotgun UNIQUE DateType
                        Finished UNIQUE DateType
-                       Accession_number UNIQUE ?Text
-       DB_info  Database ?Database ?Database_field ?Accession_number XREF Clone // added [031120 krb]
+                       Accession_number UNIQUE ?Text 
+       DB_info  Database ?Database ?Database_field ?Text // added [031120 krb]
        Type UNIQUE Cosmid            // 000824 Lincoln's additions to segregate clones
                    Fosmid            // added 06/12/01 by krb for dl
                    YAC
@@ -1327,9 +1327,9 @@
                     Clone_left_end ?Clone XREF Clone_left_end UNIQUE Int
                     Clone_right_end ?Clone XREF Clone_right_end UNIQUE Int
                     Flipped
-          DB_info Database ?Database ?Database_field ?Accession_number XREF Sequence
+          DB_info Database ?Database ?Database_field ?Text
                   Protein_id ?Sequence UNIQUE Text UNIQUE Int // DB_info tag added [011030 krb]
-                  Secondary_accession ?Accession_number XREF Sequence
+                  Secondary_accession ?Text
                   DB_remark ?Text #Evidence    // EMBL/Genbank
                   Keyword ?Keyword    // EMBL/Genbank
                   DB_annotation ?Database UNIQUE ?LongText
@@ -1457,7 +1457,7 @@
                      RNASeq ?Analysis Int
                      Mass_spec ?Mass_spec_peptide
                      mRNA ?Sequence
-                     Homology ?Accession_number
+                     Homology ?Text
                      UTR ?Sequence
                      False ?Sequence 
                      Inconsistent ?Sequence
@@ -2040,7 +2040,7 @@
                    Redundant
        Remark ?Text #Evidence
        Title ?Text
-       DB_info Database ?Database ?Database_field ?Accession_number XREF Motif // ID  Accession_number
+       DB_info Database ?Database ?Database_field ?Text // ID  Accession_number
                DB_remark ?Text #Evidence
                DB_text ?LongText
                Web_location ?WWW_server
@@ -2052,22 +2052,6 @@
              Homol_homol ?Homol_data XREF Motif_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
        GO_term ?GO_term XREF Motif ?GO_code #Evidence
        Associated_transposon_family ?Transposon_family XREF Associated_motif   // to connect Transposon famillies to Repeat motifs ar2 02-DEC-05
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-//
-// ?Accession_number class
-//
-// Small class to track primarily EMBL/GenBank accessions.
-//
-// This used to be a more extensive class but was retired during WS234-WS237 - pad
-//
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-?Accession_number Entry Sequence ?Sequence    
-                        Motif ?Motif
-                        Clone ?Clone // added [031120 krb]
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3793,6 +3777,7 @@
 // WS257
 // WS258
 // WS259
+// WS260
 
 
 

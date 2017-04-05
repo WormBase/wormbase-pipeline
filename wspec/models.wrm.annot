@@ -1019,8 +1019,8 @@
 #Evidence Paper_evidence ?Paper                                       // Data from a Paper
           Published_as ?Text                                          //  .. track other names for the same data
           Person_evidence ?Person                                     // Data communicated to wormbase from a Person (pre-publication/unpublished)
-          Author_evidence ?Author UNIQUE Text ^note                         // Data from an Author
-          Accession_evidence ?Database ^database ?Text ^accession                          // Data from a database (NDB/UNIPROT etc)
+          Author_evidence ?Author UNIQUE Text ^note                   // Data from an Author
+          Accession_evidence ?Database ^database ?Text ^accession     // Data from a database (NDB/UNIPROT etc)
           Protein_id_evidence ?Text                                   // Reference a protein_ID
           GO_term_evidence ?GO_term                                   // Reference a GO_term
           Expr_pattern_evidence ?Expr_pattern                         // Reference a Expression pattern  
@@ -1547,7 +1547,7 @@
                             Species ?Species
                             Strain ?Strain
                             Laboratory ?Laboratory
-                            DB_info Database ?Database ?Database_field ?Text
+                            DB_info Database ?Database ^database ?Database_field ^field ?Text ^accession
                      History First_WS_release Int // first WormBase release this assembly was used
                              Latest_WS_release Int // latest release where it was used
                              Supercedes UNIQUE ?Sequence_collection OUTXREF Superceded_by
@@ -1798,7 +1798,7 @@
 
 ?Homology_group Evidence #Evidence
                 Title ?Text
-                DB_info Database ?Database ?Database_field ?Text
+                DB_info Database ?Database ^database ?Database_field ^field ?Text ^accession 
                 Group_type UNIQUE COG    COG_type #Homology_type     // TODO attribute should be :homology-group/cog
                                          COG_code #COG_codes
                                   eggNOG eggNOG_type #Homology_type
@@ -2067,7 +2067,7 @@
                     Redundant
         Remark ?Text #Evidence
         Title ?Text
-        DB_info Database ?Database ^database ?Database_field ^field ?Text ^accession // ?Accession_number XREF Motif // ID  Accession_number
+        DB_info Database ?Database ^database ?Database_field ^field ?Text ^accession // ID  Accession_number
                 DB_remark ?Text #Evidence
                 DB_text ?LongText
 //                Web_location ?WWW_server           // killed by tad because seems to be empty...
@@ -2079,23 +2079,6 @@
 //              Homol_homol ?Homol_data XREF Motif_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
         GO_term ?GO_term OUTXREF Motif ?GO_code #Evidence
         Associated_transposon_family ?Transposon_family INXREF Associated_motif   // to connect Transposon famillies to Repeat motifs ar2 02-DEC-05
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-//
-// Accession_number class
-//?
-// Small class to track primarily EMBL/GenBank accessions.
-//
-// This used to be a more extensive class but was retired during WS234-WS237 - pad
-// killed by tad for db migration
-//
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-//?Accession_number  Entry Sequence ?Sequence     
-//                         Motif ?Motif
-//                         Clone ?Clone // added [031120 krb]
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2230,7 +2213,7 @@
                    Western Text  FILL_DEFAULT
               Expression_cluster ?Expression_cluster INXREF Expr_pattern //added for localizome
               Microarray_results ?Microarray_results INXREF Expr_Pattern
-              Pattern ?Text
+              Pattern ?Text //Multi_value ordering issue in Datomic possibly
               Picture ?Picture INXREF Expr_pattern
               MovieURL Text //Added by wen for link to movie URLs. 
               Movie ?Movie INXREF Expr_pattern  //Added by Wen to curate Expr_pattern video
@@ -3722,7 +3705,7 @@
           InChi ?Text              //imported from ChEBI
           InChiKey ?Text           //imported from ChEBI
           Synonym ?Text            //mainly from CTD, but also from papers and ChEBI
-          DB_info Database ?Database ?Database_field ?Text
+          DB_info Database ?Database ^database ?Database_field ^field ?Text ^accession
           Status ENUM Detected #Evidence
                       Predicted #Evidence
           Detection_method ?Text #Evidence //NMR, MALDI-MS, HPLC-UV, shotgun lipidomics
@@ -3820,3 +3803,4 @@
 // WS257
 // WS258
 // WS259
+// WS260
