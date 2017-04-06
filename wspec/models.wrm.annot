@@ -342,6 +342,7 @@
         Disease_info Experimental_model ^disease-experimental-model ?DO_term OUTXREF Gene_by_biology ?Species #Evidence                    
                      Potential_model ^disease-potential-model ?DO_term OUTXREF Gene_by_orthology ?Species #Evidence
                      Disease_relevance ?Text ^note ?Species #Evidence
+        Disease_model_annotation ?Disease_model_annotation INXREF Disease_relevant_gene
         Molecular_info Corresponding_CDS ?CDS OUTXREF Gene #Evidence             // to link to live CDSs
                        Corresponding_CDS_history ?CDS OUTXREF Gene_history       // to link to history CDSs
                        Corresponding_transcript ?Transcript OUTXREF Gene #Evidence
@@ -659,6 +660,8 @@
                   Rearrangement  ?Rearrangement INXREF Strain
                   Clone ?Clone INXREF In_strain             
                   Transgene ?Transgene INXREF Strain
+         Disease_info Models_disease ?DO_term INXREF Disease_model_strain
+                      Disease_model_annotation ?Disease_model_annotation INXREF Strain 
          Database ?Database ^database ?Database_field ^field ?Text ^accession
          Properties Inbreeding_state UNIQUE Selfed // Text
                                             Isofemale // Text
@@ -1039,6 +1042,50 @@
           Remark ?Text
 
 
+//////////////////////////////////////////
+//
+// ?Disease_model_annotation class WS260
+//
+//////////////////////////////////////////
+
+
+?Disease_model_annotation Disease_term UNIQUE ?DO_term OUTXREF Disease_model_annotation
+                          Disease_of_species ?Species
+                          Modeled_by Strain UNIQUE ?Strain ^modeled_by_strain OUTXREF Disease_model_annotation       
+                                     Variation UNIQUE ?Variation ^modeled_by_variation OUTXREF Disease_model_annotation 
+                                     Transgene UNIQUE ?Transgene ^modeled_by_transgene OUTXREF Disease_model_annotation 
+                                     Disease_relevant_gene UNIQUE ?Gene ^modeled_by_disease_relevant_gene OUTXREF Disease_model_annotation 
+                          Inferred_gene ?Gene OUTXREF Disease_model_annotation
+                          Association_type UNIQUE is_model_of
+                                                  causes_or_contributes_to_condition
+                                                  causes_condition
+                                                  contributes_to_condition
+                                                  is_marker_for
+                          Evidence_code ?GO_code
+                          Qualifier NOT
+                          Experimental_condition Inducing_chemical ?Molecule OUTXREF Disease_model_inducer
+                                                 Inducing_agent ?Text
+                          Modifier_info Modifier_transgene ?Transgene
+                                        Modifier_variation ?Variation
+                                        Modifier_strain ?Strain      
+                                        Modifier_gene ?Gene
+                                        Modifier_molecule ?Molecule OUTXREF Disease_model_modifier
+                                        Other_modifier ?Text
+                          Modifier_association_type UNIQUE condition_ameliorated_by
+                                                           condition_exacerbated_by
+                          Genetic_sex UNIQUE hermaphrodite
+                                             male
+                                             female
+                          Disease_phenotype_info Disease_phenotype ?Phenotype 
+                                                 Ameliorated_phenotype ?Phenotype
+                                                 Exacerbated_phenotype ?Phenotype
+                                                 Phenotype_comment ?Text
+                          Paper_evidence ?Paper
+                          Disease_model_description ?Text
+                          DB_info Database ?Database ^database ?Database_field ^field ?Text ^accession
+                          Curator_confirmed ?Curator
+                          Date_last_updated UNIQUE DateType ^date
+
 
 ////////////////////////////////////////////////////////
 //
@@ -1184,7 +1231,8 @@
                              Related ?Text
          Parent Is_a ?DO_term OUTXREF Is
          Child Is ?DO_term NOXREF Is_a 
-         DB_info Database ?Database ^database ?Database_field ^field ?Text ^accession              
+         DB_info Database ?Database ^database ?Database_field ^field ?Text ^accession
+         Disease_model_annotation ?Disease_model_annotation INXREF Disease_term //to hold all the details of a disease model                             
          Type GOLD
               Gram_negative_bacterial_infectious_disease
               Gram_positive_bacterial_infectious_disease
@@ -1196,7 +1244,12 @@
                       Phenotype ?Phenotype INXREF DO_term
                       WBProcess ?WBProcess INXREF DO_term
 //                      Reference ?Paper OUTXREF DO_term
-                      Reagent_info Associated_antibody ?Antibody INXREF Antibody_for_disease
+                      Disease_model_variation ?Variation INXREF Models_disease
+                      Disease_model_strain ?Strain INXREF Models_disease
+                      Disease_model_transgene ?Transgene INXREF Models_disease
+                      Chemical_inducer ?Molecule INXREF Induces_disease
+                      Molecule_modifier ?Molecule INXREF Modifies_disease
+         Reagent_info Associated_antibody ?Antibody INXREF Antibody_for_disease
                       Associated_construct ?Construct INXREF Construct_for_disease
                       Associated_transgene ?Transgene INXREF Transgene_for_disease 
          Version UNIQUE Text
@@ -2630,7 +2683,9 @@
                          Interactor ?Interaction INXREF Transgene
                 Associated_with Marked_rearrangement ?Rearrangement INXREF By_transgene
                                 Strain ?Strain OUTXREF Transgene
-                Transgene_for_disease ?DO_term OUTXREF Associated_transgene #Evidence 
+                                Transgene_for_disease ?DO_term OUTXREF Associated_transgene #Evidence
+                Disease_info Models_disease ?DO_term INXREF Disease_model_transgene
+                             Disease_model_annotation ?Disease_model_annotation INXREF Transgene
                 Reference ?Paper OUTXREF Transgene  
                 Species UNIQUE ?Species       
                 Remark ?Text #Evidence
@@ -3498,6 +3553,8 @@
            Description Phenotype ?Phenotype OUTXREF Variation #Phenotype_info
                        Phenotype_remark ?Text #Evidence
                        Phenotype_not_observed ?Phenotype OUTXREF Not_in_Variation #Phenotype_info  //added by Wen to separate Not phenotype from real phenotypes 
+           Disease_info Models_disease ?DO_term INXREF Disease_model_variation
+                        Disease_model_annotation ?Disease_model_annotation INXREF Variation
            Reference ?Paper OUTXREF Allele
            Remark ?Text #Evidence
 //           Method UNIQUE ?Method       // Becomes :locatable/method
@@ -3731,6 +3788,10 @@
                                Transgene ^affects-phenotype-of-transgene ?Transgene ?Phenotype #Evidence
                                RNAi ^affects-phenotype-of-rnai ?RNAi ?Phenotype #Evidence
                                Rearrangement ^affects-phenotype-of-rearrangement ?Rearrangement ?Phenotype #Evidence
+          Disease_info Induces_disease ?DO_term INXREF Chemical_inducer
+                       Modifies_disease ?DO_term INXREF Molecule_modifier
+                       Disease_model_inducer ?Disease_model_annotation INXREF Inducing_chemical
+                       Disease_model_modifier ?Disease_model_annotation INXREF Modifier_molecule
           Interaction ?Interaction INXREF Molecule_interactor
           Molecule_use ^use ?Text #Evidence
           Reference ?Paper OUTXREF Molecule
@@ -3803,4 +3864,3 @@
 // WS257
 // WS258
 // WS259
-// WS260
