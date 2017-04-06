@@ -1051,10 +1051,10 @@
 
 ?Disease_model_annotation Disease_term UNIQUE ?DO_term OUTXREF Disease_model_annotation
                           Disease_of_species ?Species
-                          Modeled_by Strain UNIQUE ?Strain ^modeled_by_strain OUTXREF Disease_model_annotation       
-                                     Variation UNIQUE ?Variation ^modeled_by_variation OUTXREF Disease_model_annotation 
-                                     Transgene UNIQUE ?Transgene ^modeled_by_transgene OUTXREF Disease_model_annotation 
-                                     Disease_relevant_gene UNIQUE ?Gene ^modeled_by_disease_relevant_gene OUTXREF Disease_model_annotation 
+                          Modeled_by Strain ^modeled_by_strain UNIQUE ?Strain OUTXREF Disease_model_annotation       
+                                    Variation ^modeled_by_variation UNIQUE ?Variation OUTXREF Disease_model_annotation 
+                                    Transgene ^modeled_by_transgene UNIQUE ?Transgene OUTXREF Disease_model_annotation 
+                                    Disease_relevant_gene ^modeled_by_disease_relevant_gene UNIQUE ?Gene OUTXREF Disease_model_annotation 
                           Inferred_gene ?Gene OUTXREF Disease_model_annotation
                           Association_type UNIQUE is_model_of
                                                   causes_or_contributes_to_condition
