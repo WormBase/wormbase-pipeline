@@ -147,7 +147,7 @@ foreach my $sub_query (
     my @secondary_ids;
     if ($obj->Acquires_merge) {
       foreach my $g ($obj->Acquires_merge) {
-        push @secondary_ids, $g->name;
+        push @secondary_ids, "WB:" . $g->name;
       }
     }
     
