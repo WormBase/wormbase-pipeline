@@ -100,6 +100,7 @@ _V2_point_data     -H
 _VMulti_pt_data    -H
 _VPos_neg_data     -H 
 _VVariation        -V
+_VBalancer         -V
 
 // worm biology
 
@@ -170,6 +171,7 @@ _VDO_term          -V
 _VPATO_term        -V
 _VPosition_Matrix  -V 
 _VWBProcess        -V
+_VDisease_model_annotation -V
 
 // Mass Spec class
 _VMass_spec_experiment  -V
