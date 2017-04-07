@@ -127,7 +127,7 @@ my %taxon2species = (
 		     '6282' => "ovolvulus",
 		    );
 
-@molecules = ("EST","mRNA");
+@molecules = ("EST","mRNA","STD");
 
 
 
@@ -321,12 +321,19 @@ sub get_embl_data {
 
   if ($molecule =~ /EST/) {
     $url = "http://www.ebi.ac.uk/ena/data/warehouse/search?query=%22tax_eq%28$taxid%29%20AND%20dataclass=%22EST%22%22&result=sequence_release&display=text";
+    if ($debug) {print "$url\n";}
     $name="$output_dir/${species}_${taxid}_EST.txt";
   }
   
   elsif ($molecule =~ /mRNA/) {
     $url = "http://www.ebi.ac.uk/ena/data/warehouse/search?query=%22tax_eq%28$taxid%29%20AND%20dataclass!=%22STS%22%20and%20dataclass!=%22PAT%22%20and%20dataclass=%22STD%22%20and%20mol_type=%22mRNA%22%22&result=sequence_release&display=text";
+    if ($debug) {print "$url\n";}
     $name="$output_dir/${species}_${taxid}_mRNA.txt";
+  }
+  elsif ($molecule =~ /STD/) {
+    $url = "http://www.ebi.ac.uk/ena/data/warehouse/search?query=%22tax_eq%28$taxid%29%20AND%20dataclass!=%22STS%22%20and%20dataclass!=%22PAT%22%20and%20dataclass=%22STD%22%20and%20mol_type=%22transcribed RNA%22%22&result=sequence_release&display=text";
+    if ($debug) {print "$url\n";}
+    $name="$output_dir/${species}_${taxid}_STD.txt";
   }
   else {
     $log->write_to("UNKNOWM molecule type\n");
@@ -350,7 +357,6 @@ sub get_embl_data {
   }
   close(FIN);
   $log->write_to("EMBL: Finished getting $species $molecule data.\n");
-
   return $work;
 }
 
@@ -460,8 +466,9 @@ sub output_seq {
   if ($source eq 'trinity') {
     print OUT_ACE "Properties cDNA cDNA_EST\n";
     print OUT_ACE "Method \"RNASeq_${source}\"\n";
-  } else {
-    die "can't determine the type from the ID line for\n";
+  } 
+  else {
+    die "Can't determine the type from the ID line for\n";
   }
 }
   
@@ -533,12 +540,15 @@ sub output_seq {
      }
 
 # EST
-#ID   AA007700; SV 1; linear; mRNA; EST; INV; 115 BP.
+# ID   AA007700; SV 1; linear; mRNA; EST; INV; 115 BP.
 # mRNA
-#ID   AB016491; SV 1; linear; mRNA; STD; INV; 1020 BP.
+# ID   AB016491; SV 1; linear; mRNA; STD; INV; 1020 BP.
+# ID   AF273797; SV 1; linear; transcribed RNA; STD; INV; 2438 BP.
      if ((/^ID\s+(\S+)\;\s+\SV\s+(\d+)\;\s+linear\;\s+mRNA\;\s+(EST)/) or 
 	 (/^ID\s+(\S+)\;\s+\SV\s+(\d+)\;\s+linear\;\s+mRNA\;\s+(GSS)/) or 
-	 (/^ID\s+(\S+)\;\s+\SV\s+(\d+)\;\s+linear\;\s+mRNA\;\s+(STD)/) ) { # EST or mRNA
+	 (/^ID\s+(\S+)\;\s+\SV\s+(\d+)\;\s+linear\;\s+mRNA\;\s+(STD)/) or
+	 (/^ID\s+(\S+)\;\s+\SV\s+(\d+)\;\s+linear\;\s+transcribed RNA\;\s+(STD)/)
+	) { # EST or mRNA
        $seen = "no";
        $idF = $1;
        $svF = $2;
