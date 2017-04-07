@@ -134,7 +134,7 @@ if( $update_nameDB ) {
 
 my $tace = $wormbase->tace;
 my $database = $wormbase->database('geneace');
-$database = glob('~wormpub/DATABASES/TEST_DATABASES/geneace') if $test;
+#$database = glob('~wormpub/DATABASES/TEST_DATABASES/geneace') if $test;
 
 $log->log_and_die("BAILING: someone has a writelock on the database and you specified to load it in\n") if $load && -e "$database/database/lock.wrm";
 
