@@ -147,7 +147,7 @@ foreach my $sub_query (
     my @secondary_ids;
     if ($obj->Acquires_merge) {
       foreach my $g ($obj->Acquires_merge) {
-        push @secondary_ids, "WB:" . $g->name;
+        push @secondary_ids, $g->name;
       }
     }
     
@@ -162,6 +162,8 @@ foreach my $sub_query (
 
     my $json_gene = {
       primaryId          => "WB:" . $obj->name,
+      primaryIdPrefix    => "WB:",
+      primaryIdDisplay   => $obj->name,
       symbol             => $symbol,
       soTermId           => $biotype,
       taxonId            => $taxid,
