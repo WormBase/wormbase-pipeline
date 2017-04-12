@@ -1,5 +1,5 @@
-mkdir /tmp/parasite-release
-cd /tmp/parasite-release
+mkdir /nfs/nobackup/ensemblgenomes/wormbase/parasite/parasite-release
+cd /nfs/nobackup/ensemblgenomes/wormbase/parasite/parasite-release
 
 # Dump all the databases into the tmp space
 echo "Dumping and loading databases"
