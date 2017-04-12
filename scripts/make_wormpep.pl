@@ -352,7 +352,7 @@ sub write_final_pep {
   }
   
   my %cds_info;
-  my $def = $wormbase->basedir."/wquery/SCRIPT:make_wormpep.def";
+  my $def = $wormbase->autoace."/wquery/SCRIPT:make_wormpep.def";
   print STDERR "parsing $def\n";
   my $tm_query = $wormbase->table_maker_query($dbdir,$def);
   while(<$tm_query>) {

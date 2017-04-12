@@ -81,7 +81,7 @@ my %mol_types = ( 'elegans'          => [qw( EST mRNA OST RST Trinity)],
                   'brugia'           => [qw( mRNA EST Trinity)],
                   'pristionchus'     => [qw( mRNA EST Trinity)],
                   'ovolvulus'        => [qw( mRNA EST Trinity)],
-                  'sratti'           => [qw( mRNA EST Trinity)],
+                  'sratti'           => [qw( mRNA EST)],
                 );
 
 

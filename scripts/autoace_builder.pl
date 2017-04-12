@@ -208,13 +208,13 @@ $wormbase->run_script( 'map_operons.pl'                          , $log) if $ope
 if ($enaprotxrefs) {
   $wormbase->run_script( "get_ena_submission_xrefs.pl -proteinxrefs", $log);
   $wormbase->run_script( "propagate_cds_xrefs_to_protein.pl", $log );
-  $wormbase->run_script( 'dump_gpi.pl', $log);
   if ($wormbase->species eq 'elegans') {
     $wormbase->run_script( 'generate_dbxref_file.pl -nocodingtrans -ebiupload', $log);  
   }
+  $wormbase->run_script('dump_gpi.pl', $log);
 }
 
-$wormbase->run_script( 'make_wormpep.pl -all -final'                  , $log) if $finish_wormpep;
+$wormbase->run_script('make_wormpep.pl -all -final', $log) if $finish_wormpep;
 
 $wormbase->run_script( 'get_treefam.pl'                          , $log) if $treefam;
 $wormbase->run_script( 'KEGG.pl', $log )                                 if $kegg;

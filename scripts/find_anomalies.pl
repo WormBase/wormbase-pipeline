@@ -5047,7 +5047,6 @@ UNCONFIRMED_INTRON           elegans remanei briggsae japonica brenneri brugia o
 UNMATCHED_MASS_SPEC_PEPTIDE  elegans
 EST_OVERLAPS_INTRON          elegans remanei briggsae japonica brenneri brugia ovolvulus sratti
 UNMATCHED_EXPRESSION         elegans
-INCOMPLETE_PFAM_MOTIF        elegans remanei briggsae japonica brenneri ovolvulus brugia sratti
 UNMATCHED_454_CLUSTER        elegans
 UNMATCHED_MGENE              elegans
 NOVEL_MGENE_PREDICTION       elegans
@@ -5057,6 +5056,8 @@ SPURIOUS_INTRONS             elegans remanei briggsae japonica brenneri brugia o
 PREMATURE_STOP               elegans remanei briggsae japonica brenneri brugia ovolvulus sratti
 UNCONFIRMED_MASS_SPEC_INTRON elegans
 END_DATA
+
+#INCOMPLETE_PFAM_MOTIF        elegans remanei briggsae japonica brenneri ovolvulus brugia sratti
 
 =pod
 

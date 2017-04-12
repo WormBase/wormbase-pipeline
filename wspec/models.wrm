@@ -2,7 +2,7 @@
 // models.wrm - main file defining tree class structures for the WormBase database
 // This file is read only when starting a new database or when you select 
 // "Read Models" or "Add Update File" from the main menus.
-// 
+// `
 // Explanation about class/object count limits
 // -----------------------------------------------------------------------------
 // Every single object specified in this file is represented in acedb by a key, 
@@ -321,6 +321,7 @@
         Disease_info Experimental_model ?DO_term XREF Gene_by_biology ?Species #Evidence                
                      Potential_model ?DO_term XREF Gene_by_orthology ?Species #Evidence
                      Disease_relevance ?Text ?Species #Evidence
+        Disease_model_annotation ?Disease_model_annotation XREF Disease_relevant_gene //New class to capture the richness of disease data
         Molecular_info Corresponding_CDS ?CDS XREF Gene #Evidence             // to link to live CDSs
                        Corresponding_CDS_history ?CDS XREF Gene_history       // to link to history CDSs
                        Corresponding_transcript ?Transcript XREF Gene #Evidence
@@ -636,6 +637,8 @@
                   Rearrangement ?Rearrangement XREF Strain
                   Clone ?Clone XREF In_strain          
                   Transgene ?Transgene XREF Strain
+         Disease_info Models_disease ?DO_term XREF Disease_model_strain
+                      Disease_model_annotation ?Disease_model_annotation XREF Strain 
          Database ?Database ?Database_field ?Text
          Properties Inbreeding_state UNIQUE Selfed Text
                                             Isofemale Text
@@ -773,8 +776,8 @@
        Used_in_RNAi ?RNAi XREF Clone           // Chris WS244
        Sequence_status Shotgun UNIQUE DateType
                        Finished UNIQUE DateType
-                       Accession_number UNIQUE ?Text
-       DB_info  Database ?Database ?Database_field ?Accession_number XREF Clone // added [031120 krb]
+                       Accession_number UNIQUE ?Text 
+       DB_info  Database ?Database ?Database_field ?Text // added [031120 krb]
        Type UNIQUE Cosmid            // 000824 Lincoln's additions to segregate clones
                    Fosmid            // added 06/12/01 by krb for dl
                    YAC
@@ -1017,6 +1020,51 @@
           Remark ?Text
 
 
+//////////////////////////////////////////
+//
+// ?Disease_model_annotation class WS260
+//
+//////////////////////////////////////////
+
+
+?Disease_model_annotation Disease_term UNIQUE ?DO_term XREF Disease_model_annotation
+                          Disease_of_species ?Species
+                          Modeled_by Strain UNIQUE ?Strain XREF Disease_model_annotation        // genetic entity that models the disease
+                                     Variation UNIQUE ?Variation XREF Disease_model_annotation  // genetic entity that models the disease
+                                     Transgene UNIQUE ?Transgene XREF Disease_model_annotation  // genetic entity that models the disease
+                                     Disease_relevant_gene UNIQUE ?Gene XREF Disease_model_annotation //when the genetic entity is a gene
+                          Inferred_gene ?Gene XREF Disease_model_annotation    // Indicate the gene in Variation or Strain, when submitted
+                          Association_type UNIQUE is_model_of                  // Describe relationship between genetic entity and disease (condition)
+                                                  causes_or_contributes_to_condition
+                                                  causes_condition
+                                                  contributes_to_condition
+                                                  is_marker_for
+                          Evidence_code ?GO_code // will use ECO later on
+                          Qualifier NOT          // to indicate that a disease is NOT modeled by X
+                          Experimental_condition Inducing_chemical ?Molecule XREF Disease_model_inducer //to indicate the disease-inducing agent
+                                                 Inducing_agent ?Text     //e.g. diet, radiation,etc not in Molecule class
+                          Modifier_info Modifier_transgene ?Transgene //genetic entity that modifies the disease
+                                        Modifier_variation ?Variation //(same as above)
+                                        Modifier_strain ?Strain       //(same as above)
+                                        Modifier_gene ?Gene           //to indicate the gene in the modifying Transgene, Variation, Strain.
+                                        Modifier_molecule ?Molecule XREF Disease_model_modifier  // to indicate chemical modifiers of the disease
+                                        Other_modifier ?Text          //to indicate other modifiers of the disease eg. diet,radiation, surgery etc
+                          Modifier_association_type UNIQUE condition_ameliorated_by  //to indicate the association type between modifiers and disease
+                                                           condition_exacerbated_by
+                          Genetic_sex UNIQUE hermaphrodite            //indicates genetic sex of the disease model
+                                             male
+                                             female
+                          Disease_phenotype_info Disease_phenotype ?Phenotype     //Phenotypes similar to human disease 
+                                                 Ameliorated_phenotype ?Phenotype // Phenotypes ameliorated by modifier
+                                                 Exacerbated_phenotype ?Phenotype // Phenotypes exacerbated by modifier
+                                                 Phenotype_comment ?Text  // To describe non-WPO phenotypes
+                          Paper_evidence ?Paper
+                          Disease_model_description ?Text
+                          DB_info Database ?Database ?Database_field ?Text //To indicate the OMIM gene/disease
+                          Curator_confirmed ?Curator
+                          Date_last_updated UNIQUE DateType
+
+
 
 ////////////////////////////////////////////////////////
 //
@@ -1167,7 +1215,8 @@
                  Related ?Text
          Parent Is_a ?DO_term XREF Is
          Child Is ?DO_term XREF Is_a 
-         DB_info Database ?Database ?Database_field ?Text              
+         DB_info Database ?Database ?Database_field ?Text
+         Disease_model_annotation ?Disease_model_annotation XREF Disease_term //to hold all the details of a disease model               
          Type GOLD
               Gram_negative_bacterial_infectious_disease
               Gram_positive_bacterial_infectious_disease
@@ -1179,6 +1228,11 @@
                       Phenotype ?Phenotype XREF DO_term
                       WBProcess ?WBProcess XREF DO_term
                       Reference ?Paper XREF DO_term 
+                      Disease_model_variation ?Variation XREF Models_disease   //To associate Variations to a disease
+                      Disease_model_strain ?Strain XREF Models_disease         //To associate Strains to a disease
+                      Disease_model_transgene ?Transgene XREF Models_disease   //To associate Transgenes to disease
+                      Chemical_inducer ?Molecule XREF Induces_disease          //To associate inducing chemicals to a disease
+                      Molecule_modifier ?Molecule XREF Modifies_disease        //To associate modifying chemicals to a disease
          Reagent_info Associated_antibody ?Antibody XREF Antibody_for_disease
                       Associated_construct ?Construct XREF Construct_for_disease
                       Associated_transgene ?Transgene XREF Transgene_for_disease 
@@ -1327,9 +1381,9 @@
                     Clone_left_end ?Clone XREF Clone_left_end UNIQUE Int
                     Clone_right_end ?Clone XREF Clone_right_end UNIQUE Int
                     Flipped
-          DB_info Database ?Database ?Database_field ?Accession_number XREF Sequence
+          DB_info Database ?Database ?Database_field ?Text
                   Protein_id ?Sequence UNIQUE Text UNIQUE Int // DB_info tag added [011030 krb]
-                  Secondary_accession ?Accession_number XREF Sequence
+                  Secondary_accession ?Text
                   DB_remark ?Text #Evidence    // EMBL/Genbank
                   Keyword ?Keyword    // EMBL/Genbank
                   DB_annotation ?Database UNIQUE ?LongText
@@ -1457,7 +1511,7 @@
                      RNASeq ?Analysis Int
                      Mass_spec ?Mass_spec_peptide
                      mRNA ?Sequence
-                     Homology ?Accession_number
+                     Homology ?Text
                      UTR ?Sequence
                      False ?Sequence 
                      Inconsistent ?Sequence
@@ -2040,7 +2094,7 @@
                    Redundant
        Remark ?Text #Evidence
        Title ?Text
-       DB_info Database ?Database ?Database_field ?Accession_number XREF Motif // ID  Accession_number
+       DB_info Database ?Database ?Database_field ?Text // ID  Accession_number
                DB_remark ?Text #Evidence
                DB_text ?LongText
                Web_location ?WWW_server
@@ -2052,22 +2106,6 @@
              Homol_homol ?Homol_data XREF Motif_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
        GO_term ?GO_term XREF Motif ?GO_code #Evidence
        Associated_transposon_family ?Transposon_family XREF Associated_motif   // to connect Transposon famillies to Repeat motifs ar2 02-DEC-05
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-//
-// ?Accession_number class
-//
-// Small class to track primarily EMBL/GenBank accessions.
-//
-// This used to be a more extensive class but was retired during WS234-WS237 - pad
-//
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-?Accession_number Entry Sequence ?Sequence    
-                        Motif ?Motif
-                        Clone ?Clone // added [031120 krb]
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2620,6 +2658,8 @@
            Associated_with Marked_rearrangement ?Rearrangement XREF By_transgene
                            Strain ?Strain XREF Transgene 
                            Transgene_for_disease ?DO_term XREF Associated_transgene #Evidence
+           Disease_info Models_disease ?DO_term XREF Disease_model_transgene
+                        Disease_model_annotation ?Disease_model_annotation XREF Transgene
            Reference ?Paper XREF Transgene
            Species UNIQUE ?Species
            Remark ?Text #Evidence
@@ -3487,7 +3527,9 @@
                     Marked_rearrangement ?Rearrangement XREF By_variation
            Description Phenotype ?Phenotype XREF Variation #Phenotype_info
                        Phenotype_remark ?Text #Evidence
-                       Phenotype_not_observed ?Phenotype XREF Not_in_Variation #Phenotype_info  //added by Wen to separate Not phenotype from real phenotypes 
+                       Phenotype_not_observed ?Phenotype XREF Not_in_Variation #Phenotype_info  //added by Wen to separate Not phenotype from real phenotypes
+           Disease_info Models_disease ?DO_term XREF Disease_model_variation
+                        Disease_model_annotation ?Disease_model_annotation XREF Variation
            Reference ?Paper XREF Allele
            Remark ?Text #Evidence
            Method UNIQUE ?Method
@@ -3721,6 +3763,10 @@
                                Transgene ?Transgene ?Phenotype #Evidence
                                RNAi ?RNAi ?Phenotype #Evidence
                                Rearrangement ?Rearrangement ?Phenotype #Evidence
+          Disease_info Induces_disease ?DO_term XREF Chemical_inducer
+                       Modifies_disease ?DO_term XREF Molecule_modifier
+                       Disease_model_inducer ?Disease_model_annotation XREF Inducing_chemical
+                       Disease_model_modifier ?Disease_model_annotation XREF Modifier_molecule
           Interaction ?Interaction XREF Molecule_interactor
           Molecule_use ?Text #Evidence
           Reference ?Paper XREF Molecule
@@ -3793,17 +3839,7 @@
 // WS257
 // WS258
 // WS259
-
-
-
-
-
-
-
-
-
-
-
+// WS260
 
 
 

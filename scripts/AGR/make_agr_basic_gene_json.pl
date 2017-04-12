@@ -161,7 +161,9 @@ foreach my $sub_query (
     }
 
     my $json_gene = {
-      primaryId          => $obj->name,
+      primaryId          => "WB:" . $obj->name,
+      primaryIdPrefix    => "WB:",
+      primaryIdDisplay   => $obj->name,
       symbol             => $symbol,
       soTermId           => $biotype,
       taxonId            => $taxid,

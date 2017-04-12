@@ -1569,6 +1569,7 @@ sub checkLSF {
 sub table_maker_query {
   my($self, $database, $def) = @_;
   my $fh;
+  if (!-f $def || !-r $def) {die "Cannot find or read the table_maker def file $def\n"}
   open( $fh, "echo \"Table-maker -p $def\" | ". $self->tace." $database |" ) || die "Couldn't access $database\n";
   return $fh;
 }
