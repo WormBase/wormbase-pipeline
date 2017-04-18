@@ -167,8 +167,15 @@ foreach my $strain (@Unique_strains) {
   if ($test) {print "$count Processing $strain\n";}
   # spit out array of genes - print "$strain: @{ $Straingenes{$strain} }\n";
 
-  #(Identifying number/id perorganism,) 
+  #(Identifying number/id perorganism,)
+  my $strainws;
+  if ($strain =~ /\s+/) {
+    ($strainws = $strain) =~ s/\s/_/g;
+  print $out_fh "WB-STRAIN\:$strainws\t";
+  }
+  else {
   print $out_fh "WB-STRAIN\:$strain\t";
+  }
   #(name of organism,)
   if (defined$strainspecies{$strain}) {
     print $out_fh "\"$strainspecies{$strain}[0]\"\t";
@@ -205,13 +212,13 @@ foreach my $strain (@Unique_strains) {
     print $out_fh "EMPTY\t";
   }
   #Genes (gene(s) modified if any (list is better than array))
-  if (exists $Straingenes{$strain}[0]){
-    print $out_fh "$Straingenes{$strain}[0]\($geneid2gene{$Straingenes{$strain}[0]}[0]\)";
-    foreach my $i ( 1 .. $#{ $Straingenes{$strain} } ) {
-      print $out_fh "|$Straingenes{$strain}[$i]\($geneid2gene{$Straingenes{$strain}[$i]}[0]\)";
+  if ((exists $Straingenes{$strain}[0]) && (($Straingenes{$strain}[0]) =~ /\w+/)){
+      print $out_fh "$Straingenes{$strain}[0]\($geneid2gene{$Straingenes{$strain}[0]}[0]\)";
+      foreach my $i ( 1 .. $#{ $Straingenes{$strain} } ) {
+	print $out_fh "|$Straingenes{$strain}[$i]\($geneid2gene{$Straingenes{$strain}[$i]}[0]\)";
+      }
+      print $out_fh "\t";
     }
-    print $out_fh "\t";
-  }
   else {
     print $out_fh "EMPTY\t";
   }
@@ -308,6 +315,8 @@ Class Strain
 Condition !Wild_isolate
 From 1 
 
+//wildisolate
+
 Colonne 2 
 Width 12 
 Optional 
@@ -352,7 +361,7 @@ sub generate_RRDID_query {
 #Visible 
 #Class 
 #Class Strain
-#Condition !Wild_isolate
+#Condition "N2*"
 #From 1
 
   my $tablemaker_template = <<"EOF";
@@ -366,7 +375,7 @@ Optional
 Visible 
 Class 
 Class Strain
-Condition !Wild_isolate
+Condition Species
 From 1 
  
 Colonne 2 
@@ -482,7 +491,7 @@ Class Database_field
 Right_of 12 
 Tag  HERE  
 Condition PMID
- 
+
 Colonne 14 
 Width 12 
 Optional 
