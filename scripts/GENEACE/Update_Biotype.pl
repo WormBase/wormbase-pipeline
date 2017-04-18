@@ -120,6 +120,7 @@ my %rna2SOlookup = (
 'snoRNA'  => 'SO:0001267',  # snoRNA_gene
 'snRNA'   => 'SO:0001268',  # snRNA_gene
 'tRNA'    => 'SO:0001272',  # tRNA_gene
+'ncRNA'   => 'SO:0001263',  # ncRNA_gene
 );
 
 
