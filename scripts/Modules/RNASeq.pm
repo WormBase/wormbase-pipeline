@@ -2298,7 +2298,7 @@ sub align_star {
   my $bam_stranded_hits = "$exptDir/hits.stranded";
   my $introns_done_file = "$RNASeqSRADir/$experiment_accession/Introns/Intron.ace.done";
 
-  if ($self->{new_genome} || !-e $bam_done_file || !-e $srr_done_file) { 
+  if ($self->{new_genome} || !-e $bam_done_file) { 
 #  if ($self->{new_genome} || !-e $bam_done_file || !-e $srr_done_file || !-e $trimmomatic_done_file) { 
 
     if ($self->{new_genome} || !-e $srr_done_file) { 
