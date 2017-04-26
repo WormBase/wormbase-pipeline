@@ -1102,7 +1102,7 @@ sub copy_wormpep_files {
       my $target_pepfile = "$tgt/$gspecies.$bioproj.$WS_version_name.protein.fa.gz";
       open(my $source_pep_fh, $source_pepfile);
       while(<$source_pep_fh>) {
-        /^\>(\S+)\s+\S+\s+(\S+)/ and do {
+        /\>(\S+)\s+.*gene=(\S+)/ and do {
           $gene_ids{$1} = $2;
         };
       }
