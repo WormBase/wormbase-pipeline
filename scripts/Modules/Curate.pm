@@ -1312,7 +1312,7 @@ sub change_class {
 
 ######################################
 # LAST_REVIEWED CLASS $class NEWCLASS EXISTING $old_seqname
-# Set the 'Last_reviewed' tag for the object
+# Set the 'Last_reviewed' tag for the object and all of its sister isoforms
 
 sub last_reviewed {
   my ($self, %line) = @_;
@@ -1320,8 +1320,27 @@ sub last_reviewed {
   my $class = $line{CLASS};
   my $existing = $line{EXISTING};
 
-  $self->Add_remark($class, $existing, "This $class has been inspected and looks satisfactory.");
-  $self->Last_reviewed($class, $existing);
+  # does the specified gene structure exist?
+  my $gene = $self->SeqName2Gene($existing);
+  if (!defined $gene) {die "ERROR Can't set the Last_reviewed tag for $existing - it is not attached to a Gene\n"}
+
+  # get CDS ID for Gene
+  my $update = 0; # don't make a new isoform
+  my ($cds, $isoform_letter, $number_of_existing_isoforms, $single, @used_letters) = $self->Get_next_isoform_ID($gene, $update);
+
+  if ($single) {
+    $self->Add_remark($class, $cds, "This $class has been inspected and looks satisfactory.");
+    $self->Last_reviewed($class, $cds);
+    print "$cds has been reviewed\n";
+
+  } else {
+    foreach my $letter (@used_letters) {
+      my $cdsl = $cds . $letter;
+      $self->Add_remark($class, $cdsl, "This $class has been inspected and looks satisfactory.");
+      $self->Last_reviewed($class, $cdsl);
+      print "$cdsl has been reviewed\n";
+    }
+  }
 
 }
 
