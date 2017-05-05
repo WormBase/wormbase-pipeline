@@ -707,7 +707,7 @@ sub single_query_tests {
   if ($species eq "elegans") {
     my @Transposons= $db->fetch(-query=>'find Transposon');
     my $Transposon_no = @Transposons;
-    unless ($Transposon_no eq "758"){print "\nChange in Transposon_numbers required 758 actual $Transposon_no - has additional Transposon annotation been done?\n"}
+    unless ($Transposon_no eq "11256"){print "\nChange in Transposon_numbers required 758 actual $Transposon_no - has additional Transposon annotation been done?\n"}
   }
   
   
@@ -841,7 +841,7 @@ sub test_gene_sequence_for_errors {
       }
     }
     if (defined $gene_model->Sequence) {
-      unless (($gene_model->name =~ /MTCE/) || ($gene_model->Sequence->name =~ /MITO/)) {
+      unless (($gene_model->name =~ /MTCE/) || ($gene_model->Sequence->name =~ /MITO/) || ($gene_model->Sequence->name =~ /Cbre_Contig2951/) || ($gene_model->Sequence->name =~ /Cbre_Contig2389/) || ($gene_model->Sequence->name =~ /Cbre_Contig1932/)) {
 	# look for incorrect stop codons (CDS specific)
 	if (($stop_codon ne 'taa') && ($stop_codon ne 'tga') && ($stop_codon ne 'tag') && ($method_test eq 'curated')) {
 	  if ($end_tag ne "present") {
