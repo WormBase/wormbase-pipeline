@@ -87,35 +87,27 @@ print OUT "\n\n";
 
 # Process the .ace input.
 my $line;
-my $flag = 0;
 while ($line = <IN>) {
   unless ($line =~ /^\S+/) {next;}
 
-  #Sequence : "2L52" - print OUT these but next lines are massively duplicated in the original file so only print 1
+  #Sequence : "CHROMOSOME" - print OUT these but next lines are massively duplicated in the original file so only print 1
   if ($line =~ /^Sequence : (\S+)/) {
     print OUT "\n$line";
-    $flag = 1;
     next;
   }
 
-  #S_Child Feature_data 2L52:Confirmed_intron_RNASeq 1 4592
-  if ($line =~ /^S_Child Feature_data (\S+):/) {
+  #S_Child Feature_data CHROMOSOME_II:Confirmed_intron_RNASeq:10 1 4592
+  if ($line =~ /^S_Child Feature_data (\w+)\:\w+\:(\w+)/) {
     my $sequence = $1;
-    if ($flag =~ 1) {
       @feature_data = split" ",$line;
-      print OUT "S_Child Feature_data $sequence:Confirmed_intron_RNASeq_high_qual $feature_data[3] $feature_data[4]\n";
-      $flag = 0;
-    }
-    else {
-      next;
-    }
+      print OUT "S_Child Feature_data $1:Confirmed_intron_RNASeq_high_qual\:$2 $feature_data[3] $feature_data[4]\n";
   }
 
 
-  #Feature_data : "2L52:Confirmed_intron_RNASeq" - Print these
-  if ($line =~ /^Feature_data \: \"(\S+)\:/) {
+  #Feature_data : "CHROMOSOME_II:Confirmed_intron_RNASeq:10" - Print these
+  if ($line =~ /^Feature_data \: \"(\w+)\:\w+\:(\w+)/) {
     @data=split/\s+/,$line;
-    print OUT "\nFeature_data : \"$1:Confirmed_intron_RNASeq_high_qual\"\n";
+    print OUT "\nFeature_data : \"$1:Confirmed_intron_RNASeq_high_qual:$2\"\n";
     next;
   }
 
