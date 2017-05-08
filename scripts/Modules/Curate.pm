@@ -877,6 +877,7 @@ sub new_isoform {
     }
   
     # check existing isoforms to see if we are trying to make a duplicate structure
+    shift @used_letters; # get rid of last letter as we have not made it yet and anyway don't wish to compare the new structure to it.
     foreach my $iso (@used_letters) {
       my $iso_cds = $cds . $iso;
       if ($self->structure_comparison_sanity_check($class, $iso_cds, $model)) {print "WARNING $iso_cds and $model have the same structure.\n"; $self->force()}
