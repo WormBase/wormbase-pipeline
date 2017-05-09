@@ -422,7 +422,7 @@ sub main_gene_checks {
     $sequence_classes{$gene_model->name} = $gene_model->class;
     
     # check for duplicated sequence structures
-    if ($method_test eq 'curated' || $method_test eq 'non_coding_transcript') {
+    if ($method_test eq 'curated' || $method_test eq 'non_coding_transcript' || ($method_test =~ (/RNA/)) && $gene_model_name =~ (/\w+\d+\.\d+\Z/)) {
       my ($gene_name) = ($gene_model_name =~ /($cds_regex_noend)/);
       # make a hash key out of the exon starts and ends
       my $hash_key = join(':', @exon_coord1) . ',' . join(':', @exon_coord2);
