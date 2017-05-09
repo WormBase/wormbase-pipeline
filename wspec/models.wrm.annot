@@ -1083,7 +1083,7 @@
                           Paper_evidence ?Paper
                           Disease_model_description ?Text
                           DB_info Database ?Database ^database ?Database_field ^field ?Text ^accession
-                          Curator_confirmed ?Curator
+                          Curator_confirmed ?Person
                           Date_last_updated UNIQUE DateType ^date
 
 
