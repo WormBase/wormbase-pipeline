@@ -10,7 +10,6 @@ use Log_files;
 
 use strict;
 
-
 my ($store,$debug,$test,$database,$species);
 GetOptions(
        'store=s' => \$store,
@@ -35,8 +34,6 @@ my $file = $wormbase->reports . '/'.
 
 my $of = IO::File->new($file,'w');
 $log->write_to("writing to $file\n");
-
-use constant NA => 'N/A';
 
 print $of 
 "# ${\$wormbase->long_name} orthologs\n".
