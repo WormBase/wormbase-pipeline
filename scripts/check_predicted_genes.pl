@@ -18,7 +18,7 @@ use Getopt::Long;
 use Log_files;
 use Storable;
 
-my ($verbose, $db_path, $basic, $test1, $debug, $store, $test,$build,$species,$incomplete,$nogenome);
+my ($verbose, $db_path, $basic, $test1, $debug, $store, $test, $build, $species, $incomplete, $nogenome, $clonetest);
 
 GetOptions ("verbose"    => \$verbose, # prints screen output and checks the CDS class instead of All_genes.
 	    "database=s" => \$db_path, # Path to the database you want to check.
@@ -28,9 +28,9 @@ GetOptions ("verbose"    => \$verbose, # prints screen output and checks the CDS
 	    "store:s"    => \$store,   # 
 	    "test"       => \$test,    # Test build
 	    "build"      => \$build,   # Checks specific to a full database containing genes and models.
-	    "species:s"   => \$species,  # used to hold briggsae/brenneri/remanei for some checks.
+	    "species:s"  => \$species,  # used to hold briggsae/brenneri/remanei for some checks.
 	    "incomplete" => \$incomplete, # used to avoid start/end not found warnings
-	    "nogenome"  => \$nogenome, # for testing annotations when you don't have the genome loaded.
+	    "nogenome"   => \$nogenome, # for testing annotations when you don't have the genome loaded.
 	   );
 
 my $wormbase;
@@ -426,15 +426,15 @@ sub main_gene_checks {
       my ($gene_name) = ($gene_model_name =~ /($cds_regex_noend)/);
       # make a hash key out of the exon starts and ends
       my $hash_key = join(':', @exon_coord1) . ',' . join(':', @exon_coord2);
-      if (exists $sequence_structures{$gene_name}{$hash_key}) {
-	my $other_isoform = $sequence_structures{$gene_name}{$hash_key};
+      if (exists $sequence_structures{$hash_key}) {
+	my $other_isoform = $sequence_structures{$hash_key};
 	my $class = $gene_model->class;
 	unless ($gene_model =~ (/F59A3.6/)) {
 	  push(@error1, "ERROR: $class $gene_model has the same structure as $other_isoform\n");
 	  print "ERROR: $class $gene_model has the same structure as $other_isoform\n";
 	}
       }
-      $sequence_structures{$gene_name}{$hash_key} = $gene_model->name;
+      $sequence_structures{$hash_key} = $gene_model->name;
     }
     
     #Check that the source_exons and the the span and the same size.
