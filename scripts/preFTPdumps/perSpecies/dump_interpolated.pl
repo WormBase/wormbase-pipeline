@@ -42,7 +42,7 @@ $log->write_to("connecting to ${\$wormbase->autoace}\n");
 my $db = Ace->connect(-path => $wormbase->autoace )||die Ace->error;
 
 my $file = $wormbase->reports . '/'.
-   join('.',$wormbase->gspecies_name,$wormbase->ncbi_bioproject,$wormbase->get_wormbase_version,'interpolated_clones.txt');
+   join('.',$wormbase->gspecies_name,$wormbase->ncbi_bioproject,'WSXXX.interpolated_clones.txt');
 
 my $of = IO::File->new($file,'w');
 $log->write_to("writing to $file\n");
