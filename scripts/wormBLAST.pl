@@ -488,20 +488,6 @@ sub update_dna {
   my $pipeline_scripts = "$ensembl_code_dir/ensembl-pipeline/scripts";
   my $generic_conf_dir         = ($generic_config->{confdir}||die("please set a generic confdir in $yfile_name\n"));
   
-  &run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/repeat_rule.conf", $log );
-  &run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/blastx_rule.conf", $log );
-  $wormbase->run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/blastp_rule.conf", $log );
-
-  if ($do_blats) {
-    &run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/blat_rule.conf", $log );
-  }
-  if ($do_genblasts) {
-    &run_command( "perl $pipeline_scripts/rule_setup.pl $db_options -read -file $generic_conf_dir/genblast_rule.conf", $log );
-  }
-
-  &run_command("perl $pipeline_scripts/make_input_ids $db_options -slice -slice_size 75000 -coord_system toplevel -logic_name submitslice75k -input_id_type SLICE75K",$log);
-  &run_command("perl $pipeline_scripts/make_input_ids $db_options -translation_id -logic submittranslation", $log );
-
   return 1;
 }
 
@@ -539,7 +525,6 @@ sub update_proteins {
   
   
   $raw_dbh->do('DELETE FROM protein_feature')  or die $raw_dbh->errstr;
-  $raw_dbh->do('DELETE FROM input_id_analysis WHERE input_id_type = "TRANSLATIONID"')  or die $raw_dbh->errstr;
   
   $raw_dbh->do('DELETE FROM meta WHERE meta_key = "genebuild.start_date"')  or die $raw_dbh->errstr;
   
@@ -558,7 +543,6 @@ sub update_proteins {
 			  );
   
   &run_command("perl $Bin/ENSEMBL/scripts/worm_lite.pl -yfile $yfile_name -load_genes -species $species", $log );
-  &run_command("perl $ensembl_code_dir/ensembl-pipeline/scripts/make_input_ids $db_options -translation_id -logic submittranslation", $log );
 }
 
 =head2 delete_gene_by_translation [UNUSED]
@@ -666,7 +650,6 @@ sub parse_wormpep_history {
 
 =head2 update_analysis
 
-updates the input_ids and analysis tables based on the updated files
 
 updates the blat input_ids
 
@@ -676,7 +659,6 @@ updates the blat input_ids
 # update blasts based on the updated_dbs
 #
 # * updates the analysis table with new db_files, changes the timestamp for the updated analysis to now()
-# * deletes features and input_ids for updated analysis
 
 sub update_analysis {
 
@@ -716,7 +698,6 @@ sub update_analysis {
 	$analysis_adaptor->update($analysis);
 	
 	# now delete features and input_ids for this updated analysis
-	$raw_dbh->do("DELETE FROM input_id_analysis WHERE analysis_id = ${analysis_id}")     || die "$DBI::errstr";
 	$raw_dbh->do("DELETE FROM protein_feature WHERE analysis_id = ${analysis_id}")       || die "$DBI::errstr";
 	$raw_dbh->do("DELETE FROM protein_align_feature WHERE analysis_id = ${analysis_id}") || die "$DBI::errstr";
       }
@@ -744,7 +725,6 @@ sub update_analysis {
       # delete entries so they get rerun
       $raw_dbh->do('DELETE FROM protein_feature WHERE analysis_id IN (select analysis_id FROM analysis WHERE module LIKE "ProteinAnnotation%")')
 	|| die "$DBI::errstr";
-      $raw_dbh->do('DELETE FROM input_id_analysis WHERE analysis_id IN (select analysis_id FROM analysis WHERE module LIKE "ProteinAnnotation%")')
 	|| die "$DBI::errstr";
     }
   } 
