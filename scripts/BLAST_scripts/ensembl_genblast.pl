@@ -124,12 +124,10 @@ if ($dumpace) { # dump the resulting analysis out as an ace file
   # 5) clean out all input_ids for the GenBlast analysis
   
   $log->write_to("Clean out any old genBlastG jobs\n");
-  &clean_input_ids();
   
   # 6) make new input_ids
   
   $log->write_to("Set up Ensembl jobs for genBlastG analysis\n");
-  &make_input_ids();
 
 }
 
@@ -148,36 +146,6 @@ sub update_analysis {
   }
 }
 
-
-#####################################################################################################
-
-#  cleans the input_id_analysis table
-sub clean_input_ids {
-
-  my $dependent_analysis = &get_dependent_analysis();
-
-  foreach my $analysis (@genblast_analyses, $dependent_analysis){
-    my $dbID = $analysis->dbID;
-    $db->dbc->do("DELETE FROM input_id_analysis WHERE analysis_id = $dbID");
-  }    
-}
-
-#####################################################################################################
-
-# puts new input_ids back in the input_id_analysis table 
-sub make_input_ids {
-  
-  my $dep_ana = &get_dependent_analysis();
-  my $sth = $db->dbc->prepare('INSERT INTO input_id_analysis (input_id,input_id_type,analysis_id,created,result) VALUES (?,?,?,NOW(),0)');
-  
-  # create_input_ids for each analysis
-  my @files = glob($split_wormpep_files);
-  foreach my $file (@files){
-    $sth->execute($file,$dep_ana->input_id_type, $dep_ana->dbID)
-  }
-}
-
-#####################################################################################################
 sub get_dependent_analysis {
 
   my %deps;
@@ -185,21 +153,10 @@ sub get_dependent_analysis {
   foreach my $ana (@genblast_analyses) {
     my $logic_name = $ana->logic_name;
 
-    my $rule = $db->get_RuleAdaptor->fetch_by_goal($ana);
-    die("No rule for $logic_name\n") if not defined $rule;
-    
-    my $cond_list = $rule->list_conditions;
-    die("Expecting exactly one condition for $logic_name\n")
-        if not defined $cond_list or scalar(@$cond_list) != 1;
-    
     my $dependent_ana = $db->get_AnalysisAdaptor->fetch_by_logic_name($cond_list->[0]);
     die("Could not find dependent analysis for $logic_name\n")
         if not defined $dependent_ana;
     
-    die(sprintf("Input_id type for $logic_name (%s) and its dependent analysis (%s) do not agree\n", 
-                $ana->input_id_type, $dependent_ana->input_id_type))
-        if $ana->input_id_type ne $dependent_ana->input_id_type;
-
     $deps{$dependent_ana->logic_name} = $dependent_ana; 
   }
 
