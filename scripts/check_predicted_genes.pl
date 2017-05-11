@@ -422,14 +422,46 @@ sub main_gene_checks {
     $sequence_classes{$gene_model->name} = $gene_model->class;
     
     # check for duplicated sequence structures
-    if ($method_test eq 'curated' || $method_test eq 'non_coding_transcript' || ($method_test =~ (/RNA/)) && $gene_model_name =~ (/\w+\d+\.\d+\Z/)) {
+    if ($method_test eq 'curated' || $method_test eq 'non_coding_transcript' || ($method_test =~ /RNA/ && $method_test !~ /pseudogene/ && $gene_model_name =~ (/\w+\d+\.\d+\Z/))) {
       my ($gene_name) = ($gene_model_name =~ /($cds_regex_noend)/);
       # make a hash key out of the exon starts and ends
       my $hash_key = join(':', @exon_coord1) . ',' . join(':', @exon_coord2);
+      my $target = $gene_model->name;
+      my $sequence = $gene_model->Sequence;
+      my $class = $gene_model->class;
+      my @clone_locations;
+      if ($class eq 'CDS') {
+	@clone_locations = $sequence->CDS_child;
+      } elsif ($class eq 'Transcript') {
+	@clone_locations = $sequence->Transcript;	    
+      }
+      my ($target_start, $target_end);
+      my $found = 0;
+      foreach my $target_location ( @clone_locations ) {
+	next unless ($target_location->name eq $target);
+	$found = 1;
+	$target_start = $target_location->right->name;
+	if (!defined $target_start) {
+	  push(@error1, "ERROR: $class $target has no start position in the Sequence object\n");
+	  print "ERROR: $class $target has no start position in the Sequence object\n";
+	}
+	$target_end = $target_location->right->right->name;
+	if (!defined $target_end) {
+	  push(@error1, "ERROR: $class $target has no end position in the Sequence object\n");
+	  print "ERROR: $class $target has no end position in the Sequence object\n";
+	}
+	last;
+      }
+      if (!$found) {
+	push(@error1, "ERROR: $class $target was not found in the Sequence object\n");
+	print "ERROR: $class $target was not found in the Sequence object\n";
+      }
+      $hash_key = $sequence->name . ':' . $target_start . ':' . $target_end . ':' . $hash_key;
       if (exists $sequence_structures{$hash_key}) {
 	my $other_isoform = $sequence_structures{$hash_key};
 	my $class = $gene_model->class;
 	unless ($gene_model =~ (/F59A3.6/)) {
+	  # see if the two similar structures are at the same position on the same clone
 	  push(@error1, "ERROR: $class $gene_model has the same structure as $other_isoform\n");
 	  print "ERROR: $class $gene_model has the same structure as $other_isoform\n";
 	}
