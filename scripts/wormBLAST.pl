@@ -725,7 +725,6 @@ sub update_analysis {
       # delete entries so they get rerun
       $raw_dbh->do('DELETE FROM protein_feature WHERE analysis_id IN (select analysis_id FROM analysis WHERE module LIKE "ProteinAnnotation%")')
 	|| die "$DBI::errstr";
-	|| die "$DBI::errstr";
     }
   } 
   
