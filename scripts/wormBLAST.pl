@@ -403,7 +403,7 @@ sub update_blast_dbs {
 	# make blastable database
 	$log->write_to("\tmaking blastable database for $1\n");
 	$wormbase->run_command( "$wu_blast_path/xdformat -p $wormpipe_dir/BlastDB/$whole_file", $log );
-	$wormbase->run_command( "$ncbi_blast_path/makeblastdb -dbtype prot -title $1 -in $wormpipe_dir/BlastDB/$whole_file", $log ) if ($1 eq 'wormpep');
+	$wormbase->run_command( "$ncbi_blast_path/makeblastdb -dbtype prot -title $1 -in $wormpipe_dir/BlastDB/$whole_file", $log );
 
 	push( @_updated_DBs, $1 );
 	
