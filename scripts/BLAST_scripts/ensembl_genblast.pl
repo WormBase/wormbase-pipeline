@@ -23,7 +23,7 @@ HERE
 use Getopt::Long;
 use Storable;
 
-use Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor;
+use Bio::EnsEMBL::DBSQL::DBAdaptor;
 
 # some magic to turn off the deprecation warnings
 use Bio::EnsEMBL::Utils::Exception;
@@ -74,7 +74,7 @@ if ($species eq 'elegans') {
 
 
 # MYSQL setup
-my $db = Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor->new(
+my $db = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
   -host     => $host,
   -user     => $user,
   -dbname   => $dbname || $database,
