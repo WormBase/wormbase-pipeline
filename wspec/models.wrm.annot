@@ -3239,7 +3239,7 @@
 
 #Address  Street_address Text           // multiple lines including town, state, zip/postcode, whatever
           Country UNIQUE Text
-          Institution UNIQUE Text
+          Institution Text              // Removed the unique from this to allow multiple affiliations.		
           Email Text                    // multiple emails allowed
           Main_phone Text               // phone number for the institution, I presume
           Lab_phone Text
