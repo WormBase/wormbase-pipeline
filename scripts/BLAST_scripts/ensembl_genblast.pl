@@ -145,30 +145,6 @@ sub update_analysis {
     $ana->adaptor->update($ana);
   }
 }
-
-sub get_dependent_analysis {
-
-  my %deps;
-  
-  foreach my $ana (@genblast_analyses) {
-    my $logic_name = $ana->logic_name;
-
-    my $dependent_ana = $db->get_AnalysisAdaptor->fetch_by_logic_name($cond_list->[0]);
-    die("Could not find dependent analysis for $logic_name\n")
-        if not defined $dependent_ana;
-    
-    $deps{$dependent_ana->logic_name} = $dependent_ana; 
-  }
-
-  if (scalar(values %deps) > 1) {
-    die "When running multiple GenBlasts, they must all have the same dependent/dummy analysis\n";
-  }
-
-  my ($dep) = values %deps;
-
-  return $dep;
-}
-
 #####################################################################################################
 sub clean_old_results {
 
