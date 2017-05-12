@@ -150,9 +150,9 @@ sub clean_old_results {
 
   # for each old transcript, remove its exons
 
-  my $get_transcripts = $db->prepare('SELECT * FROM prediction_transcript WHERE analysis_id=?');
-  my $del_exons       = $db->prepare('DELETE FROM prediction_exon WHERE prediction_transcript_id=?');
-  my $del_transcript  = $db->prepare('DELETE FROM prediction_transcript WHERE prediction_transcript_id=?');
+  my $get_transcripts = $db->dbc->prepare('SELECT * FROM prediction_transcript WHERE analysis_id=?');
+  my $del_exons       = $db->dbc->prepare('DELETE FROM prediction_exon WHERE prediction_transcript_id=?');
+  my $del_transcript  = $db->dbc->prepare('DELETE FROM prediction_transcript WHERE prediction_transcript_id=?');
 
   foreach my $analysis (@genblast_analyses) {
     $get_transcripts->execute($analysis->dbID);
@@ -277,9 +277,9 @@ sub dumpace {
   my $acefile = $wormbase->acefiles."/genblast.ace";
   open (ACE, "> $acefile") || $log->log_and_die("Cant open the ace file $acefile\n");
 
-  my $get_transcripts=$db->prepare('SELECT * FROM prediction_transcript WHERE analysis_id=?');
-  my $get_exons=$db->prepare('SELECT * FROM prediction_exon WHERE prediction_transcript_id=?');
-  my $get_contig=$db->prepare('SELECT name FROM seq_region where seq_region_id=?');
+  my $get_transcripts=$db->dbc->prepare('SELECT * FROM prediction_transcript WHERE analysis_id=?');
+  my $get_exons=$db->dbc->prepare('SELECT * FROM prediction_exon WHERE prediction_transcript_id=?');
+  my $get_contig=$db->dbc->prepare('SELECT name FROM seq_region where seq_region_id=?');
   foreach my $analysis (@genblast_analyses) {
     $get_transcripts->execute($analysis->dbID);
     #$get_transcripts->execute($analysis->input_id_type_analysis->dbID); 
