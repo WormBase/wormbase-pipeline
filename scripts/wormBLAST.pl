@@ -16,7 +16,6 @@
 #    /software/worm/ensembl/ensembl-conf/<species>
 
 
-use Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor;
 use Bio::EnsEMBL::DBSQL::DBConnection;
 use strict;
 
@@ -116,7 +115,7 @@ our $gff_types = ( $config->{gff_types} || "curated coding_exon" );
 
 # mysql database parameters
 #my $dba = Bio::EnsEMBL::DBSQL::DBConnection->new(
-my $dba = Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor->new(
+my $dba = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
 						 -user   => $config->{core_database}->{user},
 						 -dbname => $config->{core_database}->{dbname},
 						 -host   => $config->{core_database}->{host},
