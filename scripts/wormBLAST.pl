@@ -16,7 +16,7 @@
 #    /software/worm/ensembl/ensembl-conf/<species>
 
 
-use Bio::EnsEMBL::DBSQL::DBConnection;
+use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use strict;
 
 use FindBin qw($Bin);
