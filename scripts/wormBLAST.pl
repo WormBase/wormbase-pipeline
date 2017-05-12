@@ -687,9 +687,7 @@ sub update_analysis {
       # do we want to update this blast database?
       if (!$old_db_version || $old_db_file_path ne $latest_db_file_path) {
 
-	my $analysis_id = $analysis->dbID;
-
-	$log->write_to ("updating analysis : $analysis_id => $latest_db_file_path\n");
+	$log->write_to ("updating analysis : ".$analysis->dbID." ".$analysis->logic_name." => $latest_db_file_path\n");
       
 	# set the values we want to update:
 	$analysis->db_file($latest_db_file_path);
