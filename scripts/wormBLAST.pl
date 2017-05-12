@@ -676,19 +676,18 @@ sub update_analysis {
     if (defined $program && ($program eq 'blastp' || $program eq 'blastx')) {
     
       # check to see if the blast db version is NULL or out of date compared to the latest version
-      my $old_db_version = $analysis->db_version();
+      my $old_db_version = $analysis->db_file();
     
       # get the latest database version for this blast database from the database versions file
       my $db_name = $analysis->db;
       my $latest_db_version = get_db_version($db_name);
  
       my $latest_db_file_path = "$wormpipe_dir/BlastDB/$latest_db_version";
-      my $old_db_file_path    = "$wormpipe_dir/BlastDB/$old_db_version";
 
       # do we want to update this blast database?
-      if (!$old_db_version || $old_db_file_path ne $latest_db_file_path) {
+      if (!$old_db_file_path || $old_db_file_path ne $latest_db_file_path) {
 
-	$log->write_to ("updating analysis : $analysis_id ".$analysis->logic_name." => $latest_db_file_path\n");
+	$log->write_to ("updating analysis : $analysis_id ".$analysis->logic_name." $old_db_file_path => $latest_db_file_path\n");
       
 	# set the values we want to update:
 	$analysis->db_file($latest_db_file_path);
