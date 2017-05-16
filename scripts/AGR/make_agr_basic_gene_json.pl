@@ -11,7 +11,7 @@ use Wormbase;
 #use Log_files;
 
 my %XREF_MAP = (
-  "NCBI"       => "NCBIGene",
+  "NCBI"       => "NCBI_Gene",
   "SwissProt"  => "UniProtKB",
   "TrEMBL"     => "UniProtKB",
   "RNAcentral" => "RNAcentral",
@@ -116,16 +116,12 @@ foreach my $sub_query (
     my @xrefs;
     foreach my $dblink ($obj->Database) {
       if (exists $XREF_MAP{$dblink}) {
-        push @xrefs, {
-          dataProvider => $XREF_MAP{$dblink},
-          id =>  $dblink->right->right->name,
-        };
+        my $prefix = $XREF_MAP{$dblink};
+        my $suffix = $dblink->right->right->name; 
+        push @xrefs, "$prefix:$suffix";
       }
     }
-    push @xrefs, {
-      dataProvider => "Ensembl",
-      id => $obj->name,
-    };
+    push @xrefs, "ENSEMBL:" . $obj->name;
     
     my ($gene_class_name, $brief_id_name);
     if ($obj->Gene_class and $obj->Gene_class->Description) {
@@ -147,7 +143,7 @@ foreach my $sub_query (
     my @secondary_ids;
     if ($obj->Acquires_merge) {
       foreach my $g ($obj->Acquires_merge) {
-        push @secondary_ids, $g->name;
+        push @secondary_ids, "WB:" . $g->name;
       }
     }
     
@@ -162,19 +158,17 @@ foreach my $sub_query (
 
     my $json_gene = {
       primaryId          => "WB:" . $obj->name,
-      primaryIdPrefix    => "WB:",
-      primaryIdDisplay   => $obj->name,
       symbol             => $symbol,
       soTermId           => $biotype,
-      taxonId            => $taxid,
+      taxonId            => "NCBITaxon:" . $taxid,
       geneLiteratureUrl  => "http://www.wormbase.org/species/c_elegans/gene/" . $obj->name ."#0e--10",
     };
 
-    $json_gene->{name}            =  $name if $name;
-    $json_gene->{geneSynopsis}    =  $desc if $desc;
-    $json_gene->{synonyms}        =  [sort keys %synonyms] if keys %synonyms;
-    $json_gene->{secondaryIds}    =  \@secondary_ids if @secondary_ids;
-    $json_gene->{crossReferences} =  \@xrefs if @xrefs;
+    $json_gene->{name}              =  $name if $name;
+    $json_gene->{geneSynopsis}      =  $desc if $desc;
+    $json_gene->{synonyms}          =  [sort keys %synonyms] if keys %synonyms;
+    $json_gene->{secondaryIds}      =  \@secondary_ids if @secondary_ids;
+    $json_gene->{crossReferenceIds} =  \@xrefs if @xrefs;
 
     if (defined $locs) {
       if (exists $locs->{$obj->name}) {
