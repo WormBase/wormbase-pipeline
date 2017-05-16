@@ -109,10 +109,10 @@ $log->write_to("Using : $db for annotation data\nUsing : $gdb for primary gene d
 
 # Query the geneace WBGene objects that have been flagged Transposon_in_origin
 my @TPWBGenes;
-my $ccount;
-my $gcount;
-my $ecount1;
-my $ecount2;
+my $ccount = 0;
+my $gcount = 0;
+my $ecount1 = 0;
+my $ecount2 = 0;
 
 my @SeqGenes = $gdb->fetch (-query => "FIND Gene WHERE Transposon_in_origin");
 my @Generef;
@@ -122,12 +122,26 @@ foreach my $SeqGene(@SeqGenes) {
   print "Checking ".$SeqGene->name."\n" if ($verbose);
   push (@Generef,"$SeqGene");
   if ($SeqGene->Status->name eq 'Suppressed'){
-    print "$SeqGene - Correct Status\n" if ($verbose);
+    $log->write_to("$SeqGene - Correct Status\n") if ($verbose);
     next;
   }
+  elsif ($SeqGene->Status->name eq 'Dead'){
+    my $tmpTP_ID = $SeqGene->Sequence_name->name; 
+    $log->write_to("Warning:$SeqGene was Transposon_in_origin but is Dead, check $tmpTP_ID is also dead.\n");
+    if ($SeqGene->Species->name eq $wormbase->full_name($species)) {
+      my @tmpTPcheck = $db->fetch (-query => "FIND CDS $tmpTP_ID");
+      foreach my $tmpTPcheck (@tmpTPcheck) {
+	print "test\n"; 
+      }
+    }
+    else {
+      $log->write_to("You need to check this manually\n");
+    }
+    next;
+  } 
   else {
-   $log->write_to ("$SeqGene - ERROR Not Suppressed but is flagged as a Transposon gene in geneace\n");
-   $ecount1++;
+      $log->write_to ("$SeqGene - ERROR Not Suppressed but is flagged as a Transposon gene in geneace\n");
+      $ecount1++;
   }
 }
 
@@ -136,9 +150,8 @@ foreach my $SeqGene(@SeqGenes) {
 
 # Build Tablemaker query
 my $query = &seqTPs();
-print "\nRetrieving transposon gene data from $seqdb\n" if ($verbose);
+$log->write_to("\nRetrieving transposon gene data from $seqdb\n") if ($verbose);
 my $command = "Table-maker -p $query\nquit\n";
-my $count2;
 my $tacefh;
 
 open($tacefh,  "echo '$command' | $tace $seqdb |");
@@ -180,7 +193,7 @@ my $testgene;
 foreach $testgene (@TPWBGenes){
   $gcount++;
   if ( grep( /^$testgene$/, @Generef ) ) {
-    print "Known $testgene is a Transposon gene\n" if ($verbose);
+    $log->write_to("Known $testgene is a Transposon gene\n") if ($verbose);
     next;
   }
   else {

@@ -27,7 +27,7 @@
   $self->next_name($clone); # clone is required in elegans
 
   # get the CGC-name, if any
-  $cgcname = $self->cgcname($class, $seqname);
+  $cgcname = $self->cgcname($seqname);
 
   # Making a simple prediction change
   $self->replace($class, $old_seqname, $new_seqname); # replace old sequence name with new sequence name
@@ -93,6 +93,7 @@ use NameDB_handler;
 use DBI;
 use DBD::mysql;
 use FileHandle;
+use Coords_converter;
 
 
 =head2 
@@ -397,39 +398,6 @@ sub cmd {
 }
 
 ######################################
-  # get the CGC-name, if any
-  # $cgcname = $self->cgcname($class, $seqname);
-  
-sub cgcname {
-  my ($self, $class, $seqname) = @_;
-  my $cgcname = '';
-  
-  my ($gene_seqname, $letter) = $self->GeneSeqname($seqname);
-
-  # MYSQL CONFIG VARIABLES
-  my ($port,$host,$database,);
-  $host = 'web-wwwdb-core-02';
-  $database = 'nameserver_live';
-  $port = 3449;
-  my $dsn = "dbi:mysql:$database:$host:$port" or die "ERROR Unable to connect: $DBI::errstr\n";
-
-  #                           dsn, user,          pw
-  my $connect = DBI->connect($dsn, $self->{user}, $self->{user});
-
-  my (%storedIDs,$myquery, $execute,);
-
-  # try to pull out CGC names (i.e. name_type_id = 1) linked with the specified sequence name (name_type_id = 3)
-  my $myquery = "select object_name from secondary_identifier where name_type_id = 1 AND object_id in (select object_id from secondary_identifier where name_type_id = 3 AND object_name = '${gene_seqname}')";
-  my $query_handle = $connect->prepare($myquery);
-  $query_handle->execute(); 
-  $query_handle->bind_columns(\$cgcname);
-  while($query_handle->fetch()) {
-    return $cgcname;
-  }
-
-}
-
-######################################
 # make the FMAP display a location
 # returns 0 if OK
 sub goto_location {
@@ -509,7 +477,10 @@ sub Gene2SeqName {
   if ($gene !~ /^WBGene\d+/) {return $gene}
 
   my $gene_obj = $self->{ace}->fetch(Gene => "$gene");
-  my $seqname = $gene_obj->Sequence_name->name;
+  if (!defined $gene_obj) {die "ERROR In Gene2SeqName: $gene was not found in the database\n"}
+  my $seq_obj = $gene_obj->Sequence_name;
+  if (!defined $gene_obj) {die "ERROR In Gene2SeqName: the tag Sequence_name was not populated for Gene $gene in the database\n"}
+  my $seqname = $seq_obj->name;
   if (defined $seqname) {
     return $seqname;
   } else {
@@ -739,7 +710,7 @@ sub  change {
   print "\n";
   
   print "rm new_sneak_file\n";
-  print "newgene.pl -input batch_new.dat -pseudoace new_sneak_file -species $self->{wormbase}->species -bio CDS -who 4025 -user gw3 -password gw3 -namedb -debug gw3 (-test)\n";
+  print "newgene.pl -input batch_new.dat -pseudoace new_sneak_file -species $self->{wormbase}->species -bio CDS -who WBPerson4025 -user gw3 -password gw3 -namedb -debug gw3 (-test)\n";
   print "output is /nfs/wormpub/DATABASES/geneace/NAMEDB_Files/newgene_input.ace\n";
   print "the new_sneak_file gets appended to!\n";
   print "add the Gene tag by reading in the new_sneak_file output of newgene.pl\n";
@@ -859,6 +830,8 @@ sub replace_cds {
   my $existing = $line{EXISTING};
   my $model = $line{MODEL};
 
+  if ($self->structure_comparison_sanity_check($class, $existing, $model)) {print "WARNING $existing and $model have the same structure.\n"; ; $self->force()}
+
   $self->structure_update_sanity_check($class, $existing, $model);
 
   my $history = $self->Make_history($class, $existing);
@@ -897,11 +870,19 @@ sub new_isoform {
     my ($cds, $isoform_letter, $number_of_existing_isoforms, $single, @used_letters) = $self->Get_next_isoform_ID($gene, $update);
 
     if ($single) {
+      if ($self->structure_comparison_sanity_check($class, $existing, $model)) {print "WARNING $existing and $model have the same structure.\n"; $self->force()}
       $self->Make_CDS_into_isoform($class, $cds, 'a');
       $self->Print_CDS_to_Isoform($cds, $cds.'a');
       $self->Last_reviewed($class, $cds.'a');
     }
   
+    # check existing isoforms to see if we are trying to make a duplicate structure
+    pop @used_letters; # get rid of last letter as we have not made it yet and anyway don't wish to compare the new structure to it.
+    foreach my $iso (@used_letters) {
+      my $iso_cds = $cds . $iso;
+      if ($self->structure_comparison_sanity_check($class, $iso_cds, $model)) {print "WARNING $iso_cds and $model have the same structure.\n"; $self->force()}
+    }
+
     my $cdsl = $cds; # CDS name with letter
     $cdsl .= $isoform_letter;
     
@@ -947,7 +928,7 @@ sub new_gene {
 
   my $class = $line{CLASS};
   my @models = @{$line{MODELS}};
-  my ($sequence, $start, $end) = $self->get_Sequence($class, $models[0]);
+  my $sequence = $self->get_Clone($class, $models[0]);
   my $cds = $self->Next_CDS_ID($sequence);
 
   my @new_cds;
@@ -981,7 +962,7 @@ sub new_gene {
 
   # write data for newgene.pl
   # rm new_sneak_file
-  # newgene.pl -input batch_new_file -pseudoace new_sneak_file -species $species -bio CDS -who 4025 -user gw3 -password gw3 -namedb -debug gw3 (-test)
+  # newgene.pl -input batch_new_file -pseudoace new_sneak_file -species $species -bio CDS -who WBPerson4025 -user gw3 -password gw3 -namedb -debug gw3 (-test)
   # output is $database/NAMEDB_Files/newgene_input.ace
   # the new_sneak_file gets appended to!
   # run newgene.pl after the commands have been parsed
@@ -1023,7 +1004,7 @@ sub split_gene {
     }
   }
 
-  my $CGC_name = $self->get_CGC_name($gene);
+  my $CGC_name = $self->get_CGC_name($existing, $gene);
   if (defined $CGC_name) {print "WARNING: The existing gene has a CGC_name: $CGC_name.\nThe half inheriting the CGC_name and Gene ID must be specified as the first sequence name.\n\n"; $self->force()}
 
   my $Parent_splitgroup_count=0; # splitgroup to inherit the original gene and CGC_name, if any (the longest resulting gene)
@@ -1038,7 +1019,7 @@ sub split_gene {
       # use existing $gene ID from the old gene that is being split
     } else {
       # get new $cds
-      my ($sequence, $start, $end) = $self->get_Sequence($class, $splitgroup->[0]);
+      my $sequence = $self->get_Clone($class, $splitgroup->[0]);
       $cds = $self->Next_CDS_ID($sequence);
       # new gene ID required from batch_splitgene.pl - see below
     }
@@ -1086,7 +1067,7 @@ sub split_gene {
     #splitgene.pl -old WBGene00238817 -new OVOC13435 -who 2062 -id WBGene00255447 -load -species ovolvulus
     #splitgene.pl -old WBGene00239023 -new OVOC13436 -who 2062 -id WBGene00255448 -load -species ovolvulus
     if ($splitgroup_count != 0) {
-      print BSPLIT "splitgene.pl -old $gene -new $cds -who 4025 -id WBGene00000000 -load -species $self->{wormbase}->species\n";
+      print BSPLIT "splitgene.pl -old $gene -new $cds -who WBPerson4025 -id WBGene00000000 -load -species $self->{wormbase}->species\n";
       my $species = $self->{wormbase}->species;
       print "In the Nameserver:\nSplit Gene Existing $gene New seq-name $cds Species $species\n";
     }
@@ -1125,7 +1106,7 @@ sub merge_gene {
     my $gene = $self->SeqName2Gene($old_seqname);
     push @genes, $gene;
 
-    my $CGC_name = $self->get_CGC_name($gene);
+    my $CGC_name = $self->get_CGC_name($old_seqname, $gene);
     if (defined $CGC_name) {
       #print "Found CGC_name $CGC_name for $gene in merge\n";
       if (defined $Live) {print "WARNING: Both these genes: '$gene' and '$Live' have CGC_names - take action to move the names.\n\n"; $self->force()}
@@ -1312,7 +1293,7 @@ sub change_class {
 
 ######################################
 # LAST_REVIEWED CLASS $class NEWCLASS EXISTING $old_seqname
-# Set the 'Last_reviewed' tag for the object
+# Set the 'Last_reviewed' tag for the object and all of its sister isoforms
 
 sub last_reviewed {
   my ($self, %line) = @_;
@@ -1320,8 +1301,27 @@ sub last_reviewed {
   my $class = $line{CLASS};
   my $existing = $line{EXISTING};
 
-  $self->Add_remark($class, $existing, "This $class has been inspected and looks satisfactory.");
-  $self->Last_reviewed($class, $existing);
+  # does the specified gene structure exist?
+  my $gene = $self->SeqName2Gene($existing);
+  if (!defined $gene) {die "ERROR Can't set the Last_reviewed tag for $existing - it is not attached to a Gene\n"}
+
+  # get CDS ID for Gene
+  my $update = 0; # don't make a new isoform
+  my ($cds, $isoform_letter, $number_of_existing_isoforms, $single, @used_letters) = $self->Get_next_isoform_ID($gene, $update);
+
+  if ($single) {
+    $self->Add_remark($class, $cds, "This $class has been inspected and looks satisfactory.");
+    $self->Last_reviewed($class, $cds);
+    print "$cds has been reviewed\n";
+
+  } else {
+    foreach my $letter (@used_letters) {
+      my $cdsl = $cds . $letter;
+      $self->Add_remark($class, $cdsl, "This $class has been inspected and looks satisfactory.");
+      $self->Last_reviewed($class, $cdsl);
+      print "$cdsl has been reviewed\n";
+    }
+  }
 
 }
 
@@ -1353,7 +1353,7 @@ sub check_gene_name {
 
   my $gene = $self->SeqName2Gene($existing);
   if (!defined $gene) {die "ERROR Can't check Gene_name for $existing - it is not attached to a Gene\n"}
-  my $CGC_name = $self->get_CGC_name($gene);
+  my $CGC_name = $self->get_CGC_name($existing, $gene);
   if (defined $CGC_name && $CGC_name ne '') {
     print "The $class object $existing has a Gene_name: '$CGC_name'\n";
   } else {
@@ -1718,6 +1718,32 @@ sub get_Sequence {
   return ($cds_sequence_name, $cds_start, $cds_end);
 }
 ######################################
+# get the clone that the 5' end of the structure is on
+
+# this is used when creating a new ID for a locus becuase in elegans
+# the Sequence can span two clones and so is promoted to the top level
+# chromosome sequence, but we don't name loci after chromosomes in
+# elegans, so we want just the Clone name.
+
+sub get_Clone {
+  my ($self, $class, $cds) = @_;
+
+  my ($sequence, $start, $end) = $self->get_Sequence($class, $cds);
+  if ($sequence =~ /^CHROMOSOME/) {
+    my $coords = Coords_converter->invoke($self->{wormbase}->autoace, 0, $self->{wormbase});
+    $sequence = $coords->GetCloneFromCoords($sequence, $start, $start+1);
+    if ($sequence =~ /^CHROMOSOME/) {
+      $sequence = $coords->GetCloneFromCoords($sequence, $end-1, $end);
+      if ($sequence =~ /^CHROMOSOME/) {
+	die "ERROR The ends of this structure both appear to be on the top-level CHROMOSOME sequence\n";
+      }
+    }
+  }
+
+  return $sequence;
+}
+
+######################################
 #  my ($starts, $ends) = &get_Source_exons($class, $source_model); 
 
 sub get_Source_exons {
@@ -1791,7 +1817,7 @@ sub structure_update_sanity_check {
     print "WARNING: The sense of the existing structure and the new model are different: '$existing' ($cds_sense) and '$model' ($sense)\n\n";
     $self->force();
   }
-  # check to warn if the Sequence is changed indicating that the right model is being used
+  # check to warn if the Sequence tag is changed indicating that the right model is being used
   if ($existing_sequence ne $model_sequence) {
     print "WARNING: The locations of the existing structure and the new model are on different sequences: '$existing' ($existing_sequence) and '$model' ($model_sequence)\n\n";
     $self->force();
@@ -1806,6 +1832,48 @@ sub structure_update_sanity_check {
   if (!$overlap) {print "WARNING: The existing structure '$existing' ($cds_start - $cds_end) and new model '$model' ($start - $end) do not overlap\n\n"; $self->force(); }
 
 }
+######################################
+# compare the structures of two objects
+# checks the number and length of the exons
+# allows the Sequence to be different in case one object is on a clone and the other is on a Chromosome
+# returns true if they look like thay are the same things
+sub structure_comparison_sanity_check {
+  my ($self, $class, $existing, $model) = @_;
+
+  # are they the same named object?
+  if ($existing eq $model) {
+    return 1;
+  }
+
+  # check they are the same sense
+  my ($existing_sequence, $cds_start, $cds_end) = $self->get_Sequence($class, $existing);
+  my ($model_sequence, $start, $end) = $self->get_Sequence($class, $model);
+  my $cds_sense = '+';
+  if ($cds_start > $cds_end) {$cds_sense = '-'}
+  my $sense = '+';
+  if ($start > $end) {$sense = '-'}
+  if ($cds_sense ne $sense) {
+    return 0;
+  }
+  
+  # check the span of the objects
+  my $cds_span = $cds_start - $cds_end;
+  my $model_span = $start - $end;
+  if ($cds_span != $model_span) {
+    return 0;
+  }
+
+  # check sequence
+  my $cds_seq = $self->get_DNA($class, $existing);
+  my $model_seq = $self->get_DNA($class, $model);
+  if ($cds_seq eq $model_seq) {
+    return 1;
+  } else {
+    return 0;
+  }
+
+}
+
 ######################################
 
 sub get_DNA {
@@ -2027,18 +2095,56 @@ sub Delete {
 }
 
 ######################################
-
+# test for a CGC name
+# look in the Gene class object first, then try the Nameserver
 sub get_CGC_name {
 
-  my ($self, $gene) = @_;
+  my ($self, $cds, $gene) = @_;
 
-  
-  if (!defined $gene) {die "ERROR Gene ID not specified\n";}
+  if (!defined $gene) {die "ERROR In get_CGC_name: Gene ID not specified\n";}
   my $gene_obj = $self->{ace}->fetch('GENE' => "$gene");
-  if (!defined $gene_obj) {die "ERROR Can't find a Gene object called '$gene'\n";}
+  if (!defined $gene_obj) {die "ERROR In get_CGC_name: Can't find a Gene object called '$gene'\n";}
   my $CGC_name = $gene_obj->CGC_name;
 
+  my $species = $self->{wormbase}->species;
+  if (!defined $CGC_name && $species ne 'elegans') {
+    $CGC_name = $self->cgcname($cds);
+  }
+
   return $CGC_name;
+}
+
+
+######################################
+# get the CGC-name, if any, from the Nameserver
+# $cgcname = $self->cgcname($seqname);
+  
+sub cgcname {
+  my ($self, $seqname) = @_;
+  my $cgcname = '';
+  
+  my ($gene_seqname, $letter) = $self->GeneSeqname($seqname);
+
+  # MYSQL CONFIG VARIABLES
+  my ($port,$host,$database,);
+  $host = 'web-wwwdb-core-02';
+  $database = 'nameserver_live';
+  $port = 3449;
+  my $dsn = "dbi:mysql:$database:$host:$port" or die "ERROR Unable to connect: $DBI::errstr\n";
+
+  #                           dsn, user,          pw
+  my $connect = DBI->connect($dsn, $self->{user}, $self->{user});
+
+  my (%storedIDs,$myquery, $execute,);
+
+  # try to pull out CGC names (i.e. name_type_id = 1) linked with the specified sequence name (name_type_id = 3)
+  my $myquery = "select object_name from secondary_identifier where name_type_id = 1 AND object_id in (select object_id from secondary_identifier where name_type_id = 3 AND object_name = '${gene_seqname}')";
+  my $query_handle = $connect->prepare($myquery);
+  $query_handle->execute(); 
+  $query_handle->bind_columns(\$cgcname);
+  while($query_handle->fetch()) {
+    return $cgcname;
+  }
 
 }
 

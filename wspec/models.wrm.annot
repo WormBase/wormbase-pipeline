@@ -1083,7 +1083,7 @@
                           Paper_evidence ?Paper
                           Disease_model_description ?Text
                           DB_info Database ?Database ^database ?Database_field ^field ?Text ^accession
-                          Curator_confirmed ?Curator
+                          Curator_confirmed ?Person
                           Date_last_updated UNIQUE DateType ^date
 
 
@@ -3239,7 +3239,7 @@
 
 #Address  Street_address Text           // multiple lines including town, state, zip/postcode, whatever
           Country UNIQUE Text
-          Institution UNIQUE Text
+          Institution Text              // Removed the unique from this to allow multiple affiliations.		
           Email Text                    // multiple emails allowed
           Main_phone Text               // phone number for the institution, I presume
           Lab_phone Text
