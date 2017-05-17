@@ -48,13 +48,10 @@ my $nseg = int(($nrow/$segsize))+1;
 
 my $job_name = "worm_${db}_dump";
 
-my $multiple = $ENV{'LSF_SUBMIT_MULTIPLE'};
-my $MEMORY_SIZE = "4000${multiple}";
-
 my $lsf=LSF::JobManager->new(-q => $ENV{'LSB_DEFAULTQUEUE'},
 #                             -P => 'wormbase', 
 			     -R => "select[mem>4000] rusage[mem=4000]", 
-			     -M => $MEMORY_SIZE, 
+			     -M => 4000, 
 #			     -F => 2000000, 
 			     -J => $job_name);
 
