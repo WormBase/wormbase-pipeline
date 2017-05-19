@@ -41,6 +41,14 @@ my $full_name = $wormbase->full_name;
 $acedbpath = $wormbase->autoace unless $acedbpath;
 $ws_version = $wormbase->get_wormbase_version_name unless $ws_version;
 
+if (not defined $outfile) {
+  if ($daf) {
+    $outfile = $wormbase->ontology."/disease_association.".$wormbase->get_wormbase_version_name.".daf.txt";
+  } else {
+    $outfile = "./wormbase.disease_association.${ws_version}.json";
+  }
+}
+
 my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or die("Connection failure: ". Ace->error);
 
 my ( $it, @annots);
