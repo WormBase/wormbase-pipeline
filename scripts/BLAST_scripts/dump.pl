@@ -39,7 +39,7 @@ croak("You must supply an executable script for dumping one batch with -dump_scr
 
 my $dbh=DBI->connect("dbi:mysql:database=$db;host=$host;port=$port", "wormro");
 
-my $sth = $dbh->prepare('select count(*) from protein_feature where analysis_id in (select analysis_id from analysis where module="BlastPep")');
+my $sth = $dbh->prepare('select count(*) from protein_feature where analysis_id in (select analysis_id from analysis where program="blastp")');
 $sth->execute;
 my ($nrow) = $sth->fetchrow;
 
