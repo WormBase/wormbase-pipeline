@@ -121,7 +121,7 @@ while( my $obj = $it->next) {
     geneticSex  => ($obj->Genetic_sex) ? $obj->Genetic_sex->name : "hermaphrodite",
     evidence     => [
       {
-        evidenceCode => ($obj->Evidence_code) ? $obj->Evidence_code->name : "XXX",
+        evidenceCode => ($obj->Evidence_code) ? $obj->Evidence_code->name : "IMP",
         publications => \@papers,
       },
       ],
