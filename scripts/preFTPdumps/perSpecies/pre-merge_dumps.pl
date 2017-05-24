@@ -59,7 +59,7 @@ my %script2files = (
          'dump_interpolated.pl'                    => { output => "$report.interpolated_clones.txt" },
          'dump_promoters.pl'                       => { output => "$report.potential_promotors.fa" },
          'dump_resource_gene_ids.pl'               => { output => "$report.resource_gene_ids.txt" },
-         'dump_species_orthologs.pl'               => { output => "$report.orthologs.txt" },
+#compara is only loaded into autoace 'dump_species_orthologs.pl' => { output => "$report.orthologs.txt" },
          'dump_swissprot.pl'                       => { output => "$report.swissprot.txt" },
 );
 
