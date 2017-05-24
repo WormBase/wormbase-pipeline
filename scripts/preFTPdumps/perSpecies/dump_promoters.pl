@@ -34,7 +34,7 @@ my $log = Log_files->make_build_log($wormbase);
 
 # Establish a connection to the database.
 $log->write_to("connecting to ${\$wormbase->autoace}\n");
-my $dbh = Ace->connect(-path => $wormbase->autoace)||$log->log_and_die(Ace->error);
+my $db = Ace->connect(-path => $wormbase->autoace)||$log->log_and_die(Ace->error);
 
 my $file = $wormbase->reports . '/'.
    join('.',$wormbase->gspecies_name,$wormbase->ncbi_bioproject,'WSXXX.potential_promotors.fa');

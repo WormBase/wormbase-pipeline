@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use Time::localtime;
+use Dumper;
 use IO::File;
 use Storable;
 use Getopt::Long;
@@ -57,11 +57,6 @@ while (my $gene = $i->next) {
 	$orthologs{$_->Species} = [ $_,$methods ];
     }
 
-    foreach ($gene->Ortholog_other) {
-	my $methods  = join('; ',map { "$_" } eval { $_->right->col });
-	$orthologs{$_->Species} = [ $_,$methods ];
-    }
-
     print $of join("\t",$gene,$gene->Public_name),"\n";
     
     foreach (sort keys %orthologs) {
@@ -73,12 +68,3 @@ while (my $gene = $i->next) {
 
 $log->mail;
 $of->close;
-
-
-# yyyy-mm-dd
-sub get_date{
- my $tm = localtime;
- my ($day,$month,$year)=($tm->mday,$tm->mon,$tm->year+1900);
- return "$year-$month-$day";
-}
-

@@ -4,7 +4,7 @@
 #
 
 use Getopt::Long;
-use Time::localtime;
+use Dumper;
 use IO::File;
 use Storable;
 
@@ -92,14 +92,6 @@ foreach my $interaction (@interactions) {
 
 $log->mail;
 $of->close;
-
-
-# yyyy-mm-dd
-sub get_date{
- my $tm = localtime;
- my ($day,$month,$year)=($tm->mday,$tm->mon,$tm->year+1900);
- return "$year-$month-$day";
-}
 
 # as right() doesn't take -1
 sub right_tip{

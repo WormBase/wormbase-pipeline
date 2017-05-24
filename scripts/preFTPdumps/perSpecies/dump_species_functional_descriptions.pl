@@ -12,7 +12,7 @@
 
 use Getopt::Long;
 use IO::File;
-use Time::localtime;
+use Dumper;
 use Storable;
 
 use Wormbase;
@@ -93,27 +93,3 @@ while (my $gene = $i->next) {
 
 $log->mail;
 $of->close;
-
-# yyyy-mm-dd
-sub get_date{
- my $tm = localtime;
- my ($day,$month,$year)=($tm->mday,$tm->mon,$tm->year+1900);
- return "$year-$month-$day";
-}
-
-# wrap a paragraph to 80 characters
-sub rewrap {
-    my $text = shift;
-    $text =~ s/^\n+//gs;
-    $text =~ s/\n+$//gs;
-    my @words = split(/\s/,$text);
-    my ($para,$line);
-    foreach (@words) {
-	    $line .= "$_ ";
-	    next if length ($line) < 80;
-	    $para .= "$line\n";
-	    $line = undef;
-    }
-    $para .= "$line\n" if ($line);
-    return $para;
-}

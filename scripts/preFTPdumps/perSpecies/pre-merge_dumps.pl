@@ -9,8 +9,12 @@
 #  it will by default overwrite existing output files and warn
 
 
+use lib $ENV{CVS_DIR};
+use lib "$ENV{CVS_DIR}/Modules/Third_party";
+
 use Wormbase;
 use Log_files;
+use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
 use LSF::JobManager;
 
 use Getopt::Long;
@@ -50,14 +54,13 @@ my $report = $wormbase->reports . '/'.
 
 # list of script => (output => (),options => "")
 my %script2files = (
-         'dump_species_functional_descriptions.pl' => ( output => "$report.functional_descriptions.txt" ),
-         'dump_species_gene_interactions.pl'       => ( output => "$report.interactions.txt" ),
-         'dump_interpolated.pl'                    => ( output => "$report.interpolated_clones.txt" ),
-         'dump_promotor.pl'                        => ( output => "$report.potential_promotors.fa" ),
-         'dump_resource_gene_ids.pl'               => ( output => "$reports.resource_gene_ids.txt" ),
-         'dump_species_gene_interaction.pl'        => ( output => "$reports.interactions.txt" ),
-         'dump_species_orthoogs.pl'                => ( output => "$reports.orthologs.txt" ),
-         'dump_swissprot.pl'                       => ( output => "$reports.swissprot.txt" ),
+         'dump_species_functional_descriptions.pl' => { output => "$report.functional_descriptions.txt" },
+         'dump_species_gene_interactions.pl'       => { output => "$report.interactions.txt" },
+         'dump_interpolated.pl'                    => { output => "$report.interpolated_clones.txt" },
+         'dump_promoters.pl'                       => { output => "$report.potential_promotors.fa" },
+         'dump_resource_gene_ids.pl'               => { output => "$report.resource_gene_ids.txt" },
+         'dump_species_orthologs.pl'               => { output => "$report.orthologs.txt" },
+         'dump_swissprot.pl'                       => { output => "$report.swissprot.txt" },
 );
 
 # a.) run
@@ -79,7 +82,7 @@ $lsf->clear;
 
 
 # check
-while my(($script,$options)=each %script2files){
+while (my($script,$options) = each %script2files){
     my $file = $options->{output};
     if (-e $file){
        my $size = -s $file;
@@ -98,7 +101,7 @@ while my(($script,$options)=each %script2files){
 # LSF submit $script
 sub queue_script{
    my ($script) = @_;
-   my $cmd = $wormbase->build_cmd_line("preFTPdumps/perSpecies/$script");
+   my $cmd = $wormbase->build_cmd("preFTPdumps/perSpecies/$script");
    $lsf->submit($cmd);
 }
 
@@ -114,8 +117,8 @@ sub clean_previous_output{
 
 # assuming CVS_DIR/scripts/preFTPdumps
 sub check_script{
-   my ($scripts) = @_;
-   my $path = $ENV{CVS_DIR}."/preFTPdumps/perSpecies/$script"
+   my ($script) = @_;
+   my $path = $ENV{CVS_DIR}."/preFTPdumps/perSpecies/$script";
    if (-e $path){
      return 1
    }else{
@@ -125,7 +128,7 @@ sub check_script{
 }
 
 # test and execute
-while (my ($script,$file)= each %script2file){
+while (my($script,$file)= each %script2files){
 
    # check if output file exists already
    $log->write_to("WARNING: overwriting $file\n") if -e $file;

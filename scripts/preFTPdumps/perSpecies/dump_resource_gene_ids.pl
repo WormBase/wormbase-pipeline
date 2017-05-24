@@ -2,9 +2,9 @@
 
 use Getopt::Long;
 use IO::File;
-use Time::localtime;
 use Storable;
 
+use Dumper;
 use Wormbase;
 use Log_files;
 
@@ -53,7 +53,7 @@ while (my $gene = $i->next) {
     my $molecular_name = join('|',$gene->Molecular_name) ||'';
     my $seqName = $gene->Sequence_name ||'';
 
-    print join("\t",$wormbase->ncbi_tax_id,$wormbase->long_name,$gene,$name,$molecular_name,$seqName),"\n";
+    print $of join("\t",$wormbase->ncbi_tax_id,$wormbase->long_name,$gene,$name,$molecular_name,$seqName),"\n";
     $count++;
 }
 
@@ -61,10 +61,3 @@ $log->write_to("found $count genes\n");
 
 $log->mail;
 $of->close;
-
-# yyyy-mm-dd
-sub get_date{
- my $tm = localtime;
- my ($day,$month,$year)=($tm->mday,$tm->mon,$tm->year+1900);
- return "$year-$month-$day";
-}

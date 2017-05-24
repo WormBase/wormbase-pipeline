@@ -3,11 +3,11 @@
 # Utility functions:
 #
 
-package preFTPdumps::perSpecies::Dumper;
+package Dumper;
 
 use Exporter qw(import);
 our @ISA =   qw(Exporter);
-our @EXPORT = qw(get_data rewrap);
+our @EXPORT = qw(get_date rewrap);
 
 use Time::localtime;
 
