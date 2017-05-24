@@ -96,7 +96,7 @@ while (my($script,$options) = each %script2files){
     }
 }
 
-
+$log->mail;
 
 # LSF submit $script
 sub queue_script{
@@ -127,22 +127,4 @@ sub check_script{
    }
 }
 
-# test and execute
-while (my($script,$file)= each %script2files){
 
-   # check if output file exists already
-   $log->write_to("WARNING: overwriting $file\n") if -e $file;
-   $log->write_to("WARNING: overwriting $file.gz\n") if -e "$file.gz";
-   unlink "$file.gz" if -e "$file.gz";
-
-   # execute ...
-   $wormbase->run_script("preFTPdumps/$script");
-
-   # check if the new output actually contains something (some species don't have any data, so only warn)
-   $log->write_to("WARNING: output file $file is empty\n") unless -s $file;
-
-   # we could potentially zip them up here
-   $wormbase->run_cmd("gzip -9 $file");
-}
-
-$log->mail;
