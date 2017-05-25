@@ -61,3 +61,4 @@ $log->write_to("found $count genes\n");
 
 $log->mail;
 $of->close;
+exit(0);

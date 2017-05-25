@@ -93,3 +93,4 @@ while (my $gene = $i->next) {
 
 $log->mail;
 $of->close;
+exit(0);

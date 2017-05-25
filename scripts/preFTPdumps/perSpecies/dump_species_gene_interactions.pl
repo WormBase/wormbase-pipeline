@@ -92,6 +92,7 @@ foreach my $interaction (@interactions) {
 
 $log->mail;
 $of->close;
+exit(0);
 
 # as right() doesn't take -1
 sub right_tip{

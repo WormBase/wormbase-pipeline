@@ -47,3 +47,4 @@ while (my $p = $iterator->next) {
 
 $log->mail;
 $of->close;
+exit(0);

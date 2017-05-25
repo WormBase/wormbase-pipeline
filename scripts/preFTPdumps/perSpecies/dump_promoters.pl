@@ -70,3 +70,4 @@ for my $g (@genes) {
 
 $log->mail;
 $of->close;
+exit(0);
