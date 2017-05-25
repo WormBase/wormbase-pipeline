@@ -35,7 +35,7 @@ $log->write_to("writing to $file\n");
 
 print $of join "\t",qw(#WormPep CDS  SwissProtAc  SwissProtID Description),"\n";
 
-my $iterator = $db->fetch_many(-query=>"find Protein Species=\"${\$wormbase->long_name}\"; WormPep; Live",-filltag=>'Database');
+my $iterator = $db->fetch_many(-query=>"find Protein Species=\"${\$wormbase->long_name}\"; Live",-filltag=>'Database');
 while (my $p = $iterator->next) {
    my $swissprot_id  = $p->Database(0)->at('SwissProt.SwissProt_ID[1]');
    my $swissprot_acc = $p->Database(0)->at('SwissProt.SwissProt_AC[1]');
