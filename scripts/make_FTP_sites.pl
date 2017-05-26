@@ -374,7 +374,6 @@ sub copy_reports {
 
     my $gspecies = $wb->full_name('-g_species'=>1);
     my $bioproj = $wb->ncbi_bioproject;
-    my $version= $WS_version_name;
 
     my $in_prefix = $wb->reports."/$gspecies.${bioproj}.WSXXX.";
     my $out_prefix = "$targetdir/species/$gspecies/$bioproj/annotation/$gspecies.${bioproj}.${WS_version_name}.";
