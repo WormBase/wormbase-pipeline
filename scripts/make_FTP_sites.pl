@@ -376,7 +376,7 @@ sub copy_reports {
     my $bioproj = $wb->ncbi_bioproject;
     my $version= $WS_version_name;
 
-    my $in_prefix = $wb->reports."/$sgpecies.${bioproj}.WSXXX.";
+    my $in_prefix = $wb->reports."/$gspecies.${bioproj}.WSXXX.";
     my $out_prefix = "$targetdir/species/$gspecies/$bioproj/annotation/$gspecies.${bioproj}.${WS_version_name}.";
 
     foreach my $file ('functional_descriptions.txt','interactions.txt','potential_promotors.fa','resource_gene_ids.txt','swissprot.txt') {
