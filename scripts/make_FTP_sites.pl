@@ -169,9 +169,9 @@ map { $skip_species{$_} = 1 } @skip_species;
 map { $only_species{$_} = 1 } @only_species;
 
 if ($all) {
-  $multi_species=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$reports=$blastx=$dump_ko=$md5=$assembly_manifest=$go_public=$orthology_lists=$repeats=1;
+  $multi_species=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$reports=$blastx=$dump_ko=$md5=$assembly_manifest=$go_public=$orthology_lists=$repeats=$reports=1;
 } elsif ($all_nopublic) {
-  $multi_species=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$reports=$blastx=$dump_ko=$md5=$assembly_manifest=$orthology_lists=$repeats=1;
+  $multi_species=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$reports=$blastx=$dump_ko=$md5=$assembly_manifest=$orthology_lists=$repeats=$reports=1;
 }
 
 if (not $WS_version) {
@@ -207,6 +207,8 @@ close FTP_LOCK;
 &copy_blastx if ($blastx);
 
 &copy_multi_species if ($multi_species);
+
+&copy_reports if $reports;
 
 &copy_dna_files if ($dna);
 
@@ -356,6 +358,45 @@ sub copy_blastx {
   $log->write_to("$runtime: Finished copying/zipping non-elegans blastx\n\n");
 }
 
+##################################################
+# copy/write the report files 
+##################################################
+sub copy_reports {
+  my $runtime = $wormbase->runtime;
+  $log->write_to("$runtime: copying/zipping report files\n");
+
+  my %accessors = ($wormbase->species_accessors);
+  $accessors{elegans} = $wormbase;
+
+  foreach my $wb (values %accessors) {
+    next if exists $skip_species{$wb->species};
+    next if @only_species and not exists($only_species{$wb->species});
+
+    my $gspecies = $wb->full_name('-g_species'=>1);
+    my $bioproj = $wb->ncbi_bioproject;
+    my $version= $WS_version_name;
+
+    my $in_prefix = $wb->reports."/$sgpecies.${bioproj}.WSXXX.";
+    my $out_prefix = "$targetdir/species/$gspecies/$bioproj/annotation/$gspecies.${bioproj}.${WS_version_name}.";
+
+    foreach my $file ('functional_descriptions.txt','interactions.txt','potential_promotors.fa','resource_gene_ids.txt','swissprot.txt') {
+
+      my $in_file = $in_prefix . $file;
+      my $out_file = $out_prefix . $file . '.gz';
+
+      if (-e $in_file) {
+        $log->write_to("WARNING: $in_file is empty\n") unless -s $in_file;
+        $wormbase->run_command("cat $in_file | gzip -n -9 -c > $out_file", $log);
+      } else {
+        $log->write_to("WARNING: can't find $in_file\n");
+      }
+
+      $log->write_to("WARNING: $out_file is empty\n") unless -s $out_file;
+    }
+  }
+
+  $log->write_to("$runtime: Finished copying/zipping reports\n\n");
+}
 
 ##################################################
 # copy the xref files 
