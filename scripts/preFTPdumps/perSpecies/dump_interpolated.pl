@@ -54,7 +54,7 @@ my $query =
 
 my @rows = $db->aql($query);
 
-map {print $of,join("\t",@$_),"\n"} @rows;
+map {print $of join("\t",@$_),"\n"} @rows;
 
 $log->mail;
 $of->close;
