@@ -31,7 +31,7 @@ else {$wormbase = Wormbase->new( -debug => $debug, -test => $test,-autoace=> $da
 
 my $log = Log_files->make_build_log($wormbase);
 
-unless(lc("$wormbase") eq 'elegans'){
+unless(lc($wormbase->species) eq 'elegans'){
    $log->write_to("skipping ... as it only works for C.elegans\n");
    $log->mail;
    exit 0;
