@@ -234,7 +234,7 @@ sub write_feature {
   print ACE "SO_term \"",$so_term{$method},"\"\n";
   print ACE "Defined_by_paper \"$paper\"\n";
   print ACE "Associated_with_gene $gene_id\n";
-  print ACE "Transcription_factor $TFID\n" if (defined $TFID && $TFID ne '');
+  print ACE "Associated_with_transcription_factor $TFID\n" if (defined $TFID && $TFID ne '');
   foreach my $gene (@{$TF_gene}) {
     print ACE "Bound_by_product_of $gene\n" if (defined $gene);
   }
