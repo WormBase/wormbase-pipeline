@@ -63,6 +63,7 @@ none
 
 
 =cut
+
 use strict;
 use lib $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'}."/Modules";
@@ -81,10 +82,9 @@ use JSON;
 # Command-line options and variables                                            #
 #################################################################################
 
-my ($help, $debug, $test, $testout, $verbose, $store, $wormbase);
+my ($help, $debug, $test, $testout, $store, $wormbase);
 
 my $acedb;   # only copy across acedb files
-my $chroms;  # only copy across chromosome files
 my $ont;     # only copy across ontology files
 my $misc;    # only copy misc files
 my $wormpep; # only copy wormpep files
@@ -95,7 +95,7 @@ my $pcr;     # only copy file of PCR products
 my $homols;  # only copy best blast hits 
 my $manifest;# check everything has been copied.
 my $all;     # copy everything across
-my $all_nopublic;
+my $all_nopublic; # do everything except the release
 my $dna;
 my $rna;
 my $xrefs;
@@ -111,13 +111,13 @@ my $multi_species;
 my $orthology_lists; # flatfiles of the orthologies fro CalTech
 my $assembly_manifest;
 my $repeats; # copy repeatmasker libraries
+my $predump;
 my (%skip_species, @skip_species, @only_species, %only_species, $WS_version, $WS_version_name);
 
 GetOptions ("help"          => \$help,
 	    "debug=s"       => \$debug,
 	    "test"          => \$test,   # Copies data from the test env to a test ftp under ~/tmp/pub
             "testout=s"     => \$testout, # Copies real data to test location
-	    "verbose"       => \$verbose,
 	    "store:s"       => \$store,
 	    "acedb"         => \$acedb,
             "blastx"        => \$blastx,
@@ -149,15 +149,16 @@ GetOptions ("help"          => \$help,
             "wbversion=s"    => \$WS_version,
             'orthologylists' => \$orthology_lists,
             'repeatmasker'   => \$repeats,
+            'predump'        => \$predump,
     )||die(&usage);
 
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
-  $wormbase = Wormbase->new( -debug   => $debug,
-                             -test    => $test,
-			     );
+  $wormbase = Wormbase->new(-debug   => $debug,
+                            -test    => $test,
+			   );
 }
 
 # Display help if required
@@ -168,18 +169,14 @@ my $log = Log_files->make_build_log($wormbase);
 map { $skip_species{$_} = 1 } @skip_species;
 map { $only_species{$_} = 1 } @only_species;
 
-if ($all) {
-  $multi_species=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$reports=$blastx=$dump_ko=$md5=$assembly_manifest=$go_public=$orthology_lists=$repeats=$reports=1;
-} elsif ($all_nopublic) {
-  $multi_species=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$reports=$blastx=$dump_ko=$md5=$assembly_manifest=$orthology_lists=$repeats=$reports=1;
-}
+$go_public=1 if $all;
 
 if (not $WS_version) {
   $WS_version = $wormbase->get_wormbase_version();
 }
 $WS_version_name = "WS${WS_version}";
 
-my $maintainers     = "All";
+my $maintainers = "All";
 
 my $targetdir = ($testout) 
     ? "$testout/releases/$WS_version_name"
@@ -191,68 +188,75 @@ $log->write_to("WRITING TO $targetdir\n");
 # Main                                                                          #
 #################################################################################
 
-#if this fails its really important that the next step doesnt run - create lockat start and remove at end
-# will be checked by finish_build.pl
-
-my $lockfile = $wormbase->autoace . "/FTP_LOCK";
-$log->write_to("writing lock file\n");
-
-open (FTP_LOCK,">$lockfile") or $log->log_and_die("cant write lockfile $!\n");
-
-print FTP_LOCK "If this file exists something has failed in make_ftp_site.pl\n DO NOT continue until you know what happend and have fixed it\n\n";
-close FTP_LOCK;
-
-&copy_acedb_files if ($acedb);
-
-&copy_blastx if ($blastx);
-
-&copy_multi_species if ($multi_species);
-
-&copy_reports if $reports;
-
-&copy_dna_files if ($dna);
-
-&copy_rna_files if ($rna);
-
-&copy_wormpep_files if ($wormpep);
-
-&copy_gff_files if ($gff);
-
-&copy_report_files if ($reports);
-  		  
-&copy_est_files if ($ests);
-
-&copy_misc_files if ($misc);
-
-&copy_ontology_files if ($ont);
-
-&copy_homol_data if ($homols);
-
-&copy_xrefs if ($xrefs);
-
+&copy_acedb_files    if $acedb;
+&copy_blastx         if $blastx;
+&copy_multi_species  if $multi_species;
+&copy_reports        if $predump;
+&copy_dna_files      if $dna;
+&copy_rna_files      if $rna;
+&copy_wormpep_files  if $wormpep;
+&copy_gff_files      if $gff;
+&copy_report_files   if $report;
+&copy_est_files      if $ests;
+&copy_misc_files     if $misc;
+&copy_ontology_files if $ont;
+&copy_homol_data     if $homol;
+&copy_xrefs          if $xrefs;
 &make_assembly_manifest if $assembly_manifest;
+&extract_confirmed_genes if $genes;
+&make_cDNA2ORF_list  if $cDNA;
+&make_geneID_list    if $geneIDs;
+&make_pcr_list       if $pcr;
+&extract_ko          if $dump_ko;
+&make_orthologylists if $orthology_lists;
+&make_gbrowse_gff    if $gbrowse_gff;
+&copy_repeats        if $repeats;
 
-&extract_confirmed_genes if ($genes);
+### main block
+if ($all||$all_nopublic){
 
-&make_cDNA2ORF_list if ($cDNA);
+  my $lockfile = $wormbase->autoace . "/FTP_LOCK";
+  $log->write_to("writing lock file\n");
 
-&make_geneID_list if ($geneIDs);
+  # if this fails its really important that the next step doesnt run - create lockat start and remove at end
+  # will be checked by finish_build.pl
 
-&make_pcr_list if ($pcr);
+  # check_manifest will remove that file if all files pass the test
+  open (FTP_LOCK,">$lockfile") or $log->log_and_die("cant write lockfile $!\n");
+  print FTP_LOCK "If this file exists something has failed in make_ftp_site.pl\n DO NOT continue until you know what happend and have fixed it\n\n";
+  close FTP_LOCK;
 
-&extract_ko if ($dump_ko);
+  use LSF::JobManager;
+  use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
+  my $defaultMem = 1000;
+  my $lsf = LSF::JobManager->new(-M => $defaultMem, 
+                                 -R => "select[mem>$defaultMem] rusage[mem=$defaultMem]",
+                                 -J => 'perSpeciesDumps', 
+                                 -e => '/dev/null',
+                                 -o => '/dev/null'
+                                );
 
-&make_orthologylists if ($orthology_lists);
+  my @options = qw(acedb blastx multi dna rna wormpep gff reports misc ests homols xrefs ont genes cDNAlist geneIDs pcr gbrowsegff knockout assmanifest orthologylists repeatmasker predump);
 
-&make_gbrowse_gff if ($gbrowse_gff);
+  map {&enqueue($lsf,$_,$log)} @options;
 
-&copy_repeats if $repeats;
+  # finish
+  $log->write_to("Waiting for LSF jobs to finish.\n");
 
-&check_manifest if ($manifest);
+  $lsf->wait_all_children( history => 1 );
 
-&make_md5sums if ($md5);              # creates a file of md5sums for containing entries for all files in release
+  for my $job ( $lsf->jobs ) {
+    if ($job->history->exit_status != 0) {
+      $log->error("ERROR: Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . "\n");
+    }
+  }
+  $lsf->clear;
+}
 
+### needs to go into main
+&check_manifest if $manifest;
 
+&make_md5sums if $md5; # creates a file of md5sums for containing entries for all files in release
 
 $wormbase->run_command("chmod -R ug+w $targetdir", $log);  
 
@@ -268,25 +272,33 @@ if ($go_public) {
 }
 
 
-# warn about errors in subject line if there were any
-$wormbase->run_command("rm -f $lockfile",$log) if ($log->report_errors == 0);
 $log->mail;
-print "Finished.\n" if ($verbose);
 exit (0);
 
+sub enqueue{
+  my($queue,$arg,$log)=@_;
+  my $args='';
+  $args.=join(' ',(map {"-skip_species $_"} @skip_species),(map {"-only_species $_"} @only_species)); # another two globals
+  $args.=" -debug $debug" if $debug; # global
+  $args.=" -store $store" if $store; # global
+  $args.=" -test_out $test_out" if $testout; # global
+  $args.=' -test' if $test; # global
+  $args.=" -wb_version $wb_version" if $WS_version; # global
 
+  my $cmd = $wormbase->build_cmd("make_FTP_sites.pl $args -$arg");
+  $lsf->submit($cmd);
+  $log->write_to("queueing $cmd\n");
+}
 
 
 #################################################################################
 # Subroutines                                                                   #
 #################################################################################
 
-
 ##########################################################
 # copy the WS acedb files across and check on the size
 # The FTP disk tends to be unstable
 ##########################################################
-
 sub copy_acedb_files{
   my $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying release files\n");
@@ -378,7 +390,11 @@ sub copy_reports {
     my $in_prefix = $wb->reports."/$gspecies.${bioproj}.WSXXX.";
     my $out_prefix = "$targetdir/species/$gspecies/$bioproj/annotation/$gspecies.${bioproj}.${WS_version_name}.";
 
-    foreach my $file ('functional_descriptions.txt','interactions.txt','potential_promotors.fa','resource_gene_ids.txt','swissprot.txt') {
+    my @files = ('functional_descriptions.txt','interactions.txt','potential_promotors.fa','resource_gene_ids.txt','swissprot.txt');
+    
+    push (@files,'interpolated_clones.txt') if lc($wb->species) eq 'elegans';
+
+    foreach my $file (@files) {
 
       my $in_file = $in_prefix . $file;
       my $out_file = $out_prefix . $file . '.gz';
@@ -467,7 +483,6 @@ sub copy_repeats {
 ##################################################
 # copy the DNA and agp files across
 ##################################################
-
 sub copy_dna_files{
   my $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying dna and agp files\n");
@@ -595,7 +610,6 @@ sub copy_dna_files{
 ##################################################
 # copy the GFF
 ##################################################
-
 sub copy_gff_files{
   my $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying gff files\n");
@@ -729,7 +743,6 @@ sub copy_gff_files{
 ###############################################
 # copy across miscellaneous multi-species files
 ###############################################
-
 sub copy_report_files {
   my $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying report files\n");
@@ -753,7 +766,6 @@ sub copy_report_files {
 ###############################################
 # copy across miscellaneous multi-species files
 ###############################################
-
 sub copy_multi_species {
 
   my $runtime = $wormbase->runtime;
@@ -804,7 +816,6 @@ sub copy_multi_species {
 ############################################
 # create orthology lists
 ############################################
-
 sub make_orthologylists{
   my $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying rna files\n");
@@ -837,7 +848,6 @@ sub make_orthologylists{
 ############################################
 # copy across ncRNA files
 ############################################
-
 sub copy_rna_files{
   # $wormbase is the main build object (likely elegans) ; $wb is the species specific one
   my $runtime = $wormbase->runtime;
@@ -903,7 +913,6 @@ sub copy_rna_files{
 ############################################
 # copy across ontology files
 ############################################
-
 sub copy_ontology_files {
 
   my $runtime = $wormbase->runtime;
@@ -930,7 +939,6 @@ sub copy_ontology_files {
 ############################################
 # copy across annotation files
 #############################################
-
 sub copy_misc_files{
   my $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying misc files\n");
@@ -1089,7 +1097,6 @@ sub copy_misc_files{
 ############################################
 # copy across wormpep files
 #############################################
-
 sub copy_wormpep_files {
   
   my $runtime = $wormbase->runtime;
@@ -1383,7 +1390,6 @@ sub make_assembly_manifest {
 ###################################
 # extract confirmed genes
 ###################################
-
 sub extract_confirmed_genes{
 
   my $runtime = $wormbase->runtime;
@@ -1433,7 +1439,6 @@ sub extract_confirmed_genes{
 ################################################################################
 # dump KO data
 ################################################################################
-
 sub extract_ko {
   my $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Extracting Knockout Consortium Data\n");
@@ -1457,7 +1462,6 @@ sub extract_ko {
 ################################################################################
 # make list of cDNA -> orf connections
 ################################################################################
-
 sub make_cDNA2ORF_list {
 
   my $runtime = $wormbase->runtime;
@@ -1512,7 +1516,6 @@ EOF
 ################################################################################
 # make list of WBGene IDs to CGC name and Sequence name
 ################################################################################
-
 sub make_geneID_list {
   # For each 'live' Gene object, extract 'CGC_name' and 'Sequence_name' fields (if present)
 
@@ -1566,7 +1569,6 @@ sub make_geneID_list {
 ################################################################################
 # make list of PCR_product connections to CDS and Gene ID plus CGC name
 ################################################################################
-
 sub make_pcr_list {
 
   my $runtime = $wormbase->runtime;
@@ -1640,7 +1642,6 @@ sub make_pcr_list {
 ############################################################
 # copy best blast hits file to ftp site
 ############################################################
-
 sub copy_homol_data {
 
   my $runtime = $wormbase->runtime;
@@ -1752,7 +1753,6 @@ sub go_public {
 }
 
 ##################################################################################
-
 sub CheckSize {
   my ($first,$second)=@_;
   my $F_SIZE = (stat("$first"))[7];
@@ -1763,7 +1763,6 @@ sub CheckSize {
 }
 
 ##################################################################################
-
 sub usage {
     system ('perldoc',$0);
 }
@@ -1879,6 +1878,7 @@ sub check_manifest {
   }
   
   $log->write_to("$count files in place on FTP site\n");
+  $wormbase->run_command("rm -f $lockfile",$log) if ($log->report_errors == 0);
 }
 
 sub checkfile {
@@ -1922,6 +1922,11 @@ GSPECIES.BIOPROJ.WSREL.gene_product_info.gpi.gz
 GSPECIES.BIOPROJ.WSREL.geneIDs.txt.gz
 GSPECIES.BIOPROJ.WSREL.orthologs.txt.gz
 GSPECIES.BIOPROJ.WSREL.repeats.fa.gz
+GSPECIES.BIOPROJ.WSREL.functional_descriptions.txt.gz
+GSPECIES.BIOPROJ.WSREL.interactions.txt.gz
+GSPECIES.BIOPROJ.WSREL.potential_promotors.fa.gz
+GSPECIES.BIOPROJ.WSREL.resource_gene_ids.txt.gz
+GSPECIES.BIOPROJ.WSREL.swissprot.txt.gz
 
 [CORE]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.best_blastp_hits.txt.gz
