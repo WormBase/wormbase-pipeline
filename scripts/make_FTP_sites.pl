@@ -111,6 +111,7 @@ my $multi_species;
 my $orthology_lists; # flatfiles of the orthologies fro CalTech
 my $assembly_manifest;
 my $repeats; # copy repeatmasker libraries
+my $predump;
 my (%skip_species, @skip_species, @only_species, %only_species, $WS_version, $WS_version_name);
 
 GetOptions ("help"          => \$help,
@@ -149,6 +150,7 @@ GetOptions ("help"          => \$help,
             "wbversion=s"    => \$WS_version,
             'orthologylists' => \$orthology_lists,
             'repeatmasker'   => \$repeats,
+            'predump'        => \$predump,
     )||die(&usage);
 
 
@@ -169,9 +171,9 @@ map { $skip_species{$_} = 1 } @skip_species;
 map { $only_species{$_} = 1 } @only_species;
 
 if ($all) {
-  $multi_species=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$reports=$blastx=$dump_ko=$md5=$assembly_manifest=$go_public=$orthology_lists=$repeats=$reports=1;
+  $multi_species=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$reports=$blastx=$dump_ko=$md5=$assembly_manifest=$go_public=$orthology_lists=$repeats=$predump=1;
 } elsif ($all_nopublic) {
-  $multi_species=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$reports=$blastx=$dump_ko=$md5=$assembly_manifest=$orthology_lists=$repeats=$reports=1;
+  $multi_species=$acedb=$dna=$gff=$rna=$misc=$wormpep=$genes=$cDNA=$ests=$geneIDs=$pcr=$homols=$manifest=$ont=$xrefs=$reports=$blastx=$dump_ko=$md5=$assembly_manifest=$orthology_lists=$repeats=$predump=1;
 }
 
 if (not $WS_version) {
@@ -208,7 +210,7 @@ close FTP_LOCK;
 
 &copy_multi_species if ($multi_species);
 
-&copy_reports if $reports;
+&copy_reports if $predump;
 
 &copy_dna_files if ($dna);
 
