@@ -33,14 +33,14 @@ my $file = $wormbase->reports . '/'.
 my $of = IO::File->new($file,'w');
 $log->write_to("writing to $file\n");
 
-print $of join "\t",qw(#WormPep CDS  SwissProtAc  SwissProtID Description),"\n";
+print $of join("\t",qw(#WormPep CDS SwissProtAc UniProtAc Description)) . "\n";
 
 my $iterator = $db->fetch_many(-query=>"find Protein Species=\"${\$wormbase->long_name}\"; Live",-filltag=>'Database');
 while (my $p = $iterator->next) {
-   my $swissprot_id  = $p->Database?$p->Database(0)->at('SwissProt.SwissProt_ID[1]'):'';
-   my $swissprot_acc = $p->Database?$p->Database(0)->at('SwissProt.SwissProt_AC[1]'):'';
+   my $swissprot_id  = $p->Database?$p->Database(0)->at('SwissProt.UniProtAcc[1]'):'';
+   my $swissprot_acc = $p->Database?$p->Database(0)->at('UniProt.UniProtAcc[1]'):'';
    foreach my $cds ($p->Corresponding_CDS){
-     my $desc          = $cds->Brief_identification;
+     my $desc = $cds->Brief_identification;
      print $of join("\t","$p",$cds,$swissprot_id,$swissprot_acc,$desc),"\n";
    }
 }
