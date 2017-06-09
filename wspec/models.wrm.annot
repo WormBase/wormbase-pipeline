@@ -494,6 +494,26 @@
                                                     Qualitative_epistasis
                                                     Opposing_epistasis
                                                     Quantitative_epistasis
+                                            GI_module_one A_phenotypic
+                                                          Mono_phenotypic
+                                                          Cis_phenotypic
+                                                          Iso_phenotypic
+                                                          Trans_phenotypic
+                                            GI_module_two Enhancing
+                                                          Suppressing
+                                                          All_suppressing
+                                                          Super_suppressing
+                                                          Sub_suppressing
+                                                          Inter_suppressing
+                                                          Semi_suppressing
+                                                          Co_suppressing
+                                                          Masking
+                                            GI_module_three Neutral
+                                                            Non_neutral
+                                                            Positive
+                                                            Negative
+                                                            Converging
+                                                            Diverging
                 Interactor PCR_interactor ?PCR_product OUTXREF Interaction #Interactor_info       // PCR_product of the interacting gene or protein, e.g. Yeast Two Hybrid experiments
                            Sequence_interactor ?Sequence OUTXREF Interaction #Interactor_info     // Sequence of the interacting gene or protein
                            Interactor_overlapping_CDS ?CDS OUTXREF Interaction #Interactor_info   // CDS of the interacting gene or protein (or related sequence)
@@ -3239,7 +3259,7 @@
 
 #Address  Street_address Text           // multiple lines including town, state, zip/postcode, whatever
           Country UNIQUE Text
-          Institution Text              // Removed the unique from this to allow multiple affiliations.		
+          Institution Text              // Removed the unique from this to allow multiple affiliations.
           Email Text                    // multiple emails allowed
           Main_phone Text               // phone number for the institution, I presume
           Lab_phone Text
