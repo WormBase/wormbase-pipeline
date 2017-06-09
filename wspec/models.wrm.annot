@@ -1074,7 +1074,11 @@
                           Modeled_by Strain ^modeled-by-strain UNIQUE ?Strain OUTXREF Disease_model_annotation       
                                      Variation ^modeled-by-variation UNIQUE ?Variation OUTXREF Disease_model_annotation 
                                      Transgene ^modeled-by-transgene UNIQUE ?Transgene OUTXREF Disease_model_annotation 
-                                     Disease_relevant_gene ^modeled-by-disease-relevant-gene UNIQUE ?Gene OUTXREF Disease_model_annotation 
+                                     Disease_relevant_gene ^modeled-by-disease-relevant-gene UNIQUE ?Gene OUTXREF Disease_model_annotation
+                          Annotation_made_with Interacting_variation ?Variation //Addition for WS261
+                                               Interacting_transgene ?Transgene
+                                               Interacting_gene ?Gene
+                                               RNAi_experiment ?RNAi
                           Inferred_gene ?Gene OUTXREF Disease_model_annotation
                           Association_type UNIQUE is_model_of
                                                   causes_or_contributes_to_condition
@@ -1100,7 +1104,7 @@
                                                  Ameliorated_phenotype ?Phenotype
                                                  Exacerbated_phenotype ?Phenotype
                                                  Phenotype_comment ?Text
-                          Paper_evidence ?Paper
+                          Paper_evidence UNIQUE ?Paper
                           Disease_model_description ?Text
                           DB_info Database ?Database ^database ?Database_field ^field ?Text ^accession
                           Curator_confirmed ?Person
