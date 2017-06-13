@@ -3261,7 +3261,7 @@
                                                 // connection but not yet verified by
                                                 // the Person
 
-#Address  Street_address Text           // multiple lines including town, state, zip/postcode, whatever
+#Address  Street_address Text #Ordered          // multiple lines including town, state, etc. Uses #Ordered for Datomic conversion.
           Country UNIQUE Text
           Institution Text              // Removed the unique from this to allow multiple affiliations.
           Email Text                    // multiple emails allowed
