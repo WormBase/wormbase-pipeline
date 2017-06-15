@@ -1,0 +1,53 @@
+---
+generics:
+  cvsdir: /nfs/panda/ensemblgenomes/wormbase/software/packages/ensembl/branches/branch-89
+  taxonomy_database:
+    host: mysql-eg-pan-prod.ebi.ac.uk
+    port: 4276
+    dbname: ncbi_taxonomy
+  production_database:
+    host: mysql-eg-pan-prod.ebi.ac.uk
+    user: ensro
+    port: 4276
+    dbname: ensembl_production_parasite
+  analysisconf:  /nfs/panda/ensemblgenomes/wormbase/parasite/config/ensembl-config/ParaSite/pipe_conf/analysis.conf
+echinococcus_canadensis_prjeb8992:
+  taxon_id: 519352
+  assembly_version: ECANG7
+  toplevel: scaffold
+  seqlevel: scaffold
+  fasta: /nfs/panda/ensemblgenomes/wormbase/parasite/data/release10/echinococcus_canadensis_prjeb8992/GCA_900004735.1_ECANG7_genomic.fna.to_parasite
+  gff3: /nfs/panda/ensemblgenomes/wormbase/parasite/data/release10/echinococcus_canadensis_prjeb8992/EcanG7_V2_2.gff3.to_parasite
+  meta:
+   species.division: EnsemblParasite
+   assembly.accession: GCA_900004735.1
+   assembly.coverage_depth: medium
+   assembly.default: ECANG7
+   assembly.name: ECANG7
+   genebuild.start_date: 2017-05-WormBase
+   genebuild.version: 2017-05-WormBase
+   provider.name: BMHid-Biologia Molecular de Hidatidosis
+   provider.url: http://www.bmhid.org/
+   species.alias: Echinococcus canadensis
+   species.db_name: echinococcus_canadensis_prjeb8992
+   species.display_name: Echinococcus canadensis (PRJEB8992)
+   species.production_name: echinococcus_canadensis_prjeb8992
+   species.scientific_name: Echinococcus canadensis
+   species.taxonomy_id: 519352
+   species.species_taxonomy_id: 519352
+   species.url: echinococcus_canadensis_PRJEB8992
+   species.bioproject_id: PRJEB8992
+   species.ftp_genome_id: PRJEB8992
+   sample.gene_param: EcG7_11431
+   sample.gene_text: EcG7_11431
+   sample.location_param: E.canG7_contigs_0009:322-648
+   sample.location_text: E.canG7_contigs_0009:322-648
+   sample.search_text: peptidase
+   sample.transcript_param: maker-E.canG7_contigs_0009-pred_gff_blastx-gene-0.9-mRNA-1
+   sample.transcript_text: maker-E.canG7_contigs_0009-pred_gff_blastx-gene-0.9-mRNA-1
+  core_database:
+   user: ensrw
+   port: 4126
+   password: scr1b3d1
+   host: mysql-eg-devel-1.ebi.ac.uk
+   dbname: ms41_echinococcus_canadensis_prjeb8992_core_10_89_1
