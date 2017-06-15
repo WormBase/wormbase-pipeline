@@ -50,25 +50,3 @@ print "sample.search_text: ribosomal"
 print "sample.transcript_param: " + mrna
 print "sample.transcript_text: " + mrna
 
-'''
-#only if you forgot to add the sample config in the yaml file
-alias='ms41_trichinella_pseudospiralis_iss588prjna257433'
-
-mysqlcommand='mysql -hmysql-eg-devel-1.ebi.ac.uk -P4126 -uensrw -pscr1b3d1 -D'+ alias +'_core_7_84_1' 
-arg=mysqlcommand.split(" ")
-
-cmd='INSERT INTO meta (species_id,meta_key,meta_value) VALUES ("1","sample.gene_param","' + gene + '");'
-subprocess.call(arg+["-e",cmd])
-cmd='INSERT INTO meta (species_id,meta_key,meta_value) VALUES ("1","sample.gene_text","' + gene + '");'
-subprocess.call(arg+["-e",cmd])
-cmd='INSERT INTO meta (species_id,meta_key,meta_value) VALUES ("1","sample.location_text","' + region + '");'
-subprocess.call(arg+["-e",cmd])
-cmd='INSERT INTO meta (species_id,meta_key,meta_value) VALUES ("1","sample.location_param","' + region + '");'
-subprocess.call(arg+["-e",cmd])
-cmd='INSERT INTO meta (species_id,meta_key,meta_value) VALUES ("1","sample.transcript_param","' + mrna + '");'
-subprocess.call(arg+["-e",cmd])
-cmd='INSERT INTO meta (species_id,meta_key,meta_value) VALUES ("1","sample.transcript_text","' + mrna + '");'
-subprocess.call(arg+["-e",cmd])
-cmd='INSERT INTO meta (species_id,meta_key,meta_value) VALUES ("1","sample.search_text","ribosomal");'
-subprocess.call(arg+["-e",cmd])
-'''
