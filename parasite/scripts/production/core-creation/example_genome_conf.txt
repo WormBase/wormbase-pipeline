@@ -48,6 +48,6 @@ echinococcus_canadensis_prjeb8992:
   core_database:
    user: ensrw
    port: 4126
-   password: scr1b3d1
+   password: *****
    host: mysql-eg-devel-1.ebi.ac.uk
    dbname: ms41_echinococcus_canadensis_prjeb8992_core_10_89_1
