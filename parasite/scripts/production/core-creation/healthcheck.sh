@@ -43,11 +43,8 @@ do
 done
 
 
-#mysqlcmd="mysql -uensrw -hmysql-ps-prod-1.ebi.ac.uk -P4450 -pscr1b3PSp1"
-mysqlcmd="mysql -uensrw -hmysql-eg-devel-1.ebi.ac.uk -P4126 -pscr1b3d1"
-#--host=mysql-ps-staging-1.ebi.ac.uk --port=4451 --user=ensrw --password=scr1b3PSs1
-#database_name="hymenolepis_microstoma_prjeb124_core_1_75_1"
-#genome=$WA/data/"hymenolepis_microstoma_1.0.fa"
+mysqlcmd="mysql -uensro -hmysql-eg-devel-1.ebi.ac.uk -P4126"
+
 
 echo "Check database $database_name upload."
 echo "=== Assembly: ==="
