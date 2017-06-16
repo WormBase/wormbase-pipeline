@@ -25,6 +25,8 @@ species_list=`grep '^[a-z0-9]*_[a-z0-9]*_[a-z0-9]*:' $1`
 fasta_list=`grep 'fasta: .*' $1 | awk '{print $2}'`
 gff3_list=`grep 'gff3: .*' $1 | awk '{print $2}'`
 coredb_list=`grep ' dbname: .*' $1 | awk '{print $2}' | tail -n+3`
+host_list=`grep ' host: .*' $1 | awk '{print $2}' | tail -n+3`
+port_list=`grep ' port: .*' $1 | awk '{print $2}' | tail -n+3`
 
 END=`printf "%s\n" $species_list | wc -l`
 
@@ -34,12 +36,14 @@ species=`sed -n ${i}p <<< "$species_list" | sed s'/.$//'`
 fasta=`sed -n ${i}p <<< "$fasta_list"`
 gff3=`sed -n ${i}p <<< "$gff3_list"`
 coredb=`sed -n ${i}p <<< "$coredb_list"`
+host=`sed -n ${i}p <<< "$host_list"`
+port=`sed -n ${i}p <<< "$port_list"`
 
 health_out="/nfs/panda/ensemblgenomes/wormbase/parasite/core-creation/$coredb.healthcheck.out"
 printf "Submitting healthcheck job for $species \n"
 printf "The output of this job will be written in $health_out \n\n"
 
-$DIR/healthcheck.sh -d $coredb -g $fasta -a $gff3 -e $git > $health_out
+$DIR/healthcheck.sh -d $coredb -g $fasta -a $gff3 -u ensro -p $port -s $host > $health_out
 
 done
 
