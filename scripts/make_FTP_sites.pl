@@ -431,7 +431,7 @@ sub copy_xrefs {
     my $bioproj = $wb->ncbi_bioproject;
 
     my $in_prefix = $wb->reports . "/" . $wb->species . ".";
-    my $out_prefix = "$targetdir/species/$gspecies/$bioproj/$gspecies.${bioproj}.${WS_version_name}.";
+    my $out_prefix = "$targetdir/species/$gspecies/$bioproj/annotation/$gspecies.${bioproj}.${WS_version_name}.";
 
     foreach my $io_pair ([ "dbxrefs.txt", "xrefs.txt.gz" ],
                          [ "gene_product_info.gpi", "gene_product_info.gpi.gz" ]) {
@@ -930,6 +930,24 @@ sub copy_ontology_files {
   $wormbase->run_command("cp -f $obo_dir/*.obo $ace_ontology_dir/", $log);
   foreach my $file (glob("$ace_ontology_dir/*.*")) {
     $wormbase->run_command("cp -f $file $ftp_ontology_dir/", $log);
+  }
+
+  my %accessors = ($wormbase->species_accessors);
+  $accessors{elegans} = $wormbase;
+
+  foreach my $wb (values %accessors) {
+    next if exists $skip_species{$wb->species};
+    next if @only_species and not exists($only_species{$wb->species});
+
+    my $gspecies = $wb->full_name('-g_species'=>1);
+    my $bioproj = $wb->ncbi_bioproject;
+
+    my $in_file = $obo_dir . '/gene_association.'. $WS_version_name.'.wb.' . $wb->species;
+    my $out_file = "$targetdir/species/$gspecies/$bioproj/annotation/$gspecies.${bioproj}.${WS_version_name}.go_annotations.gaf.gz";
+
+    if (-e $in_file) {
+        $wormbase->run_command("cat $in_file | gzip -n -9 -c > $out_file", $log);
+    }
   }
 
   $runtime = $wormbase->runtime;
