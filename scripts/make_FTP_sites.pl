@@ -1359,7 +1359,7 @@ sub make_assembly_manifest {
         }
       }
       
-      my ($bioproj, $gc_acc);
+      my ($bioproj, $gc_acc,$ucsc);
       
       my @db = $seq_col->at('Origin.DB_info.Database');
       foreach my $db (@db) {
@@ -1367,6 +1367,8 @@ sub make_assembly_manifest {
           $bioproj = $db->right->right->name;
         } elsif ($db->name eq 'NCBI_Genome_Assembly') {
           $gc_acc  = $db->right->right->name;
+        } elsif ($db->name eq 'UCSC') {
+          $ucsc  = $db->right->right->name;
         }
       }
       
@@ -1381,6 +1383,7 @@ sub make_assembly_manifest {
         bioproject => $bioproj,
         bioproject_description => $bioproj_desc,
         assembly_accession => $gc_acc,
+        ucsc_name => $ucsc,
         assembly_name => (defined $assembly_name) ? $assembly_name->name : "$g_species Assembly unnamed",
         appeared_in => 'WS'.$first_ws_rel->name,
         is_canonical => ($is_canonical) ? JSON::true : JSON::false,
