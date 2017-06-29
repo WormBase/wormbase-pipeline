@@ -1934,7 +1934,6 @@ GSPECIES.BIOPROJ.WSREL.assembly.agp.gz
 GSPECIES.BIOPROJ.WSREL.wormpep_package.tar.gz
 GSPECIES.BIOPROJ.WSREL.transposon_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.transposons.fa.gz
-GSPECIES.BIOPROJ.WSREL.gene_product_info.gpi.gz
 
 [CORE]species/GSPECIES/BIOPROJ/annotation
 GSPECIES.BIOPROJ.WSREL.geneIDs.txt.gz
@@ -1945,6 +1944,8 @@ GSPECIES.BIOPROJ.WSREL.interactions.txt.gz
 GSPECIES.BIOPROJ.WSREL.potential_promotors.fa.gz
 GSPECIES.BIOPROJ.WSREL.resource_gene_ids.txt.gz
 GSPECIES.BIOPROJ.WSREL.swissprot.txt.gz
+GSPECIES.BIOPROJ.WSREL.gene_product_info.gpi.gz
+GSPECIES.BIOPROJ.WSREL.go_annotations.gaf.gz
 
 [CORE]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.best_blastp_hits.txt.gz
