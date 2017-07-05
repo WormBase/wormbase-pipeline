@@ -134,7 +134,7 @@ if ($fly) {
     my $page_download = '/tmp/page_download';
     my $fly_version;
     $log->write_to("\tdownloading flybase listing\n");
-    $wormbase->run_command("wget -O $page_download ftp://flybase.net/genomes/Drosophila_melanogaster/current/fasta/md5sum.txt", $log);
+    $wormbase->run_command("wget -O $page_download ftp://ftp.flybase.net/genomes/Drosophila_melanogaster/current/fasta/md5sum.txt", $log);
     open (PAGE, "<$page_download") || $log->log_and_die("Can't open $page_download\n");
     while (my $line = <PAGE>) {
       if ($line =~ /dmel-all-translation-r(\d+)\.(\d+)\.fasta.gz/) {
@@ -148,7 +148,7 @@ if ($fly) {
     #get the file
     my $fly_download = '/tmp/flybase.gz';
     $log->write_to("\tdownloading flybase file\n");
-    $wormbase->run_command("wget -O $fly_download ftp://flybase.net/genomes/Drosophila_melanogaster/current/fasta/dmel-all-translation-r${fly_version}.fasta.gz", $log);
+    $wormbase->run_command("wget -O $fly_download ftp://ftp.flybase.net/genomes/Drosophila_melanogaster/current/fasta/dmel-all-translation-r${fly_version}.fasta.gz", $log);
     $wormbase->run_command("gunzip -f $fly_download", $log);
     $fly_download = '/tmp/flybase';
     
