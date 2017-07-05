@@ -73,7 +73,12 @@ my %accessors = ($wormbase->species_accessors);
 
 my @genes;
 my @genenames;
-
+my %bio2so = (
+   CDS        => '0001217',
+   Transcript => '0001263',
+   Pseudogene => '0000336',
+   Transposon => '0000111',
+);
 
 ##############################
 # warn/notify on use of -load.
@@ -84,23 +89,25 @@ elsif (defined$load) { $log->write_to("2) Output has been scheduled for auto-loa
 #open file and read
 open (FILE,"<$file") or $log->log_and_die("can't open $file : $!\n");
 open (ACE,">$outputfile") or $log->log_and_die("cant write output: $!\n");
-my($oldgene,$newgene,$newname,$user);
+my($oldgene,$newgene,$newname,$user,$bio);
 my $count=0;
 my $createdcount=0;
 while (<FILE>) {
   chomp;
   
   #newgene.pl -seq Bm16920 -who 4055 -load -id WBGene00255463 -species brugia
-  if (/newgene.pl\s+-seq\s+(\w+)\s+-who\s+(\d+)\s+\S+\s+-id\s+(WBGene\d{8})\s+-species\s+(\w+)/) { #gather info
+  if (/newgene.pl\s+-seq\s+(\w+)\s+-who\s+(\d+)\s+\S+\s+-id\s+(WBGene\d{8})\s+-bio\s+(\S+)\s+-species\s+(\w+)/) { #gather info
     #Captured string ($1) - Bm16922
     #Captured string ($2) - 4055
     #Captured string ($3) - WBGene00255484
-    #Captured string ($4) - brugia
+    #Captured string ($4) - CDS
+    #Captured string ($5) - brugia
     $createdcount++;
     $newname = $1;
     $user = "WBPerson$2";
     $newgene = $3;
-    $species = $4;
+    $bio = $4;
+    $species = $5;
     &create_gene;
   }
   elsif (/\w+/) {
@@ -150,8 +157,16 @@ sub create_gene {
     }
     
     # process NEW gene
+
+    my $SO = $bio2so{$bio};
+    unless ($SO) {
+      printf ("-bio option $bio is not valid, please use %s\n",join('/',keys %bio2so)) if $debug;
+      $log->log("you need to add a biotype to $newgene\n");
+    }
+
+
     my $ver = "1";
-    $output .= "\nGene : $newgene\nVersion $ver\nSequence_name $newname\nPublic_name $newname\nSpecies \"$full_name_data{$species}\"\nHistory Version_change $ver now $user Event Created\nLive\nMethod Gene\n\n";
+    $output .= "\nGene : $newgene\nVersion $ver\nSequence_name $newname\nPublic_name $newname\nSpecies \"$full_name_data{$species}\"\nHistory Version_change $ver now $user Event Created\nLive\nBiotype \"SO:$SO\"\nMethod Gene\n\n";
     
   } else {
     $log->error("ERROR: Missing information to create $newgene\n");
