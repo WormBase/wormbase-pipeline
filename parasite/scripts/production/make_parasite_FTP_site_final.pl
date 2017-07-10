@@ -26,6 +26,7 @@ my (
   $rel_num,
   $checksum, 
   $verbose,
+  $source_tl_dir,
   $staging_tl_dir,
   $production_tl_dir,
   $staging,
@@ -41,6 +42,7 @@ $wb_rel_num = "666";
   'wbrelnum=s'       => \$wb_rel_num,
   'checksum'         => \$checksum,
   'verbose'          => \$verbose,
+  'sourcedir=s'      => \$source_tl_dir,
   'stagingdir=s'     => \$staging_tl_dir,
   'releasedir=s'     => \$production_tl_dir,
   'staging'          => \$staging,
@@ -59,6 +61,11 @@ my $wb_ftp_root_staging    = "../../../../../../../releases";
 my $wb_ftp_root_production = "../../../../../../releases";
 
 if ($staging) {
+  if ($source_tl_dir) {
+    # ensure the raw dump data is mirrored correctly to the staging area
+    my $cp_cmd = "rsync -a $source_tl_dir/WBPS${rel_num} $staging_tl_dir/";
+    system($cp_cmd) and die "Could not successfully rsync from $source_tl_dir to $staging_tl_dir\n";
+  }
   &make_core_symlinks($wb_ftp_root_staging, $staging_tl_dir );
   &make_md5sums($staging_tl_dir);
 } 
