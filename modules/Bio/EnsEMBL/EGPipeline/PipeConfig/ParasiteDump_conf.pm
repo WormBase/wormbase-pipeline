@@ -82,48 +82,6 @@ sub default_options {
     blast_genome_masked  => 1,
     blast_mrna           => 1,
     blast_protein        => 1,
-
-
-    #
-    # vep cache options
-    #
-    vep_outdir           => "/nfs/nobackup/ensemblgenomes/wormbase/parasite/ftp_dumps/vep",
-    vep_species_flags    => {},
-    vep_command          => '--build all',
-    vep_hc_random        => 0.05,
-    vep_region_size      => 1e6,
-    vep_include_pattern  => undef,
-    vep_exclude_pattern  => undef,
-    vep_lrg              => 1,
-    vep_sift             => 0,
-    vep_regulation       => 0,
-    vep_polyphen         => 0,
-    vep_pipeline_dir     => $self->o('vep_outdir'),
-
-    vep_dump_servers => [
-      {
-       	host => 'mysql-ps-staging-1.ebi.ac.uk',
-        port => 4451,
-        user => 'ensro',
-        pass => '',
-      },
-      {
-       	host => 'mysql-ps-staging-2.ebi.ac.uk',
-        port => 4467,
-        user => 'ensro',
-        pass => '',
-      },
-     ],
-
-    vep_ensembl_cvs_root_dir => $ENV{ENSEMBL_CVS_ROOT_DIR},
-    vep_perl_command => '$^X',
-    vep_refseq  => 0,
-    vep_merged  => 0,
-    vep_convert => 1,
-    vep_debug   => 0,
-    vep_eg      => 1,
-    vep_eg_version => $self->o('wbps_version'),
-    vep_ensembl_release => $self->o('ensembl_release'),
   };
 }
 
@@ -180,34 +138,12 @@ sub pipeline_analyses {
   }
 
   my $ini = [];
-  if ($self->o('dump_vep')) {
-    push @$ini, 'InitVEP';
-  }
   if ($self->o('dump_ftp')) {
     push @$ini, 'SpeciesFactory';
   }
   if ($self->o('dump_blast')) {
     push @$ini, 'SpeciesFactoryBlast';
   }
-
-
-  my %vep_common_params = map {$_ => $self->o("vep_${_}") || undef} qw(
-    ensembl_release 
-    ensembl_cvs_root_dir
-    pipeline_dir
-    perl_command
-    refseq
-    merged
-    convert
-    debug
-    eg
-    eg_version
-    sift
-    polyphen
-    regulation
-  );
-
-  $vep_common_params{convert} = $self->o('vep_convert');
 
   return [
     {
@@ -294,52 +230,6 @@ sub pipeline_analyses {
                             },
       -rc_name           => '2Gb_job',
     },
-    #
-    # VEP
-    #
-    {
-      -logic_name    => 'InitVEP',
-      -module        => 'Bio::EnsEMBL::VEP::Pipeline::DumpVEP::InitDump',
-      -parameters    => {
-        include_pattern => $self->o('vep_include_pattern'),
-        exclude_pattern => $self->o('vep_exclude_pattern'),
-        dump_servers    => $self->o('vep_dump_servers'),
-        %vep_common_params
-       },
-      -rc_name       => 'default',
-      -hive_capacity => 1,
-      -max_retry_count => 0,
-      -flow_into     => {
-           2 => ['CreateVEPJobs'],
-          },
-    },
-    {
-      -logic_name    => 'CreateVEPJobs',
-      -module        => 'Bio::EnsEMBL::VEP::Pipeline::DumpVEP::CreateDumpJobs',
-      -parameters    => {
-        merged          => $self->o('vep_merged'),
-        lrg             => $self->o('vep_lrg'),
-        %vep_common_params
-      },
-      -rc_name       => 'default',
-      -analysis_capacity => 20,
-      -max_retry_count => 0,
-      -flow_into     => {
-        3 => ['DumpVEP'],
-      },
-    },
-    {
-      -logic_name    => 'DumpVEP',
-      -module        => 'Bio::EnsEMBL::VEP::Pipeline::DumpVEP::Dumper::Core',
-      -parameters    => {
-        species_flags  => $self->o('vep_species_flags'),
-        %vep_common_params,
-	region_size    => $self->o('vep_region_size'),
-      },
-      -rc_name       => 'default',
-      -analysis_capacity => 10,
-      -max_retry_count => 0,
-      },
     #
     # FTP
     #
