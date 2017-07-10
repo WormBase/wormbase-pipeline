@@ -129,14 +129,17 @@ if (-e $paper) {
 #
 # Parent sequences for features and variations may have changed during the build
 #
-foreach my $ftype ("binding_site", "binding_site_region", "promoter", "regulatory_region") {
-  my $ffile = $wormbase->acefiles . "/feature_${ftype}.ace";
-  if (-e $ffile) {
-    $log->write_to("Parsing out and loading parent info from $ffile...\n");
+foreach my $ffile (glob($wormbase->acefiles . '/feature_*.ace')) {
+  $ffile =~/feature_(*)\.ace/;
+  my $ftype = $1;
+
+  if ($ftype =~ /binding_site|binding_site_region|enhancer|history_feature|promoter|regulatory_region|TF_binding_site|TF_binding_site_region|TSS_region/) {
+    $log->write_to("Parsing out and loading parent info for $ftype from $ffile...\n");
     my $tmp_file = &parse_out_parent_sequences($ffile);
     $wormbase->load_to_database($geneace, $tmp_file, "feature_${ftype}_parents",$log);
     unlink $tmp_file;
   }
+
 }
 
 my $vfile = $wormbase->acefiles . "/map_alleles4geneace.ace";
