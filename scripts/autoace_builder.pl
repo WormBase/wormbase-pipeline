@@ -377,13 +377,30 @@ sub map_features_to_genome {
   $wormbase->run_script("check_class.pl -stage map_features -classes Sequence,Feature", $log);
  
 
-  # all the rest is elegans-specific
-  if ($wormbase->species ne 'elegans') {return}
 
   my $release = $wormbase->get_wormbase_version;
   my $previous_release = $release - 1;
 
   my $assembly_mapper = Remap_Sequence_Change->new($previous_release, $release, $wormbase->species, $wormbase->genome_diffs);
+
+  #
+  # RNAi
+  #
+  my $rnai_file = "misc_RNAi_homols_" . $wormbase->species . ".ace";
+  my $rnai_mappings = $wormbase->misc_dynamic . "/" . $rnai_file;
+
+  if (not $assembly_mapper->remap_test and -e $rnai_mappings) {
+    # genome has not changed. Load the current mappings, and supplement with new data
+    $wormbase->load_to_database( $wormbase->autoace, $rnai_mappings, "RNAi_MISC_DYN", $log );
+    $wormbase->run_script( 'RNAi2Genome.pl -onlyunmapped', $log );
+  } else {
+    # genome has changed. Need to remap everything
+    unlink $rnai_mappings if -e $rnai_mappings;
+    $wormbase->run_script( "RNAi2Genome.pl -acefile $rnai_mappings", $log );
+  }
+
+  # all the rest is elegans-specific
+  if ($wormbase->species ne 'elegans') {return}
 
   #
   # PCR_products
@@ -401,21 +418,6 @@ sub map_features_to_genome {
     $wormbase->run_script( "PCR_product2Genome.pl -acefile $pcr_mappings", $log );
   }
   
-  #
-  # RNAi
-  #
-  my $rnai_file = "misc_RNAi_homols_" . $wormbase->species . ".ace";
-  my $rnai_mappings = $wormbase->misc_dynamic . "/" . $rnai_file;
-
-  if (not $assembly_mapper->remap_test and -e $rnai_mappings) {
-    # genome has not changed. Load the current mappings, and supplement with new data
-    $wormbase->load_to_database( $wormbase->autoace, $rnai_mappings, "RNAi_MISC_DYN", $log );
-    $wormbase->run_script( 'RNAi2Genome.pl -onlyunmapped', $log );
-  } else {
-    # genome has changed. Need to remap everything
-    unlink $rnai_mappings if -e $rnai_mappings;
-    $wormbase->run_script( "RNAi2Genome.pl -acefile $rnai_mappings", $log );
-  }
  
   # check count of classes loaded
   $wormbase->run_script("check_class.pl -stage map_features_elegans -classes PCR_product,Homol_data,Sequence", $log);
