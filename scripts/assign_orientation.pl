@@ -27,7 +27,7 @@ use Modules::PWM;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase,$noload);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $noload, $justID);
 my ($all, $species, $gff_directory, $gff_file, $gff_source, $gff_type, $ID_after);
 
 GetOptions ("help"       => \$help,
@@ -37,6 +37,7 @@ GetOptions ("help"       => \$help,
 	    "store:s"    => \$store,
             "noload"     => \$noload,
 	    "all"        => \$all, # do all EST sequences, not just the ones with no orientation
+	    "ID:s"       => \$justID, # only do this ID for debugging
 	    "species:s"  => \$species, # the default is elegans
 	    "gff_directory:s" => \$gff_directory,	# stuff to specify a specific GFF file to search
 	    "gff_file:s"      => \$gff_file,
@@ -150,7 +151,7 @@ my $ovlp = Overlap->new($database, $wormbase);
   # get ESTs with no orientation (or get all ESTs if $all or a GFF file is specified)
   my @no53_est;
   foreach my $est (@est) {
-
+    if (defined $justID && $est->[0] ne $justID) {next} # do only one ID for debugging
     print "$est->[0] ignored\n" if ($verbose && exists $ignore{$est->[0]});
     if (exists $ignore{$est->[0]}) {next;} # withdrawn, rRNA or chimaeric
 
@@ -227,7 +228,32 @@ my $ovlp = Overlap->new($database, $wormbase);
 	    $splice_ok{$id} = 1;
 	  }
 	}
+      }
+      if (abs($hit_end - $prev_hit_start) == 1) {
+	print "$id $sense\n" if ($verbose);
 
+	# check the splice sites
+	# forward sense
+	$score_5 = $pwm->splice5($seq, $start-1, '-'); # -1 to convert from sequence pos to perl string coords
+	$score_3 = $pwm->splice3($seq, $prev_end, '-'); # -1 to convert from sequence pos to perl string coords
+	$forward = $score_5 + $score_3;
+
+	# reverse sense
+	$score_5 = $pwm->splice5($seq, $prev_end-1, '+'); # -1 to convert from sequence pos to perl string coords
+	$score_3 = $pwm->splice3($seq, $start-2, '+'); # -1 to convert from sequence pos to perl string coords
+	$reverse = $score_5 + $score_3;
+
+	# good difference between the intron splice scores on the two strands
+	# and one or the other has good splice scores
+	if (abs($reverse - $forward) > 1 && ($reverse > 1 || $forward > 1)) {
+	  print "$id $forward $reverse " if ($verbose);
+	  if (($sense eq '-' && $reverse > 1) || ($sense eq '+' && $forward > 1)) {
+	    print "$id $forward $reverse  ************* REVERSE SENSE REQUIRED (splice)\n" if ($verbose);
+	    $splice_reverse{$id} = 1;
+	  } elsif (($sense eq '-' && $forward > 1) || ($sense eq '+' && $reverse > 1)) {
+	    $splice_ok{$id} = 1;
+	  }
+	}
       }
     }
   }
