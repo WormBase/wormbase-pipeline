@@ -75,7 +75,7 @@ my $gff_splits_dir  = $wormbase->gff_splits;  # AUTOACE GFF SPLIT
 
 my %mol_types = ( 'elegans'          => [qw( EST mRNA OST RST Trinity)],
                   'briggsae'         => [qw( mRNA EST Trinity)],
-                  'remanei'          => [qw( mRNA EST Trinity)],
+                  'remanei'          => [qw( mRNA EST)],
                   'brenneri'         => [qw( mRNA EST)],
                   'japonica'         => [qw( mRNA EST Trinity)],
                   'brugia'           => [qw( mRNA EST Trinity)],
