@@ -209,6 +209,7 @@ if ($enaprotxrefs) {
   $wormbase->run_script( "get_ena_submission_xrefs.pl -proteinxrefs", $log);
   $wormbase->run_script( "propagate_cds_xrefs_to_protein.pl", $log );
   if ($wormbase->species eq 'elegans') {
+    $wormbase->run_script( 'load_panther_xrefs.pl', $log);
     $wormbase->run_script( 'generate_dbxref_file.pl -nocodingtrans -ebiupload', $log);  
   }
   $wormbase->run_script('dump_gpi.pl', $log);
