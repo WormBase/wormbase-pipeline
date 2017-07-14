@@ -11,15 +11,27 @@ use Wormbase;
 #use Log_files;
 
 my %XREF_MAP = (
-  "NCBI"       => "NCBI_Gene",
-  "SwissProt"  => "UniProtKB",
-  "TrEMBL"     => "UniProtKB",
-  "RNAcentral" => "RNAcentral",
+  "NCBI"       => {
+    gene => "NCBI_Gene",
+  },
+  "SwissProt"  => {
+    UniProtAcc => "UniProtKB",
+  },
+  "TrEMBL"     => {
+    UniProtAcc => "UniProtKB",
+  },
+  "RNAcentral" => {
+    URSid => "RNAcentral",
+  },
+  "Panther" => {
+    gene   => "PANTHER_SEQ",
+    family => "PANTHER",
+  }
 );
 
 
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $species);
+my ($help, $debug, $test, $verbose, $store, $wormbase);
 my ($outfile, $acedbpath, $ws_version, $gtf_file, $out_fh, $locs);
 
 GetOptions ("help"        => \$help,
@@ -30,7 +42,6 @@ GetOptions ("help"        => \$help,
 	    "database:s"  => \$acedbpath,
 	    "outfile:s"   => \$outfile,
             "gtf=s"       => \$gtf_file,
-            "species=s"   => \$species,
             "wsversion=s" => \$ws_version,
 	    );
 
@@ -116,9 +127,13 @@ foreach my $sub_query (
     my @xrefs;
     foreach my $dblink ($obj->Database) {
       if (exists $XREF_MAP{$dblink}) {
-        my $prefix = $XREF_MAP{$dblink};
-        my $suffix = $dblink->right->right->name; 
-        push @xrefs, "$prefix:$suffix";
+        foreach my $field ($dblink->col) {
+          if (exists $XREF_MAP{$dblink}->{$field}) {
+            my $prefix = $XREF_MAP{$dblink}->{$field};
+            my $suffix = $field->right->name; 
+            push @xrefs, "$prefix:$suffix";
+          }
+        }
       }
     }
     push @xrefs, "ENSEMBL:" . $obj->name;
