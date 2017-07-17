@@ -1,47 +1,64 @@
 #!/usr/bin/env perl
-# script to dump the interpro domains for each species into a flatfile in MISC_OUTPUT
+#
+# script to dump the interpro domains for each species into a flatfile in REPORTs
+#
 # should be run post-merge
+#
 
-use feature qw(say);
+use strict;
+use Getopt::Long;
+use IO::File;
+use Storable;
 
 use Ace;
 use Wormbase;
-use Getopt::Long;
-use IO::File;
-use strict;
+use Log_files;
 
-my($test,$debug);
+my($test,$debug, $species, $store, $wb, $outfile);
+
 GetOptions(
   'test'      => \$test,
-  'debug=s'   => \$debug
+  'debug=s'   => \$debug,
+  'species=s' => \$species,
+  'store=s'   => \$store,
+  'outfile=s' => \$outfile,
 )||die();
 
-my $wb = Wormbase->new(-debug => $debug, 
-                       -test => $test, 
-		      );
-
-my $log = Log_files->make_build_log($wb);
-my $db = Ace->connect(-path => $wb->autoace)||$log->log_and_die(Ace->error);
-
-my %species_accessors=$wb->species_accessors;
-$species_accessors{ref($wb)} = $wb;
-
-while (my($k,$v)=each %species_accessors){
-
-  my $outfile =$v->autoace.'/MISC_OUTPUT/protein_domains.tsv';
-  my $out = IO::File->new($outfile,'w');
-  $log->log_and_die("cannot open $outfile\n") unless defined $out;
-  $log->write_to("dumping domains for $k to $outfile\n");
-
-  my $cdses = $db->fetch_many(-query => "find CDS Corresponding_protein; Species=\"${\$v->long_name}\"") 
-   ||$log->log_and_die(Ace->error);
-
-  while (my $cds = $cdses->next){
-    my $protein = $cds->Corresponding_protein;
-    my @motifs = grep {/INTERPRO:/} $protein->Motif_homol;
-    say $out join("\t",($cds->Gene,$cds->Gene->Public_name,$protein,
-                map {"$_". ($_->fetch->Title?' "'.$_->fetch->Title.'"':'')} @motifs));
-  }
+my $wormbase;
+if ($store) { 
+  $wb = Storable::retrieve($store) or croak("Can't restore wormbase from $store\n")
+}else {
+  $wb = Wormbase->new( -debug => $debug, -test => $test,-organism => $species)
 }
 
+if (not defined $outfile) {
+  my $fname = sprintf("%s.%s.%s.protein_domains.csv", $wb->gspecies_name, $wb->ncbi_bioproject, "WSXXX");
+  $outfile = $wb->reports."/$outfile";
+}
+
+$species = $wb->species;
+
+my $full = $wb->long_name;
+my $log = Log_files->make_build_log($wb);
+my $out = IO::File->new($outfile,'w');
+
+$log->log_and_die("cannot open $outfile\n") unless defined $out;
+$log->write_to("dumping domains for $species to $outfile\n");
+
+my $db = Ace->connect(-path => $wb->autoace)||$log->log_and_die(Ace->error);
+
+my $cdses = $db->fetch_many(-query => "find CDS Corresponding_protein; Species=\"$full\"") 
+    ||$log->log_and_die(Ace->error);
+
+while (my $cds = $cdses->next){
+  my $protein = $cds->Corresponding_protein;
+  my @motifs = grep {/INTERPRO:/} $protein->Motif_homol;
+  print $out join("\t",($cds->Gene,$cds->Gene->Public_name,$protein,
+                      map {"$_". ($_->fetch->Title?' "'.$_->fetch->Title.'"':'')} @motifs)), "\n";
+}
+$db->close();
+
+
+
 $log->mail();
+exit(0);
