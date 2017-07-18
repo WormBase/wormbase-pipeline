@@ -1,14 +1,13 @@
 #!/usr/bin/env perl
 #
 # script to dump the interpro domains for each species into a flatfile in REPORTs
-#
-# should be run post-merge
-#
 
 use strict;
 use Getopt::Long;
 use IO::File;
 use Storable;
+
+use lib $ENV{CVS_DIR};
 
 use Ace;
 use Wormbase;
@@ -32,8 +31,8 @@ if ($store) {
 }
 
 if (not defined $outfile) {
-  my $fname = sprintf("%s.%s.%s.protein_domains.csv", $wb->gspecies_name, $wb->ncbi_bioproject, "WSXXX");
-  $outfile = $wb->reports."/$outfile";
+  my $fname = "protein_domains.csv";
+  $outfile = $wb->reports."/$fname";
 }
 
 $species = $wb->species;

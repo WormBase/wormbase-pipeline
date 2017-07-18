@@ -10,17 +10,20 @@
 #   -test                  use the test database
 #   -database <path>       use a custom database
 
+use strict;
+
 use Getopt::Long;
 use IO::File;
 use Dumper;
 use Storable;
 
+use lib $ENV{CVS_DIR};
+
 use Wormbase;
 use Log_files;
 
-use strict;
 
-my ($species,$format,$store,$debug,$test,$database);
+my ($species,$format,$store,$debug,$test,$database,$outfile);
 GetOptions(
      'species=s'  => \$species,
      'format=s'   => \$format,
@@ -28,6 +31,7 @@ GetOptions(
      'debug=s'    => \$debug,
      'test'       => \$test,
      'database=s' => \$database,
+     'outfile=s'  => \$outfile,
 )||die(@!);
 
 
@@ -44,10 +48,10 @@ my $log = Log_files->make_build_log($wormbase);
 $log->write_to("connecting to ${\$wormbase->autoace}\n");
 my $dbh = Ace->connect(-path => $wormbase->autoace)||$log->log_and_die(Ace->error);
 
-my $file = $wormbase->reports . '/'.
-   join('.',$wormbase->gspecies_name,$wormbase->ncbi_bioproject,'WSXXX.functional_descriptions.txt');
-my $of = IO::File->new($file,'w');
-$log->write_to("writing to $file\n");
+$outfile = $wormbase->reports . '/functional_descriptions.txt'
+    if not defined $outfile;
+my $of = IO::File->new($outfile,'w');
+$log->write_to("writing to $outfile\n");
 
 my $separator = "=\n";
 my $no_entry = 'none available';

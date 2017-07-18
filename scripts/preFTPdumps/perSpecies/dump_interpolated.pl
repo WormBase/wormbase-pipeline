@@ -11,41 +11,51 @@ use IO::File;
 use Storable;
 use Getopt::Long;
 
+use lib $ENV{CVS_DIR};
+
 use Wormbase;
 use Log_files;
 
 use strict;
 
-my ($store,$debug,$test,$database,$species);
+my ($store,$debug,$test,$database,$species,$outfile);
 GetOptions(
-       'store=s' => \$store,
-       'debug=s' => \$debug,
-       'test'    => \$test,
-       'species=s'  => \$species,
-       'database=s' => \$database,
+  'store=s' => \$store,
+  'debug=s' => \$debug,
+  'test'    => \$test,
+  'species=s'  => \$species,
+  'database=s' => \$database,
+  'outfile=s'  => \$outfile,
+  
 )||die(@!);
 
 my $wormbase;
-if ($store) { $wormbase = Storable::retrieve($store) or croak("Can't restore wormbase from $store\n")} 
-else {$wormbase = Wormbase->new( -debug => $debug, -test => $test,-autoace=> $database,-organism => $species)}
+if ($store) { 
+  $wormbase = Storable::retrieve($store) or croak("Can't restore wormbase from $store\n")
+} else {
+  $wormbase = Wormbase->new( -debug => $debug, 
+                             -test => $test,
+                             -autoace=> $database,
+                             -organism => $species);
+}
 
 my $log = Log_files->make_build_log($wormbase);
 
 unless(lc($wormbase->species) eq 'elegans'){
-   $log->write_to("skipping ... as it only works for C.elegans\n");
-   $log->mail;
-   exit 0;
+  $log->write_to("skipping ... as it only works for C.elegans\n");
+  $log->mail;
+  exit 0;
 }
 
 # Establish a connection to the database.
 $log->write_to("connecting to ${\$wormbase->autoace}\n");
 my $db = Ace->connect(-path => $wormbase->autoace )||die Ace->error;
 
-my $file = $wormbase->reports . '/'.
-   join('.',$wormbase->gspecies_name,$wormbase->ncbi_bioproject,'WSXXX.interpolated_clones.txt');
+$outfile = $wormbase->reports . '/'. 'interpolated_clones.txt' 
+    if not defined $outfile;
 
-my $of = IO::File->new($file,'w');
-$log->write_to("writing to $file\n");
+my $of = IO::File->new($outfile,'w');
+$log->write_to("writing to $outfile\n");
 
 
 my $query = 

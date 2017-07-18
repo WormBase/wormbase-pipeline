@@ -1190,6 +1190,7 @@ sub spell        { my $self = shift; return $self->{'spell_dir'}; }
 sub misc_output  { my $self = shift; return $self->{'misc_output'}; }
 sub logs         { my $self = shift; return $self->{'logs'}; }
 sub ftp_upload   { my $self = shift; return $self->{'ftp_upload'}; }
+sub ftp_staging  { my $self = shift; return $self->{'ftp_staging'}; }
 sub ftp_site     { my $self = shift; return $self->{'ftp_site'}; }
 sub submit_repos { my $self = shift; return $self->{'submit_repos'}; }
 sub reports      { my $self = shift; return $self->{'reports'}; }
@@ -1312,11 +1313,13 @@ sub establish_paths {
   
   if ($self->test) {
     $self->{'ftp_upload'} = $self->wormpub . "/TEST/ftp_uploads/wormbase";
+    $self->{'ftp_staging'} = $self->wormpub . "/TEST/FTP_STAGING";
     $self->{'ftp_site'}   = $self->wormpub . "/TEST/FTP_site/pub/wormbase";
     $self->{'build_data'} = $self->wormpub . "/TEST/BUILD_DATA";
     $self->{'genome_diff'} = $self->wormpub . "/TEST/CHROMOSOME_DIFFERENCES";
   } else {
     $self->{'ftp_upload'} = $self->wormpub . "/ftp_uploads";
+    $self->{'ftp_staging'} = $self->wormpub . "/FTP_STAGING";
     $self->{'ftp_site'}   = "/nfs/disk69/ftp/pub/consortia/wormbase";
     $self->{'build_data'} = $self->wormpub . "/BUILD_DATA";
     $self->{'genome_diff'} = $self->wormpub . "/CHROMOSOME_DIFFERENCES";

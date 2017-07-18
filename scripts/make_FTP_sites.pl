@@ -86,12 +86,8 @@ my ($help, $debug, $test, $testout, $store, $wormbase);
 
 my $acedb;   # only copy across acedb files
 my $ont;     # only copy across ontology files
-my $misc;    # only copy misc files
+my $annots;  # only copy annotations folder files
 my $wormpep; # only copy wormpep files
-my $genes;   # only copy confirmed genes
-my $cDNA;    # only copy cDNA2orf file
-my $geneIDs; # only copy file of gene IDs
-my $pcr;     # only copy file of PCR products
 my $homols;  # only copy best blast hits 
 my $manifest;# check everything has been copied.
 my $all;     # copy everything across
@@ -102,12 +98,10 @@ my $gff;
 my $reports;
 my $ests;
 my $blastx;
-my $dump_ko;
+my $letter;
 my $md5;
 my $multi_species;
-my $orthology_lists; # flatfiles of the orthologies fro CalTech
 my $assembly_manifest;
-my $repeats; # copy repeatmasker libraries
 my (%skip_species, @skip_species, @only_species, %only_species, $WS_version, $WS_version_name);
 
 GetOptions ("help"          => \$help,
@@ -123,25 +117,18 @@ GetOptions ("help"          => \$help,
 	    "wormpep"       => \$wormpep,
 	    "gff"           => \$gff,
             "reports"       => \$reports,
-	    "misc"          => \$misc,
+	    "annots"        => \$annots,
             "ests"          => \$ests,
 	    "homols"        => \$homols,
-            "xrefs"         => \$xrefs,
 	    "ont"           => \$ont,
-	    "genes"         => \$genes,
-	    "cDNAlist"      => \$cDNA,
-	    "geneIDs"       => \$geneIDs,
-	    "pcr"           => \$pcr,
-            "knockout"      => \$dump_ko,
             "assmanifest"   => \$assembly_manifest,
+            "letter"        => \$letter,
 	    "manifest"      => \$manifest,
             "md5"            => \$md5,
             "skipspecies=s@" => \@skip_species,
             "onlyspecies=s@" => \@only_species,
 	    "all"            => \$all,
             "wbversion=s"    => \$WS_version,
-            'orthologylists' => \$orthology_lists,
-            'repeatmasker'   => \$repeats,
     )||die(&usage);
 
 
@@ -150,7 +137,7 @@ if ( $store ) {
 } else {
   $wormbase = Wormbase->new(-debug   => $debug,
                             -test    => $test,
-			   );
+      );
 }
 
 # Display help if required
@@ -170,7 +157,7 @@ my $maintainers = "All";
 
 my $targetdir = ($testout) 
     ? "$testout/releases/$WS_version_name"
-    : $wormbase->ftp_site . "/staging/releases/$WS_version_name";
+    : $wormbase->ftp_staging . "/releases/$WS_version_name";
 
 $log->write_to("WRITING TO $targetdir\n");
 
@@ -178,96 +165,25 @@ $log->write_to("WRITING TO $targetdir\n");
 # Main                                                                          #
 #################################################################################
 
-&copy_acedb_files    if $acedb;
-&copy_blastx         if $blastx;
-&copy_multi_species  if $multi_species;
-&copy_dna_files      if $dna;
-&copy_rna_files      if $rna;
-&copy_wormpep_files  if $wormpep;
-&copy_gff_files      if $gff;
-&copy_report_files   if $reports;
-&copy_est_files      if $ests;
-&copy_misc_files     if $misc;
-&copy_ontology_files if $ont;
-&copy_homol_data     if $homols;
-&copy_xrefs          if $xrefs;
-&copy_assembly_manifest if $assembly_manifest;
-&extract_confirmed_genes if $genes;
-&make_cDNA2ORF_list  if $cDNA;
-&make_geneID_list    if $geneIDs;
-&make_pcr_list       if $pcr;
-&extract_ko          if $dump_ko;
-&make_orthologylists if $orthology_lists;
-&copy_repeats        if $repeats;
-
-### main block
-if ($all) {
-
-  my $lockfile = $wormbase->autoace . "/FTP_LOCK";
-  $log->write_to("writing lock file\n");
-
-  # if this fails its really important that the next step doesnt run - create lockat start and remove at end
-  # will be checked by finish_build.pl
-
-  # check_manifest will remove that file if all files pass the test
-  open (FTP_LOCK,">$lockfile") or $log->log_and_die("cant write lockfile $!\n");
-  print FTP_LOCK "If this file exists something has failed in make_ftp_site.pl\n DO NOT continue until you know what happend and have fixed it\n\n";
-  close FTP_LOCK;
-
-  use LSF::JobManager;
-  use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
-  my $defaultMem = 1000;
-  my $lsf = LSF::JobManager->new(-M => $defaultMem, 
-                                 -R => "select[mem>$defaultMem] rusage[mem=$defaultMem]",
-                                 -J => 'perSpeciesDumps', 
-                                 -e => '/dev/null',
-                                 -o => '/dev/null'
-                                );
-
-  my @options = qw(acedb blastx multi dna rna wormpep gff reports misc ests homols xrefs ont genes cDNAlist geneIDs pcr knockout assmanifest orthologylists repeatmasker);
-
-  map {&enqueue($lsf,$_,$log)} @options;
-
-  # finish
-  $log->write_to("Waiting for LSF jobs to finish.\n");
-
-  $lsf->wait_all_children( history => 1 );
-
-  for my $job ( $lsf->jobs ) {
-    if ($job->history->exit_status != 0) {
-      $log->error("ERROR: Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . "\n");
-    }
-  }
-  $lsf->clear;
-
-  $wormbase->run_command("rm -f $lockfile",$log) if ($log->report_errors == 0);
-}
-
-&check_manifest      if $manifest or $all;
-&make_md5sums        if $md5 or $all;
+&copy_acedb_files        if $acedb or $all;
+&copy_blastx             if $blastx or $all;
+&copy_multi_species      if $multi_species or $all;
+&copy_dna_files          if $dna or $all;
+&copy_rna_files          if $rna or $all;
+&copy_wormpep_files      if $wormpep or $all;
+&copy_gff_files          if $gff or $all;
+&copy_report_files       if $reports or $all;
+&copy_est_files          if $ests or $all;
+&copy_annotations_files  if $annots or $all;
+&copy_ontology_files     if $ont or $all;
+&copy_homol_data         if $homols or $all;
+&copy_assembly_manifest  if $assembly_manifest or $all;
+&copy_release_letter     if $letter or $all;
+&check_manifest          if $manifest or $all;
+&make_md5sums            if $md5 or $all;
 
 $log->mail;
-exit (0);
-
-sub enqueue{
-  my($lsf,$arg,$log) = @_;
-  my $args='';
-  $args.=join(' ',(map {"-skip_species $_"} @skip_species),(map {"-only_species $_"} @only_species)); # another two globals
-  $args.=" -debug $debug" if $debug; # global
-  $args.=" -store $store" if $store; # global
-  $args.=" -test_out $testout" if $testout; # global
-  $args.=' -test' if $test; # global
-  $args.=" -wb_version $WS_version" if $WS_version; # global
-
-  my $cmd = $wormbase->build_cmd("make_FTP_sites.pl $args -$arg");
-  $lsf->submit($cmd);
-  $log->write_to("queueing $cmd\n");
-}
-
-
-#################################################################################
-# Subroutines                                                                   #
-#################################################################################
+exit(0);
 
 ##########################################################
 # copy the WS acedb files across and check on the size
@@ -342,73 +258,6 @@ sub copy_blastx {
   }
 
   $log->write_to("$runtime: Finished copying/zipping non-elegans blastx\n\n");
-}
-
-
-##################################################
-# copy the xref files 
-##################################################
-sub copy_xrefs {
-  my $runtime = $wormbase->runtime;
-  $log->write_to("$runtime: copying/zipping xref files\n");
-
-  my %accessors = ($wormbase->species_accessors);
-  $accessors{elegans} = $wormbase;
-
-  foreach my $wb (values %accessors) {
-    next if exists $skip_species{$wb->species};
-    next if @only_species and not exists($only_species{$wb->species});
-
-    my $gspecies = $wb->full_name('-g_species'=>1);
-    my $bioproj = $wb->ncbi_bioproject;
-
-    my $in_prefix = $wb->reports . "/" . $wb->species . ".";
-    my $out_prefix = "$targetdir/species/$gspecies/$bioproj/annotation/$gspecies.${bioproj}.${WS_version_name}.";
-
-    foreach my $io_pair ([ "dbxrefs.txt", "xrefs.txt.gz" ],
-                         [ "gene_product_info.gpi", "gene_product_info.gpi.gz" ]) {
-      my ($in_suffix, $out_suffix) = @$io_pair;
-
-      my $in_file = $in_prefix . $in_suffix;
-      my $out_file = $out_prefix . $out_suffix;
-
-      if (-e $in_file) {
-        $wormbase->run_command("cat $in_file | gzip -n -9 -c > $out_file", $log);
-      }
-    }
-  }
-
-  $log->write_to("$runtime: Finished copying/zipping xrefs\n\n");
-}
-
-##################################################
-# copy the repeatmasker libraries
-##################################################
-sub copy_repeats {
-  my $runtime = $wormbase->runtime;
-  $log->write_to("$runtime: copying/zipping repeatmasker files\n");
-
-  my %accessors = ($wormbase->species_accessors);
-  $accessors{elegans} = $wormbase;
-
-  foreach my $wb (values %accessors) {
-    next if exists $skip_species{$wb->species};
-    next if @only_species and not exists($only_species{$wb->species});
-
-    my $gspecies = $wb->full_name('-g_species'=>1);
-    my $bioproj = $wb->ncbi_bioproject;
-
-    my $file = $wb->repeatmasker_library;
-
-    my $out_file = "$targetdir/species/$gspecies/$bioproj/annotation/$gspecies.${bioproj}.${WS_version_name}.repeats.fa.gz";
-    if (-e $file) {
-      $wormbase->run_command("cat $file | gzip -n -9 -c > $out_file", $log);
-    } else {
-      $log->error("ERROR: Could not find file $file\n");
-    }
-  }
-
-  $log->write_to("$runtime: Finished copying/zipping repeatmasker files\n\n");
 }
 
 
@@ -745,37 +594,6 @@ sub copy_multi_species {
   $log->write_to("$runtime: Finished copying multi species files\n\n");
 }
 
-############################################
-# create orthology lists
-############################################
-sub make_orthologylists{
-  my $runtime = $wormbase->runtime;
-  $log->write_to("$runtime: copying rna files\n");
-
-  # run through all possible organisms
-  my %accessors = ($wormbase->species_accessors);
-  $accessors{elegans} = $wormbase;
-
-  foreach my $wb (values %accessors) {
-       next if exists $skip_species{$wb->species};
-       next if @only_species and not exists $only_species{$wb->species};
-
-       my $gspecies = $wb->full_name('-g_species' => 1);
-       my $bioproj = $wb->ncbi_bioproject;
-
-       my $ftp_dir = "$targetdir/species/$gspecies/$bioproj/annotation";
-       mkpath($ftp_dir,1,0775);
-
-       my $ofile = "$ftp_dir/$gspecies.$bioproj.WS".$wormbase->get_wormbase_version.'.orthologs.txt';
-       $wormbase->run_script("dump_ortholog_flatfile.pl -out $ofile -fullspecies \"${\$wb->full_name}\"",$log);
-       if (-e $ofile and -s $ofile){
-         $wormbase->run_command("touch $ofile && gzip -9 -n $ofile", $log);
-       }
-       else {
-	 $log->write_to("Data problem with $ofile\n");
-       }
-  }
-} 
 
 ############################################
 # copy across ncRNA files
@@ -846,52 +664,35 @@ sub copy_rna_files{
 # copy across ontology files
 ############################################
 sub copy_ontology_files {
-
+  
   my $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying ontology files\n");
-
+  
   my $ace_dir = $wormbase->autoace;
-
+  
   my $obo_dir = $wormbase->primaries . "/citace/temp_unpack_dir/home/citace/Data_for_${WS_version_name}/Data_for_Ontology/";
   my $ace_ontology_dir = "$ace_dir/ONTOLOGY";
   my $ftp_ontology_dir = "$targetdir/ONTOLOGY";
-
+  
   mkpath($ace_ontology_dir,1,0775);
   mkpath($ftp_ontology_dir,1,0775);
-
+  
   $wormbase->run_command("cp -f $obo_dir/*.obo $ace_ontology_dir/", $log);
   foreach my $file (glob("$ace_ontology_dir/*.*")) {
     $wormbase->run_command("cp -f $file $ftp_ontology_dir/", $log);
   }
-
-  my %accessors = ($wormbase->species_accessors);
-  $accessors{elegans} = $wormbase;
-
-  foreach my $wb (values %accessors) {
-    next if exists $skip_species{$wb->species};
-    next if @only_species and not exists($only_species{$wb->species});
-
-    my $gspecies = $wb->full_name('-g_species'=>1);
-    my $bioproj = $wb->ncbi_bioproject;
-
-    my $in_file = $obo_dir . '/gene_association.'. $WS_version_name.'.wb.' . $wb->species;
-    my $out_file = "$targetdir/species/$gspecies/$bioproj/annotation/$gspecies.${bioproj}.${WS_version_name}.go_annotations.gaf.gz";
-
-    if (-e $in_file) {
-        $wormbase->run_command("cat $in_file | gzip -n -9 -c > $out_file", $log);
-    }
-  }
-
+  
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying ontology files\n\n");
 }
 
+
 ############################################
 # copy across annotation files
 #############################################
-sub copy_misc_files{
+sub copy_annotations_files{
   my $runtime = $wormbase->runtime;
-  $log->write_to("$runtime: copying misc files\n");
+  $log->write_to("$runtime: copying files into per-species annotations folder...\n");
 
   my %accessors = ($wormbase->species_accessors);
   $accessors{$wormbase->species} = $wormbase; 
@@ -1018,18 +819,69 @@ sub copy_misc_files{
   }
 
   #
-  # protein domain file
+  # Xref files
   #
-  while(my($k,$v)=each %accessors){
-     next if exists $skip_species{$k};
-     next if @only_species and not exists $only_species{$k};
-    
-     my $source = $v->misc_output . '/protein_domains.tsv';
-     my $target = "$targetdir/species/".$v->full_name(-g_species => 1).'/'.$v->ncbi_bioproject.'/annotation/'.
-                  $v->full_name(-g_species => 1).'.'.$v->ncbi_bioproject.'.'.$WS_version_name.'.protein_domains.tsv';
-     if (-e $source){$wormbase->run_command("cp -f $source $target",$log)}
-     else{$log->write_to("ERROR: cannot find $source file\n")}
+  foreach my $wb (values %accessors) {
+    next if exists $skip_species{$wb->species};
+    next if @only_species and not exists($only_species{$wb->species});
+
+    my $gspecies = $wb->full_name('-g_species'=>1);
+    my $bioproj = $wb->ncbi_bioproject;
+
+    my $in_prefix = $wb->reports . "/" . $wb->species . ".";
+    my $out_prefix = "$targetdir/species/$gspecies/$bioproj/annotation/$gspecies.${bioproj}.${WS_version_name}.";
+
+    foreach my $io_pair ([ "dbxrefs.txt", "xrefs.txt.gz" ],
+                         [ "gene_product_info.gpi", "gene_product_info.gpi.gz" ]) {
+      my ($in_suffix, $out_suffix) = @$io_pair;
+
+      my $in_file = $in_prefix . $in_suffix;
+      my $out_file = $out_prefix . $out_suffix;
+
+      if (-e $in_file) {
+        $wormbase->run_command("cat $in_file | gzip -n -9 -c > $out_file", $log);
+      }
+    }
   }
+
+  #
+  # repeats
+  #
+  foreach my $wb (values %accessors) {
+    next if exists $skip_species{$wb->species};
+    next if @only_species and not exists($only_species{$wb->species});
+
+    my $gspecies = $wb->full_name('-g_species'=>1);
+    my $bioproj = $wb->ncbi_bioproject;
+
+    my $file = $wb->repeatmasker_library;
+
+    my $out_file = "$targetdir/species/$gspecies/$bioproj/annotation/$gspecies.${bioproj}.${WS_version_name}.repeats.fa.gz";
+    if (-e $file) {
+      $wormbase->run_command("cat $file | gzip -n -9 -c > $out_file", $log);
+    } else {
+      $log->error("ERROR: Could not find file $file\n");
+    }
+  }
+
+  #
+  # GO annotation files
+  #
+  foreach my $wb (values %accessors) {
+    next if exists $skip_species{$wb->species};
+    next if @only_species and not exists($only_species{$wb->species});
+
+    my $gspecies = $wb->full_name('-g_species'=>1);
+    my $bioproj = $wb->ncbi_bioproject;
+
+    my $in_file = $wormbase->autoace . 'ONTOLOGY/gene_association.'. $WS_version_name.'.wb.' . $wb->species;
+    my $out_file = "$targetdir/species/$gspecies/$bioproj/annotation/$gspecies.${bioproj}.${WS_version_name}.go_annotations.gaf.gz";
+
+    if (-e $in_file) {
+        $wormbase->run_command("cat $in_file | gzip -n -9 -c > $out_file", $log);
+    }
+  }
+
 
   #
   # Finally, other misc annotation files
@@ -1041,16 +893,31 @@ sub copy_misc_files{
     my $gspecies = $wb->full_name('-g_species'=>1);
     my $bioproj = $wb->ncbi_bioproject;
     
-    my $in_prefix = $wb->reports."/$gspecies.${bioproj}.WSXXX.";
+    my $in_prefix = $wb->reports;
     my $out_prefix = "$targetdir/species/$gspecies/$bioproj/annotation/$gspecies.${bioproj}.${WS_version_name}.";
     
-    my @files = ('functional_descriptions.txt','interactions.txt','potential_promotors.fa','resource_gene_ids.txt','swissprot.txt');
+    my @files = ('functional_descriptions.txt',
+                 'orthologs.txt',
+                 'protein_domains.csv');
+    if ($wb->species eq 'elegans') {
+      push @files, ('interactions.txt',
+                    'potential_promotors.fa',
+                    'resource_gene_ids.txt',
+                    'swissprot.txt',
+                    'knockout_consortium_alleles.xml',
+                    'confirmed_genes.fa',
+                    'cdna2orf.txt',
+                    'geneIDs.txt',
+                    'geneOtherIDs.txt',
+                    'pcr_product2gene.txt',
+                    'interpolated_clones.txt',
+      );
+    }
     
-    push (@files,'interpolated_clones.txt') if lc($wb->species) eq 'elegans';
     
     foreach my $file (@files) {
       
-      my $in_file = $in_prefix . $file;
+      my $in_file = $in_prefix . "/" . $file;
       my $out_file = $out_prefix . $file . '.gz';
       
       if (-e $in_file) {
@@ -1259,7 +1126,7 @@ sub copy_est_files {
 
 
 ###################################
-# make_assembly_manifest
+# copy_assembly_manifest
 ###################################
 sub copy_assembly_manifest {
   
@@ -1279,257 +1146,27 @@ sub copy_assembly_manifest {
 }
 
 
+
 ###################################
-# extract confirmed genes
+# copy_release_letter
 ###################################
-sub extract_confirmed_genes{
-
+sub copy_release_letter {
   my $runtime = $wormbase->runtime;
-  $log->write_to("$runtime: Extracting elegans confirmed genes\n");
+  $log->write_to("$runtime: copying release letter\n");
 
-  my $gspecies = $wormbase->full_name('-g_species' => 1);
-  my $bioproj = $wormbase->ncbi_bioproject;
+  my $tgt_file = "$targetdir/letter.$WS_version_name";
+  my $src_file = $wormbase->reports . "/letter.$WS_version_name";
 
-  my $ace_dir = $wormbase->autoace;
-  my $annotation_dir = "$targetdir/species/$gspecies/$bioproj/annotation";
-  my $wormdna = $wormbase->wormpep."/".$wormbase->pepdir_prefix."pep.dna${WS_version}";
-  my $seqio  = Bio::SeqIO->new('-file' => "$wormdna", '-format' => 'fasta');
+  $log->log_and_die("Release letter does not exist in the REPORTS directory")
+      if not -e $src_file;
 
-  my $db = Ace->connect(-path => "$ace_dir/") || die print "ACE connection failure: ", Ace->error;
-  my $query = "Find elegans_CDS; Confirmed";
-
-  my @confirmed_genes   = $db->fetch(-query=>$query);
-  my %conf_genes;
-  map { $conf_genes{$_->name} = 1 } @confirmed_genes;
-
-  mkpath("$annotation_dir",1,0775);
-
-  my $out_file = "$annotation_dir/$gspecies.$bioproj.$WS_version_name.confirmed_genes.fa";
-
-  open(OUT,">$out_file") or 
-      $log->write_to("Couldn't write to $out_file\n");
-
-  while(my $seq = $seqio->next_seq){
-    if($conf_genes{$seq->id}) {
-      print OUT "\n>".$seq->id."\n";
-      print OUT $wormbase->format_sequence($seq->seq);
-    }
-  }
-  close(OUT);
-
-  $wormbase->run_command("gzip -n -9 -f $out_file", $log);
-
-  $db->close;
+  $wormbase->run_command("cp $src_file $tgt_file", $log);
 
   $runtime = $wormbase->runtime;
-  $log->write_to("$runtime: Finished extracting confirmed genes\n\n");
-
-  return(0);
+  $log->write_to("$runtime: Copied release letter\n");
 }
 
 
-################################################################################
-# dump KO data
-################################################################################
-sub extract_ko {
-  my $runtime = $wormbase->runtime;
-  $log->write_to("$runtime: Extracting Knockout Consortium Data\n");
-
-  my $gspecies = $wormbase->full_name('-g_species' => 1);
-  my $bioproj = $wormbase->ncbi_bioproject;
-
-  my $annotation_dir = "$targetdir/species/$gspecies/$bioproj/annotation";
-  mkpath("$annotation_dir",1,0775);
-
-  my $outfile = "$annotation_dir/${gspecies}.${bioproj}.${WS_version_name}.knockout_consortium_alleles.xml.gz";
-
-  $wormbase->run_script("dump_ko.pl -file $outfile",$log);
-  
-  $runtime = $wormbase->runtime;
-  $log->write_to("$runtime: Finished dumping KO data\n\n");
-
-}
-
-
-################################################################################
-# make list of cDNA -> orf connections
-################################################################################
-sub make_cDNA2ORF_list {
-
-  my $runtime = $wormbase->runtime;
-  $log->write_to("$runtime: making cDNA2ORF files\n");
-  # simple routine to just get cDNA est names and their correct ORFs and make an FTP site file
-  # two columns, second column supports multiple ORF names
-
-  my $gspecies = $wormbase->full_name('-g_species' => 1);
-  my $bioproj = $wormbase->ncbi_bioproject;
-  my $annotation_dir = "$targetdir/species/$gspecies/$bioproj/annotation";
-  my $ace_dir = $wormbase->autoace;
-
-  mkpath("$annotation_dir",1,0775);
-
-  my $tace = $wormbase->tace;
-  my $command=<<EOF;
-Table-maker -p "$ace_dir/wquery/cDNA2CDS.def" quit
-EOF
-
-  my $dir = "$ace_dir";
-
-  my %cDNA2orf;
-  open (TACE, "echo '$command' | $tace $dir | ") or $log->log_and_die("Couldn't access $dir\n");  
-  while (<TACE>){
-    chomp;
-    if (m/^\"/){
-      s/\"//g;
-      m/(.+)\s+(.+)/;     
-      $cDNA2orf{$1} .= "$2 ";
-    }
-  }
-  close(TACE);
-  
-  # output to ftp site
-
-  
-  my $out = "$annotation_dir/$gspecies.$bioproj.$WS_version_name.cdna2orf.txt";
-  open(OUT, ">$out") or $log->write_to("Couldn't open $out\n");
-
-  foreach my $key (keys %cDNA2orf){
-    print OUT "$key,$cDNA2orf{$key}\n";
-  }
-  close(OUT);
-
-  $wormbase->run_command("gzip -n -9 -f $out", $log);
-
-  $runtime = $wormbase->runtime;
-  $log->write_to("$runtime: Finished making cdna2orf list\n\n");  
-  
-}
-
-################################################################################
-# make list of WBGene IDs to CGC name and Sequence name
-################################################################################
-sub make_geneID_list {
-  # For each 'live' Gene object, extract 'CGC_name' and 'Sequence_name' fields (if present)
-
-  my $runtime = $wormbase->runtime;
-  $log->write_to("$runtime: making Gene ID list\n");
- 
-  my %accessors = ($wormbase->species_accessors);
-  foreach my $wb ($wormbase, values %accessors) {
-    next if exists $skip_species{$wb->species};
-    next if @only_species and not exists $only_species{$wb->species};
-
-    my $gspecies = $wb->full_name('-g_species' => 1);
-    my $bioproj = $wb->ncbi_bioproject;
-    my $full_name = $wb->full_name;
-    my $tax_id = $wb->ncbi_tax_id;
-
-    my $annotation_dir = "$targetdir/species/$gspecies/$bioproj/annotation";
-    my $ace_dir = $wormbase->autoace;
-
-    my $out     = "$annotation_dir/$gspecies.$bioproj.$WS_version_name.geneIDs.txt";
-    my $otherNames = "$annotation_dir/$gspecies.$bioproj.$WS_version_name.geneOtherIDs.txt";
-
-    mkpath("$annotation_dir",1,0775);
-    open GENEID,">$out" ||die($!);
-    open OTHERID, ">$otherNames" ||die($!);
-
-    my $db = Ace->connect(-path => "$ace_dir/") || die (Ace->error);
-    my $gene_it = $db->fetch_many(-query => "Find Gene; Species=\"${full_name}\"");
-    while(my $gene=$gene_it->next){
-      print GENEID join(",", 
-                         $tax_id,
-                         $gene,
-                         ($gene->CGC_name||''),
-                         ($gene->Sequence_name||''),
-                         $gene->Status), "\n";
-      print OTHERID join("\t",$gene,$gene->Status,$gene->Sequence_name,$gene->CGC_name,$gene->Other_name),"\n";
-    }
-
-    close GENEID;
-    close OTHERID;
-    $db->close();
-    $wormbase->run_command("gzip -n -9 -f $out", $log);
-    $wormbase->run_command("gzip -n -9 -f $otherNames", $log);
-  } 
-
-  $runtime = $wormbase->runtime;
-  $log->write_to("$runtime: Finished making gene_id list\n\n");
-}
-
-
-################################################################################
-# make list of PCR_product connections to CDS and Gene ID plus CGC name
-################################################################################
-sub make_pcr_list {
-
-  my $runtime = $wormbase->runtime;
-  $log->write_to("$runtime: making PCR product 2 gene list list\n");
-
-  my $gspecies = $wormbase->full_name('-g_species' => 1);
-  my $bioproj = $wormbase->ncbi_bioproject;
-  my $annotation_dir = "$targetdir/species/$gspecies/$bioproj/annotation";
-  my $ace_dir = $wormbase->autoace;
-
-  my $tace    = $wormbase->tace;
-  my $command = "Table-maker -p $ace_dir/wquery/pcr_product2gene.def\nquit\n";
-  my $dir     = "$ace_dir";
-  my $out     = "$annotation_dir/$gspecies.$bioproj.$WS_version_name.pcr_product2gene.txt";
-  mkpath("$annotation_dir",1,0775);
-
-  # hashes needed because one pcr product may hit two or more genes
-  my %pcr2gene;
-  my %gene2sequence;
-  my %gene2cgc;
-
-  open (TACE, "echo '$command' | $tace $dir | ") || croak "Couldn't access $dir\n";  
-  while (<TACE>){
-    if (m/^\"/){
-      s/\"//g;
-      chomp;
-      # split the line into various fields
-      my ($pcr,$gene,$cgc,$sequence) = split(/\t/, $_) ;
-
-      # fill hashes and arrays, allow for multiple genes per PCR product
-      $pcr2gene{$pcr}      .= "$gene,";
-      ($gene2cgc{$gene} = $cgc) if($cgc);
-      $gene2sequence{$gene} = "$sequence";
-    }
-  }
-  close(TACE);
-
-  # Now write output, cycling through list of pcr products in %pcr2gene
-
-  open (OUT, ">$out") or $log->log_and_die("Couldn't open $out\n");
-
-  foreach my $pcr (keys %pcr2gene){
-    my @genes = split(/,/,$pcr2gene{$pcr});
-    my $counter =0;
-    print OUT "$pcr";
-    foreach my $gene (@genes){
-
-      # remove next element if it is the same gene ID and start loop again
-      if (defined($genes[$counter+1]) && $genes[$counter+1] eq $genes[$counter]){
-	splice(@genes, $counter+1,1);
-	redo;
-      }
-      $counter++;
-      print OUT "\t$gene";
-      print OUT "($gene2cgc{$gene})" if (exists($gene2cgc{$gene}));
-      
-      # now print sequence name
-      print OUT ",$gene2sequence{$gene}";      
-    }
-    print OUT "\n";
-  }
-
-  close(OUT);
-
-  $wormbase->run_command("gzip -n -9 -f $out", $log);
-
-  $runtime = $wormbase->runtime;
-  $log->write_to("$runtime: Finished making list\n\n");
-}
 
 ############################################################
 # copy best blast hits file to ftp site
@@ -1614,7 +1251,7 @@ sub check_manifest {
   $t2_species{$wormbase->species} = $wormbase;
   
   my %t3_species = $wormbase->tier3_species_accessors;
-
+  
   my %species;
   foreach my $sp (keys %t3_species) {
     $species{$sp} = $t3_species{$sp};
@@ -1625,11 +1262,11 @@ sub check_manifest {
   
   
   my (@stanzas, $count);
-
+  
   while(<DATA>) {
     next unless /\w/;
     next if /^\#/;
-  
+    
     /^\[(.*)\](\S+)/ and do {
       my ($sp, $par) = ($1, $2);
       push @stanzas, {
@@ -1644,7 +1281,7 @@ sub check_manifest {
       } else {
         map { $include{$_} = 1 } split(/,/, $sp);
       }
-
+      
       foreach my $tsp (keys %include) {
         if ($tsp eq 'TIER3') {
           foreach my $ntsp (keys %t3_species) {
@@ -1720,6 +1357,7 @@ sub check_manifest {
   $log->write_to("$count files in place on FTP site\n");
 }
 
+
 sub checkfile {
   my $file = shift;
   if( -s "$file") {
@@ -1731,9 +1369,6 @@ sub checkfile {
   }
 }
 
-#for manifest checks
-# gspecies = $wb->full_name('-gspecies' => 1)
-# WORM = $wb->pepdir_prefix
 
 __DATA__
 [elegans]species/c_elegans/BIOPROJ/annotation
@@ -1749,6 +1384,11 @@ GSPECIES.BIOPROJ.WSREL.omim_xrefs.txt
 GSPECIES.BIOPROJ.WSREL.changed_CGC_names.txt
 GSPECIES.BIOPROJ.WSREL.readable_changed_CGC_names.txt
 GSPECIES.BIOPROJ.WSREL.TSS.wig.tar.gz
+GSPECIES.BIOPROJ.WSREL.geneIDs.txt.gz
+GSPECIES.BIOPROJ.WSREL.interactions.txt.gz
+GSPECIES.BIOPROJ.WSREL.potential_promotors.fa.gz
+GSPECIES.BIOPROJ.WSREL.resource_gene_ids.txt.gz
+GSPECIES.BIOPROJ.WSREL.swissprot.txt.gz
 
 [elegans]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.assembly.agp.gz
@@ -1757,16 +1397,13 @@ GSPECIES.BIOPROJ.WSREL.transposon_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.transposons.fa.gz
 
 [CORE]species/GSPECIES/BIOPROJ/annotation
-GSPECIES.BIOPROJ.WSREL.geneIDs.txt.gz
-GSPECIES.BIOPROJ.WSREL.orthologs.txt.gz
-GSPECIES.BIOPROJ.WSREL.repeats.fa.gz
 GSPECIES.BIOPROJ.WSREL.functional_descriptions.txt.gz
-GSPECIES.BIOPROJ.WSREL.interactions.txt.gz
-GSPECIES.BIOPROJ.WSREL.potential_promotors.fa.gz
-GSPECIES.BIOPROJ.WSREL.resource_gene_ids.txt.gz
-GSPECIES.BIOPROJ.WSREL.swissprot.txt.gz
-GSPECIES.BIOPROJ.WSREL.gene_product_info.gpi.gz
+GSPECIES.BIOPROJ.WSREL.orthologs.txt.gz
+GSPECIES.BIOPROJ.WSREL.protein_domains.csv.gz
 GSPECIES.BIOPROJ.WSREL.go_annotations.gaf.gz
+GSPECIES.BIOPROJ.WSREL.repeats.fa.gz
+GSPECIES.BIOPROJ.WSREL.gene_product_info.gpi.gz
+
 
 [CORE]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.best_blastp_hits.txt.gz

@@ -49,26 +49,31 @@ my $lsf = LSF::JobManager->new(-M => $defaultMem,
                               );
 
 # that is the root of the output file name based on the FTP spec
-my $report = $wormbase->reports . '/'.
-   join('.',$wormbase->gspecies_name,$wormbase->ncbi_bioproject,'WSXXX');
+my $report_dir = $wormbase->reports;
 
 # list of script => (output => (),options => "")
 my %script2files = (
-  'dump_species_functional_descriptions.pl' => { output => "$report.functional_descriptions.txt" },
-  'dump_species_gene_interactions.pl'       => { output => "$report.interactions.txt" },
-  'dump_interpolated.pl'                    => { output => "$report.interpolated_clones.txt" },
-  'dump_promoters.pl'                       => { output => "$report.potential_promotors.fa" },
-  'dump_resource_gene_ids.pl'               => { output => "$report.resource_gene_ids.txt" },
-#compara is only loaded into autoace 'dump_species_orthologs.pl' => { output => "$report.orthologs.txt" },
-  'dump_swissprot.pl'                       => { output => "$report.swissprot.txt" },
-  'dump_protein_domains.pl'                 => { output => "$report.protein_domains.txt" },
+  'dump_species_functional_descriptions.pl' => { output => "$report_dir/functional_descriptions.txt" },
+  'dump_protein_domains.pl'                 => { output => "$report_dir/protein_domains.csv" },
+  'dump_species_orthologs.pl'               => { output => "$report_dir/orthologs.txt" },
+  'dump_species_gene_interactions.pl'       => { output => "$report_dir/interactions.txt" },
+  'dump_interpolated.pl'                    => { output => "$report_dir/interpolated_clones.txt" },
+  'dump_promoters.pl'                       => { output => "$report_dir/potential_promotors.fa" },
+  'dump_resource_gene_ids.pl'               => { output => "$report_dir/resource_gene_ids.txt" },
+  'dump_swissprot.pl'                       => { output => "$report_dir/swissprot.txt" },
+  'dump_ko.pl'                              => { output => "$report_dir/knockout_consortium_alleles.xml" },
+  'dump_confirmed_genes.pl'                 => { output => "$report_dir/confirmed_genes.fa" },
+  'dump_cdna2orf.pl'                        => { output => "$report_dir/cdna2orf.txt" },
+  'dump_geneid_list.pl'                     => { output => "$report_dir/geneIDs.txt" },
+  'dump_geneid_list.pl'                     => { output => "$report_dir/geneOtherIDs.txt", -options => "-other" },
+  'dump_pcr_list.pl'                        => { output => "$report_dir/pcr_product2gene.txt" },
 );
 
 # a.) run
 foreach my $script (keys %script2files){
    next unless &check_script($script);
    &clean_previous_output($script2files{$script}->{output});
-   &queue_script($script);
+   &queue_script($script, $script2files{$script});
 }
 
 # finish
@@ -101,9 +106,16 @@ $log->mail;
 
 # LSF submit $script
 sub queue_script{
-   my ($script) = @_;
-   my $cmd = $wormbase->build_cmd("preFTPdumps/perSpecies/$script");
+   my ($script, $data) = @_;
+   
+   my $cmd = "preFTPdumps/perSpecies/$script";
+   $cmd .= " -output $data->{outfile}";
+   if (exists $data->{options}) {
+     $cmd .= " $data->{options}";
+   }
+   $cmd = $wormbase->build_cmd($cmd);
    $lsf->submit($cmd);
+
 }
 
 # basically try to delete $file

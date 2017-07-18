@@ -3,22 +3,27 @@
 # dumps all interactions into a flatfile, except the no_interaction ones
 #
 
+use strict;
+
 use Getopt::Long;
 use Dumper;
 use IO::File;
 use Storable;
 
+use lib $ENV{CVS_DIR};
+
 use Wormbase;
 use Log_files;
-use strict;
 
-my ($store,$debug,$test,$database,$species);
+
+my ($store,$debug,$test,$database,$species,$outfile);
 GetOptions(
        'store=s' => \$store,
        'debug=s' => \$debug,
        'test'    => \$test,
        'species=s'  => \$species,
        'database=s' => \$database,
+       'outfile=s'  => \$outfile,
 )||die(@!);
 
 my $wormbase;
@@ -31,10 +36,10 @@ my $log = Log_files->make_build_log($wormbase);
 $log->write_to("connecting to ${\$wormbase->autoace}\n");
 my $dbh = Ace->connect(-path => $wormbase->autoace )||die Ace->error;
 
-my $file = $wormbase->reports . '/'.
-   join('.',$wormbase->gspecies_name,$wormbase->ncbi_bioproject,'WSXXX.interactions.txt');
-my $of = IO::File->new($file,'w');
-$log->write_to("writing to $file\n");
+$outfile = $wormbase->reports . '/interactions.txt' 
+    if not defined $outfile;
+my $of = IO::File->new($outfile,'w');
+$log->write_to("writing to $outfile\n");
 
 print $of "# WormBase gene interactions\n";
 print $of "# WormBase version: " . $dbh->version . "\n";
@@ -49,7 +54,7 @@ foreach my $interaction (@interactions) {
           $interaction->Paper->Brief_citation,$interaction->Paper->Database(2),$interaction->Paper->Database(3) 
     };
 
-    my $reference = "[$db_field:$db_acc] $brief_citation";
+    #my $reference = "[$db_field:$db_acc] $brief_citation";
     my $interaction_type = $interaction->Interaction_type;
     my $subtype = ($interaction_type=~/Genetic|Regulatory/) ? &right_tip($interaction_type) : 'N/A';
 
