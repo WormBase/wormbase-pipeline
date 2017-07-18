@@ -304,7 +304,8 @@ if ($omim) {
 $wormbase->run_script( "post_build_checks.pl -a"                 , $log) if $check;
 $wormbase->run_script( "data_checks.pl -ace -gff"                , $log) if $data_check;
 $wormbase->run_script( "dbcomp.pl -post_gff"                     , $log) if $data_check;
-$wormbase->run_script( "build_release_files.pl"                  , $log) if $buildrelease;
+
+&build_release                                                           if $buildrelease;
 &public_sites                                                            if $public;
 &release                                                                 if $release;
 
@@ -617,11 +618,15 @@ sub make_extras {
   $wormbase->run_script( "genestats.pl" , $log);
 }
 
+sub build_release {
+  $wormbase->run_script( "build_release_files.pl", $log);
+  $wormbase->run_script( "make_assembly_manifest.pl", $log);
+  $wormbase->run_script( "release_letter.pl"  , $log);
+}
 
 sub public_sites {
   # gets everything on the to FTP and websites and prepares release letter ready for final edit and sending.
   $wormbase->run_script( "make_FTP_sites.pl -public", $log);
-  $wormbase->run_script( "release_letter.pl -l"  , $log);
 }
 
 
