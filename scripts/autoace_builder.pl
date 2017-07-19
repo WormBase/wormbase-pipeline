@@ -33,7 +33,7 @@ my ( $load, $big_load, $tsuser );
 my ($map_features, $remap_misc_dynamic, $map, $map_alleles, $transcripts, $cdna_files, $misc_data_sets, $homol_data_sets, $nem_contigs);
 my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $treefam, $ncbi_xrefs, $load_interpro, $RRID, $omim);
 my ( $utr, $agp, $gff_munge, $gff3_munge, $extras , $ontologies, $interpolate, $check, $enaseqxrefs, $enagenexrefs, $enaprotxrefs, $xrefs);
-my ( $data_check, $buildrelease, $public,$finish_build, $gffdb, $autoace, $release, $user, $kegg, $prepare_gff_munge, $post_merge, $gtf);
+my ( $data_check, $buildrelease, $public,$finish_build, $gffdb, $autoace, $user, $kegg, $prepare_gff_munge, $post_merge, $gtf);
 
 
 GetOptions(
@@ -96,7 +96,6 @@ GetOptions(
 	   'finish_build'   => \$finish_build,
 	   'gffdb'          => \$gffdb,
 	   'autoace'        => \$autoace,
-	   'release'        => \$release,
 	   'check'    	    => \$check,
 	   'data_check'     => \$data_check,
 	   'species:s'      => \$species,
@@ -304,19 +303,10 @@ if ($omim) {
 $wormbase->run_script( "post_build_checks.pl -a"                 , $log) if $check;
 $wormbase->run_script( "data_checks.pl -ace -gff"                , $log) if $data_check;
 $wormbase->run_script( "dbcomp.pl -post_gff"                     , $log) if $data_check;
-
 &build_release                                                           if $buildrelease;
-&public_sites                                                            if $public;
-&release                                                                 if $release;
-
 $wormbase->run_script("finish_build.pl"                          , $log) if $finish_build;
-# Update the gffdb to reflect the database being built.
-if  ($gffdb && $autoace) {
-  $wormbase->run_command("update_gffdb.csh -autoace"               , $log);
-}
-else {
-  $wormbase->run_command("update_gffdb.csh"                  , $log) if $gffdb;
-}
+&go_public                                                               if $public;
+
 
 if ($load) {
   my $db_to_load = ($database) ? $database : $wormbase->autoace;
@@ -624,21 +614,39 @@ sub build_release {
   $wormbase->run_script( "release_letter.pl"  , $log);
 }
 
-sub public_sites {
-  # gets everything on the to FTP and websites and prepares release letter ready for final edit and sending.
-  $wormbase->run_script( "make_FTP_sites.pl -public", $log);
-}
 
+sub go_public {
 
-sub release {
-  # copy and send the release letter around
-  $wormbase->run_script( "distribute_letter.pl -maildev", $log);
-  
-  # Make data on FTP site available
-  $log->write_to("Updating symlink on FTP site\n");
-
-  my $ftpdir = $wormbase->ftp_site;
+  my $ftp_release_dir = $wormbase->ftp_site . "/releases";
+  my $ftp_staging_dir = $wormbase->ftp_site . "/staging/releases";
+  my $db_dir = $wormbase->wormpub . "/DATABASES";
   my $rel   = $wormbase->get_wormbase_version_name;
-  $wormbase->run_command("rm -f $ftpdir/development_release", $log);
-  $wormbase->run_command("cd $ftpdir; ln -s releases/$rel development_release", $log);  
+  
+  if (not -d "$ftp_staging_dir/$rel") {
+    $log->log_and_die("Did not find $ftp_staging_dir/$rel. Something wrong. Not going public\n");
+  }
+  if (not -d "$db_dir/$rel") {
+    $log->log_and_die("Did not find $db_dir/$rel. Something wrong. Not going public\n");
+  }
+  if (not -e "$ftp_staging_dir/$rel/letter.$rel") {
+    $log->log_and_die("Did not find $ftp_staging_dir/$rel/letter.$rel. Something wrong. Not going public\n");
+  }
+
+  $log->write_to("Moving the release folder from staging to live\n");
+  $wormbase->run_command("mv $ftp_staging_dir/$rel $ftp_release_dir/");
+
+  $log->write_to("Updating the current_development symlink\n");
+  $wormbase->run_command("rm -f $ftp_release_dir/current-development-release", $log);
+  $wormbase->run_command("cd $ftp_release_dir && ln -s $rel current-development-release", $log);  
+
+  $log->write_to("Updating the current_DB symlink\n");
+  $wormbase->run_script("rm -f $db_dir/current_DB", $log);
+  $wormbase->run_script("cd $db_dir && ln -s $rel current_DB", $log);
+  
+  $log->write_to("Sending release letter to staff\n");
+  my $letter = "$ftp_release_dir/$rel/letter.$rel";
+  $wormbase->mail_maintainer( "WormBase $rel release",
+                              'staff@wormbase.org',
+                              $letter);
+  $log->write_to("\n\nWormBase $rel has been (data) has been released!\n");
 }
