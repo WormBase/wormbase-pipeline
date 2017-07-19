@@ -132,7 +132,7 @@ my %rna2SOlookup = (
 my $db = Ace->connect(-path=>$seqdb) or  $log->log_and_die("Couldn't connect to $seqdb\n". Ace->error);
 my $gdb =  Ace->connect(-path=>$geneace) or  $log->log_and_die("Couldn't connect to $geneace\n". Ace->error);
 
-$log->write_to("Using : $db for annotation data\n Using : $gdb for primary gene data.\n\n");
+$log->write_to("Using : $db for annotation data\nUsing : $gdb for primary gene data.\n\n");
 
 # example of running anther script
 #$wormbase->run_script("other_script -options", $log);
@@ -153,17 +153,29 @@ my @Generef;
 my %biotype;
 foreach my $SeqGene(@SeqGenes) {
   $ccount ++;
-  print "Checking".$SeqGene->name."\n" if ($verbose);
+  print "Checking ".$SeqGene->name."\n" if ($verbose);
   push (@Generef,"$SeqGene->name");
   if ($SeqGene->Corresponding_CDS){
-    $biotype{$SeqGene} = 'SO:0001217';
-    print "$SeqGene - Coding\n" if ($verbose);
-    next;
+      if ($SeqGene->Corresponding_CDS->Method eq "Transposon_CDS") {
+	  $biotype{$SeqGene} = 'SO:0000111';
+	  print "$SeqGene - Transposon gene\n" if ($verbose);
+      }
+      else {
+	  $biotype{$SeqGene} = 'SO:0001217';
+	  #print "$SeqGene - Coding\n" if ($verbose);
+      }
+      next;
   }
   if ($SeqGene->Corresponding_Pseudogene){
-    $biotype{$SeqGene} = 'SO:0000336';
-    print "$SeqGene - Pseudogene\n" if ($verbose);
-    next;
+      if ($SeqGene->Corresponding_Pseudogene->Method eq "Transposon_pseudogene") {
+	  $biotype{$SeqGene} = 'SO:0000111';
+	  print "$SeqGene - Transposon gene\n" if ($verbose);
+      }
+      else {
+	  $biotype{$SeqGene} = 'SO:0000336';
+	  print "$SeqGene - Pseudogene\n" if ($verbose);
+      }
+      next;
   }
   if ($SeqGene->Corresponding_Transcript){
     if (defined $biotype{$SeqGene}){
@@ -186,11 +198,17 @@ foreach my $SeqGene(@SeqGenes) {
     }
   }
   else {
-    $log->write_to("Warning $SeqGene - No live annotation attached to this gene.\n") if ($verbose);
+    $log->write_to("$SeqGene: No live annotation");
     if ($SeqGene->Corresponding_CDS_history) { 
-      $log->write_to("Checked $SeqGene - Has History annotation associated with it.\n") if ($verbose);
+      $log->write_to(" - CHECK: Has History CDS\n");
     }
-    else {$log->write_to("Error - $SeqGene appears to be dangling, why is it in the database $db?\n");}
+    elsif ($SeqGene->Corresponding_transcript_history) { 
+      $log->write_to(" - CHECK: Has History Transcript\n");
+    }
+    elsif ($SeqGene->Corresponding_pseudogene_history) { 
+      $log->write_to(" - CHECK: Has History Pseudogene\n");
+    }
+    else {$log->write_to(" - WARNING: Dangling annotation, please check the database $db?\n");}
     next;
   }
 }
@@ -208,58 +226,59 @@ if ($single) {
   @WBGenes = $gdb->fetch (-query => "FIND Gene WBGene00014836");
 }
 else {
-  @WBGenes = $gdb->fetch (-query => "FIND Genes_$species WHERE Live");
+  @WBGenes = $gdb->fetch (-query => "FIND Genes_$species");
 }
 foreach my $WBGene(@WBGenes) {
-  $gcount ++;
-  my $finalbio;
-  my $WBGeneBio;
-  if (defined $biotype{$WBGene}) {
-    #I have a calculated biotype so I'm going to use it#
-    $finalbio = $biotype{$WBGene};
-    if ($WBGene->Biotype) {
-      $WBGeneBio = $WBGene->Biotype;
-      #test just for the hell of it#
-      if ($WBGeneBio eq $finalbio) {
-	$mcount++;
-	$log->write_to("$WBGene - MATCH\n");
-      }
-      elsif ($WBGeneBio ne $finalbio) {
-	$log->write_to("$WBGene - NO-MATCH Calculated $finalbio Geneace:$WBGeneBio\n");
-	print ACE "Gene : $WBGene\nBiotype $finalbio\n\n";
-	$bcount++;
-      }
-      else {
-	$log->write_to("Warning missed round 1: $WBGene\n");
-	$missedcount++;
-      }
+    if  ($WBGene->Status eq "Dead"){
+	if ($WBGene->Biotype){
+	    print "Dead gene with Biotype\n";
+	    print ACE "Gene : \"$WBGene\"\n-D Biotype\n\n";
+	}
+	next;
     }
-    else { 
-      $log->write_to("Warning missed round 2: $WBGene\n");
-      # Need a biotype
-      print ACE "Gene : \"$WBGene\"\nBiotype \"$biotype{$WBGene}\"\n\n";
-      $missedcount++;
-
-
-
-
-
-
-    }
-  }
-  else {
-  #  no calculated biotype 
-    if ($WBGene->Biotype) {
-      $log->write_to("Warning $WBGene previously had a biotype of ".$WBGene->Biotype."\n");
-      $qcount++;
+    $gcount ++;
+    my $finalbio;
+    my $WBGeneBio;
+    if (defined $biotype{$WBGene}) {
+	#I have a calculated biotype so I'm going to use it#
+	$finalbio = $biotype{$WBGene};
+	if ($WBGene->Biotype) {
+	    $WBGeneBio = $WBGene->Biotype;
+	    #test just for the hell of it#
+	    if ($WBGeneBio eq $finalbio) {
+		$mcount++;
+		$log->write_to("$WBGene - MATCH\n");
+	    }
+	    elsif ($WBGeneBio ne $finalbio) {
+		$log->write_to("$WBGene - NO-MATCH Calculated $finalbio Geneace:$WBGeneBio\n");
+		print ACE "Gene : $WBGene\nBiotype $finalbio\n\n";
+		$bcount++;
+	    }
+	    else {
+		$log->write_to("Warning missed round 1: $WBGene\n");
+		$missedcount++;
+	    }
+	}
+	else { 
+	    $log->write_to("Warning missed round 2: $WBGene\n");
+	    # Need a biotype
+	    print ACE "Gene : \"$WBGene\"\nBiotype \"$biotype{$WBGene}\"\n\n";
+	    $missedcount++; 
+	}
     }
     else {
-      $ucount++;
-      $finalbio = "SO:0001867";
+	#  no calculated biotype 
+	if ($WBGene->Biotype) {
+	    $log->write_to("Warning $WBGene previously had a biotype of ".$WBGene->Biotype."\n");
+	    $qcount++;
+	}
+	else {
+	    $ucount++;
+	    $finalbio = "SO:0001867";
+	}
     }
-  }
-  #print "Gene : $WBGene\nBiotype $finalbio\n";
-  next;
+    #print "Gene : $WBGene\nBiotype $finalbio\n";
+    next;
 }
 
 
@@ -318,7 +337,7 @@ __END__
 
 =pod
 
-=head2 NAME - script_template.pl
+=head2 NAME - Update_Biotype.pl
 
 =head1 USAGE
 
@@ -328,7 +347,7 @@ __END__
 
 =back
 
-This script does...blah blah blah
+This script checks the primary annotations in the sequence database against the Biotypes stored in geneace
 
 script_template.pl MANDATORY arguments:
 
@@ -377,7 +396,7 @@ script_template.pl  OPTIONAL arguments:
 
 =over 4
 
-=item xxx (xxx@sanger.ac.uk)
+=item xxx (pad@sanger.ac.uk)
 
 =back
 
