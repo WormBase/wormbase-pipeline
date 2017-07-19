@@ -2,8 +2,6 @@
 #
 # overload_gff_gene.pl
 #
-# Adds interpolated map positions and other information to gene and allele lines
-#
 # Last updated by: $Author: klh $
 # Last updated on: $Date: 2015-03-23 12:11:34 $
 
@@ -51,7 +49,7 @@ my $species_full = $wormbase->full_name;
 open(my $gff_in_fh, $infile) or $log->log_and_die("Could not open $infile for reading\n");
 open(my $gff_out_fh, ">$outfile") or $log->log_and_die("Could not open $outfile for writing\n");  
 
-my ($locus_h, $sequence_name_h, $biotype_h) = &get_data();
+my ($locus_h, $sequence_name_h, $biotype_h, $so_term_h) = &get_data();
 
 while (<$gff_in_fh>) {
   if (/^\#/) {
@@ -80,6 +78,9 @@ while (<$gff_in_fh>) {
 
       $f[8] .= ";biotype=$biotype_h->{$gene}" 
           if exists $biotype_h->{$gene} and $f[8] !~ /biotype/;
+
+      $f[8] .= ";so_term_name=$so_term_h->{$gene}"
+          if exists $so_term_h->{$gene} and $f[8] !~ /so_term_name/;
 
       if ($f[8] !~ /Alias/) {
         my @al_elements;
@@ -129,12 +130,12 @@ sub get_data {
   my $db = Ace->connect('-path' => $database) 
       or $log->log_and_die("cant open Ace connection to db\n".Ace->error."\n");
 
-  my (%locus, %sequence_name, %biotype);
+  my (%locus, %sequence_name, %biotype, %so_term);
   
   # get the CGC/WGN name of the Genes
   $log->write_to("Reading Gene info\n");
   
-  my $query = "find Gene where Species = \"$species_full\"";
+  my $query = "find Gene where Sequence AND Species = \"$species_full\"";
   my $genes = $db->fetch_many('-query' => $query);
   while (my $gene = $genes->next){
     if ($gene->CGC_name) {        
@@ -168,9 +169,14 @@ sub get_data {
       my @types = sort keys %ttypes;
       $biotype{$gene} = join(",", @types);
     }
+    #
+    # Get an alternative, SO-compliant BioType from the gene object itself
+    if ($gene->BioType) {
+      $so_term{$gene} = $gene->BioType->SO_name->name;
+    }
   }
   $db->close();
   $log->write_to("Closed connection to DB\n");
   
-  return (\%locus, \%sequence_name, \%biotype);
+  return (\%locus, \%sequence_name, \%biotype, \%so_term);
 }
