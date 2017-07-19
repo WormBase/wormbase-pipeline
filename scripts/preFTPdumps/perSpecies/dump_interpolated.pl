@@ -35,11 +35,11 @@ if ($store) {
 } else {
   $wormbase = Wormbase->new( -debug => $debug, 
                              -test => $test,
-                             -autoace=> $database,
                              -organism => $species);
 }
 
 my $log = Log_files->make_build_log($wormbase);
+$database = $wormbase->autoace if not defined $database;
 
 unless(lc($wormbase->species) eq 'elegans'){
   $log->write_to("skipping ... as it only works for C.elegans\n");
@@ -49,7 +49,7 @@ unless(lc($wormbase->species) eq 'elegans'){
 
 # Establish a connection to the database.
 $log->write_to("connecting to ${\$wormbase->autoace}\n");
-my $db = Ace->connect(-path => $wormbase->autoace )||die Ace->error;
+my $db = Ace->connect(-path => $database ) or $log->log_and_die("Could not connect to $database\n");
 
 $outfile = $wormbase->reports . '/'. 'interpolated_clones.txt' 
     if not defined $outfile;

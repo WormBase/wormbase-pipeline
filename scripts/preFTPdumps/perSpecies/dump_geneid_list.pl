@@ -25,19 +25,21 @@ GetOptions(
 my $wormbase;
 if ($store) { 
   $wormbase = Storable::retrieve($store) or croak("Can't restore wormbase from $store\n");
-} 
-else {
-  $wormbase = Wormbase->new( -debug => $debug, -test => $test,-autoace=> $database,-organism => $species);
+} else {
+  $wormbase = Wormbase->new( -debug => $debug, 
+                             -test => $test,
+                             -organism => $species);
 }
 
 my $log = Log_files->make_build_log($wormbase);
+$database = $wormbase->autoace if not defined $database;
 
 $outfile = $wormbase->reports . '/cdna2orf.fa'
     if not defined $outfile;
 my $of = IO::File->new($outfile,'w');
 $log->write_to("writing to $outfile\n");
 
-my $db = Ace->connect(-path => ($database) ? $database : $wormbase->autoace ) or $log->log_and_die("Could not connect\n");
+my $db = Ace->connect(-path => $database ) or $log->log_and_die("Could not connect\n");
 my $full_name = $wormbase->full_name;
 my $tax_id = $wormbase->ncbi_tax_id;
 

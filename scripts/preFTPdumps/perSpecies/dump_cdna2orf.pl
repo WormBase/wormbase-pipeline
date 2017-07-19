@@ -26,10 +26,14 @@ if ($store) {
   $wormbase = Storable::retrieve($store) or croak("Can't restore wormbase from $store\n");
 } 
 else {
-  $wormbase = Wormbase->new( -debug => $debug, -test => $test,-autoace=> $database,-organism => $species);
+  $wormbase = Wormbase->new( -debug => $debug, 
+                             -test => $test,
+                             -organism => $species);
 }
 
 my $log = Log_files->make_build_log($wormbase);
+
+$database = $wormbase->autoace if not defined $database;
 
 $outfile = $wormbase->reports . '/cdna2orf.fa'
     if not defined $outfile;
@@ -37,15 +41,12 @@ my $of = IO::File->new($outfile,'w');
 $log->write_to("writing to $outfile\n");
 
 my $tace = $wormbase->tace;
-my $ace_dir = (defined $database) ? $database : $wormbase->autoace;
 my $command=<<EOF;
-Table-maker -p "$ace_dir/wquery/cDNA2CDS.def" quit
+Table-maker -p "$database/wquery/cDNA2CDS.def" quit
 EOF
 
-my $dir = "$ace_dir";
-
 my %cDNA2orf;
-open (TACE, "echo '$command' | $tace $dir | ") or $log->log_and_die("Couldn't access $dir\n");  
+open (TACE, "echo '$command' | $tace $database | ") or $log->log_and_die("Couldn't access $database\n");  
 while (<TACE>){
   chomp;
   if (m/^\"/){

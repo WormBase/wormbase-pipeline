@@ -26,14 +26,17 @@ if ($store) {
   $wormbase = Storable::retrieve($store) or croak("Can't restore wormbase from $store\n");
 } 
 else {
-  $wormbase = Wormbase->new( -debug => $debug, -test => $test,-autoace=> $database,-organism => $species);
+  $wormbase = Wormbase->new( -debug => $debug, 
+                             -test => $test,
+                             -organism => $species);
 }
 
 my $log = Log_files->make_build_log($wormbase);
+$database = $wormbase->autoace if not defined $database;
 
 # Establish a connection to the database.
-$log->write_to("connecting to ${\$wormbase->autoace}\n");
-my $db = Ace->connect(-path => ($database) ? $database :$wormbase->autoace ) or $log->log_and_die(Ace->error);
+$log->write_to("connecting to $database\n");
+my $db = Ace->connect(-path => $database ) or $log->log_and_die(Ace->error);
 
 $outfile = $wormbase->reports . '/confirmed_genes.fa'
     if not defined $outfile;

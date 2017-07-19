@@ -29,17 +29,17 @@ my $wormbase;
 if ($store) { 
   $wormbase = Storable::retrieve($store) or croak("Can't restore wormbase from $store\n")
 }else {
-  $wormbase = Wormbase->new( -debug => $debug, -test => $test,-autoace=> $database,-organism => $species)
+  $wormbase = Wormbase->new( -debug => $debug, 
+                             -test => $test,
+                             -organism => $species);
 }
 
 my $log = Log_files->make_build_log($wormbase);
 
-# Establish a connection to the database.
-$log->write_to("connecting to ${\$wormbase->autoace}\n");
-my $dbh = Ace->connect(-path => $wormbase->autoace)||$log->log_and_die(Ace->error);
+$log->write_to("connecting to $database\n");
+my $dbh = Ace->connect(-path => $database) or $log->log_and_die("Could not connect to $database\n");
 
-$outfile = $wormbase->reports . '/resource_gene_ids.txt'
-    if not defined $outfile;
+$outfile = $wormbase->reports . '/resource_gene_ids.txt' if not defined $outfile;
 my $of = IO::File->new($outfile,'w');
 $log->write_to("writing to $outfile\n");
 

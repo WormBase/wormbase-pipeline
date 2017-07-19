@@ -26,7 +26,9 @@ if ($store) {
   $wormbase = Storable::retrieve($store) or croak("Can't restore wormbase from $store\n");
 } 
 else {
-  $wormbase = Wormbase->new( -debug => $debug, -test => $test,-autoace=> $database,-organism => $species);
+  $wormbase = Wormbase->new( -debug => $debug, 
+                             -test => $test,
+                             -organism => $species);
 }
 
 my $log = Log_files->make_build_log($wormbase);

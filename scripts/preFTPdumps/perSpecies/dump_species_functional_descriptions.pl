@@ -39,14 +39,16 @@ my $wormbase;
 if ($store) { 
   $wormbase = Storable::retrieve($store) or croak("Can't restore wormbase from $store\n")
 }else {
-  $wormbase = Wormbase->new( -debug => $debug, -test => $test,-autoace=> $database,-organism => $species)
+  $wormbase = Wormbase->new( -debug => $debug, 
+                             -test => $test,
+                             -organism => $species);
 }
 
 my $log = Log_files->make_build_log($wormbase);
+$database = $wormbase->autoace if not defined $database;
 
-# Establish a connection to the database.
 $log->write_to("connecting to ${\$wormbase->autoace}\n");
-my $dbh = Ace->connect(-path => $wormbase->autoace)||$log->log_and_die(Ace->error);
+my $dbh = Ace->connect(-path => $database) or $log->log_and_die("Could not connect to $database\n");
 
 $outfile = $wormbase->reports . '/functional_descriptions.txt'
     if not defined $outfile;

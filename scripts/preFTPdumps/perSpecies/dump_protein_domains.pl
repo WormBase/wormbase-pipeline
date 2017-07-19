@@ -13,38 +13,39 @@ use Ace;
 use Wormbase;
 use Log_files;
 
-my($test,$debug, $species, $store, $wb, $outfile);
+my($test,$debug, $species, $store, $wb, $database, $outfile);
 
 GetOptions(
-  'test'      => \$test,
-  'debug=s'   => \$debug,
-  'species=s' => \$species,
-  'store=s'   => \$store,
-  'outfile=s' => \$outfile,
+  'test'       => \$test,
+  'debug=s'    => \$debug,
+  'species=s'  => \$species,
+  'store=s'    => \$store,
+  'outfile=s'  => \$outfile,
+  'database=s' => \$database,
 )||die();
 
 my $wormbase;
 if ($store) { 
   $wb = Storable::retrieve($store) or croak("Can't restore wormbase from $store\n")
 }else {
-  $wb = Wormbase->new( -debug => $debug, -test => $test,-organism => $species)
-}
-
-if (not defined $outfile) {
-  my $fname = "protein_domains.csv";
-  $outfile = $wb->reports."/$fname";
+  $wb = Wormbase->new( -debug => $debug, 
+                       -test => $test,
+                       -organism => $species);
 }
 
 $species = $wb->species;
-
 my $full = $wb->long_name;
 my $log = Log_files->make_build_log($wb);
+
+$database = $wb->autoace if not defined $database;
+
+$outfile = $wb->reports . "/protein_domains.csv" if not defined $outfile;
 my $out = IO::File->new($outfile,'w');
 
 $log->log_and_die("cannot open $outfile\n") unless defined $out;
 $log->write_to("dumping domains for $species to $outfile\n");
 
-my $db = Ace->connect(-path => $wb->autoace)||$log->log_and_die(Ace->error);
+my $db = Ace->connect(-path => $database) or $log->log_and_die("Could not connect to $database\n");
 
 my $cdses = $db->fetch_many(-query => "find CDS Corresponding_protein; Species=\"$full\"") 
     ||$log->log_and_die(Ace->error);
@@ -56,8 +57,6 @@ while (my $cds = $cdses->next){
                       map {"$_". ($_->fetch->Title?' "'.$_->fetch->Title.'"':'')} @motifs)), "\n";
 }
 $db->close();
-
-
 
 $log->mail();
 exit(0);

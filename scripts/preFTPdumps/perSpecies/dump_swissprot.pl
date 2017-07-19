@@ -23,13 +23,17 @@ GetOptions(
 
 my $wormbase;
 if ($store) { $wormbase = Storable::retrieve($store) or croak("Can't restore wormbase from $store\n")} 
-else {$wormbase = Wormbase->new( -debug => $debug, -test => $test,-autoace=> $database,-organism => $species)}
+else {$wormbase = Wormbase->new( -debug => $debug, 
+                                 -test => $test,
+                                 -organism => $species);
+}
 
 my $log = Log_files->make_build_log($wormbase);
 
-# Establish a connection to the database.
-$log->write_to("connecting to ${\$wormbase->autoace}\n");
-my $db = Ace->connect(-path => $wormbase->autoace )||die Ace->error;
+$database = $wormbase->autoace if not defined $database;
+
+$log->write_to("connecting to $database\n");
+my $db = Ace->connect(-path => $database ) or $log->log_and_die("Could not connect to $database\n");
 
 $outfile = $wormbase->reports . '/swissprot.txt'
     if not defined $outfile;

@@ -23,14 +23,22 @@ GetOptions(
 )||die(@!);
 
 my $wormbase;
-if ($store) { $wormbase = Storable::retrieve($store) or croak("Can't restore wormbase from $store\n")} 
-else {$wormbase = Wormbase->new( -debug => $debug, -test => $test,-autoace=> $database,-organism => $species)}
+if ($store) { 
+  $wormbase = Storable::retrieve($store) or croak("Can't restore wormbase from $store\n");
+} 
+else {
+  $wormbase = Wormbase->new( -debug   => $debug, 
+                             -test    => $test,
+                             -organism => $species);
+}
+
 
 my $log = Log_files->make_build_log($wormbase);
 
-# Establish a connection to the database.
+$database = $wormbase->autoace if not defined $database;
+
 $log->write_to("connecting to ${\$wormbase->autoace}\n");
-my $dbh = Ace->connect(-path => $wormbase->autoace )||die Ace->error;
+my $dbh = Ace->connect(-path => $database ) or $log->log_and_die("Connection failure: ".  Ace->error );
 
 $outfile = $wormbase->reports . '/orthologs.txt'
     if not defined $outfile;
