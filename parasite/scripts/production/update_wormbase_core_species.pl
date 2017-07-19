@@ -628,7 +628,7 @@ dbname=COREDBNAME
 dir=WORK_DIR/xrefs/mapping/SPECIES/WBPSPARASITE_VERSION
 
 farm
-queue=production-rh6
+queue=production-rh7
 exonerate=/nfs/panda/ensemblgenomes/external/exonerate-2/bin/exonerate
 
 END_XREF_INPUT_TEMPLATE
