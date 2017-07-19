@@ -98,7 +98,7 @@ if($clones) {
     @clones = qw(Cbre_Contig1 Cbre_Contig10 Cbre_Contig20 Cbre_Contig50 Cbre_Contig100 Cbre_Contig200  Cbre_Contig400 Cbre_Contig600 Cbre_Contig800);
   } elsif ($wb->species eq 'briggsae') {
     # briggae contains a mixture of data on chromosomes and supercontigs, so include both
-    @clones = qw(cb25.fpc0002 cb25.fpc0011c cb25.fpc0081 cb25.fpc0143a chrI chrII);
+    @clones = qw(cb25.fpc2310b cb25.fpc4095 cb25.fpc4366 cb25.NA_001 chrI chrII);
   } elsif ($wb->species eq 'remanei') {
     @clones = qw(Crem_Contig0 Crem_Contig10 Crem_Contig15 Crem_Contig30 Crem_Contig100 Crem_Contig200 Crem_Contig300 Crem_Contig500 Crem_Contig800);
   } elsif ($wb->species eq 'japonica') {
@@ -191,11 +191,11 @@ if($clones) {
       }
     }
     
-    if ($wb->species eq 'briggsae') {
-      @expected = qw(TRF Dust); # briggsae inverted feature_data is on the clones, not the chromosomes
-    } else {
+#    if ($wb->species eq 'briggsae') {
+#      @expected = qw(TRF Dust); # briggsae inverted feature_data is on the clones, not the chromosomes
+#    } else {
       @expected = qw(TRF Dust inverted);
-    }
+#    }
 
     &check_for_missing_data2(\@hd, \@expected, 'Feature_data', 'what is expected');
 
