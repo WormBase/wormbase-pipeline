@@ -98,7 +98,7 @@ if($clones) {
     @clones = qw(Cbre_Contig1 Cbre_Contig10 Cbre_Contig20 Cbre_Contig50 Cbre_Contig100 Cbre_Contig200  Cbre_Contig400 Cbre_Contig600 Cbre_Contig800);
   } elsif ($wb->species eq 'briggsae') {
     # briggae contains a mixture of data on chromosomes and supercontigs, so include both
-    @clones = qw(cb25.NA_005 cb25.NA_007 cb25.fpc4366 cb25.NA_019 chrI chrII);
+    @clones = qw(cb25.NA_022 cb25.NA_032 cb25.fpc4366 cb25.NA_019 chrI chrII);
   } elsif ($wb->species eq 'remanei') {
     @clones = qw(Crem_Contig0 Crem_Contig10 Crem_Contig15 Crem_Contig30 Crem_Contig100 Crem_Contig200 Crem_Contig300 Crem_Contig500 Crem_Contig800);
   } elsif ($wb->species eq 'japonica') {
