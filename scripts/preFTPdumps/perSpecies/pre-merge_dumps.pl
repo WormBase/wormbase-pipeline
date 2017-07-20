@@ -21,11 +21,12 @@ use Getopt::Long;
 
 use strict;
 
-my ($store,$debug,$test,$database);
+my ($store,$debug,$test,$database,@species);
 GetOptions(
      'store=s'    => \$store,
      'debug=s'    => \$debug,
      'test'       => \$test,
+     'species=s@' => \@species,
 )||die(@!);
 
 
@@ -75,7 +76,9 @@ my $lsf = LSF::JobManager->new(-M => $defaultMem,
 my %files_to_check;
 
 foreach my $wb ($wormbase, values $wormbase->species_accessors ) {
-  
+
+  next if @species and not grep { $_ eq $wb->species } @species;
+
   my $report_dir = $wb->reports;
   
   foreach my $script (keys %script_conf){
