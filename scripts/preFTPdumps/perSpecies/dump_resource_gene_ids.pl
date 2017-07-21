@@ -34,6 +34,8 @@ if ($store) {
                              -organism => $species);
 }
 
+$database||=$wormbase->autoace;
+
 my $log = Log_files->make_build_log($wormbase);
 
 $log->write_to("connecting to $database\n");
