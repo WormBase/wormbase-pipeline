@@ -130,12 +130,12 @@ $log->mail;
 
 # LSF submit $script
 sub queue_script {
-  my ($script, $data) = @_;
+  my ($script, $outf, $opts) = @_;
   
   my $cmd = "preFTPdumps/perSpecies/$script";
-  $cmd .= " -output $data->{outfile}";
-  if (exists $data->{options}) {
-    $cmd .= " $data->{options}";
+  $cmd .= " -outfile $outf";
+  if (defined $opts) {
+    $cmd .= " $opts";
   }
   $cmd = $wormbase->build_cmd($cmd);
   $lsf->submit($cmd);
