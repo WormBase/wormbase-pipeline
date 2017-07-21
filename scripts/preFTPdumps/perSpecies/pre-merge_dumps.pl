@@ -86,7 +86,7 @@ foreach my $wb ($wormbase, values %core_species ) {
     my $outfile = "$report_dir/" . $script_conf{$script}->{output};
     next unless &check_script($script);
     &clean_previous_output($outfile);
-    &queue_script($script, $outfile, $script_conf{$script}->{options});
+    &queue_script($wb,$script, $outfile, $script_conf{$script}->{options});
     push @{$files_to_check{$script}}, $outfile;
   }
   
@@ -96,7 +96,7 @@ foreach my $wb ($wormbase, values %core_species ) {
     my $outfile = "$report_dir/" . $opts->{output};
     next unless &check_script($script);
     &clean_previous_output($outfile);
-    &queue_script($script, $outfile, $opts->{options});
+    &queue_script($wb,$script, $outfile, $opts->{options});
     push @{$files_to_check{$script}}, $outfile;
   }
 }
@@ -130,14 +130,14 @@ $log->mail;
 
 # LSF submit $script
 sub queue_script {
-  my ($script, $outf, $opts) = @_;
+  my ($wb,$script, $outf, $opts) = @_;
   
   my $cmd = "preFTPdumps/perSpecies/$script";
   $cmd .= " -outfile $outf";
   if (defined $opts) {
     $cmd .= " $opts";
   }
-  $cmd = $wormbase->build_cmd($cmd);
+  $cmd = $wb->build_cmd($cmd);
   $lsf->submit($cmd);
 }
 

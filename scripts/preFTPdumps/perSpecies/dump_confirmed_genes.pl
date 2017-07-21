@@ -5,6 +5,7 @@ use strict;
 use IO::File;
 use Storable;
 use Getopt::Long;
+use Bio::SeqIO;
 
 use lib $ENV{CVS_DIR};
 
