@@ -11,7 +11,7 @@ use lib $ENV{CVS_DIR};
 use Dumper;
 use Wormbase;
 use Log_files;
-
+use Ace;
 
 my ($species,$format,$store,$debug,$test,$database,$outfile);
 GetOptions(
