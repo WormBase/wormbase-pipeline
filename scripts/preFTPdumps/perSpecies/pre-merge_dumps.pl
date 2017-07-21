@@ -92,11 +92,11 @@ foreach my $wb ($wormbase, values %core_species ) {
   
   next if $wb->species ne 'elegans';
 
-  foreach my $script (keys %elegans_script_conf) {
-    my $outfile = "$report_dir/" . $script_conf{$script}->{output};
+  while( my($script,$opts) = each %elegans_script_conf) {
+    my $outfile = "$report_dir/" . $opts->{output};
     next unless &check_script($script);
     &clean_previous_output($outfile);
-    &queue_script($script, $outfile, $script_conf{$script}->{options});
+    &queue_script($script, $outfile, $opts->{options});
     push @{$files_to_check{$script}}, $outfile;
   }
 }
