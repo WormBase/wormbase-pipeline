@@ -38,7 +38,7 @@ my $log = Log_files->make_build_log($wormbase);
 $database = $wormbase->autoace if not defined $database;
 
 $log->write_to("connecting to $database\n");
-my $db = Ace->connect(-path => $database) and $log->log_and_die("Could not connect to $database\n");
+my $db = Ace->connect(-path => $database) || $log->log_and_die("Could not connect to $database (".Ace->error.")\n");
 
 $outfile = $wormbase->reports . "/" . "potential_promoters.fa"
     if not defined $outfile;
