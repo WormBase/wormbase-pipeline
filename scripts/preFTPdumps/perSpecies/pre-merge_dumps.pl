@@ -75,7 +75,8 @@ my $lsf = LSF::JobManager->new(-M => $defaultMem,
 
 my %files_to_check;
 
-foreach my $wb ($wormbase, values $wormbase->species_accessors ) {
+my %core_species = $wormbase->species_accessors;
+foreach my $wb ($wormbase, values %core_species ) {
 
   next if @species and not grep { $_ eq $wb->species } @species;
 
