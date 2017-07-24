@@ -902,7 +902,6 @@ sub copy_annotations_files{
     if ($wb->species eq 'elegans') {
       push @files, ('interactions.txt',
                     'potential_promotors.fa',
-                    'resource_gene_ids.txt',
                     'swissprot.txt',
                     'knockout_consortium_alleles.xml',
                     'confirmed_genes.fa',
@@ -917,7 +916,7 @@ sub copy_annotations_files{
     
     foreach my $file (@files) {
       
-      my $in_file = $in_prefix . "/" . $file;
+      my $in_file = $in_prefix . "/" . $wb->species ".$file";
       my $out_file = $out_prefix . $file . '.gz';
       
       if (-e $in_file) {
@@ -1387,7 +1386,6 @@ GSPECIES.BIOPROJ.WSREL.TSS.wig.tar.gz
 GSPECIES.BIOPROJ.WSREL.geneIDs.txt.gz
 GSPECIES.BIOPROJ.WSREL.interactions.txt.gz
 GSPECIES.BIOPROJ.WSREL.potential_promotors.fa.gz
-GSPECIES.BIOPROJ.WSREL.resource_gene_ids.txt.gz
 GSPECIES.BIOPROJ.WSREL.swissprot.txt.gz
 
 [elegans]species/GSPECIES/BIOPROJ
