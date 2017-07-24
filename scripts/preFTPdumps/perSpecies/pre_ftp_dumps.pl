@@ -40,24 +40,22 @@ if ($store) {
 }
 
 
-my %script_conf = (
-  'dump_species_functional_descriptions.pl' => { output => "functional_descriptions.txt" },
-  'dump_protein_domains.pl'                 => { output => "protein_domains.csv" },
-  'dump_species_orthologs.pl'               => { output => "orthologs.txt" }, 
-  'dump_confirmed_genes.pl'                 => { output => "confirmed_genes.fa" },
-    );
+my @script_conf = (
+  { script => 'dump_species_functional_descriptions.pl', output => "functional_descriptions.txt",  all => 1 },
+  { script => 'dump_protein_domains.pl',                 output => "protein_domains.csv",          all => 1 },
+  { script => 'dump_species_orthologs.pl',               output => "orthologs.txt",                all => 1 },
+  { script => 'dump_confirmed_genes.pl',                 output => "confirmed_genes.fa",           all => 1 },
+  { script => 'dump_species_gene_interactions.pl',       output => "interactions.txt"                },
+  { script => 'dump_interpolated.pl',                    output => "interpolated_clones.txt"         },
+  { script => 'dump_promoters.pl',                       output => "potential_promotors.fa"          },
+  { script => 'dump_resource_gene_ids.pl',               output => "resource_gene_ids.txt"           },
+  { script => 'dump_swissprot.pl',                       output => "swissprot.txt"                   },
+  { script => 'dump_ko.pl',                              output => "knockout_consortium_alleles.xml" },
+  { script => 'dump_cdna2orf.pl',                        output => "cdna2orf.txt"                    },
+  { script => 'dump_pcr_list.pl',                        output => "pcr_product2gene.txt"            },
+  { script => 'dump_geneid_list.pl',                     output => "geneIDs.txt"                     },
+  { script => 'dump_geneid_list.pl',                     output => "geneOtherIDs.txt", options => "-other" },
 
-my %elegans_script_conf = (
-  'dump_species_gene_interactions.pl'       => { output => "interactions.txt" },
-  'dump_interpolated.pl'                    => { output => "interpolated_clones.txt" },
-  'dump_promoters.pl'                       => { output => "potential_promotors.fa" },
-  'dump_resource_gene_ids.pl'               => { output => "resource_gene_ids.txt" },
-  'dump_swissprot.pl'                       => { output => "swissprot.txt" },
-  'dump_ko.pl'                              => { output => "knockout_consortium_alleles.xml" },
-  'dump_cdna2orf.pl'                        => { output => "cdna2orf.txt" },
-  'dump_geneid_list.pl'                     => { output => "geneIDs.txt" },
-  'dump_geneid_list.pl'                     => { output => "geneOtherIDs.txt", options => "-other" },
-  'dump_pcr_list.pl'                        => { output => "pcr_product2gene.txt" },
 );
 
 
@@ -74,8 +72,8 @@ my $lsf = LSF::JobManager->new(-M => $defaultMem,
                               );
 
 my %files_to_check;
-
 my %core_species = $wormbase->species_accessors;
+
 foreach my $wb ($wormbase, values %core_species ) {
   my $spe = $wb->species;
 
@@ -83,25 +81,21 @@ foreach my $wb ($wormbase, values %core_species ) {
 
   my $report_dir = $wb->reports;
   
-  while( my ($script, $opts) = each %script_conf){
-    my $outfile = "$report_dir/${spe}." . $opts->{output};
-    next unless &check_script($script);
-    &clean_previous_output($outfile);
+  foreach my $item (@script_conf) {
+    my $script = $item->{script};
+    my $output = $item->{output};
     # note that all scripts need to be run against autoace, because only that has all
     # of the necessary objects filled in
-    &queue_script($wb,$script, $outfile, $opts->{options} . "-database " . $wormbase->autoace);
-    push @{$files_to_check{$script}}, $outfile;
-  }
-  
-  next if $spe ne 'elegans';
+    my $options = $item->{options} . " -database " . $wormbase->autoace;
 
-  while( my($script,$opts) = each %elegans_script_conf) {
-    my $outfile = "$report_dir/${spe}" . $opts->{output};
+    next unless $item->{all} or $spe eq 'elegans';
     next unless &check_script($script);
+
+    my $outfile = "$report_dir/${spe}.${output}";
     &clean_previous_output($outfile);
-    &queue_script($wb,$script, $outfile, $opts->{options});
+    &queue_script($wb,$script, $outfile, $options);
     push @{$files_to_check{$script}}, $outfile;
-  }
+  }  
 }
 
 $log->write_to("Waiting for LSF jobs to finish.\n");
