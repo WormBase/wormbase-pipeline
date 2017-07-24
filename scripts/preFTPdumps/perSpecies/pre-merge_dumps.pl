@@ -43,7 +43,7 @@ if ($store) {
 my %script_conf = (
   'dump_species_functional_descriptions.pl' => { output => "functional_descriptions.txt" },
   'dump_protein_domains.pl'                 => { output => "protein_domains.csv" },
-  'dump_species_orthologs.pl'               => { output => "orthologs.txt", -options => "-database $wormbase->autoace" },
+  'dump_species_orthologs.pl'               => { output => "orthologs.txt" }, 
   'dump_confirmed_genes.pl'                 => { output => "confirmed_genes.fa" },
     );
 
@@ -56,7 +56,7 @@ my %elegans_script_conf = (
   'dump_ko.pl'                              => { output => "knockout_consortium_alleles.xml" },
   'dump_cdna2orf.pl'                        => { output => "cdna2orf.txt" },
   'dump_geneid_list.pl'                     => { output => "geneIDs.txt" },
-  'dump_geneid_list.pl'                     => { output => "geneOtherIDs.txt", -options => "-other" },
+  'dump_geneid_list.pl'                     => { output => "geneOtherIDs.txt", options => "-other" },
   'dump_pcr_list.pl'                        => { output => "pcr_product2gene.txt" },
 );
 
@@ -77,23 +77,26 @@ my %files_to_check;
 
 my %core_species = $wormbase->species_accessors;
 foreach my $wb ($wormbase, values %core_species ) {
+  my $spe = $wb->species;
 
-  next if @species and not grep { $_ eq $wb->species } @species;
+  next if @species and not grep { $_ eq $spe } @species;
 
   my $report_dir = $wb->reports;
   
-  foreach my $script (keys %script_conf){
-    my $outfile = "$report_dir/" . $script_conf{$script}->{output};
+  while( my ($script, $opts) = each %script_conf){
+    my $outfile = "$report_dir/${spe}." . $opts->{output};
     next unless &check_script($script);
     &clean_previous_output($outfile);
-    &queue_script($wb,$script, $outfile, $script_conf{$script}->{options});
+    # note that all scripts need to be run against autoace, because only that has all
+    # of the necessary objects filled in
+    &queue_script($wb,$script, $outfile, $opts->{options} . "-database " . $wormbase->autoace);
     push @{$files_to_check{$script}}, $outfile;
   }
   
-  next if $wb->species ne 'elegans';
+  next if $spe ne 'elegans';
 
   while( my($script,$opts) = each %elegans_script_conf) {
-    my $outfile = "$report_dir/" . $opts->{output};
+    my $outfile = "$report_dir/${spe}" . $opts->{output};
     next unless &check_script($script);
     &clean_previous_output($outfile);
     &queue_script($wb,$script, $outfile, $opts->{options});

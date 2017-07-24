@@ -45,36 +45,36 @@ $outfile = $wormbase->reports . '/orthologs.txt'
 my $of = IO::File->new($outfile,'w');
 $log->write_to("writing to $outfile\n");
 
+my $full_name = $wormbase->long_name;
+
 print $of 
-"# ${\$wormbase->long_name} orthologs\n".
+"# $full_name orthologs\n".
 "# WormBase version: " . $dbh->version . "\n".
 '# Generated:'.get_date."\n".
 '# File is in record format with records separated by "=\n"'."\n".
 "#      Sample Record\n".
 '#      WBGeneID \t PublicName \n'."\n".
-'#      Species \t Ortholog \t MethodsUsedToAssignOrtholog \n'."\n".
+'#      Species \t Ortholog \t Public_name \t MethodsUsedToAssignOrtholog \n'."\n".
 '# BEGIN CONTENTS'."\n".
-"=\n";
 
-my $i = $dbh->fetch_many(-query=>"find Gene Species=\"${\$wormbase->long_name}\"");
+my $i = $dbh->fetch_many(-query=>"find Gene Species=\"$full_name\"");
 while (my $gene = $i->next) {
+  my $nm = $gene->Public_name;
+  my @orthologs = $gene->Ortholog;
+  next unless @orthologs;
 
-    my %orthologs = ();   
+  print $of "=\n";
+  print $of "$gene\t$nm\n";
+  
+  foreach my $o ($gene->Ortholog) {
+    my @support = $o->col(3);
+    @support = $o->col(2) unless @support;
+    my $support_str = join(";", @support);
     
-    # Nematode orthologs
-    foreach ($gene->Ortholog) {
-	my $methods  = join('; ',map { "$_" } eval { $_->right(2)->col }) ;
-	$orthologs{$_->Species} = [ $_,$methods ];
-    }
-
-    print $of join("\t",$gene,$gene->Public_name),"\n";
-    
-    foreach (sort keys %orthologs) {
-	my ($ortholog,$methods) = @{$orthologs{$_}};
-	print $of join("\t",$_,$ortholog,$methods),"\n";
-    }
-    print $of "=\n";
+    print $of join("\t",$o->Species,$o,$o->Public_name,$support_str), "\n";
+  }
 }
 
-$log->mail;
 $of->close;
+$log->mail;
+
