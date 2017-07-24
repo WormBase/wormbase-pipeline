@@ -45,14 +45,19 @@ $log->write_to("writing to $outfile\n");
 
 my $WS_version = $wormbase->get_wormbase_version();
 my $wormdna = $wormbase->wormpep."/".$wormbase->pepdir_prefix."pep.dna${WS_version}";
+my $wormpep = $wormbase->wormpep."/".$wormbase->pepdir_prefix."pep${WS_version}";
+
+my $seqio_pep  = Bio::SeqIO->new('-file' => "$wormpep", '-format' => 'fasta');
+my %conf_genes;
+while(my $seq = $seqio_pep->next_seq) {
+  my ($status) = $seq->desc =~ /status=(\S+)/;
+  if ($status =~ /^confirmed$/i) {
+    $conf_genes{$seq->id} = 1;
+  }
+}
 
 my $seqio  = Bio::SeqIO->new('-file' => "$wormdna", '-format' => 'fasta');
 my $seqio_out = Bio::SeqIO->new('-file' => ">$outfile", '-format' => 'fasta');
-
-my $query = "Find elegans_CDS; Confirmed";
-my @confirmed_genes   = $db->fetch(-query=>$query);
-my %conf_genes;
-map { $conf_genes{$_->name} = 1 } @confirmed_genes;
 
 while(my $seq = $seqio->next_seq){
   if($conf_genes{$seq->id}) {
