@@ -910,7 +910,8 @@ sub copy_annotations_files{
                     'geneOtherIDs.txt',
                     'pcr_product2gene.txt',
                     'interpolated_clones.txt',
-      );
+                    'molecules.ace'
+                    );
     }
     
     
@@ -1387,6 +1388,7 @@ GSPECIES.BIOPROJ.WSREL.geneIDs.txt.gz
 GSPECIES.BIOPROJ.WSREL.interactions.txt.gz
 GSPECIES.BIOPROJ.WSREL.potential_promotors.fa.gz
 GSPECIES.BIOPROJ.WSREL.swissprot.txt.gz
+GSPECIES.BIOPROJ.WSREL.molecules.ace.gz
 
 [elegans]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.assembly.agp.gz
