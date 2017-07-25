@@ -37,9 +37,6 @@ my $log = Log_files->make_build_log($wormbase);
 
 $database = $wormbase->autoace if not defined $database;
 
-$log->write_to("connecting to ${\$wormbase->autoace}\n");
-my $dbh = Ace->connect(-path => $database ) or $log->log_and_die("Connection failure: ".  Ace->error );
-
 $outfile = $wormbase->reports . '/orthologs.txt'
     if not defined $outfile;
 my $of = IO::File->new($outfile,'w');
@@ -49,16 +46,20 @@ my $full_name = $wormbase->long_name;
 
 print $of 
 "# $full_name orthologs\n".
-"# WormBase version: " . $dbh->version . "\n".
-'# Generated:'.get_date."\n".
-'# File is in record format with records separated by "=\n"'."\n".
-"#      Sample Record\n".
-'#      WBGeneID \t PublicName \n'."\n".
-'#      Species \t Ortholog \t Public_name \t MethodsUsedToAssignOrtholog \n'."\n".
-'# BEGIN CONTENTS'."\n".
+    "# WormBase version: " . $wormbase->get_wormbase_version . "\n".
+    '# Generated:'.get_date."\n".
+    '# File is in record format with records separated by "=\n"'."\n".
+    "#      Sample Record\n".
+    '#      WBGeneID \t PublicName \n'."\n".
+    '#      Species \t Ortholog \t Public_name \t MethodsUsedToAssignOrtholog \n'."\n".
+    '# BEGIN CONTENTS'."\n";
 
-my $i = $dbh->fetch_many(-query=>"find Gene Species=\"$full_name\"");
-while (my $gene = $i->next) {
+$log->write_to("connecting to $database\n");
+my $dbh = Ace->connect(-path => $database ) or $log->log_and_die("Connection failure: ".  Ace->error );
+
+$log->write_to("Querying for genes...\n");
+my @genes = $dbh->fetch(-query=>"find Gene WHERE Ortholog AND Species=\"$full_name\"");
+foreach my $gene (@genes) {
   my $nm = $gene->Public_name;
   my @orthologs = $gene->Ortholog;
   next unless @orthologs;
@@ -70,6 +71,9 @@ while (my $gene = $i->next) {
     my @support = $o->col(3);
     @support = $o->col(2) unless @support;
     my $support_str = join(";", @support);
+
+    next if not $o->Species;
+    next if not $o->Public_name;
     
     print $of join("\t",$o->Species,$o,$o->Public_name,$support_str), "\n";
   }
