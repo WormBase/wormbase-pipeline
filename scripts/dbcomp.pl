@@ -377,7 +377,6 @@ sub sanger {
 		 "Method",
 		 "Clone",
 		 "Coding_transcripts",
-		 "Accession_number",
 		 "Variation",
 		 "Motif",
 		 "Feature",
