@@ -9,6 +9,7 @@
 use strict;
 use Getopt::Long;
 
+use Storable;
 use Ace;
 use JSON;
 use Wormbase;
