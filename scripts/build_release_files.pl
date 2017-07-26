@@ -118,8 +118,6 @@ sub buildrelease{
   }
   #check md5sums
   $wormbase->run_command("cd ".$wormbase->autoace."/release; md5sum -c md5sum.WS$WS_version", $log);
-    # zip up the dna and gff files
-  $wormbase->run_script( "release_letter.pl", $log);
 }
 
 
