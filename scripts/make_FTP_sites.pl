@@ -917,7 +917,7 @@ sub copy_annotations_files{
     
     foreach my $file (@files) {
       
-      my $in_file = $in_prefix . "/" . $wb->species ".$file";
+      my $in_file = $in_prefix . "/" . $wb->species .".$file";
       my $out_file = $out_prefix . $file . '.gz';
       
       if (-e $in_file) {
