@@ -874,7 +874,7 @@ sub copy_annotations_files{
     my $gspecies = $wb->full_name('-g_species'=>1);
     my $bioproj = $wb->ncbi_bioproject;
 
-    my $in_file = $wormbase->autoace . 'ONTOLOGY/gene_association.'. $WS_version_name.'.wb.' . $wb->species;
+    my $in_file = $wormbase->autoace . '/ONTOLOGY/gene_association.'. $WS_version_name.'.wb.' . $wb->species;
     my $out_file = "$targetdir/species/$gspecies/$bioproj/annotation/$gspecies.${bioproj}.${WS_version_name}.go_annotations.gaf.gz";
 
     if (-e $in_file) {
