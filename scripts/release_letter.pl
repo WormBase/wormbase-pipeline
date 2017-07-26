@@ -558,7 +558,7 @@ sub write_GO_stats {
     next if $k eq 'WB';
     printf $fh "    %-20s %5d\n",  $k,  $annots{by_provider_counts}->{$k};
   }
-  printf $fh "  Breakdown by evdience code:\n";
+  printf $fh "  Breakdown by evidence code:\n";
   printf $fh "    IEA     %d\n", $summa{annotation_counts}->{iea};
   printf $fh "      Interpro2GO %5d\n", $summa{annotation_counts}->{iea_interpro}; 
   printf $fh "      Other       %5d\n", $summa{annotation_counts}->{iea_non_interpro}; 
