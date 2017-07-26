@@ -1138,7 +1138,7 @@ sub copy_assembly_manifest {
   my $tgt_manifile = "$ftp_acedb_dir/ASSEMBLIES.$WS_version_name.json";
   my $src_manifile = $wormbase->reports . "ASSEMBLIES.json";
 
-  $log->log_and_die("Assembly manifest does not exist in REPORTS directory")
+  $log->log_and_die("Assembly manifest ($src_manifile) does not exist in REPORTS directory")
       if not -e $src_manifile;
 
   $wormbase->run_command("cp $src_manifile $tgt_manifile", $log);
