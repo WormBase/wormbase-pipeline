@@ -1395,6 +1395,7 @@ GSPECIES.BIOPROJ.WSREL.assembly.agp.gz
 GSPECIES.BIOPROJ.WSREL.wormpep_package.tar.gz
 GSPECIES.BIOPROJ.WSREL.transposon_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.transposons.fa.gz
+GSPECIES.BIOPROJ.WSREL.xrefs.txt.gz
 
 [CORE]species/GSPECIES/BIOPROJ/annotation
 GSPECIES.BIOPROJ.WSREL.functional_descriptions.txt.gz
@@ -1411,7 +1412,6 @@ GSPECIES.BIOPROJ.WSREL.annotations.gff2.gz
 GSPECIES.BIOPROJ.WSREL.ncRNA_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.pseudogenic_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.intergenic_sequences.fa.gz
-GSPECIES.BIOPROJ.WSREL.xrefs.txt.gz
 
 [CORE:pristionchus]species/GSPECIES/BIOPROJ/annotation
 GSPECIES.BIOPROJ.WSREL.SRA_gene_expression.tar.gz
