@@ -839,7 +839,7 @@ sub copy_annotations_files{
       my $out_file = $out_prefix . $out_suffix;
 
       if (-e $in_file) {
-        $wormbase->run_command("cat $in_file | gzip -n -9 -c > $out_file", $log);
+        $wormbase->run_command("cat $in_file | gzip -n -9 -c >! $out_file", $log);
       }
     }
   }
