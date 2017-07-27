@@ -54,7 +54,7 @@ my @script_conf = (
   { script => 'dump_cdna2orf.pl',                        output => "cdna2orf.txt"                    },
   { script => 'dump_pcr_list.pl',                        output => "pcr_product2gene.txt"            },
   { script => 'dump_geneid_list.pl',                     output => "geneIDs.txt"                     },
-  { script => 'dump_molecules.pl',                       output => "moleculess.ace"                  },
+  { script => 'dump_molecules.pl',                       output => "molecules.ace"                  },
   { script => 'dump_geneid_list.pl',                     output => "geneOtherIDs.txt", options => "-other" },
 
 );
