@@ -34,8 +34,10 @@ if ($store) {
 my $log = Log_files->make_build_log($wormbase);
 $database = $wormbase->autoace if not defined $database;
 
-$outfile = $wormbase->reports . '/cdna2orf.fa'
-    if not defined $outfile;
+if (not defined $outfile){
+  $outfile = $wormbase->reports . (defined $other_names ? '/geneOtherIDs.txt' : '/geneIDs.txt');
+}
+
 my $of = IO::File->new($outfile,'w');
 $log->write_to("writing to $outfile\n");
 
