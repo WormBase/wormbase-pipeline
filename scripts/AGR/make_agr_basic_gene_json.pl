@@ -24,7 +24,7 @@ my %XREF_MAP = (
     URSid => "RNAcentral",
   },
   "Panther" => {
-    gene   => "PANTHER_SEQ",
+    #gene   => "PANTHER_SEQ",
     family => "PANTHER",
   }
 );
