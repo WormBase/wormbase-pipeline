@@ -631,17 +631,24 @@ sub go_public {
   if (not -e "$ftp_staging_dir/$rel/letter.$rel") {
     $log->log_and_die("Did not find $ftp_staging_dir/$rel/letter.$rel. Something wrong. Not going public\n");
   }
-
+  
   $log->write_to("Moving the release folder from staging to live\n");
-  $wormbase->run_command("mv $ftp_staging_dir/$rel $ftp_release_dir/");
-
+  $wormbase->run_command("mv $ftp_staging_dir/$rel $ftp_release_dir/", $log) 
+      and $log->log_and_die("Failed to mv release folder into place - aborting\n");
+  
   $log->write_to("Updating the current_development symlink\n");
-  $wormbase->run_command("rm -f $ftp_release_dir/current-development-release", $log);
-  $wormbase->run_command("cd $ftp_release_dir && ln -s $rel current-development-release", $log);  
-
+  eval {
+    $wormbase->run_command("rm -f $ftp_release_dir/current-development-release", $log) and die;
+    $wormbase->run_command("cd $ftp_release_dir && ln -s $rel current-development-release", $log) and die;
+  };
+  $@ and $log->write_to("WARNING: Failed to update FTP development symlink - need to fix manually\n");
+  
   $log->write_to("Updating the current_DB symlink\n");
-  $wormbase->run_command("rm -f $db_dir/current_DB", $log);
-  $wormbase->run_command("cd $db_dir && ln -s $rel current_DB", $log);
+  eval {
+    $wormbase->run_command("rm -f $db_dir/current_DB", $log) and die;
+    $wormbase->run_command("cd $db_dir && ln -s $rel current_DB", $log) and die;
+  };
+  $@ and $log->write_to("WARNING: Failed to update current_DB symlink - need to fix manually\n");
   
   $log->write_to("Sending release letter to staff\n");
   my $letter = "$ftp_release_dir/$rel/letter.$rel";
