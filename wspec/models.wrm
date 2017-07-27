@@ -2344,18 +2344,18 @@
                     No_original_reference Text //proposed by Wen
                     Person ?Person
                     Location ?Laboratory
-                    Clonality UNIQUE Polyclonal Text
-                                     Monoclonal Text
-                    Antigen UNIQUE Peptide Text
-                                   Protein Text
-                                   Other_antigen Text
+                    Clonality UNIQUE Polyclonal UNIQUE Text
+                                     Monoclonal UNIQUE Text
+                    Antigen UNIQUE Peptide UNIQUE Text
+                                   Protein UNIQUE Text
+                                   Other_antigen UNIQUE Text
                     Animal UNIQUE Rabbit
                                   Mouse
                                   Rat
                                   Guinea_pig
                                   Chicken
                                   Goat
-                                  Other_animal Text
+                                  Other_animal UNIQUE Text
           Historical_gene ?Gene Text
           Possible_pseudonym ?Antibody XREF Possible_pseudonym_of
           Possible_pseudonym_of ?Antibody XREF Possible_pseudonym
@@ -3864,23 +3864,3 @@
 // WS258
 // WS259
 // WS260
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

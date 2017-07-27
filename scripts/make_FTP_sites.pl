@@ -874,11 +874,13 @@ sub copy_annotations_files{
     my $gspecies = $wb->full_name('-g_species'=>1);
     my $bioproj = $wb->ncbi_bioproject;
 
-    my $in_file = $wormbase->autoace . 'ONTOLOGY/gene_association.'. $WS_version_name.'.wb.' . $wb->species;
+    my $in_file = $wormbase->autoace . "/ONTOLOGY/gene_association.${WS_version_name}.wb.$gspecies";
     my $out_file = "$targetdir/species/$gspecies/$bioproj/annotation/$gspecies.${bioproj}.${WS_version_name}.go_annotations.gaf.gz";
 
     if (-e $in_file) {
         $wormbase->run_command("cat $in_file | gzip -n -9 -c > $out_file", $log);
+    }else{
+        $log->write_to("WARNING: cannot find $in_file\n");
     }
   }
 
@@ -1395,6 +1397,7 @@ GSPECIES.BIOPROJ.WSREL.assembly.agp.gz
 GSPECIES.BIOPROJ.WSREL.wormpep_package.tar.gz
 GSPECIES.BIOPROJ.WSREL.transposon_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.transposons.fa.gz
+GSPECIES.BIOPROJ.WSREL.xrefs.txt.gz
 
 [CORE]species/GSPECIES/BIOPROJ/annotation
 GSPECIES.BIOPROJ.WSREL.functional_descriptions.txt.gz
@@ -1411,7 +1414,6 @@ GSPECIES.BIOPROJ.WSREL.annotations.gff2.gz
 GSPECIES.BIOPROJ.WSREL.ncRNA_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.pseudogenic_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.intergenic_sequences.fa.gz
-GSPECIES.BIOPROJ.WSREL.xrefs.txt.gz
 
 [CORE:pristionchus]species/GSPECIES/BIOPROJ/annotation
 GSPECIES.BIOPROJ.WSREL.SRA_gene_expression.tar.gz

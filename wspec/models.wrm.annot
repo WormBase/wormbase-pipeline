@@ -2370,18 +2370,18 @@
                     No_original_reference // Text //proposed by Wen   -- never has text tad
                     Person ?Person
                     Location ?Laboratory
-                    Clonality UNIQUE Polyclonal // Text   turned into an enum by tad
-                                     Monoclonal // Text
-                    Antigen UNIQUE ENUM Peptide Text
-                                        Protein Text
-                                        Other_antigen Text
+                    Clonality UNIQUE Polyclonal // UNIQUE Text   turned into an enum by tad
+                                     Monoclonal // UNIQUE Text
+                    Antigen UNIQUE ENUM Peptide UNIQUE Text
+                                        Protein UNIQUE Text
+                                        Other_antigen UNIQUE Text
                     Animal UNIQUE ENUM Rabbit
                                        Mouse
                                        Rat
                                        Guinea_pig
                                        Chicken
                                        Goat
-                                       Other_animal Text
+                                       Other_animal UNIQUE Text
           Historical_gene ?Gene Text
           Possible_pseudonym ?Antibody INXREF Possible_pseudonym_of
           Possible_pseudonym_of ?Antibody OUTXREF Possible_pseudonym
@@ -2889,7 +2889,7 @@
              Interaction ?Interaction INXREF PCR_interactor
              RNAi ?RNAi INXREF PCR_product
              Remark ?Text #Evidence
-//             Method UNIQUE ?Method       // Becomes :locatable/method
+//           Method UNIQUE ?Method       // Becomes :locatable/method
 
 
 ///////////////////////////////////////////////
@@ -2906,7 +2906,7 @@
            Remark ?Text #Evidence
            Related_phenotypes Specialisation_of ?Phenotype OUTXREF Generalisation_of
                               Generalisation_of ?Phenotype INXREF Specialisation_of
-                              Dead // Alternate_phenotype ?Phenotype    -- tad killed because empty.
+                              Dead Alternate_phenotype ?Phenotype    // tad killed because empty reinstated as no longer empty pad.
            Attribute_of RNAi ?RNAi INXREF Phenotype
                         Variation ?Variation INXREF Phenotype
                         Transgene ?Transgene INXREF Phenotype     // Added by Carol
