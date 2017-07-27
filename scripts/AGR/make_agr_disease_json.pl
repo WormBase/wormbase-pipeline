@@ -66,10 +66,12 @@ while (my $obj = $it->next) {
   my $g = $obj->name;
 
   foreach my $doterm ($obj->Experimental_model) {
-    my (@papers, $evi_date);
+    my (@json_papers, $evi_date);
     foreach my $evi ($doterm->right->col) {
       if ($evi->name eq 'Paper_evidence') {
-        @papers = &get_papers( $evi->col );
+        foreach my $wb_paper ($evi->col ) {
+          push @json_papers, &get_paper( $wb_paper );
+        }
       } elsif ($evi->name eq 'Date_last_updated') {
         $evi_date = $evi->right;
         $evi_date->date_style('ace');
@@ -78,23 +80,25 @@ while (my $obj = $it->next) {
       }
     }
     
-    push @annots, {
-      objectId => "WB:$g",
-      DOid     => $doterm->name,
-      taxonId  => "NCBITaxon:$taxid",
-      dataProvider => "WB", 
-      dateAssigned => defined $evi_date ? $evi_date : $date,
-      geneticSex   => "hermaphrodite",
-      evidence     => [
-        {
-          evidenceCode => "IMP",  # inferred from mutant phenotype; hard-coded for now
-          publications => \@papers,
+    foreach my $pap (@json_papers) {
+      push @annots, {
+        objectId => "WB:$g",
+        objectName => $obj->Public_name->name,
+        inferredGeneAssociation => "WB:$g",
+        DOid     => $doterm->name,
+        taxonId  => "NCBITaxon:$taxid",
+        dataProvider => "WB", 
+        dateAssigned => defined $evi_date ? $evi_date : $date,
+        geneticSex   => "hermaphrodite",
+        evidence     => {
+          evidenceCodes => ["IMP"],  # inferred from mutant phenotype; hard-coded for now
+          publication => $pap,
         },
-          ],
-      objectRelation => {
-        associationType => "causes_condition",
-        objectType      => "gene",
-      },
+        objectRelation => {
+          associationType => "is_implicated_in",
+          objectType      => "gene",
+        },
+      };
     };
   }
 }
@@ -111,7 +115,8 @@ while( my $obj = $it->next) {
   my ($y, $m, $d) = split(/\-/, $evi_date);
   $evi_date = sprintf("%4d-%02d-%02dT00:00:00+00:00", $y, $m, $d);
 
-  my @papers = &get_papers( $obj->Paper_evidence );
+  my ($paper) = &get_paper( $obj->Paper_evidence );
+  my @evi_codes = map { $_->name } $obj->Evidence_code;
 
   my $annot = {
     DOid         => $obj->Disease_term->name,
@@ -119,12 +124,10 @@ while( my $obj = $it->next) {
     dataProvider => "WB",
     dateAssigned => $evi_date,
     geneticSex  => ($obj->Genetic_sex) ? $obj->Genetic_sex->name : "hermaphrodite",
-    evidence     => [
-      {
-        evidenceCode => ($obj->Evidence_code) ? $obj->Evidence_code->name : "IMP",
-        publications => \@papers,
-      },
-      ],
+    evidence     => {
+      evidenceCodes => (@evi_codes) ? \@evi_codes : ["IMP"],
+      publication => $paper,
+    },
   };
   
   # no Experimental_condition data in WB; will need to address this one as data arrives
@@ -135,9 +138,10 @@ while( my $obj = $it->next) {
   my ($gene) = $obj->Disease_relevant_gene;
   my ($inferred_gene) = $obj->Inferred_gene;
 
-  my ($obj_id, $obj_type, $assoc_type, @with_list);
+  my ($obj_id, $obj_name, $obj_type, $assoc_type, @with_list);
   if (defined $strain) {
     $obj_type = "strain";
+    $obj_name = ($strain->Genotype) ? $strain->Genotype->name : "";
     $assoc_type = "is_model_of";
     $obj_id = "WB_Strain:" . $strain->name;
 
@@ -146,20 +150,23 @@ while( my $obj = $it->next) {
     #push @with_list, "WB_Var:" . $allele->name if defined $name;
   } elsif (defined $allele) {
     $obj_type = "allele";
-    $assoc_type = "causes_condition";
+    $obj_name = $allele->Public_name->name;
+    $assoc_type = "is_implicated_in";
     $obj_id = "WB_Var:" . $allele->name;
 
     #push @with_list, "WB:" . $gene->name if defined $gene;
     #push @with_list, "WB_Transgene:" . $transgene->name if defined $transgene;
   } elsif (defined $transgene) {
     $obj_type = "transgene";
-    $assoc_type = "causes_condition";
+    $obj_name = $transgene->Public_name->name;
+    $assoc_type = "is_implicated_in";
     $obj_id = "WB_Transgene:" . $transgene->name;
     
     #push @with_list, "WB:" . $gene->name if defined $gene;
   } elsif (defined $gene) {
     $obj_type = "gene";
-    $assoc_type = "causes_condition";
+    $obj_name = $gene->Public_name->name;
+    $assoc_type = "is_implicated_in";
     $obj_id = "WB:" . $gene->name;
   } else {
     die "Could not identify a central object for the annotation from Disease_model_annotation $obj->name\n";
@@ -173,6 +180,7 @@ while( my $obj = $it->next) {
 
   $annot->{objectRelation} = $assoc_rel;
   $annot->{objectId} = $obj_id;
+  $annot->{objectName} = $obj_name;
   $annot->{with} = \@with_list if @with_list;
   
   #
@@ -183,6 +191,7 @@ while( my $obj = $it->next) {
 
     my @mod_strain    = map { "WB_Strain:" . $_->name } $obj->Modifier_strain;
     my @mod_transgene = map { "WB_Transgene:" . $_->name } $obj->Modifier_transgene;
+    my @mod_var       = map { "WB_Var:" . $_->name } $obj->Modifier_variation;
     my @mod_gene      = map { "WB:" . $_->name } $obj->Modifier_gene;
     my @mod_molecule  = map { $_->name } $obj->Modifier_molecule;
     my @mod_other     = map { $_->name } $obj->Other_modifier;
@@ -190,7 +199,7 @@ while( my $obj = $it->next) {
     my $mod_annot = {
       associationType => $mod_assoc_type,
     };
-    my @genetic  = (@mod_strain, @mod_transgene, @mod_gene);
+    my @genetic  = (@mod_strain, @mod_transgene, @mod_var, @mod_gene);
     my @exp_cond = (@mod_molecule, @mod_other);
 
     die "$obj: Genetic or Experimental modifier info must be supplied when Modifier_association_type is supplied\n"
@@ -221,14 +230,7 @@ if ($daf) {
 
   foreach my $annot (@annots) {
     # if an annotation has multiple lines of evidence, we need  a separate line for each one
-    foreach my $evidence (@{$annot->{evidence}}) {
-      my $evi_code = $evidence->{evidenceCode};
-      foreach my $paper (@{$evidence->{publications}}) {
-        my $pmid = $paper->{pubMedId};
-
-        &write_DAF_line( $outfh, $evi_code, $pmid, $annot );
-      }
-    }
+    &write_DAF_line( $outfh, $annot );
   }
   
 } else {
@@ -251,28 +253,24 @@ if ($daf) {
 exit(0);
 
 ##############################################
-sub get_papers {
-  my @wb_paper = @_;
+sub get_paper {
+  my ($wb_paper) = @_;
 
-  my @papers;
+  my $json_paper = {};
 
-  foreach my $paper (@wb_paper) {
-    my $pmid;
-    foreach my $db ($paper->Database) {
-      if ($db->name eq 'MEDLINE') {
-        $pmid = $db->right->right->name;
-        last;
-      }
-    }
-    push @papers, {
-      modPublicationId => "WB_REF:$paper",
-    };
-    if ($pmid) {
-      $papers[-1]->{pubMedId} = "PMID:$pmid";
+  my $pmid;
+  foreach my $db ($wb_paper->Database) {
+    if ($db->name eq 'MEDLINE') {
+      $pmid = $db->right->right->name;
+      last;
     }
   }
+  $json_paper->{modPublicationId} = "WB_REF:$wb_paper";
+  if ($pmid) {
+    $json_paper->{pubMedId} = "PMID:$pmid";
+  }
 
-  return @papers;
+  return $json_paper;
 }
 
 ##############################################
@@ -295,7 +293,7 @@ sub write_DAF_header {
 
   my ($fh) = @_;
 
-  print $fh "!daf-version 0.1\n";
+  print $fh "!daf-version 1.0\n";
   print $fh "!Date: $date\n";
   print $fh "!Project_name: WormBase (WB) Version $ws_version\n";
   print $fh "!URL: http://www.wormbase.org/\n";
@@ -311,11 +309,11 @@ sub write_DAF_column_headers {
   my @col_headers  = (
     'Taxon',
     'DB Object Type',
-    'DB',
     'DB Object ID',
     'DB Object Symbol',
     'Inferred gene association',
     'Gene Product Form ID',
+    'Additional genetic components',
     'Experimental conditions',
     'Association type',
     'Qualifier',
@@ -337,21 +335,18 @@ sub write_DAF_column_headers {
 
 ###########################################################3
 sub write_DAF_line {
-  my ($fh, $evi_code, $pmid,  $obj) = @_;
-
-  my $obj_id = $obj->{objectId};
-  my ($id_source, $id) = split(/:/, $obj_id);
+  my ($fh, $obj) = @_;
 
   my $date = $obj->{dateAssigned};
   $date =~ s/(\d{4})\-(\d{2})\-(\d{2}).+/${1}${2}${3}/; 
-  
+
   printf($fh "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", 
          $obj->{taxonId},
          $obj->{objectRelation}->{objectType}, 
-         $id_source,
-         $id,
-         "",
+         $obj->{objectId},
+         $obj->{objectName},
          (exists $obj->{inferredGeneAssociation}) ? $obj->{inferredGeneAssociation} : "",
+         "",
          "",
          "",
          $obj->{objectRelation}->{associationType},
@@ -362,9 +357,9 @@ sub write_DAF_line {
          "",
          (exists $obj->{modifier} and exists $obj->{modifier}->{genetic}) ? join(",", @{$obj->{modifier}->{genetic}}) : "",
          (exists $obj->{modifier} and exists $obj->{modifier}->{experimentalConditionsText}) ? join(",", @{$obj->{modifier}->{experimentalConditionsText}}) : "",
-         $evi_code,
+         join(",", @{$obj->{evidence}->{evidenceCodes}}),
          $obj->{geneticSex},
-         $pmid,
+         $obj->{evidence}->{publication}->{pubMedId},
          $date,
          $obj->{dataProvider});
 
