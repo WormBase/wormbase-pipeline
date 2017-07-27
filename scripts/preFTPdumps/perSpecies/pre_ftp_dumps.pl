@@ -33,7 +33,7 @@ GetOptions(
 # WormBase build stanza
 my $wormbase;
 if ($store) { 
-  $wormbase = Storable::retrieve($store) or croak("Can't restore wormbase from $store\n")
+  $wormbase = Storable::retrieve($store) or croak("Can't restore wormbase from $store\n");
 }else{
   $wormbase = Wormbase->new( -debug => $debug, 
                              -test => $test);
@@ -41,22 +41,21 @@ if ($store) {
 
 
 my @script_conf = (
-  { script => 'dump_species_functional_descriptions.pl', output => "functional_descriptions.txt",  all => 1 },
-  { script => 'dump_protein_domains.pl',                 output => "protein_domains.csv",          all => 1 },
-  { script => 'dump_species_orthologs.pl',               output => "orthologs.txt",                all => 1 },
-  { script => 'dump_confirmed_genes.pl',                 output => "confirmed_genes.fa",           all => 1 },
-  { script => 'dump_species_gene_interactions.pl',       output => "interactions.txt"                },
-  { script => 'dump_interpolated.pl',                    output => "interpolated_clones.txt"         },
-  { script => 'dump_promoters.pl',                       output => "potential_promotors.fa"          },
-  { script => 'dump_resource_gene_ids.pl',               output => "resource_gene_ids.txt"           },
-  { script => 'dump_swissprot.pl',                       output => "swissprot.txt"                   },
-  { script => 'dump_ko.pl',                              output => "knockout_consortium_alleles.xml" },
-  { script => 'dump_cdna2orf.pl',                        output => "cdna2orf.txt"                    },
-  { script => 'dump_pcr_list.pl',                        output => "pcr_product2gene.txt"            },
-  { script => 'dump_geneid_list.pl',                     output => "geneIDs.txt"                     },
-  { script => 'dump_molecules.pl',                       output => "molecules.ace"                  },
-  { script => 'dump_geneid_list.pl',                     output => "geneOtherIDs.txt", options => "-other" },
-
+  { script => 'dump_species_functional_descriptions.pl', output => 'functional_descriptions.txt', all => 1 },
+  { script => 'dump_protein_domains.pl',                 output => 'protein_domains.csv',         all => 1 },
+  { script => 'dump_species_orthologs.pl',               output => 'orthologs.txt',               all => 1 },
+  { script => 'dump_confirmed_genes.pl',                 output => 'confirmed_genes.fa',          all => 1 },
+  { script => 'dump_species_gene_interactions.pl',       output => 'interactions.txt'                },
+  { script => 'dump_interpolated.pl',                    output => 'interpolated_clones.txt'         },
+  { script => 'dump_promoters.pl',                       output => 'potential_promotors.fa'          },
+  { script => 'dump_resource_gene_ids.pl',               output => 'resource_gene_ids.txt'           },
+  { script => 'dump_swissprot.pl',                       output => 'swissprot.txt'                   },
+  { script => 'dump_ko.pl',                              output => 'knockout_consortium_alleles.xml' },
+  { script => 'dump_cdna2orf.pl',                        output => 'cdna2orf.txt'                    },
+  { script => 'dump_pcr_list.pl',                        output => 'pcr_product2gene.txt'            },
+  { script => 'dump_geneid_list.pl',                     output => 'geneIDs.txt',                 all => 1 },
+  { script => 'dump_molecules.pl',                       output => 'molecules.ace'                   },
+  { script => 'dump_geneid_list.pl',                     output => 'geneOtherIDs.txt', options => "-other", all=>1 },
 );
 
 

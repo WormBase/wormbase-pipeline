@@ -900,7 +900,10 @@ sub copy_annotations_files{
     
     my @files = ('functional_descriptions.txt',
                  'orthologs.txt',
-                 'protein_domains.csv');
+                 'protein_domains.csv',
+                 'geneIDs.txt',
+                 'geneOtherIDs.txt',
+                 );
     if ($wb->species eq 'elegans') {
       push @files, ('interactions.txt',
                     'potential_promotors.fa',
@@ -908,8 +911,6 @@ sub copy_annotations_files{
                     'knockout_consortium_alleles.xml',
                     'confirmed_genes.fa',
                     'cdna2orf.txt',
-                    'geneIDs.txt',
-                    'geneOtherIDs.txt',
                     'pcr_product2gene.txt',
                     'interpolated_clones.txt',
                     'molecules.ace'
