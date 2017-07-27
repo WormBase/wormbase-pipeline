@@ -640,8 +640,8 @@ sub go_public {
   $wormbase->run_command("cd $ftp_release_dir && ln -s $rel current-development-release", $log);  
 
   $log->write_to("Updating the current_DB symlink\n");
-  $wormbase->run_script("rm -f $db_dir/current_DB", $log);
-  $wormbase->run_script("cd $db_dir && ln -s $rel current_DB", $log);
+  $wormbase->run_command("rm -f $db_dir/current_DB", $log);
+  $wormbase->run_command("cd $db_dir && ln -s $rel current_DB", $log);
   
   $log->write_to("Sending release letter to staff\n");
   my $letter = "$ftp_release_dir/$rel/letter.$rel";
