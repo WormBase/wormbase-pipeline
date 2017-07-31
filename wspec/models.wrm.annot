@@ -3796,16 +3796,16 @@
           Nonspecies_source ?Text
           Chemical_synthesis #Evidence
           Endogenous_in ?Species #Evidence
-          Biofunction_role ENUM Metabolite ?Text #Evidence
-                                Regulator ?Text #Evidence
-                                Structural_component ?Text #Evidence
-                                Cofactor ?Text #Evidence
-                                Activator ?Text #Evidence
-                                Inhibitor ?Text #Evidence
-                                Product ?Text #Evidence
-                                Substrate ?Text #Evidence
-                                Ligand ?Text #Evidence
-                                Receptor ?Text #Evidence
+          Biofunction_role ENUM Metabolite #Evidence
+                                Regulator #Evidence
+                                Structural_component #Evidence
+                                Cofactor #Evidence
+                                Activator #Evidence
+                                Inhibitor #Evidence
+                                Product #Evidence
+                                Substrate #Evidence
+                                Ligand #Evidence
+                                Receptor #Evidence
           Essential_for ?Species #Evidence
           WBProcess ?WBProcess INXREF Molecule
           Regulate_expr_cluster ?Expression_cluster INXREF Regulated_by_molecule
