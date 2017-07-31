@@ -1081,12 +1081,13 @@
                                                RNAi_experiment ?RNAi
                           Inferred_gene ?Gene OUTXREF Disease_model_annotation
                           Association_type UNIQUE is_model_of
+                                                  is_implicated_in                       
                                                   causes_or_contributes_to_condition
                                                   causes_condition
                                                   contributes_to_condition
                                                   is_marker_for
                           Evidence_code ?GO_code
-                          Qualifier NOT
+                          Qualifier_not
                           Experimental_condition Inducing_chemical ?Molecule OUTXREF Disease_model_inducer
                                                  Inducing_agent ?Text
                           Modifier_info Modifier_transgene ?Transgene
@@ -1097,6 +1098,7 @@
                                         Other_modifier ?Text
                           Modifier_association_type UNIQUE condition_ameliorated_by
                                                            condition_exacerbated_by
+                          Modifier_qualifier_not
                           Genetic_sex UNIQUE hermaphrodite
                                              male
                                              female

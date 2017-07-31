@@ -1059,12 +1059,13 @@
                                                RNAi_experiment ?RNAi
                           Inferred_gene ?Gene // Indicate the gene in Variation or Strain, when submitted
                           Association_type UNIQUE is_model_of                  // Describe relationship between genetic entity and disease (condition)
+                                                  is_implicated_in
                                                   causes_or_contributes_to_condition
                                                   causes_condition
                                                   contributes_to_condition
                                                   is_marker_for
                           Evidence_code ?GO_code // will use ECO later on
-                          Qualifier NOT          // to indicate that a disease is NOT modeled by X
+                          Qualifier_not          // to indicate that a disease is NOT modeled by X change tag WS262
                           Experimental_condition Inducing_chemical ?Molecule XREF Disease_model_inducer //to indicate the disease-inducing agent
                                                  Inducing_agent ?Text     //e.g. diet, radiation,etc not in Molecule class
                           Modifier_info Modifier_transgene ?Transgene //genetic entity that modifies the disease
@@ -1075,6 +1076,7 @@
                                         Other_modifier ?Text          //to indicate other modifiers of the disease eg. diet,radiation, surgery etc
                           Modifier_association_type UNIQUE condition_ameliorated_by  //to indicate the association type between modifiers and disease
                                                            condition_exacerbated_by
+                          Modifier_qualifier_not //new tag for WS262
                           Genetic_sex UNIQUE hermaphrodite            //indicates genetic sex of the disease model
                                              male
                                              female
