@@ -82,7 +82,8 @@ my %seen;
 
 while(my $pep = $seqs->next_seq){ 
   my $cds_id = $pep->id;
-  my ($pepid) = $pep->desc =~ /^(\S+)/; 
+  my ($pepid) = $pep->desc =~ /^(\S+)/;
+  $pepid=~s/wormpep=//; # the C.elegans protein header is slighlty different
   my $protein_id = $wormbase->wormpep_prefix . ":" . $pepid;
 
   next if exists $seen{$protein_id};
