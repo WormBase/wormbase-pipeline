@@ -1387,7 +1387,6 @@ GSPECIES.BIOPROJ.WSREL.omim_xrefs.txt
 GSPECIES.BIOPROJ.WSREL.changed_CGC_names.txt
 GSPECIES.BIOPROJ.WSREL.readable_changed_CGC_names.txt
 GSPECIES.BIOPROJ.WSREL.TSS.wig.tar.gz
-GSPECIES.BIOPROJ.WSREL.geneIDs.txt.gz
 GSPECIES.BIOPROJ.WSREL.interactions.txt.gz
 GSPECIES.BIOPROJ.WSREL.potential_promotors.fa.gz
 GSPECIES.BIOPROJ.WSREL.swissprot.txt.gz
@@ -1407,6 +1406,8 @@ GSPECIES.BIOPROJ.WSREL.orthologs.txt.gz
 GSPECIES.BIOPROJ.WSREL.protein_domains.csv.gz
 GSPECIES.BIOPROJ.WSREL.go_annotations.gaf.gz
 GSPECIES.BIOPROJ.WSREL.repeats.fa.gz
+GSPECIES.BIOPROJ.WSREL.geneIDs.txt.gz
+GSPECIES.BIOPROJ.WSREL.geneOtherIDs.txt.gz
 
 [CORE]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.best_blastp_hits.txt.gz
