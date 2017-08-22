@@ -52,6 +52,7 @@ my ($all,
     $overload_marker,
     $overload_sage,
     $overload_pcr,
+    $restructure_mirna,
     $final,
     );
 
@@ -77,6 +78,7 @@ GetOptions (
   "add_gmap2pmap"      => \$add_gmap2pmap,
   "add_utr"            => \$add_utr,
   "add_supplementary"  => \$add_supplementary,
+  "restructure_mirna"  => \$restructure_mirna,
   "final"              => \$final,
 
   "workdir=s"   => \$working_dir,
@@ -221,6 +223,13 @@ if ($overload_sage or $all) {
 ############################################################
 if ($overload_transposon or $all) {
     &run_munging_script("GFF_post_process/overload_gff_transposon.pl");
+}
+
+############################################################
+# Restructures miRNA features into the correct hierarchy
+############################################################
+if ($restructure_mirna or $all) {
+    &run_munging_script("GFF_post_process/restructure_mirnas.pl");
 }
 
 #############################################################

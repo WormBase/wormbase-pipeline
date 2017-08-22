@@ -61,7 +61,7 @@ while (<$gff_in_fh>) {
   unless ($source eq 'curated' and $feature eq 'CDS' or
           $source eq 'Coding_transcript' and ($feature eq 'mRNA' or $feature eq 'protein_coding_primary_transcript') or
           $source eq 'Non_coding_transcript' and $feature eq 'nc_primary_transcript' or
-          $source eq 'miRNA_precursor' and $feature eq 'pre_miRNA' or
+          $source eq 'miRNA_primary_transcript' and $feature eq 'miRNA_primary_transcript' or
           $source eq 'miRNA_mature' and $feature eq 'miRNA' or
           $source eq 'Pseudogene' and $feature eq 'pseudogenic_transcript' or
           $source =~ /RNA$/ and $source eq $feature) {
