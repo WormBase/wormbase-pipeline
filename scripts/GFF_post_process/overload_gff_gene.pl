@@ -82,6 +82,9 @@ while (<$gff_in_fh>) {
       $f[8] .= ";so_term_name=$so_term_h->{$gene}"
           if exists $so_term_h->{$gene} and $f[8] !~ /so_term_name/;
 
+      $f[8] .= ";curie=WB:$gene"
+          if $f[8] !~ /curie/;
+
       if ($f[8] !~ /Alias/) {
         my @al_elements;
         if (exists $locus_h->{$gene}) {
