@@ -84,7 +84,6 @@ while (my $obj = $it->next) {
       push @annots, {
         objectId => "WB:$g",
         objectName => $obj->Public_name->name,
-        inferredGeneAssociation => "WB:$g",
         DOid     => $doterm->name,
         taxonId  => "NCBITaxon:$taxid",
         dataProvider => "WB", 
@@ -136,7 +135,7 @@ while( my $obj = $it->next) {
   my ($allele) = $obj->Variation;
   my ($transgene) = $obj->Transgene;
   my ($gene) = $obj->Disease_relevant_gene;
-  my ($inferred_gene) = $obj->Inferred_gene;
+  my (@inferred_genes) = map { "WB:" . $_->name } $obj->Inferred_gene;
 
   my ($obj_id, $obj_name, $obj_type, $assoc_type, @with_list);
   if (defined $strain) {
@@ -168,6 +167,7 @@ while( my $obj = $it->next) {
     $obj_name = $gene->Public_name->name;
     $assoc_type = "is_implicated_in";
     $obj_id = "WB:" . $gene->name;
+    @inferred_genes = ();
   } else {
     die "Could not identify a central object for the annotation from Disease_model_annotation $obj->name\n";
   }
@@ -176,7 +176,7 @@ while( my $obj = $it->next) {
     associationType => $assoc_type,
     objectType      => $obj_type,
   };
-  $assoc_rel->{inferredGeneAssociation} = $inferred_gene->name if defined $inferred_gene;
+  $assoc_rel->{inferredGeneAssociation} = \@inferred_genes if @inferred_genes;
 
   $annot->{objectRelation} = $assoc_rel;
   $annot->{objectId} = $obj_id;
@@ -340,12 +340,21 @@ sub write_DAF_line {
   my $date = $obj->{dateAssigned};
   $date =~ s/(\d{4})\-(\d{2})\-(\d{2}).+/${1}${2}${3}/; 
 
+  my $inferred_gene;
+  if ($obj->{objectRelation}->{objectType} eq "gene") {
+    $inferred_gene = $obj->{objectId};
+  } elsif (exists $obj->{objectRelation}->{inferredGeneAssociation}) {
+    $inferred_gene =  join(",", @{$obj->{objectRelation}->{inferredGeneAssociation}});
+  } else {
+    $inferred_gene = "";
+  }
+
   printf($fh "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", 
          $obj->{taxonId},
          $obj->{objectRelation}->{objectType}, 
          $obj->{objectId},
          $obj->{objectName},
-         (exists $obj->{inferredGeneAssociation}) ? $obj->{inferredGeneAssociation} : "",
+         $inferred_gene,
          "",
          "",
          "",
