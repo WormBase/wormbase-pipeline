@@ -1075,6 +1075,7 @@
                                      Variation ^modeled-by-variation UNIQUE ?Variation OUTXREF Disease_model_annotation
                                      Transgene ^modeled-by-transgene UNIQUE ?Transgene OUTXREF Disease_model_annotation
                                      Disease_relevant_gene ^modeled-by-disease-relevant-gene UNIQUE ?Gene OUTXREF Disease_model_annotation
+                                     Modeled_by_remark ?Text
                           Annotation_made_with Interacting_variation ?Variation //Addition for WS261
                                                Interacting_transgene ?Transgene
                                                Interacting_gene ?Gene
