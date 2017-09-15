@@ -430,9 +430,20 @@ sub main_gene_checks {
       my $sequence = $gene_model->Sequence;
       my $class = $gene_model->class;
       my @clone_locations;
+      print "$sequence - " if ($debug);
       if ($class eq 'CDS') {
-	@clone_locations = $sequence->CDS_child;
+	  unless (defined $sequence->CDS_child) {
+	      print "CDS : $gene_model has S_parent issues\n";
+	      next;
+	  }
+ 	print $sequence->CDS_child."\n" if ($debug);
+	  @clone_locations = $sequence->CDS_child;
       } elsif ($class eq 'Transcript') {
+	  unless (defined $sequence->Transcript) {
+	      print "Transcript : $gene_model has S_parent issues\n";
+	      next;
+	  } 
+	print $sequence->Transcript."\n" if ($debug);
 	@clone_locations = $sequence->Transcript;	    
       }
       my ($target_start, $target_end);
@@ -533,7 +544,7 @@ sub main_gene_checks {
 	$start_tag_val = 1;
       }
       #Known non-AUG mRNAs
-      unless (($incomplete) || ($gene_model->name eq "K04G2.11") || ($gene_model->name eq "C54A12.4") || ($gene_model->name eq "C37C3.8c")|| ($species ne 'elegans' && $method_test eq 'history')) {
+      unless (($incomplete) || ($gene_model->name eq "K04G2.11") || ($gene_model->name eq "C54A12.4") || ($gene_model->name eq "C37C3.8c") || ($gene_model->name eq "F07F6.2") || ($species ne 'elegans' && $method_test eq 'history')) {
 	push(@error2,"ERROR: $gene_model Start_not_found tag present\n"); 
 	print "ERROR: $gene_model Start_not_found tag present\n" if ($verbose);
       }
