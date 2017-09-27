@@ -544,7 +544,7 @@ sub main_gene_checks {
 	$start_tag_val = 1;
       }
       #Known non-AUG mRNAs
-      unless (($incomplete) || ($gene_model->name eq "K04G2.11") || ($gene_model->name eq "C54A12.4") || ($gene_model->name eq "C37C3.8c") || ($gene_model->name eq "F07F6.2") || ($species ne 'elegans' && $method_test eq 'history')) {
+      unless (($incomplete) || ($gene_model->name eq "K04G2.11") || ($gene_model->name eq "C54A12.4") || ($gene_model->name eq "C37C3.8c") || ($gene_model->name eq "F07F6.2") || ($gene_model->name eq "W09G10.9") || ($species ne 'elegans' && $method_test eq 'history')) {
 	push(@error2,"ERROR: $gene_model Start_not_found tag present\n"); 
 	print "ERROR: $gene_model Start_not_found tag present\n" if ($verbose);
       }
