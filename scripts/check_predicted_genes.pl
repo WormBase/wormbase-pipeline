@@ -262,6 +262,20 @@ if ($build) {
 	$seen{$gg}=1;
       }
 
+      my @isoformer_genes = $db->fetch (-query => "FIND $qclass where \"*iso*\"");
+      foreach my $g (@isoformer_genes) {
+my $gg=$g->name; 
+	if ($ignore{$gg}) {next}
+	if (exists $seen{$gg}) {
+	  $s=' (seen already)';
+	} else {
+	  $s='';
+	}
+	$log->write_to("Error: $qclass $gg should be removed $s\n"); 
+	$seen{$gg}=1;
+      }
+
+
       my @no_Sparent_genes = $db->fetch (-query => "FIND $qclass where !S_parent");
       foreach my $g (@no_Sparent_genes) {
 	my $gg=$g->name; 
