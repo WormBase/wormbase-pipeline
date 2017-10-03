@@ -375,6 +375,25 @@ sub map_features_to_genome {
 
   my $assembly_mapper = Remap_Sequence_Change->new($previous_release, $release, $wormbase->species, $wormbase->genome_diffs);
 
+
+  #
+  # PCR_products - only C. elegans, but must be run before RNAiGenome
+  #
+  if ($wormbase->species eq 'elegans') {
+    my $pcr_file = "misc_PCR_mappings_" . $wormbase->species . ".ace";
+    my $pcr_mappings = $wormbase->misc_dynamic . "/" . $pcr_file;
+    
+    if (not $assembly_mapper->remap_test and -e $pcr_mappings) {
+      # genome has not changed. Load the current mappings, and supplement with new data
+      $wormbase->load_to_database( $wormbase->autoace, $pcr_mappings, "PCR_product_MISC_DYN", $log );
+      $wormbase->run_script( 'PCR_product2Genome.pl -onlyunmapped', $log );
+    } else {
+      # genome has changed. Need to remap everything
+      unlink $pcr_mappings if -e $pcr_mappings;
+      $wormbase->run_script( "PCR_product2Genome.pl -acefile $pcr_mappings", $log );
+    }
+  }
+ 
   #
   # RNAi
   #
@@ -390,29 +409,10 @@ sub map_features_to_genome {
     unlink $rnai_mappings if -e $rnai_mappings;
     $wormbase->run_script( "RNAi2Genome.pl -acefile $rnai_mappings", $log );
   }
-
-  # all the rest is elegans-specific
-  if ($wormbase->species ne 'elegans') {return}
-
-  #
-  # PCR_products
-  #
-  my $pcr_file = "misc_PCR_mappings_" . $wormbase->species . ".ace";
-  my $pcr_mappings = $wormbase->misc_dynamic . "/" . $pcr_file;
-
-  if (not $assembly_mapper->remap_test and -e $pcr_mappings) {
-    # genome has not changed. Load the current mappings, and supplement with new data
-    $wormbase->load_to_database( $wormbase->autoace, $pcr_mappings, "PCR_product_MISC_DYN", $log );
-    $wormbase->run_script( 'PCR_product2Genome.pl -onlyunmapped', $log );
-  } else {
-    # genome has changed. Need to remap everything
-    unlink $pcr_mappings if -e $pcr_mappings;
-    $wormbase->run_script( "PCR_product2Genome.pl -acefile $pcr_mappings", $log );
-  }
-  
  
   # check count of classes loaded
-  $wormbase->run_script("check_class.pl -stage map_features_elegans -classes PCR_product,Homol_data,Sequence", $log);
+  $wormbase->run_script("check_class.pl -stage map_features_elegans -classes PCR_product,Homol_data,Sequence", $log) 
+      if $wormbase->species eq 'elegans';
  
 }
 
