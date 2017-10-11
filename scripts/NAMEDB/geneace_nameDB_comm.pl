@@ -100,8 +100,13 @@ foreach my $gene (keys %server_genes) {
 
 # any genes left in the acedb list are absent from the nameserver
 foreach (keys %ace_genes ){
+    if ($_ =~ /ENS/) {
+	print "Skipping ENSEMBL ID:$_\n" if $debug;
+    }
+    else {
 	$log->error("ERROR: $_ absent from nameserver\n");
 	$errorcount++;
+    }
 }
 $log->write_to("INFO: $errorcount errors found\n") if ($log->report_errors > 0);
 $log->write_to("No errors found\n") if ($log->report_errors == 0);
