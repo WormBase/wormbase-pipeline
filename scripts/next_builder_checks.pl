@@ -159,7 +159,7 @@ if($clones) {
     # human, japonica, pristionchus, remanei, slimSwissProt,
     # worm, yeast)
     my @expected = qw(fly brenneri briggsae human japonica pristionchus remanei slimSwissProt worm yeast);
-    &check_for_missing_data2(\@hd, \@expected, 'Feature_data', 'what is expected');
+    &check_for_missing_data2(\@hd, \@expected, 'Homol_data', 'what is expected');
 
 #    if($count < 11) {
 #      $log->error("\tERROR: $clone has wublastx Homol_data objects missing\n");
