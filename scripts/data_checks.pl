@@ -258,7 +258,7 @@ sub read_GFF_queries {
     $i++;
     $queries[$i]{'DESC'}  = "Allele";
     $queries[$i]{'GFF'}   = "\tAllele\tsequence_alteration";
-    $queries[$i]{'QUERY'} = 'find Variation flanking_sequences AND method = "Allele"';
+    $queries[$i]{'QUERY'} = 'find Variation Flanking_sequences AND (method = "Allele" OR method = "Engineered_allele")';
 
     $i++;
     $queries[$i]{'DESC'}  = "Transposon_insertion";
