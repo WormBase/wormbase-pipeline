@@ -1,3 +1,6 @@
+
+
+
 #!/usr/local/bin/perl5.8.0 -w
 #
 # confirm_genes.pl
@@ -620,7 +623,7 @@ sub create_transcript_file {
 	}else {
 		$prefix = $wormbase->chromosome_prefix."${chrom}_";
 	}
-        my $trinity = -e "${prefix}BLAT_Trinity_BEST.gff" ? "${prefix}BLAT_Trinity_BEST.gff" : '';
+        my $trinity = -e "${gffdir}/${prefix}BLAT_Trinity_BEST.gff" ? "${prefix}BLAT_Trinity_BEST.gff" : '';
 	$wormbase->run_command("cd $gffdir; cat ${prefix}BLAT_EST_BEST.gff ${prefix}BLAT_mRNA_BEST.gff $trinity >  ${prefix}BLAT_TRANSCRIPT_BEST.gff", $log) unless (-e "$gffdir/${prefix}BLAT_TRANSCRIPT_BEST.gff");
 
 	# only elegans has OSTs and RSTs
