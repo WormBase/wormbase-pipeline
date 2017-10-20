@@ -36,9 +36,13 @@ my $log = Log_files->make_build_log($wormbase);
 my $acedb = ($database or $wormbase->database('geneace'));
 $log->write_to("Checking $acedb for errors\n");
 
-my $def = "$ENV{CVS_DIR}/../wquery/geneace/variation_nameserver_comm.def";
+#my $def = "$ENV{CVS_DIR}/../wquery/geneace/variation_nameserver_comm.def";
+my $tmdef = &get_table_maker_def();
+my $command = "Table-maker -p $tmdef\nquit\n";
+$log->write_to("\nRetrieving Variation data, using Table-maker and query ${tmdef}...\n");
 
-my $TABLE = $wormbase->table_maker_query($acedb, $def);
+
+my $TABLE = $wormbase->table_maker_query($acedb, $tmdef);
 my %ace_ids;
 while(<$TABLE>) {
   next unless /WBVar/;
@@ -127,3 +131,46 @@ foreach my $var (sort keys %ids) {
 $log->write_to("Work Done!\n");
 $log->mail();
 exit(0);
+
+
+sub get_table_maker_def {
+
+  my $def = '/tmp/nsvar.def';
+  open TMP,">$def" or $log->log_and_die("cant write $def: $!\n");
+  my $txt = <<END;
+
+Sortcolumn 1
+
+Colonne 1 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Variation 
+From 1 
+ 
+Colonne 2 
+Width 12 
+Mandatory
+Visible 
+Next_Tag 
+From 1 
+Tag Status
+ 
+Colonne 3 
+Width 12 
+Optional
+Visible 
+Class 
+Class Variation_name 
+From 1 
+Tag Public_name  
+
+// End of these definitions
+END
+
+  print TMP $txt;
+  close TMP;
+
+  return $def;
+}
