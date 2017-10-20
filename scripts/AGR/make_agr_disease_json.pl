@@ -108,6 +108,13 @@ while (my $obj = $it->next) {
 $it = $db->fetch_many(-query => 'Find Disease_model_annotation');
 
 while( my $obj = $it->next) {
+  if (not $obj->Date_last_updated or
+      not $obj->Paper_evidence or
+      not $obj->Evidence_code or
+      not $obj->Disease_term) {
+    warn("Bad object $obj - missing key fields - skipping\n");
+    next;
+  }
 
   my  $evi_date = $obj->Date_last_updated;
   $evi_date->date_style('ace');
