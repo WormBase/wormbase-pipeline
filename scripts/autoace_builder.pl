@@ -244,9 +244,10 @@ if ($prepare_gff_munge) {
 #several GFF manipulation steps
 if ($gff_munge or $gff3_munge) {
     #Used for finding the previous gff files in the staging area of the sanger file system
+    #previously looked at the internal FTP dir but we no longer store the data at Sanger. 
   my $prev_gff_prefix = 
       join("/", 
-           $wormbase->ftp_staging, #previously looked at the internal FTP dir but we no longer store the data at Sanger. 
+           $wormbase->ftp_staging, 
            "releases", 
            "WS" . ($wormbase->version - 1),
            "species",
