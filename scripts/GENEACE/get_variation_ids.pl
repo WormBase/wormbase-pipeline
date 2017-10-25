@@ -20,17 +20,20 @@ my ($PASS,$USER, $DB); # mysql ones
 my $DOMAIN  = 'Variation'; # hardcoded to variation
 
 my ($wormbase, $debug, $test, $store, $species,$infile,$outfile,$nocheck, 
-    $ace_file_template, $input_is_public_names, $input_is_other_names);
+    $ace_file_template, $input_is_public_names, $input_is_other_names, $input, $output,$public);
 
 GetOptions (
-  "debug=s"       => \$debug,   # send log emails only to one user
-  "test"          => \$test,    # run against the test database on utlt-db
-  "store:s"       => \$store,   # if you want to pass a Storable instead of recreating it
-  "species:s"     => \$species, # elegans/briggsae/whateva .. needed for logging
-  "user:s"	  => \$USER,    # mysql username
-  "pass:s"	  => \$PASS,    # mysql password
-  'nocheck'       => \$nocheck, # don't check public_names
-  'acetemplate=s' => \$ace_file_template,
+    "debug=s"   => \$debug,   # send log emails only to one user
+    "test"      => \$test,    # run against the test database on utlt-db
+    "store:s"   => \$store,   # if you want to pass a Storable instead of recreating it
+    "species:s" => \$species, # elegans/briggsae/whateva .. needed for logging
+    "user:s"	=> \$USER,    # mysql username
+    "pass:s"	=> \$PASS,    # mysql password
+    'nocheck'   => \$nocheck, # don't check public_names
+    'input:s'     => \$input,   # File containing new public_names for new Variations
+    "output:s"    => \$output,  # File to capture the new WBVar and name associations
+    'acetemplate=s' => \$ace_file_template, #unknown template file that is also printed along with the IDs retrieved by the script
+    'public'    => \$public   # The file only contains public_names so these should be used.
     )||die(@!);
     
 die "Species option is mandatory\n" unless $species; # need that for NameDB to fetch the correct regexps
@@ -57,7 +60,7 @@ $db->setDomain($DOMAIN);
 # abc123
 # abc234
 
-if (defined $ace_file_template and -e $ace_file_template) {
+if (defined $ace_file_template) {
   my $tmp_str = "";
 
   open(my $atfh, $ace_file_template) 
@@ -70,7 +73,9 @@ if (defined $ace_file_template and -e $ace_file_template) {
 }
 
 my @entries;
-while (<>) {
+open (OUT, ">$output") or $log->log_and_die("Could not open $output for reading\n");
+open (IN, "<$input") or $log->log_and_die("Could not open $input for reading\n");
+while (<IN>) {
   chomp;
 
   my @names = split(/\s+/, $_);
@@ -82,11 +87,16 @@ while (<>) {
 }
 
 foreach my $entry (@entries) {
-  my ($other_name, $public_name) = @$entry;
-
-  if (not $nocheck and defined $public_name and not defined &_check_name($public_name)) {
-    next;
-  }
+    my ($public_name, $other_name);
+    if ($public) {
+	($public_name, $other_name) = @$entry;
+    }
+    else {
+	($other_name, $public_name) = @$entry;
+    }
+    if (not $nocheck and defined $public_name and not defined &_check_name($public_name)) {
+	next;
+    }
 
   my $id = $db->idCreate;
   
@@ -94,14 +104,12 @@ foreach my $entry (@entries) {
 
   $db->addName($id,'Public_name'=>$public_name);
 
+  print OUT "\nVariation : \"$id\"\n";
+  print OUT "Public_name $public_name\n";
+  print OUT "Other_name $other_name\n" if (defined $other_name);
   if (defined $ace_file_template) {
-    print "Variation : \"$id\"\n";
-    print "Public_name $public_name\n";
-    print "Other_name $other_name\n";
-    print "$ace_file_template\n";
-  } else {
-    print join("\t", $id, $public_name, $other_name), "\n"; 
-  } 
+      print OUT "$ace_file_template\n";
+  }
 }
 
 $log->mail;
@@ -147,9 +155,9 @@ the submitter-supplied name is used to populate the Other_name tag.
 
 =head1 USAGE EXAMPLES
 
-get_variation_ids.pl -species briggsae input_id_-user me -pass me file.txt > output_id_file.txt
+get_variation_ids.pl -species briggsae input_id_-user me -pass me input file.txt -output output_id_file.txt
 
-get_variation_ids.pl -species elegans -user me -pass me -acetemplate wild_template.ace input_id_file.txt > output_file.ace
+get_variation_ids.pl -species elegans -user me -pass me -acetemplate wild_template.ace -input input_id_file.txt -output output_file.ace
 
 =head1 OPTIONS
 
@@ -159,9 +167,13 @@ get_variation_ids.pl -species elegans -user me -pass me -acetemplate wild_templa
 
 -pass         MySQL NameDB account password
 
--acetemplate  Write Ace format, using the given file as a template; the contents will be tagged to the end of each entry
+-acetemplate  Takes the file name of a file containing Ace template format which will be printed to the end of the results to create a fuller entry.
  
 -nocheck      Do not check for public name clashes
+
+-input        Takes the file name that you have generated as input
+
+-output       Takes the name of a file that the results from the nameserver are written to. 
 
 =cut
 
