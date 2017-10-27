@@ -36,12 +36,12 @@
 // ACeDB model file.  The syntax is very similar, but it has a few additions in order
 // to smooth migration to Datomic.
 //
-// For more details, see https://github.com/WormBase/db/wiki/Augmented-model-file
+// For more details, see https://github.com/WormBase/db-prototypes/wiki/Augmented-model-file
 //
 
 ////////////////////////
 // Basic map classes  //
-////////////////////////
+v////////////////////////
 
 // TAD xref
 // TAD tupleize
