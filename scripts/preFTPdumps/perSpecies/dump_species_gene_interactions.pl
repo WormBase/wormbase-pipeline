@@ -75,21 +75,23 @@ foreach my $interaction (@interactions) {
     foreach my $interactor_type ($interaction->Interactor) {# e.g. PCR_interactor, Interactor_overlapping_gene
 	my $role = '';
 	my $count = 0;
-	foreach my $interactor ($interactor_type->col) {
-	    my @interactors = $interactor_type->col;
-	    my @tags = eval{ $interactors[$count++]->col }; # Interactor_info
-	    my %info;
-	    $info{obj} = $interactor;
-	    if (@tags) {
-		map { $info{"$_"} = $_->at; } @tags;
+	foreach my $interactor ($interactor_type->col) { # gene / varitation / etc.
+	    my @interactors = $interactor_type->col; 
 
+	    my @tags = eval{ $interactors[$count++]->col }; # tags hanging of the respective gene/etc.
+
+	    if (@tags) {
                 # Exclude those that have been translated to Gene
 		if ($interactor_type =~ /Other_regulator|Interactor_overlapping_gene|Molecule_regulator|Other_regulated|Rearrangement/) {
-                    $role = $info{Interactor_type};
-		    my @interactor_names;
-		    my $public_name = eval{$interactor->Public_name} ||'N/A';
-		    push (@interactor_names,$interactor,$public_name);
-		    push (@cols,@interactor_names,$role);
+	            my @roles;
+		    map { push(@roles,$_->col) if "$_" eq 'Interactor_type' } @tags;
+
+                    foreach my $role (@roles) {
+                     my @interactor_names;
+		     my $public_name = eval{$interactor->Public_name} ||'N/A';
+		     push (@interactor_names,$interactor,$public_name);
+		     push (@cols,@interactor_names,$role);
+		    }
 		}
 	    }
 	}
