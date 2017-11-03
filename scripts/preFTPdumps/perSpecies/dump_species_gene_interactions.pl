@@ -56,9 +56,9 @@ foreach my $interaction (@interactions) {
           $interaction->Paper->Brief_citation,$interaction->Paper->Database(2),$interaction->Paper->Database(3) 
     };
 
-    #my $reference = "[$db_field:$db_acc] $brief_citation";
+    # my $reference = "[$db_field:$db_acc] $brief_citation";
     my $interaction_type = $interaction->Interaction_type;
-    my $subtype = ($interaction_type=~/Genetic|Regulatory/) ? &right_tip($interaction_type) : 'N/A';
+    my $subtype = ($interaction_type=~/Genetic|Regulatory|Physical/) ? &right_tip($interaction_type) : 'N/A';
 
     # exclude negative results
     next if $subtype=~/No_interaction/;
