@@ -1049,10 +1049,10 @@
 
 ?Disease_model_annotation Disease_term UNIQUE ?DO_term XREF Disease_model_annotation
                           Disease_of_species ?Species
-                          Modeled_by Strain UNIQUE ?Strain XREF Disease_model_annotation        // genetic entity that models the disease
-                                     Variation UNIQUE ?Variation XREF Disease_model_annotation  // genetic entity that models the disease
-                                     Transgene UNIQUE ?Transgene XREF Disease_model_annotation  // genetic entity that models the disease
-                                     Disease_relevant_gene UNIQUE ?Gene XREF Disease_model_annotation //when the genetic entity is a gene
+                          Modeled_by Strain UNIQUE ?Strain XREF Disease_model_annotation ?Text               // genetic entity that models the disease
+                                     Variation UNIQUE ?Variation XREF Disease_model_annotation ?Text         // genetic entity that models the disease
+                                     Transgene UNIQUE ?Transgene XREF Disease_model_annotation ?Text        // genetic entity that models the disease
+                                     Disease_relevant_gene UNIQUE ?Gene XREF Disease_model_annotation ?Text  //when the genetic entity is a gene
                                      Modeled_by_remark UNIQUE ?Text
                           Annotation_made_with Interacting_variation ?Variation //Addition for WS261
                                                Interacting_transgene ?Transgene
