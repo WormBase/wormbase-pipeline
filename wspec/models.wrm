@@ -2291,12 +2291,12 @@
 
 //Qualifer hash will be used for Expr_pattern curation to specify the reliability of data.
 
-#Qualifier Certain Text
-           Uncertain Text             //For faint or variable expression
-           Partial Text               //For expression of unidentified cell in a cell group
+#Qualifier Certain
+           Uncertain             //For faint or variable expression
+           Partial               //For expression of unidentified cell in a cell group
            Anatomy_term ?Anatomy_term //combines life stage with anatomy term in expr pattern annotation
            Life_stage  ?Life_stage    //combines life stage with anatomy term in expr pattern annotation
-
+           Remark Text  //New tag to take the optional text from the Certain/Uncertain/Partial nested tags above.
 
 
 
@@ -2562,13 +2562,13 @@
                   Remark Text #Evidence
                   Reference UNIQUE ?Paper XREF Anatomy_function
 
-#Anatomy_function_info Autonomous Text
-                       Nonautonomous Text
-                       Sufficient Text
-                       Insufficient Text
-                       Necessary Text
-                       Unnecessary Text
-                       Remark Text
+#Anatomy_function_info Autonomous
+                       Nonautonomous
+                       Sufficient
+                       Insufficient
+                       Necessary
+                       Unnecessary
+                       Remark UNIQUE Text
 
 ///////////////////
 //
