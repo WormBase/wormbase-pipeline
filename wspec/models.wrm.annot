@@ -1071,10 +1071,10 @@ v////////////////////////
 
 ?Disease_model_annotation Disease_term UNIQUE ?DO_term OUTXREF Disease_model_annotation
                           Disease_of_species ?Species
-                          Modeled_by Strain ^modeled-by-strain UNIQUE ?Strain OUTXREF Disease_model_annotation
-                                     Variation ^modeled-by-variation UNIQUE ?Variation OUTXREF Disease_model_annotation
-                                     Transgene ^modeled-by-transgene UNIQUE ?Transgene OUTXREF Disease_model_annotation
-                                     Disease_relevant_gene ^modeled-by-disease-relevant-gene UNIQUE ?Gene OUTXREF Disease_model_annotation
+                          Modeled_by Strain ^modeled-by-strain UNIQUE ?Strain OUTXREF Disease_model_annotation ?Text
+                                     Variation ^modeled-by-variation UNIQUE ?Variation OUTXREF Disease_model_annotation ?Text
+                                     Transgene ^modeled-by-transgene UNIQUE ?Transgene OUTXREF Disease_model_annotation ?Text
+                                     Disease_relevant_gene ^modeled-by-disease-relevant-gene UNIQUE ?Gene OUTXREF Disease_model_annotation ?Text
                                      Modeled_by_remark UNIQUE ?Text
                           Annotation_made_with Interacting_variation ?Variation //Addition for WS261
                                                Interacting_transgene ?Transgene
