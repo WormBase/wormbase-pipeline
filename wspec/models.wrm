@@ -2564,11 +2564,15 @@
 
 #Anatomy_function_info Autonomous
                        Nonautonomous
+                       Autonomous_remark UNIQUE Text // Applies to both of the above tags
                        Sufficient
                        Insufficient
+                       Sufficient_remark UNIQUE Text // Applies to both of the above tags
                        Necessary
                        Unnecessary
-                       Remark UNIQUE Text
+                       Necessary_remark UNIQUE Text // Applies to both of the above tags
+                       Remark Text
+
 
 ///////////////////
 //
