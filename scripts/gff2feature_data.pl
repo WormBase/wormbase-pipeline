@@ -126,7 +126,7 @@ while (my $line = <IN>) {
 }
 
 # write the last sequence
-write_tiles(\@tiles, \@whole_chromosome, $virtual, $sequence, $sequence_len); #  write the old data
+write_tiles(\@tiles, \@whole_chromosome, $sequence, $sequence_len); #  write the old data
 
 # work out the median score and write the Method object
 write_method();
