@@ -26,17 +26,22 @@ use Getopt::Long;
 
   -file      file containing IDs and old/new names  <Mandatory>
 
-    FORMAT:
+    FORMAT: standard
     WBVar00278423 ot582 Blah
     WBGene00012345 AH6.4 Blah
-  
+
+    FORMAT: -newonly
+    WBGene00012345 unc-20
+    WBGene00054321 AH6.4
+
   -domain    set domain to whatever (Gene Variation Feature)<Mandatory>
   -debug     limits to specified user <Optional>
   -species   can be used to specify non elegans
   -test      use the test nameserver  <Optional 4 testing>
   -user      username                 <Mandatory>
   -pass      password                 <Mandatory>
-  -cgc       thes also adds the name as a cgc name in the nameserver
+  -cgc       this also adds the name as a cgc name in the nameserver
+  -newonly   modifies what is necessary in the input file
 
 e.g. perl pname_update.pl -user blah -pass blah -species elegans -test -file variation_name_data
 
@@ -49,7 +54,7 @@ e.g. perl pname_update.pl -user blah -pass blah -species elegans -test -file var
 my $PASS;
 my $USER;
 my $DOMAIN;
-my ($debug, $test, $store, $species, $file,$cgc);
+my ($debug, $test, $store, $species, $file,$cgc,$newonly);
 
 GetOptions (
 	    "file=s"     => \$file,
@@ -60,7 +65,8 @@ GetOptions (
 	    "domain=s"   => \$DOMAIN,
 	    "user:s"	 => \$USER,
 	    "pass:s"	 => \$PASS,
-	    "cgc"        => \$cgc
+	    "cgc"        => \$cgc,
+            "newonly"    => \$newonly,
 	   );
 
 
@@ -97,19 +103,32 @@ open (DATA, "<$file");
 
 while (<DATA>) {
   chomp;
-  if ($_ =~/(WB\S+\d{8})\s+(\S+)\s+(\S+)/)	{
-    $log->write_to ("\nProcessing $_\n");
-    if (&check_name_exists($2)) {
-      &addname($1,$3,$cgc)
-    }
-    else {
-      $log->write_to ("ERROR: ID $1 has a different Public name to that supplied $2\n");
-    }
+  # if you only have the new names
+  if ($newonly) {
+      if ($_ =~/(WB\S+\d{8})\s+(\S+)/)	{
+	  $log->write_to ("\nProcessing $_\n");
+	      &addname($1,$2,$cgc)
+      }
+      else {
+	  $log->write_to ("\nERROR: $_ has a line format error\n");
+      } 
+      next;      
   }
   else {
-    $log->write_to ("\nERROR: $_ has a line format error\n");
-  } 
-  next;
+      if ($_ =~/(WB\S+\d{8})\s+(\S+)\s+(\S+)/)	{
+	  $log->write_to ("\nProcessing $_\n");
+	  if (&check_name_exists($2)) {
+	      &addname($1,$3,$cgc)
+	  }
+	  else {
+	      $log->write_to ("ERROR: ID $1 has a different Public name to that supplied $2\n");
+	  }
+      }
+      else {
+	  $log->write_to ("\nERROR: $_ has a line format error\n");
+      } 
+      next;
+  }
 }
 
 close DATA;
