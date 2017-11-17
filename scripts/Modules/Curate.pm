@@ -292,13 +292,14 @@ sub to_transcript_cmd {
 
 
 ######################################
-# Changing something to a Transposon_CDS
-# $self->to_transposon_cds_cmd($class, $cds_seqname)
-sub to_transposon_cds_cmd {
-  my ($self, $class, $old_seqname) = @_;
+# Changing something to a Transposon
+# $self->make_transposon($class, $cds_familyname)
+sub make_transposon_cmd {
+  my ($self, $class, $old_seqname, $new_familyname) = @_;
   
   if (!defined $old_seqname || $old_seqname eq '') {die "ERROR The existing object was not specified.\n";}
-  $self->cmd("CHANGE_CLASS CLASS $class NEWCLASS Transposon_CDS EXISTING $old_seqname");
+  if (!defined $new_familyname || $new_familyname eq '') {die "ERROR The new Transposon Family was not specified.\n";}
+  $self->cmd("MAKE_TRANSPOSON CLASS $class EXISTING $old_seqname FAMILY $new_familyname");
 }
 
 
@@ -358,6 +359,10 @@ sub cmd {
     # KEEP
   } elsif ($line[0] =~ /KEEP/) {
     $self->keep_cds(%line);
+    
+    # MAKE_TRANSPOSON
+  } elsif ($line[0] =~ /MAKE_TRANSPOSON/) {
+    $self->make_transposon(%line);
     
     # MERGE
   } elsif ($line[0] =~ /MERGE/) {
@@ -768,12 +773,13 @@ sub parse_line {
 		 'DIE' => 1,          # this is the only circumstance when there should be more than one existing gene in a command (so this is 'EXISTINGS')
 		 'CLASS' => 1,
 		 'NEWCLASS' => 1,
+		 'FAMILY' => 1,
 		);
 
   my $key;
   my $splitgroup = -1;
   foreach my $word (@line) {
-    if (keys %line == 0) {
+    if (keys %line == 0) { # the first word of the command is the VERB
       $line{VERB} = $word
     } else {
       if (exists $keyword{$word}) { # if word is a keyword
@@ -918,6 +924,55 @@ sub delete_obj {
   print "Have Deleted $existing - Please Kill $existing in the Nameserver and/or check on the Isoform status of other CDS on this gene - maybe there is just one isoform that needs an Isoform letter and tag removed\n";
 
 }
+######################################
+# MAKE_TRANSPOSON CLASS CDS EXISTING WBGene00032898 FAMILY LINE2A_CB
+# convert the CDS to Transposon_CDS and make a new Transposon object with the same span
+
+sub make_transposon {
+  my ($self, %line) = @_;
+
+  my $class = $line{CLASS};
+  my $existing = $line{EXISTING};
+  my $family = $line{FAMILY};
+
+  my $gene = $self->SeqName2Gene($existing);
+
+  # check to see if the existing gene has isoforms - die if so
+  my $update = 0; # don't update
+  my ($cds, $isoform_letter, $number_of_existing_isoforms, $single, @used_letters) = $self->Get_next_isoform_ID($gene, $update);
+  if (!$single) {die "ERROR Can't make a Transposon object from $existing because it has isoforms - are you sure this is correct?\n"}
+
+  $self->Change_to_Transposon_CDS($class, $cds);
+  $self->Last_reviewed($class, $cds);
+  $self->Add_remark($class, $cds, "Converted this Transposon as it has a strong similarity to a retrotransposase ($family).");
+
+  # find ID of next available Transposon
+  my $transposon_id = $self->Find_Next_Transposon_ID();
+
+  # set Corresponding_transposon in the CDS
+  $self->set_Tag($class, $cds, 'Corresponding_transposon', $transposon_id);
+
+  # make stub of Transposon object
+  $self->Add_stub('Transposon', $transposon_id);
+
+  # set Gene
+  $self->set_Tag('Transposon', $transposon_id, 'Gene', $gene);
+
+  # set Member_of to FAMILY
+  $self->set_Tag('Transposon', $transposon_id, 'Member_of', $family);
+
+  # set Remark
+  $self->Add_remark('Transposon', $transposon_id, "Transposon span entered to represent a member of the $family transposon family.");
+
+  # get start and end of CDS or Pseudogene object in Sequence
+  # set start and end of Transposon in Sequence
+  my ($sequence, $start, $end) = $self->get_Sequence($class, $cds);
+  $self->set_Tag('Sequence', $sequence, 'Transposon', $transposon_id, $start, $end);
+  
+  print "In the Nameserver:\nChange class of $existing from $class to Transposon\n";
+
+}
+
 ######################################
 # NEW_GENE MODELS briggsae_GG6688|c25_g1_i1-chrII-1b
 
@@ -1401,6 +1456,25 @@ sub Last_reviewed {
 
 }
 
+######################################
+sub Change_to_Transposon_CDS {
+  my ($self, $class, $cds) = @_;
+  
+  my $fh = $self->{out};
+  print $fh "\n// Change_to_Transposon_CDS\n";
+  print $fh "$class : $cds\n";
+  
+  if ($class eq 'CDS') {
+    print $fh "Method Transposon_CDS\n";
+
+  } elsif ($class eq 'Pseudogene') {
+    print $fh "Method Transposon_Pseudogene\n";
+    print $fh "Type Transposon_pseudogene\n";
+  } else {
+    die "ERROR $cds is not a CDS or a PSeudogene. I don't know how to set this up as a Transposon!\n";
+  }    
+  print $fh "\n";
+  }
 ######################################
 # make a history object
 sub Make_history {
@@ -1993,7 +2067,7 @@ sub Add_stub {
   
   print $fh "\n// Add_stub\n";
   print $fh "$class : $seqname\n";
-  print $fh "From_laboratory CB\n";
+  print $fh "From_laboratory HX\n";
   print $fh "Species \"$long_name\"\n";
   
   if ($class eq 'CDS') {
@@ -2009,8 +2083,8 @@ sub Add_stub {
     print $fh "Transcript ncRNA\n"; # if you need something different, then you will have to edit the object
     print $fh "Method ncRNA\n";
     print $fh "\n";
-  } elsif ($class eq 'Transposon_CDS') {
-    print $fh "Method Transposon_CDS\n";
+  } elsif ($class eq 'Transposon') {
+    print $fh "Method Transposon\n";
     print $fh "\n";
   } else {
     die "ERROR Unknown class: $class\n";
@@ -2065,6 +2139,20 @@ sub Make_CDS_into_isoform {
 }
 
 ######################################
+# set arbitraty tag to arbitray value(s)
+
+sub set_Tag {
+  my ($self, $class, $cds, $tag, @value) = @_;
+
+  my $fh = $self->{out};
+  print $fh "\n// set_Tag\n";
+  print $fh "$class : $cds\n";
+  print $fh "$tag @value\n";
+  print $fh "\n";
+
+  
+}
+######################################
 # &Make_isoform_into_CDS($class, $cdsl, $cds);
 
 sub Make_isoform_into_CDS {
@@ -2093,7 +2181,21 @@ sub Delete {
   print $fh "\n";
 
 }
+######################################
+# $transposon_id = $self->Find_Next_Transposon_ID();
+# Warning! This finds the next available Transposon ID in the curation database - there may be higher IDs used in other databases! Manual checking is required!
+sub Find_Next_Transposon_ID {
+  my ($self) = @_;
 
+  my $maxnumber = "WBTransposon00000000";
+
+  my @trans = $self->{ace}->fetch(-query => "find Transposon");
+  foreach my $thing (@trans) {
+    if ($thing->name gt $maxnumber) {$maxnumber = $thing->name}
+  }
+  $maxnumber++;
+  return $maxnumber;
+}
 ######################################
 # test for a CGC name
 # look in the Gene class object first, then try the Nameserver

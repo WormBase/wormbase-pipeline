@@ -11,7 +11,7 @@ use Sequence_extract;
 use FileHandle;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase, $species, $database, $curate_test);
-my ($replace, $isoform, $newgene, $split, $merge, $to_cds, $to_pseudogene, $to_transcript, $to_transposon_cds, $delete, $last_reviewed, $just_make_history, $check_gene_name);
+my ($replace, $isoform, $newgene, $split, $merge, $to_cds, $to_pseudogene, $to_transcript, $make_transposon, $delete, $last_reviewed, $just_make_history, $check_gene_name);
 my ($noload, $force, $class, $oldseq, @newseq);
 
 
@@ -32,7 +32,7 @@ GetOptions ("help"              => \$help,
 	    "to_cds"            => \$to_cds,            # COMMAND: convert an object into a CDS class object
 	    "to_pseudogene"     => \$to_pseudogene,     # COMMAND: convert an object into a Pseudogene class object
 	    "to_transcript"     => \$to_transcript,     # COMMAND: convert an object into a Transcript class object (you have to edit it if you want a Type other than ncRNA)
-	    "to_transposon_cds" => \$to_transposon_cds, # COMMAND: convert an object into a Transposon_CDS class object
+	    "make_transposon"   => \$make_transposon,   # COMMAND: convert an object into a Transposon_CDS and new Transposon class object
 	    "delete"            => \$delete,            # COMMAND: delete an object (leaving a history object)
 	    "last_reviewed"     => \$last_reviewed,     # COMMAND: add a Last_reviewed tag
 	    "just_make_history"      => \$just_make_history,      # COMMAND: just create a history object
@@ -124,9 +124,9 @@ if ($curate_test) {
 } elsif ($to_transcript) {
   if (!defined $class) {$class = 'CDS'}
   $curate->to_transcript_cmd($class, $oldseq, @newseq);
-} elsif ($to_transposon_cds) {
+} elsif ($make_transposon) {
   if (!defined $class) {$class = 'CDS'}
-  $curate->to_transposon_cds_cmd($class, $oldseq, @newseq);
+  $curate->make_transposon_cmd($class, $oldseq, @newseq);
 } elsif ($delete) {
   if (!defined $class) {$class = 'CDS'}
   $curate->delete_cmd($class, $oldseq);
