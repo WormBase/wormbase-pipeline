@@ -13,7 +13,7 @@ GetOptions (
 	   );
 if (!defined $species) {$species = 'elegans'}
 
-my @cmds = qw/Replace Isoform Split Merge To_CDS To_Pseudogene To_Transcript Create_Gene Delete Last_reviewed Just_Make_History Check_Gene_name/;
+my @cmds = qw/Replace Isoform Split Merge To_CDS To_Pseudogene To_Transcript Make_Transposon Create_Gene Delete Last_reviewed Just_Make_History Check_Gene_name/;
 
 
 my $mw = MainWindow->new;
@@ -150,7 +150,7 @@ sub Status {
 sub Class {
   my ($f, $class_var_ref) = @_;
   my @classes = qw/
-CDS Pseudogene Transcript Transposon_CDS
+CDS Pseudogene Transcript
 /;
   
   my $class = $f->Optionmenu(
@@ -323,6 +323,10 @@ sub command_chosen {
     one_line_text($old);
     one_line_text($new);
     delete_text($status); add_text($status, "Convert the old name into a Transcript (Method/Type = ncRNA)")
+  } elsif ($selection eq 'Make_Transposon') {
+    one_line_text($old);
+    one_line_text($new);
+    delete_text($status); add_text($status, "Convert the old name into a Transposon_CDS and new Transposon (new name is Family)")
   } elsif ($selection eq 'Create_Gene') {
     inactivate_text($old);
     one_line_text($old);
