@@ -51,19 +51,22 @@ foreach my $dba (@$all_dbas) {
   my $prefix = join(".", $species, $bioproject, "WBPS${rel_num}");
   my $gtf_suffix = $prefix . ".canonical_geneset.gtf.gz";
   my $genome_suffix = $prefix . ".genomic.fa.gz";
+  my $cdna_suffix = $prefix . ".mRNA_transcripts.fa.gz";
 
   my $source_genome = "$ftp_source_dir/WBPS${rel_num}/species/$species/$bioproject/$genome_suffix";
   my $source_gtf = "$ftp_source_dir/WBPS${rel_num}/species/$species/$bioproject/$gtf_suffix";
+  my $source_cdna = "$ftp_source_dir/WBPS${rel_num}/species/$species/$bioproject/$cdna_suffix";
 
   die "Could not find $source_genome\n" if not -e $source_genome;
   die "Could not find $source_gtf\n" if not -e $source_gtf;
+  die "Could not find $source_cdna\n" if not -e $source_cdna;
 
   push @entries, {
     species    => $species,
     bioproject => $bioproject,
     taxon      => $taxon,
     assembly   => $assembly,
-    to_copy    => [$source_genome, $source_gtf],
+    to_copy    => [$source_genome, $source_gtf, $source_cdna],
   };
 }
 
