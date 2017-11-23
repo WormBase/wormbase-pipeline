@@ -308,11 +308,11 @@ sub merge_genes {
   my $names1 = $db->idAllNames($gene_id);
   my $names2 = $db->idAllNames($merge_id);
   
-  unless( ($db->user eq 'mt3') or ($db->user eq 'ar2') or ($db->user eq 'pad') or ($db->user eq 'gw3' )){
+  unless( ($db->user eq 'pad') or ($db->user eq 'gw3' )){
     if ( $$names2{'CGC'} ) {
       if ($$names1{'CGC'} ) {
 	#both genes have CGC name - confirm with geneace 
-	$db->dienice("FAILED: Both genes have CGC names".$$names1{'CGC'}." and ".$$names2{'CGC'}.".  The correct course of action should be determined by the CGC admin (mt3)<br>
+	$db->dienice("FAILED: Both genes have CGC names".$$names1{'CGC'}." and ".$$names2{'CGC'}.".  The correct course of action should be determined by the CGC admin (pad)<br>
 					Please contact Geneace curator to resolve this");
       } else {
 	#gene being eaten has a CGC name and eater doesnt
