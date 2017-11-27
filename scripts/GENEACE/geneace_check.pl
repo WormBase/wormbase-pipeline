@@ -23,14 +23,14 @@ use File::Path;
 my ($help, $debug, $test, $class, @classes, $database, $ace, $verbose);
 my @skip_methods;
 
-GetOptions ("help"        => \$help,
-            "debug=s"     => \$debug,
-	    "class=s"     => \@classes,
-	    "database=s"  => \$database,
-            "ace"         => \$ace,
-	    "verbose"     => \$verbose,
-            "test"        => \$test,
-            "skipmethod=s@" =>  \@skip_methods,
+GetOptions ('help'          => \$help,
+            'debug=s'       => \$debug,
+	    'class=s'       => \@classes,
+	    'database=s'    => \$database,
+            'ace'           => \$ace,
+	    'verbose'       => \$verbose,
+            'test'          => \$test,
+            'skipmethod=s@' =>  \@skip_methods,
 	   );
 
 ###################################################
@@ -38,19 +38,18 @@ GetOptions ("help"        => \$help,
 ###################################################
 my $wb = Wormbase->new(-test => $test, -debug => $debug );
 # choose database to query: default is /nfs/wormpub/DATABASES/geneace
-$database = "/nfs/wormpub/DATABASES/geneace" unless $database;
+$database = '/nfs/wormpub/DATABASES/geneace' unless $database;
 print "Using database $database.\n\n";
 
 my $tace = $wb->tace;          # tace executable path
-my $curr_db = "/nfs/wormpub/DATABASES/current_DB"; # Used for some cross checking with geneace
+my $curr_db = '/nfs/wormpub/DATABASES/current_DB'; # Used for some cross checking with geneace
 my $def_dir = "$ENV{CVS_DIR}/../wquery/geneace";                          # where lots of table-maker definitions are kept
 
 my $rundate = $wb->rundate;                                # Used by various parts of script for filename creation
-my $maintainers = join (", ", 
-                        "paul.davis\@wormbase.org",
-                        "gary.williams\@wormbase.org",
-                        "maryann.tuli\@wormbase.org",
-                        "kevin.howe\@wormbase.org",
+my $maintainers = join (', ', 
+                        'paul.davis\@wormbase.org',
+                        'gary.williams\@wormbase.org',
+                        'kevin.howe\@wormbase.org',
                         );
 
 my $log_dir = "$database/logs";                            # some of the many output files are put here (ar2)
@@ -63,7 +62,7 @@ my (%L_name_F_WBP, %L_name_F_M_WBP);                       # hashes for checking
 ##################################################
 
 # Display help if required
-if ($help){&usage("Help")}
+if ($help){&usage('Help')}
 
 # Use debug mode?
 if($debug){
@@ -136,7 +135,7 @@ print "Exit status $? log close\n\n" if ($debug);
 
 close(ACE) if ($ace);
 # email everyone specified by $maintainers
-$wb->mail_maintainer("geneace_check: SANGER",$maintainers,$log);
+$wb->mail_maintainer('geneace_check: SANGER',$maintainers,$log);
 
 exit(0);
 #--------------------------------------------------------------------------------------------------------------------
@@ -262,37 +261,37 @@ sub process_gene_class{
   }
 
   # Look for Species tag but no Species field after it
-  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Species AND NOT NEXT")){
+  foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Species AND NOT NEXT')){
     print LOG "ERROR: $gene has a 'Species' tag but no value\n";
  }
 
   # checks that a gene with alleles are not dead (i.e. merged into something else)
-  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Dead AND Allele")){
+  foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Dead AND Allele')){
     print LOG "ERROR: Mama mia! $gene is dead but is still connected to an allele\n";
   }
 
   # checks that a gene with references are not dead (i.e. merged into something else)
-  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Dead AND Reference")){
+  foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Dead AND Reference')){
       print LOG "ERROR: Oh my sainted Aunt! $gene is dead but is still connected to a reference\n";
   }
 
   # checks that a gene with orthologs has not been merged into something else ie Dead. nb. It is OK for Transposon_CDSs to have Orthologs
-  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE NOT Live AND Merged_into AND Ortholog")){
+  foreach my $gene ($db->fetch(-query=>'Find Gene WHERE NOT Live AND Merged_into AND Ortholog')){
       print LOG "ERROR: Zut alors! $gene has been merged (and is Dead) but is still connected to an ortholog\n";
   }
   
   # checks that a gene with mapping data is not dead.
-  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Dead AND Map_info")){
+  foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Dead AND Map_info')){
     print LOG "ERROR: ERROR: Bleedin' Nora! $gene is dead but still has mapping data\n";
   }
 
   # checks that a Gene doesn't have both Map and Interpolated_map_position tags
-  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Map AND Interpolated_map_position")){
+  foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Map AND Interpolated_map_position')){
     print LOG "ERROR: $gene has both Map and Interpolated_map_position tags, are you crazy?\n";
   }
 
   # checks for genes that have no Live tag but a split_from tag
-  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Split_from AND Dead AND NOT Merged_into AND NOT Made_into_transposon")){
+  foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Split_from AND Dead AND NOT Merged_into AND NOT Made_into_transposon')){
     print LOG "ERROR: $gene has Split_from tag but no Live tag\n";
   }
 
@@ -309,7 +308,7 @@ sub process_gene_class{
     my $species = $gene_id->Species;
     if ($verbose) {
       print "$gene_id:";
-      if($species eq "Caenorhabditis elegans" and exists $Gene_info{$gene_id}{'Public_name'}) {
+      if($species eq 'Caenorhabditis elegans' and exists $Gene_info{$gene_id}{'Public_name'}) {
         print $Gene_info{$gene_id}{'Public_name'};
       }
       print "\n";
@@ -411,12 +410,12 @@ sub test_locus_for_errors{
   if( !defined $gene_id->Positive_clone(1) && defined $gene_id->Sequence_name){
     # don't need to do this for C. briggsae genes
     my $species = $gene_id->Species;
-    if ($species eq "Caenorhabditis elegans"){
+    if ($species eq 'Caenorhabditis elegans'){
       my $seq = $gene_id->Sequence_name;
       
       # don't need to do this for Dead genes.
       my $identity = $gene_id->Status;
-      if ($identity eq "Live"){
+      if ($identity eq 'Live'){
 	my $seq = $gene_id->Sequence_name;
 	
 	# need to chop off the ending to just get clone part
@@ -449,7 +448,7 @@ sub test_locus_for_errors{
     if (!defined($tag)){
       $warnings .= "ERROR: $gene_id has an Event tag but does not have any following tag\n";
     }
-    elsif ($tag eq "Killed"){
+    elsif ($tag eq 'Killed'){
       if ( defined $gene_id->at('Identity.Live')){
 	$warnings .= "ERROR(a): $gene_id ($Gene_info{$gene_id}{'Public_name'}) has 'Live' tag but also has 'Killed' tag => Lose Live\n";
 	if ($ace){
