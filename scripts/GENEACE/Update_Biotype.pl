@@ -59,6 +59,7 @@ else {
   $output = "/tmp/${species}_$datestring";
 }
 open (ACE,">$output") or $log->log_and_die("can't write output: $!\n");
+open (REP,">$report") or $log->log_and_die("can't write report: $!\n");
 
 # Display help if required
 &usage("Help") if ($help);
@@ -209,6 +210,7 @@ foreach my $SeqGene(@SeqGenes) {
       $log->write_to(" - CHECK: Has History Pseudogene\n");
     }
     else {$log->write_to(" - WARNING: Dangling annotation, please check the database $db?\n");}
+    print REP "$SeqGene - WARNING: Dangling annotation, please check the database $db for feature data\n" if ($report);
     next;
   }
 }
@@ -248,6 +250,7 @@ foreach my $WBGene(@WBGenes) {
 	    if ($WBGeneBio eq $finalbio) {
 		$mcount++;
 		$log->write_to("$WBGene - MATCH\n");
+		
 	    }
 	    elsif ($WBGeneBio ne $finalbio) {
 		$log->write_to("$WBGene - NO-MATCH Calculated $finalbio Geneace:$WBGeneBio\n");
@@ -263,6 +266,7 @@ foreach my $WBGene(@WBGenes) {
 	    $log->write_to("Warning missed round 2: $WBGene\n");
 	    # Need a biotype
 	    print ACE "Gene : \"$WBGene\"\nBiotype \"$biotype{$WBGene}\"\n\n";
+	    print REP "$WBGene missed round 2...Assigned $biotype{$WBGene}\n" if ($report);
 	    $missedcount++; 
 	}
     }
@@ -270,6 +274,7 @@ foreach my $WBGene(@WBGenes) {
 	#  no calculated biotype 
 	if ($WBGene->Biotype) {
 	    $log->write_to("Warning $WBGene previously had a biotype of ".$WBGene->Biotype."\n");
+	    print REP "$WBGene previously had a biotype of ".$WBGene->Biotype."\n" if ($report);
 	    $qcount++;
 	}
 	else {
