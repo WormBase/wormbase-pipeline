@@ -100,7 +100,7 @@ foreach my $gene (keys %server_genes) {
 
 # any genes left in the acedb list are absent from the nameserver
 foreach (keys %ace_genes ){
-    if ($_ =~ /ENS/) {
+    if (($_ =~ /ENS/) || ($_ =~ /YMR133W/)) {
 	print "Skipping ENSEMBL ID:$_\n" if $debug;
     }
     else {
