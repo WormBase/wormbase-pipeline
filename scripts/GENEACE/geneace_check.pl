@@ -831,27 +831,33 @@ sub process_laboratory_class{
   my $e = 0;
   # test for Allele_designation and Representative tags
   foreach my $lab (@labs){
-    if ( $verbose && (!defined $lab -> Allele_designation) && $lab =~ /[A-Z]{3,3}/ ){
-      print LOG "INFO: $lab has no Allele_designation (exception)\n";
-      $e++;
+    $e = 0;
+    if ((defined $lab->Remark) && ($lab->Remark =~ /closed/)) {
+      print LOG "INFO: $lab ".$lab->Remark."\n" if ($verbose);
     }
-    if ( (!defined $lab -> Allele_designation) && $lab !~ /[A-Z]{3,3}/ ){
-      print LOG "ERROR: $lab has no Allele_designation\n";
-      $e++;
+    else {
+      if ( $verbose && (!defined $lab -> Allele_designation) && $lab =~ /[A-Z]{3,3}/ ){
+	print LOG "INFO: $lab has no Allele_designation (exception)\n";
+	$e++;
+      }
+      if ( (!defined $lab -> Allele_designation) && $lab !~ /[A-Z]{3,3}/ ){
+	print LOG "ERROR: $lab has no Allele_designation\n";
+	$e++;
+      }
+      if( (!defined $lab->Representative) && $lab !~ /DR/ && $lab !~ /XA|CGC/ ){
+	print LOG "ERROR: $lab has no Representative\n";
+	$e++;
+      }
+      if( defined $lab->at('Laboratory.CGC.Representative') && !defined $lab->Representative ){
+	print LOG "ERROR: $lab has Representative tag without value\n";
+	$e++;
+      }
+      if ( defined $lab->Representative && $lab -> Representative !~ /^WBPerson\d+/ ){
+	print LOG "$lab representative (", $lab->Representative, ") is not using WBPerson# format\n";
+	$e++;
+      }
+      print LOG $lab->Remark.": $lab Remark\n\n" if (($e ne 0) && (defined $lab->Remark));
     }
-    if( (!defined $lab->Representative) && $lab !~ /XA|CGC/ ){
-      print LOG "ERROR: $lab has no Representative\n";
-      $e++;
-    }
-    if( defined $lab->at('Laboratory.CGC.Representative') && !defined $lab->Representative ){
-      print LOG "ERROR: $lab has Representative tag without value\n";
-      $e++;
-    }
-    if ( defined $lab->Representative && $lab -> Representative !~ /^WBPerson\d+/ ){
-      print LOG "$lab representative (", $lab->Representative, ") is not using WBPerson# format\n";
-      $e++;
-    }
-    print LOG $lab->Remark."\n" if $e != 0;
   }
 }
 
@@ -952,7 +958,7 @@ sub process_allele_class{
 
     # Check for SeqStatus tag missing
     if (!defined($allele->SeqStatus)) {
-	print LOG "ERROR: $allele has no SeqStatus tag\n";
+	print LOG "ERROR: $allele has no SeqStatus tag\n" if ($allele->Status eq "Live");
     }
 
     # Check for method tag missing
