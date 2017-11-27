@@ -520,7 +520,7 @@ sub main_gene_checks {
 	  if ($intron_size < 4 && !$artificial_intron_Ribosomal_slippage && !$artificial_intron_Low_quality_sequence) {
 	    push(@error4,"ERROR: $gene_model has a very small intron ($intron_size bp) and no Ribosomal_slippage or Low_quality_sequence tag\n");
 	  } else {
-	    push(@error4,"ERROR: $gene_model has a small intron ($intron_size bp)\n") if ($species eq 'elegans');
+	    push(@error4,"Warning: $gene_model has a small intron ($intron_size bp)\n") if ($species eq 'elegans');
 	  }
 	}
       }
