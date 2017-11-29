@@ -379,7 +379,7 @@ sub pepdir_prefix{'ppa'};
 sub ncbi_tax_id {'54126'};
 sub ncbi_bioproject {'PRJNA12644'};
 sub bioproject_description { 'Max Planck Institute for Developmental Biology P. pacificus genome project' }
-sub assembly_type {'contig'};
+sub assembly_type {'chromosome'};
 sub wormpep_prefix {'PP'}
 sub upload_db_name {''}; # we already hold the data in the primary database, it is not downloaded
 sub TSL {(
