@@ -82,7 +82,7 @@ my $lsf = LSF::JobManager->new();
 
 my $host = qx('hostname');chomp $host;
 $port = 23100 if not $port;
-if (scalar(@chromosomes) > 50){
+if (scalar(@chromosomes) > 40){
   $wormbase->run_command("($giface_server $database $port 1200:6000000:1000:600000000>/dev/null)>&/dev/null &",$log);
   sleep 20;
 }
@@ -96,7 +96,7 @@ my $store_file = $wormbase->build_store; # get the store file to use in all comm
 CHROMLOOP: foreach my $chrom ( @chromosomes ) {
   if ( @methods ) {
     foreach my $method ( @methods ) {
-      my $out = scalar(@chromosomes) <= 50 ? 
+      my $out = scalar(@chromosomes) <= 40 ? 
           "$scratch_dir/wormpubGFFdump.$chrom.$method.lsfout" 
           : "$scratch_dir/wormpubGFFdump.$submitchunk.$method.lsfout";
       my $job_name = "worm_".$wormbase->species."_gffbatch";
@@ -104,7 +104,7 @@ CHROMLOOP: foreach my $chrom ( @chromosomes ) {
       my @bsub_options = (-o => "$out",
 			  -J => $job_name);
 
-      if (scalar(@chromosomes) <= 50) {
+      if (scalar(@chromosomes) <= 40) {
         push @bsub_options, (-M => "4500", 
                              -R => "\"select[mem>4500] rusage[mem=4500]\"");
       } else {
@@ -114,7 +114,7 @@ CHROMLOOP: foreach my $chrom ( @chromosomes ) {
       }
 
       my $cmd = "$dumpGFFscript -database $database -dump_dir $dump_dir -method $method -species $species";
-      if (scalar(@chromosomes) > 50) {
+      if (scalar(@chromosomes) > 40) {
         $cmd .= " -host $host";
         $cmd .= " -port $port";
         $cmd .= " -gifaceclient $giface_client";
@@ -138,23 +138,23 @@ CHROMLOOP: foreach my $chrom ( @chromosomes ) {
 
       $lsf->submit(@bsub_options, $cmd_file);
     }
-    last CHROMLOOP if scalar(@chromosomes) > 50;
+    last CHROMLOOP if scalar(@chromosomes) > 40;
   }
   else {
     # for large chromosomes, ask for a memory limit of 3.5 Gb
     my $job_name = "worm_".$wormbase->species."_gffbatch";
-    my @bsub_options = scalar(@chromosomes) <= 50 ? (-M => "4500", 
+    my @bsub_options = scalar(@chromosomes) <= 40 ? (-M => "4500", 
 						    -R => "\"select[mem>4500] rusage[mem=4500]\"",
 						   ) : (-M => "500", 
                                                        -R => "\"select[mem>=500] rusage[mem=500]\"");
-    my $out = scalar(@chromosomes) <= 50 
+    my $out = scalar(@chromosomes) <= 40 
         ? "$scratch_dir/wormpubGFFdump.$chrom.lsfout" 
         : "$scratch_dir/wormpubGFFdump.$submitchunk.lsfout";
     push @bsub_options, (-o => "$out",
 			 -J => $job_name);
 
     my $cmd = "$dumpGFFscript -database $database -dump_dir $dump_dir -species $species";
-    if (scalar(@chromosomes) > 50) {
+    if (scalar(@chromosomes) > 40) {
       $cmd .= " -host $host";
       $cmd .= " -port $port";
       $cmd .= " -gifaceclient $giface_client";
@@ -178,7 +178,7 @@ CHROMLOOP: foreach my $chrom ( @chromosomes ) {
     chmod 0777, $cmd_file;
 
     $lsf->submit(@bsub_options, $cmd_file);
-    last CHROMLOOP if scalar(@chromosomes) > 50;
+    last CHROMLOOP if scalar(@chromosomes) > 40;
   }
   $submitchunk++;
 }
@@ -200,7 +200,7 @@ if ($rerun_if_failed) {
   ##################################################################
   # now try re-runnning any commands that failed
   $lsf = LSF::JobManager->new();
-  my @bsub_options = scalar(@chromosomes) <= 50 ? (-M => "4500", 
+  my @bsub_options = scalar(@chromosomes) <= 40 ? (-M => "4500", 
                                                    -R => "\"select[mem>4500] rusage[mem=4500]\""
       ) : ();
   
@@ -237,7 +237,7 @@ if ($rerun_if_failed) {
 ##################################################################
 
 
-if (scalar(@chromosomes) > 50){
+if (scalar(@chromosomes) > 40){
   open (WRITEDB,"| $giface_client $host -port $port -userid wormpub -pass blablub");
   print WRITEDB "shutdown now\n";
   close WRITEDB;
