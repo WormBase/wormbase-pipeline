@@ -123,6 +123,7 @@ sub invoke {
     foreach my $assembly (@assemblies) {
       foreach my $dbxref ($assembly->Database) {
         next if $dbxref->name ne "NCBI_BioProject";
+        next if $assembly->Dead;
         my $bp = $dbxref->right->right->name;
         
         if ($bp eq $ncbi_bioproj) {
