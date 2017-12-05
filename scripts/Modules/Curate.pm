@@ -590,7 +590,7 @@ sub Find_Next_CDS_ID {
 
   my $maxnumber = 0;
   if ($self->{species} eq 'elegans') {
-    my @cdses = $self->{ace}->fetch(-query => "find CDS ${clone}.* WHERE Method = \"curated\"");
+    my @cdses = $self->{ace}->fetch(-query => "find CDS ${clone}.* WHERE Method = \"curated\" OR Method = \"Transposon_CDS\"");
     my @pseuds = $self->{ace}->fetch(-query=>"find Pseudogene ${clone}.*");
     my @trans = $self->{ace}->fetch(-query=>"find Transcript ${clone}.*");
     foreach my $thing (@cdses, @pseuds, @trans) {
@@ -845,8 +845,9 @@ sub replace_cds {
   $self->Delete_existing_structure($class, $existing);
 
   $self->Update_CDS_structure($class, $existing, $model);
-
-  $self->Add_remark($class, $existing, "This $class has been updated based on the RNAseq data.");
+  
+  $self->Add_remark($class, $existing, 'This $class has been updated based on the published alternate intron splicing.' );
+#  $self->Add_remark($class, $existing, "This $class has been updated based on the RNAseq data.");
   $self->Last_reviewed($class, $existing);
 
   $self->Print_CDS_to_Isoform($existing, $existing);
@@ -898,7 +899,9 @@ sub new_isoform {
     
     $self->Add_Gene($class, $cdsl, $gene);
     
-    $self->Add_remark($class, $cdsl, "This structure has been created based on the RNASeq data.");
+    #$self->Add_remark($class, $cdsl, "This structure has been created based on the RNASeq data.");
+    $self->Add_remark($class, $cdsl, 'This structure has been created based on the published alternate intron splicing.');
+
     $self->Last_reviewed($class, $cdsl);
     
     $self->Add_isoform_tag($class, $cdsl);
@@ -1006,6 +1009,8 @@ sub new_gene {
     }
     
     $self->Add_remark($class, $cdsl, "This Gene has been created based on the RNASeq data.");
+
+
     $self->Last_reviewed($class, $cdsl);
 
     $self->Print_CDS_to_Isoform($cds, $cdsl);
@@ -1434,6 +1439,7 @@ sub Add_remark {
   print $fh "$class : $cds\n";
   print $fh "Remark \"[$date $ENV{USER}] $text\" Curator_confirmed $self->{person}\n";
   print $fh "Remark \"[$date $ENV{USER}] $text\" From_analysis RNASeq\n";
+  print $fh "Remark \"[$date $ENV{USER}] $text\" Paper_evidence WBPaper00049972\n";
   print $fh "\n";
 }
 
