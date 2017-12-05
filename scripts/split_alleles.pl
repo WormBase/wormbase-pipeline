@@ -157,7 +157,7 @@ if ($map) {
     
   }
   
-  foreach my $mem_gb (4, 7) {
+  foreach my $mem_gb (5, 10) {
     my @outstanding_jobs = grep { not $_->{success} } @jobs;
     
     if (@outstanding_jobs) {
