@@ -1523,7 +1523,6 @@ sub Make_history {
     }
     ($transcript_type, $transcript_type_value1, $transcript_type_value2) = $obj->Transcript->row(0);
   }
-  $clone_tag = $self->CloneTag($class);
   
   if (!defined $obj) {
     die "ERROR Invalid $class. $existing is not a valid $class name";
@@ -1544,7 +1543,7 @@ sub Make_history {
   # parent clone coords
   my $clone = $obj->Sequence;
   my @clone_entry;
-  my $clone_tag = $self->CloneTag($class);
+  $clone_tag = $self->CloneTag($class);
   @clone_entry = $clone->${clone_tag};
 
   my $start;
@@ -2243,7 +2242,7 @@ sub cgcname {
   #                           dsn, user,          pw
   my $connect = DBI->connect($dsn, $self->{user}, $self->{user});
 
-  my (%storedIDs,$myquery, $execute,);
+  my (%storedIDs, $execute,);
 
   # try to pull out CGC names (i.e. name_type_id = 1) linked with the specified sequence name (name_type_id = 3)
   my $myquery = "select object_name from secondary_identifier where name_type_id = 1 AND object_id in (select object_id from secondary_identifier where name_type_id = 3 AND object_name = '${gene_seqname}')";
