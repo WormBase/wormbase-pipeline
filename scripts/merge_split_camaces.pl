@@ -600,6 +600,7 @@ sub load_curation_data {
           push (@files,
 		"$wormpub/CURATION_DATA/Tiling_array_data/tiling_array.ace",
 		"$wormpub/BUILD_DATA/MISC_DYNAMIC/RNASeq_splice_elegans_high_qual.ace_WS${WS_version}",
+		"$wormpub/BUILD_DATA/MISC_DYNAMIC/Gu_TSS_data.ace",
 		"$wormpub/CURATION_DATA/assign_orientation.WS${WS_version}.ace",
 		"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_TEC_RED_homol.ace",
 		"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_21urna_homol.ace",
