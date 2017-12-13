@@ -50,13 +50,14 @@ $log->write_to("creating a GPI file at $output for ${\$wormbase->long_name}\n");
 my $db = Ace->connect(-path => ($database ||$wormbase->autoace));
 
 my $genes = $db->fetch_many(-query => 'Find Gene;Species="'.$wormbase->long_name.
-            '";Live;Corresponding_transcript OR Corresponding_CDS OR Corresponding_pseudogene')
+            '";Live;SMap;Corresponding_transcript OR Corresponding_CDS OR Corresponding_pseudogene')
             or $log->log_and_die(Ace->error);
 
 print $outfile "!gpi-version: 1.2\n";
 
 while (my $g = $genes->next){
    # Gene block
+   print STDERR "processing $g\n" if $debug;
    printf $outfile "WB\t%s\t%s\t%s\t%s\t%s\ttaxon:%i\t\t%s\n", 
        $g,
        $g->Public_name,
