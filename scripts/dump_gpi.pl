@@ -134,7 +134,7 @@ sub uniprot_xref{
         my $subtype="$_";
         $result[0]= "UniProtKB:".$_->right(1) if $subtype eq 'UniProtIsoformAcc';
         push @result,"UniProtKB:".$_->right(1) if $subtype eq 'UniProtAcc' && ! $result[0];
-        push @rnacentral,'UniProtKB_GCRP:'.$_->right(1) if $type eq 'UniProtGCRP';
+        push @rnacentral,'UniProtKB_GCRP:'.$_->right(1) if $type eq 'UniProt_GCRP';
         push @rnacentral,'RNAcentral:'.$_->right(1) if $type eq 'RNAcentral';
        }$_->col
   }$object->at('DB_info.Database');
