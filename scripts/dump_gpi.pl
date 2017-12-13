@@ -73,7 +73,7 @@ while (my $g = $genes->next){
        $t,
        $g->Public_name,
        ($g->Gene_class?$g->Gene_class->Description:''),
-       '',
+       join('|',$g->Other_name),
        $t->Species->NCBITaxonomyID,
        "WB:$g",
        ''
@@ -82,9 +82,9 @@ while (my $g = $genes->next){
        # Protein block
        printf $outfile "WB\t%s\t%s\t%s\t%s\tprotein\ttaxon:%i\t\%s\t%s\n", 
        $p,
-       $g->Public_name,
-       $p->Gene_name,
-       '',
+       uc($g->Public_name),
+       ($g->Gene_class?$g->Gene_class->Description:''),
+       join('|',$g->Other_name),
        $p->Species->NCBITaxonomyID,
        "WB:$t",
        uniprot_xref($p->fetch)
@@ -134,6 +134,7 @@ sub uniprot_xref{
         my $subtype="$_";
         $result[0]= "UniProtKB:".$_->right(1) if $subtype eq 'UniProtIsoformAcc';
         push @result,"UniProtKB:".$_->right(1) if $subtype eq 'UniProtAcc' && ! $result[0];
+        push @rnacentral,'UniProtKB_GCRP:'.$_->right(1) if $type eq 'UniProtGCRP';
         push @rnacentral,'RNAcentral:'.$_->right(1) if $type eq 'RNAcentral';
        }$_->col
   }$object->at('DB_info.Database');
