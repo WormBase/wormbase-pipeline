@@ -117,6 +117,7 @@ sub new {
   $self->{'seq_obj'} = shift;   # Sequence_extract object
   $self->{'wormbase'} = shift;  # wormbase object
   $self->{'log'} = shift;       # log object
+  $self->{'ace2'} = shift;      # OPTIONAL - db handle of camace owned by other person (pad, gw3) for when curating genes in their half of the genome
   
   my $person;
   my $user = $ENV{'USER'};
@@ -145,6 +146,7 @@ sub new {
   $self->{force} = 0; # sanity checks fail normally, unless this is set to 1
   $self->{force_flag} = 0; # this is set to 1 if an error that requires forcing is found
 
+
   # +++ want to see if the OUT file has been moved to a directory for old OUT files
   # +++ i.e. there is no OUT file in existence
   # +++ otherwise we could get in trouble when we check to see what
@@ -154,6 +156,61 @@ sub new {
   
   return $self;
 }
+
+######################################
+# if we are curating the other person's database then we need to carefully check for isoform letters greater than in our normal database using $ace2
+sub set_alternate_curation_database {
+  my ($self, $out2, $ace2) = @_;
+
+  $self->{'ace2'} = $ace2;       # alternate acedb db handle
+
+  if ($self->{species} eq 'elegans' && defined $self->{ace2}) {
+    if ($self->{user} eq 'pad') {
+      push @{$self->{carefully_check}}, qw(CHROMOSOME_IV CHROMOSOME_V);
+      $self->{carefully_check_database} = "/nfs/wormpub/camace_gw3";
+    } elsif ($self->{user} eq 'gw3') {
+      push @{$self->{carefully_check}}, qw(CHROMOSOME_I CHROMOSOME_II CHROMOSOME_III CHROMOSOME_X);
+      $self->{carefully_check_database} = "/nfs/wormpub/camace_pad";
+    } else {
+      die "You must be either pad or gw3 to curate elegans";
+    }
+  }
+}
+
+######################################
+# check_alternate_curation_database
+# returns true and the gene_object from the alternate database if the gene is on a chromosome belonging to the other curator (gw3 or pad)
+
+sub check_alternate_curation_database {
+  my ($self, $gene_obj) = @_;
+
+  my $alternate = 0; # not using the alternate chromosomes
+
+  # if we are using elegans and an alternate database has been supplied, 
+  # then check to see if we should be using the alternative database
+  if ($self->{species} eq 'elegans' && defined $self->{ace2}) {
+    my @cds = $gene_obj->Corresponding_CDS;
+    my $sequence_obj = $cds[0]->Sequence;
+    my $chrom;
+    if ($sequence_obj->name !~ /^CHROMOSOME_/) {
+      $chrom = $sequence_obj->Source; # get Chromosome
+    } else {
+      $chrom = $sequence_obj->name;
+    }
+    if (grep {$chrom eq $_} @{$self->{carefully_check}} ) { # is this chromosome one of the ones normally curated in the alternative database?
+      $gene_obj = $self->{ace2}->fetch('GENE' => "$gene_obj");
+      $alternate = 1;
+      #print "Using alternate database for: $cds[0]\n";
+    } else {
+      print "Not using alternate database for: $cds[0]\n";
+    }
+  }
+
+  return ($alternate, $gene_obj);
+}
+
+######################################
+
 
 ######################################
 # flag to force the command to succeed even if it fails the normal checks
@@ -846,8 +903,8 @@ sub replace_cds {
 
   $self->Update_CDS_structure($class, $existing, $model);
   
-  $self->Add_remark($class, $existing, 'This $class has been updated based on the published alternate intron splicing.' );
-#  $self->Add_remark($class, $existing, "This $class has been updated based on the RNAseq data.");
+#  $self->Add_remark($class, $existing, 'This $class has been updated based on the published alternate intron splicing.' );
+  $self->Add_remark($class, $existing, "This $class has been updated based on the RNAseq data.");
   $self->Last_reviewed($class, $existing);
 
   $self->Print_CDS_to_Isoform($existing, $existing);
@@ -899,8 +956,8 @@ sub new_isoform {
     
     $self->Add_Gene($class, $cdsl, $gene);
     
-    #$self->Add_remark($class, $cdsl, "This structure has been created based on the RNASeq data.");
-    $self->Add_remark($class, $cdsl, 'This structure has been created based on the published alternate intron splicing.');
+    $self->Add_remark($class, $cdsl, "This structure has been created based on the RNASeq data.");
+#    $self->Add_remark($class, $cdsl, 'This structure has been created based on the published alternate intron splicing.');
 
     $self->Last_reviewed($class, $cdsl);
     
@@ -1770,7 +1827,7 @@ sub Copy_remarks {
 }
 
 ######################################
-#  my ($sequence, $start, $end) = &get_Sequence($cds);
+#  my ($sequence, $start, $end) = &get_Sequence($class, $cds);
 
 sub get_Sequence {
   my ($self, $class, $cds) = @_;
@@ -1989,6 +2046,7 @@ sub Get_next_isoform_ID {
   } else {
 
     my $gene_obj = $self->{ace}->fetch('GENE' => "$gene");
+
     my @structures;
     my @corr_cds = $gene_obj->Corresponding_CDS;
     foreach my $struc (@corr_cds) {
