@@ -1496,7 +1496,6 @@ sub Add_remark {
   print $fh "$class : $cds\n";
   print $fh "Remark \"[$date $ENV{USER}] $text\" Curator_confirmed $self->{person}\n";
   print $fh "Remark \"[$date $ENV{USER}] $text\" From_analysis RNASeq\n";
-  print $fh "Remark \"[$date $ENV{USER}] $text\" Paper_evidence WBPaper00049972\n";
   print $fh "\n";
 }
 
