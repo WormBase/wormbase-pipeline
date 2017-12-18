@@ -53,6 +53,9 @@ my $to_promote = {
   TrEMBL => {
     UniProtAcc => [['TrEMBL', 'UniProtAcc']],
   },
+  UniProt_GCRP => {
+    UniProtAcc => [['UniProt_GCRP', 'UniProtAcc']],
+  },
   KEGG => {
     KEGG_id => [['KEGG', 'KEGG_id'],
                 ['NemaPath', 'KEGG_id']],
@@ -160,7 +163,7 @@ Optional
 Visible 
 Class 
 Class Database 
-From 1 
+From 2 
 Tag Database 
  
 Colonne 4 
