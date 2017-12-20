@@ -670,7 +670,7 @@ sub Find_Next_CDS_ID {
     } else {
       $prefix = 'SRAE_0';
     }
-    my @cdses = $self->{ace}->fetch(-query => "find CDS ${prefix}* WHERE Method = \"curated\"");
+    my @cdses = $self->{ace}->fetch(-query => "find CDS ${prefix}* WHERE Method = \"curated\" OR Method = \"Transposon_CDS\"");
     my @pseuds = $self->{ace}->fetch(-query=>"find Pseudogene ${prefix}*");
     my @trans = $self->{ace}->fetch(-query=>"find Transcript ${prefix}*");
     foreach my $thing (@cdses, @pseuds, @trans) {
@@ -687,7 +687,7 @@ sub Find_Next_CDS_ID {
 
   } else {
     my $prefix = $prefix{$self->{species}};
-    my @cdses = $self->{ace}->fetch(-query => "find CDS ${prefix}* WHERE Method = \"curated\"");
+    my @cdses = $self->{ace}->fetch(-query => "find CDS ${prefix}* WHERE Method = \"curated\" OR Method = \"Transposon_CDS\"");
     my @pseuds = $self->{ace}->fetch(-query=>"find Pseudogene ${prefix}*");
     my @trans = $self->{ace}->fetch(-query=>"find Transcript ${prefix}*");
     foreach my $thing (@cdses, @pseuds, @trans) {
@@ -1496,7 +1496,6 @@ sub Add_remark {
   print $fh "$class : $cds\n";
   print $fh "Remark \"[$date $ENV{USER}] $text\" Curator_confirmed $self->{person}\n";
   print $fh "Remark \"[$date $ENV{USER}] $text\" From_analysis RNASeq\n";
-  print $fh "Remark \"[$date $ENV{USER}] $text\" Paper_evidence WBPaper00049972\n";
   print $fh "\n";
 }
 
