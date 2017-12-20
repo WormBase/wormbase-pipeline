@@ -17,23 +17,43 @@ use Getopt::Long;
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
+use Getopt::Long;
+use Log_files;
 
-my ($db,$geneace,$test);
-&GetOptions('db=s'      => \$db,
-            'geneace=s' => \$geneace,
-	    'test'      => \$test,
-) || die('cant parse the command line parameter');
+
+my ($db,$geneace,$test,$debug);
+GetOptions('db=s'      => \$db,
+	   'geneace=s' => \$geneace,
+	   'test'      => \$test,
+	   'debug:s'   => \$debug,
+    );
 
 ######################
 # ----- globals -----
 ######################
 
-my $user = `whoami`; chomp $user;
-if ($user ne "wormpub"){print "\nYou need to be wormpub to upload data to geneace\n"; exit 0 };
 
-my $wormbase = (defined $db)
-    ? Wormbase->new(-autoace => $db)
-    : Wormbase->new();
+my $user;
+
+if ($debug) {
+    $user = $debug;
+} 
+else {
+    $user = `whoami`; chomp $user;
+}
+
+#if ($user ne "wormpub"){print "\nYou need to be wormpub to upload data to geneace\n"; exit 0 };
+
+my $wormbase;
+
+if (!defined $db) {
+    $db = "autoace";
+}
+$wormbase = Wormbase->new( -debug => $debug,
+			   -test => $test,
+			   -autoace => $db
+    );
+
 my $tace     = $wormbase->tace;          # tace executable path
 my $release  = $wormbase->get_wormbase_version_name(); # only the digits
 
@@ -47,6 +67,10 @@ my $log = Log_files->make_build_log($wormbase);
 ##############################
 my $accept_large_differences = 1; 
 my $command;
+
+unless (-e $wormbase->acefiles) {
+    $log->log_and_die("ERROR can't find acefiles dir here:$wormbase!!!\nIf you are running this post build you will need to create a symbolic link in the database dir you are pointing at [ln -s /nfs/wormpub/BUILD/elegans/acefiles acefiles]\n\n");
+}
 
 #
 # Map data 1 = interpolated map data
@@ -76,55 +100,55 @@ $wormbase->load_to_database($geneace, $file, 'genetic_map_fixes_from_autoace', $
 #
 # Update geneace with person/person_name data from Caltech
 # 
-my $person = $wormbase->acefiles."/primaries/citace/caltech_Person.ace";
-if (-e $person) {
+#my $person = $wormbase->acefiles."/primaries/citace/caltech_Person.ace";
+#if (-e $person) {
 
-  $log->write_to("Updating person name information from caltech_Person.ace file\n");
+#  $log->write_to("Updating person name information from caltech_Person.ace file\n");
 
   # 
   # First need to remove person/person_name data from geneace
   # Note that the value of "CGC_representative_for" is kept as geneace keeps this record
   # i.e. you can't delete *all* of the Person class from geneace
-  $log->write_to("First removing old Person data\n");
-  $command=<<END;
-find Person *
-edit -D PostgreSQL_id
-edit -D Name
-edit -D Laboratory
-edit -D Address
-edit -D Comment
-edit -D Tracking
-edit -D Lineage
-edit -D Publication
-save
-quit
-END
+#  $log->write_to("First removing old Person data\n");
+#  $command=<<END;
+#find Person *
+#edit -D PostgreSQL_id
+#edit -D Name
+#edit -D Laboratory
+#edit -D Address
+#edit -D Comment
+#edit -D Tracking
+#edit -D Lineage
+#edit -D Publication
+#save
+#quit
+#END
 
-  open (Load_GA,"| $tace -tsuser \"person_update_from_autoace\" $geneace") || die "Failed to upload to Geneace\n";
-  print Load_GA $command;
-  close(Load_GA) or $log->log_and_die("Could not successfully complete the removal of old person data\n");
+#  open (Load_GA,"| $tace -tsuser \"person_update_from_autoace\" $geneace") || die "Failed to upload to Geneace\n";
+#  print Load_GA $command;
+#  close(Load_GA) or $log->log_and_die("Could not successfully complete the removal of old person data\n");
 
   #
   # new Person data will have been dumped from citace
   #
-  $log->write_to("Adding new person data\n");
+#  $log->write_to("Adding new person data\n");
 
-  $wormbase->load_to_database($geneace, $person,"caltech_Person",$log);
-} else {
-  $log->write_to("NOT updating person name information - could not find file $person\n");
-}
+#  $wormbase->load_to_database($geneace, $person,"caltech_Person",$log);
+#} else {
+#  $log->write_to("NOT updating person name information - could not find file $person\n");
+#}
 
 #
 # new Paper data will have been dumped from citace
 #
-my $paper = $wormbase->acefiles."/primaries/citace/caltech_Paper.ace";
-if (-e $paper) {
-  $log->write_to("Adding new paper data\n");
-
-  $wormbase->load_to_database($geneace, $paper,"caltech_Paper",$log);
-} else {
-  $log->write_to("NOT updating Paper information - could not find file $paper\n");
-}
+#my $paper = $wormbase->acefiles."/primaries/citace/caltech_Paper.ace";
+#if (-e $paper) {
+#  $log->write_to("Adding new paper data\n");
+#
+#  $wormbase->load_to_database($geneace, $paper,"caltech_Paper",$log);
+#} else {
+#  $log->write_to("NOT updating Paper information - could not find file $paper\n");
+#}
 
 #
 # Parent sequences for features and variations may have changed during the build
