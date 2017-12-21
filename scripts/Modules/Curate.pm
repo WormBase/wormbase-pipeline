@@ -670,7 +670,7 @@ sub Find_Next_CDS_ID {
     } else {
       $prefix = 'SRAE_0';
     }
-    my @cdses = $self->{ace}->fetch(-query => "find CDS ${prefix}* WHERE Method = \"curated\"");
+    my @cdses = $self->{ace}->fetch(-query => "find CDS ${prefix}* WHERE Method = \"curated\" OR Method = \"Transposon_CDS\"");
     my @pseuds = $self->{ace}->fetch(-query=>"find Pseudogene ${prefix}*");
     my @trans = $self->{ace}->fetch(-query=>"find Transcript ${prefix}*");
     foreach my $thing (@cdses, @pseuds, @trans) {
@@ -687,7 +687,7 @@ sub Find_Next_CDS_ID {
 
   } else {
     my $prefix = $prefix{$self->{species}};
-    my @cdses = $self->{ace}->fetch(-query => "find CDS ${prefix}* WHERE Method = \"curated\"");
+    my @cdses = $self->{ace}->fetch(-query => "find CDS ${prefix}* WHERE Method = \"curated\" OR Method = \"Transposon_CDS\"");
     my @pseuds = $self->{ace}->fetch(-query=>"find Pseudogene ${prefix}*");
     my @trans = $self->{ace}->fetch(-query=>"find Transcript ${prefix}*");
     foreach my $thing (@cdses, @pseuds, @trans) {
