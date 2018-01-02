@@ -240,7 +240,7 @@ v////////////////////////
 
 ?Gene_class     Evidence #Evidence
                 Phenotype ?Text
-                Description ?Text // [krb 020614]
+                Description UNIQUE ?Text // [krb 020614]
                 Designating_laboratory UNIQUE ?Laboratory OUTXREF Gene_classes
                 Former_designating_laboratory DateType ^until UNIQUE ?Laboratory OUTXREF Former_gene_classes //This is a one way XREF to track responsibility for a class.
                 Variation ?Variation    INXREF Gene_class
