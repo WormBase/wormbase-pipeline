@@ -188,7 +188,9 @@ sub gatherDOdata {
   }
   my $countomim2do = (keys %omim2do);
   $log->write_to("Collected $countomim2do  OMIM::DO_terms\nFinished getting DO data...");
-
+  if ($countomim2do < 4000) {
+    $log->log_and_die("ERROR: $countomim2do OMIM::DO_term mappings collected which is less than the minimum 4000, this is bad!!\n");
+  }
   return \%omim2do;
 }
 
