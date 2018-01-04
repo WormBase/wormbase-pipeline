@@ -86,7 +86,7 @@ while ( my $obj = $it->next ) {
       # Life_stage in the qualifier hash to maintain the relationship
       # anatomy-developmental stage. But in the GAF the tag Life stage per se can
       # be confusing."
-      next if $tag->name =~ /Life_stage/;
+      next if $tag->name =~ /Life_stage/ or $tag->name =~ /Remark/;
       $at{$at}->{$tag->name} = 1;
     }
     # if there were no qualifiers, add in an empty one
