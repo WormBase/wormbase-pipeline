@@ -50,99 +50,140 @@ $log->write_to("creating a GPI file at $output for ${\$wormbase->long_name}\n");
 my $db = Ace->connect(-path => ($database ||$wormbase->autoace));
 
 my $genes = $db->fetch_many(-query => 'Find Gene;Species="'.$wormbase->long_name.
-            '";Live;SMap;Corresponding_transcript OR Corresponding_CDS OR Corresponding_pseudogene')
+            '";Live;SMap;Corresponding_transcript OR Corresponding_CDS')
             or $log->log_and_die(Ace->error);
 
 print $outfile "!gpi-version: 1.2\n";
 
 while (my $g = $genes->next){
    # Gene block
+  my ($desc) = $g->Gene_class ? $g->Gene_class->Description : "";
+
    print STDERR "processing $g\n" if $debug;
-   printf $outfile "WB\t%s\t%s\t%s\t%s\t%s\ttaxon:%i\t\t%s\n", 
-       $g,
-       $g->Public_name,
-       ($g->Gene_class?$g->Gene_class->Description:''),
-       join('|',$g->Other_name),
-       $g->Biotype->SO_name,
-       $g->Species->NCBITaxonomyID,
-       uniprot_xref($g)
-   ;
+   print $outfile join("\t",
+                        "WB",
+                        $g,
+                        $g->Public_name,
+                        $desc,
+                        join('|',$g->Other_name),
+                        "gene",
+                        "taxon:" . $g->Species->NCBITaxonomyID,
+                        "",
+                        join("|", &get_xrefs($g, "gene")),
+                        ""), "\n";
 
    foreach my $t($g->Corresponding_CDS){
      # Transcript/CDS block
-     printf $outfile "WB\t%s\t%s\t%s\t%s\ttranscript\ttaxon:%i\t\%s\t%s\n", 
-       $t,
-       $g->Public_name,
-       ($g->Gene_class?$g->Gene_class->Description:''),
-       join('|',$g->Other_name),
-       $t->Species->NCBITaxonomyID,
-       "WB:$g",
-       ''
-     ;
+     print $outfile join("\t", 
+                         "WB", 
+                         $t,
+                         $g->Public_name,
+                         $desc,
+                         join('|',$g->Other_name),
+                         "transcript",
+                         "taxon:" . $t->Species->NCBITaxonomyID,
+                         "WB:$g",
+                         "", 
+                         ""), "\n";
      foreach my $p($t->Corresponding_protein){
-       # Protein block
-       printf $outfile "WB\t%s\t%s\t%s\t%s\tprotein\ttaxon:%i\t\%s\t%s\n", 
-       $p,
-       uc($g->Public_name),
-       ($g->Gene_class?$g->Gene_class->Description:''),
-       join('|',$g->Other_name),
-       $p->Species->NCBITaxonomyID,
-       "WB:$t",
-       uniprot_xref($p->fetch)
-     ;
+       print $outfile join("\t", 
+                           "WB",
+                           $p,
+                           uc($g->Public_name),
+                           $desc,
+                           join('|',map { uc($_) } $g->Other_name),
+                           "protein",
+                           "taxon:" .$p->Species->NCBITaxonomyID,
+                           "WB:$t",
+                           join("|", &get_xrefs($p, "protein")),
+                           ""), "\n";
      }
    }
 
    foreach my $t($g->Corresponding_transcript){
        next if "${\$t->Method}" eq 'Coding_transcript';
        # ncRNA transcript block
-       printf $outfile "WB\t%s\t%s\t%s\t%s\t%s\ttaxon:%i\t\%s\t%s\n", 
-       $t,
-       $g->Public_name,
-       ($g->Gene_class?$g->Gene_class->Description:''),
-       '',
-       $t->Method->GFF_SO->SO_name,
-       $t->Species->NCBITaxonomyID,
-       "WB:$g",
-       uniprot_xref($t->fetch)
-     ;
+       print $outfile join("\t", 
+                           "WB", 
+                           $t,
+                           $g->Public_name,
+                           $desc,
+                           '',
+                           $t->Method->GFF_SO->SO_name,
+                           "taxon:" . $t->Species->NCBITaxonomyID,
+                           "WB:$g",
+                           join("|". &get_xrefs($t, "transcript")), 
+                           ""), "\n";
    }
 }
 
 
-# return the UNiProtIsoformAcc if it exists, else return the UniProtAcc if there is only *one*
-sub uniprot_xref{
-  my ($object)=@_;
+sub get_xrefs {
+  my ($obj, $type) = @_;
+
+
+  my (%accs_by_source, @ret);
   
-  my @result;
-  my @rnacentral;
+  foreach my $db ($obj->Database) {
+    if ($db eq "SwissProt" or $db eq 'TrEMBL' or $db eq 'UniProt_GCRP' or $db eq 'RNAcentral' or $db eq 'UniProtKB') {
+      foreach my $subtype ($db->col) {
+        foreach my $acc ($subtype->col) {
+          if ($db eq 'UniProtKB') { 
+            if ($subtype eq 'UniProtIsoformAcc') {
+              push @{$accs_by_source{UniProtIsoform}}, $acc->name;
+            }            
+          } else {
+            push @{$accs_by_source{$db->name}}, $acc->name;
+          }
+        }
+      }
+    }
+  }
 
-  # case for Genes
-  map {my $type="$_";
-       map{
-         my $subtype="$_";
-         map{
-          $result[0]='UniProtKB:'.$_ if $type eq 'SwissProt';
-          push @result,'UniProtKB:'.$_ if $type eq 'TrEMBL' && ! $result[0];
-          push @rnacentral,'RNAcentral:'.$_ if $type eq 'RNAcentral';
-         }$_->col 
-       }$_->col
-  }$object->at('Identity.DB_info.Database');
+  if ($type eq 'gene') {
+    # for protein-coding genes, get GCRP xref(s) if one exists; if not, get SwissProt/Trembl/RNAcentral if there is only one
 
-  # case for Proteins/CDS
-  map {my $type=$_;
-       map{
-        my $subtype="$_";
-        $result[0]= "UniProtKB:".$_->right(1) if $subtype eq 'UniProtIsoformAcc';
-        push @result,"UniProtKB:".$_->right(1) if $subtype eq 'UniProtAcc' && ! $result[0];
-        push @rnacentral,'UniProtKB_GCRP:'.$_->right(1) if $type eq 'UniProt_GCRP';
-        push @rnacentral,'RNAcentral:'.$_->right(1) if $type eq 'RNAcentral';
-       }$_->col
-  }$object->at('DB_info.Database');
- 
-  push (@rnacentral,$result[0]) if scalar(@result)==1;
-  return join('|',@rnacentral);
+    if (exists $accs_by_source{UniProt_GCRP}) {
+      @ret = map { "UniProtKB:$_" } @{$accs_by_source{UniProt_GCRP}};
+    } else {
+      my @list;
+      if (exists $accs_by_source{SwissProt}) {
+        push @list, map { "UniProtKB:$_" } @{$accs_by_source{SwissProt}};
+      }
+      if (exists $accs_by_source{TrEMBL}) {
+        push @list, map { "UniProtKB:$_" } @{$accs_by_source{TrEMBL}};
+      }
+      if (exists $accs_by_source{RNAcentral}) {
+        push @list, map { "RNAcentral:$_" } @{$accs_by_source{RNAcentral}};
+      }
+      
+      if (scalar(@list) == 1) {
+        @ret = @list;
+      }
+    }
+  } elsif ($type eq 'protein') {
+    # transcript or protein
+    if (exists $accs_by_source{UniProtIsoform}) {
+      @ret = map { "UniprotKB:$_" } @{$accs_by_source{UniProtIsoform}};
+    } else {
+      if (exists $accs_by_source{SwissProt}) {
+        push @ret, map { "UniProtKB:$_" } @{$accs_by_source{SwissProt}};
+      }
+      if (exists $accs_by_source{TrEMBL}) {
+        push @ret, map { "UniProtKB:$_" } @{$accs_by_source{TrEMBL}};
+      }
+    }
+  } else {
+    # transcripts and ncRNAs; only going to add RNAcentral xrefs for these
+    if (exists $accs_by_source{RNAcentral}) {
+      push @ret, map { "RNAcentral:$_" } @{$accs_by_source{RNAcentral}};
+    }
+  }
+
+
+  return @ret;
 }
+
 
 $log->mail;
 
