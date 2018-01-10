@@ -39,7 +39,7 @@ my $ena_dbh = &get_ena_dbh($ena_cred);
 # standard name = 23
 # gene = 12
 # Get most info for each PID with a /locus_tag + featID was gene (#12)
-# statusid = 4 => public/active records only (i.e. not supressed)
+# statusid = 4 => public/active records only (i.e. not suppressed)
 my $ena_sql =  "SELECT d.primaryacc#, b.version, c.PROTEIN_ACC, c.version, c.chksum, fq.text, c.featid, d.project#, d.statusid"
     . " FROM cdsfeature c, dbentry d, bioseq b, feature_qualifiers fq"
     . " WHERE d.primaryacc# IN ("

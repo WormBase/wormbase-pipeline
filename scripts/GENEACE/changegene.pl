@@ -192,7 +192,7 @@ sub process_gene{
 
   # need to handle transposons differently
   if ($new eq "Transposon"){
-    print OUT "History Version_change $new_version now $person Event Transposon_in_origin\nTransposon_in_origin\nSuppressed\nRemark \"This gene was determined to be of Transposon in origin so has been supressed from the protein set. Detailed information about the origin of this gene can be found in the corresponding Transposon object associated with this gene.\"\n\n";
+    print OUT "History Version_change $new_version now $person Event Transposon_in_origin\nTransposon_in_origin\nSuppressed\nRemark \"This gene was determined to be of Transposon in origin so has been suppressed from the protein set. Detailed information about the origin of this gene can be found in the corresponding Transposon object associated with this gene.\"\n\n";
     
     print OUT "Gene $gene\n-D Gene_info\n\n";
     
