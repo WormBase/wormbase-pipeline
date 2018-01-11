@@ -525,6 +525,18 @@ sub ncbi_bioproject {'PRJNA51225'};
 sub bioproject_description { 'California Institute of Technology C. angaria genome project' }
 sub assembly_type {'contig'};
 
+package Cnigoni;
+use Carp;
+
+our @ISA = qw(Species);
+
+sub short_name {'C. nigoni'}
+sub gspecies_name{'c_nigoni'}
+sub long_name{'Caenorhabditis nigoni'}
+sub ncbi_tax_id {1611254};
+sub ncbi_bioproject {'PDUG01'};
+sub bioproject_description { 'Caenorhabditis nigoni strain JU1422, whole genome shotgun sequencing project' }
+sub assembly_type {'contig'};
 
 #######################################################
 
