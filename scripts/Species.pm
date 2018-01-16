@@ -566,6 +566,8 @@ sub ncbi_bioproject {'PRJNA51225'};
 sub bioproject_description { 'California Institute of Technology C. angaria genome project' }
 sub assembly_type {'contig'};
 
+#######################################################
+
 package Cnigoni;
 use Carp;
 
@@ -605,19 +607,6 @@ sub long_name{'Caenorhabditis afra'}
 sub ncbi_tax_id {'1094335'};
 sub ncbi_bioproject {'PRJNA51171'};
 sub bioproject_description { 'Genome Institute at Washington University Caenorhabditis afra genome project' }
-sub assembly_type {'contig'};
-
-######################################################
-package Cnigoni;
-use Carp;
-our @ISA = qw(Species);
-
-sub short_name {'C. nigoni'}
-sub gspecies_name{'c_nigoni'}
-sub long_name{'Caenorhabditis nigoni'}
-sub ncbi_tax_id {'1611254'};
-sub ncbi_bioproject {'PRJNA51169'};
-sub bioproject_description { 'Genome Institute at Washington University Caenorhabditis sp. 9 genome project' }
 sub assembly_type {'contig'};
 
 ######################################################
