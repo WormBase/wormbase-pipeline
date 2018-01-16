@@ -458,6 +458,47 @@ sub TSL {(
 sub wormpep_prefix {'OV'}
 sub upload_db_name {'ovolvulus'};
 
+######################################################
+package Tmuris;
+use Carp;
+our @ISA = qw(Species);
+
+# sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/TMU/tmuris.repeatLib.fa'}
+sub short_name {'T. muris'}
+sub gspecies_name{'t_muris'}
+sub long_name{'Trichuris muris'}
+sub ncbi_tax_id {'70415'}
+sub ncbi_bioproject {'PRJEB126'}
+sub bioproject_description { 'Wellcome Trust Sanger Institute T. muris genome project' }
+sub assembly_type {'contig'}
+
+sub cds_regex{qr/^TMUE_\d+[a-z]*/};
+sub seq_name_regex{qr/^TMUE_\d+/};
+sub cds_regex_noend{qr/TMUE_\d+[a-z]*/}; # for getting the CDS part of a Transcript name
+
+sub pep_prefix {'TMP'}
+sub pepdir_prefix{'tmu'};
+sub seq_db {my $self = shift;return $self->database('tmuris');}
+sub wormpep_prefix {'TMP'}
+
+# T. muris TSL sequences, taken from:
+# https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4125394/
+my %TSL = (
+           'SL1'  => 'GGTTATTTACCCTGTTAACAAG',
+           'SL2A' => 'GGTTAATTACCCAATTTAAAAG',
+           'SL2B' => 'GGTAAATTTACCCACAGTGAAG',
+           'SL2C' => 'GGTTAAGTTTACCCAATTGAAG',
+           'SL2D' => 'GGTTATTTACCCATTGCCACAG',
+           'SL2E' => 'GGTTAATTACCCAATTTCAAAG',
+           'SL2F' => 'GGTTTTATACCCTCTCACCAAG',
+           'SL2G' => 'GGTAAATTTACCCGCAATAAAG',
+           'SL2H' => 'GGTACATTTACCCACAGTTAAG',
+           'SL2I' => 'GGTTTATTACCCAAATCGAAAG',
+           'SL2J' => 'GGTTATTTATCCCCTGACCAAG',
+           'SL2K' => 'GGTTAAATTTACCCCTCAAAAG',
+           'SL2L' => 'GGTATTTACCCAACGTTGACTG',
+);
+
 
 ######################################################
 package Sratti;
