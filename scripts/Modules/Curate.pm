@@ -99,7 +99,7 @@ use Coords_converter;
 =head2 
 
     Title   :   new
-    Usage   :   my $Curate = Curate->new($out, $ace, $seq_obj, $wormbase, $log);
+    Usage   :   my $Curate = Curate->new($out, $ace, $wormbase, $log);
     Function:   initialises the object
     Returns :   RNASeq object;
     Args    :   
@@ -114,7 +114,6 @@ sub new {
   
   $self->{'out'} = shift;       # output file handle
   $self->{'ace'} = shift;       # acedb db handle
-  $self->{'seq_obj'} = shift;   # Sequence_extract object
   $self->{'wormbase'} = shift;  # wormbase object
   $self->{'log'} = shift;       # log object
   $self->{'ace2'} = shift;      # OPTIONAL - db handle of camace owned by other person (pad, gw3) for when curating genes in their half of the genome
@@ -137,7 +136,7 @@ sub new {
   
   $self->{species} = $self->{wormbase}->species;
 
-  if ($self->{species} eq 'elegans' || $self->{species} eq 'sratti') {
+  if ($self->{species} eq 'elegans' || $self->{species} eq 'sratti' || $self->{species} eq 'tmuris') {
     $self->{next_cds_id} = ();
   } else {
     $self->{next_cds_id} = '';
