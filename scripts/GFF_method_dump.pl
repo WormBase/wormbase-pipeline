@@ -1,8 +1,6 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/usr/bin/env perl
 #
 # GFF_method_dump.pl
-#
-# by Anthony Rogers
 #
 # Selectively dump GFF for certain acedb methods
 #
@@ -19,9 +17,9 @@ use strict;
 use Storable;
 use File::stat;
 
-my ($help, $debug, $test, $quicktest, $database, $species, @methods, @chromosomes, $dump_dir, @clones, $list,$host, $giface, $giface_client, $gff3,$port,$fprefix );
-my @sequences;
-my $store;
+my ($help, $debug, $test, $store);
+my ($quicktest, $database, $species, @methods, @chromosomes, $dump_dir, @clones, $list,$host, $giface, $giface_client, $gff3,$port,$fprefix );
+
 GetOptions (
   "help"           => \$help,
   "debug=s"        => \$debug,
@@ -41,8 +39,6 @@ GetOptions (
   "method:s"      => \@methods,
   "methods:s"     => \@methods,
   "chromosomes:s" => \@chromosomes,
-  "clone:s"       => \@clones,
-  "clones:s"      => \@clones,
   "list:s"        => \$list,
   "fprefix:s"     => \$fprefix,
     );
@@ -63,7 +59,16 @@ my $log = Log_files->make_build_log($wormbase);
 
 @methods     = split(/,/,join(',',@methods));
 @chromosomes = split(/,/,join(',',@chromosomes));
-@sequences = split(/,/,join(',',@clones)) if @clones;
+my @sequences;
+if (defined $list and -e $list) {
+  open(my $list_fh, $list) or $log->log_and_die("Could not open $list for reading\n");
+  while(<$list_fh>) {
+    /^(\S+)/ and push @sequences, $1;
+  }
+} elsif (@chromosomes) {
+  @sequences = @chromosomes;
+}
+
 
 if ($host) {
   $log->log_and_die("You must supply a valid saceclient binary to be used\n")
@@ -73,10 +78,6 @@ if ($host) {
 } else {
   $log->log_and_die("You must supply a valid giface binary to be used\n")
       if not defined $giface or not -x $giface;
-}
-
-if ($wormbase->assembly_type eq 'contig' and not $host) {
-  $log->log_and_die("no host passed for contig assembly");
 }
 
 $fprefix = "" if not defined $fprefix;
@@ -89,8 +90,6 @@ $dump_dir = "/tmp/GFF_CLASS" unless $dump_dir;
 # seqfeatures' removes everything after a '//' as it looks like a
 # comment in acedb!
 $dump_dir =~ s#/$##g;
-
-&check_options;
 `mkdir -p $dump_dir/tmp` unless -e "$dump_dir/tmp";
 
 #make sure dump_dir is writable
@@ -361,60 +360,6 @@ sub check_the_file {
     }
   };
   return $@;
-}
-
-
-######################
-sub check_options {
-
-  unless($list or @clones ) {
-    
-    # -chromosomes
-    
-    my @chrom =  $wormbase->get_chromosome_names(-mito => 1, -prefix => 1);
-    
-    my %chroms = map {$_ => 1} $wormbase->get_chromosome_names(-mito => 1, -prefix => 1);
-    
-    unless (@chromosomes ) {
-      @sequences= @chrom;
-      print "Dumping for all chromosomes\n";
-    } 
-    else {
-      foreach (@chromosomes) {
-    	if ( $chroms{$_} ) {
-          push( @sequences,$_);
-        }
-        else {
-          $log->log_and_die ("$_ is not a valid chromosome\n");
-        }
-      }
-    }
-  }
-  
-  &process_list if $list;
-  
-  # -database
-  if ( $database ){
-    if( -e "$database" ) {
-      if( -e "$database/wspec/models.wrm" ) {
-        print "$database OK\nDumping @methods for chromosomes @chromosomes\n";
-        return;
-      }
-    }
-  }
-  else {
-    $log->log_and_die ("You must enter a valid database\n");
-  }
-  $log->log_and_die ("$database is not a valid acedb database\n");	
-}
-
-#####################
-sub process_list {
-  open(LIST,"<$list") or $log->log_and_die ("bad list $list\n");
-  while(<LIST>) {
-    chomp;
-    push(@sequences,$_);
-  }
 }
 
 =pod 
