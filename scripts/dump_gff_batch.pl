@@ -151,7 +151,7 @@ foreach my $chrom (@individual_chrs) {
     print "Command: $cmd\n" if ($verbose);
 
     # write out the command file to be executed
-    my $cmd_file = "$cmd_file_root." . $cmd_number++;
+    my $cmd_file = "$cmd_file_root.$this_cmd_num";
     open (my $cmd_fh, ">$cmd_file") || die "Can't open file $cmd_file: $!";
     print $cmd_fh "#!/bin/csh\n";
     print $cmd_fh "$cmd\n";
@@ -164,7 +164,8 @@ foreach my $chrom (@individual_chrs) {
 
 if (@batch_chrs) {
   my $seq_list_file = "$cmd_dir/batch_seq_list.txt";
-  open(my $batch_fh, ">$seq_list_file") or $log->log_and_die("Could not open $seq_list_file for writing\n");
+  open(my $batch_fh, ">$seq_list_file") or 
+      $log->log_and_die("Could not open $seq_list_file for writing\n");
   foreach my $seq (@batch_chrs) {
     print $batch_fh "$seq\n";
   }
@@ -176,9 +177,11 @@ if (@batch_chrs) {
 
   if ( @methods ) {
     foreach my $method ( @methods ) {
+      my $this_cmd_num = ++$cmd_number;
+
       my $gff_out = sprintf("%s/%s.gff%s", $dump_dir, $method, ($gff3) ? "3" : "");
-      my $lsf_out = "$scratch_dir/wormpubGFFdump.$method.lsfout";
-      my $job_name = "worm_".$wormbase->species."_gffbatch";
+      my $lsf_out = "$scratch_dir/wormpubGFFdump.$method.$this_cmd_num.lsfout";
+      my $job_name = "worm_".$wormbase->species."_gffbatch.$this_cmd_num";
 
       my @bsub_options = (@common_bsub_opts, -o => $lsf_out, -J => $job_name);
 
@@ -191,7 +194,7 @@ if (@batch_chrs) {
       $log->write_to("Command: $cmd\n") if ($verbose);
       print "Command: $cmd\n" if ($verbose);
 
-      my $cmd_file = "$cmd_file_root." . $cmd_number++;
+      my $cmd_file = "$cmd_file_root.$this_cmd_num";
       open (my $cmd_fh, ">$cmd_file") || die "Can't open file $cmd_file: $!";
       print $cmd_fh "#!/bin/csh\n";
       print $cmd_fh "$cmd\n";
@@ -202,9 +205,11 @@ if (@batch_chrs) {
     }
   }
   else {
+    my $this_cmd_num = ++$cmd_number;
+
     my $gff_out = sprintf("%s/%s.gff%s", $dump_dir, $species, ($gff3) ? "3" : "");
-    my $lsf_out = "$scratch_dir/wormpubGFFdump.lsfout";
-    my $job_name = "worm_".$wormbase->species."_gffbatch";
+    my $lsf_out = "$scratch_dir/wormpubGFFdump.$this_cmd_num.lsfout";
+    my $job_name = "worm_".$wormbase->species."_gffbatch.$this_cmd_num";
 
     my @bsub_options = (@common_bsub_opts,  -o => $lsf_out, -J => $job_name);
 
@@ -217,7 +222,7 @@ if (@batch_chrs) {
     print "Command: $cmd\n" if ($verbose);
 
     # write out the command file to be executed
-    my $cmd_file = "$cmd_file_root." . $cmd_number++;
+    my $cmd_file = "$cmd_file_root.$this_cmd_num";
     open (my $cmd_fh, ">$cmd_file") || die "Can't open file $cmd_file: $!";
     print $cmd_fh "#!/bin/csh\n";
     print $cmd_fh "$cmd\n";
