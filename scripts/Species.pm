@@ -15,7 +15,6 @@
 
 use strict;
 use Carp;
-use Ace::Sequence;
 
 package Species;
 
@@ -95,6 +94,7 @@ sub _cache_chromosome_names_and_lengths {
   }
   my @sequences = $assembly->follow(-tag=>'Sequences');
   my %h;
+  require Ace::Sequence;
   foreach my $seq (@sequences) {
     my $ace_seq = Ace::Sequence->new($seq);
     $h{$seq->name} = $ace_seq->length;
