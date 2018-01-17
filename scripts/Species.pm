@@ -15,6 +15,7 @@
 
 use strict;
 use Carp;
+use Ace::Sequence;
 
 package Species;
 
