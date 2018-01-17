@@ -527,9 +527,9 @@ sub ncbi_bioproject {'PRJEB126'}
 sub bioproject_description { 'Wellcome Trust Sanger Institute T. muris genome project' }
 sub assembly_type {'contig'}
 
-sub cds_regex{qr/^TMUE_(0|1|2|M)\d{9}[a-z]*/};
-sub seq_name_regex{qr/^TMUE_(0|1|2|M)\d{9}/};
-sub cds_regex_noend{qr/^TMUE_(0|1|2|M)\d{9}[a-z]*/}; # for getting the CDS part of a Transcript name
+sub cds_regex{qr/^TMUE_(0|1|2|3|M)\d{9}[a-z]*/};
+sub seq_name_regex{qr/^TMUE_(0|1|2|3|M)\d{9}/};
+sub cds_regex_noend{qr/^TMUE_(0|1|2|3|M)\d{9}[a-z]*/}; # for getting the CDS part of a Transcript name
 
 sub pep_prefix {'TMP'}
 sub pepdir_prefix{'tmu'};
