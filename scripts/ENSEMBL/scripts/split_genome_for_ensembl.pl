@@ -17,6 +17,15 @@ my $MAX_CONTIG_LEN = 10000000;
 my ($genome_fa,
     $contig_fa_file,
     $agp_file) = @ARGV;
+$genome_fa or die "Usage: split_genome_for_ensembl.pl path.fa [path.split.fa] [path.toplevel.agp]";
+unless($contig_fa_file){
+  $contig_fa_file = $genome_fa;
+  $contig_fa_file =~ s/^(.*?)\.(\w+)(.gz)?$/$1.split.$2/;
+}
+unless($agp_file){
+  $agp_file = $genome_fa;
+  $agp_file =~ s/^(.*?)\.(\w+)(.gz)?$/$1.toplevel.agp/;
+}
 
 my $seqio = Bio::SeqIO->new(-format => 'fasta',
                             -file => ($genome_fa =~ /\.gz$/) ? "gunzip -c $genome_fa |" : $genome_fa);
