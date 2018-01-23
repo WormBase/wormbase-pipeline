@@ -1001,6 +1001,7 @@ sub do_analysis_check {
 	    'brugia'      => 'Brugia malayi',
 	    'ovolvulus'   => 'Onchocerca volvulus',
 	    'sratti'      => 'Strongyloides ratti',
+	    'tmuris'      => 'Trichuris muris',
 	   );
 
   $log->write_to("\n");
@@ -1097,6 +1098,7 @@ sub get_controls {
 			'remanei'   => 'SB146',
 			'pristionchus'   => 'PS312',
 			'sratti'    => 'ED321',
+			'tmuris'    => 'Edinburgh',
 		       );
 
   my @Embryo = ('WBls:0000003', 'WBls:0000004', 'WBls:0000005',
