@@ -1,6 +1,16 @@
 #!/bin/bash 
 set -e
 
+# Set some defaults - we want to write the xref database into the prod db
+# Source ENSEMBL_VERSION and PARASITE_VERSION from the environment - populated via `module load`
+pass_file_for_prod_db=/nfs/panda/ensemblgenomes/external/mysql-cmds/ensrw/mysql-ps-prod
+if ! [ -r $pass_file_for_prod_db ]; then echo "The db password is at $pass_file_for_prod_db. But you can not read it - such shame."; exit 1; fi
+db_string=$( perl -ne 'print $1 if /run_mysql\(qw\((.*)\)\)/' < $pass_file_for_prod_db ) 
+read host port user pass <<< $db_string
+ensembl_vers=${ENSEMBL_VERSION}
+parasite_vers=${PARASITE_VERSION}
+name=$(whoami)
+
 #1) config
 while [[ $# > 0 ]]
 do
@@ -44,7 +54,7 @@ case $key in
     shift
     ;;
     -help)
-    printf "Run the xref pipeline for 1 core database.\nMandatory arguments: -taxon, -name (your user id ex: ms41), -alias (species_name_bioproject ex:steinernema_glaseri_prjna204943), -ensembl_vers, -parasite_vers, -host, -pass, -user, -port (connection details for the server where your core db is and where the xref dbs will be created).\n"
+    printf "Run the xref pipeline for 1 core database.\nMandatory arguments: -taxon, -alias (group_species_bioproject ex:steinernema_glaseri_prjna204943).\n"
     exit 1
     ;;
     *)
@@ -65,12 +75,12 @@ if ! [ ${port} ]; then echo "port is unset"; exit 1; fi
 if ! [ ${user} ]; then echo "user is unset"; exit 1; fi
 if ! [ ${pass} ]; then echo "pass is unset"; exit 1; fi
 
-MYTMPDIR=/nfs/nobackup/ensemblgenomes/wormbase/parasite/xref
+XREF_TMP_DIR=${XREF_TMP_DIR:-/nfs/nobackup/ensemblgenomes/wormbase/parasite/xref}
 ENSEMBL_ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 if [ ! -d "${ENSEMBL_ROOT_DIR}/ensembl" ]; then
 cd ${ENSEMBL_ROOT_DIR}
-git clone https://github.com/Ensembl/ensembl.git
+git clone --depth 1 https://github.com/Ensembl/ensembl.git
 fi
 
 
@@ -107,10 +117,10 @@ printf "Config table created.\n"
 #c) parsing now
 
 printf "We will now start parsing the sources \n"
-printf "The output will be written to ${MYTMPDIR}/${species}/${alias}_PARSER1.OUT\n"
+printf "The output will be written to ${XREF_TMP_DIR}/${species}/${alias}_PARSER1.OUT\n"
 
-if [ ! -d "${MYTMPDIR}/${species}/input_data" ]; then
-cd ${MYTMPDIR}
+if [ ! -d "${XREF_TMP_DIR}/${species}/input_data" ]; then
+cd ${XREF_TMP_DIR}
 mkdir ${species}
 cd ${species}
 mkdir input_data
@@ -128,26 +138,26 @@ perl xref_parser.pl \
   -dbname $dbname \
   -checkdownload \
   -stats \
- -download_dir ${MYTMPDIR}/${species}/input_data \
-  &> ${MYTMPDIR}/${species}/${alias}_PARSER1.OUT
+ -download_dir ${XREF_TMP_DIR}/${species}/input_data \
+  &> ${XREF_TMP_DIR}/${species}/${alias}_PARSER1.OUT
 
 #d) xref database back up before mapping 1
 printf "Backing up the xref database..\n"
-printf "The xref database will be dumped in ${MYTMPDIR}/${species}/sql_dump/${alias}_xref_after_parsing.sql\n"
+printf "The xref database will be dumped in ${XREF_TMP_DIR}/${species}/sql_dump/${alias}_xref_after_parsing.sql\n"
 
-if [ ! -d "${MYTMPDIR}/${species}/sql_dump" ]; then
-cd ${MYTMPDIR}/${species}
+if [ ! -d "${XREF_TMP_DIR}/${species}/sql_dump" ]; then
+cd ${XREF_TMP_DIR}/${species}
 mkdir sql_dump
 fi
 
-mysqldump -P$port  -h$host  -u$user -p$pass $dbname  > ${MYTMPDIR}/${species}/sql_dump/${alias}_xref_after_parsing.sql 
+mysqldump -P$port  -h$host  -u$user -p$pass $dbname  > ${XREF_TMP_DIR}/${species}/sql_dump/${alias}_xref_after_parsing.sql 
 
 #3) mapping step 1
 #a) create config file
 printf '%s\n' '-----MAPPING STEP 1-----'
 
-if [ ! -d "${MYTMPDIR}/${species}/mapping" ]; then
-cd ${MYTMPDIR}/${species}
+if [ ! -d "${XREF_TMP_DIR}/${species}/mapping" ]; then
+cd ${XREF_TMP_DIR}/${species}
 mkdir mapping
 cd mapping
 mkdir xref
@@ -165,7 +175,7 @@ port=$port
 dbname=$dbname
 user=$user
 password=$pass
-dir=${MYTMPDIR}/${species}/mapping/xref
+dir=${XREF_TMP_DIR}/${species}/mapping/xref
 
 species=$species
 taxon=parasite
@@ -174,7 +184,7 @@ port=$port
 dbname=$coredb
 user=$user
 password=$pass
-dir=${MYTMPDIR}/${species}/mapping/core
+dir=${XREF_TMP_DIR}/${species}/mapping/core
 
 farm
 queue=production-rh7
@@ -186,22 +196,22 @@ printf "Config file ensembl/misc-scripts/xref_mapping/${alias}_xref_mapper.input
 #b) mapping now
 
 printf "We will now start mapping phase 1.\n"
-printf "The output will be written to ${MYTMPDIR}/${species}/${alias}_MAPPER1.OUT\n"
+printf "The output will be written to ${XREF_TMP_DIR}/${species}/${alias}_MAPPER1.OUT\n"
 
-perl xref_mapper.pl -file ${ENSEMBL_ROOT_DIR}/ensembl/misc-scripts/xref_mapping/${alias}_xref_mapper.input -dumpcheck >& ${MYTMPDIR}/${species}/${alias}_MAPPER1.out
+perl xref_mapper.pl -file ${ENSEMBL_ROOT_DIR}/ensembl/misc-scripts/xref_mapping/${alias}_xref_mapper.input -dumpcheck >& ${XREF_TMP_DIR}/${species}/${alias}_MAPPER1.out
 
 #d) xref database and core database back up before mapping 2
 printf "Backing up the xref database..\n"
-printf "The xref database will be dumped in ${MYTMPDIR}/${species}/sql_dump/${alias}_xref_after_mapping1.sql\n"
-mysqldump -P$port  -h$host -u$user -p$pass  $dbname  > ${MYTMPDIR}/${species}/sql_dump/${alias}_xref_after_mapping1.sql
+printf "The xref database will be dumped in ${XREF_TMP_DIR}/${species}/sql_dump/${alias}_xref_after_mapping1.sql\n"
+mysqldump -P$port  -h$host -u$user -p$pass  $dbname  > ${XREF_TMP_DIR}/${species}/sql_dump/${alias}_xref_after_mapping1.sql
 
 printf "Backing up the core database..\n"
-printf "The core database will be dumped in ${MYTMPDIR}/${species}/sql_dump/${alias}_core_after_mapping1.sql\n"
-mysqldump  -P$port  -h$host -u$user -p$pass  $coredb  > ${MYTMPDIR}/${species}/sql_dump/${alias}_core_after_mapping1.sql
+printf "The core database will be dumped in ${XREF_TMP_DIR}/${species}/sql_dump/${alias}_core_after_mapping1.sql\n"
+mysqldump  -P$port  -h$host -u$user -p$pass  $coredb  > ${XREF_TMP_DIR}/${species}/sql_dump/${alias}_core_after_mapping1.sql
 
 #3) mapping step 2
 
 printf "We will now start mapping phase 2.\n"
-printf "The output will be written to ${MYTMPDIR}/${species}/${alias}_MAPPER2.OUT\n"
-perl xref_mapper.pl -file ${ENSEMBL_ROOT_DIR}/ensembl/misc-scripts/xref_mapping/${alias}_xref_mapper.input -upload >& ${MYTMPDIR}/${species}/${alias}_MAPPER2.out
+printf "The output will be written to ${XREF_TMP_DIR}/${species}/${alias}_MAPPER2.OUT\n"
+perl xref_mapper.pl -file ${ENSEMBL_ROOT_DIR}/ensembl/misc-scripts/xref_mapping/${alias}_xref_mapper.input -upload >& ${XREF_TMP_DIR}/${species}/${alias}_MAPPER2.out
 
