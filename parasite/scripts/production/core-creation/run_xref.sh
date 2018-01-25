@@ -76,12 +76,10 @@ if ! [ ${user} ]; then echo "user is unset"; exit 1; fi
 if ! [ ${pass} ]; then echo "pass is unset"; exit 1; fi
 
 XREF_TMP_DIR=${XREF_TMP_DIR:-/nfs/nobackup/ensemblgenomes/wormbase/parasite/xref}
-ENSEMBL_ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-if [ ! -d "${ENSEMBL_ROOT_DIR}/ensembl" ]; then
-cd ${ENSEMBL_ROOT_DIR}
-git clone --depth 1 https://github.com/Ensembl/ensembl.git
-fi
+# we want to modify xref_config.ini in Ensembl's code so get the local copy
+ENSEMBL_ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/ensembl"
+[ -d "${ENSEMBL_ROOT_DIR}" ] || git clone -q "$ENSEMBL_CVS_ROOT_DIR/ensembl" "${ENSEMBL_ROOT_DIR}"
 
 
 #2) parsing step
@@ -92,7 +90,7 @@ printf '%s\n' '-----PARSING STEP-----'
 species=`echo $alias | cut -d'_' -f 1,2`
 dbname=${name}_${alias}_xref_${parasite_vers}_${ensembl_vers}_1
 
-if ! grep -q $species ${ENSEMBL_ROOT_DIR}/ensembl/misc-scripts/xref_mapping/xref_config.ini; then
+if ! grep -q $species ${ENSEMBL_ROOT_DIR}/misc-scripts/xref_mapping/xref_config.ini; then
 echo "
 [species $species]
 taxonomy_id     = $taxon
@@ -103,13 +101,13 @@ source          = RefSeq_dna::MULTI-invertebrate
 source          = RefSeq_peptide::MULTI-invertebrate
 source          = Uniprot/SPTREMBL::MULTI-invertebrate
 source          = Uniprot/SWISSPROT::MULTI-invertebrate
-source          = UniParc::MULTI" >> ${ENSEMBL_ROOT_DIR}/ensembl/misc-scripts/xref_mapping/xref_config.ini
+source          = UniParc::MULTI" >> ${ENSEMBL_ROOT_DIR}/misc-scripts/xref_mapping/xref_config.ini
 fi
 
 printf "Config file ensembl/misc-scripts/xref_mapping/xref_config.ini updated.\n"
 
 #b) convert the configuration into a database
-cd ${ENSEMBL_ROOT_DIR}/ensembl/misc-scripts/xref_mapping/
+cd ${ENSEMBL_ROOT_DIR}/misc-scripts/xref_mapping/
 perl xref_config2sql.pl > sql/populate_metadata.sql
 
 printf "Config table created.\n"
@@ -119,14 +117,9 @@ printf "Config table created.\n"
 printf "We will now start parsing the sources \n"
 printf "The output will be written to ${XREF_TMP_DIR}/${species}/${alias}_PARSER1.OUT\n"
 
-if [ ! -d "${XREF_TMP_DIR}/${species}/input_data" ]; then
-cd ${XREF_TMP_DIR}
-mkdir ${species}
-cd ${species}
-mkdir input_data
-fi
+mkdir -p "${XREF_TMP_DIR}/${species}/input_data"
 
-cd ${ENSEMBL_ROOT_DIR}/ensembl/misc-scripts/xref_mapping/
+cd ${ENSEMBL_ROOT_DIR}/misc-scripts/xref_mapping/
 perl xref_parser.pl \
   -user $user \
   -pass $pass \
@@ -164,7 +157,7 @@ mkdir xref
 mkdir core
 fi
  
-cd ${ENSEMBL_ROOT_DIR}/ensembl/misc-scripts/xref_mapping/
+cd ${ENSEMBL_ROOT_DIR}/misc-scripts/xref_mapping/
 coredb=${name}_${alias}_core_${parasite_vers}_${ensembl_vers}_1
 
 if [ ! -f "${alias}_xref_mapper.input"  ];
@@ -198,7 +191,7 @@ printf "Config file ensembl/misc-scripts/xref_mapping/${alias}_xref_mapper.input
 printf "We will now start mapping phase 1.\n"
 printf "The output will be written to ${XREF_TMP_DIR}/${species}/${alias}_MAPPER1.OUT\n"
 
-perl xref_mapper.pl -file ${ENSEMBL_ROOT_DIR}/ensembl/misc-scripts/xref_mapping/${alias}_xref_mapper.input -dumpcheck >& ${XREF_TMP_DIR}/${species}/${alias}_MAPPER1.out
+perl xref_mapper.pl -file ${ENSEMBL_ROOT_DIR}/misc-scripts/xref_mapping/${alias}_xref_mapper.input -dumpcheck >& ${XREF_TMP_DIR}/${species}/${alias}_MAPPER1.out
 
 #d) xref database and core database back up before mapping 2
 printf "Backing up the xref database..\n"
@@ -213,5 +206,5 @@ mysqldump  -P$port  -h$host -u$user -p$pass  $coredb  > ${XREF_TMP_DIR}/${specie
 
 printf "We will now start mapping phase 2.\n"
 printf "The output will be written to ${XREF_TMP_DIR}/${species}/${alias}_MAPPER2.OUT\n"
-perl xref_mapper.pl -file ${ENSEMBL_ROOT_DIR}/ensembl/misc-scripts/xref_mapping/${alias}_xref_mapper.input -upload >& ${XREF_TMP_DIR}/${species}/${alias}_MAPPER2.out
+perl xref_mapper.pl -file ${ENSEMBL_ROOT_DIR}/misc-scripts/xref_mapping/${alias}_xref_mapper.input -upload >& ${XREF_TMP_DIR}/${species}/${alias}_MAPPER2.out
 
