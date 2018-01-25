@@ -28,23 +28,6 @@ sub flatten_params {
   return @param_array;
 }
 
-# use with  (-prefix => 'whatever', -mito => 1)
-sub get_chromosome_names {
-  my $self= shift;
-  my %options = @_;
-  my @chromosomes=$self->chromosome_names;
-  my $prefix=$options{'-prefix'};
-  $prefix=$self->chromosome_prefix if ($prefix && length $prefix < 2);
-  push @chromosomes, $self->mt_name if $options{'-mito'} && $self->mt_name;
-  return map {$prefix.$_} @chromosomes if $options{'-prefix'};
-  return @chromosomes
-}
-
-# denotes whether this is the canonical project for this species
-sub is_canonical {
-  return 1;
-}
-
 sub _new {
   my $class = shift;
   my %param = %{ shift(@_) };
@@ -54,51 +37,124 @@ sub _new {
   bless $self, $class;
 }
 
+# use with  (-prefix => 'whatever', -mito => 1)
+sub get_chromosome_names {
+  my $self= shift;
+  my %options = @_;
+  my @chromosomes = $self->chromosome_names;
+  my $prefix=$options{'-prefix'};
+  $prefix = $self->chromosome_prefix if ($prefix && length $prefix < 2);
+  push @chromosomes, $self->mt_name if $options{'-mito'} && $self->mt_name;
+  return map {$prefix.$_} @chromosomes if $options{'-prefix'};
+  return @chromosomes
+}
+
+# use with  (-prefix => 'whatever', -mito => 1)
+sub get_chromosome_lengths {
+  my $self= shift;
+  my %options = @_;
+  my $chr_lengths = $self->chromosome_lengths;
+  my $prefix = $options{'-prefix'};
+  
+  $prefix = $self->chromosome_prefix if ($prefix && length $prefix < 2);
+  if ($prefix) {
+    foreach my $k (keys %$chr_lengths) {
+      my $pk = $prefix . $k;
+      my $val = $chr_lengths->{$k};
+      delete $chr_lengths->{$k};
+      $chr_lengths->{$pk} = $val;
+    }
+  }
+
+  return $chr_lengths;
+}
+
+sub _seq_names_and_length_cache {
+  my ($self) = @_;
+  return $self->common_data . "/toplevel_seqs.lst";
+}
+
+sub _cache_chromosome_names_and_lengths {
+  my ($self) = @_;
+
+  my $cache_file = $self->_seq_names_and_length_cache;
+
+  my $db = Ace->connect(-path => $self->autoace) || die(Ace->error);
+
+  my $species = $db->fetch(Species => $self->full_name);
+  die("cannot find species ${\$self->full_name} in ${\$self->autoace}\n") unless $species;
+  
+  my $assembly;
+  
+  my @assemblies = $species->Assembly;
+  while (my $a = shift @assemblies){
+    next unless $a->Status eq 'Live';
+    my @hit = grep {$self->ncbi_bioproject eq $_} $a->DB_info->col(3);
+    $assembly = $a if $hit[0];
+  }
+  my @sequences = $assembly->follow(-tag=>'Sequences');
+  my %h;
+  require Ace::Sequence;
+  foreach my $seq (@sequences) {
+    my $ace_seq = Ace::Sequence->new($seq);
+    $h{$seq->name} = $ace_seq->length;
+  }
+
+  if (keys %h) {
+    open (my $outf,">$cache_file") || die($!);
+    foreach my $k (keys %h) {
+      print $outf "$k $h{$k}\n";
+    }
+    close $outf;
+  } else {
+    die "Could not find names/lengths for any toplevel sequences\n";
+  }
+}
+
+
+sub chromosome_names {
+  my ($self) = @_;
+  
+  my $cache =  $self->_seq_names_and_length_cache; 
+  if (not -e $cache) {
+    $self->_cache_chromosome_names_and_lengths;
+  }
+
+  my @names;
+  open(my $genomefh, $cache) or die "Could not open $cache for reading\n";
+  while(<$genomefh>){ 
+    /^(\S+)/ and push @names, $1;
+  }
+  close($genomefh);
+
+  return @names;
+}
+
+sub chromosome_lengths {
+  my ($self) = @_;
+  
+  my $cache =  $self->_seq_names_and_length_cache; 
+  if (not -e $cache) {
+    $self->_cache_chromosome_names_and_lengths;
+  }
+
+  my %lens;
+  open(my $genomefh, $cache) or die "Could not open $cache for reading\n";
+  while(<$genomefh>){ 
+    /^(\S+)\s+(\d+)/ and $lens{$1} = $2;
+  }
+  close($genomefh);
+
+  return \%lens;
+}
+
+# denotes whether this is the canonical project for this species
+sub is_canonical {
+  return 1;
+}
 
 sub TSL {  
   ('SL1'  => "GGTTTAATTACCCAAGTTTGAG"); # the SL1 sequence is conserved across the majority of nematodes
-}
-
-# Default method, not usually used - pulls the names from a file
-# 
-sub chromosome_names {
-  my $self=shift;
-  
-  unless ($self->{'chromosome_names'}) {
-    my $species = lc(ref($self));
-    my $prefix=$self->chromosome_prefix;
-    my @ids;
-
-    # generate the FASTA file if needed from the ACeDB database
-    if (not -e "${\$self->common_data}/toplevel_seqs.lst"){
-       my $db = Ace->connect(-path => $self->autoace) || die(Ace->error);
-
-       my $species = $db->fetch(Species => $self->full_name);
-       die("cannot find species ${\$self->full_name} in ${\$self->autoace}\n") unless $species;
-
-       my $assembly;
-
-       my @assemblies = $species->Assembly;
-       while (my $a = shift @assemblies){
-	   next unless $a->Status eq 'Live';
-           my @hit = grep {$self->ncbi_bioproject eq $_} $a->DB_info->col(3);
-           $assembly = $a if $hit[0];
-       }
-       my @sequences = $assembly->follow(-tag=>'Sequences');
-       open (my $outf,">${\$self->common_data}/toplevel_seqs.lst") || die($!);
-       map { print $outf $_->name, "\n" } @sequences;
-       close $outf;
-    }
-    
-    open(my $genomefh, "${\$self->common_data}/toplevel_seqs.lst") or croak("Could not open genome sequence for reading\n"); 
-    while(<$genomefh>){ 
-      chomp;
-      push @ids,$_;
-    }
-    close($genomefh);
-    $self->{'chromosome_names'} = \@ids;
-  };
-  return @{$self->{'chromosome_names'}};
 }
 
 sub full_name {
@@ -458,6 +514,47 @@ sub TSL {(
 sub wormpep_prefix {'OV'}
 sub upload_db_name {'ovolvulus'};
 
+######################################################
+package Tmuris;
+use Carp;
+our @ISA = qw(Species);
+
+# sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/TMU/tmuris.repeatLib.fa'}
+sub short_name {'T. muris'}
+sub gspecies_name{'t_muris'}
+sub long_name{'Trichuris muris'}
+sub ncbi_tax_id {'70415'}
+sub ncbi_bioproject {'PRJEB126'}
+sub bioproject_description { 'Wellcome Trust Sanger Institute T. muris genome project' }
+sub assembly_type {'contig'}
+
+sub cds_regex{qr/^TMUE_(0|1|2|3|M)\d{9}[a-z]*/};
+sub seq_name_regex{qr/^TMUE_(0|1|2|3|M)\d{9}/};
+sub cds_regex_noend{qr/^TMUE_(0|1|2|3|M)\d{9}[a-z]*/}; # for getting the CDS part of a Transcript name
+
+sub pep_prefix {'TMP'}
+sub pepdir_prefix{'tmu'};
+sub seq_db {my $self = shift;return $self->database('tmuris');}
+sub wormpep_prefix {'TMP'}
+
+# T. muris TSL sequences, taken from:
+# https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4125394/
+my %TSL = (
+           'SL1'  => 'GGTTATTTACCCTGTTAACAAG',
+           'SL2A' => 'GGTTAATTACCCAATTTAAAAG',
+           'SL2B' => 'GGTAAATTTACCCACAGTGAAG',
+           'SL2C' => 'GGTTAAGTTTACCCAATTGAAG',
+           'SL2D' => 'GGTTATTTACCCATTGCCACAG',
+           'SL2E' => 'GGTTAATTACCCAATTTCAAAG',
+           'SL2F' => 'GGTTTTATACCCTCTCACCAAG',
+           'SL2G' => 'GGTAAATTTACCCGCAATAAAG',
+           'SL2H' => 'GGTACATTTACCCACAGTTAAG',
+           'SL2I' => 'GGTTTATTACCCAAATCGAAAG',
+           'SL2J' => 'GGTTATTTATCCCCTGACCAAG',
+           'SL2K' => 'GGTTAAATTTACCCCTCAAAAG',
+           'SL2L' => 'GGTATTTACCCAACGTTGACTG',
+);
+
 
 ######################################################
 package Sratti;
@@ -525,6 +622,8 @@ sub ncbi_bioproject {'PRJNA51225'};
 sub bioproject_description { 'California Institute of Technology C. angaria genome project' }
 sub assembly_type {'contig'};
 
+#######################################################
+
 package Cnigoni;
 use Carp;
 
@@ -534,9 +633,10 @@ sub short_name {'C. nigoni'}
 sub gspecies_name{'c_nigoni'}
 sub long_name{'Caenorhabditis nigoni'}
 sub ncbi_tax_id {1611254};
-sub ncbi_bioproject {'PDUG01'};
+sub ncbi_bioproject {'PRJNA384657'};
 sub bioproject_description { 'Caenorhabditis nigoni strain JU1422, whole genome shotgun sequencing project' }
 sub assembly_type {'contig'};
+sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/CNI/nigoni_repeats_2016.08.14.fa'}
 
 #######################################################
 
@@ -564,19 +664,6 @@ sub long_name{'Caenorhabditis afra'}
 sub ncbi_tax_id {'1094335'};
 sub ncbi_bioproject {'PRJNA51171'};
 sub bioproject_description { 'Genome Institute at Washington University Caenorhabditis afra genome project' }
-sub assembly_type {'contig'};
-
-######################################################
-package Cnigoni;
-use Carp;
-our @ISA = qw(Species);
-
-sub short_name {'C. nigoni'}
-sub gspecies_name{'c_nigoni'}
-sub long_name{'Caenorhabditis nigoni'}
-sub ncbi_tax_id {'1611254'};
-sub ncbi_bioproject {'PRJNA51169'};
-sub bioproject_description { 'Genome Institute at Washington University Caenorhabditis sp. 9 genome project' }
 sub assembly_type {'contig'};
 
 ######################################################

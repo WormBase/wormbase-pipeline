@@ -47,14 +47,15 @@ else {
 
 $species||=lc(ref($wormbase));
 
-my $log = Log_files->make_build_log($wormbase);
 my $scratch_dir = $wormbase->build_lsfout;
+my $host = qx('hostname');chomp $host;
+$port = 23100 if not $port;
 
 my @chroms = $wormbase->get_chromosome_names(-prefix => 1,-mito => 1);
+my $chrom_lengths = $wormbase->get_chromosome_lengths(-prefix => 1,-mito => 1);
 $wormbase->checkLSF;
 
 my @methods     = split(/,/,join(',',$methods)) if $methods;
-
 my @chromosomes = $chrom_choice ? split(/,/,join(',',$chrom_choice)):@chroms;
 
 $database = $wormbase->autoace    unless $database;
@@ -66,62 +67,57 @@ $giface = $wormbase->giface if not defined $giface;
 $giface_server = $wormbase->giface_server if not defined $giface_server;
 $giface_client = $wormbase->giface_client if not defined $giface_client;
 
-$log->write_to("Dumping from DATABASE : $database\n\tto $dump_dir\n\n");
-	      
-$log->write_to("\t chromosomes ".@chromosomes."\n");
-if( @methods ){
-  $log->write_to("\tmethods ".@methods."\n\n");
-}
-else {
-  $log->write_to("\tno method specified\n\n");
-}
+my $log = Log_files->make_build_log($wormbase);
+my $store_file = $wormbase->build_store;
 
+$log->write_to("Dumping from DATABASE : $database\n\tto $dump_dir\n\n");
+$log->write_to("\t chromosomes ".@chromosomes."\n");
+$log->write_to("\tmethods ".@methods."\n\n") if @methods;
+$log->write_to("\tno method specified\n\n") if not @methods;
 $log->write_to("bsub commands . . . . \n\n");
-my $submitchunk=0;
 my $lsf = LSF::JobManager->new();
 
-my $host = qx('hostname');chomp $host;
-$port = 23100 if not $port;
-if (scalar(@chromosomes) > 40){
-  $wormbase->run_command("($giface_server $database $port 1200:6000000:1000:600000000>/dev/null)>&/dev/null &",$log);
-  sleep 20;
+my (@individual_chrs, @batch_chrs);
+if ($species eq 'elegans') {
+  @individual_chrs = @chromosomes;
+} else {
+  foreach my $chr (@chromosomes) {
+    $log->log_and_die("Could not find length for $chr - aborting\n") if not exists $chrom_lengths->{$chr};
+
+    if ($chrom_lengths->{$chr} > 5000000) {
+      push @individual_chrs, $chr;
+    } else {
+      push @batch_chrs, $chr;
+    }
+  }
+}
+
+if (@batch_chrs){
+  &start_giface_server();
 }
 
 my $cmd_dir = $wormbase->autoace . "/TMP";
 mkdir $cmd_dir, 0777;
-my $cmd_file_root = "${cmd_dir}/dump_gff_batch_$$"; # root of name of files to hold commands
-my $cmd_number = 0;		# count for making name of next command file
-my $store_file = $wormbase->build_store; # get the store file to use in all commands
+my $cmd_file_root = "${cmd_dir}/dump_gff_batch_$$";
+my $cmd_base = "$dumpGFFscript -database $database -species $species -dump_dir $dump_dir";
+my $cmd_number = 0;
 
-CHROMLOOP: foreach my $chrom ( @chromosomes ) {
+foreach my $chrom (@individual_chrs) {
+  my $common_additional_params = "-chromosome $chrom -giface $giface";
+  my @common_bsub_opts = (-M => "4500", 
+                          -R => "\"select[mem>4500] rusage[mem=4500]\"");
   if ( @methods ) {
     foreach my $method ( @methods ) {
-      my $out = scalar(@chromosomes) <= 40 ? 
-          "$scratch_dir/wormpubGFFdump.$chrom.$method.lsfout" 
-          : "$scratch_dir/wormpubGFFdump.$submitchunk.$method.lsfout";
-      my $job_name = "worm_".$wormbase->species."_gffbatch";
+      my $this_cmd_num = ++$cmd_number;
 
-      my @bsub_options = (-o => "$out",
-			  -J => $job_name);
+      my $gff_out = sprintf("%s/%s.%s.gff%s", $dump_dir, $chrom, $method, ($gff3) ? "3" : "");
+      my $lsf_out = "$scratch_dir/wormpubGFFdump.$chrom.$method.$this_cmd_num.lsfout";
+      my $job_name = "worm_".$wormbase->species."_gffbatch.$this_cmd_num";
 
-      if (scalar(@chromosomes) <= 40) {
-        push @bsub_options, (-M => "4500", 
-                             -R => "\"select[mem>4500] rusage[mem=4500]\"");
-      } else {
-        push @bsub_options, (-M => "100", 
-                             -R => "\"select[mem>100] rusage[mem=100]\"");
+      my @bsub_options = (@common_bsub_opts, -o => $lsf_out, -J => $job_name);
 
-      }
-
-      my $cmd = "$dumpGFFscript -database $database -dump_dir $dump_dir -method $method -species $species";
-      if (scalar(@chromosomes) > 40) {
-        $cmd .= " -host $host";
-        $cmd .= " -port $port";
-        $cmd .= " -gifaceclient $giface_client";
-      } else {
-        $cmd .= " -giface $giface";
-        $cmd .= " -chromosome $chrom";
-      }
+      my $cmd = "$cmd_base $common_additional_params";
+      $cmd .= " -method $method";
       $cmd .= " -debug $debug" if $debug;
       $cmd .= " -gff3" if $gff3;
       $cmd = $wormbase->build_cmd_line($cmd, $store_file);      
@@ -129,59 +125,114 @@ CHROMLOOP: foreach my $chrom ( @chromosomes ) {
       print "Command: $cmd\n" if ($verbose);
 
       # write out the command file to be executed
-      my $cmd_file = "$cmd_file_root." . $cmd_number++;
-      open (CMD, ">$cmd_file") || die "Can't open file $cmd_file: $!";
-      print CMD "#!/bin/csh\n";
-      print CMD "$cmd\n";
-      close (CMD);
+      my $cmd_file = "$cmd_file_root.$this_cmd_num";
+      open (my $cmd_fh, ">$cmd_file") || die "Can't open file $cmd_file: $!";
+      print $cmd_fh "#!/bin/csh\n";
+      print $cmd_fh "$cmd\n";
+      close ($cmd_fh);
       chmod 0777, $cmd_file;
 
       $lsf->submit(@bsub_options, $cmd_file);
     }
-    last CHROMLOOP if scalar(@chromosomes) > 40;
-  }
-  else {
-    # for large chromosomes, ask for a memory limit of 3.5 Gb
-    my $job_name = "worm_".$wormbase->species."_gffbatch";
-    my @bsub_options = scalar(@chromosomes) <= 40 ? (-M => "4500", 
-						    -R => "\"select[mem>4500] rusage[mem=4500]\"",
-						   ) : (-M => "500", 
-                                                       -R => "\"select[mem>=500] rusage[mem=500]\"");
-    my $out = scalar(@chromosomes) <= 40 
-        ? "$scratch_dir/wormpubGFFdump.$chrom.lsfout" 
-        : "$scratch_dir/wormpubGFFdump.$submitchunk.lsfout";
-    push @bsub_options, (-o => "$out",
-			 -J => $job_name);
+  } else {
+    my $this_cmd_num = ++$cmd_number;
 
-    my $cmd = "$dumpGFFscript -database $database -dump_dir $dump_dir -species $species";
-    if (scalar(@chromosomes) > 40) {
-      $cmd .= " -host $host";
-      $cmd .= " -port $port";
-      $cmd .= " -gifaceclient $giface_client";
-    } else {
-      $cmd .= " -chromosome $chrom";
-      $cmd .= " -giface $giface";
-    }
+    my $gff_out = sprintf("%s/%s.gff%s", $dump_dir, $chrom, ($gff3) ? "3" : "");
+    my $lsf_out = "$scratch_dir/wormpubGFFdump.$chrom.$this_cmd_num.lsfout";
+    my $job_name = "worm_".$wormbase->species."_gffbatch.$this_cmd_num";
 
-    $cmd .=" -debug $debug" if $debug;
+    my @bsub_options = (@common_bsub_opts, -o => $lsf_out, -J => $job_name);
+
+    my $cmd = "$cmd_base $common_additional_params";
+    $cmd .= " -debug $debug" if $debug;
     $cmd .= " -gff3" if $gff3;
     $cmd = $wormbase->build_cmd_line($cmd, $store_file);
     $log->write_to("Command: $cmd\n") if ($verbose);
     print "Command: $cmd\n" if ($verbose);
 
     # write out the command file to be executed
-    my $cmd_file = "$cmd_file_root." . $cmd_number++;
-    open (CMD, ">$cmd_file") || die "Can't open file $cmd_file: $!";
-    print CMD "#!/bin/csh\n";
-    print CMD "$cmd\n";
-    close (CMD);
+    my $cmd_file = "$cmd_file_root.$this_cmd_num";
+    open (my $cmd_fh, ">$cmd_file") || die "Can't open file $cmd_file: $!";
+    print $cmd_fh "#!/bin/csh\n";
+    print $cmd_fh "$cmd\n";
+    close ($cmd_fh);
     chmod 0777, $cmd_file;
 
     $lsf->submit(@bsub_options, $cmd_file);
-    last CHROMLOOP if scalar(@chromosomes) > 40;
   }
-  $submitchunk++;
 }
+
+if (@batch_chrs) {
+  my $seq_list_file = "$cmd_dir/batch_seq_list.txt";
+  open(my $batch_fh, ">$seq_list_file") or 
+      $log->log_and_die("Could not open $seq_list_file for writing\n");
+  foreach my $seq (@batch_chrs) {
+    print $batch_fh "$seq\n";
+  }
+  close($batch_fh);
+
+  my $common_additional_params = "-host $host -port $port -gifaceclient $giface_client -list $seq_list_file";
+  my @common_bsub_opts =  (-M => "100", 
+                           -R => "\"select[mem>100] rusage[mem=100]\"");
+
+  if ( @methods ) {
+    foreach my $method ( @methods ) {
+      my $this_cmd_num = ++$cmd_number;
+
+      my $gff_out = sprintf("%s/%s.gff%s", $dump_dir, $method, ($gff3) ? "3" : "");
+      my $lsf_out = "$scratch_dir/wormpubGFFdump.$method.$this_cmd_num.lsfout";
+      my $job_name = "worm_".$wormbase->species."_gffbatch.$this_cmd_num";
+
+      my @bsub_options = (@common_bsub_opts, -o => $lsf_out, -J => $job_name);
+
+      my $cmd = "$cmd_base $common_additional_params";
+      $cmd .= " -method $method";
+      $cmd .= " -debug $debug" if $debug;
+      $cmd .= " -gff3" if $gff3;
+
+      $cmd = $wormbase->build_cmd_line($cmd, $store_file);      
+      $log->write_to("Command: $cmd\n") if ($verbose);
+      print "Command: $cmd\n" if ($verbose);
+
+      my $cmd_file = "$cmd_file_root.$this_cmd_num";
+      open (my $cmd_fh, ">$cmd_file") || die "Can't open file $cmd_file: $!";
+      print $cmd_fh "#!/bin/csh\n";
+      print $cmd_fh "$cmd\n";
+      close($cmd_fh);
+      chmod 0777, $cmd_file;
+
+      $lsf->submit(@bsub_options, $cmd_file);
+    }
+  }
+  else {
+    my $this_cmd_num = ++$cmd_number;
+
+    my $gff_out = sprintf("%s/%s.gff%s", $dump_dir, $species, ($gff3) ? "3" : "");
+    my $lsf_out = "$scratch_dir/wormpubGFFdump.$this_cmd_num.lsfout";
+    my $job_name = "worm_".$wormbase->species."_gffbatch.$this_cmd_num";
+
+    my @bsub_options = (@common_bsub_opts,  -o => $lsf_out, -J => $job_name);
+
+    my $cmd = "$cmd_base $common_additional_params";
+    $cmd .= " -debug $debug" if $debug;
+    $cmd .= " -gff3" if $gff3;
+
+    $cmd = $wormbase->build_cmd_line($cmd, $store_file);
+    $log->write_to("Command: $cmd\n") if ($verbose);
+    print "Command: $cmd\n" if ($verbose);
+
+    # write out the command file to be executed
+    my $cmd_file = "$cmd_file_root.$this_cmd_num";
+    open (my $cmd_fh, ">$cmd_file") || die "Can't open file $cmd_file: $!";
+    print $cmd_fh "#!/bin/csh\n";
+    print $cmd_fh "$cmd\n";
+    close ($cmd);
+    chmod 0777, $cmd_file;
+
+    $lsf->submit(@bsub_options, $cmd_file);
+  }
+}
+
 
 $lsf->wait_all_children( history => 1 );
 $log->write_to("All GFF dump jobs have completed!\n");
@@ -196,51 +247,97 @@ for my $job ( $lsf->jobs ) {
 }
 $lsf->clear;
 
-if ($rerun_if_failed) { 
+if (@problem_cmds and scalar(@problem_cmds) < 120 and $rerun_if_failed) { 
   ##################################################################
   # now try re-runnning any commands that failed
+  if (@batch_chrs) {
+    &stop_giface_server();
+    &start_giface_server();
+  }
+  
   $lsf = LSF::JobManager->new();
-  my @bsub_options = scalar(@chromosomes) <= 40 ? (-M => "4500", 
-                                                   -R => "\"select[mem>4500] rusage[mem=4500]\""
-      ) : ();
   
   my $out = "$scratch_dir/wormpubGFFdump.rerun.lsfout";
   my $job_name = "worm_".$wormbase->species."_gffbatch";
-  push @bsub_options, (-o => "$out",
-                       -J => $job_name);
-  if (scalar @problem_cmds < 120) { # we don't want to re-run too many jobs!
-    foreach my $cmd_file (@problem_cmds) {
-      $log->write_to("*** Attempting to re-run job: $cmd_file\n");
-      $lsf->submit(@bsub_options, $cmd_file);
-    }
-    $lsf->wait_all_children( history => 1 );
-    my $failed = 0;
-    for my $job ( $lsf->jobs ) {
-      if ($job->history->exit_status == 0) {
-        unlink $job->history->command;
-      } else {
-        $failed++;
-        $log->error("\n\nERROR: Job $job (" . $job->history->command . ") exited non zero at the second attempt. See $out\n");
-        push @problem_cmds, $job->history->command;
-      }
-      $log->write_to("\n\nNumber of jobs that failed after the second attempt: $failed\n");
-    }
-  } else {
-    $log->error("ERROR: There are ". scalar @problem_cmds ." GFF_method_dump.pl LSF jobs that have failed. See $out\n");
-    $log->write_to("Not attempting to re-run all of these jobs.\nPlease investigate what went wrong!\n");
-    for my $job ( $lsf->jobs ) {
-      unlink $job->history->command;
-    }
+  
+  my @common_bsub_opts = (-M => "4500", 
+                          -R => "\"select[mem>4500] rusage[mem=4500]\"");
+  
+  my $rerun_count = 0;
+  my @new_problem_cmds;
+  
+  foreach my $cmd_file (@problem_cmds) {
+    $log->write_to("*** Attempting to re-run job: $cmd_file\n");
+    my $out = sprintf("%s/wormpubGFFdump.rerun.lsfout", $scratch_dir, ++$rerun_count);
+    my $job_name = sprintf("worm_gff.%s.rerun_", $species, $rerun_count);
+    my @bsub_opts = (@common_bsub_opts, -o => $out, -J => $job_name);
+    
+    $lsf->submit(@bsub_opts, $cmd_file);
   }
+  $lsf->wait_all_children( history => 1 );
+  my $failed = 0;
+  for my $job ( $lsf->jobs ) {
+    if ($job->history->exit_status == 0) {
+      unlink $job->history->command;
+    } else {
+      $failed++;
+      $log->error("\n\nERROR: Job $job (" . $job->history->command . ") exited non zero at the second attempt. See $out\n");
+      push @new_problem_cmds, $job->history->command;
+    }
+    $log->write_to("\n\nNumber of jobs that failed after the second attempt: $failed\n");
+  }
+  @problem_cmds = @new_problem_cmds;
   $lsf->clear;
 }
-##################################################################
+
+if (@problem_cmds) {
+  $log->error("ERROR: There are ". scalar @problem_cmds ." GFF_method_dump.pl LSF jobs that have failed. See LSF output files ($scratch_dir)\n");      
+}
 
 
-if (scalar(@chromosomes) > 40){
-  open (WRITEDB,"| $giface_client $host -port $port -userid wormpub -pass blablub");
-  print WRITEDB "shutdown now\n";
-  close WRITEDB;
+if (@batch_chrs and @individual_chrs) {
+
+  if (not $log->report_errors) {
+    $log->write_to("Concatenating per-sequence dumps to all-sequence dump file(s)...\n");
+
+    #certain steps require GFF files containing all sequences (for a particular method), so we aggergate the sequences here. 
+    if (@methods) {
+      foreach my $method (@methods) {
+        my $target_gff = sprintf("%s/%s.gff%s", $dump_dir, $method, ($gff3) ? "3" : "");
+        foreach my $seq (@individual_chrs) {
+          my $source_gff = sprintf("%s/%s_%s.gff%s", $dump_dir, $seq, $method, ($gff3) ? "3" : "");
+          $wormbase->run_command("cat $source_gff >> $target_gff", $log);
+        }
+      } 
+    } else {
+      my $target_gff = sprintf("%s/%s.gff%s", $dump_dir, $species, ($gff3) ? "3" : "");
+      foreach my $seq (@individual_chrs) {
+        my $source_gff = sprintf("%s/%s.gff%s", $dump_dir, $seq, ($gff3) ? "3" : "");
+        $wormbase->run_command("cat $source_gff >> $target_gff", $log);
+      }
+    }
+  } else {
+    $log->write_to("Something went wrong, so will NOT concatenate per-sequence dumps to all-sequence dump file(s)\n");
+  }
+}
+
+&stop_giface_server() if @batch_chrs;
+
+$log->mail;
+exit(0);
+
+
+sub start_giface_server {
+  $wormbase->run_command("($giface_server $database $port 1200:6000000:1000:600000000>/dev/null)>&/dev/null &",$log);
+  sleep 20;
+}
+
+sub stop_giface_server {
+  open (my $write_fh,"| $giface_client $host -port $port -userid wormpub -pass blablub");
+  print $write_fh "shutdown now\n";
+  close $write_fh;
+
+  # wait a couple of minutes and if the process is still hanging around, kill it
   sleep 180;
   my $ps_string=`ps waux|grep sgiface|grep \$USER|grep -v grep`;
   $ps_string=~/\w+\s+(\d+)/;
@@ -248,8 +345,6 @@ if (scalar(@chromosomes) > 40){
   $wormbase->run_command("kill $server_pid",$log) if $server_pid;
 }
 
-$log->mail;
-exit(0);
 
 =pod
 

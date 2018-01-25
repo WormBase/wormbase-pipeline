@@ -99,7 +99,7 @@ use Coords_converter;
 =head2 
 
     Title   :   new
-    Usage   :   my $Curate = Curate->new($out, $ace, $seq_obj, $wormbase, $log);
+    Usage   :   my $Curate = Curate->new($out, $ace, $wormbase, $log);
     Function:   initialises the object
     Returns :   RNASeq object;
     Args    :   
@@ -114,7 +114,6 @@ sub new {
   
   $self->{'out'} = shift;       # output file handle
   $self->{'ace'} = shift;       # acedb db handle
-  $self->{'seq_obj'} = shift;   # Sequence_extract object
   $self->{'wormbase'} = shift;  # wormbase object
   $self->{'log'} = shift;       # log object
   $self->{'ace2'} = shift;      # OPTIONAL - db handle of camace owned by other person (pad, gw3) for when curating genes in their half of the genome
@@ -137,7 +136,7 @@ sub new {
   
   $self->{species} = $self->{wormbase}->species;
 
-  if ($self->{species} eq 'elegans' || $self->{species} eq 'sratti') {
+  if ($self->{species} eq 'elegans' || $self->{species} eq 'sratti' || $self->{species} eq 'tmuris') {
     $self->{next_cds_id} = ();
   } else {
     $self->{next_cds_id} = '';
@@ -586,7 +585,7 @@ sub Gene2SeqName {
 # get the next available sequence name 
 # $self->next_name($clone); # clone is required in elegans and sratti - so we get this from the model data
 sub Next_CDS_ID {
-  my ($self, $clone)  = @_; # $clone is required to get the clone name (in elegans) or the toplevel name (in sratti) or in other species it should be undef
+  my ($self, $clone)  = @_; # $clone is required to get the clone name (in elegans) or the toplevel linkage group name (in sratti or tmuris). In other species it should be undef
 
   my %sratti_prefix = (
 		       SRAE_chr1 => 'SRAE_1',
@@ -616,6 +615,11 @@ sub Next_CDS_ID {
     }
     return $self->{next_cds_id}{$prefix} += 100;
 
+  } elsif ($self->{species} eq 'tmuris') {
+    if (!defined $clone) {die "ERROR \$clone is not defined and this species is tmuris\n";}
+    if (!exists $self->{next_cds_id}{$clone}) {$self->Find_Next_CDS_ID($clone)}
+    return $self->{next_cds_id}{$clone}++;
+
   } else {
     if ($self->{next_cds_id} eq '') {$self->Find_Next_CDS_ID()}
     return $self->{next_cds_id}++;
@@ -637,6 +641,7 @@ sub Find_Next_CDS_ID {
 		brugia      => 'Bm',
 		ovolvulus   => 'OVOC',
 		sratti      => 'SRAE_', # followed by a digit or a 'X' then the number ending '00'
+		tmuris      => 'TMUE_', # followed by the linkage group ('0', '1', '2' or a 'M') then the 9-digit unique sequential number
 	       );
 
   my %sratti_prefix = (
@@ -682,6 +687,29 @@ sub Find_Next_CDS_ID {
     $maxnumber += 100;
     # check it has never been used as a CDS
     while ($self->check_history_seqname("${prefix}${maxnumber}")) {$maxnumber += 100}
+    $self->{next_cds_id}{$prefix} = $prefix . $maxnumber;
+
+
+  } elsif ($self->{species} eq 'tmuris') {
+    my $prefix;
+    if ($clone =~ /^TMUE_LG(\d)/) {
+      $prefix = "TMUE_" . $1;
+    } elsif ($clone =~ /^TMUE_MITO/) {
+      $prefix = "TMUE_M"
+    } else {
+      $prefix = 'TMUE_0';
+    }
+    my @cdses = $self->{ace}->fetch(-query => "find CDS ${prefix}* WHERE Method = \"curated\" OR Method = \"Transposon_CDS\"");
+    my @pseuds = $self->{ace}->fetch(-query=>"find Pseudogene ${prefix}*");
+    my @trans = $self->{ace}->fetch(-query=>"find Transcript ${prefix}*");
+    foreach my $thing (@cdses, @pseuds, @trans) {
+      if ($thing =~ /^${prefix}(\d+)$/ || $thing =~ /^${prefix}(\d+)[a-z]$/) {
+	my $number = $1;
+	if ($number > $maxnumber) {$maxnumber = $number}
+      }
+    }
+    # check it has never been used as a CDS
+    while ($self->check_history_seqname("${prefix}${maxnumber}")) {$maxnumber++}
     $self->{next_cds_id}{$prefix} = $prefix . $maxnumber;
 
 

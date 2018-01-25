@@ -7,7 +7,6 @@ use Log_files;
 use Storable;
 use Ace;
 use Modules::Curate;
-use Sequence_extract;
 use FileHandle;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase, $species, $database, $curate_test);
@@ -48,12 +47,23 @@ GetOptions ("help"              => \$help,
 
 $debug = 'gw3';
 
+if (!defined $database) {
+  if ($species eq 'elegans') {
+    $database = "/nfs/wormpub/camace_$ENV{USER}";
+  } else {
+    $database = "/nfs/wormpub/${species}_curation";
+  }
+}
+if (!-e $database || !-d $database) {die "Can't find database $database\n"}
+
+
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
 			     -organism => $species,
+			     -autoace  => $database,
                              );
 }
 
@@ -73,25 +83,14 @@ my $log = Log_files->make_build_log($wormbase);
 
 if (!defined $species) {$species = $wormbase->species}
 
-if (!defined $database) {
-  if ($species eq 'elegans') {
-    $database = "/nfs/wormpub/camace_$ENV{USER}";
-  } else {
-    $database = "/nfs/wormpub/${species}_curation";
-  }
-}
-if (!-e $database || !-d $database) {die "Can't find database $database\n"}
-
 my $outfile = "$database/$ENV{USER}_curate.ace";
 ## check to see if outfile exists already in which case it didn't get read in successfully in a previous session
 #if (-e $outfile) {die "The output ACE file $outfile already exists\nWas there a problem parsing this existing file last time?\n";}
  
 my $ace = Ace->connect (-path => $database) || die "cannot connect to database at $database\n";
-my $refresh = 0;
-my $seq_obj = Sequence_extract->invoke($database, $refresh, $wormbase);
 
 my $out = FileHandle->new("> $outfile");
-my $curate = Curate->new($out, $ace, $seq_obj, $wormbase, $log);
+my $curate = Curate->new($out, $ace, $wormbase, $log);
 
 if (defined $force) {$curate->set_force(1)}
 
