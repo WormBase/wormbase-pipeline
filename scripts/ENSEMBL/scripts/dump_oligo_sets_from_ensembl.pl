@@ -86,7 +86,7 @@ foreach my $vendor (sort { $b cmp $a } keys %arrays_by_vendor) {
   print STDERR "Processing $vendor...\n" if $verbose;
 
   if ($vendor ne 'AFFY') {    
-    my %probes_by_dbID;
+    my (%probes_by_dbID, %done_wb_probes);
     
     foreach my $array (@{$arrays_by_vendor{$vendor}}) {
       foreach my $probe (@{$array->get_all_Probes}) {
@@ -111,7 +111,8 @@ foreach my $vendor (sort { $b cmp $a } keys %arrays_by_vendor) {
       }
 
       if (scalar(keys %wb_names) == 0) {
-        die "Could not determine any WormBase names for probe id ", $probe->dbID, "\n";
+        warn sprintf("Could not determine any WormBase names for probe id %d\n", $probe->dbID);
+        next;
       } elsif (scalar(keys %wb_names) > 1) {
         warn "Multiple WormBase names for probe id ", $probe->dbID, "\n";
       }
@@ -134,7 +135,10 @@ foreach my $vendor (sort { $b cmp $a } keys %arrays_by_vendor) {
         my $chr_strand = $pf->strand;
         
         foreach my $wb_pname (sort keys %wb_names) {
-          push @{$results{$chr_name}->{$wb_pname}->{$chr_strand}}, \@blocks;
+          if (not exists $done_wb_probes{$wb_pname}) {
+            push @{$results{$chr_name}->{$wb_pname}->{$chr_strand}}, \@blocks;
+          }
+          $done_wb_probes{$wb_pname} = 1;
         }
       }      
     }
@@ -231,7 +235,7 @@ sub write_ace {
 
   if ($species =~ 'elegans' and grep { $_ eq $chr } ('I', 'II', 'III', 'IV', 'V', 'X', 'MtDNA')) {
     $chr = "CHROMOSOME_${chr}";
-  } elsif ($species =~ 'briggsae' grep { $_ eq $chr } ('I', 'II', 'III', 'IV', 'V', 'X')) {
+  } elsif ($species =~ 'briggsae' and grep { $_ eq $chr } ('I', 'II', 'III', 'IV', 'V', 'X')) {
     $chr = "chr${chr}";
   }
 
