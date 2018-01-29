@@ -5,6 +5,7 @@
 #TODO: let config values override what this script would rather do
 use YAML;
 use File::Basename;
+use File::Spec;
 use Getopt::Long qw(GetOptionsFromArray);
 
 my ($generics) = YAML::Load(<<'...');
@@ -52,8 +53,8 @@ $species_conf-> { "core_database" } = {
     user => $user,
     dbname => "${species}_${bioproject}_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_1"
 };
-my $fasta_location="$dirs/${filename}.fa";
-my $gff3_location="$dirs/${filename}.gff3";
+my $fasta_location=File::Spec->rel2abs("$dirs/${filename}.fa");
+my $gff3_location=File::Spec->rel2abs("$dirs/${filename}.gff3");
 warn "We expect a good FASTA at $fasta_location" unless -f $fasta_location;
 warn "We expect a good GFF3 at $gff3_location" unless -f $gff3_location;
 
