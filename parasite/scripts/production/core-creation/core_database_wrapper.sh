@@ -8,7 +8,7 @@ DIR=`dirname $0`
 
 out_file="${1}.wormlite.out" 
 
-if ! [ -f $1 ] ; echo "Usage: $0 <species conf>" ; exit 1 ; fi
+if ! [ -f $1 ] ; then echo "Usage: $0 <species conf>" ; exit 1 ; fi
 SPECIES_CONF=$1.auto
 
 printf "Expanding the config \n"
