@@ -5,12 +5,19 @@ DIR=`dirname $0`
 #this wrapper creates one or several core dbs from a YAML config file then performs some basic healthchecks on them
 
 #Creating core database with worm_lite.pl
+
 out_file="${1}.wormlite.out" 
+
+if ! [ -f $1 ] ; echo "Usage: $0 <species conf>" ; exit 1 ; fi
+SPECIES_CONF=$1.auto
+
+printf "Expanding the config \n"
+$WORM_CODE/parasite/scripts/production/core-creation/files/createEnsemblConf.pl $1 > $SPECIES_CONF
 
 printf "Launching worm_lite.pl \n"
 printf "The output of this script will be written in $out_file \n\n"
 
-if perl -w $WORM_CODE/scripts/ENSEMBL/scripts/worm_lite.pl -yfile $1 -allspecies -setup -load_genes -load_dna &> $out_file; then
+if perl -w $WORM_CODE/scripts/ENSEMBL/scripts/worm_lite.pl -yfile $SPECIES_CONF -allspecies -setup -load_genes -load_dna &> $out_file; then
     printf "worm_lite.pl exited successfully.\n\n"
 else
     printf "worm_lite has errored. Please check the output file\n"
@@ -19,14 +26,14 @@ else
 fi
 
 #performing basic healthchecks
-git=`grep -o 'cvsdir: .*' $1 | awk '{print $2}'`
+git=`grep -o 'cvsdir: .*' $SPECIES_CONF | awk '{print $2}'`
 
-species_list=`grep '^[a-z0-9]*_[a-z0-9]*_[a-z0-9]*:' $1`
-fasta_list=`grep 'fasta: .*' $1 | awk '{print $2}'`
-gff3_list=`grep 'gff3: .*' $1 | awk '{print $2}'`
-coredb_list=`grep ' dbname: .*' $1 | awk '{print $2}' | tail -n+3`
-host_list=`grep ' host: .*' $1 | awk '{print $2}' | tail -n+3`
-port_list=`grep ' port: .*' $1 | awk '{print $2}' | tail -n+3`
+species_list=`grep '^[a-z0-9]*_[a-z0-9]*_[a-z0-9]*:' $SPECIES_CONF`
+fasta_list=`grep 'fasta: .*' $SPECIES_CONF | awk '{print $2}'`
+gff3_list=`grep 'gff3: .*' $SPECIES_CONF | awk '{print $2}'`
+coredb_list=`grep ' dbname: .*' $SPECIES_CONF | awk '{print $2}' | tail -n+3`
+host_list=`grep ' host: .*' $SPECIES_CONF | awk '{print $2}' | tail -n+3`
+port_list=`grep ' port: .*' $SPECIES_CONF | awk '{print $2}' | tail -n+3`
 
 END=`printf "%s\n" $species_list | wc -l`
 
