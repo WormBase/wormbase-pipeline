@@ -86,8 +86,8 @@ $mysqlcmd -D $database_name -e 'select biotype, count(*) from gene group by biot
 
 echo ""
 echo "Dump protein fasta file:"
-echo "perl dump_translations.pl -dbname $database_name -dbhost mysql-eg-devel-1.ebi.ac.uk  -dbuser $user -dbhost $server -dbport $port -stable_id -file_err $DATA/dump_out/$database_name\_error.txt -file $DATA/dump_out/$database_name\_protein.fa"
-perl $pipeline_fold/dump_translations.pl -dbname $database_name -dbuser $user -dbhost $server -dbport $port -stable_id -file_err $DATA/dump_out/$database_name\_error.fa -file $DATA/dump_out/$database_name\_protein.fa
+echo "perl dump_translations.pl -dbname $database_name -dbhost mysql-eg-devel-1.ebi.ac.uk  -dbuser $user -dbhost $server -dbport $port -stable_id -file_err $DATA/dump_out/$database_name\_error.txt -file /dev/null"
+perl $pipeline_fold/dump_translations.pl -dbname $database_name -dbuser $user -dbhost $server -dbport $port -stable_id -file_err $DATA/dump_out/$database_name\_error.fa -file /dev/null 
 
 echo "The number of coding protein sequences is"
 grep -c ">" $DATA/dump_out/$database_name\_protein.fa
