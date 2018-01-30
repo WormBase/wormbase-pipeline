@@ -32,7 +32,7 @@ GetOptions ("help"       => \$help,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
-	    "output:s"   => \$output,
+	    "output:s"   => \$output,   # optional output 
 	    "database:s" => \$database, # optional database to use, default is autoace
 	    "version:i"  => \$version,  # optional WS version to use, default is autoace version
 	    );
@@ -62,6 +62,7 @@ my $log = Log_files->make_build_log($wormbase);
 # MAIN BODY OF SCRIPT
 ##########################
 
+$output ||= $wormbase->reports . '/changed_swissprot_proteins.txt';
 my $VER = (defined $version) ? $version : $wormbase->get_wormbase_version;
 my $ace_dir =  (defined $database) ? $database : $wormbase->autoace;
 my $tace = $wormbase->tace;
@@ -87,7 +88,6 @@ while (<TACE>) {
 # History 262 removed T07A9.9a                            (in the same Protein object as the above line)
 
   if ($_ =~ /^Protein/) {$title = $_}
-#  if ($_ =~ /Database/) {print $_}
   if ($_ =~ /^Database\s+\"SwissProt\"\s+\"UniProtAcc\"/) {$swissprot = $_}
   if ($_ =~ /^History\s+(\d+)\s/ && $1 == $VER) {
     if ($header_printed == 0) {
