@@ -6,13 +6,13 @@ DIR=`dirname $0`
 
 #Creating core database with worm_lite.pl
 
-out_file="${1}.wormlite.out" 
-
 if ! [ -f $1 ] ; then echo "Usage: $0 <species conf>" ; exit 1 ; fi
+
+out_file=$( basename "$1" | sed 's/\..*$/.wormlite.out/' ) 
 SPECIES_CONF=$1.auto
 
 printf "Expanding the config \n"
-$WORM_CODE/parasite/scripts/production/core-creation/files/createEnsemblConf.pl $1 > $SPECIES_CONF
+perl -MCoreCreation::Conf -e "print CoreCreation::Conf->new(\"$1\")-> dump()" > $SPECIES_CONF
 
 printf "Launching worm_lite.pl \n"
 printf "The output of this script will be written in $out_file \n\n"
@@ -28,12 +28,13 @@ fi
 #performing basic healthchecks
 git=`grep -o 'cvsdir: .*' $SPECIES_CONF | awk '{print $2}'`
 
+# TODO this used to be for a list, now it's for one species. Does no longer work for multiple species.
 species_list=`grep '^[a-z0-9]*_[a-z0-9]*_[a-z0-9]*:' $SPECIES_CONF`
 fasta_list=`grep 'fasta: .*' $SPECIES_CONF | awk '{print $2}'`
 gff3_list=`grep 'gff3: .*' $SPECIES_CONF | awk '{print $2}'`
-coredb_list=`grep ' dbname: .*' $SPECIES_CONF | awk '{print $2}' | tail -n+3`
-host_list=`grep ' host: .*' $SPECIES_CONF | awk '{print $2}' | tail -n+3`
-port_list=`grep ' port: .*' $SPECIES_CONF | awk '{print $2}' | tail -n+3`
+coredb=$(perl -MCoreCreation::Conf -e "print CoreCreation::Conf->new(\"/nfs/production/panda/ensemblgenomes/wormbase/parasite/data/release10/ascaris_suum_prjna62057/ascaris_suum_prjna62057.conf\")->{core_database}->{dbname} ;")
+host=$(perl -MCoreCreation::Conf -e "print CoreCreation::Conf->new(\"/nfs/production/panda/ensemblgenomes/wormbase/parasite/data/release10/ascaris_suum_prjna62057/ascaris_suum_prjna62057.conf\")->{core_database}->{host};")
+port=$(perl -MCoreCreation::Conf -e "print CoreCreation::Conf->new(\"/nfs/production/panda/ensemblgenomes/wormbase/parasite/data/release10/ascaris_suum_prjna62057/ascaris_suum_prjna62057.conf\")->{core_database}->{port};")
 
 END=`printf "%s\n" $species_list | wc -l`
 
@@ -42,16 +43,13 @@ do
 species=`sed -n ${i}p <<< "$species_list" | sed s'/.$//'`
 fasta=`sed -n ${i}p <<< "$fasta_list"`
 gff3=`sed -n ${i}p <<< "$gff3_list"`
-coredb=`sed -n ${i}p <<< "$coredb_list"`
-host=`sed -n ${i}p <<< "$host_list"`
-port=`sed -n ${i}p <<< "$port_list"`
 
 health_out="/nfs/panda/ensemblgenomes/wormbase/parasite/core-creation/$coredb.healthcheck.out"
 printf "Submitting healthcheck job for $species \n"
 printf "The output of this job will be written in $health_out \n\n"
-
+set -x
 $DIR/healthcheck.sh -d $coredb -g $fasta -a $gff3 -u ensro -p $port -s $host > $health_out
-
+set +x
 done
 
 printf "All healthchecks done!\n"
