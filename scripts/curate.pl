@@ -130,6 +130,7 @@ if ($curate_test) {
 } elsif ($make_operon) {
   my @oldseq = split(/,/,$oldseq);
   $curate->make_operon_cmd(\@oldseq, @newseq);
+  print "\nNow load $outfile into geneace\n\n";
 } elsif ($delete) {
   if (!defined $class) {$class = 'CDS'}
   $curate->delete_cmd($class, $oldseq);
