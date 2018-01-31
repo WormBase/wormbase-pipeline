@@ -25,33 +25,4 @@ else
     exit 1
 fi
 
-#performing basic healthchecks
-git=`grep -o 'cvsdir: .*' $SPECIES_CONF | awk '{print $2}'`
-
-# TODO this used to be for a list, now it's for one species. Does no longer work for multiple species.
-species_list=`grep '^[a-z0-9]*_[a-z0-9]*_[a-z0-9]*:' $SPECIES_CONF`
-fasta_list=`grep 'fasta: .*' $SPECIES_CONF | awk '{print $2}'`
-gff3_list=`grep 'gff3: .*' $SPECIES_CONF | awk '{print $2}'`
-coredb=$(perl -MCoreCreation::Conf -e "print CoreCreation::Conf->new(\"/nfs/production/panda/ensemblgenomes/wormbase/parasite/data/release10/ascaris_suum_prjna62057/ascaris_suum_prjna62057.conf\")->{core_database}->{dbname} ;")
-host=$(perl -MCoreCreation::Conf -e "print CoreCreation::Conf->new(\"/nfs/production/panda/ensemblgenomes/wormbase/parasite/data/release10/ascaris_suum_prjna62057/ascaris_suum_prjna62057.conf\")->{core_database}->{host};")
-port=$(perl -MCoreCreation::Conf -e "print CoreCreation::Conf->new(\"/nfs/production/panda/ensemblgenomes/wormbase/parasite/data/release10/ascaris_suum_prjna62057/ascaris_suum_prjna62057.conf\")->{core_database}->{port};")
-
-END=`printf "%s\n" $species_list | wc -l`
-
-for i in $(seq 1 $END);
-do
-species=`sed -n ${i}p <<< "$species_list" | sed s'/.$//'`
-fasta=`sed -n ${i}p <<< "$fasta_list"`
-gff3=`sed -n ${i}p <<< "$gff3_list"`
-
-health_out="/nfs/panda/ensemblgenomes/wormbase/parasite/core-creation/$coredb.healthcheck.out"
-printf "Submitting healthcheck job for $species \n"
-printf "The output of this job will be written in $health_out \n\n"
-set -x
-$DIR/healthcheck.sh -d $coredb -g $fasta -a $gff3 -u ensro -p $port -s $host > $health_out
-set +x
-done
-
-printf "All healthchecks done!\n"
-
-
+$DIR/healthcheck.pl $1
