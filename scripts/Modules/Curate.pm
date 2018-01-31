@@ -406,6 +406,15 @@ sub check_gene_name_cmd {
 }
 
 ######################################
+# Show next available Sequence name on this Clone or Scaffold
+# $self->show_next_sequence_name_cmd($clone);
+sub show_next_sequence_name_cmd {
+  my ($self, $clone) = @_;
+
+  $self->cmd("SHOW_NEXT_SEQUENCE_NAME CLONE $clone");
+}
+
+######################################
 # execute one command line
 # $self->cmd($command_line);
 sub cmd {
@@ -469,6 +478,9 @@ sub cmd {
     # CHECK_GENE_NAME
   } elsif ($line[0] =~ /CHECK_GENE_NAME/) {
     $self->check_gene_name(%line);
+
+  } elsif ($line[0] =~ /SHOW_NEXT_SEQUENCE_NAME/) {
+    $self->show_next_sequence_name(%line);
   }
 }
 
@@ -875,6 +887,7 @@ sub parse_line {
 		 'CLASS' => 1,
 		 'NEWCLASS' => 1,
 		 'FAMILY' => 1,
+		 'CLONE' => 1,
 		);
 
   my $key;
@@ -1568,6 +1581,20 @@ sub check_gene_name {
 }
 
 ######################################
+# SHOW_NEXT_SEQUENCE_NAME CLONE $clone
+# Show the next sequence name on this Clone or Scaffold
+
+sub show_next_sequence_name {
+  my ($self, %line) = @_;
+
+  my $clone = $line{CLONE};
+
+  my $next_id = $self->Find_Next_CDS_ID($clone);
+  print "The next available Sequence ID is: $next_id'\n";
+
+}
+
+######################################
 ######################################
 ######################################
 ######################################
@@ -1762,7 +1789,7 @@ sub get_history_version {
   die "ERROR no version\n" unless $WS_version =~ /\d+/;
   
   # check to see if the Build has started - if so then use the Build's version
-  my $build_file = $self->{wormbase}->autoace . "/wspec/database.wrm";
+  my $build_file = $self->{wormbase}->basedir . "/BUILD/autoace/wspec/database.wrm";
   if (-e $build_file) {
     my $Build_WS_version = `grep "NAME WS" $build_file`;
     chomp($Build_WS_version);

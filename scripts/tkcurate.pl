@@ -13,7 +13,7 @@ GetOptions (
 	   );
 if (!defined $species) {$species = 'elegans'}
 
-my @cmds = qw/Replace Isoform Split Merge To_CDS To_Pseudogene To_Transcript Make_Transposon Make_Operon Create_Gene Delete Last_reviewed Just_Make_History Check_Gene_name/;
+my @cmds = qw/Replace Isoform Split Merge To_CDS To_Pseudogene To_Transcript Make_Transposon Make_Operon Create_Gene Delete Last_reviewed Just_Make_History Check_Gene_name Show_Next_Sequence_Name/;
 
 
 my $mw = MainWindow->new;
@@ -358,6 +358,11 @@ sub command_chosen {
     one_line_text($old);
     one_line_text($new);
     delete_text($status); add_text($status, "Check for a CGC Gene name")
+  } elsif ($selection eq 'Show_Next_Sequence_Name') {
+    inactivate_text($new);
+    one_line_text($old);
+    one_line_text($new);
+    delete_text($status); add_text($status, "Show the next available Sequence-name on the Clone/Scaffold")
   } else {
     error_warning('ERROR', "Unknown command from command option menu: '$selection'");
     die ("Unknown command from command option menu: '$selection'\n");

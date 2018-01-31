@@ -10,7 +10,7 @@ use Modules::Curate;
 use FileHandle;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase, $species, $database, $curate_test);
-my ($replace, $isoform, $newgene, $split, $merge, $to_cds, $to_pseudogene, $to_transcript, $make_transposon, $make_operon, $delete, $last_reviewed, $just_make_history, $check_gene_name);
+my ($replace, $isoform, $newgene, $split, $merge, $to_cds, $to_pseudogene, $to_transcript, $make_transposon, $make_operon, $delete, $last_reviewed, $just_make_history, $check_gene_name, $show_next_sequence_name);
 my ($noload, $force, $class, $oldseq, @newseq);
 
 
@@ -37,6 +37,7 @@ GetOptions ("help"              => \$help,
 	    "last_reviewed"     => \$last_reviewed,     # COMMAND: add a Last_reviewed tag
 	    "just_make_history"      => \$just_make_history,      # COMMAND: just create a history object
 	    "check_gene_name"   => \$check_gene_name,   # COMMAND: report any Gene_name for the object
+	    "show_next_sequence_name"   => \$show_next_sequence_name,   # COMMAND: show the next available Sequence-name on this clone or scaffold
 
 	    "class:s"           => \$class,             # class of things being curated - defaults to CDS
 	    "oldseq:s"          => \$oldseq,            # existing sequence name
@@ -143,6 +144,8 @@ if ($curate_test) {
 } elsif ($check_gene_name) {
   if (!defined $class) {$class = 'CDS'}
   $curate->check_gene_name_cmd($class, $oldseq);
+} elsif ($show_next_sequence_name) {
+  $curate->show_next_sequence_name_cmd($oldseq);
 } else {
   die "command not recognised\n";
 }
