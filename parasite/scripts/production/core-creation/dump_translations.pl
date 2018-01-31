@@ -43,7 +43,7 @@
 
   Optional arguments:
 
-    -file         File to write the results to (default: STDOUT)
+    -file         File to write the results to (default: none!)
     -file_err     File to write the proteins that have errors in 
     -slicename    Retrieve sequences from this slice
     -dnadbname    DNA database name
@@ -158,8 +158,7 @@ if ($file) {
     $fh = \*FH;
 }
 else {
-    $verbose and print STDERR "Going to write peptides to stdout\n";
-    $fh = \*STDOUT;
+    $verbose and print STDERR "Going to skip correct peptides\n";
 }
 
 my $fh2;
@@ -169,7 +168,7 @@ if ($file_err) {
     $fh2 = \*FH2;
 }
 
-my $seqio = Bio::SeqIO->new('-format' => 'Fasta', -fh => $fh);
+my $seqio = Bio::SeqIO->new('-format' => 'Fasta', -fh => $fh) if $fh;
 my $seqerr = Bio::SeqIO->new('-format' => 'Fasta', -fh => $fh2);
 
 my $gene_list;
@@ -218,7 +217,7 @@ while (my $gene = shift @$gene_list) {
 
         $tseq->display_id($identifier) if $identifier;
         $tseq->desc("Translation id $identifier gene $gene_id");
-        $seqio->write_seq($tseq);
+        $seqio->write_seq($tseq) if $fh;
     }
 }
 close($fh) or die "Error writing translation fasta; $!";
