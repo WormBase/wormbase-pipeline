@@ -13,7 +13,7 @@ GetOptions (
 	   );
 if (!defined $species) {$species = 'elegans'}
 
-my @cmds = qw/Replace Isoform Split Merge To_CDS To_Pseudogene To_Transcript Make_Transposon Create_Gene Delete Last_reviewed Just_Make_History Check_Gene_name/;
+my @cmds = qw/Replace Isoform Split Merge To_CDS To_Pseudogene To_Transcript Make_Transposon Make_Operon Create_Gene Delete Last_reviewed Just_Make_History Check_Gene_name/;
 
 
 my $mw = MainWindow->new;
@@ -327,6 +327,11 @@ sub command_chosen {
     one_line_text($old);
     one_line_text($new);
     delete_text($status); add_text($status, "Convert the old name into a Transposon_CDS and new Transposon (new name is Family)")
+  } elsif ($selection eq 'Make_Operon') {
+    many_lines_text($old);
+    one_line_text($new);
+    add_text($new, "dicistronic_mRNA");
+    delete_text($status); add_text($status, "Create a new Operon (new name is Method: dicistronic_mRNA or Operon)")
   } elsif ($selection eq 'Create_Gene') {
     inactivate_text($old);
     one_line_text($old);

@@ -10,7 +10,7 @@ use Modules::Curate;
 use FileHandle;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase, $species, $database, $curate_test);
-my ($replace, $isoform, $newgene, $split, $merge, $to_cds, $to_pseudogene, $to_transcript, $make_transposon, $delete, $last_reviewed, $just_make_history, $check_gene_name);
+my ($replace, $isoform, $newgene, $split, $merge, $to_cds, $to_pseudogene, $to_transcript, $make_transposon, $make_operon, $delete, $last_reviewed, $just_make_history, $check_gene_name);
 my ($noload, $force, $class, $oldseq, @newseq);
 
 
@@ -32,6 +32,7 @@ GetOptions ("help"              => \$help,
 	    "to_pseudogene"     => \$to_pseudogene,     # COMMAND: convert an object into a Pseudogene class object
 	    "to_transcript"     => \$to_transcript,     # COMMAND: convert an object into a Transcript class object (you have to edit it if you want a Type other than ncRNA)
 	    "make_transposon"   => \$make_transposon,   # COMMAND: convert an object into a Transposon_CDS and new Transposon class object
+	    "make_operon"       => \$make_operon,       # COMMAND: make an operon and add some genes to it
 	    "delete"            => \$delete,            # COMMAND: delete an object (leaving a history object)
 	    "last_reviewed"     => \$last_reviewed,     # COMMAND: add a Last_reviewed tag
 	    "just_make_history"      => \$just_make_history,      # COMMAND: just create a history object
@@ -126,6 +127,9 @@ if ($curate_test) {
 } elsif ($make_transposon) {
   if (!defined $class) {$class = 'CDS'}
   $curate->make_transposon_cmd($class, $oldseq, @newseq);
+} elsif ($make_operon) {
+  my @oldseq = split(/,/,$oldseq);
+  $curate->make_operon_cmd(\@oldseq, @newseq);
 } elsif ($delete) {
   if (!defined $class) {$class = 'CDS'}
   $curate->delete_cmd($class, $oldseq);

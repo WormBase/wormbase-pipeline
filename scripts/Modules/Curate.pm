@@ -358,6 +358,16 @@ sub make_transposon_cmd {
   $self->cmd("MAKE_TRANSPOSON CLASS $class EXISTING $old_seqname FAMILY $new_familyname");
 }
 
+######################################
+# making a new Operon
+# $self->make_operon($class, $method, $existing_seqnames)
+# existing seqnames - array ref of seqnames to add to the operon
+sub make_operon_cmd {
+  my ($self, $existing_seqnames, $method) = @_;
+  
+  if (!defined $existing_seqnames || $existing_seqnames eq '') {die "ERROR The existing sequence names to be put in the operon were not specified.\n";}
+  $self->cmd("MAKE_OPERON METHOD $method IN_OPERON @{$existing_seqnames}");
+}
 
 ######################################
 # Deleting a gene, cds, isoform, whatever
@@ -419,6 +429,10 @@ sub cmd {
     # MAKE_TRANSPOSON
   } elsif ($line[0] =~ /MAKE_TRANSPOSON/) {
     $self->make_transposon(%line);
+
+    # MAKE_OPERON
+  } elsif ($line[0] =~ /MAKE_OPERON/) {
+   $self->make_operon(%line);
     
     # MERGE
   } elsif ($line[0] =~ /MERGE/) {
@@ -855,7 +869,9 @@ sub parse_line {
 		 'MODELS' => 1,
 		 'SPLITGROUP' => 1,   # this is for specifying groups of models
 		 'EXISTING' => 1,
-		 'DIE' => 1,          # this is the only circumstance when there should be more than one existing gene in a command (so this is 'EXISTINGS')
+		 'DIE' => 1,          # has more than one existing gene following it
+		 'IN_OPERON' => 1,    # has more than one existing gene following it
+		 'METHOD' => 1,
 		 'CLASS' => 1,
 		 'NEWCLASS' => 1,
 		 'FAMILY' => 1,
@@ -871,7 +887,7 @@ sub parse_line {
 	$key = $word;
 	if ($key eq 'SPLITGROUP') {$splitgroup++}
       } else {
-	if ($key eq 'MODELS' || $key eq 'DIE') {
+	if ($key eq 'MODELS' || $key eq 'DIE' || $key eq 'IN_OPERON') {
 	  push @{$line{$key}}, $word;
 
 	} elsif ($key eq 'SPLITGROUP') {
@@ -1059,6 +1075,51 @@ sub make_transposon {
   
   print "In the Nameserver:\nChange class of $existing from $class to Transposon\n";
 
+}
+
+######################################
+# MAKE_OPERON METHOD Operon IN_OPERON CBG00001 CBG010101
+# make a new Operon object containing the specified genes
+
+sub make_operon {
+  my ($self, %line) = @_;
+
+  my $method = $line{METHOD}; # either 'Operon' or 'dicistronic_mRNA'
+  my @existing = @{$line{IN_OPERON}}; # the genes in the operon
+
+  my @genes;
+  foreach my $old_seqname (@existing) {
+    my $gene = $self->SeqName2Gene($old_seqname);
+    push @genes, $gene;
+  }
+  
+
+  my $operon_id = $self->Find_Next_Operon_ID();
+
+  # make Operon object
+  my $long_name = $self->{wormbase}->long_name();
+  my $fh = $self->{out};
+  print $fh "\n// Make_operon\n";
+  print $fh "Operon : $operon_id\n";
+  print $fh "Species \"$long_name\"\n";
+  print $fh "Method $method\n";
+  if ($method eq 'Operon') {
+    print $fh "Description \"Operon -  These exist as closely spaced gene clusters similar to bacterial operons.\"\n";
+  } else {
+    print $fh "Description \"Dicistronic mRNA Operon -  These exist as mostly non-overlapping open reading frames in a single transcript.\"\n";
+  }
+
+  # set Genes
+  foreach my $gene (@genes) {
+    $self->set_Tag('Operon', $operon_id, 'Contains_gene', $gene);
+  }
+
+
+
+  # set Remark
+  $self->Add_remark('Operon', $operon_id, "Operon span entered to represent a $method.");
+
+  
 }
 
 ######################################
@@ -2282,6 +2343,37 @@ sub Find_Next_Transposon_ID {
   my @trans = $self->{ace}->fetch(-query => "find Transposon");
   foreach my $thing (@trans) {
     if ($thing->name gt $maxnumber) {$maxnumber = $thing->name}
+  }
+  $maxnumber++;
+  return $maxnumber;
+}
+######################################
+# $operon_id = $self->Find_Next_Operon_ID();
+# Warning! This finds the next available Operon ID in the curation database - there may be higher IDs in geneace! Manual checking is required!
+sub Find_Next_Operon_ID {
+  my ($self) = @_;
+
+  my %prefix = (
+		elegans     => 'CE',
+		briggsae    => 'CB',
+		remanei     => 'CR',
+		brenneri    => 'CN',
+		japonica    => 'CJ',
+		pristiochus => 'PP',
+		brugia      => 'BM',
+		ovolvulus   => 'OV',
+		sratti      => 'SR',
+		tmuris      => 'TM',
+	       );
+
+  my $species = $self->{wormbase}->species;
+  my $prefix = $prefix{$species};
+  my $maxnumber = $prefix."OP0001";
+
+  my @operons = $self->{ace}->fetch(-query => "find Operon");
+  foreach my $thing (@operons) {
+    my $thing_start = substr($thing->name, 0, 2); # first two characters
+    if ($thing_start eq $prefix && $thing->name =~ /${prefix}OP\d{4}/ && $thing->name gt $maxnumber) {$maxnumber = $thing->name}
   }
   $maxnumber++;
   return $maxnumber;
