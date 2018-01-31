@@ -29,7 +29,7 @@ GetOptions(
 # recreate configuration   #
 ############################
 my $wb;
-my $opprefix;
+
 if ($store) { $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
 else { $wb = Wormbase->new( -debug => $debug, 
 			    -test => $test, 
@@ -39,14 +39,26 @@ else { $wb = Wormbase->new( -debug => $debug,
 my $log = Log_files->make_build_log($wb);
 my $acefile = $wb->acefiles."/operon_coords.ace";
 
+
+my %prefix = (
+	      elegans     => 'CEOP',
+	      briggsae    => 'CBOP',
+	      remanei     => 'CROP',
+	      brenneri    => 'CNOP',
+	      japonica    => 'CJOP',
+	      pristiochus => 'PPOP',
+	      brugia      => 'BMOP',
+	      ovolvulus   => 'OVOP',
+	      sratti      => 'SROP',
+	      tmuris      => 'TMOP',
+	     );
+
+
+
 $species = $wb->species; 
-if ($species eq "elegans") {
-$opprefix = "CEOP";
-}
-elsif ($species eq "brugia"){
-$opprefix = "BMOP";
-}
-else {$log->log_and_die("Cant map operons for $species as I don't know about them\n");}
+if (! exists $prefix{$species}) {$log->log_and_die("Cant map operons for $species as I don't know about them\n");}
+my $opprefix = $prefix{$species};
+
 
 my @chromosomes = $wb->get_chromosome_names(-prefix => 1, mito => 0);
 my %gene_span;
