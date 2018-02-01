@@ -257,6 +257,8 @@ if($wormbase->species eq 'elegans') {
 	push( @{ $CE_corr_CDS{'CE25872'} }, "F36D3.1" );
 	$CE_live{'CE24071'} =1;# hard coded as this history is confused. Remove if CE24071 no longer valid
 	push( @{ $CE_corr_CDS{'CE24071'} }, "Y105C5B.21c" );
+	$CE_live{'CE02572'} =1;# hard coded as this history is confused. Remove if CE02572 no longer valid
+	push( @{ $CE_corr_CDS{'CE02572'} }, "C56C10.7b" );
 }
 
 #ace file for new Protein model (with History)
