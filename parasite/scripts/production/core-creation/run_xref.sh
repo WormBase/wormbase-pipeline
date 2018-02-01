@@ -113,11 +113,11 @@ cd ${ENSEMBL_ROOT_DIR}/misc-scripts/xref_mapping/
   &> ${XREF_TMP_DIR}/${species}/${alias}_PARSER1.out
 
 #d) xref database back up before mapping 1
-printf "Backing up the xref database..\n"
-printf "The xref database will be dumped in ${XREF_TMP_DIR}/${species}/sql_dump/${alias}_xref_after_parsing.sql\n"
+[ "$XREF_PARSER_SKIP" ] || printf "Backing up the xref database..\n"
+[ "$XREF_PARSER_SKIP" ] || printf "The xref database will be dumped in ${XREF_TMP_DIR}/${species}/sql_dump/${alias}_xref_after_parsing.sql\n"
 
 
-mysqldump -P$port  -h$host  -u$user -p$pass $dbname  > ${XREF_TMP_DIR}/${species}/sql_dump/${alias}_xref_after_parsing.sql 
+[ "$DB_DUMP_SKIP" ] || mysqldump -P$port  -h$host  -u$user -p$pass $dbname  > ${XREF_TMP_DIR}/${species}/sql_dump/${alias}_xref_after_parsing.sql 
 
 #3) mapping step 1
 #a) create config file
@@ -159,15 +159,21 @@ perl ${ENSEMBL_ROOT_DIR}/misc-scripts/xref_mapping/xref_mapper.pl -file ${ENSEMB
 #d) xref database and core database back up before mapping 2
 printf "Backing up the xref database..\n"
 printf "The xref database will be dumped in ${XREF_TMP_DIR}/${species}/sql_dump/${alias}_xref_after_mapping1.sql\n"
-mysqldump -P$port  -h$host -u$user -p$pass  $dbname  > ${XREF_TMP_DIR}/${species}/sql_dump/${alias}_xref_after_mapping1.sql
+[ "$DB_DUMP_SKIP" ] || mysqldump -P$port  -h$host -u$user -p$pass  $dbname  > ${XREF_TMP_DIR}/${species}/sql_dump/${alias}_xref_after_mapping1.sql
+
+num_xrefs=$($PARASITE_STAGING_MYSQL $coredb -e 'select count(*) from xref')
+if [ "$num_xrefs" -ne 0 ] ; then printf "Core database dirty, already contains $num_xrefs - bailing out!" ; exit 1 ; fi
 
 printf "Backing up the core database..\n"
 printf "The core database will be dumped in ${XREF_TMP_DIR}/${species}/sql_dump/${alias}_core_after_mapping1.sql\n"
-mysqldump  -P$staging_port  -h$staging_host -u$staging_user -p$staging_pass  $coredb  > ${XREF_TMP_DIR}/${species}/sql_dump/${alias}_core_after_mapping1.sql
+[ "$DB_DUMP_SKIP" ] || mysqldump  -P$staging_port  -h$staging_host -u$staging_user -p$staging_pass  $coredb  > ${XREF_TMP_DIR}/${species}/sql_dump/${alias}_core_after_mapping1.sql
 
 #3) mapping step 2
 
 printf "We will now start mapping phase 2.\n"
 printf "The output will be written to ${XREF_TMP_DIR}/${species}/${alias}_MAPPER2.out\n"
 perl ${ENSEMBL_ROOT_DIR}/misc-scripts/xref_mapping/xref_mapper.pl -file ${ENSEMBL_ROOT_DIR}/misc-scripts/xref_mapping/${alias}_xref_mapper.input -upload >& ${XREF_TMP_DIR}/${species}/${alias}_MAPPER2.out
+
+printf "Ended gracefully - number of entries in the core db: "
+$PARASITE_STAGING_MYSQL $coredb -e 'select count(*) from xref'
 
