@@ -4,7 +4,7 @@ set -e
 # Set some defaults - we want to write the xref database into the prod db
 # Source ENSEMBL_VERSION and PARASITE_VERSION from the environment - populated via `module load`
 
-# The script also has the options to provide commands itself, you could integrate it differently. Maybe:
+# The script also has the options to provide commands itself, you could integrate it differently. Maybetaging_host
 # ${PARASITE_STAGING_MYSQL}-ensrw details suffix_END | sed 's/--[a-z]*END//g'
 # Also gives host port user pass.
 pass_file_for_prod_db=/nfs/panda/ensemblgenomes/external/mysql-cmds/ensrw/mysql-ps-prod
@@ -18,7 +18,7 @@ pass_file_for_staging_db=$( which ${PARASITE_STAGING_MYSQL}-ensrw )
 if ! [ -r $pass_file_for_staging_db ]; then echo "You tried to get pass file from staging DB using an env var etc. and LOL it didn't work it told you $pass_file_for_staging_db" ; exit 1 ; fi
 
 staging_db_string=$( perl -ne 'print $1 if /run_mysql\(qw\((.*)\)\)/' < $pass_file_for_staging_db )
-read staging_host staging_port staging_user staging_pass <<< $db_string
+read staging_host staging_port staging_user staging_pass <<< $staging_db_string
 if ! [ "$staging_host" -a "$staging_port" -a "$staging_user" -a "$staging_pass" ]; then echo "Could not get staging DB credentials from string: $staging_db_string" ; exit 1 ; fi 
 
 #1) config
@@ -31,37 +31,9 @@ case $key in
     taxon="$2"
     shift # past argument
     ;;
-    -name)
-    name="$2"
-    shift # past argument
-    ;;
     -alias)
     alias="$2"
     shift # past argument
-    ;;
-    -ensembl_vers)
-    ensembl_vers="$2"
-    shift
-    ;;
-    -parasite_vers)
-    parasite_vers="$2"
-    shift
-    ;;
-    -host)
-    host="$2"
-    shift
-    ;;
-    -port)
-    port="$2"
-    shift
-    ;;
-    -pass)
-    pass="$2"
-    shift
-    ;;
-    -user)
-    user="$2"
-    shift
     ;;
     -help)
     printf "Run the xref pipeline for 1 core database.\nMandatory arguments: -taxon, -alias (group_species_bioproject ex:steinernema_glaseri_prjna204943).\n"
@@ -75,15 +47,8 @@ esac
 shift # past argument or value
 done
 
-if ! [ ${name} ]; then echo "name is unset"; exit 1; fi
 if ! [ ${alias} ]; then echo "alias is unset"; exit 1; fi;
 if ! [ ${taxon} ]; then echo "taxon is unset"; exit 1; fi
-if ! [ ${ensembl_vers} ]; then echo "ensembl_vers is unset"; exit 1; fi;
-if ! [ ${parasite_vers} ]; then echo "parasite_vers is unset"; exit 1; fi;
-if ! [ ${host} ]; then echo "host is unset"; exit 1; fi
-if ! [ ${port} ]; then echo "port is unset"; exit 1; fi
-if ! [ ${user} ]; then echo "user is unset"; exit 1; fi
-if ! [ ${pass} ]; then echo "pass is unset"; exit 1; fi
 
 XREF_TMP_DIR=${XREF_TMP_DIR:-/nfs/nobackup/ensemblgenomes/wormbase/parasite/xref/rel_$PARASITE_VERSION}
 
@@ -159,7 +124,7 @@ mysqldump -P$port  -h$host  -u$user -p$pass $dbname  > ${XREF_TMP_DIR}/${species
 printf '%s\n' '-----MAPPING STEP 1-----'
 
  
-coredb=${name}_${alias}_core_${parasite_vers}_${ensembl_vers}_1
+coredb=${alias}_core_${parasite_vers}_${ensembl_vers}_1
 
 echo "xref
 host=$host
