@@ -159,11 +159,8 @@ mysqldump -P$port  -h$host  -u$user -p$pass $dbname  > ${XREF_TMP_DIR}/${species
 printf '%s\n' '-----MAPPING STEP 1-----'
 
  
-cd ${ENSEMBL_ROOT_DIR}/misc-scripts/xref_mapping/
 coredb=${name}_${alias}_core_${parasite_vers}_${ensembl_vers}_1
 
-if [ ! -f "${alias}_xref_mapper.input"  ];
-then
 echo "xref
 host=$host
 port=$port
@@ -183,8 +180,7 @@ dir=${XREF_TMP_DIR}/${species}/mapping/core
 
 farm
 queue=production-rh7
-exonerate=/nfs/panda/ensemblgenomes/external/exonerate-2/bin/exonerate" > ${alias}_xref_mapper.input
-fi
+exonerate=/nfs/panda/ensemblgenomes/external/exonerate-2/bin/exonerate" > ${ENSEMBL_ROOT_DIR}/misc-scripts/xref_mapping/${alias}_xref_mapper.input
 
 printf "Config file ensembl/misc-scripts/xref_mapping/${alias}_xref_mapper.input created.\n"
 
@@ -193,7 +189,7 @@ printf "Config file ensembl/misc-scripts/xref_mapping/${alias}_xref_mapper.input
 printf "We will now start mapping phase 1.\n"
 printf "The output will be written to ${XREF_TMP_DIR}/${species}/${alias}_MAPPER1.out\n"
 
-perl xref_mapper.pl -file ${ENSEMBL_ROOT_DIR}/misc-scripts/xref_mapping/${alias}_xref_mapper.input -dumpcheck >& ${XREF_TMP_DIR}/${species}/${alias}_MAPPER1.out
+perl ${ENSEMBL_ROOT_DIR}/misc-scripts/xref_mapping/xref_mapper.pl -file ${ENSEMBL_ROOT_DIR}/misc-scripts/xref_mapping/${alias}_xref_mapper.input -dumpcheck >& ${XREF_TMP_DIR}/${species}/${alias}_MAPPER1.out
 
 #d) xref database and core database back up before mapping 2
 printf "Backing up the xref database..\n"
@@ -208,5 +204,5 @@ mysqldump  -P$staging_port  -h$staging_host -u$staging_user -p$staging_pass  $co
 
 printf "We will now start mapping phase 2.\n"
 printf "The output will be written to ${XREF_TMP_DIR}/${species}/${alias}_MAPPER2.out\n"
-perl xref_mapper.pl -file ${ENSEMBL_ROOT_DIR}/misc-scripts/xref_mapping/${alias}_xref_mapper.input -upload >& ${XREF_TMP_DIR}/${species}/${alias}_MAPPER2.out
+perl ${ENSEMBL_ROOT_DIR}/misc-scripts/xref_mapping/xref_mapper.pl -file ${ENSEMBL_ROOT_DIR}/misc-scripts/xref_mapping/${alias}_xref_mapper.input -upload >& ${XREF_TMP_DIR}/${species}/${alias}_MAPPER2.out
 
