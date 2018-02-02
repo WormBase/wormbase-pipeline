@@ -8,7 +8,7 @@ use YAML;
 use File::Basename;
 use File::Spec;
 use Getopt::Long qw(GetOptionsFromArray);
-
+use CoreCreation::Fasta;
 sub new {
     my ( $class, $path_to_conf ) = @_;
     die "Required: <path to species conf>" unless -f $path_to_conf;
@@ -84,11 +84,22 @@ sub read_config {
 "${species}_${bioproject}_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_1"
     };
     my $fasta_location = File::Spec->rel2abs("$dirs/${filename}.fa");
-    my $gff3_location  = File::Spec->rel2abs("$dirs/${filename}.gff3");
-    warn "We expect a good FASTA at $fasta_location" unless -f $fasta_location;
-    warn "We expect a good GFF3 at $gff3_location"   unless -f $gff3_location;
 
-    $species_conf->{fasta} = $fasta_location;
+    $species_conf->{toplevel} = "scaffold";
+    my $fasta = CoreCreation::Fasta->new($fasta_location);
+    if($fasta->needs_contig_structure){
+      my $split_fasta_location = File::Spec->rel2abs("$dirs/${filename}.split.fa");
+      my $agp_location = File::Spec->rel2abs("$dirs/${filename}.toplevel.agp");
+      $fasta->split($split_fasta_location, $agp_location);
+      $species_conf->{fasta} = $split_fasta_location;
+      $species_conf->{agp} = $agp_location;
+      $species_conf->{seqlevel} = "contig";
+    } else {
+      $species_conf->{fasta} = $fasta_location;
+      $species_conf->{seqlevel} = "scaffold";
+    }
+    my $gff3_location  = File::Spec->rel2abs("$dirs/${filename}.gff3");
+    die "We expect a good GFF3 at $gff3_location"   unless -f $gff3_location;
     $species_conf->{gff3}  = $gff3_location;
 
     my $taxon_id = $species_conf->{"taxon_id"};
