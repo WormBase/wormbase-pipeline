@@ -69,6 +69,7 @@ my %logic2type = (
 		  brepepx => 'brenneri',
 		  ovolpepx => 'ovolvulus',
                   srapepx => 'sratti',
+                  tmupepx => 'tmuris',
 		  gadflyx => '1',
 		  ipi_humanx => '1',
 		  yeastx => '1',

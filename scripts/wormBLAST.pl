@@ -96,7 +96,7 @@ if (-e $wormbase->autoace){
 #
 # Never do genblasts for C.ele, O.vol and B.mal
 #
-if ($species eq 'elegans' or $species eq 'ovolvulus' or $species eq 'brugia' or $species eq 'sratti') {
+if ($species eq 'elegans' or $species eq 'ovolvulus' or $species eq 'brugia' or $species eq 'sratti' or $species eq 'tmuris') {
   $do_genblasts = 0;
 }
 

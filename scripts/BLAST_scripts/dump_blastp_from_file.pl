@@ -94,7 +94,8 @@ my %processIds2prot_analysis = (
 				'brepepp'         => 'wublastp_brenneri',
 				'brugpepp'        => 'wublastp_brugia',
 				'ovolpepp'        => 'wublastp_ovolvulus',
-                                'srapepp'         => 'wublastp_sratti'
+                                'srapepp'         => 'wublastp_sratti',
+                                'tmupepp'         => 'wublastp_tmuris'
 			       );
 
 
@@ -114,6 +115,7 @@ our %org_prefix = (
 		    'wublastp_brugia'        => 'BM',
 		    'wublastp_ovolvulus'     => 'OV',
                     'wublastp_sratti'        => 'SRP',
+                    'wublastp_tmuris'        => 'TMP',
 		  );
 
 my $QUERY_SPECIES = $wormbase->full_name;
@@ -195,6 +197,7 @@ my %bre_matches;
 my %bru_matches;
 my %ovo_matches;
 my %sra_matches;
+my %tmu_matches;
 
 my %type_count;
 
@@ -236,6 +239,7 @@ while (<BLAST>) {
                \%ppa_matches,
                \%bru_matches,
                \%ovo_matches,
+               \%tmu_matches,
                \%sra_matches) 
         if (%worm_matches or 
             %human_matches or 
@@ -250,6 +254,7 @@ while (<BLAST>) {
             %ppa_matches or 
             %bru_matches or
             %ovo_matches or
+            %tmu_matches or
             %sra_matches
         );
 
@@ -268,7 +273,8 @@ while (<BLAST>) {
     %bru_matches = ();
     %ovo_matches = ();
     %sra_matches = ();
-    
+    %tmu_matches = ();
+   
     %type_count = ();
 
   }
@@ -312,6 +318,8 @@ while (<BLAST>) {
     $added = &addWormData ( \%ovo_matches,\@data);
   } elsif ( $analysis eq 'srapepp') {
     $added = &addWormData ( \%sra_matches,\@data);
+  } elsif ( $analysis eq 'tmupepp') {
+    $added = &addWormData ( \%tmu_matches,\@data);
   }
 
 
@@ -339,6 +347,7 @@ while (<BLAST>) {
            \%ppa_matches,
            \%bru_matches,
            \%ovo_matches,
+           \%tmu_matches,
            \%sra_matches) 
     if (%worm_matches or 
         %human_matches or 
@@ -353,8 +362,8 @@ while (<BLAST>) {
         %ppa_matches or 
         %bru_matches or 
         %ovo_matches or
+        %tmu_matches or
         %sra_matches);
-
 
 close OUT;
 close RECIP;
@@ -660,6 +669,7 @@ sub species_lookup {
 		      'wublastp_brugia'        => 'Brugia malayi',
 		      'wublastp_ovolvulus'     => 'Onchocerca volvulus',
 		      'wublastp_sratti'        => 'Strongyloides ratti',
+		      'wublastp_tmuris'        => 'Trichuris muris',
 		      'wublastp_remanei'       => 'Caenorhabditis remanei',
 		      'wublastp_japonica'      => 'Caenorhabditis japonica',
 		      'wublastp_brenneri'      => 'Caenorhabditis brenneri',
