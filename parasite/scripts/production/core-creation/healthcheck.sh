@@ -84,18 +84,13 @@ echo "$mysqlcmd -D $database_name -e 'select biotype, count(*) from gene group b
 echo "Endend the upload of assembly and annotation in $database_name" 
 $mysqlcmd -D $database_name -e 'select biotype, count(*) from gene group by biotype;' 
 
-echo ""
-echo "Dump protein fasta file:"
-echo "perl dump_translations.pl -dbname $database_name -dbhost mysql-eg-devel-1.ebi.ac.uk  -dbuser $user -dbhost $server -dbport $port -stable_id -file_err $DATA/dump_out/$database_name\_error.txt -file /dev/null"
-perl $pipeline_fold/dump_translations.pl -dbname $database_name -dbuser $user -dbhost $server -dbport $port -stable_id -file_err $DATA/dump_out/$database_name\_error.fa -file /dev/null 
-
-echo "The number of coding protein sequences is"
-grep -c ">" $DATA/dump_out/$database_name\_protein.fa
-echo "While the number of non coding sequences (with stop codon inside) are:"
-grep -c ">" $DATA/dump_out/$database_name\_error.fa
-
 echo "" 
 echo "Ensure every gene has a canonical_transcript_id:" 
 echo "1) the result from this mysql is empty" 
 echo "$mysqlcmd -D $database_name -e 'select count(*) from gene where canonical_transcript_id = 0;'" 
 $mysqlcmd -D $database_name -e 'select count(*) from gene where canonical_transcript_id = 0;'  
+
+echo ""
+echo "Dump protein fasta file - errors to STDOUT:"
+perl $pipeline_fold/dump_translations.pl -dbname $database_name -dbuser $user -dbhost $server -dbport $port -stable_id -file_err /dev/fd/1 -file /dev/null 
+

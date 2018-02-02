@@ -25,4 +25,4 @@ else
     exit 1
 fi
 
-$DIR/healthcheck.pl $1
+perl $DIR/healthcheck.pl $1
