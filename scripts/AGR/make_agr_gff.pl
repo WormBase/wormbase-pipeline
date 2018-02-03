@@ -3,11 +3,12 @@
 use strict;
 use Storable;	
 use Getopt::Long;
+use JSON; 
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
 
-my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $bgi_json);
 my ($gff_in, $gff_out, $ws_version);
 
 GetOptions ("help"        => \$help,
@@ -17,6 +18,7 @@ GetOptions ("help"        => \$help,
 	    "store:s"     => \$store,
 	    "gffout:s"    => \$gff_out,
             "gffin=s"     => \$gff_in,
+            "bgijson=s"   => \$bgi_json,
             "wsversion=s" => \$ws_version,
 	    );
 
@@ -30,6 +32,23 @@ if ( $store ) {
 
 die "You must supply an input GFF file\n" if not defined $gff_in or not -e $gff_in;
 die "You must supply an output file name\n" if not defined $gff_out;
+die "You must supply an BGI JSON file\n" if not defined $bgi_json;
+
+
+my (%bgi_genes, $json_string);
+open(my $json_fh, $bgi_json) or die "Could not open $bgi_json for reading\n";
+while(<$json_fh>) {
+  $json_string .= $_;
+}
+
+my $json_reader = JSON->new;
+my $json = $json_reader->decode($json_string);
+
+foreach my $entry (@{$json->{data}}) {
+  my $id = $entry->{primaryId};
+  $bgi_genes{$id} = $entry;
+}
+
 
 my $in_fh = &open_gff_file($gff_in);
 open(my $out_fh, ">$gff_out") or die "Could not open $gff_out for writing\n";
@@ -41,7 +60,30 @@ while(<$in_fh>) {
     next;
   };
 
-  /^\S+\s+WormBase\s+/ and print $out_fh $_;
+  if (/^\S+\s+WormBase\s+gene\s+/) {
+    chomp;
+    my @l = split(/\t/, $_);
+    my %attr;
+    foreach my $kv (split(/;/, $l[8])) {
+      my ($k, $v) = split(/\=/, $kv);
+      $attr{$k} = $v;
+    }
+    my $gid = $attr{curie};
+
+    # use symbol as Name
+    $attr{Name} = $bgi_genes{$gid}->{symbol};
+    if (exists $bgi_genes{$gid}->{name}) {
+      $attr{long_name} = $bgi_genes{$gid}->{name};
+    }
+    if (exists $bgi_genes{$gid}->{geneSynopsis}) {
+      $attr{description} = $bgi_genes{$gid}->{geneSynopsis};
+    }
+    $l[8] = join(";", map { $_ . "=" . $attr{$_} } keys %attr);
+    print $out_fh join("\t", @l), "\n";
+
+  } elsif (/^\S+\s+WormBase\s+/) {
+    print $out_fh $_;
+  }
 }
 close($out_fh) or die "Could not close $gff_out after writing (probably file system full)\n";
 
