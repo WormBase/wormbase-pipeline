@@ -70,7 +70,7 @@ my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or die("Connectio
 
 $locs = &get_location_data($db, $gtf_file);
 
-my $base_query = 'FIND Gene WHERE Sequence AND Live AND Species = "Caenorhabditis elegans"';
+my $base_query = 'FIND Gene WHERE Live AND Species = "Caenorhabditis elegans"';
 
 my $meta_data = {
   dateProduced => &get_rfc_date(),
@@ -85,6 +85,7 @@ foreach my $sub_query (
   " AND Corresponding_CDS",
   " AND Corresponding_pseudogene",
   " AND Corresponding_transcript AND NOT Corresponding_CDS",
+  " AND NOT Sequence AND Reference"
     ) {
 
 
@@ -101,22 +102,40 @@ foreach my $sub_query (
     next unless $obj->isObject();
     next unless $obj->Species;
     next unless $obj->Species->name eq $full_name;
-    
-    my $biotype = $obj->Biotype->name;
-    # temp hack to deal with data problem in WS258 (where some genes have "ncRNA" rather than "ncRNA_gene")
-    $biotype = "SO:0001263" if $biotype eq "SO:0000655";
 
+    #
+    # Biotype
+    #
+    my $biotype = "SO:0000704"; # default - gene
 
-    my ($symbol, %synonyms);
-    my $seq_name = $obj->Sequence_name->name;
-    if ($obj->CGC_name) {
-      $symbol = $obj->CGC_name->name;
-      $synonyms{$seq_name} = 1;
-    } else {
-      $symbol = $seq_name;
+    if ($obj->Biotype) {
+      $biotype = $obj->Biotype->name;
     }
+
+    #
+    # Symbol and syno
+    #
+    my ($symbol, %synonyms);
+    if ($obj->Sequence_name) {
+      my $seq_name = $obj->Sequence_name->name;
+      if ($obj->CGC_name) {
+        $symbol = $obj->CGC_name->name;
+        $synonyms{$seq_name} = 1;
+      } else {
+        $symbol = $seq_name;
+      }
+    } elsif ($obj->CGC_name) {
+      $symbol = $obj->CGC_name->name;
+    } else {
+      # no sequence name and no CGC name; skip these for now
+      next;
+    }
+
     map { $synonyms{$_->name} = 1 } $obj->Other_name;
-        
+    
+    #
+    # Description
+    #
     my $desc = "";
     if ($obj->Concise_description) {
       $desc = $obj->Concise_description->name;
@@ -124,6 +143,9 @@ foreach my $sub_query (
       $desc = $obj->Automated_description->name; 
     }
     
+    #
+    # Cross references
+    #
     my @xrefs;
     foreach my $dblink ($obj->Database) {
       if (exists $XREF_MAP{$dblink}) {
@@ -136,8 +158,10 @@ foreach my $sub_query (
         }
       }
     }
-    push @xrefs, "ENSEMBL:" . $obj->name;
-    
+
+    #
+    # Name (from gene class)
+    #
     my ($gene_class_name, $brief_id_name);
     if ($obj->Gene_class and $obj->Gene_class->Description) {
       $gene_class_name = $obj->Gene_class->Description->name;
@@ -155,6 +179,9 @@ foreach my $sub_query (
       $name = "";
     }
     
+    #
+    # Secondary ids
+    #
     my @secondary_ids;
     if ($obj->Acquires_merge) {
       foreach my $g ($obj->Acquires_merge) {
@@ -162,6 +189,9 @@ foreach my $sub_query (
       }
     }
     
+    #
+    # References
+    #
     my @pmids;
     foreach my $paper ($obj->Reference) {
       foreach my $pref ($paper->Database) {
@@ -171,6 +201,25 @@ foreach my $sub_query (
       }
     }
 
+    #
+    # location
+    #
+    my $loc;
+    if (defined $locs and exists $locs->{$obj->name}) {
+      $loc = $locs->{$obj->name};
+      # Only add Ensembl xrefs for genomicly placed genes;
+      push @xrefs, "ENSEMBL:" . $obj->name;
+    } 
+    #elsif ($obj->Map) {
+    #  $loc = {
+    #    chromosome => $obj->Map->name,
+    #    assembly   => "unlocalised",
+    #  };
+    #}
+
+    #
+    # Make the JSON object
+    #
     my $json_gene = {
       primaryId          => "WB:" . $obj->name,
       symbol             => $symbol,
@@ -185,14 +234,10 @@ foreach my $sub_query (
     $json_gene->{secondaryIds}      =  \@secondary_ids if @secondary_ids;
     $json_gene->{crossReferenceIds} =  \@xrefs if @xrefs;
 
-    if (defined $locs) {
-      if (exists $locs->{$obj->name}) {
-        $json_gene->{genomeLocations} = [$locs->{$obj->name}];
-      } else {
-        # do not include genes without a location for now
-        next;
-      }
-    }
+    if (defined $loc) {
+      $json_gene->{genomeLocations} = [$loc];
+
+    } 
 
     push @genes, $json_gene;
   }
