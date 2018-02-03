@@ -150,7 +150,7 @@ foreach my $core_db (@core_dbs) {
   if ($@ or not defined $gdb) {
     # not present; create it
     print STDERR "Creating new GenomeDB for $prod_name\n";
-    $gdb = Bio::EnsEMBL::Compara::GenomeDB->new(-db_adaptor => $core_db);
+    $gdb = Bio::EnsEMBL::Compara::GenomeDB->new_from_DBAdaptor($core_db);
     $gdb->last_release(undef);
     $gdb->first_release(software_version());
     if ($locators) {
