@@ -149,16 +149,16 @@ while( my $obj = $it->next) {
     $obj_type = "strain";
     $obj_name = ($strain->Genotype) ? $strain->Genotype->name : "";
     $assoc_type = "is_model_of";
-    $obj_id = "WB_Strain:" . $strain->name;
+    $obj_id = "WBStrain:" . $strain->name;
 
     #push @with_list, "WB:" . $gene->name if defined $gene;
-    #push @with_list, "WB_Transgene:" . $transgene->name if defined $transgene;
-    #push @with_list, "WB_Var:" . $allele->name if defined $name;
+    #push @with_list, "WBTransgene:" . $transgene->name if defined $transgene;
+    #push @with_list, "WBVar:" . $allele->name if defined $name;
   } elsif (defined $allele) {
     $obj_type = "allele";
     $obj_name = $allele->Public_name->name;
     $assoc_type = "is_implicated_in";
-    $obj_id = "WB_Var:" . $allele->name;
+    $obj_id = "WB:" . $allele->name;
 
     #push @with_list, "WB:" . $gene->name if defined $gene;
     #push @with_list, "WB_Transgene:" . $transgene->name if defined $transgene;
@@ -166,7 +166,7 @@ while( my $obj = $it->next) {
     $obj_type = "transgene";
     $obj_name = $transgene->Public_name->name;
     $assoc_type = "is_implicated_in";
-    $obj_id = "WB_Transgene:" . $transgene->name;
+    $obj_id = "WB:" . $transgene->name;
     
     #push @with_list, "WB:" . $gene->name if defined $gene;
   } elsif (defined $gene) {
@@ -196,9 +196,9 @@ while( my $obj = $it->next) {
   if ($obj->Modifier_association_type) {
     my ($mod_assoc_type) = $obj->Modifier_association_type->name;
 
-    my @mod_strain    = map { "WB_Strain:" . $_->name } $obj->Modifier_strain;
-    my @mod_transgene = map { "WB_Transgene:" . $_->name } $obj->Modifier_transgene;
-    my @mod_var       = map { "WB_Var:" . $_->name } $obj->Modifier_variation;
+    my @mod_strain    = map { "WBStrain:" . $_->name } $obj->Modifier_strain;
+    my @mod_transgene = map { "WB:" . $_->name } $obj->Modifier_transgene;
+    my @mod_var       = map { "WB:" . $_->name } $obj->Modifier_variation;
     my @mod_gene      = map { "WB:" . $_->name } $obj->Modifier_gene;
     my @mod_molecule  = map { $_->name } $obj->Modifier_molecule;
     my @mod_other     = map { $_->name } $obj->Other_modifier;
@@ -272,7 +272,7 @@ sub get_paper {
       last;
     }
   }
-  $json_paper->{modPublicationId} = "WB_REF:$wb_paper";
+  $json_paper->{modPublicationId} = "WBPaper:$wb_paper";
   if ($pmid) {
     $json_paper->{pubMedId} = "PMID:$pmid";
   }
