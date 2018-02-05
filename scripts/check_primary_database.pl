@@ -72,6 +72,7 @@ my $japonica  = $wormbase->primary('japonica');
 my $brugia    = $wormbase->primary('brugia');
 my $ovolvulus = $wormbase->primary('ovolvulus');
 my $sratti    = $wormbase->primary('sratti');
+my $tmuris    = $wormbase->primary('tmuris');
 
 if ($debug){
 print<<HERE;
@@ -84,6 +85,7 @@ $japonica
 $brugia
 $ovolvulus
 $sratti
+$tmuris
 HERE
 }
 
@@ -101,6 +103,8 @@ if ((-e $japonica) && ($species eq 'japonica')) {push(@xaceinstances,"$japonica"
 if ((-e $brugia) && ($species eq 'brugia')) {push(@xaceinstances,"$brugia");}
 if ((-e $ovolvulus) && ($species eq 'ovolvulus')) {push(@xaceinstances,"$ovolvulus");}
 if ((-e $sratti) && ($species eq 'sratti')) {push(@xaceinstances,"$sratti");}
+if ((-e $tmuris) && ($species eq 'tmuris')) {push(@xaceinstances,"$tmuris");}
+
 
 # example of running another script
 

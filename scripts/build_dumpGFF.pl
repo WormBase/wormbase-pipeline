@@ -66,55 +66,55 @@ $log->mail();
 exit(0);
 
 __DATA__
-init Genomic_canonical elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti
-init Link elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti
-init Pseudogene elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti
-init Transposon elegans pristionchus japonica brenneri briggsae remanei brugia ovolvulus sratti
-init Transposon_CDS elegans pristionchus japonica brenneri briggsae remanei brugia ovolvulus sratti
-init Transposon_Pseudogene elegans pristionchus japonica brenneri briggsae remanei brugia ovolvulus sratti
-init rRNA_Pseudogene elegans pristionchus japonica brenneri briggsae remanei brugia ovolvulus sratti
-init tRNA_Pseudogene elegans pristionchus japonica brenneri briggsae remanei brugia ovolvulus sratti
-init curated  elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti
-init history elegans briggsae pristionchus japonica brenneri brugia ovolvulus sratti
-init history_pseudogene elegans briggsae pristionchus japonica brenneri brugia ovolvulus sratti
-init history_transcript elegans briggsae pristionchus japonica brenneri brugia ovolvulus sratti
-init Non_coding_transcript elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti
-init snlRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti
-init snRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti
-init rRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti
-init scRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti
-init snoRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti
-init tRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti
-init stRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti
-init ncRNA elegans briggsae brugia japonica brenneri remanei pristionchus ovolvulus sratti
-init miRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti
-init pre_miRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti 
-init miRNA_primary_transcript elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti
-init asRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti
-init lincRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti
-init piRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti
-init 7kncRNA elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti
-blat BLAT_EST_BEST elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti
-blat BLAT_EST_OTHER elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti
-blat BLAT_NEMATODE elegans pristionchus remanei briggsae japonica brenneri brugia ovolvulus sratti
+init Genomic_canonical elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti tmuris
+init Link elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti tmuris
+init Pseudogene elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti tmuris
+init Transposon elegans pristionchus japonica brenneri briggsae remanei brugia ovolvulus sratti tmuris
+init Transposon_CDS elegans pristionchus japonica brenneri briggsae remanei brugia ovolvulus sratti tmuris
+init Transposon_Pseudogene elegans pristionchus japonica brenneri briggsae remanei brugia ovolvulus sratti tmuris
+init rRNA_Pseudogene elegans pristionchus japonica brenneri briggsae remanei brugia ovolvulus sratti tmuris
+init tRNA_Pseudogene elegans pristionchus japonica brenneri briggsae remanei brugia ovolvulus sratti tmuris
+init curated  elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti tmuris
+init history elegans briggsae pristionchus japonica brenneri brugia ovolvulus sratti tmuris
+init history_pseudogene elegans briggsae pristionchus japonica brenneri brugia ovolvulus sratti tmuris
+init history_transcript elegans briggsae pristionchus japonica brenneri brugia ovolvulus sratti tmuris
+init Non_coding_transcript elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti tmuris
+init snlRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti tmuris
+init snRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti tmuris
+init rRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti tmuris
+init scRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti tmuris
+init snoRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti tmuris
+init tRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti tmuris
+init stRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti tmuris
+init ncRNA elegans briggsae brugia japonica brenneri remanei pristionchus ovolvulus sratti tmuris
+init miRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti tmuris
+init pre_miRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti tmuris 
+init miRNA_primary_transcript elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti tmuris
+init asRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti tmuris
+init lincRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti tmuris
+init piRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti tmuris
+init 7kncRNA elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti tmuris
+blat BLAT_EST_BEST elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti tmuris
+blat BLAT_EST_OTHER elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti tmuris
+blat BLAT_NEMATODE elegans pristionchus remanei briggsae japonica brenneri brugia ovolvulus sratti tmuris
 blat BLAT_OST_BEST elegans
 blat BLAT_OST_OTHER elegans
 blat BLAT_RST_BEST elegans
 blat BLAT_RST_OTHER elegans
 blat BLAT_TC1_BEST elegans
 blat BLAT_TC1_OTHER elegans
-blat BLAT_mRNA_BEST elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti
-blat BLAT_mRNA_OTHER elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti
+blat BLAT_mRNA_BEST elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti tmuris
+blat BLAT_mRNA_OTHER elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti tmuris
 blat BLAT_ncRNA_BEST elegans
 blat BLAT_ncRNA_OTHER elegans
-blat BLAT_WASHU elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti
-blat BLAT_NEMBASE elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti
+blat BLAT_WASHU elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti tmuris
+blat BLAT_NEMBASE elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti tmuris
 blat BLAT_Trinity_BEST elegans briggsae brugia ovolvulus japonica
 blat BLAT_Trinity_OTHER elegans briggsae brugia ovolvulus japonica
-blat SL1 elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti
-blat SL2 elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti
-blat polyA_signal_sequence elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti
-blat polyA_site elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti
+blat SL1 elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti tmuris
+blat SL2 elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti tmuris
+blat polyA_signal_sequence elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti tmuris
+blat polyA_site elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti tmuris
 blat GenePairs elegans
 blat Orfeome elegans
 blat RNAi_primary elegans
@@ -125,10 +125,10 @@ blat Oligo_set elegans
 homol waba_coding elegans
 homol waba_strong elegans
 homol waba_weak elegans
-homol tandem elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti
-homol RepeatMasker elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti
-homol wublastx elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti
-homol inverted elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti
+homol tandem elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti tmuris
+homol RepeatMasker elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti tmuris
+homol wublastx elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti tmuris
+homol inverted elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti tmuris
 variation Allele elegans
 variation CGH_allele elegans
 variation Deletion_allele elegans

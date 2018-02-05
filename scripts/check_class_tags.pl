@@ -432,7 +432,19 @@ sub get_classes_and_ids_to_check {
 			       Sequence => ['SRAE_chr2', 'SRAE_scaffold1'],
 			       Transcript => 'SRAE_0000000800',
                              },
-		);
+
+		);                  'tmuris'  => { 
+			       Ace2SO => 'coding_transcript_ace2so',
+			       CDS => 'TMUE_0000001900',
+			       Feature_data => 'TMUE_scaffold351:TRF',
+			       Gene => 'XXX',
+			       Gene_name => 'TMUE_0000002363',
+			       Homol_data => 'TMUE_0000001503:wublastx_brenneri',
+			       Method => 'BLAT_EST_BEST',
+			       Protein => 'TMP:TMP00002',
+			       Sequence => ['TMUE_LG3', 'TMUE_scaffold273'],
+			       Transcript => 'TMUE_0000001726',
+                             },
 
   return $classes{$species};
 }

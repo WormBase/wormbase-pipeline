@@ -68,6 +68,7 @@ if (
     $wb->species eq 'brugia' ||
     $wb->species eq 'ovolvulus' ||
     $wb->species eq 'sratti' ||
+    $wb->species eq 'tmuris' ||
     $wb->species eq 'brugia' ||
     $wb->species eq 'pristionchus') {
   $pfam=$seq=0;
@@ -111,6 +112,8 @@ if($clones) {
     @clones = qw(OVOC_OO_000001 OVOC_OO_000008 OVOC_OO_000054 OVOC_OO_000132 OVOC_OO_000629 OVOC_OO_000690);
   } elsif ($wb->species eq 'sratti') {
     @clones = qw(SRAE_chr2 SRAE_scaffold1);
+  } elsif ($wb->species eq 'tmuris') {
+    @clones = qw(TMUE_LG3 TMUE_scaffold273);
   }
 
 
