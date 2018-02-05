@@ -29,7 +29,7 @@ GetOptions (
             'brugpep'   => \$brugpep,
             'ovolpep'   => \$ovolpep,
             'srapep'    => \$srapep,
-            'tmupep'    => \$srapep,
+            'tmupep'    => \$tmupep,
 	   );
 
 my $wormbase;
