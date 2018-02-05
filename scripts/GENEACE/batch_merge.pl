@@ -308,6 +308,12 @@ sub merge_gene {
 	  $output .= "\nGene : $livegene\nReference $references\n";
 	}
       }
+      # transfer Features
+      foreach my $feature ($deadgeneObj->at('Associated_feature')) {
+	  if (defined $feature) {
+	      $output .= "\nGene : $livegene\nAssociated_feature $feature\n";
+	  }
+      }
       
       # transfer the Ortholog tags
       foreach my $dead_Orthologs ($deadgeneObj->at('Gene_info.Ortholog')) {
