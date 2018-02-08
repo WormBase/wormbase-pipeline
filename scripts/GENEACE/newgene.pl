@@ -59,6 +59,7 @@ my %valid_species = (
   brugia    => 1,
   ovolvulus => 1,
   sratti    => 1,
+  tmuris    => 1,
 );
 my $list = join(',',keys %valid_species);
 

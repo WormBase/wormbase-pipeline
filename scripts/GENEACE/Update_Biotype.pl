@@ -138,9 +138,14 @@ $log->write_to("Using : $db for annotation data\nUsing : $gdb for primary gene d
 # example of running anther script
 #$wormbase->run_script("other_script -options", $log);
 my $command;
+if ($species =~ "tmuris") { 
+$command .= "query find Gene where Species = T*muris\n";
+}
+else {
 $command .= "query find Genes_$species\n";
+}
 $command .= "quit\n";
-
+if ($debug) {print "Command $command\n"; }
 
 my $ccount;
 my @SeqGenes;
@@ -225,10 +230,15 @@ my $ucount = 0;
 my $missedcount = 0;
 my @WBGenes;
 if ($single) {
-  @WBGenes = $gdb->fetch (-query => "FIND Gene WBGene00014836");
+  @WBGenes = $gdb->fetch (-query => "FIND Gene $single");
 }
 else {
-  @WBGenes = $gdb->fetch (-query => "FIND Genes_$species");
+    if ($species =~ "tmuris"){
+	@WBGenes = $gdb->fetch (-query => "FIND Gene where Species = T*muris");
+    }
+    else {
+	@WBGenes = $gdb->fetch (-query => "FIND Genes_$species");	
+    }
 }
 foreach my $WBGene(@WBGenes) {
     if  ($WBGene->Status eq "Dead"){

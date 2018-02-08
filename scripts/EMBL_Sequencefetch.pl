@@ -112,6 +112,7 @@ my %species2taxonid = (
 		       'brugia'            => "6279",
 		       'cangaria'          => "96668",
 		       'sratti'            => "34506",
+                       'tmuris'            => "70415",
 		       'ovolvulus'         => "6282",
 		      );
 my %taxon2species = (
@@ -124,6 +125,7 @@ my %taxon2species = (
 		     '6279' => "brugia",
 		     '96668' => "cangaria",
 		     '34506' => "sratti",
+   		     '70415' => "tmuris",
 		     '6282' => "ovolvulus",
 		    );
 

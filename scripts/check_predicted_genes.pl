@@ -446,6 +446,7 @@ sub main_gene_checks {
       my @clone_locations;
       print "$sequence - " if ($debug);
       if ($class eq 'CDS') {
+	  print "$sequence\n" if ($debug);
 	  unless (defined $sequence->CDS_child) {
 	      print "CDS : $gene_model has S_parent issues\n";
 	      next;
