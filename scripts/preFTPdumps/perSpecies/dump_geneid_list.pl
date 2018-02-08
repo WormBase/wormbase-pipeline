@@ -50,13 +50,14 @@ while(my $gene=$gene_it->next){
   if ($other_names) {
     print $of join("\t",$gene,$gene->Status,$gene->Sequence_name,$gene->CGC_name,$gene->Other_name),"\n";    
   } else {
+    my ($biotype) = ($gene->BioType) ? $gene->BioType->SO_name->name : "gene";
     print $of join(",", 
                    $tax_id,
                    $gene,
                    ($gene->CGC_name||''),
                    ($gene->Sequence_name||''),
-                   $gene->Status), "\n";
-    
+                   $gene->Status,
+                   ($gene->BioType) ? $gene->BioType->SO_name->name : "gene"), "\n";
     
   }
 }
