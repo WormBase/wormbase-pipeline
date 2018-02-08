@@ -165,6 +165,7 @@ sub invoke {
       }
     }
     close($sl_coords);
+    $db->close();
     system("cp $SL_coords_file $clone_coords_file") and croak "cant cp $SL_coords_file\n";    
   }
 
