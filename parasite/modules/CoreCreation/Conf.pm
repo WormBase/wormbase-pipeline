@@ -1,8 +1,7 @@
 #Experimental
 #Inflate the little config we need to provide into a massive one
 #Uses env vars for database passwords based on the right module load
-#Writes config to stdout
-#TODO: let config values override what this script would rather do
+# CoreCreation::Conf->new(pathToConf)->dump() - write the inflated config to stdout
 package CoreCreation::Conf;
 use YAML;
 use File::Basename;
