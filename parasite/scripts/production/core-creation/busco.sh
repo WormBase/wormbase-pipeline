@@ -28,7 +28,11 @@ result=$BUSCO_TMP/run_$species/short_summary_${species}.txt
 
 if [ ! -f "$result" ] ; then >&2 echo "Could not find the result file $result - did BUSCO succeed? " ; exit 1 ; fi
 
+echo "Parsing the result file: $result"
+
 perl -ne 'print "assembly.busco_complete\t$1\nassembly.busco_duplicated\t$2\nassembly.busco_fragmented\t$3\nassembly.busco_missing\t$4\nassembly.busco_number\t$5\n" if /C:([0-9.]+).*D:([0-9.]+).*F:([0-9.]+).*M:([0-9.]+).*n:(\d+)/' $result \
   | while read meta_key meta_value ; do
   ${PARASITE_STAGING_MYSQL}-ensrw $core_db -e "insert into meta (meta_key, meta_value) values (\"$meta_key\", \"$meta_value\");"
 done 
+
+echo "Parsed the results and inserted into the meta table. DONE"
