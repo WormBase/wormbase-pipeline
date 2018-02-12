@@ -24,11 +24,11 @@ module load busco
 
 python3 $BUSCO/BUSCO.py -sp caenorhabditis -l $BUSCO/nematoda_odb9 -o $species -i $fasta -c 8 -m genome -f -r 
 
-result=short_summary_$species/run_$species
+result=$BUSCO_TMP/run_$species/short_summary_${species}.txt
 
 if [ ! -f "$result" ] ; then >&2 echo "Could not find the result file $result - did BUSCO succeed? " ; exit 1 ; fi
 
-perl -ne 'print "assembly.busco_complete\t$1\nassembly.busco_duplicated\t$2\nassembly.bus.busco_missing\t$4\nassembly.busco_number\t$5" if /C:([0-9.]+).*D:([0-9.]+).*F:([0-9.]+).*M:([0-9.]+).*n:(\d+)/' $result \
+perl -ne 'print "assembly.busco_complete\t$1\nassembly.busco_duplicated\t$2\nassembly.busco_fragmented\t$3\nassembly.busco_missing\t$4\nassembly.busco_number\t$5\n" if /C:([0-9.]+).*D:([0-9.]+).*F:([0-9.]+).*M:([0-9.]+).*n:(\d+)/' $result \
   | while read meta_key meta_value ; do
-  $PARASITE_STAGING_MYSQL $core_db -e "insert into meta (meta_key, meta_value) values (\"$meta_key\", \"$meta_value\");"
+  ${PARASITE_STAGING_MYSQL}-ensrw $core_db -e "insert into meta (meta_key, meta_value) values (\"$meta_key\", \"$meta_value\");"
 done 
