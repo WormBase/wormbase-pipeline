@@ -1,16 +1,22 @@
 # Run busco
 
-set -euo pipefail
+set -e
 
-if [ ! -f "$1" ] ; then echo "Usage: $0 <species/species.fa>. NEMATODES ONLY" ; exit 1 ; fi 
+if [ ! -f "$1" ] ; then echo "Usage: $0 <species/species.fa>" ; exit 1 ; fi 
  
 fasta=$1
 species=$(basename $(dirname $fasta) )
 core_db=$($PARASITE_STAGING_MYSQL -e 'show databases' | grep "${species}_core_${PARASITE_VERSION}_${ENSEMBL_VERSION}" | head -n 1)
 if [ ! "core_db" ] ; then echo "Could not find core db for species $species " ; exit 1 ; fi
 
-if [ 1 -ne $($PARASITE_STAGING_MYSQL --column-names=FALSE $core_db -e 'select count(*) from meta where meta_value="Nematoda";' ) ] ; then
-   >&2 echo "$species does not look like a nematode - which is bad because we don't know what Augustus parameters and BUSCOs to use"
+if [ 1 -eq $($PARASITE_STAGING_MYSQL --column-names=FALSE $core_db -e 'select count(*) from meta where meta_value="Nematoda";' ) ] ; then
+  species_parameter_for_augustus=caenorhabditis
+  busco_library=$BUSCO/nematoda_odb9
+elif [ 1 -eq $($PARASITE_STAGING_MYSQL --column-names=FALSE $core_db -e 'select count(*) from meta where meta_value="Platyhelminthes";') ] ; then
+  species_parameter_for_augustus=schistosoma
+  busco_library=$BUSCO/metazoa_odb9
+else
+   >&2 echo "$species does not look like a nematode or a platyhelminth- which is bad because we don't know what Augustus parameters and BUSCOs to use"
    exit 1
 fi
 
@@ -22,7 +28,7 @@ cd $BUSCO_TMP
 
 module load busco
 
-python3 $BUSCO/BUSCO.py -sp caenorhabditis -l $BUSCO/nematoda_odb9 -o $species -i $fasta -c 8 -m genome -f -r 
+python3 $BUSCO/BUSCO.py -sp $species_parameter_for_augustus -l $busco_library -o $species -i $fasta -c 8 -m genome -f -r 
 
 result=$BUSCO_TMP/run_$species/short_summary_${species}.txt
 
