@@ -189,7 +189,7 @@ foreach my $method (@methods) {
     my @hit = ( $interpro_id, $start, $end, $hstart, $hend, $score, $evalue );
     push @{$motifs{$prot}}, [ @hit ];
   }
-  $log->write_to("skipped $skip entries for $method as they had no IPR #\n");
+  $log->write_to("(skipped $skip entries for $method as they had no IPR #)\n") if $skip;
 }
 
 
