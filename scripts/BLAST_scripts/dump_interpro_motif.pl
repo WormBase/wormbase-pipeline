@@ -21,8 +21,7 @@ use DBI;
 my $WPver; 
 my $database; 
 my $method; 
-my $verbose; 
-my ($ddir, $help);
+my ($ddir, $help,$verbose);
 my ($store, $test, $debug);
 
 
@@ -177,7 +176,7 @@ foreach my $method (@methods) {
   my $ref = $sth_f->fetchall_arrayref;
   $counts{$method} = scalar(@$ref);
   print "We found $counts{$method} results for $method\n";
-
+  my $skip=0;
   foreach my $aref (@$ref) {
     my ($prot, $start, $end, $hit_name, $hstart, $hend, $score, $evalue) = @$aref;
     if (!defined $score) {$score = 0}
@@ -185,13 +184,12 @@ foreach my $method (@methods) {
     # convert Database ID to InterPro ID 
     $id2interpro->execute ($hit_name);
     my $interpro_id_ref = $id2interpro->fetchrow_arrayref;
-    if (! defined $interpro_id_ref) {next} # if there is no InterPro ID then skip this one
-#    my $interpro_id = @{$$interpro_id_ref[0]};
+    if (! defined $interpro_id_ref) {next;$skip++} # if there is no InterPro ID then skip this one
     my ($interpro_id) = @{$interpro_id_ref};
-
     my @hit = ( $interpro_id, $start, $end, $hstart, $hend, $score, $evalue );
     push @{$motifs{$prot}}, [ @hit ];
   }
+  $log->write_to("skipped $skip entries for $method as they had no IPR #\n");
 }
 
 
