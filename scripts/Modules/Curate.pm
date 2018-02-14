@@ -1931,7 +1931,9 @@ sub Copy_remarks {
 
   foreach ($obj->Remark) {
     my ($remark, $evidence, $evidence_value1, $evidence_value2) = $_->row(0);
-    print $fh "Remark \"", $remark->name ,"\"";
+    my $remark_text = $remark->name;
+    $remark_text =~ s/\"/\'/g;
+    print $fh "Remark \"", $remark_text ,"\"";
     print $fh " \"", $evidence->name,"\"" if ($evidence);
     print $fh " \"", $evidence_value1->name,"\"" if ($evidence_value1);
     print $fh " \"", $evidence_value2->name,"\"" if ($evidence_value2);
