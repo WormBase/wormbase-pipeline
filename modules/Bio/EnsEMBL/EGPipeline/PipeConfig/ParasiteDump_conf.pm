@@ -40,7 +40,6 @@ sub default_options {
 
     dump_ftp        => 1,
     dump_blast      => 1,
-    dump_vep        => 0,
 
     pipeline_db => {
       -host   => $self->o('host'),
@@ -59,7 +58,7 @@ sub default_options {
     # put core species in here
     ftp_antispecies => [],
 
-    ftp_outdir => "/nfs/ftp/pub/databases/wormbase/staging/parasite/releases",
+    ftp_outdir => "$ENV{PARASITE_SCRATCH}/dumps/WBPS$ENV{PARASITE_VERSION}/FTP",
     ftp_genome	             => 1,
     ftp_genome_masked	     => 1,
     ftp_genome_softmasked    => 1,
@@ -74,7 +73,7 @@ sub default_options {
     #
     # BLAST dumping options
     #
-    blast_outdir => "/nfs/nobackup/ensemblgenomes/wormbase/parasite/ftp_dumps/vep",
+    blast_outdir => "$ENV{PARASITE_SCRATCH}/dumps/WBPS$ENV{PARASITE_VERSION}/BLAST",
     blast_species => [],
     blast_antispecies => [],
 
