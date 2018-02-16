@@ -24,8 +24,6 @@ use warnings;
 use base ('Bio::EnsEMBL::EGPipeline::FileDump::BaseDumper');
 use File::Path qw(make_path remove_tree);
 use File::Copy;
-use base qw/Bio::EnsEMBL::Production::Pipeline::Base/;
-
 
 sub param_defaults {
   my ($self) = @_;
@@ -54,9 +52,11 @@ sub run {
   my $dbname = $mc->dbc->dbname();
 
 #define file name
+  make_path($out_dir);
   my $prefix = "$prod_name.$assembly";
   my $out_file = "$out_dir/$prefix.$suffix";
 
+  
   $params .= " --host $host";
   $params .= " --port $port";
   $params .= " --user ensro";

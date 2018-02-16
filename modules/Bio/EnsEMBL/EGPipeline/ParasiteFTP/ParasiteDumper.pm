@@ -24,8 +24,6 @@ use warnings;
 use base ('Bio::EnsEMBL::EGPipeline::FileDump::BaseDumper');
 use File::Path qw(make_path remove_tree);
 use File::Copy;
-use base qw/Bio::EnsEMBL::Production::Pipeline::Base/;
-
 
 sub param_defaults {
   my ($self) = @_;
