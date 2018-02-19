@@ -66,6 +66,9 @@ sub run {
   $params .= " -dbname $dbname";
   $params .= " -outfile $out_file";
 
+# disconnect from Hive - the script might be running for a while
+  $self -> dbc && $self -> dbc -> disconnect_if_idle();
+
 #call dump script
   my $command = "perl $script $params";
 

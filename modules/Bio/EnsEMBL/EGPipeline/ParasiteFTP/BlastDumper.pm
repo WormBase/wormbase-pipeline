@@ -50,7 +50,7 @@ sub run {
   my $prod_name = ucfirst( $mc->single_value_by_key('species.production_name') );
   my $assembly = $mc->single_value_by_key('assembly.default');
   my $dbname = $mc->dbc->dbname();
-  $mc->dbc->disconnect_if_idle(); 
+  $mc->dbc->disconnect_if_idle();
 
 #define file name
   make_path($out_dir);
@@ -64,6 +64,8 @@ sub run {
   $params .= " -dbname $dbname";
   $params .= " -outfile $out_file";
 
+# disconnect from Hive - the script might be running for a while  
+  $self -> dbc && $self -> dbc -> disconnect_if_idle();
 #call dump script
   my $command = "perl $script $params";
 
