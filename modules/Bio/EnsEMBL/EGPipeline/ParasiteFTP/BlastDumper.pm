@@ -50,6 +50,7 @@ sub run {
   my $prod_name = ucfirst( $mc->single_value_by_key('species.production_name') );
   my $assembly = $mc->single_value_by_key('assembly.default');
   my $dbname = $mc->dbc->dbname();
+  $mc->dbc->disconnect_if_idle(); 
 
 #define file name
   make_path($out_dir);

@@ -51,6 +51,7 @@ sub run {
   my $bioproject = $mc->single_value_by_key('species.ftp_genome_id');
   my $dbname = $mc->dbc->dbname();
   my ($sp) = ($dbname =~ /([^_]+_[^_]+)_.*?$/); 
+  $mc->dbc->disconnect_if_idle();
 
 #create directory structure
   my $dir = "$out_dir/WBPS$ps_rel/species/$sp/$bioproject";
