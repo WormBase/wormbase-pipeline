@@ -21,8 +21,8 @@ package Bio::EnsEMBL::EGPipeline::ParasiteFTP::BlastDumper;
 use strict;
 use warnings;
 
-use base ('Bio::EnsEMBL::EGPipeline::FileDump::BaseDumper');
-use File::Path qw(make_path remove_tree);
+use base ('Bio::EnsEMBL::Hive::Process');
+use File::Path qw(make_path);
 use File::Copy;
 
 sub param_defaults {
