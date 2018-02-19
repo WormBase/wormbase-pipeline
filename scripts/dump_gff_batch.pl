@@ -9,7 +9,7 @@ use Storable;
 
 my ($debug, $test, $database,$species, $verbose, $store );
 my ($giface, $giface_server, $giface_client, $port);
-my ($gff3, $dump_dir, $rerun_if_failed, $methods, $chrom_choice);
+my ($gff3, $gff, $dump_dir, $rerun_if_failed, $methods, $chrom_choice);
 
 my $dumpGFFscript = "GFF_method_dump.pl";
 
@@ -29,6 +29,7 @@ GetOptions (
   "gifaceserver:s" => \$giface_server, 
   "gifaceclient:s" => \$giface_client, 
   "gff3"           => \$gff3,
+  "gff"            => \$gff,
   "rerunfail"      => \$rerun_if_failed,
   "species:s"	   => \$species,
   "port:s"         => \$port,
@@ -55,6 +56,9 @@ my @chroms = $wormbase->get_chromosome_names(-prefix => 1,-mito => 1);
 my $chrom_lengths = $wormbase->get_chromosome_lengths(-prefix => 1,-mito => 1);
 $wormbase->checkLSF;
 
+if ($gff) {
+    print "-gff is not a necessary command line option as the script defaulty to gff2 but this catches those who like editing the command lines instead of taking them from the build guide.\n";
+}
 my @methods     = split(/,/,join(',',$methods)) if $methods;
 my @chromosomes = $chrom_choice ? split(/,/,join(',',$chrom_choice)):@chroms;
 
