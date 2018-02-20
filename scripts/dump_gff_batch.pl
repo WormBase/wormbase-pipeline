@@ -300,6 +300,7 @@ if (@problem_cmds) {
 
 
 if (@batch_chrs and @individual_chrs) {
+  my @to_delete;
 
   if (not $log->report_errors) {
     $log->write_to("Concatenating per-sequence dumps to all-sequence dump file(s)...\n");
@@ -311,6 +312,7 @@ if (@batch_chrs and @individual_chrs) {
         foreach my $seq (@individual_chrs) {
           my $source_gff = sprintf("%s/%s_%s.gff%s", $dump_dir, $seq, $method, ($gff3) ? "3" : "");
           $wormbase->run_command("cat $source_gff >> $target_gff", $log);
+          push @to_delete, $source_gff;
         }
       } 
     } else {
@@ -318,10 +320,16 @@ if (@batch_chrs and @individual_chrs) {
       foreach my $seq (@individual_chrs) {
         my $source_gff = sprintf("%s/%s.gff%s", $dump_dir, $seq, ($gff3) ? "3" : "");
         $wormbase->run_command("cat $source_gff >> $target_gff", $log);
+        push @to_delete, $source_gff;
       }
     }
+  }
+
+  if (not $log->report_errors) {
+    $log->write_to("Appended @to_delete so deleting\n");
+    unlink @to_delete;
   } else {
-    $log->write_to("Something went wrong, so will NOT concatenate per-sequence dumps to all-sequence dump file(s)\n");
+    $log->write_to("Something went wrong with appending @to_delete, so will not delete\n");
   }
 }
 
