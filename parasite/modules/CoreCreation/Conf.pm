@@ -122,11 +122,11 @@ sub read_config {
       sprintf( "%s %s", ucfirst($spe), $cies );
     $species_conf->{meta}->{"species.species_taxonomy_id"} = $taxon_id;
     $species_conf->{meta}->{"species.taxonomy_id"}         = $taxon_id;
-    $species_conf->{meta}->{"species.url"}      = "${species}_${bioproject}";
+    $species_conf->{meta}->{"species.url"}      = sprintf( "%s_%s", ucfirst($species), $bioproject);
     $species_conf->{meta}->{"assembly.default"} = $assembly_version;
     $species_conf->{meta}->{"assembly.name"}    = $assembly_version;
-
-    my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst ) =
+    
+my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst ) =
       localtime(time);
     my $gene_build = sprintf( "%s-%02d-WormBase", $year + 1900, $mon + 1 );
     $species_conf->{meta}->{"genebuild.start_date"} = $gene_build;
