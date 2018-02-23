@@ -287,22 +287,91 @@ sub _get_revcomp {
 
 # evaluate the matrix against the sequence at the given position
 sub _evaluate {
-  my ($self, $matrix_href, $seq, $pos) = @_;
+  my ($self, $matrix_href, $seq_ref, $pos) = @_;
 
   my %matrix = %{$matrix_href};
   my $result = 0;
 
   if ($pos + $matrix{'startoffset'} < 0) {return -999;}
-  if ($pos + $matrix{'endoffset'} > length($seq) - 1) {return -999;}
+  if ($pos + $matrix{'endoffset'} > length($$seq_ref) - 1) {return -999;}
 
   for (my $i = 0; $i < @{$matrix{'a'}}; $i++) {
     my $next_position = $pos + $matrix{'startoffset'} + $i;
-    my $chr = lc substr($seq, $next_position, 1);
+    my $chr = lc substr($$seq_ref, $next_position, 1);
     if ($chr ne 'a' && $chr ne 'c' && $chr ne 'g' && $chr ne 't') {return -999;}
     $result += $matrix{$chr}->[$i];
   }
 
   return $result;
+}
+
+=head2 
+
+    Title   :   splice3_by_ref
+    Usage   :   $result = $pwm->splice3_by_ref(\$sequence, $position);
+    Function:   returns the score for a 3-prime splice site after the given position in the sequence_ref
+    Returns :   the splice site score
+    Args    :   reference of sequence to evaluate, 
+                position in the sequence to look at (starting from zero)
+                [optional] sense '+' or '-' ('+' is the default)
+
+=cut
+
+sub splice3_by_ref {
+  my ($self, $seq_ref, $pos, $sense) = @_;
+  if (!defined $sense) {$sense = '+';}
+
+  if ($sense eq '+') {
+    return $self->_evaluate($self->{splice3}, $seq_ref, $pos);
+  } else {
+    return $self->_evaluate($self->{rev_splice3}, $seq_ref, $pos);
+  }
+}
+
+=head2 
+
+    Title   :   splice5_by_ref
+    Usage   :   $result = $pwm->splice5_by_ref(\$sequence, $position);
+    Function:   returns the score for a 5-prime splice site after the given position in the sequence_ref
+    Returns :   the splice site score
+    Args    :   reference of the sequence to evaluate, 
+                position in the sequence to look at (starting from zero)
+                [optional] sense '+' or '-' ('+' is the default)
+
+=cut
+
+sub splice5_by_ref {
+  my ($self, $seq_ref, $pos, $sense) = @_;
+  if (!defined $sense) {$sense = '+';}
+
+  if ($sense eq '+') {
+    return $self->_evaluate($self->{splice5}, $seq_ref, $pos);
+  } else {
+    return $self->_evaluate($self->{rev_splice5}, $seq_ref, $pos);
+  }
+}
+
+=head2 
+
+    Title   :   atg_by_ref
+    Usage   :   $result = $pwm->atg_by_ref(\$sequence, $position);
+    Function:   returns the score for a START codon starting at the given position in the sequence_ref
+    Returns :   the START codon score
+    Args    :   reference of the sequence to evaluate, 
+                position in the sequence to look at (starting from zero)
+                [optional] sense '+' or '-' ('+' is the default)
+
+=cut
+
+sub atg_by_ref {
+  my ($self, $seq_ref, $pos, $sense) = @_;
+  if (!defined $sense) {$sense = '+';}
+
+  if ($sense eq '+') {
+    return $self->_evaluate($self->{atg}, $seq_ref, $pos);
+  } else {
+    return $self->_evaluate($self->{rev_atg}, $seq_ref, $pos);
+  }
 }
 
 =head2 
@@ -322,9 +391,9 @@ sub splice3 {
   if (!defined $sense) {$sense = '+';}
 
   if ($sense eq '+') {
-    return $self->_evaluate($self->{splice3}, $seq, $pos);
+    return $self->_evaluate($self->{splice3}, \$seq, $pos);
   } else {
-    return $self->_evaluate($self->{rev_splice3}, $seq, $pos);
+    return $self->_evaluate($self->{rev_splice3}, \$seq, $pos);
   }
 }
 
@@ -345,9 +414,9 @@ sub splice5 {
   if (!defined $sense) {$sense = '+';}
 
   if ($sense eq '+') {
-    return $self->_evaluate($self->{splice5}, $seq, $pos);
+    return $self->_evaluate($self->{splice5}, \$seq, $pos);
   } else {
-    return $self->_evaluate($self->{rev_splice5}, $seq, $pos);
+    return $self->_evaluate($self->{rev_splice5}, \$seq, $pos);
   }
 }
 
@@ -368,9 +437,9 @@ sub atg {
   if (!defined $sense) {$sense = '+';}
 
   if ($sense eq '+') {
-    return $self->_evaluate($self->{atg}, $seq, $pos);
+    return $self->_evaluate($self->{atg}, \$seq, $pos);
   } else {
-    return $self->_evaluate($self->{rev_atg}, $seq, $pos);
+    return $self->_evaluate($self->{rev_atg}, \$seq, $pos);
   }
 }
 
