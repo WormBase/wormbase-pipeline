@@ -48,7 +48,6 @@ my @script_conf = (
   { script => 'dump_species_gene_interactions.pl',       output => 'interactions.txt'                },
   { script => 'dump_interpolated.pl',                    output => 'interpolated_clones.txt'         },
   { script => 'dump_promoters.pl',                       output => 'potential_promotors.fa'          },
-  { script => 'dump_resource_gene_ids.pl',               output => 'resource_gene_ids.txt'           },
   { script => 'dump_swissprot.pl',                       output => 'swissprot.txt'                   },
   { script => 'dump_ko.pl',                              output => 'knockout_consortium_alleles.xml' },
   { script => 'dump_cdna2orf.pl',                        output => 'cdna2orf.txt'                    },
