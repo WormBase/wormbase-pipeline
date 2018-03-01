@@ -134,7 +134,7 @@ sub new {
   
   $self->{Isoform_details} = ();
   
-  $self->{species} = $self->{wormbase}->species;
+  $self->{species} = $self->{wormbase}->{species};
 
   if ($self->{species} eq 'elegans' || $self->{species} eq 'sratti' || $self->{species} eq 'tmuris') {
     $self->{next_cds_id} = ();
@@ -1932,7 +1932,8 @@ sub Copy_remarks {
   foreach ($obj->Remark) {
     my ($remark, $evidence, $evidence_value1, $evidence_value2) = $_->row(0);
     my $remark_text = $remark->name;
-    $remark_text =~ s/\"/\'/g;
+    $remark_text =~ s/\n//g; # there are some newlines scattered about - remove them
+    $remark_text =~ s/\"/\'/g; # convert double quotes to single quotes
     print $fh "Remark \"", $remark_text ,"\"";
     print $fh " \"", $evidence->name,"\"" if ($evidence);
     print $fh " \"", $evidence_value1->name,"\"" if ($evidence_value1);
