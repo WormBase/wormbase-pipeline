@@ -1501,6 +1501,7 @@ sub change_class {
   $self->Add_Gene($new_class, $existing, $gene);
   $self->Copy_db_remark($class, $existing, $new_class, $existing);
   $self->Copy_remarks($class, $existing, $new_class, $existing); 
+  $self->Copy_associated_features($class, $existing, $new_class, $existing);
   $self->Add_remark($new_class, $existing, "This has been converted to a $new_class based on the RNASeq data.");
   $self->Last_reviewed($new_class, $existing);
   $self->Copy_structure_to_new_class($class, $existing, $new_class);
@@ -1761,6 +1762,7 @@ sub Make_history {
   print $fh "\n";
 
   $self->Copy_remarks($class, $existing, $class, $history);
+  $self->Copy_associated_features($class, $existing, $class, $history);
 
   return "$history";
 }
@@ -1935,6 +1937,31 @@ sub Copy_remarks {
     $remark_text =~ s/\n//g; # there are some newlines scattered about - remove them
     $remark_text =~ s/\"/\'/g; # convert double quotes to single quotes
     print $fh "Remark \"", $remark_text ,"\"";
+    print $fh " \"", $evidence->name,"\"" if ($evidence);
+    print $fh " \"", $evidence_value1->name,"\"" if ($evidence_value1);
+    print $fh " \"", $evidence_value2->name,"\"" if ($evidence_value2);
+    print $fh "\n";
+  }
+  print $fh "\n";
+
+}
+
+######################################
+# copy Associated_features
+#
+sub Copy_associated_features {
+  my ($self, $class, $existing, $new_class, $new_seqname) = @_;
+
+  my $obj = $self->{ace}->fetch($class => "$existing");
+
+  my $fh = $self->{out};
+  print $fh "\n// Copy_associated_features\n";
+  print $fh "$new_class : $new_seqname\n";
+
+  foreach ($obj->Associated_feature) {
+    my ($feature, $evidence, $evidence_value1, $evidence_value2) = $_->row(0);
+    my $feature_name = $feature->name;
+    print $fh "Associated_feature \"", $feature_name ,"\"";
     print $fh " \"", $evidence->name,"\"" if ($evidence);
     print $fh " \"", $evidence_value1->name,"\"" if ($evidence_value1);
     print $fh " \"", $evidence_value2->name,"\"" if ($evidence_value2);
@@ -2335,17 +2362,118 @@ sub set_Tag {
 }
 ######################################
 # &Make_isoform_into_CDS($class, $cdsl, $cds);
+# rename without isoform_letter
 
 sub Make_isoform_into_CDS {
   my ($self, $class, $isoform, $cds) = @_;
   
-  # rename without isoform_letter
+
+## Used to do it this way, but it was frequently omitting to make the start and end span positions in the Sequence's CDS_child section
+#  print $fh "\n// Make_isoform_into_CDS\n";
+#  print $fh "-R $class $isoform $cds\n";
+#  print $fh "\n";
+#  print $fh "$class : $cds \n";
+#  print $fh "-D Isoform\n";
+#  print $fh "\n";
+
+
+## ... so now we make the whole object explicitly tag-by-tag with code reused from make_history()
+  my $clone_tag; # where it lives under the Sequence object tags
+  my $transcript_type;
+  my $transcript_type_value1;
+  my $transcript_type_value2;
+  my $pseudogene_type;
+
+  my $date = $self->date();
+
+  my $obj = $self->{ace}->fetch($class => "$isoform");
+  if (!defined $obj) {
+    die "ERROR Invalid $class. $isoform is not a valid $class name";
+  }
+
+  if ($class eq 'Pseudogene') {
+    $pseudogene_type = $obj->Type->name;
+
+  } elsif ($class eq 'Transcript') {
+    ($transcript_type, $transcript_type_value1, $transcript_type_value2) = $obj->Transcript->row(0);
+  }
+  
+  if ($self->{ace}->fetch('CDS' => $cds) || $self->{ace}->fetch('Pseudogene' => $cds) || $self->{ace}->fetch('Transcript' => $cds)) {
+    warn "The non-isoform object '$cds' already exists - not making this again\n";
+    return $cds;
+  }
+    
+  # NB we don't make a copy of the 'Isoform' tag for obvious reasons
+  my $method = $obj->Method;
+  my $species = $obj->Species->name;
+  my $gene = $obj->Gene->name;
+  my $lab = $obj->From_laboratory->name;
+  my $seq = $obj->Sequence->name;
+  my $brief = $obj->fetch('Brief_identification'); # this tag may not exist
+  my $brief_identification = $obj->Brief_identification->name if ($brief);
+  my $corresponding_protein = $obj->fetch('Corresponding_protein'); # this tag may not exist
+  my $corresponding_protein_name = $obj->Corresponding_protein->name if ($corresponding_protein);
+  my $artificial_intron = $obj->fetch('Artificial_intron'); # this tag may not exist
+  my $artificial_intron_name = $obj->Artificial_intron->name if ($artificial_intron);
+  my $genetic_code = $obj->fetch('Genetic_code'); # this tag may not exist
+  my $genetic_code_name = $obj->Genetic_code->name if ($genetic_code);
+
+  # parent clone coords
+  my $clone = $obj->Sequence;
+  my @clone_entry;
+  $clone_tag = $self->CloneTag($class);
+  @clone_entry = $clone->${clone_tag};
+
+  my $start;
+  my $end;
+  foreach my $CDS ( @clone_entry ) {
+    next unless ($CDS->name eq "$isoform");
+    $start = $CDS->right->name;
+    $end = $CDS->right->right->name;
+    last;
+  }
+
   my $fh = $self->{out};
   print $fh "\n// Make_isoform_into_CDS\n";
-  print $fh "-R $class $isoform $cds\n";
+  print $fh "Sequence : $seq\n";
+  print $fh "$clone_tag \"$cds\" $start $end\n";
+
+  print $fh "\n$class : $cds\n";
+
+  foreach ($obj->Source_exons) {
+    my ($start, $end) = $_->row(0);
+    print $fh "Source_exons ",$start->name," ",$end->name,"\n";
+  }
+
+  print $fh "Sequence $seq\n";
+  print $fh "From_laboratory $lab\n";
+  print $fh "Gene $gene\n" if $gene;
+  print $fh "Species \"$species\"\n" if $species;
+  print $fh "Evidence Curator_confirmed $self->{person}\n";
+  print $fh "Last_reviewed now $self->{person}\n";
+  print $fh "Remark \"[$date $ENV{USER}] Convert from an isoform to a single CDS.\"\n";
+  print $fh "Method $method\n";
+  print $fh "Brief_identification \"$brief_identification\"\n" if ($brief_identification);
+  print $fh "Corresponding_protein \"$corresponding_protein_name\"\n" if ($corresponding_protein_name);
+  print $fh "CDS\n" if ($class eq 'CDS');
+  print $fh "CDS_predicted_by ${\$obj->CDS_predicted_by}\n" if ($class eq 'CDS' && $obj->CDS_predicted_by);
+  print $fh "Artificial_intron $artificial_intron_name\n" if ($artificial_intron_name);
+  print $fh "Genetic_code_name  $genetic_code_name\n" if ($genetic_code_name);
+
+  print $fh "$pseudogene_type" if ($pseudogene_type);
+
+  print $fh "$transcript_type" if ($transcript_type);
+  print $fh " \"",$transcript_type_value1->name,"\"" if ($transcript_type_value1);
+  print $fh " \"",$transcript_type_value2->name,"\"" if ($transcript_type_value2);
+  print $fh "\n" if ($transcript_type);
+
   print $fh "\n";
-  print $fh "$class : $cds \n";
-  print $fh "-D Isoform\n";
+
+  $self->Copy_remarks($class, $isoform, $class, $cds);
+  $self->Copy_associated_features($class, $isoform, $class, $cds);
+
+  # remove the old isoform object
+  print $fh "-D $class $isoform \n";
   print $fh "\n";
 
 }
