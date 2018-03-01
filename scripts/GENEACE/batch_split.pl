@@ -123,6 +123,11 @@ while (<FILE>) {
     $newgene = $4;
     $species = $5;
     $actualcount++;
+    
+    if ($user !~ /^WBPerson/) {
+      $user = "WBPerson" . $user;
+    }
+
     &split_gene;
   }
   elsif (/\w+/) {
