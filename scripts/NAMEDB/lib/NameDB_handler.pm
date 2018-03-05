@@ -186,6 +186,12 @@ sub validate_name {
                                      'Sequence' => 'SRAE_[\dXM]\d+$',
                                      'Public_name' => '^Sra-[a-z21]{3,4}-[1-9]\d*(\.\d+)?$|^SRAE_[\dXM]\d+$'
                                      },
+                         'tmuris' => {
+                                      'CGC' => '^Tmu-[a-z21]{3,4}-[1-9]\d*(\.\d+)?$',
+                                      'Sequence' => '^TMUE_[0123M]\d{9}$',
+                                      'Public_name' => '^Tmu-[a-z21]{3,4}-[1-9]\d*(\.\d+)?$|^TMUE_[0123M]\d{9}$'
+                                     }
+
 		      };
 
     unless ( $name =~ /$name_checks->{$species}->{$type}/ ) {
