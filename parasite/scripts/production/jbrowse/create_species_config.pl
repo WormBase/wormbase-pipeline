@@ -9,7 +9,7 @@ use Getopt::Long;
 use IO::Uncompress::Gunzip qw(gunzip);
 use Log::Log4perl qw(:easy);
 use Pod::Usage qw(pod2usage);
-
+use FindBin qw($Bin);
 Log::Log4perl->easy_init($INFO);
 my $logger = get_logger();
 
@@ -18,18 +18,17 @@ if(!@ARGV) {
   pod2usage(1);
   exit;
 }
-my ($ftp_dir, $jbrowse_path, $out_dir, $worm_pipeline_dir, $species_name);
+my ($ftp_dir, $jbrowse_path, $out_dir, $species_name);
 GetOptions(
     'ftp_dir=s'           => \$ftp_dir,
     'jbrowse_path=s'      => \$jbrowse_path,
     'out_dir=s'           => \$out_dir,
-    'worm_pipeline_dir=s' => \$worm_pipeline_dir,
     'species=s'           => \$species_name
   );
 
 ## Load the GFF3 config into memory - we only want to do this once
 my @gff3_config;
-open(FILE, "$worm_pipeline_dir/parasite/scripts/production/jbrowse/gff3_tracks.tsv") or $logger->logdie("Cannot open GFF3 track configuration file: $!");
+open(FILE, "$Bin/gff3_tracks.tsv") or $logger->logdie("Cannot open GFF3 track configuration file: $!");
 foreach(<FILE>) {
   chomp;
   my @parts = split("\t", $_);
@@ -89,7 +88,7 @@ for my $species (@species) {
     close(TRACKJSON);
     
     ## Copy the functions file
-    copy("$worm_pipeline_dir/parasite/scripts/production/jbrowse/includes/functions.conf",  "$out_dir/$prod_name/data/functions.conf");
+    copy("$Bin/includes/functions.conf",  "$out_dir/$prod_name/data/functions.conf");
     
     ## Get the FASTA
     $logger->info("Retrieving and unzipping $fasta_file.gz");
@@ -164,4 +163,3 @@ create_species_config.pl - produce a JBrowse configuration from a WormBase ParaS
       --ftp_dir <path to filesystem location of FTP site> \
       --jbrowse_path <path to JBrowse check out>          \
       --out_dir <output directory>                        \
-      --worm_pipeline_dir <path to check out of wormbase-pipeline repo>
