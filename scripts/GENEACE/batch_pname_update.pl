@@ -40,7 +40,7 @@ use Getopt::Long;
   -test      use the test nameserver  <Optional 4 testing>
   -user      username                 <Mandatory>
   -pass      password                 <Mandatory>
-  -cgc       this also adds the name as a cgc name in the nameserver
+  -cgc       this also adds the name as a cgc name in the nameserver if used with the -cgc option
   -newonly   modifies what is necessary in the input file
 
 e.g. perl pname_update.pl -user blah -pass blah -species elegans -test -file variation_name_data
@@ -94,6 +94,7 @@ die "-domain option is mandatory\n" unless $DOMAIN;
 die "-user option is mandatory\n" unless $USER;
 die "-pass option is mandatory\n" unless $PASS;
 die "-file option is mandatory\n" unless $file;
+die "-cgc is only available with -newonly" unless ($cgc && $newonly);
 
 my $DB = $wormbase->test ? 'test_wbgene_id;utlt-db:3307' : 'nameserver_live;web-wwwdb-core-02:3449';
 my $db = NameDB_handler->new($DB,$USER,$PASS);
@@ -117,12 +118,12 @@ while (<DATA>) {
   else {
       if ($_ =~/(WB\S+\d{8})\s+(\S+)\s+(\S+)/)	{
 	  $log->write_to ("\nProcessing $_\n");
-	  if (&check_name_exists($2)) {
+	  #if (&check_name_exists($2)) {
 	      &addname($1,$3,$cgc)
-	  }
-	  else {
-	      $log->write_to ("ERROR: ID $1 has a different Public name to that supplied $2\n");
-	  }
+	  #}
+	  #else {
+	  #    $log->write_to ("ERROR: ID $1 has a different Public name to that supplied $2\n");
+	  #}
       }
       else {
 	  $log->write_to ("\nERROR: $_ has a line format error\n");
@@ -151,11 +152,15 @@ sub addname {
   my $ID = shift;
   my $NEW = shift;
   my $CGC = shift;
-  $db->addName($ID,'Public_name'=>$NEW);
-  $log->write_to ("$NEW added to $ID\n");
+  unless ($CGC) {
+      $log->write_to ("$NEW added to $ID as Sequence and Public_name\n");
+      $db->addName($ID,'Public_name'=>$NEW) unless ($CGC);
+      $db->addName($ID,'Sequence'=>$NEW);
+  }
   if ($CGC) {
-    $db->addName($ID,'CGC'=>$NEW);
-    $log->write_to ("$NEW also added to $ID as CGC_name\n");
-}
- 
+      $db->addName($ID,'Public_name'=>$NEW);
+      $log->write_to ("$NEW added to as a Public_name to $ID\n");
+      $db->addName($ID,'CGC'=>$NEW);
+      $log->write_to ("$NEW also added to $ID as CGC_name\n");
+  }
 }
