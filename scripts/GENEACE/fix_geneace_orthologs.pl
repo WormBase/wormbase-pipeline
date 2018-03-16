@@ -1,4 +1,13 @@
 #!/usr/bin/env perl
+#
+# perl $CVS_DIR/GENEACE/fix_geneace_orthologs.pl -database ~/DATABASES/geneace/ -outfile Live_orthocheck.out
+#
+# Script to fix the analysis/evidence meta data that sometimes gets lost when manually moving orthologs/when genes are merged split/manually generated and loaded.
+#
+# Can use the -species option to only check the genes in that core species, but defaults to all Live genes with Orthologs
+#
+
+
 use strict;
 use lib $ENV{"CVS_DIR"};
 use Wormbase;
@@ -9,14 +18,30 @@ use Getopt::Long;
 use GENEACE::Geneace;
 use File::Path;
 
-my ($species, $database, $out);
+my ($species, $database, $out, $debug, $wormbase);
 GetOptions ("species:s"        => \$species,
 	    "database:s" => \$database,
-	    "outfile:s" => \$out
+	    "outfile:s" => \$out,
+	    "debug:s" => \$debug
     );
 
+  $wormbase = Wormbase->new( -debug    => $debug,
+                             -organism => $species,
+      );
+
+my $full_species_name;
+if ($species){
+    $full_species_name = $wormbase->full_name;
+}
+
 my $db = Ace->connect(-path => $database,) || die("Ace::Error");
-my $query = "find Gene Species=\"${species}\"; Ortholog";
+my $query;
+if ($species) {
+    $query = "find Gene Species=\"${full_species_name}\"; Ortholog";
+}
+else {
+    $query = "find Gene; Live; Ortholog";
+}
 my $genes = $db->fetch_many(-query => $query);
 open (ACE,">$out") || die("Out::Error");
 my $count;
