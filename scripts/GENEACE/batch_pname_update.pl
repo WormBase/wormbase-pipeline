@@ -41,6 +41,8 @@ use Getopt::Long;
   -user      username                 <Mandatory>
   -pass      password                 <Mandatory>
   -cgc       this also adds the name as a cgc name in the nameserver if used with the -cgc option
+  -public    this only tries to add the name as a Public_name - used to update missing Public_names
+  -sequence    this only tries to add the name as a Sequence_name - used to update missing Sequence_names
   -newonly   modifies what is necessary in the input file
 
 e.g. perl pname_update.pl -user blah -pass blah -species elegans -test -file variation_name_data
@@ -54,7 +56,7 @@ e.g. perl pname_update.pl -user blah -pass blah -species elegans -test -file var
 my $PASS;
 my $USER;
 my $DOMAIN;
-my ($debug, $test, $store, $species, $file,$cgc,$newonly);
+my ($debug, $test, $store, $species, $file, $cgc, $public, $sequence, $newonly);
 
 GetOptions (
 	    "file=s"     => \$file,
@@ -66,6 +68,8 @@ GetOptions (
 	    "user:s"	 => \$USER,
 	    "pass:s"	 => \$PASS,
 	    "cgc"        => \$cgc,
+	    "public"     => \$public,
+	    "sequence"   => \$sequence,
             "newonly"    => \$newonly,
 	   );
 
@@ -94,7 +98,11 @@ die "-domain option is mandatory\n" unless $DOMAIN;
 die "-user option is mandatory\n" unless $USER;
 die "-pass option is mandatory\n" unless $PASS;
 die "-file option is mandatory\n" unless $file;
-die "-cgc is only available with -newonly" unless ($cgc && $newonly);
+if (!$newonly) {
+  die "-cgc is only available with -newonly" if ($cgc);
+  die "-public is only available with -newonly" if ($public);
+  die "-sequence is only available with -newonly" if ($sequence);
+}
 
 my $DB = $wormbase->test ? 'test_wbgene_id;utlt-db:3307' : 'nameserver_live;web-wwwdb-core-02:3449';
 my $db = NameDB_handler->new($DB,$USER,$PASS);
@@ -108,7 +116,11 @@ while (<DATA>) {
   if ($newonly) {
       if ($_ =~/(WB\S+\d{8})\s+(\S+)/)	{
 	  $log->write_to ("\nProcessing $_\n");
-	      &addname($1,$2,$cgc)
+	  if (&check_name_exists($2)) {
+	    $log->write_to ("\nERROR: $_ CGC name already exists\n");
+	  } else {
+	    &addname($1, $2, $cgc, $public, $sequence)
+	  }
       }
       else {
 	  $log->write_to ("\nERROR: $_ has a line format error\n");
@@ -119,7 +131,7 @@ while (<DATA>) {
       if ($_ =~/(WB\S+\d{8})\s+(\S+)\s+(\S+)/)	{
 	  $log->write_to ("\nProcessing $_\n");
 	  #if (&check_name_exists($2)) {
-	      &addname($1,$3,$cgc)
+	      &addname($1, $3, $cgc, $public, $sequence)
 	  #}
 	  #else {
 	  #    $log->write_to ("ERROR: ID $1 has a different Public name to that supplied $2\n");
@@ -139,7 +151,7 @@ sub check_name_exists {
   my $name = shift;
   my $ID = $db->idGetByTypedName('Public_name'=>$name)->[0];
   unless($ID) {  
-    $log->write_to ("ERROR: $name does not exist in the nameserver\n");
+#    $log->write_to ("ERROR: $name does not exist in the nameserver\n");
     return undef;
   }
   else {
@@ -152,15 +164,27 @@ sub addname {
   my $ID = shift;
   my $NEW = shift;
   my $CGC = shift;
-  unless ($CGC) {
-      $log->write_to ("$NEW added to $ID as Sequence and Public_name\n");
-      $db->addName($ID,'Public_name'=>$NEW) unless ($CGC);
-      $db->addName($ID,'Sequence'=>$NEW);
-  }
+  my $PUBLIC = shift;
+  my $SEQUENCE = shift;
+
   if ($CGC) {
       $db->addName($ID,'Public_name'=>$NEW);
       $log->write_to ("$NEW added to as a Public_name to $ID\n");
       $db->addName($ID,'CGC'=>$NEW);
       $log->write_to ("$NEW also added to $ID as CGC_name\n");
+
+  } elsif ($PUBLIC) {
+      $log->write_to ("$NEW added to $ID as Public_name\n");
+      $db->addName($ID,'Public_name'=>$NEW);
+
+  } elsif ($SEQUENCE) {
+    $log->write_to ("$NEW added to $ID as Sequence_name\n");
+    $db->addName($ID,'Sequence'=>$NEW);
+
+  } else {
+      $log->write_to ("$NEW added to $ID as Sequence and Public_name\n");
+      $db->addName($ID,'Public_name'=>$NEW);
+      $db->addName($ID,'Sequence'=>$NEW);
   }
+  
 }
