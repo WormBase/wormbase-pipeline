@@ -14,18 +14,35 @@ do
   mysql-ps-rel-ensrw -e "CREATE DATABASE $DB"
   mysql-ps-rel-ensrw $DB < $DB.sql
   mysql-ps-rel-ensrw mysqlcheck -o $DB
-  mysqldbcompare --server1=$stagingurl --server2=$(echo $(mysql-ps-rel details url) | awk '{ sub(/^mysql:\/\//,""); print }' | awk '{ sub(/\/$/,""); print }') $DB:$DB
+  diff_and_assert $PARASITE_STAGING_MYSQL mysql-ps-rel-ensrw $DB
   echo "Loading to mysql-ps-rest-rel"
   mysql-ps-rest-rel-ensrw -e "CREATE DATABASE $DB"
   mysql-ps-rest-rel-ensrw $DB < $DB.sql
   mysql-ps-rest-rel-ensrw mysqlcheck -o $DB
-  mysqldbcompare --server1=$stagingurl --server2=$(echo $(mysql-ps-rest-rel details url) | awk '{ sub(/^mysql:\/\//,""); print }' | awk '{ sub(/\/$/,""); print }') $DB:$DB
+  diff_and_assert $PARASITE_STAGING_MYSQL mysql-ps-rest-rel-ensrw $DB
   echo "Loading to mysql-ps-intrel"
   mysql-ps-intrel-ensrw -e "CREATE DATABASE $DB"
   mysql-ps-intrel-ensrw $DB < $DB.sql
   mysql-ps-intrel-ensrw mysqlcheck -o $DB
-  mysqldbcompare --server1=$stagingurl --server2=$(echo $(mysql-ps-intrel details url) | awk '{ sub(/^mysql:\/\//,""); print }' | awk '{ sub(/\/$/,""); print }') $DB:$DB
+  diff_and_assert $PARASITE_STAGING_MYSQL mysql-ps-intrel-ensrw $DB
 done
+
+diff_and_assert(){
+  if [ $(diff_from_schema "$@" | wc -l) -gt 0 ]; then
+    echo "WARNING - tables not the same: $@"
+    return 1
+  else
+    return 0
+  fi
+}
+diff_from_schema(){
+ server_1=$1
+ server_2=$2
+ core_db=$3
+ diff \
+        <($(which $server_1) -e "select TABLE_NAME,TABLE_ROWS from information_schema.TABLES where TABLE_SCHEMA=\"$core_db\" order by TABLE_NAME") \
+        <($(which $server_2) -e "select TABLE_NAME,TABLE_ROWS from information_schema.TABLES where TABLE_SCHEMA=\"$core_db\" order by TABLE_NAME")
+}
 
 # Compress the archive then push to the EBI Archive Freezer
 echo "Creating release archive for the EBI Freezer"
