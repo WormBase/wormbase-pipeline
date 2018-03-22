@@ -476,18 +476,19 @@ sub write_new_orthology {
     $version++;
 
     $assigned_names{$new_name} = $ortholog;
-    print $ace "\nGene : $ortholog\nVersion $version\nCGC_name $new_name From_analysis Inferred_from_orthology\n";
+    print $ace "\nGene : $ortholog\nVersion $version\n";
+    print $ace "CGC_name $new_name From_analysis Inferred_from_orthology\n";
     print $ace "Public_name $new_name\n";
     print $ace "Version_change $version now $person{$user} Name_change CGC_name $new_name\n";
     my ($class) = $new_name =~ /-(\w+)-/;
     print $ace "Gene_class $class\n";
-#    print "Transfering CGC_name: $new_name from $gene to $ortholog";
     $log->write_to("Transfering CGC_name: $new_name from $gene to $ortholog");
 
     if($geneObj->CGC_name) {
 	#get existing evidence
 	my $evidence = $geneObj->CGC_name->right(2);
 	my $old_name = $geneObj->CGC_name->name;
+	if ($new_name eq $old_name) {$log->log_and_die("ERROR - Attempt to assign the same existing CGC_name $new_name to $ortholog\n")}  # 
 	my $old_class = $geneObj->Gene_class->name;
 	print $ace "Version_change ",$version," now $person{$user} Name_change Other_name $old_name\n";
 	print $ace "Other_name $old_name\n";
@@ -498,8 +499,19 @@ sub write_new_orthology {
 
 	#gene class update
 	print $ace "\nGene_class : $old_class\nOld_member $old_name\n";
-#	print " and replacing $old_name";
 	$log->write_to(" and replacing $old_name");
+
+	# If there is an Other_name that is the same as the new CGC name, then remove it.
+	if ($geneObj->Other_name) {
+	  my @other_name = $geneObj->Other_name;
+	  foreach my $other_name (@other_name) {
+	    if ($other_name->name eq $new_name) {
+	      print $ace "\nGene : $ortholog\n";
+	      print $ace "-D Other_name $other_name\n";
+	    }
+	  }
+	}
+
     }
 
     print $namedb "$ortholog\t$new_name\n";
