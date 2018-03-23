@@ -74,6 +74,7 @@ my %checked_small_genes = (
 			   'C04G2.1b' => 1, 
 			   'C08H9.18' => 1,
 			   'C12D8.21b' => 1,
+			   'C16A11.5e' => 1,
 			   'C18D4.12' => 1,
 			   'C32B5.18' => 1,
 			   'C33A12.19b' => 1,
@@ -180,6 +181,73 @@ my %checked_small_intron = (
 			    'R74.3a' => 1, # 23bp intron which switches frame to give an alternate 3' end to the protein. This isoform encodes the active form of xbp-1.
 			    'R74.3c' => 1, # 23bp intron which switches frame to give an alternate 3' end to the protein.
 			   );
+
+
+# these CDS sequence do not start with the canonical AUG codon
+# many of them are micro-ORF genes taken from the sORF database
+# but about 10 of them are larger genes
+my %non_canonical_initiation = (
+				'B0041.12' => 1, # 'gtg'
+				'B0361.14' => 1, # 'ttg'
+				'C07G2.5' => 1, # 'ttg'
+				'C08B6.18' => 1, # 'ttg'
+				'C09E8.6' => 1, # 'gtg'
+				'C13F10.8' => 1, # 'gtg'
+				'C14C10.10' => 1, # 'ctg'
+				'C26H9A.4' => 1, # 'gtg'
+				'C34D10.5' => 1, # 'ctg'
+				'C34E10.12b' => 1, # 'gtg'
+				'C37C3.8c' => 1, # 'att'
+				'C48A7.16' => 1, # 'gtg'
+				'C53H9.4' => 1, # 'gtg'
+				'C54A12.4' => 1, # 'ctg'
+				'C56G2.22' => 1, # 'ttg'
+				'F07F6.2' => 1, # 'att'
+				'F08B12.11' => 1, # 'ctg'
+				'F08C6.18' => 1, # 'ctg'
+				'F13G3.15' => 1, # 'gtg'
+				'F20B6.10a' => 1, # 'ttg'
+				'F20B6.10b' => 1, # 'gtg'
+				'F27D4.12' => 1, # 'ttg'
+				'F43C9.2c' => 1, # 'ttg'
+				'F44E5.17' => 1, # 'ctg'
+				'F45H11.8' => 1, # 'atc'
+				'F52G3.7' => 1, # 'ttg'
+				'F53F10.2c' => 1, # 'ttg'
+				'F53F10.2d' => 1, # 'ttg'
+				'F53F10.2e' => 1, # 'ctg'
+				'F53F10.2f' => 1, # 'gtg'
+				'F53G2.12b' => 1, # 'ctg'
+				'F53G2.12c' => 1, # 'gtg'
+				'K04G2.11' => 1, # scbp-2
+				'K11D12.14' => 1, # 'ctg'
+				'R10E9.4' => 1, # 'ctg'
+				'R12B2.13' => 1, # 'ttg'
+				'T03G6.7' => 1, # 'ctg'
+				'T04C10.11' => 1, # 'ctg'
+				'T05A8.11' => 1, # 'ctg'
+				'T06D10.8' => 1, # 'ttg'
+				'T06E8.8' => 1, # 'ctg'
+				'T09F3.7' => 1, # 'ctg'
+				'T17H7.4m' => 1, # 'gtg'
+				'T19D2.13a' => 1, # 'gtg'
+				'T19D2.13b' => 1, # 'ctg'
+				'T23F2.13' => 1, # 'gtg'
+				'T24D1.7' => 1, # 'ttg'
+				'T28F3.11' => 1, # 'gtg'
+				'W02D3.13b' => 1, # 'ctg'
+				'W09G3.16' => 1, # 'gtg'
+				'W09G10.9' => 1, # 'atc'
+				'Y32F6B.9' => 1, # 'ttg'
+				'Y39G8B.13' => 1, # 'ttg'
+				'Y44E3A.7' => 1, # 'gtg'
+				'Y55B1BL.2' => 1, # 'gtg'
+				'Y62E10A.2' => 1, # 'ttg'
+				'Y75B8A.63' => 1, # 'ctg'
+				'Y92H12BL.6' => 1, # 'gtg'
+				'ZC328.8a' => 1, # 'ctg'
+			       );
+
 
 my $cds_regex = $wormbase->cds_regex;
 my $cds_regex_noend = $wormbase->seq_name_regex;
@@ -912,7 +980,7 @@ sub test_gene_sequence_for_errors {
 	  }
 	}
 	# look for incorrect start codons(CDS specific)
-	if ($gene_model->name eq "K04G2.11") {
+	if (exists $non_canonical_initiation{$gene_model->name}) {
 	  print "WARNING: $gene_model  intentionally utilises a novel '$start_codon' start codon......Ignoring\n" if $verbose;
 	}
 	if (($start_codon ne 'atg') && ($method_test eq 'curated') && ($start_tag ne "present") && ($gene_model->name ne "K04G2.11")) {
