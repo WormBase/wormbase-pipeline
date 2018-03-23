@@ -981,9 +981,9 @@ sub test_gene_sequence_for_errors {
 	}
 	# look for incorrect start codons(CDS specific)
 	if (exists $non_canonical_initiation{$gene_model->name}) {
-	  print "WARNING: $gene_model  intentionally utilises a novel '$start_codon' start codon......Ignoring\n" if $verbose;
+	  print "INFORMATION: $gene_model  intentionally utilises a novel '$start_codon' start codon......Ignoring\n" if $verbose;
 	}
-	if (($start_codon ne 'atg') && ($method_test eq 'curated') && ($start_tag ne "present") && ($gene_model->name ne "K04G2.11")) {
+	if (($start_codon ne 'atg') && ($method_test eq 'curated') && ($start_tag ne "present") && (!exists $non_canonical_initiation{$gene_model->name})) {
 	  if (($start_tag ne "present")) {
 	    push(@error1,"ERROR: $gene_model '$start_codon' is not a valid start codon. Start_not_found tag MISSING\n");
 	    print "ERROR: $gene_model '$start_codon' is not a valid start codon. Start_not_found tag MISSING\n" if $verbose;
