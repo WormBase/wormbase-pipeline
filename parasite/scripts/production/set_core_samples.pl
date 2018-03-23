@@ -5,7 +5,7 @@ use warnings;
 
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
-
+use List::MoreUtils qw(uniq);
 use Carp;
 
 
@@ -38,14 +38,6 @@ my (
 
     
 # get a compara dba
-
-my $compara_url = sprintf( 'mysql://%s:%s@%s:%d/%s',
-                           $compara_user, 
-                           $compara_pass,
-                           $compara_host,
-                           $compara_port,
-                           $compara_dbname);
-
 my $compara_db = Bio::EnsEMBL::Compara::DBSQL::DBAdaptor->new( -url => sprintf( 'mysql://%s:%s@%s:%d/%s',
                                                                                 $compara_user, 
                                                                                 $compara_pass,
@@ -61,31 +53,43 @@ my $core_db = Bio::EnsEMBL::DBSQL::DBAdaptor->new( -dbname => $dbname,
 
 # longest slice is bound to have multiple genes, right?
 
+sub score {
+  my ($stats, $weights) = @_;
+  $weights //= {
+	description => 1,
+	domains => 10,
+	model_orthologs => 5	
+  } ;
+  my $desc = @{$stats->{description}};
+  my $dom = @{$stats->{domains}};
+  my $o = @{$stats->{model_orthologs}};
+  # We want a description, three orthologs, and ten protein domains
+  return (3 * $desc + 1) * ( 5 * (6-$o)*$o + 1 ) * ((20 - $dom) * $dom + 1 ) ; 
+
+}
 my @all_genes;
 
 SEQ:foreach my $slice (sort { $b->length <=> $a->length } @{$core_db->get_SliceAdaptor->fetch_all('toplevel')}) {
 
   my @genes = sort { $a->start <=> $b->start } @{$slice->get_all_Genes_by_type('protein_coding')};
   
-  print STDERR "There are ", scalar(@genes) . " gene\n";
-  
   foreach my $g (@genes) {
 
     my $stats = { 
-      gene            => $g , 
-      description     => 0,
-      domains         => 0,
-      model_orthologs => 0,
+      description     => [],
+      domains         => [],
+      model_orthologs => [],
     };
 
-    $stats->{description}++ if defined $g->description and $g->description !~ /Uncharacterized/i;
-    $stats->{description}++ if defined $g->display_xref;
-        
-    my @f = grep { $_->interpro_ac } @{$g->canonical_transcript->translation->get_all_ProteinFeatures};
+    push @{$stats->{description}}, $g->description if defined $g->description and $g->description !~ /Uncharacterized/i;
+    push @{$stats->{description}}, "display_xref: ".$g->display_xref->display_id if defined $g->display_xref;
     
-    $stats->{model_domains} = 1 if @f;
-    
-
+    my @domains;
+    for my $feature (@{$g->canonical_transcript->translation->get_all_DomainFeatures}){
+      push @domains, $feature->interpro_ac if $feature->interpro_ac;
+    }
+    @domains= uniq(@domains);
+    $stats->{domains} = \@domains;
     my $gm = $compara_db->get_GeneMemberAdaptor->fetch_by_stable_id($g->stable_id);
     foreach my $target_species ('homo_sapiens',
                                 'mus_musculus',
@@ -95,40 +99,34 @@ SEQ:foreach my $slice (sort { $b->length <=> $a->length } @{$core_db->get_SliceA
                                 'caenorhabditis_elegans_prjna13758') {
       foreach my $homology (@{$compara_db->get_HomologyAdaptor->fetch_all_by_Member($gm, -TARGET_SPECIES => $target_species)}) {
         if ($homology->description() eq 'ortholog_one2one') {
-          $stats->{model_orthologs}++;
+          push @{$stats->{model_orthologs}}, $target_species;
         }
       }
     }
     
-    push @all_genes, $stats;
-
-    last SEQ if @all_genes  > 1000;
+    push @all_genes, {
+      gene => $g,
+      stats => $stats,
+      score => &score($stats)
+    };
+    last SEQ if @all_genes  > ($test ? 50 : 1000);
   }
-
-
 }
 
-my ($best) = sort {
-  $b->{description} <=> $a->{description} or $b->{model_orthologs} <=> $a->{model_orthologs}
+my ($best, $second, $third) = sort {
+  $b->{score} <=> $a->{score}
 } @all_genes;
-      
-print "CHOSE GENE ", $best->{gene}->stable_id, "\n";
 
-&print_gene_sample( $best->{gene} );
-if (not $test) {
-  &store_gene_sample( $core_db, $best->{gene} );
+sub choice_to_string {
+  my $o = shift;
+  return $o->{gene}->stable_id . " score ".$o->{score}."\n" . Data::Dumper::Dumper($o->{stats})."\n";
 }
+print "Third place: " . choice_to_string($third) if $test;
+print "Second place: " . choice_to_string($second) if $test;
+print "Chose gene " . choice_to_string($best);
 
+&store_gene_sample( $core_db, $best->{gene} ) unless ($test);
 
-sub print_gene_sample {
-  my ($g) = @_;
-  
-  print "Selected gene :\n";
-  printf "  acc  : %s\n", $g->stable_id;
-  printf "  name : %s\n", $g->display_xref->display_id;
-  printf "  desc : %s\n", $g->description;
-
-}
 
 #######################################3
 sub store_gene_sample {

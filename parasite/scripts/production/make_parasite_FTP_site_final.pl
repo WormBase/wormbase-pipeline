@@ -1,139 +1,88 @@
-
 #!/usr/bin/env perl
-
+# Create target FTP directory
+# If possible link to entries in wormbase FTP
+# Otherwise copy from source
+# Then, recreate the checksums
 use strict;
 use Getopt::Long;
 use File::Path;
-
-my $WORMBASE_GENOMES = {
-  'brugia_malayi_prjna10729'             => 1,
-  'onchocerca_volvulus_prjeb513'         => 1,
-  'strongyloides_ratti_prjeb125'         => 1,
-  'pristionchus_pacificus_prjna12644'    => 1,
-  'caenorhabditis_angaria_prjna51225'    => 1,
-  'caenorhabditis_elegans_prjna13758'    => 1,
-  'caenorhabditis_briggsae_prjna10731'   => 1,
-  'caenorhabditis_brenneri_prjna20035'   => 1,
-  'caenorhabditis_remanei_prjna53967'    => 1,
-  'caenorhabditis_japonica_prjna12591'   => 1,
-  'caenorhabditis_sinica_prjna194557'    => 1,  
-  'caenorhabditis_tropicalis_prjna53597' => 1,
-  'panagrellus_redivivus_prjna186477'    => 1,
-}; 
-
+use File::Basename;
+use File::Spec;
 my (
-  $wb_rel_num,
-  $rel_num,
-  $checksum, 
-  $verbose,
-  $source_tl_dir,
-  $staging_tl_dir,
-  $production_tl_dir,
-  $staging,
-  $production,
-  $copy_previous,
-    );
-
-$rel_num = "666";
-$wb_rel_num = "666";
-
+  $wormbase_release_ftp_dir,
+  $source_dir,
+  $wbps_release_ftp_dir,
+  $wbps_version
+   );
 &GetOptions(
-  'relnum=s'         => \$rel_num,
-  'wbrelnum=s'       => \$wb_rel_num,
-  'checksum'         => \$checksum,
-  'verbose'          => \$verbose,
-  'sourcedir=s'      => \$source_tl_dir,
-  'stagingdir=s'     => \$staging_tl_dir,
-  'releasedir=s'     => \$production_tl_dir,
-  'staging'          => \$staging,
-  'release'          => \$production,
-    );
+ 'wormbase_release_ftp_dir=s' => \$wormbase_release_ftp_dir,
+ 'source_dir=s' => \$source_dir,
+ 'wbps_release_ftp_dir=s' => \$wbps_release_ftp_dir,
+ 'wbps_version=i' => \$wbps_version,
+) ;
+my $usage = " Usage: $0 --wbps_version=\$PARASITE_VERSION --source_dir=<where folders with individual species are> --wormbase_release_ftp_dir=<release tied to this WBPS version> --wbps_release_ftp_dir=<target directory>";
+die ("--source_dir not a directory: $source_dir . $usage") unless -d $source_dir;
+die ("--wormbase_release_ftp_dir not a directory: $wormbase_release_ftp_dir . $usage") unless -d $wormbase_release_ftp_dir;
+die ($usage) unless $wbps_release_ftp_dir;
+die ($usage) unless $wbps_version;
 
-my $release = "WBPS${rel_num}";
-my $prev_release = "WBPS" . ($rel_num - 1);
-my $wb_release = "WS${wb_rel_num}";
-
-my $ftp_root = "/ebi/ftp/pub/databases/wormbase";
-
-$staging_tl_dir            = "$ftp_root/staging/parasite/releases" if not defined $staging_tl_dir;
-$production_tl_dir         = "$ftp_root/parasite/releases" if not defined $production_tl_dir;
-my $wb_ftp_root_staging    = "../../../../../../../releases";
-my $wb_ftp_root_production = "../../../../../../releases";
-
-if ($staging) {
-  if ($source_tl_dir) {
-    # ensure the raw dump data is mirrored correctly to the staging area
-    my $cp_cmd = "rsync -a $source_tl_dir/WBPS${rel_num} $staging_tl_dir/";
-    system($cp_cmd) and die "Could not successfully rsync from $source_tl_dir to $staging_tl_dir\n";
+for my $path_species (glob "$source_dir/*") {
+  my $species = basename $path_species;
+  my ($spe, $cies) = split(/_/, $species);
+  for my $this_source_dir ( glob "$source_dir/$species/*" ) {
+     my $bioproject = basename $this_source_dir;
+     my $this_target_dir = "$wbps_release_ftp_dir/species/$species/$bioproject";
+     mkpath $this_target_dir if not -d $this_target_dir;
+     my $putative_wormbase_dir = join("/", $wormbase_release_ftp_dir,"species", lc((substr $spe, 0, 1 ) . "_" . $cies) , uc($bioproject));
+     if ( -d $putative_wormbase_dir ) {
+        print localtime ." ". $species . " making symlinks $putative_wormbase_dir -> $this_target_dir \n";
+        &make_symlinks_to_wormbase_species (
+          "$species.$bioproject.WBPS$wbps_version",
+          $putative_wormbase_dir,
+          $this_target_dir
+        );
+     } else {
+        my $cp_cmd = "rsync -a $this_source_dir/ $this_target_dir/";
+        print localtime . " $species $cp_cmd\n";
+        system($cp_cmd) and die("Failed: $cp_cmd");
+     }
   }
-  &make_core_symlinks($wb_ftp_root_staging, $staging_tl_dir );
-  &make_md5sums($staging_tl_dir);
-} 
-
-if ($production) {
-  if (-d "$staging_tl_dir/$release" and not -d "$production_tl_dir/$release") {
-    system("mv $staging_tl_dir/$release $production_tl_dir") and die "Could not mv $staging_tl_dir/$release to $production_tl_dir\n";
-  }
-  if (-d "$production_tl_dir/$release") {
-    &make_core_symlinks($wb_ftp_root_production, $production_tl_dir );
-    &make_md5sums($production_tl_dir);
-  } 
 }
+print localtime . " Finished moving species files, remaking checksums file \n" ;
+my $checksum_file = "CHECKSUMS";
 
-
-#####################
-sub make_md5sums {
-  my ($tl_dir) = @_;
-
-  my $targetdir = "$tl_dir/$release";
-  my $checksum_file = "CHECKSUMS";
-
-  my @files;
-  open(FIND, "find $targetdir/species -name '*.*' | sort |");
-  while(<FIND>) {
-    chomp;
-    s/^$targetdir\///;
-    $verbose and print STDERR "Will checksum: $_\n";
+my @files;
+open(FIND, "find $wbps_release_ftp_dir/species -name '*.*' | sort |");
+while(<FIND>) {
+  chomp;
+    s/^$wbps_release_ftp_dir\///;
     push @files, $_;
   }
 
-  system("cd $targetdir && md5sum @files > $checksum_file") and die "Could not calc checksums\n";
+system("cd $wbps_release_ftp_dir && md5sum @files > $checksum_file") and die "Could not calc checksums\n";
+print localtime . " Completed \n";
+#####################
 
-}
-
-
-#############################################
-sub make_core_symlinks {
-  my ($core_ftp_root, $this_tl_dir) = @_;
-
-  foreach my $wb_genome (keys %$WORMBASE_GENOMES) {
-
-    my ($genus_pre, $genus_suf, $spe, $bioproject) = $wb_genome =~ /(\S)(\S+)_(\S+)_(\S+)/; 
-    $bioproject = uc($bioproject);
-    
-    my $ps_species_name = "${genus_pre}${genus_suf}_${spe}";
-    my $wb_species_name = "${genus_pre}_${spe}";
-
-    my $link_dir_dest = join("/", $this_tl_dir, $release, "species", $ps_species_name, $bioproject);
-    my $link_dir_source = "$core_ftp_root/$wb_release/species/$wb_species_name/$bioproject";
-    mkpath $link_dir_dest if not -d $link_dir_dest;
-
-    foreach my $fsuffix( "genomic.fa.gz", 
-                         "genomic_softmasked.fa.gz", 
-                         "genomic_masked.fa.gz",
-                         "CDS_transcripts.fa.gz", 
-                         "mRNA_transcripts.fa.gz", 
-                         "protein.fa.gz", 
-                         "annotations.gff3.gz",
-                         "canonical_geneset.gtf.gz") {
-      my $link_fname_dest = join(".", $ps_species_name, $bioproject, $release, $fsuffix);
-      my $link_fname_source = join(".", $wb_species_name, $bioproject, $wb_release, $fsuffix);
-
-      unlink "$link_dir_dest/$link_fname_dest" 
-          if -e "$link_dir_dest/$link_fname_dest" or -l "$link_dir_dest/$link_fname_dest";
-
-      system("cd $link_dir_dest && ln -s $link_dir_source/$link_fname_source $link_fname_dest") 
-          and die "Could not create symlink to $link_dir_source/$link_fname_source in $link_dir_dest\n";
-    }
+sub make_symlinks_to_wormbase_species {
+  my ($name_root, $wormbase_source_dir, $target_dir) = @_;
+  for (glob("$target_dir/*")){
+    unlink;
+  }
+  for my $file_type (
+qw/protein.fa.gz
+mRNA_transcripts.fa.gz
+genomic_softmasked.fa.gz
+genomic_masked.fa.gz
+genomic.fa.gz
+CDS_transcripts.fa.gz
+canonical_geneset.gtf.gz
+annotations.gff3.gz/) {
+  my ($wormbase_link_target, @others) = glob("$wormbase_source_dir/*.$file_type");
+  die ("No unambiguous file of type $file_type found in $wormbase_source_dir - WormBase, what happened?!") 
+      unless $wormbase_link_target and not @others;
+  my $l = "$target_dir/$name_root.$file_type";
+  # Need relative links - the FTP site is mirrored over from the NFS directory we operate in
+  my $wormbase_relative_link_target =File::Spec->abs2rel ($wormbase_link_target, $target_dir); 
+  symlink ($wormbase_relative_link_target , $l) or die "Could not create symlink: $l -> $wormbase_relative_link_target ($wormbase_link_target )";
   }
 }

@@ -1,5 +1,7 @@
 
-#
+# This functionality got incorporated into a Perl module CoreCreation::Fasta
+# @see parasite/modules/CoreCreation/Fasta.pm
+# Not quite deprecated yet but maybe you'll like the module more
 # Take a genome fasta file, and creates a fasta file and agp 
 # that is suitable for loading into Ensembl
 #

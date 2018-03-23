@@ -238,7 +238,12 @@ sub parse_genes_gff3_fh {
 
     my (%gene_biotypes);
     my $tcount = 1;
-
+    
+    # sanity check: all transcripts have the same strand
+    my @strands_unique = do { my %seen; grep { !$seen{$transcripts{$_}->{strand}}++ } @tids }; 
+    if(scalar(@strands_unique) > 1 ) {
+       die "Bailing on gene $gid - transcripts not all on the same strand";
+    }
     TRAN: foreach my $tid (sort @tids) {
 
       my $tran = $transcripts{$tid};
