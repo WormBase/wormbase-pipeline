@@ -491,7 +491,7 @@ sub copy_gff_files{
     my $cur_ver_label = sprintf("%s.%s.WS%d", $g_species, $bioproj, $WS_version);
 
     my $prev_ver_gff3_file = sprintf("%s/releases/WS%d/species/%s/%s/%s.%s.WS%s.annotations.gff3.gz", 
-                                     $wormbase->ftp_site,
+                                     $wormbase->ftp_staging,
                                      $WS_version - 1,
                                      $g_species,
                                      $bioproj,
