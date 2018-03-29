@@ -620,10 +620,9 @@ foreach my $chrom ( @chromosomes ) {
   $log->write_to("$count2 cDNAs rejected in round 2 (introns matched in two or more genes)\n");
   $log->write_to("$count3 cDNAs rejected in round 3 (overlaps two or more genes)\n");
 
-  close($prob_fh);
-
 }
 
+close($prob_fh);
 close($out_fh);
 
 $log->mail();
