@@ -23,21 +23,20 @@ my $database;
 my $builder_script = "transcript_builder.pl";
 my $scratch_dir = "/tmp";
 my $gff_dir;
-my ($store, $debug, $test, @no_run, $no_load, $species, @outfile_names, $mem);
+my ($store, $debug, $test, $use_previous_run, $no_load, $species, @outfile_names, $mem);
 
 GetOptions (
-	    "database:s"    => \$database,
-	    "dump_dir:s"    => \$dump_dir,
-	    "gff_dir:s"     => \$gff_dir,
-	    "store:s"       => \$store,
-	    "debug:s"       => \$debug,
-	    "test"          => \$test,
-	    "no_run:s"      => \@no_run,
-            "noload"        => \$no_load,
-	    "species:s"	    => \$species,
-	    "mem:s"         => \$mem,
-
-	   );
+  "database:s"       => \$database,
+  "dump_dir:s"       => \$dump_dir,
+  "gff_dir:s"        => \$gff_dir,
+  "store:s"          => \$store,
+  "debug:s"          => \$debug,
+  "test"             => \$test,
+  "usepreviousrun"   => \$use_previous_run,
+  "noload"           => \$no_load,
+  "species:s"	     => \$species,
+  "mem:s"            => \$mem,
+    );
 
 my $wormbase;
 if ( $store ) {
@@ -58,26 +57,20 @@ $wormbase->checkLSF($log);
 
 $database = $wormbase->autoace unless $database;
 
-if (@no_run) {
-  @outfile_names = @no_run;
-} else {
-  my @chrs = $wormbase->get_chromosome_names;
-  my $chunk_total = 24;
-  $chunk_total = scalar(@chrs) if $chunk_total > scalar(@chrs);
+my @chrs = $wormbase->get_chromosome_names;
+my $chunk_total = 24;
+$chunk_total = scalar(@chrs) if $chunk_total > scalar(@chrs);
 
-  $gff_dir  = $wormbase->gff_splits unless $gff_dir;
-  $dump_dir = $wormbase->transcripts unless $dump_dir;
+$gff_dir  = $wormbase->gff_splits unless $gff_dir;
+$dump_dir = $wormbase->transcripts unless $dump_dir;
 
-  # make a Coords_converter to write the coords files. Otherwise all 6 processes try and do it.
-  my $coords = Coords_converter->invoke($database,1, $wormbase);
-
-  # clean up output files created in any possible previous runs of this script
-  $wormbase->run_command("rm -f ".$wormbase->transcripts."/transcripts*.ace", $log);
-
-  # this extract paired read info from the database and writes it to EST_pairs file
+# make a Coords_converter to write the coords files. Otherwise all 6 processes try and do it.
+my $coords = Coords_converter->invoke($database,1, $wormbase);
+# this extract paired read info from the database and writes it to EST_pairs file
+my $pairs = "$database/COMMON_DATA/EST_pairs.txt";
+if (not -e $pairs) {
   my $cmd = "select cdna, pair from cdna in class cDNA_sequence where exists_tag cdna->paired_read, pair in cdna->paired_read";
   my $tace = $wormbase->tace;
-  my $pairs = "$database/COMMON_DATA/EST_pairs.txt";
 
   open (TACE, "echo '$cmd' | $tace $database |") or die "cant open tace to $database using $tace\n";
   open ( PAIRS, ">$pairs") or die "cant open $pairs :\t$!\n";
@@ -92,18 +85,28 @@ if (@no_run) {
     print PAIRS "$data[0]\t$data[1]\n";
   }
   close PAIRS;
+}
   
-  my $job_name = "worm_".$wormbase->species."_transcript";
+my $job_name = "worm_".$wormbase->species."_transcript";
 
-  # create and submit LSF jobs.
-  $log->write_to("bsub commands . . . . \n\n");
-  my $lsf = LSF::JobManager->new();
-  foreach my $chunk_id (1..$chunk_total) {
-    my $batchname = "batch_${chunk_id}";
-    my $outfname = "transcripts_${batchname}.ace";
-    my $pfname = "problems_${batchname}.txt";
+# create and submit LSF jobs.
+$log->write_to("bsub commands . . . . \n\n");
+my $lsf = LSF::JobManager->new();
+foreach my $chunk_id (1..$chunk_total) {
+  my $batchname = "batch_${chunk_id}";
+  my $outfname = "transcripts_${batchname}.ace";
+  my $foutname = sprintf("%s/%s", $wormbase->transcripts, $outfname);
+  my $pfname = "problems_${batchname}.txt";
+  my $fpfname = sprintf("%s/%s", $wormbase->transcripts, $pfname);
+
+  push @outfile_names, sprintf("%s/%s", $wormbase->transcripts, $outfname);
+  if (not $use_previous_run or not -e $foutname) {
+    unlink $foutname if -e $foutname;
+    unlink $fpfname if -e $fpfname;
+
     my $err = "$scratch_dir/transcript_builder.$batchname.err.$$";
     my $cmd = "$builder_script -database $database -chunkid $chunk_id -chunktotal $chunk_total -acefname $outfname -problemfname $pfname";
+    
     $log->write_to("$cmd\n");
     print "$cmd\n";
     $cmd = $wormbase->build_cmd($cmd);
@@ -113,19 +116,19 @@ if (@no_run) {
                         -R => "\"select[mem>$mem] rusage[mem=$mem]\"",
                         -J => $job_name);
     $lsf->submit(@bsub_options, $cmd);
-    push @outfile_names, sprintf("%s/%s", $wormbase->transcripts, $outfname);
-  }  
-  $lsf->wait_all_children( history => 1 );
-  $log->write_to("All transcript builder jobs have completed!\n");
-  my $critical_error = 0;
-  for my $job ( $lsf->jobs ) {
-    $log->error("Job $job (" . $job->history->command . ") exited non zero\n") if $job->history->exit_status != 0;
-    $critical_error++ if ($job->history->exit_status != 0);
+  } else {
+    $log->write_to("For batch $chunk_id, using pre-generated acefile $foutname\n");
   }
-  $lsf->clear;   
-  $log->log_and_die("There were $critical_error critical errors in the transcript_builder jobs, please check and re-run with -mem 6000 if you suspect memory issues.\n") if $critical_error ne 0;
+}  
+$lsf->wait_all_children( history => 1 );
+$log->write_to("All transcript builder jobs have completed!\n");
+my $critical_error = 0;
+for my $job ( $lsf->jobs ) {
+  $log->error("Job $job (" . $job->history->command . ") exited non zero\n") if $job->history->exit_status != 0;
+  $critical_error++ if ($job->history->exit_status != 0);
 }
-
+$lsf->clear;   
+$log->log_and_die("There were $critical_error critical errors in the transcript_builder jobs, please check and re-run with -mem 6000 if you suspect memory issues.\n") if $critical_error;
 
 
 if ($wormbase->species eq 'elegans') {
