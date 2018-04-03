@@ -515,29 +515,19 @@ if ($dump_modified) {
     }
     
     if (/^SQ/) {
-      &process_feature_table($out_fh, $seqname, @features);
-      if ($sequencelevel) {
-        print $out_fh $_;
-      } elsif (defined $agp_segs) {
+      if (defined $agp_segs) {
         $log->log_and_die("Could not find AGP segs for $seqname\n") 
             if not exists $agp_segs->{$seqname};
 
-        my $con_string = &make_con_from_segs(@{$agp_segs->{$seqname}});
-
-        my $sbreak = $Text::Wrap::break;
-        my $scols  = $Text::Wrap::columns;
-
-        $Text::Wrap::break = '(?<=[,])';
-        $Text::Wrap::columns = 76;
-        my $wrapped = wrap('', '', $con_string);
-
-        $Text::Wrap::break   = $sbreak;
-        $Text::Wrap::columns = $scols;
-
-        foreach my $line (split(/\n/, $wrapped)) {
-          print $out_fh "CO   $line\n";
-        }
+        push @features, &make_assembly_gaps_from_segs(@{$agp_segs->{$seqname}});
       }
+
+      &process_feature_table($out_fh, $seqname, @features);
+
+      if ($sequencelevel) {
+        print $out_fh $_;
+      } 
+
       next;
     }
     
@@ -611,6 +601,15 @@ sub process_feature_table {
         }
       }
       next;
+    } elsif ($feat->{ftype} eq 'assembly_gap') {
+      printf $out_fh "FT   %-16s%s\n", $feat->{ftype}, $feat->{location}->[0];
+      foreach my $tag (@{$feat->{quals}}) {
+        foreach my $ln (@$tag) {
+          printf $out_fh "FT   %16s%s\n", " ", $ln;
+        }
+      }
+      next;
+
     } elsif ($feat->{ftype} =~ /RNA$/) {
       my $mod_dir = $feat->{ftype};
       my ($rna_class);
@@ -1037,6 +1036,7 @@ sub parse_location {
   return ($strand, @exons);
 }
 
+
 ##########################
 sub get_multi_gene_loci {
   my ($gene2gseqname) = @_;
@@ -1061,7 +1061,101 @@ sub get_multi_gene_loci {
   return \%multi_gene_loci;
 }
 
+###########################
+# this method obtains a list of multi-span objects, i.e. objects
+# that span multiple clones. Since ENA no longer accept these
+# annotations on multiple clones, we need to choose one clone
+# to attach them to, and do this by selecting the clone where
+# most of the object lies, using a series of rules
+#
+# Additionally, when sequence has been updated and there are mutual 
+# dependencies between clones (i.e. clone X refers to clone Y and vice 
+# versa), this can cause problems because clone X will be referring to 
+# the "new" version of clone Y which has not been loaded yet. We therefore 
+# provide the option of excluding all multi-clone features for one round
+# of submissions. A second submission round will therefore be required to
+# process the clones with foreign references
+##########################
 
+sub get_locs_for_multi_span_objects {
+  my $file = shift;
+
+  my ($clone, $acc, $type, $loc, $obj_name, %locs, %best_obj_locs);
+
+  open(my $fh, $file) or $log->log_and_die("Could not open $file for reading\n");
+  while(<$fh>) {
+    /^ID\s+(\S+)/ and do {
+      $clone = $1;
+      $acc = "";
+      next;
+    };
+    /^AC\s+(\S+);/ and do {
+      $acc = $1 if not $acc;
+    };
+    /^FT   (\S+)\s+(\S+)$/ and do {
+      ($type, $loc) = ($1, $2);
+      while(<$fh>) {
+        last if /^FT\s+\//;
+        /FT\s+(\S+)/ and $loc .= $1;
+      }
+    };
+      
+    /^FT\s+\/standard_name=\"(\S+)\"/ and do {
+      $obj_name = $1;
+      
+      push @{$locs{"$type:$obj_name"}}, {
+        clone => $clone,
+        acc   => $acc,
+        location => $loc,
+      };
+      next;
+    }
+  }
+  foreach my $obj (keys %locs) {
+    my @locs = @{$locs{$obj}};
+    my ($obj_name) = $obj =~ /:(\S+)/;
+
+    next if scalar(@locs) == 1;
+
+    $best_obj_locs{$obj_name} = {};
+
+    next if $exclude_multis;
+    
+    foreach my $loc (@locs) {
+      my ($local_extent, $foreign_extents) = &parse_location($loc->{location});
+      $loc->{local_extent} = $local_extent;
+      $loc->{foreign_extents} = $foreign_extents;
+    }
+    
+    @locs = grep { $_->{local_extent} > 0 } @locs;
+    @locs = sort { $b->{local_extent} <=> $a->{local_extent} } @locs;
+
+    my $best_loc = 0;
+    for(my $i=0; $i < @locs; $i++) {
+      my $loc = $locs[$i];
+      my $clone = $loc->{clone};
+
+      if ($obj_name =~ /$clone/) {
+        # sequence name of object matches clone name, 
+        # so this is the best choice for this obj
+        $best_loc = $i;
+        last;
+      }
+    }
+
+
+    my @best_locs = ($keep_redundant) ? @locs : ($locs[$best_loc]);
+
+    foreach my $loc (@best_locs) {    
+      my $clone = $loc->{clone};
+      $best_obj_locs{$obj_name}->{$clone} = 1;
+    }
+
+  }
+
+  return \%best_obj_locs;
+}
+  
 
 ###################################
 sub stage_dump_to_submissions_repository {
@@ -1184,6 +1278,26 @@ sub make_con_from_segs {
     }
   }
   return "join(" . join(",", @components) . ")";
+}
+
+
+##############################################33#333
+sub make_assembly_gap_from_segs {
+  my @segs = @_;
+  
+  my @f;
+  foreach my $seg (@segs) {
+    if ($seg->{type} eq 'gap') {
+      push @f, {
+        location => [sprintf("%d..%d", $seg->{start}, $seg->{end})],
+        quals => [sprintf("/estimated_length=%d", $seg->{end} - $seg->{start} + 1),
+                  sprintf("/gap_type=\"%s\"", "between_scaffolds"),
+                  sprintf("/linkage_evidence=\"%\"", "unspecified")]
+      };
+    }
+  }
+
+  return @f;
 }
 
 ##############################################
