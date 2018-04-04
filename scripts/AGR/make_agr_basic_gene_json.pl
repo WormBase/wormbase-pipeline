@@ -104,6 +104,11 @@ foreach my $sub_query (
     next unless $obj->Species->name eq $full_name;
 
     #
+    # Primary Id
+    #
+    my $primary_id = "WB:" . $obj->name;
+
+    #
     # Biotype
     #
     my $biotype = "SO:0000704"; # default - gene
@@ -113,7 +118,7 @@ foreach my $sub_query (
     }
 
     #
-    # Symbol and syno
+    # Symbol and synonym
     #
     my ($symbol, %synonyms);
     if ($obj->Sequence_name) {
@@ -142,22 +147,7 @@ foreach my $sub_query (
     } elsif ($obj->Automated_description) {
       $desc = $obj->Automated_description->name; 
     }
-    
-    #
-    # Cross references
-    #
-    my @xrefs;
-    foreach my $dblink ($obj->Database) {
-      if (exists $XREF_MAP{$dblink}) {
-        foreach my $field ($dblink->col) {
-          if (exists $XREF_MAP{$dblink}->{$field}) {
-            my $prefix = $XREF_MAP{$dblink}->{$field};
-            my $suffix = $field->right->name; 
-            push @xrefs, "$prefix:$suffix";
-          }
-        }
-      }
-    }
+
 
     #
     # Name (from gene class)
@@ -204,18 +194,45 @@ foreach my $sub_query (
     #
     # location
     #
-    my $loc;
+    my (@xrefs, $loc);
     if (defined $locs and exists $locs->{$obj->name}) {
       $loc = $locs->{$obj->name};
       # Only add Ensembl xrefs for genomicly placed genes;
-      push @xrefs, "ENSEMBL:" . $obj->name;
+      push @xrefs, { id => "ENSEMBL:" . $obj->name };
     } 
-    #elsif ($obj->Map) {
-    #  $loc = {
-    #    chromosome => $obj->Map->name,
-    #    assembly   => "unlocalised",
-    #  };
-    #}
+    
+    #
+    # Cross references
+    #
+    foreach my $dblink ($obj->Database) {
+      if (exists $XREF_MAP{$dblink}) {
+        foreach my $field ($dblink->col) {
+          if (exists $XREF_MAP{$dblink}->{$field}) {
+            my $prefix = $XREF_MAP{$dblink}->{$field};
+            my $suffix = $field->right->name; 
+            push @xrefs, { id => "$prefix:$suffix" };
+          }
+        }
+      }
+    }
+
+    #
+    # Back-to-mod xrefs
+    #
+    push @xrefs, {
+      id => $primary_id,
+      pages => ["gene", "gene/expression", "gene/references"],
+    };
+    # for SPELL, we should technically only include the ref if this gene exists in SPELL, 
+    # which (as defined by Wen Chen) is: 
+    if ($obj->RNASeq_FPKM or $obj->Microarray_results) {
+      push @xrefs, {
+        id => "WB_SPELL:$symbol",
+        pages => ["gene/spell"],
+      };
+    }
+
+
 
     #
     # Make the JSON object
@@ -225,14 +242,13 @@ foreach my $sub_query (
       symbol             => $symbol,
       soTermId           => $biotype,
       taxonId            => "NCBITaxon:" . $taxid,
-      geneLiteratureUrl  => "http://www.wormbase.org/species/c_elegans/gene/" . $obj->name ."#0e--10",
     };
 
     $json_gene->{name}              =  $name if $name;
     $json_gene->{geneSynopsis}      =  $desc if $desc;
     $json_gene->{synonyms}          =  [sort keys %synonyms] if keys %synonyms;
     $json_gene->{secondaryIds}      =  \@secondary_ids if @secondary_ids;
-    $json_gene->{crossReferenceIds} =  \@xrefs if @xrefs;
+    $json_gene->{crossReferences} =  \@xrefs if @xrefs;
 
     if (defined $loc) {
       $json_gene->{genomeLocations} = [$loc];
