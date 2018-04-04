@@ -86,7 +86,6 @@ my $lsf = LSF::JobManager->new(
 			       -M => $bsub_mem,
 			       -F => 400000);
 
-my $storable = $wormbase->autoace . '/'. ref($wormbase).'.store';
 $dumpdir ||= "$ENV{PIPELINE}/dumps";
 $database ||= "worm_ensembl_${species}";
 
@@ -100,7 +99,7 @@ foreach my $db (keys %logic2type){
     $job_count++;
     my $outfile = "$dumpdir/${species}_$db.$job_count.ace";
     push @outfiles,$outfile;
-    my $options="-database $database -logicname $db -outfile $outfile -store $storable -sequence $chrom";
+    my $options="-database $database -logicname $db -outfile $outfile -sequence $chrom";
     $options .= ' -self' if $logic2type{$db} eq lc(ref $wormbase);
 
     my $cmd;
