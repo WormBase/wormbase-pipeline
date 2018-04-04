@@ -3,18 +3,10 @@
 use strict;
 
 use Getopt::Long;
-use Bio::EnsEMBL::DBSQL::DBAdaptor;
-use Bio::EnsEMBL::Funcgen::DBSQL::DBAdaptor;
+use Bio::EnsEMBL::Registry;
 
 my ($species, 
-    $core_host,
-    $core_port,
-    $core_user, 
-    $core_dbname,
-    $fgen_host,
-    $fgen_port,
-    $fgen_user, 
-    $fgen_dbname,
+    $reg_conf,
     %p2g_map, $p2g_file, 
     $pname_file, %wb_oset_names,
     $choose_best,
@@ -22,20 +14,20 @@ my ($species,
     $verbose);
 
 &GetOptions(
-  'corehost=s'      => \$core_host,
-  'coreport=s'      => \$core_port,
-  'coreuser=s'      => \$core_user,
-  'coredbname=s'    => \$core_dbname,
-  'fgenhost=s'      => \$fgen_host,
-  'fgenport=s'      => \$fgen_port,
-  'fgenuser=s'      => \$fgen_user,
-  'fgendbname=s'    => \$fgen_dbname,
+  'reg_conf=s'      => \$reg_conf,
+  'species=s'       => \$species,
   'probe2genemap=s' => \$p2g_file,
   'wbprobenames=s'  => \$pname_file,
   'choosebest'      => \$choose_best,
   'verbose'         => \$verbose,
   'acefile=s'       => \$acefile,
     );
+
+
+die "You must supply a valid Registry file\n" if not defined $reg_conf or not -e $reg_conf;
+die "You must supply a species\n" if not defined $species;
+
+Bio::EnsEMBL::Registry->load_all($reg_conf);
 
 if (defined $p2g_file) {
   &parse_probe_to_gene_map($p2g_file, \%p2g_map);
@@ -45,24 +37,9 @@ if (defined $pname_file) {
 }
 
 
-my $core_db = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
-  -host => $core_host,
-  -port => $core_port,
-  -user => $core_user, 
-  -dbname => $core_dbname);
+my $core_db = Bio::EnsEMBL::Registry->get_DBAdaptor($species, 'core');
+my $fgen_db = Bio::EnsEMBL::Registry->get_DBAdaptor($species, 'funcgen');
 
-my $fgen_db = Bio::EnsEMBL::Funcgen::DBSQL::DBAdaptor->new(
-  -host => $fgen_host,
-  -port => $fgen_port,
-  -user => $fgen_user, 
-  -dbname => $fgen_dbname,
-  -dnadb => $core_db,
-    );
-
-
-$species = $core_db->get_MetaContainer->get_production_name;
-
-die "Could nit get species from core db\n" if not $species;
 
 my $a_adap = $fgen_db->get_ArrayAdaptor;
 my $p_adap = $fgen_db->get_ProbeAdaptor;
