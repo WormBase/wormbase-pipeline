@@ -1622,6 +1622,10 @@ Method : "wublastp_sratti"
 Colour "LIGHTGREEN"
 Remark "wublastp search of Wormpep vs Onchocerca volvulus peptides"
 
+Method : "wublastp_tmuris"
+Colour "LIGHTGREEN"
+Remark "wublastp search of Wormpep vs T. muris peptides"
+
 Method : "wublastp_brugia"
 Colour "LIGHTGREEN"
 Remark "wublastp search of Wormpep vs Brugia malayi peptides"
@@ -1765,10 +1769,26 @@ Score_bounds 10.000000 100.000000
 Allow_misalign
 Blixem_X
 Join_blocks
-Remark "wublastx search vs O. volvulus peptides"
+Remark "wublastx search vs S. ratti peptides"
 Display_gaps
 Gapped
 GFF_source "sratti_proteins-BLASTX"
+GFF_feature "protein_match"
+GFF_SO "SO:0000349" // protein_match
+
+Method : "wublastx_tmuris" 
+Colour GREEN
+Frame_sensitive
+Show_up_strand
+Score_by_width
+Score_bounds 10.000000 100.000000
+Allow_misalign
+Blixem_X
+Join_blocks
+Remark "wublastx search vs T. muris peptides"
+Display_gaps
+Gapped
+GFF_source "tmuris_proteins-BLASTX"
 GFF_feature "protein_match"
 GFF_SO "SO:0000349" // protein_match
 
@@ -3150,6 +3170,18 @@ GFF_source "SL1"
 GFF_feature "SL1_acceptor_site"
 GFF_SO "SO:0000708" // SL1_acceptor_site
 
+Method : "RNASeq_SL1"
+Remark   "SL1 trans-splice acceptor site"
+Colour   RED
+Show_up_strand  
+Width    2.200000
+Right_priority   1.900000
+Show_text       
+GFF_source       "RNASeq_SL1"
+GFF_feature      "SL1_acceptor_site"
+GFF_SO   "SO:0000708"
+
+
 Method : "SL2" 
 Remark "SL2 trans-splice acceptor site"
 Colour YELLOW
@@ -3159,6 +3191,18 @@ Show_text
 GFF_source "SL2"
 GFF_feature "SL2_acceptor_site"
 GFF_SO "SO:0000709" // SL2_acceptor_site
+
+Method : "RNASeq_SL2"
+Remark   "SL2 trans-splice acceptor site"
+Colour   YELLOW
+Show_up_strand  
+Width    2.500000
+Right_priority   1.920000
+Show_text       
+GFF_source       "RNASeq_SL2"
+GFF_feature      "SL2_acceptor_site"
+GFF_SO   "SO:0000709"
+
 
 Method : "TSL"
 Remark "Indeterminate trans-splice acceptor site."
@@ -3192,6 +3236,16 @@ Show_text
 Remark "polyA run on Transcript sequence."
 
 Method : "polyA_site" 
+Colour CERISE
+Strand_sensitive	
+Width 1.000000
+Show_up_strand
+Show_text
+GFF_feature "polyA_site"
+GFF_SO "SO:0000553" // polyA_site
+Remark "polyadenylation site"
+
+Method : "RNASeq_polyA" 
 Colour CERISE
 Strand_sensitive	
 Width 1.000000
