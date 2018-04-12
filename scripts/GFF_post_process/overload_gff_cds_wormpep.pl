@@ -84,8 +84,6 @@ while (<$gff_in_fh>) {
         $attr .=  ";prediction_status=$tran_status->{$cds}" if exists $tran_status->{$cds} and $tran_status->{$cds};
         $attr .=  ";wormpep=$tran_wormpep->{$cds}"           if exists $tran_wormpep->{$cds} and $tran_wormpep->{$cds};
         $attr .=  ";locus=$tran_locus->{$cds}"              if exists $tran_locus->{$cds} and $tran_locus->{$cds};
-        #$attr .=  ";Note=$briefID{$cds}"                              if ($briefID{$cds} ne "");
-        #$attr .=  ";gene=$geneID{$cds}"                               if ($geneID{$cds} ne "");
         
         $already_done_cds{$cds} = 1;
         $changed_lines++;
@@ -96,13 +94,16 @@ while (<$gff_in_fh>) {
         $tr = $1; 
       } elsif (/ID=Pseudogene:([^;]+);/) {
         $tr = $1;
-      } else {
+      }
+
+      if ($tr) {
+        $attr .=  ";wormpep=$tran_wormpep->{$tr}"      if exists $tran_wormpep->{$tr} and $tran_wormpep->{$tr};
+        $attr .=  ";locus=$tran_locus->{$tr}"          if exists $tran_locus->{$tr} and $tran_locus->{$tr};
+        $changed_lines++;
+      }
+      elsif ($attr !~ /Operon=/) {
         $log->log_and_die("Could not find Transcript id in attribute field: $attr\n");
       } 
-      $attr .=  ";wormpep=$tran_wormpep->{$tr}"      if exists $tran_wormpep->{$tr} and $tran_wormpep->{$tr};
-      $attr .=  ";locus=$tran_locus->{$tr}"          if exists $tran_locus->{$tr} and $tran_locus->{$tr};
-
-      $changed_lines++;
     }
   } else {
     if( $feature eq 'CDS') {
@@ -112,8 +113,6 @@ while (<$gff_in_fh>) {
       $attr .=  " ; WormPep \"$tran_wormpep->{$cds}\""           if exists $tran_wormpep->{$cds} and $tran_wormpep->{$cds};
       $attr .=  " ; Locus \"$tran_locus->{$cds}\""               if exists $tran_locus->{$cds} and $tran_locus->{$cds};
 
-      #$attr .=  " ; Note \"$briefID{$i}\""                              if ($briefID{$i} ne "");
-      #$attr .=  " ; Gene \"$geneID{$i}\""                               if ($geneID{$i} ne "");
       $changed_lines++;
     } else {
       #non-coding genes
@@ -121,11 +120,14 @@ while (<$gff_in_fh>) {
       if (not $tr) {
         ($tr) = $attr =~ (/Pseudogene \"(\S+)\"/);
       }
-      $log->log_and_die("Could not find transcript name in attr field : $attr\n") if not $tr;
 
-      $attr .= " ; WormPep \"$tran_wormpep->{$tr}\"" if exists $tran_wormpep->{$tr} and $tran_wormpep->{$tr};
-      $attr .= " ; Locus \"$tran_locus->{$tr}\""     if exists $tran_locus->{$tr} and $tran_locus->{$tr};
-      $changed_lines++;
+      if ($tr) {
+        $attr .= " ; WormPep \"$tran_wormpep->{$tr}\"" if exists $tran_wormpep->{$tr} and $tran_wormpep->{$tr};
+        $attr .= " ; Locus \"$tran_locus->{$tr}\""     if exists $tran_locus->{$tr} and $tran_locus->{$tr};
+        $changed_lines++;
+      } elsif ($attr !~ /Operon \"\S+\"/) {
+        $log->log_and_die("Could not find transcript name in attr field : $attr\n");
+      }
     }
   }
   
