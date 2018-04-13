@@ -101,7 +101,7 @@ while (<$gff_in_fh>) {
         $attr .=  ";locus=$tran_locus->{$tr}"          if exists $tran_locus->{$tr} and $tran_locus->{$tr};
         $changed_lines++;
       }
-      elsif ($attr !~ /Operon=/) {
+      elsif ($attr !~ /Name=Operon:/) {
         $log->log_and_die("Could not find Transcript id in attribute field: $attr\n");
       } 
     }
