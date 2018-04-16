@@ -89,8 +89,8 @@ Show_up_strand
 Width 1.000000
 Show_text	
 GFF_source "dicistronic_mRNA"
-GFF_feature "dicistronic_mRNA"
-GFF_SO "SO:0000716" // dicistronic_mRNA
+GFF_feature "operon"
+GFF_SO "SO:0000178" // operon
 
 Method : "Deprecated_operon"
 Remark "Is an operon that was previously seen as an active operon."
