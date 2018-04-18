@@ -519,7 +519,7 @@ package Tmuris;
 use Carp;
 our @ISA = qw(Species);
 
-# sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/TMU/tmuris.repeatLib.fa'}
+sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/TMU/TMUE.fa'}
 sub short_name {'T. muris'}
 sub gspecies_name{'t_muris'}
 sub long_name{'Trichuris muris'}
