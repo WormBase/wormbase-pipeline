@@ -14,13 +14,14 @@ use strict;
 
 use Getopt::Long;
 use IO::File;
-use Dumper;
 use Storable;
 
 use lib $ENV{CVS_DIR};
+use lib "$ENV{CVS_DIR}/preFTPdumps/perSpecies";
 
 use Wormbase;
 use Log_files;
+use Dumper;
 
 
 my ($species,$format,$store,$debug,$test,$database,$outfile);

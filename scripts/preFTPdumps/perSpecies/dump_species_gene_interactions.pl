@@ -6,12 +6,14 @@
 use strict;
 
 use Getopt::Long;
-use Dumper;
+
 use IO::File;
 use Storable;
 
 use lib $ENV{CVS_DIR};
+use lib "$ENV{CVS_DIR}/preFTPdumps/perSpecies";
 
+use Dumper;
 use Wormbase;
 use Log_files;
 
