@@ -81,5 +81,8 @@ foreach my $gene (@genes) {
 }
 
 $of->close;
+$dbh->close();
 $log->mail;
+
+exit(0);
 
