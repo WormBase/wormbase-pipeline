@@ -37,9 +37,9 @@ GetOptions(
 ) || die("bad commandline parameter\n");
 
 
-die "You must supply a valid YAML config file\n" if not defined $yfile or not -e $yfile;
+die "You must supply a valid YAML config file\n" if not defined $yfile or (not -e $yfile and $yfile ne "-" ) ;
 
-my $global_config = YAML::LoadFile($yfile);
+my $global_config = $yfile eq "-" ? YAML::Load(do {local $/; <>}) : YAML::LoadFile($yfile);
 my $generic_config = $global_config->{generics};
 
 my $cvsDIR;

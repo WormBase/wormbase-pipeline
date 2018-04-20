@@ -39,6 +39,7 @@ sub _parse {
         }
         push @toplevels, $seq;
     }
+    Carp::croak("Fasta appears empty: $self->{genome_fa}") unless @toplevels;
     $self->{toplevels} = \@toplevels;
     $self->{need_agp}  = $need_agp;
 }
@@ -52,7 +53,9 @@ sub needs_contig_structure {
 }
 
 sub split {
-    my ( $self, $contig_fa_file, $agp_file ) = @_;
+    my ( $self, %h) = @_;
+    my $contig_fa_file = $h{fasta};
+    my $agp_file = $h{agp};
     if ( not defined $self->{toplevels} ) {
         $self->_parse();
     }
