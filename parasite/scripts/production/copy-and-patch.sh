@@ -7,9 +7,12 @@ echo "These were the comparator databases: No refresh needed? "
 $PREVIOUS_PARASITE_STAGING_MYSQL -e "show databases like \"%_core_%\"" | grep -v core_${PREVIOUS_PARASITE_VERSION}
 echo "Begin database copying"
 
-databaselist=$($PREVIOUS_PARASITE_STAGING_MYSQL -NB -e 'SHOW DATABASES LIKE "%\_core\_%"')
-databases=( `echo ${databaselist}` )
-
+if [ $# -gt 0 ] ; then
+ databases=$@
+else
+ databaselist=$($PREVIOUS_PARASITE_STAGING_MYSQL -NB -e 'SHOW DATABASES LIKE "%\_core\_%"')
+ databases=( `echo ${databaselist}` )
+fi
 for DB in "${databases[@]}"
 do
   echo "Copying $DB"
@@ -27,9 +30,8 @@ do
   fi
   echo "Dumping $DB to $NEWDB"
   ${PREVIOUS_PARASITE_STAGING_MYSQL}-ensrw mysqldump $DB | ${PARASITE_STAGING_MYSQL}-ensrw $NEWDB
+  echo "Using schema_patcher.pl to patch $NEWDB"
+  perl $ENSEMBL_CVS_ROOT_DIR/ensembl/misc-scripts/schema_patcher.pl $(${PARASITE_STAGING_MYSQL}-ensrw details script) \
+     --release $ENSEMBL_VERSION --nointeractive \
+     --database "$NEWDB"
 done
-
-echo "Using schema_patcher.pl to patch databases"
-
-perl $ENSEMBL_CVS_ROOT_DIR/ensembl/misc-scripts/schema_patcher.pl $(${PARASITE_STAGING_MYSQL}-ensrw details script) --release $ENSEMBL_VERSION --type core --verbose --nointeractive
-
