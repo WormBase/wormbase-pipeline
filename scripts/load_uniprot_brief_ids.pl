@@ -80,6 +80,14 @@ foreach my $gene (sort keys %$cur_data) {
       my $prod = $cds_product{$cds}->{product};
       my $uniprot = $cds_product{$cds}->{uniprot};
       
+      my $brief_id =  {
+        brief_id => $prod,
+        evidence_tag => "Accession_evidence", 
+        database => "UniProt",
+        accession => $uniprot,
+      };
+      $brief_ids{$brief_id->{brief_id}} = $brief_id;      
+
       my $update = 0;
       
       if (exists $cur_data->{$gene}->{$cds}->{brief_id}) {
@@ -87,42 +95,59 @@ foreach my $gene (sort keys %$cur_data) {
           if (exists $cur_data->{$gene}->{$cds}->{accession} and
               $cur_data->{$gene}->{$cds}->{accession} eq $uniprot) {
             $log->write_to("$cds : attached to UniProt $uniprot and product unchanged. Doing nothing\n") if $debug;
-            $stats{"2 - UniProt product matches WormBase brief_id and accessions match (no action)"}++;
+            $stats{"3 - UniProt product matches WormBase brief_id and accessions match (no action)"}++;
           } else {
             $log->write_to("$cds : UniProt product matches, but accession does not. Updating.\n");
             $update = 1;
-            $stats{"3 - Uniprot product matches WormBase product but accession does not (updating accession)"}++;
+            $stats{"5 - Uniprot product matches WormBase product but accession does not (updating accession)"}++;
           }
         } else {
           $log->write_to("$cds : UniProt product is different from current. Updating.\n");
           $update = 1;
-          $stats{"4 - UniProt product different from WormBase brief_id (updating brief_id)"}++;
+          $stats{"5 - UniProt product different from WormBase brief_id (updating whole Brief_id)"}++;
         }
       } else {
         $log->write_to("$cds : no brief_id. Updating.\n");
         $update = 1;
+        $stats{"6 - UniProt product and no WormBase product (adding Brief_id)"}++;
       }
 
       if ($update) {
-        $prod =~ s/\//\\\//g; 
-        print $acefh "\nCDS : \"$cds\"\n";
-        print $acefh "-D Brief_identification\n";
-        print $acefh "\nCDS : \"$cds\"\n";
-        print $acefh "Brief_identification \"$prod\" Accession_evidence \"UniProt\" \"$uniprot\"\n";      
-        $cur_data->{$gene}->{$cds} = {
-          brief_id => $prod,
-          evidence_tag => "Accession_evidence", 
-          database => "UniProt",
-          accession => $uniprot,
-        };
+        $brief_id->{brief_id} =~ s/\//\\\//g; 
+        $cur_data->{$gene}->{$cds} = $brief_id;
+
+        printf $acefh "\nCDS : \"%s\"\n", $cds;
+        printf $acefh "-D Brief_identification\n";
+        printf $acefh "\nCDS : \"%s\"\n", $cds;
+        printf $acefh "Brief_identification \"%s\" %s \"%s\" \"%s\"\n", $brief_id->{brief_id}, $brief_id->{evidence_tag}, $brief_id->{database}, $brief_id->{accession}; 
+
       }
     } else {
       if (exists $cur_data->{$gene}->{$cds}->{brief_id}) {
         $log->write_to("$cds : No UniProt product, but existing product. Doing nothing\n") if $debug; 
-        $stats{"1 - No UniProt product, but existing WormBase brief_id (no action)"}++;
+        $stats{"2 - No UniProt product, but existing WormBase brief_id (no action)"}++;
+      } 
+    }
+  }
+
+  # if there is only one product name associated with a gene, and it has only been associated with
+  # some of the isoforms, propagate it to the other isoforms
+  foreach my $cds (sort keys %{$cur_data->{$gene}}) {
+    if (not exists  $cur_data->{$gene}->{$cds}->{brief_id}) {
+      if (scalar(keys %brief_ids) == 1) {
+        $log->write_to("$cds : No UniProt product, no existing product, but propagating the product from other isoforms\n") if $debug; 
+        $stats{"1 - No UniProt product, no existing product, but propagating UniProt product from another isoform"}++;
+
+        my ($brief_id) = values(%brief_ids);
+        $cur_data->{$gene}->{$cds} = $brief_id;
+
+        printf $acefh "\nCDS : \"%s\"\n", $cds;
+        printf $acefh "-D Brief_identification\n";
+        printf $acefh "\nCDS : \"%s\"\n", $cds;
+        printf $acefh "Brief_identification \"%s\" %s \"%s\" \"%s\"\n", $brief_id->{brief_id}, $brief_id->{evidence_tag}, $brief_id->{database}, $brief_id->{accession}; 
       } else {
-        $log->write_to("$cds : No UniProt product and no existing product. Doing nothing\n") if $debug; 
-        $stats{"0 - No UniProt product and no WormBase product (no action)"}++;
+        $log->write_to("$cds : No UniProt product, no existing product\n") if $debug; 
+        $stats{"0 - No UniProt product, no existing product"}++;
       }
     }
   }
