@@ -61,7 +61,6 @@ my $ace_dir    = $wormbase->autoace;                  # AUTOACE DATABASE DIR
 my $wormpepdir = $wormbase->wormpep;                  # CURRENT WORMPEP
 my $ver        = $wormbase->get_wormbase_version();
 my $PEP_PREFIX = $wormbase->pep_prefix;
-my $WORMPEP_PREFIX = $wormbase->wormpep_prefix; # the namely WP: pr BP:
 my $PEPDIR 	   = $wormbase->pepdir_prefix;
 # read history file
 our ( $gene, $CE, $in, $out );
@@ -267,7 +266,7 @@ foreach my $key ( sort keys %CE_history ) {
 #		$log->error("$key has no sequence in fasta file \n");
 #		next;
 #	}
-    print ACE "\nProtein : \"$WORMPEP_PREFIX:$key\"\n";
+    print ACE "\nProtein : \"$key\"\n";
 
     ## Write histories
     foreach my $release ( sort byRelease keys %{ $CE_history{$key} } ) {
@@ -276,7 +275,6 @@ foreach my $key ( sort keys %CE_history ) {
         }
     }
 
-    #print ACE "Database \"WORMPEP\" WORMPEP_ID \"$WORMPEP_PREFIX:$key\"\n";
     print ACE "Species \"".$wormbase->full_name."\"\n";
     print ACE "Wormpep\n" if ($wormbase->species eq 'elegans');
 
@@ -302,7 +300,7 @@ foreach my $key ( sort keys %CE_history ) {
     foreach my $pepid( @{$CE_corr_CDS{$key}}) {
     	if ($CE_sequence{$pepid}) {
 	    print ACE "Molecular_weight ", &get_mol_weight( $CE_sequence{$pepid} )," Inferred_automatically \"build_pepace.pl\"\n";
-	    print ACE "\nPeptide : \"$WORMPEP_PREFIX:$key\"\n";
+	    print ACE "\nPeptide : \"$key\"\n";
 	    print ACE "$CE_sequence{$pepid}\n";
 	    last; # we only need this once 
 	}
