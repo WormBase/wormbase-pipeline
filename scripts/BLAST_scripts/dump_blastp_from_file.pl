@@ -114,7 +114,7 @@ our %org_prefix = (
 		    'wublastp_brenneri'      => '',
 		    'wublastp_brugia'        => '',
 		    'wublastp_ovolvulus'     => '',
-                    'wublastp_sratti'        => 'P',
+                    'wublastp_sratti'        => '',
                     'wublastp_tmuris'        => '',
 		  );
 
