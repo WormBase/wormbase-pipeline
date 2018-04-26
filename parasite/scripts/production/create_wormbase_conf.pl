@@ -35,7 +35,7 @@ sub wormbase_gff3 {
   my ($spe, $cies, $bioproject) = split /_/, $species;
   return join ("/", &wormbase_ftp_dir(@_), join(".", lc((substr $spe, 0, 1 ) . "_" . $cies), uc($bioproject), "WS$wormbase_version", "annotations.gff3.gz" ));
 }
-sub wormbase_fa {
+sub wormbase_fasta {
   my ($species, $wormbase_version) = @_;
   my ($spe, $cies, $bioproject) = split /_/, $species;
   return join ("/", &wormbase_ftp_dir(@_), join(".", lc((substr $spe, 0, 1 ) . "_" . $cies), uc($bioproject), "WS$wormbase_version", "genomic.fa.gz" ));
@@ -50,7 +50,7 @@ sub config {
   my ($species, @__) = @_;
   my $result = {
     gff3 => &wormbase_gff3(@_),
-    fa => &wormbase_fa(@_),
+    fasta => &wormbase_fasta(@_),
     core_database => {
       dbname => &wormbase_core_db_name(@_),
     },
