@@ -12,6 +12,7 @@ my @wormbase_core_species = qw(
   brugia_malayi_prjna10729
   onchocerca_volvulus_prjeb513
   strongyloides_ratti_prjeb125
+  trichuris_muris_prjeb126
 );
 #config for an ancient hack in worm_lite.pl . Split by comma if there are more selenoproteins.
 my $seleno_proteins = {

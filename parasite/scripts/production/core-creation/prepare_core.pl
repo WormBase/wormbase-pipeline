@@ -9,15 +9,15 @@ my $data_dir_path = $ARGV[0];
 die "Usage: $0 <data dir>" unless -d $data_dir_path;
 $data_dir_path =  File::Spec->rel2abs($data_dir_path) unless File::Spec->file_name_is_absolute($data_dir_path);
 my $data_dir_name = File::Basename::basename($data_dir_path); 
-my $gff_path = File::Spec->catfile($data_dir_path, "$data_dir_name.gff3");
-die "Expected gff at: $gff_path" unless -f $gff_path;
-my $fasta_path = File::Spec->catfile($data_dir_path,"$data_dir_name.fa");
-die "Expected fasta at: $fasta_path" unless -f $fasta_path;
 my $conf_path = File::Spec->catfile($data_dir_path, "$data_dir_name.conf");
 
 while (true) {
   if ( not -f $conf_path) {
     my $conf = Load(do {local $/; <DATA>});
+    my $gff_path = File::Spec->catfile($data_dir_path, "$data_dir_name.gff3");
+    die "Expected gff at: $gff_path" unless -f $gff_path;
+    my $fasta_path = File::Spec->catfile($data_dir_path,"$data_dir_name.fa");
+    die "Expected fasta at: $fasta_path" unless -f $fasta_path;
     $conf->{gff3} = $gff_path;
     $conf->{toplevel} = "scaffold";
     my $fasta = CoreCreation::Fasta->new($fasta_path);
@@ -59,6 +59,5 @@ meta:
  provider.name: ?
  provider.url: ? 
  species.biosample: ?
- species.taxonomy_id: ?
 # Consult WormBook if needed. Remove for Platyhelminthes.
  species.nematode_clade: ?
