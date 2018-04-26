@@ -55,7 +55,7 @@ while (my($species,$wb)=each %accessors){
   }
 
   while (my $seq = $prot_seqio->next_seq) {
-    my $id = sprintf("%s:%s", $wb->ncbi_bioproject, $seq->id);
+    my $id = sprintf("%s_%s", $wb->ncbi_bioproject, $seq->id);
     printf($acefh "\nProtein : \"%s\"\n", $id);
     printf($acefh "Species \"%s\"\n", $wb->full_name);
     printf($acefh "Corresponding_CDS \"%s\"\n", $id);
@@ -89,7 +89,7 @@ while (my($species,$wb)=each %accessors){
       my ($name) = $name_attr =~ /Name=(\S+)/; 
       my ($id) = $id_attr =~ /ID=(\S+)/;
 
-      my $ace_name = sprintf("%s:%s", $wb->ncbi_bioproject, $name);
+      my $ace_name = sprintf("%s_%s", $wb->ncbi_bioproject, $name);
 
       if ($l[2] eq 'gene') {
         $geneid2name{$id} = $ace_name;
