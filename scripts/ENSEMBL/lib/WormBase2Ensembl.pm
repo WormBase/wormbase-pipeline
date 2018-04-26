@@ -120,6 +120,7 @@ sub parse_genes_gff3_fh {
 
   while(<$fh>) {
     chomp;
+    next unless $_;
     next if /^\#/;
     my @l = split(/\t+/, $_);
 
