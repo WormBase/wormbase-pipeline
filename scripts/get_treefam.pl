@@ -64,7 +64,7 @@ while (my($cds,$protein_id)=each %cds2wormpep){
  }
 
  if ($ids[0]){
-  print $out "Protein : ${\$wormbase->wormpep_prefix}:$protein_id\n";
+  print $out "Protein : $protein_id\n";
   map {print $out "Database TREEFAM TREEFAM_ID $_\n"} @ids;
   print $out "\n";
   print $out "CDS : $cds\n";
