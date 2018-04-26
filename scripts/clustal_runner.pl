@@ -133,7 +133,7 @@ while (my $line = <$infile>){
       next;
     }
 
-    my ($protein)=$db->fetch(Protein => $wb->wormpep_prefix .':'. $wpid);
+    my ($protein)=$db->fetch(Protein => $wpid);
     $log->write_to("can't find $wpid\n") unless $protein;
     
     next unless $protein;
