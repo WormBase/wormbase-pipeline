@@ -328,7 +328,7 @@ sub get_method {
 
   my $candidate = "enhancer";
   my $method;
-  my @methods = ('enhancer', 'silencer', 'TF_binding_site', 'regulatory_region', 'nc_conserved_region', 'binding_site');
+  my @methods = ('enhancer', 'silencer', 'TF_binding_site', 'regulatory_region', 'nc_conserved_region', 'binding_site', 'promoter');
 
   do {
     print "Method [$candidate] (",join ', ',@methods,") > ";
@@ -453,7 +453,7 @@ sub get_desc {
   my $desc;
   my ($method, $TF_name, $public_name, $gene_name) = @_;
 
-  my $candidate;
+  my $candidate='';
   if ($method eq 'TF_binding_site') {
     $candidate = "This is a $TF_name transcription factor binding site for $gene_name.";
   } elsif ($method eq 'binding_site') {
@@ -466,6 +466,8 @@ sub get_desc {
     $candidate = "This is the '$public_name' regulatory region for $gene_name.";
   } elsif ($method eq 'nc_conserved_region') {
     $candidate = "This is the conserved '$public_name' region for $gene_name.";
+  } elsif ($method eq 'promoter') {
+    $candidate = "This is the '$public_name' promoter region for $gene_name.";
   }
 
   do {
@@ -622,6 +624,13 @@ sub get_location {
   #print "gene location: $gene_id, $chromosome, $gene_start, $gene_sense\n";
 
   do {
+    print "\n";
+    print "New Feature location\n";
+    print "offsets: a pair of numbers, -ve for upsteam, +ve for downstream of the START\n";
+    print "flanking sequences: acgtacgt agctagct\n";
+    print "sequence of region: aaggcctt\n";
+    print "quit: quit\n";
+    print "\n";
     print "Location (offsets, sequence, flanking sequences, or quit) > ";
     my $input = <STDIN>;
     chomp ($input);
@@ -650,7 +659,7 @@ sub get_location {
 	my $flank2 = lc $2;
       # search within 30Kb of the START of the gene in both senses
 	my $area = 30000;
-	my $seq .= $seq_obj->Sub_sequence($chromosome, $gene_start-$area, $area * 2);
+	my $seq = $seq_obj->Sub_sequence($chromosome, $gene_start-$area, $area * 2);
 	if ($gene_sense eq '-') {
 	  $seq = $seq_obj->DNA_revcomp($seq);
 	}
@@ -695,7 +704,7 @@ sub get_location {
 	my $flank1 = lc $1;
       # search within 10Kb of the START of the gene in both senses
 	my $area = 10000;
-	my $seq .= $seq_obj->Sub_sequence($chromosome, $gene_start-$area, $area * 2);
+	my $seq = $seq_obj->Sub_sequence($chromosome, $gene_start-$area, $area * 2);
 	if ($gene_sense eq '-') {
 	  $seq = $seq_obj->DNA_revcomp($seq);
 	}
@@ -810,7 +819,7 @@ sub get_gene_id {
 sub get_sequence_text {
   my ($chromosome, $start, $end, $sense) = @_;
 
-  my $seq .= $seq_obj->Sub_sequence($chromosome, $start-1, $end-$start+1);
+  my $seq = $seq_obj->Sub_sequence($chromosome, $start-1, $end-$start+1);
   if ($gene_sense eq '-') {
     $seq = $seq_obj->DNA_revcomp($seq);
   }
