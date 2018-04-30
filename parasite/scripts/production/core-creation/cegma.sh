@@ -9,7 +9,7 @@ species=$(basename $(dirname $fasta) )
 core_db=$($PARASITE_STAGING_MYSQL -e 'show databases' | grep "${species}_core_${PARASITE_VERSION}_${ENSEMBL_VERSION}" | head -n 1)
 if [ ! "core_db" ] ; then echo "Could not find core db for species $species " ; exit 1 ; fi
 
-tmp=$(dirname $fasta)/.tmp
+tmp=$PARASITE_SCRATCH/cegma/WBPS${PARASITE_VERSION}/$species
 mkdir -pv $tmp
 cd $tmp
 echo "Running CEGMA"
