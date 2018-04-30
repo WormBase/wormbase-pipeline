@@ -14,7 +14,7 @@ my @wormbase_core_species = qw(
   strongyloides_ratti_prjeb125
   trichuris_muris_prjeb126
 );
-#config for an ancient hack in worm_lite.pl . Split by comma if there are more selenoproteins.
+#Split by comma if there are more selenoproteins.
 my $seleno_proteins = {
   caenorhabditis_elegans_prjna13758 => "WBGene00015553",
   caenorhabditis_briggsae_prjna10731 => "WBGene00028139",
@@ -24,6 +24,10 @@ my $seleno_proteins = {
   brugia_malayi_prjna10729 => "WBGene00222286",
   onchocerca_volvulus_prjeb513 => "WBGene00241445",
 };
+# Could be incomplete! This is per assembly, we rarely change assemblies, and usually not through this script.
+my $mitochondrial_seq_regions = {
+  trichuris_muris_prjeb126 => "TMUE_MITO"
+}; 
 
 sub wormbase_ftp_dir {
   my ($species, $wormbase_version) = @_;
@@ -57,6 +61,9 @@ sub config {
   };
   my $s = $seleno_proteins->{$species};
   $result->{"seleno"} = $s if $s;
+  
+  my $m = $mitochondrial_seq_regions->{$species};
+  $result->{"mitochondrial"} = $m if $m;
   return $result;
 }
 
