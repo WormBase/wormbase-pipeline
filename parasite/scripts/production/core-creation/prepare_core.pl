@@ -32,6 +32,8 @@ while (true) {
       $conf->{fasta} = $fasta_path;
       $conf->{seqlevel} = "scaffold";
     }
+    my $mito = $fasta->mito;
+    $conf->{mitochondrial} = $mito if $mito;
     
     
     open(FH, '>', $conf_path) or die $!;
