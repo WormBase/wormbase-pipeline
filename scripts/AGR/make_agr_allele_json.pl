@@ -112,7 +112,7 @@ while (my $obj = $it->next) {
     secondaryIds => [],
     taxonId       => "NCBITaxon:" . $taxid,
     gene          => "WB:$gene",
-    crossReferences => [ { id => "WBVar:$obj", page => "allele" }],
+    crossReferences => [ { id => "WBVar:$obj", pages => ["allele"] }],
   };
 
 
