@@ -43,7 +43,7 @@ while (true) {
   
   my $text = File::Slurp::read_file($conf_path);
   if ($text =~ /\?/) {
-    die unless -t STDOUT;
+    die "Complete the config file and remove all the ?s!" unless -t STDOUT;
     system("vi $conf_path") and die; #:cq in vim to escape this
   } else {
     last;
