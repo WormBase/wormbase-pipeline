@@ -85,8 +85,15 @@ while (my $obj = $it->next) {
         objectId => "WB:$g",
         objectName => $obj->Public_name->name,
         DOid     => $doterm->name,
-        taxonId  => "NCBITaxon:$taxid",
-        dataProvider => "WB", 
+        dataProvider => [
+          { 
+            crossReference => {
+              id => "WB",
+              pages => ["homepage"],
+            },
+            type => "curated",
+          },
+        ],
         dateAssigned => defined $evi_date ? $evi_date : $date,
         geneticSex   => "hermaphrodite",
         evidence     => {
@@ -126,8 +133,15 @@ while( my $obj = $it->next) {
 
   my $annot = {
     DOid         => $obj->Disease_term->name,
-    taxonId      => "NCBITaxon:$taxid",
-    dataProvider => "WB",
+    dataProvider => [
+      { 
+        crossReference => {
+          id => "WB",
+          pages => ["homepage"],
+        },
+        type => "curated",
+      },
+    ],
     dateAssigned => $evi_date,
     geneticSex  => ($obj->Genetic_sex) ? $obj->Genetic_sex->name : "hermaphrodite",
     evidence     => {
@@ -243,7 +257,15 @@ if ($daf) {
 } else {
   my $meta_data = {
     dateProduced => $date,
-    dataProvider => "WB", 
+    dataProvider => [
+      { 
+        crossReference => {
+          id => "WB",
+          pages => ["homepage"],
+        },
+        type => "curated",
+      },
+        ],
     release      => (defined $ws_version) ? $ws_version : $wormbase->get_wormbase_version_name(),
   };
   
@@ -357,7 +379,7 @@ sub write_DAF_line {
   }
 
   printf($fh "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", 
-         $obj->{taxonId},
+         $taxid,
          $obj->{objectRelation}->{objectType}, 
          $obj->{objectId},
          $obj->{objectName},

@@ -154,6 +154,7 @@ INT: while (my $obj = $it->next) {
 
     $id_a = $id_b = $o->{id};
     $name_a = $name_b = $o->{public_name};
+    $sp_a = $sp_b = $o->{species};
 
     if (exists $o->{roles}->{Bait} and exists $o->{roles}->{Target}) {
       if ($int_type eq 'ProteinDNA') {
@@ -185,7 +186,7 @@ INT: while (my $obj = $it->next) {
       $type_b = $psi_mi_prot;
     } elsif ($int_type eq 'ProteinDNA') {
       if (scalar(keys %{$obj_a->{roles}}) != 1 or scalar(keys %{$obj_b->{roles}}) != 1) {
-        warn( "Skipping $obj - has unexpected content (multiple of missing roles for genes)\n");
+        warn( "Skipping $obj - has unexpected content (multiple or missing roles for genes)\n");
         next;
       }
       if (exists $obj_a->{roles}->{Bait} and exists $obj_b->{roles}->{Target}) {

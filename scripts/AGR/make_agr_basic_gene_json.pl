@@ -74,7 +74,15 @@ my $base_query = 'FIND Gene WHERE Live AND Species = "Caenorhabditis elegans"';
 
 my $meta_data = {
   dateProduced => &get_rfc_date(),
-  dataProvider => "WB", 
+  dataProvider => [
+    { 
+      crossReference => {
+        id => "WB",
+        pages => ["homepage"],
+      },
+      type => "curated",
+    },
+      ],
   release      => (defined $ws_version) ? $ws_version : $wormbase->get_wormbase_version_name(),
 };
 

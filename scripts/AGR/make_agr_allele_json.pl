@@ -108,6 +108,7 @@ while (my $obj = $it->next) {
   my $json_obj = {
     primaryId     => "WBVar:$obj", 
     symbol        => $symbol,
+    symbolText    => $symbol,
     synonyms      => [keys \%synonyms],
     secondaryIds => [],
     taxonId       => "NCBITaxon:" . $taxid,
@@ -122,7 +123,15 @@ while (my $obj = $it->next) {
 
 my $meta_data = {
   dateProduced => &get_rfc_date(),
-  dataProvider => "WB", 
+  dataProvider => [
+    { 
+      crossReference => {
+        id => "WB",
+        pages => ["homepage"],
+      },
+      type => "curated",
+    },
+      ],
   release      => (defined $ws_version) ? $ws_version : $wormbase->get_wormbase_version_name(),
 };
 
