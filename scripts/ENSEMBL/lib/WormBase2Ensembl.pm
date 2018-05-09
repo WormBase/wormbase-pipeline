@@ -571,12 +571,10 @@ sub phase_fix {
         
         $first_exon_better_phase = $phase if $stops_by_phase{$phase} == 0;
       }
-      if ($first_exon_original_phase != $first_exon_better_phase) {
-          $self->verbose and printf STDERR "Fixed transcript %s: changed phase of the first exon phase from %d to %d\n", $t->stable_id, $first_exon_original_phase, $first_exon_better_phase;
-      } else {
-        # We've achieved nothing. Fix the exon to how it was.
-        $exon_h->[0]->phase($first_exon_original_phase);
-      }
+
+      printf STDERR "Fixed transcript %s: changed phase of the first exon phase from %d to %d\n", $t->stable_id, $first_exon_original_phase, $first_exon_better_phase
+        if $first_exon_original_phase ne $first_exon_better_phase and $self->verbose;
+      $exon_h->[0]->phase($first_exon_better_phase);
     }
   }
 }
