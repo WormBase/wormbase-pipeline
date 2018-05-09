@@ -29,8 +29,17 @@ mkdir -p $BUSCO_TMP
 
 cd $BUSCO_TMP
 
+run_log=$BUSCO_TMP/run-busco.$(date "+%Y-%m-%d").out
+python3 $BUSCO/BUSCO.py -sp $species_parameter_for_augustus -l $busco_library -o $species -i $fasta -c 8 -m genome -f -r \
+  | tee $run_log 
 
-python3 $BUSCO/BUSCO.py -sp $species_parameter_for_augustus -l $busco_library -o $species -i $fasta -c 8 -m genome -f -r 
+#BUSCO doesn't reliably use status codes
+#https://gitlab.com/ezlab/busco/issues/84 
+if grep '^CRITICAL\|^ERROR' $run_log ; then
+  echo "Run log said a worrying thing. Bailing out!"
+  exit 1
+fi
+
 
 result=$BUSCO_TMP/run_$species/short_summary_${species}.txt
 
