@@ -22,8 +22,8 @@ if ! [ "$cegma_complete" ] || ! [ "$cegma_partial" ] ; then
     echo "Could not parse: ./output.completeness_report"
     exit 1
 fi
+${PARASITE_STAGING_MYSQL}-ensrw $core_db -e 'delete from meta where meta_key like "assembly.cegma%"'
  
 ${PARASITE_STAGING_MYSQL}-ensrw $core_db -e "insert into meta (meta_key, meta_value) values (\"assembly.cegma_complete\", \"$cegma_complete\");"
 ${PARASITE_STAGING_MYSQL}-ensrw $core_db -e "insert into meta (meta_key, meta_value) values (\"assembly.cegma_partial\", \"$cegma_partial\");"
 echo "Complete!"
-rm -v $tmp
