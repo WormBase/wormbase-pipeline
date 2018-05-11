@@ -252,32 +252,29 @@ sub _sort_transcripts {
 
   my @trans = @{$self->{'transcripts'}};
 
-  if (scalar(@trans) > 1) {
-
-    # sort by start, then end, then exon fingerprint. This is not perfect, but it will at 
-    # ensure that identical CDSs with unchanged evidence will end up with the transcripts
-    # that have been named the same between builds. Need rigourous transcript mapping 
-    # (i.e. comparing new transcripts with those produced in last build) to solve this 
-    # problem properly. 
-    my @fps;
-    foreach my $t (@trans) {
-      my @ex = map { $_->[0], $_->[1] } $t->sorted_exons;
-      my $fp = join(":", @ex);
-      push @fps, [$t, $t->start, $t->end, $fp];
-    }
-
-    @trans = map { $_->[0] } sort { $a->[1] <=> $b->[1] or $a->[2] <=> $b->[2] or $a->[3] cmp $b->[3] } @fps;
-
-    for( my $cnt = 1; $cnt <= scalar(@trans); $cnt++) {
-      my $tran = $trans[$cnt-1];
-      my $tname = $tran->name;
-      $tname =~ s/\.\d+$//; 
-      $tname .= ".$cnt";
-      $tran->name($tname);
-    }
-
-    $self->{'transcripts'} = \@trans;
+  # sort by start, then end, then exon fingerprint. This is not perfect, but it will at 
+  # ensure that identical CDSs with unchanged evidence will end up with the transcripts
+  # that have been named the same between builds. Need rigourous transcript mapping 
+  # (i.e. comparing new transcripts with those produced in last build) to solve this 
+  # problem properly. 
+  my @fps;
+  foreach my $t (@trans) {
+    my @ex = map { $_->[0], $_->[1] } $t->sorted_exons;
+    my $fp = join(":", @ex);
+    push @fps, [$t, $t->start, $t->end, $fp];
   }
+  
+  @trans = map { $_->[0] } sort { $a->[1] <=> $b->[1] or $a->[2] <=> $b->[2] or $a->[3] cmp $b->[3] } @fps;
+  
+  for( my $cnt = 1; $cnt <= scalar(@trans); $cnt++) {
+    my $tran = $trans[$cnt-1];
+    my $tname = $tran->name;
+    $tname =~ s/\.\d+$//; 
+    $tname .= ".$cnt";
+    $tran->name($tname);
+  }
+  
+  $self->{'transcripts'} = \@trans;
 }
 
 =head2 add_matching_cDNA
