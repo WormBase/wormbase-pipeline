@@ -109,8 +109,8 @@ blat BLAT_ncRNA_BEST elegans
 blat BLAT_ncRNA_OTHER elegans
 blat BLAT_WASHU elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti tmuris
 blat BLAT_NEMBASE elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti tmuris
-blat BLAT_Trinity_BEST elegans briggsae brugia ovolvulus japonica
-blat BLAT_Trinity_OTHER elegans briggsae brugia ovolvulus japonica
+blat BLAT_Trinity_BEST elegans briggsae brugia ovolvulus japonica tmuris
+blat BLAT_Trinity_OTHER elegans briggsae brugia ovolvulus japonica tmuris
 blat SL1 elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti tmuris
 blat SL2 elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti tmuris
 blat polyA_signal_sequence elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti tmuris
