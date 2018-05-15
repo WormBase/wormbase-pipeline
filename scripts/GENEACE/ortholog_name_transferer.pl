@@ -115,6 +115,12 @@ my @elegans_genes = $acedb->fetch (-query => 'FIND Gene WBGene* WHERE Live AND S
 $log->write_to("Fetch non-elegans non-ovolvulus non-tmuris non-sratti genes\n");
 my @other_genes = $acedb->fetch (-query => 'FIND Gene WBGene* WHERE Live AND Species != "Caenorhabditis elegans" AND Species != "Onchocerca volvulus" AND Species != "Trichuris muris" AND Species != "Strongyloides ratti"');
 
+# get other species DEAD genes
+# We wish to be able to display a warning if we assign a CGC_name and there is another gene that is already DEAD but which still has the CGC_name - it needs to be manually removed from the DEAD gene.
+$log->write_to("Fetch DEAD non-elegans non-ovolvulus non-tmuris non-sratti genes\n");
+my @dead_other_genes = $acedb->fetch (-query => 'FIND Gene WBGene* WHERE Dead AND Species != "Caenorhabditis elegans" AND Species != "Onchocerca volvulus" AND Species != "Trichuris muris" AND Species != "Strongyloides ratti"');
+
+
 $log->write_to("Ignore genes with paper_evidence for the name\n");
 my %paper_bork_list = get_paper_bork_list(@other_genes);
 
@@ -128,6 +134,11 @@ my %existing = store_existing(@other_genes);
 my %assigned_names;
 my %correct_already;
 
+
+# store existing DEAD non-elegans gene CGC names 
+# list of existing DAED names to check that all have been set up correctly
+$log->write_to("Store the existing DEAD genes with names\n");
+my %dead_existing = store_existing(@dead_other_genes);
 
 if ($sanitycheck) {
   $log->write_to("Sanity check\n");
@@ -167,7 +178,7 @@ if ($sanitycheck) {
   
   # check to see if there are any CGC names that are set but should not be.
   $log->write_to("Check existing CGC names\n");
-  check_existing(\%existing, \%assigned_names, \%correct_already);
+  check_existing(\%dead_existing, \%existing, \%assigned_names, \%correct_already);
  
 
 }
@@ -564,26 +575,35 @@ sub store_existing {
   return %existing;
 }
 #######################################################################################
+# report any genes which are DEAD but which have a CGC name that we have just assigned to another gene
 # report any non-elegans genes that have a CGC name that we did not set
 sub check_existing {
-  my ($existing, $assigned_names, $correct_already) = @_;
+  my ($dead_existing, $existing, $assigned_names, $correct_already) = @_;
+
+  foreach my $dead_gene (keys %{$dead_existing}) {
+    my $name = $existing->{$dead_gene};
+    if (exists $assigned_names->{$name}) {
+      $log->write_to("The Dead gene $dead_gene has a name $name but this is bogus: this name has now correctly been assigned to $assigned_names->{$name} - no action has been taken, but it needs attention\n");
+    }
+  }
+
 
   foreach my $gene (keys %{$existing}) {
     my $name = $existing->{$gene};
     if (exists $assigned_names->{$name}) {
       if (exists $paper_bork_list{$gene}) {
-	$log->write_to("The gene $gene has a name $name but the only evidence for this is Paper_evidence: this name has correctly been assigned to $assigned_names->{$name} - no action taken, but it needs attention\n");
+	$log->write_to("The gene $gene has a name $name but the only evidence for this is Paper_evidence: this name has correctly been assigned to $assigned_names->{$name} - no action has been taken, but it needs attention\n");
       } elsif (exists $RNA_bork_list{$gene}) {
-	$log->write_to("The gene $gene has a name $name and is a ncRNA: this name has correctly been assigned to $assigned_names->{$name} - no action taken, but it needs attention\n");
+	$log->write_to("The gene $gene has a name $name and is a ncRNA: this name has correctly been assigned to $assigned_names->{$name} - no action has been taken, but it needs attention\n");
       } else {
 	$log->write_to("The gene $gene has a name $name but this is bogus: it will be deleted: this name has correctly been assigned to $assigned_names->{$name}\n");
 	delete_incorrect_orthology($gene, $name, "The CGC name $name was deleted as there was no evidence to support it. This name has correctly been assigned to $assigned_names->{$name}");
       }      
     } else {
       if (exists $paper_bork_list{$gene}) {
-	$log->write_to("The gene $gene has a name $name but the only evidence for this is Paper_evidence - no action taken\n");
+	$log->write_to("The gene $gene has a name $name but the only evidence for this is Paper_evidence - no action has been taken\n");
       } elsif (exists $RNA_bork_list{$gene}) {
-	$log->write_to("The gene $gene has a name $name and is a ncRNA - no action taken\n");
+	$log->write_to("The gene $gene has a name $name and is a ncRNA - no action has been taken\n");
       } else {
 	$log->write_to("The gene $gene has a name $name but this is bogus: it will be deleted\n");
 	delete_incorrect_orthology($gene, $name, "The CGC name $name was deleted as there was no evidence to support it.");
