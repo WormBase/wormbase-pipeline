@@ -44,12 +44,14 @@ sub run {
   my $suffix = $self->param_required('suffix');
 
 #connect to core database and get info
-  my $mc       = $self->core_dba->get_MetaContainer();
+  my $mc = Bio::EnsEMBL::Registry->get_adaptor($species, 'Core', 'MetaContainer');
   my $host     = $mc->dbc->host();
   my $port     = $mc->dbc->port();
-  my $bioproject = $mc->single_value_by_key('species.ftp_genome_id');
   my $dbname = $mc->dbc->dbname();
   my ($sp) = ($dbname =~ /([^_]+_[^_]+)_.*?$/); 
+  my $bioproject = 
+    $mc->single_value_by_key('species.ftp_genome_id');
+  $species =~ /[^_]+_[^_]+_([^_])/ and $bioproject //= $1;
   $mc->dbc->disconnect_if_idle();
 
 #create directory structure

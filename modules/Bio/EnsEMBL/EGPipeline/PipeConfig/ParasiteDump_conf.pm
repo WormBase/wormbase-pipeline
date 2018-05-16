@@ -28,7 +28,7 @@ sub default_options {
   return {
 
     %{$self->SUPER::default_options},
-    max_hive_capacity => 200,
+    max_hive_capacity => 150,
 
     division => ['parasite'],
     dump_genome     => $ENV{WORM_CODE}."/scripts/ENSEMBL/scripts/dump_genome.pl",
@@ -46,37 +46,24 @@ sub default_options {
       -driver => 'mysql',
     },
 
-
-    #
-    # ftp dumping options
-    #
+    species => [],
+    antispecies => [],
     ftp_outdir => '',
-    ftp_species => [],
-    # put core species in here
-    ftp_antispecies => [],
-
-    ftp_genome	             => 1,
-    ftp_genome_masked	     => 1,
-    ftp_genome_softmasked    => 1,
-    ftp_cds                  => 1,
-    ftp_mrna                 => 1,
-    ftp_protein              => 1,
-    ftp_gff3                 => 1,
-    ftp_gtf                  => 1,
-    ftp_create_core_symlinks => 1,
-
-
-    #
-    # BLAST dumping options
-    #
     blast_outdir => '',
-    blast_species => [],
-    blast_antispecies => [],
-
-    blast_genome         => 1,
-    blast_genome_masked  => 1,
-    blast_mrna           => 1,
-    blast_protein        => 1,
+    dump_ftp => join("," , 
+      qw/DumpGenome
+      DumpGenomeMasked
+      DumpGenomeSoftMasked
+      DumpTranscriptsCDS
+      DumpTranscriptsmRNA
+      DumpProteins
+      DumpGFF3
+      DumpGTF/),
+    dump_blast =>join( ",", 
+     qw/DumpGenomeBlast
+      DumpGenomeMaskedBlast
+      DumpTranscriptsBlast
+      DumpProteinsBlast/),
   };
 }
 
@@ -102,48 +89,9 @@ sub pipeline_analyses {
     push @$ini, 'SpeciesFactoryBlast';
   }
 
-  my $ftp_analysis = [];
-
-  if ($self->o('ftp_genome')) {
-    push @$ftp_analysis, 'DumpGenome';
-  }
-  if ($self->o('ftp_genome_masked')) {
-    push @$ftp_analysis, 'DumpGenomeMasked';
-  }
-  if ($self->o('ftp_genome_softmasked')) {
-    push @$ftp_analysis, 'DumpGenomeSoftMasked';
-  }
-  if ($self->o('ftp_cds')) {
-    push @$ftp_analysis, 'DumpTranscriptsCDS';
-  }
-  if ($self->o('ftp_mrna')) {
-    push @$ftp_analysis, 'DumpTranscriptsmRNA';
-  }
-  if ($self->o('ftp_protein')) {
-    push @$ftp_analysis, 'DumpProteins';
-  }
-  if ($self->o('ftp_gff3')) {
-    push @$ftp_analysis, 'DumpGFF3';
-  }
-  if ($self->o('ftp_gtf')) {
-    push @$ftp_analysis, 'DumpGTF';
-  }
-
-  my $blast_analysis = [];
-
-  if ($self->o('blast_genome')) {
-    push @$blast_analysis, 'DumpGenomeBlast';
-  }
-  if ($self->o('blast_genome_masked')) {
-    push @$blast_analysis, 'DumpGenomeMaskedBlast';
-  }
-  if ($self->o('blast_mrna')) {
-    push @$blast_analysis, 'DumpTranscriptsBlast';
-  }
-  if ($self->o('blast_protein')) {
-    push @$blast_analysis, 'DumpProteinsBlast';
-  }
-
+  my @ftp_analysis = $self->o('ftp_outdir') ? split "," , $self->o('dump_ftp') : ();
+  my @blast_analysis = $self->o('blast_outdir') ? split "," , $self->o('dump_blast') : ();
+  
   return [
     {
       -logic_name      => 'InitialisePipeline',
@@ -163,9 +111,9 @@ sub pipeline_analyses {
       -module            => 'Bio::EnsEMBL::EGPipeline::Common::RunnableDB::EGSpeciesFactory',
       -max_retry_count   => 1,
       -parameters        => {
-                              division        => $self->o('division'),
-                              species         => $self->o('blast_species'),
-                              antispecies     => $self->o('blast_antispecies'),
+                              species         => $self->o('species'),
+                              antispecies     => $self->o('antispecies'),
+                              division        => $self->o('species') ? [] : $self->o('division'),
                               meta_filters    => {},
                               chromosome_flow => 0,
                               variation_flow  => 0,
@@ -173,7 +121,7 @@ sub pipeline_analyses {
 			      core_flow       => 4, 
                             },
       -flow_into         => {
-				4 => $blast_analysis,
+				4 => \@blast_analysis,
 			    },
       -meadow_type	 => 'LOCAL',
     },
@@ -237,9 +185,9 @@ sub pipeline_analyses {
       -module            => 'Bio::EnsEMBL::EGPipeline::Common::RunnableDB::EGSpeciesFactory',
       -max_retry_count   => 1,
       -parameters        => {
-                              species         => $self->o('ftp_species'),
-                              antispecies     => $self->o('ftp_antispecies'),
-                              division        => $self->o('division'),
+                              species         => $self->o('species'),
+                              antispecies     => $self->o('antispecies'),
+                              division        => $self->o('species') ? [] : $self->o('division'),
                               meta_filters    => {},
                               chromosome_flow => 0,
                               variation_flow  => 0,
@@ -247,7 +195,7 @@ sub pipeline_analyses {
 			      core_flow => 4, 
                             },
       -flow_into         => {
-				4 => $ftp_analysis,
+				4 => \@ftp_analysis,
 			    },
       -meadow_type	 => 'LOCAL',
     },
@@ -362,6 +310,7 @@ sub pipeline_analyses {
                               out_dir    => $self->o('ftp_outdir'),
                               ps_rel    => $ENV{PARASITE_VERSION},
                               suffix    => "annotations.gff3",
+                              params => "",
                             },
       -flow_into         => { 
                                 4 => ['Gzip'],
@@ -378,6 +327,7 @@ sub pipeline_analyses {
                               out_dir    => $self->o('ftp_outdir'),
                               ps_rel    => $ENV{PARASITE_VERSION},
                               suffix    => "canonical_geneset.gtf",
+                              params => "",
                             },
       -flow_into         => { 
                                 4 => ['Gzip'],
