@@ -5034,7 +5034,7 @@ UNMATCHED_SAGE               elegans
 UNMATCHED_WABA               
 OVERLAPPING_EXONS            elegans remanei briggsae japonica brenneri brugia ovolvulus sratti tmuris
 MISMATCHED_EST               elegans remanei briggsae japonica brenneri brugia ovolvulus sratti tmuris
-WEAK_INTRON_SPLICE_SITE      elegans remanei briggsae japonica brenneri brugia ovolvulus sratti tmuris
+WEAK_INTRON_SPLICE_SITE      elegans remanei briggsae japonica brenneri brugia ovolvulus sratti
 SHORT_EXON                   elegans remanei briggsae japonica brenneri brugia ovolvulus sratti tmuris
 SHORT_INTRON                 elegans remanei briggsae japonica brenneri brugia ovolvulus sratti tmuris
 REPEAT_OVERLAPS_EXON         elegans remanei briggsae japonica brenneri brugia ovolvulus sratti tmuris
