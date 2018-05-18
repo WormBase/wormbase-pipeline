@@ -292,7 +292,7 @@ sub process_gene_class{
 
   # checks for genes that have no Live tag but a split_from tag
   foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Split_from AND Dead AND NOT Merged_into AND NOT Made_into_transposon')){
-    print LOG "ERROR: $gene has Split_from tag but no Live tag\n";
+    print LOG "ERROR: $gene has Split_from tag but no Live tag\n" unless ($gene eq "WBGene00195119");
   }
 
 
@@ -374,7 +374,7 @@ sub test_locus_for_errors{
   }
 
   if( !defined $gene_id->Public_name && !defined $gene_id->CGC_name && !defined $gene_id->Sequence_name && !defined $gene_id->Other_name ){
-    $warnings .= "WARNING: $gene_id has no name information please check it was merged into a cgc_named gene (266 known issues)\n" unless  ($gene_id->Remark =~ /[MERGED INTO UNCLONED GENE]/);
+      $warnings .= "WARNING: $gene_id has no name information please check it was merged into a cgc_named gene (266 known issues)\n" unless  (($gene_id->Remark =~ /[MERGED INTO UNCLONED GENE]/) || ($gene_id->Merged_into));
   }
 
   # test for discrepancy betw. CGC_name and Gene_class name, ie, for aap-1, the gene_class should be aap
