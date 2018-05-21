@@ -43,7 +43,7 @@ print "Using database $database.\n\n";
 
 my $tace = $wb->tace;          # tace executable path
 my $curr_db = '/nfs/wormpub/DATABASES/current_DB'; # Used for some cross checking with geneace
-my $def_dir = "$ENV{CVS_DIR}/../wquery/geneace";                          # where lots of table-maker definitions are kept
+my $def_dir = "/nfs/wormpub/DATABASES/geneace/wquery";                          # where lots of table-maker definitions are kept
 
 my $rundate = $wb->rundate;                                # Used by various parts of script for filename creation
 my $maintainers = join (', ', 
@@ -887,6 +887,7 @@ sub process_allele_class{
   }
 
   my $query = "find Variation Allele";
+  #my $query = "find Variation WBVar00088961";
   foreach my $meth (@skip_methods) {
     $query .= " AND Method != \"$meth\"";
   }
