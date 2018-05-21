@@ -98,7 +98,6 @@ while (my $gene = $i->next) {
     }
 }
 
-$dbh->close();
-$of->close;
 $log->mail;
+$of->close;
 exit(0);
