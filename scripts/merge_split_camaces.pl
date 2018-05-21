@@ -69,7 +69,7 @@ my $altblat;               # alternative location for blat data
 	      "remove_only"   => \$remove_only,
 	      "load_only"     => \$load_only,
 	      "oldskool"      => \$oldskool,
-	      "nochecksl"     => \$nochecks,
+	      "nochecks"      => \$nochecks,
 	      "verbose"       => \$verbose,
 	      "names"         => \$names,
 	      "altacefiles:s" => \$altacefiles,
