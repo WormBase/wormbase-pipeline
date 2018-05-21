@@ -22,6 +22,29 @@ sub staging_writable {
   my $v = $ENV{PARASITE_STAGING_MYSQL} or die "PARASITE_STAGING_MYSQL not in env. You need to module load parasite_prod_relx";
   return new(shift,"$v-ensrw"); 
 }
+sub core_databases {
+  my $db_cmd= shift -> {db_cmd};
+  my @result;
+  open(my $fh, $db_cmd.' -Ne \'show databases like "%core%" \' |') or Carp::croak "ProductionMysql: $db_cmd not in your PATH\n";
+  while(<$fh>) {
+   chomp;
+   push @result, $_ if $_;
+  }
+  return @result;
+}
+sub meta_value {
+  my $db_cmd= shift -> {db_cmd};
+  my $db_name = shift;
+  my $pattern = shift;
+  my @result;
+  open(my $fh, "$db_cmd $db_name -Ne 'select meta_value from  meta where meta_key like \"$pattern\" ' |") or Carp::croak "ProductionMysql: $db_cmd not in your PATH\n";
+  while(<$fh>) {
+   chomp;
+   push @result, $_ if $_;
+  }
+  return @result if wantarray;
+  return @result[0];
+}
 
 sub conn {
   my $db_cmd= shift -> {db_cmd};
