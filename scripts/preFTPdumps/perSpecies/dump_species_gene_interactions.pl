@@ -101,9 +101,8 @@ foreach my $interaction (@interactions) {
     print $of join("\t",@cols) . "\n";
 }
 
-$of->close;
-$dbh->close();
 $log->mail;
+$of->close;
 exit(0);
 
 # as right() doesn't take -1

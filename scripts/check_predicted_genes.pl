@@ -187,6 +187,7 @@ my %checked_small_intron = (
 # many of them are micro-ORF genes taken from the sORF database
 # but about 10 of them are larger genes
 my %non_canonical_initiation = (
+                                'W09G3.8b' => 1, # 'gtg'
 				'B0041.12' => 1, # 'gtg'
 				'B0361.14' => 1, # 'ttg'
 				'C07G2.5' => 1, # 'ttg'

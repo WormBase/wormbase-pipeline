@@ -43,7 +43,7 @@ print "Using database $database.\n\n";
 
 my $tace = $wb->tace;          # tace executable path
 my $curr_db = '/nfs/wormpub/DATABASES/current_DB'; # Used for some cross checking with geneace
-my $def_dir = "$ENV{CVS_DIR}/../wquery/geneace";                          # where lots of table-maker definitions are kept
+my $def_dir = "/nfs/wormpub/DATABASES/geneace/wquery";                          # where lots of table-maker definitions are kept
 
 my $rundate = $wb->rundate;                                # Used by various parts of script for filename creation
 my $maintainers = join (', ', 
@@ -292,7 +292,7 @@ sub process_gene_class{
 
   # checks for genes that have no Live tag but a split_from tag
   foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Split_from AND Dead AND NOT Merged_into AND NOT Made_into_transposon')){
-    print LOG "ERROR: $gene has Split_from tag but no Live tag\n";
+    print LOG "ERROR: $gene has Split_from tag but no Live tag\n" unless ($gene eq "WBGene00195119");
   }
 
 
@@ -374,7 +374,7 @@ sub test_locus_for_errors{
   }
 
   if( !defined $gene_id->Public_name && !defined $gene_id->CGC_name && !defined $gene_id->Sequence_name && !defined $gene_id->Other_name ){
-    $warnings .= "WARNING: $gene_id has no name information please check it was merged into a cgc_named gene (266 known issues)\n" unless  ($gene_id->Remark =~ /[MERGED INTO UNCLONED GENE]/);
+      $warnings .= "WARNING: $gene_id has no name information please check it was merged into a cgc_named gene (266 known issues)\n" unless  (($gene_id->Remark =~ /[MERGED INTO UNCLONED GENE]/) || ($gene_id->Merged_into));
   }
 
   # test for discrepancy betw. CGC_name and Gene_class name, ie, for aap-1, the gene_class should be aap
@@ -887,6 +887,7 @@ sub process_allele_class{
   }
 
   my $query = "find Variation Allele";
+  #my $query = "find Variation WBVar00088961";
   foreach my $meth (@skip_methods) {
     $query .= " AND Method != \"$meth\"";
   }
