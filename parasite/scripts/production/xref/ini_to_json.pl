@@ -9,7 +9,7 @@ my $cfg = Config::IniFiles->new(
 die unless $cfg;
 for my $section ( grep /source/, $cfg -> Sections ) { 
    next if $section =~ /brenneri/ or $section =~/remanei/;
-   next if $cfg->val($section, "Download") eq "N";
+   next if $cfg->val($section, "download") eq "N";
    my %ans_here;
    for my $param ($cfg->Parameters($section)){
      next if $param eq "data_uri" or $param eq "download";

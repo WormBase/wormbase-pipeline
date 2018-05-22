@@ -52,7 +52,7 @@ for my $core_db (@core_dbs){
    );
    print "[species $species]\n";
    print "alias           = $alias\n";
-   print "taxon           = $taxon\n";
+   print "taxonomy_id     = $taxon\n";
    print $templates->{STANDARD_SOURCES};
    if (-f $wormbase_annotation_path){
        (my $ftp_path = $wormbase_annotation_path) =~ s/ebi\/ftp/ftp:\/\/ftp.ebi.ac.uk/;
@@ -100,6 +100,16 @@ prio_descr      =
 parser          = EntrezGeneParser
 release_uri     =
 data_uri        = ftp://ftp.ncbi.nlm.nih.gov/gene/DATA/gene_info.gz
+
+[source WikiGene::MULTI]
+name            = WikiGene
+download        = N
+order           = 100
+priority        = 1
+prio_descr      =
+parser          = EntrezGeneParser
+release_uri     =
+data_uri        = comes via EntrezGene
 
 [source GO::MULTI]
 name            = GO
