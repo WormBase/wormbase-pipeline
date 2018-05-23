@@ -35,6 +35,7 @@ for my $core_db (@all_core_dbs){
 die "Usage: $0 <core_dbs_pattern" unless @core_dbs;
 
 print $templates->{ENSEMBL_PARSERS};
+my $has_wormbase_parsers;
 for my $core_db (@core_dbs){
    my ($spe, $cies, $bioproject) = split "_", $core_db;
    my $species = "${spe}_${cies}";
@@ -55,16 +56,20 @@ for my $core_db (@core_dbs){
    print "taxonomy_id     = $taxon\n";
    print $templates->{STANDARD_SOURCES};
    if (-f $wormbase_annotation_path){
-       (my $ftp_path = $wormbase_annotation_path) =~ s/ebi\/ftp/ftp:\/\/ftp.ebi.ac.uk/;
-       my $source =  "wormbase::". substr ($spe, 0, 1 ) . $cies;
+       $has_wormbase_parsers++;
+       (my $ftp_path = $wormbase_annotation_path) =~ s/\/ebi\/ftp/ftp:\/\/ftp.ebi.ac.uk/;
+       my $spe_1 = substr ($spe, 0, 1 );
+       my $source =  "wormbase::$spe_1$cies";
        print "source = $source\n";
        print "\n";
        print "[source $source]\n";
+       print "name            = wormbase_$spe_1$cies\n";
        print $templates->{WORMBASE_SOURCE};
        print "data_uri = $ftp_path\n";
    }
    print "\n";
 }
+print $templates->{WORMBASE_FAKE_SOURCES} if $has_wormbase_parsers;
 
 1;
 __DATA__
@@ -80,7 +85,6 @@ source          = UniParc::MULTI
 END_STANDARD_SOURCES_TEMPLATE
 
 BEGIN_WORMBASE_SOURCE_TEMPLATE
-name            = wormbase_all
 download        = Y
 order           = 50
 priority        = 1
@@ -175,3 +179,55 @@ release_uri =
 data_uri    = ftp://ftp.ebi.ac.uk/pub/contrib/uniparc/upidump.lis
 
 END_ENSEMBL_PARSERS_TEMPLATE
+
+BEGIN_WORMBASE_FAKE_SOURCES_TEMPLATE
+[source wormpep_id::wormbase]
+name            = wormpep_id
+download        = N
+order           = 50
+priority        = 1
+prio_descr      =
+parser          = comes from WormbaseDirectParser
+release_uri     =
+data_uri        =
+
+[source wormbase_gene::wormbase]
+name            = wormbase_gene
+download        = N
+order           = 50
+priority        = 1
+prio_descr      =
+parser          = comes from WormbaseDirectParser
+release_uri     =
+data_uri        =
+
+[source wormbase_locus::wormbase]
+name            = wormbase_locus
+download        = N
+order           = 50
+priority        = 1
+prio_descr      =
+parser          = comes from WormbaseDirectParser
+release_uri     =
+data_uri        =
+
+[source wormbase_gseqname::wormbase]
+name            = wormbase_gseqname
+download        = N
+order           = 50
+priority        = 1
+prio_descr      =
+parser          = comes from WormbaseDirectParser
+release_uri     =
+data_uri        =
+
+[source wormbase_transcript::wormbase]
+name            = wormbase_transcript
+download        = N
+order           = 50
+priority        = 1
+prio_descr      =
+parser          = comes from WormbaseDirectParser
+release_uri     =
+data_uri        =
+END_WORMBASE_FAKE_SOURCES_TEMPLATE
