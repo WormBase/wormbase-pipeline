@@ -1624,13 +1624,20 @@ sub date {
 }
 ######################################
 # add the Last_reviewed tag
+# ... and if this is Michael, then set the Evidence tag as well
 sub Last_reviewed {
   my ($self, $class, $cds) = @_;
+
+  my $evidence="\n";
+  if ($ENV{'USER'} eq 'mh6') {
+    $evidence = "Evidence Curator_confirmed WBPerson4055\n";
+  }
 
   my $fh = $self->{out};
   print $fh "\n// Last_reviewed\n";
   print $fh "$class : $cds\n";
   print $fh "Last_reviewed now $self->{person}\n";
+  print $fh $evidence;
   print $fh "\n";
 
 }
