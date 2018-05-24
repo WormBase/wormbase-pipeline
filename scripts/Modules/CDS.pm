@@ -74,7 +74,7 @@ sub new
     $self->transform_strand($transformer,"transform") if ( $self->strand eq "-" );
 
     $self->transformer( $transformer );
-    my $transcript = Transcript->new( $name, $self);
+    my $transcript = Transcript->new( "${name}.1", $self);
     $self->transcripts( $transcript );
 
     $self->gene_start( $transcript->start );
@@ -184,16 +184,8 @@ sub map_cDNA
             print STDERR "CDS::map_cDNA\tTranscript::map_cDNA: Creating new transcript for " . $self->name . " with " . $cdna->name . "\n" if $SequenceObj::debug;
 	    # if this cdna matches the CDS but not the existing transcripts create a new one
 	    # append .x to indicate multiple transcripts for same CDS.
-	    my $transcript_count = scalar($self->transcripts);
-	    my $new_name;
-	    if( $transcript_count == 1 ) {
-	      # rename the original as .1
-	      $new_name = $self->name . ".$transcript_count";
-	      my @transcripts = $self->transcripts;
-	      $transcripts[0]->name("$new_name");
-	    }
-	    $transcript_count++;
-	    $new_name = $self->name . ".$transcript_count";
+	    my $transcript_suffix = scalar($self->transcripts) + 1;
+	    my $new_name = $self->name . ".$transcript_suffix";
 	    
 	    my $transcript = Transcript->new( $new_name, $self);
 	    $transcript->chromosome( $self->chromosome );
