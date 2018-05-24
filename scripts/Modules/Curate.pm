@@ -768,7 +768,15 @@ sub check_history_seqname {
 
   my $version = $self->get_history_version($self->{wormbase}->database('current'));
   my $pepname = $self->{wormbase}->pepdir_prefix . 'pep';
-  if (!-e "/nfs/wormpub/BUILD/WORMPEP/${pepname}$version/${pepname}.history${version}") {$version--;}
+  my $count = 10;
+  while (!-e "/nfs/wormpub/BUILD/WORMPEP/${pepname}$version/${pepname}.history${version}") {
+    $count--;
+    if ($count == 0) {
+      print "\nThere is no old WORMPEP history file for this species within the last 10 releases - is this correct?\n\n";
+      return 0;
+    }
+    $version--;
+  }
   open (PEP, "< /nfs/wormpub/BUILD/WORMPEP/${pepname}$version/${pepname}.history${version}") || die "ERROR Can't find /nfs/wormpub/BUILD/WORMPEP/${pepname}$version/${pepname}.history${version}\n";
   while (my $line = <PEP>) {
     my @f = split /\s+/, $line;
