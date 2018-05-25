@@ -18,6 +18,10 @@ sub staging {
   my $v = $ENV{PARASITE_STAGING_MYSQL} or die "PARASITE_STAGING_MYSQL not in env. You need to module load parasite_prod_relx";
   return new(shift, $v);
 }
+sub previous_staging {
+  my $v = $ENV{PREVIOUS_PARASITE_STAGING_MYSQL} or die "PREVIOUS_PARASITE_STAGING_MYSQL not in env. You need to module load parasite_prod_relx";
+  return new(shift, $v);
+}
 sub staging_writable {
   my $v = $ENV{PARASITE_STAGING_MYSQL} or die "PARASITE_STAGING_MYSQL not in env. You need to module load parasite_prod_relx";
   return new(shift,"$v-ensrw"); 
@@ -43,7 +47,8 @@ sub meta_value {
    push @result, $_ if $_;
   }
   return @result if wantarray;
-  return @result[0];
+  return @result[0] if @result;
+  return undef;
 }
 
 sub conn {
