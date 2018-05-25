@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
-
+# Sorts out FASTA split-or-not and conf template
+# Creates the conf in a given directory
+# Alternative conf template can be passed on STDIN
 use YAML;
 use CoreCreation::Fasta;
 use File::Spec;
@@ -11,14 +13,17 @@ $data_dir_path =  File::Spec->rel2abs($data_dir_path) unless File::Spec->file_na
 my $data_dir_name = File::Basename::basename($data_dir_path); 
 my $conf_path = File::Spec->catfile($data_dir_path, "$data_dir_name.conf");
 
+my $conf;
+$conf = Load(do {local $/; <STDIN>})->{$data_dir_name} unless -t STDIN;
+$conf //= Load(do {local $/; <DATA>});
 while (true) {
   if ( not -f $conf_path) {
-    my $conf = Load(do {local $/; <DATA>});
-    my $gff_path = File::Spec->catfile($data_dir_path, "$data_dir_name.gff3");
-    die "Expected gff at: $gff_path" unless -f $gff_path;
+
+    $conf->{gff3} //=  File::Spec->catfile($data_dir_path, "$data_dir_name.gff3");
+    die "Expected gff at: ".$conf->{gff3} unless -f $conf->{gff3} and File::Spec->file_name_is_absolute($conf->{gff3});
+
     my $fasta_path = File::Spec->catfile($data_dir_path,"$data_dir_name.fa");
     die "Expected fasta at: $fasta_path" unless -f $fasta_path;
-    $conf->{gff3} = $gff_path;
     $conf->{toplevel} = "scaffold";
     my $fasta = CoreCreation::Fasta->new($fasta_path);
     if($fasta->needs_contig_structure){
@@ -43,7 +48,7 @@ while (true) {
   
   my $text = File::Slurp::read_file($conf_path);
   if ($text =~ /\?/) {
-    die "Complete the config file and remove all the ?s!" unless -t STDOUT;
+    die "$conf_path: complete the config file and remove all the ?s!" unless -t STDOUT;
     system("vi $conf_path") and die; #:cq in vim to escape this
   } else {
     last;

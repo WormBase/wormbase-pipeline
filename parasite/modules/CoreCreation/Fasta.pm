@@ -106,7 +106,7 @@ sub mito {
     my @mito;
     for my $top_level (@{$self->{toplevels}}) {
        my $id = $top_level->display_id;
-       push @mito , $id if $id =~ /mito/i;
+       push @mito , $id if $id =~ /mito/i or $id =~ /mtDNA/i;
     } 
     Carp::croak("Multiple mitochondrial scaffolds?: @mito") if @mito > 1;
     return pop @mito;

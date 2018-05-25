@@ -486,11 +486,13 @@ sub load_genes {
   print STDERR "Running: $set_canon_cmd\n";
   system($set_canon_cmd) and die "Could not set canonical transcripts\n";
 
-  my $timestamp = strftime("%Y-%m", localtime(time));
-  my $versionstamp = "${timestamp}-WormBase";
+  my $timestamp = strftime("%Y-%m", localtime(time))."-WormBase";
+  my $versionstamp = $timestamp;
+  $versionstamp = $config->{"meta.genebuild.version"} if exists $config->{"meta.genebuild.version"};
+  $versionstamp = $config->{"meta"}{"genebuild.version"} if exists $config->{"meta"}{"genebuild.version"}; 
 
   $dba->dbc->do('DELETE FROM meta WHERE meta_key = "genebuild.start_date"');
-  $dba->dbc->do("INSERT INTO meta (meta_key,meta_value) VALUES (\"genebuild.start_date\",\"$versionstamp\")");
+  $dba->dbc->do("INSERT INTO meta (meta_key,meta_value) VALUES (\"genebuild.start_date\",\"$timestamp\")");
   
   $dba->dbc->do('DELETE FROM meta WHERE meta_key = "genebuild.version"');
   $dba->dbc->do("INSERT INTO meta (meta_key,meta_value) VALUES (\"genebuild.version\",\"$versionstamp\")");
@@ -559,7 +561,7 @@ sub load_meta_table {
   my $db = $config->{core_database};
 
   my $meta = $config->{meta};
-  if ($meta){ # allow both versions for a while
+  if ($meta){
     while (my ($k,$v)=each %$meta){
       &update_meta($db,$k,$v);
     }

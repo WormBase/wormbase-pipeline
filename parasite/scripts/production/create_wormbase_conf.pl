@@ -24,10 +24,6 @@ my $seleno_proteins = {
   brugia_malayi_prjna10729 => "WBGene00222286",
   onchocerca_volvulus_prjeb513 => "WBGene00241445",
 };
-# Could be incomplete! This is per assembly, we rarely change assemblies, and usually not through this script.
-my $mitochondrial_seq_regions = {
-  trichuris_muris_prjeb126 => "TMUE_MITO"
-}; 
 
 sub wormbase_ftp_dir {
   my ($species, $wormbase_version) = @_;
@@ -39,11 +35,6 @@ sub wormbase_gff3 {
   my ($spe, $cies, $bioproject) = split /_/, $species;
   return join ("/", &wormbase_ftp_dir(@_), join(".", lc((substr $spe, 0, 1 ) . "_" . $cies), uc($bioproject), "WS$wormbase_version", "annotations.gff3.gz" ));
 }
-sub wormbase_fasta {
-  my ($species, $wormbase_version) = @_;
-  my ($spe, $cies, $bioproject) = split /_/, $species;
-  return join ("/", &wormbase_ftp_dir(@_), join(".", lc((substr $spe, 0, 1 ) . "_" . $cies), uc($bioproject), "WS$wormbase_version", "genomic.fa.gz" ));
-}
 sub wormbase_core_db_name {
   my ($species, $wormbase_version, $parasite_version, $ensembl_version) = @_;
   my ($spe, $cies, $bioproject) = split /_/, $species;
@@ -51,19 +42,18 @@ sub wormbase_core_db_name {
 }
 
 sub config {
-  my ($species, @__) = @_;
+  my ($species, $wormbase_version, @__) = @_;
   my $result = {
     gff3 => &wormbase_gff3(@_),
-    fasta => &wormbase_fasta(@_),
     core_database => {
       dbname => &wormbase_core_db_name(@_),
     },
+    meta => {
+      "genebuild.version" => "WS$wormbase_version"
+    }
   };
   my $s = $seleno_proteins->{$species};
   $result->{"seleno"} = $s if $s;
-  
-  my $m = $mitochondrial_seq_regions->{$species};
-  $result->{"mitochondrial"} = $m if $m;
   return $result;
 }
 

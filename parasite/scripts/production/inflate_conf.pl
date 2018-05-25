@@ -54,11 +54,6 @@ for my $k (keys %{$conf}){
   $species_conf->{meta}->{"assembly.default"} //= $assembly_version;
   $species_conf->{meta}->{"assembly.name"} //= $assembly_version;
 
-  my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst ) = localtime(time);
-  my $gene_build //= sprintf( "%s-%02d-WormBase", $year + 1900, $mon + 1 );
-  $species_conf->{meta}->{"genebuild.start_date"} //= $gene_build;
-  $species_conf->{meta}->{"genebuild.version"}    //= $gene_build;
-
 }
 
 print Dump($conf);
