@@ -488,7 +488,7 @@ sub dumpData {
 	      print OUT "Target_species \"",&species_lookup($$data[1], $$data[4]),"\"\n";
 
 	      print RECIP "Protein : \"".$prefix."$$data[4]\" line "; #  matching peptide
-	      print RECIP '"'.$prot_pref."$pid\" ";	# worm protein
+	      print RECIP '"'."$pid\" ";#  worm protein
 	      print RECIP "$$data[1] "; #  analysis
 	      print RECIP "$$data[7] "; #  e value
 	      print RECIP "$$data[5] "; #  HomolStart
