@@ -743,7 +743,7 @@ sub process_cds {
 	my $motif_out = "";	# holds the motif output, if any
 
 	print OUT "\n";
-	print OUT "Protein : \"$$wormpep_id\"\n";                                          
+	print OUT "Protein : \"$wormpep_id\"\n";                                          
 	my $pos = $protein_positions{$ms_peptide}; # position in protein
 	my $len = length(&no_underscore($ms_peptide)); # length of peptide sequence
 	my $end = $pos+$len-1;
