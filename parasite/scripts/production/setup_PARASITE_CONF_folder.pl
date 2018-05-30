@@ -130,6 +130,14 @@ use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
 Bio::EnsEMBL::Registry->load_registry_from_url('STAGINGURLRO/ENSEMBL_VERSION');
 Bio::EnsEMBL::Registry->load_registry_from_url('PRODURLRW/ENSEMBL_VERSION');
 
+# LoadMembers pipeline e!92 doesn't support a "find these species in registry" list like EGSpeciesFactory's -antispecies so we resort to modifying the registry
+# This isn't an encouraged method of managing species lists.
+
+Bio::EnsEMBL::Registry->remove_DBAdaptor('trichinella_pseudospiralis_iss141prjna257433','core');
+Bio::EnsEMBL::Registry->remove_DBAdaptor('trichinella_pseudospiralis_iss176prjna257433','core');
+Bio::EnsEMBL::Registry->remove_DBAdaptor('trichinella_pseudospiralis_iss470prjna257433','core');
+Bio::EnsEMBL::Registry->remove_DBAdaptor('trichinella_pseudospiralis_iss588prjna257433','core');
+
 Bio::EnsEMBL::Compara::DBSQL::DBAdaptor->new(
     -host => 'PANHOST',
     -port => 'PANPORT',
