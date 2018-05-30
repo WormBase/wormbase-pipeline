@@ -62,25 +62,23 @@ $collection_name = "wormbase" if not defined $collection_name;
 #
 # 0. Get species data
 #
+
 if (defined $sfile) {
   open(my $fh, $sfile) or die "Could not open species file for reading\n";
   while(<$fh>) {
     next if /^\#/;
     /^(\S+)/ and push @species, $1;
   }
-} elsif (@species) {
-  @species = map { split(/,/, $_) } @species;
-} else {
-  die "You must supply a species list as a file (-sfile) or with -species X -species Y etc\n";
 }
+@species = map { split(/,/, $_) } @species;
 
 my @core_dbs;
-foreach my $species (sort @species) {
-
-  my $dbh = Bio::EnsEMBL::Registry->get_DBAdaptor($species, 'core');
-  print STDERR "Got core adaptor for $species\n";
-  push @core_dbs, $dbh;
+if (@species) {
+  @core_dbs = map { Bio::EnsEMBL::Registry->get_DBAdaptor($_, 'core') } @species; 
+} else {
+  @core_dbs = @{Bio::EnsEMBL::Registry->get_all_DBAdaptors(-GROUP => 'core')};
 }
+die "No core databases found! " unless @core_dbs;
 
 if ($recreatedb) { 
   die("When creating the db from scratch, you must give -comparacode") unless $compara_code ;
