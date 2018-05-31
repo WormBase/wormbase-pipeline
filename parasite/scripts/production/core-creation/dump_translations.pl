@@ -43,7 +43,7 @@
 
   Optional arguments:
 
-    -file         File to write the results to (default: none!)
+    -file         File to write the results to
     -file_err     File to write the proteins that have errors in 
     -slicename    Retrieve sequences from this slice
     -dnadbname    DNA database name
