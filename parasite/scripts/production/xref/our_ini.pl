@@ -35,6 +35,7 @@ for my $core_db (@all_core_dbs){
 die "Usage: $0 <core_dbs_pattern" unless @core_dbs;
 
 print $templates->{ENSEMBL_PARSERS};
+print $templates->{ENSEMBL_FAKE_SOURCES};
 my $has_wormbase_parsers;
 for my $core_db (@core_dbs){
    my ($spe, $cies, $bioproject) = split "_", $core_db;
@@ -77,6 +78,7 @@ __DATA__
 BEGIN_STANDARD_SOURCES_TEMPLATE
 source          = EntrezGene::MULTI
 source          = GO::MULTI
+source          = RNACentral::MULTI
 source          = RefSeq_dna::MULTI-invertebrate
 source          = RefSeq_peptide::MULTI-invertebrate
 source          = Uniprot/SPTREMBL::MULTI-invertebrate
@@ -178,6 +180,16 @@ parser      = ChecksumParser
 release_uri =
 data_uri    = ftp://ftp.ebi.ac.uk/pub/contrib/uniparc/upidump.lis
 
+[source RNACentral::MULTI]
+name        = RNAcentral
+download    = Y
+order       = 1
+priority    = 1
+prio_descr  =
+parser      = ChecksumParser
+release_uri =
+data_uri    = ftp://ftp.ebi.ac.uk/pub/databases/RNAcentral/current_release/md5/md5.tsv.gz
+
 END_ENSEMBL_PARSERS_TEMPLATE
 
 BEGIN_WORMBASE_FAKE_SOURCES_TEMPLATE
@@ -231,3 +243,131 @@ parser          = comes from WormbaseDirectParser
 release_uri     =
 data_uri        =
 END_WORMBASE_FAKE_SOURCES_TEMPLATE
+
+BEGIN_ENSEMBL_FAKE_SOURCES_TEMPLATE
+[source RefSeq_dna::MULTI-predicted]
+name            = RefSeq_dna_predicted
+download        = N
+order           = 20
+priority        = 1
+prio_descr      = refseq
+parser          = RefSeqParser
+release_uri     =
+
+[source RefSeq_mRNA::MULTI]
+name            = RefSeq_mRNA
+download        = N
+order           = 20
+priority        = 3
+prio_descr      = refseq
+parser          = RefSeqParser
+release_uri     =
+[source RefSeq_mRNA::CCDS]
+name            = RefSeq_mRNA
+download        = N
+order           = 20
+priority        = 2
+prio_descr      = ccds
+parser          = RefSeqParser
+release_uri     =
+
+[source RefSeq_mRNA::otherfeatures]
+name            = RefSeq_mRNA
+download        = N
+order           = 20
+priority        = 1
+prio_descr      = otherfeatures
+parser          = RefSeqCoordinateParser
+release_uri     =
+
+[source RefSeq_peptide::otherfeatures]
+name            = RefSeq_peptide
+download        = N
+order           = 20
+priority        = 1
+prio_descr      = otherfeatures
+parser          = RefSeqCoordinateParser
+release_uri     =
+
+[source RefSeq_mRNA_predicted::otherfeatures]
+name            = RefSeq_mRNA_predicted
+download        = N
+order           = 20
+priority        = 1
+prio_descr      = otherfeatures
+parser          = RefSeqCoordinateParser
+release_uri     =
+
+[source RefSeq_peptide_predicted::otherfeatures]
+name            = RefSeq_peptide_predicted
+download        = N
+order           = 20
+priority        = 1
+prio_descr      = otherfeatures
+parser          = RefSeqCoordinateParser
+release_uri     =
+
+[source RefSeq_ncRNA::MULTI]
+name            = RefSeq_ncRNA
+download        = N
+order           = 20
+priority        = 2
+prio_descr      =
+parser          = RefSeqParser
+release_uri     =
+
+[source RefSeq_ncRNA::otherfeatures]
+name            = RefSeq_ncRNA
+download        = N
+order           = 20
+priority        = 1
+prio_descr      = otherfeatures
+parser          = RefSeqCoordinateParser
+release_uri     =
+
+[source RefSeq_ncRNA_predicted::otherfeatures]
+name            = RefSeq_ncRNA_predicted
+download        = N
+order           = 20
+priority        = 1
+prio_descr      = otherfeatures
+parser          = RefSeqCoordinateParser
+release_uri     =
+
+[source RefSeq_mRNA_predicted::MULTI]
+name            = RefSeq_mRNA_predicted
+download        = N
+order           = 20
+priority        = 2
+prio_descr      = refseq
+parser          = RefSeqParser
+release_uri     =
+
+[source RefSeq_mRNA_predicted::CCDS]
+name            = RefSeq_mRNA_predicted
+download        = N
+order           = 20
+priority        = 1
+prio_descr      = ccds
+parser          = RefSeqParser
+release_uri     =
+
+[source RefSeq_ncRNA_predicted::MULTI]
+name            = RefSeq_ncRNA_predicted
+download        = N
+order           = 20
+priority        = 1
+prio_descr      =
+parser          = RefSeqParser
+release_uri     =
+
+[source RefSeq_peptide::MULTI-predicted]
+name            = RefSeq_peptide_predicted
+download        = N
+order           = 30
+priority        = 2
+prio_descr      =
+parser          = RefSeqGPFFParser
+release_uri     =
+
+END_ENSEMBL_FAKE_SOURCES_TEMPLATE
