@@ -77,7 +77,6 @@ __DATA__
 
 BEGIN_STANDARD_SOURCES_TEMPLATE
 source          = EntrezGene::MULTI
-source          = GO::MULTI
 source          = RNACentral::MULTI
 source          = RefSeq_dna::MULTI-invertebrate
 source          = RefSeq_peptide::MULTI-invertebrate
@@ -116,17 +115,6 @@ prio_descr      =
 parser          = EntrezGeneParser
 release_uri     =
 data_uri        = comes via EntrezGene
-
-[source GO::MULTI]
-name            = GO
-download        = Y
-order           = 80
-priority        = 1
-prio_descr      = main
-parser          = GOParser
-dependent_on    = Uniprot/SPTREMBL,Uniprot/SWISSPROT,RefSeq_dna,RefSeq_peptide,SGD
-release_uri     = ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/current_release_numbers.txt
-data_uri        = ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/UNIPROT/goa_uniprot_all.gaf.gz
 
 [source RefSeq_dna::MULTI-invertebrate]
 name            = RefSeq_dna
@@ -262,6 +250,7 @@ priority        = 3
 prio_descr      = refseq
 parser          = RefSeqParser
 release_uri     =
+
 [source RefSeq_mRNA::CCDS]
 name            = RefSeq_mRNA
 download        = N
