@@ -36,27 +36,52 @@ die "Usage: $0 <core_dbs_pattern" unless @core_dbs;
 
 print $templates->{ENSEMBL_PARSERS};
 print $templates->{ENSEMBL_FAKE_SOURCES};
-my $has_wormbase_parsers;
+my %core_dbs_per_species;
 for my $core_db (@core_dbs){
-   my ($spe, $cies, $bioproject) = split "_", $core_db;
+   my ($spe, $cies) = split "_", $core_db;
    my $species = "${spe}_${cies}";
+   $core_dbs_per_species{$species} //= [];
+   push $core_dbs_per_species{$species}, $core_db;
+}
+
+my $has_wormbase_parsers;
+for my $species (keys %core_dbs_per_species){
+   my @core_dbs = @{$core_dbs_per_species{$species}};
+   my ($spe, $cies) = split "_", $species;
    my $wormbase_species = substr ($spe, 0, 1 ) . "_" . $cies;
-   my $alias = "${spe}_${cies}_${bioproject}";
-   my $taxon = ProductionMysql->staging->meta_value($core_db, "species.taxonomy_id");
-   my $wormbase_annotation_path = join ("/",   
-     "/ebi/ftp/pub/databases/wormbase/releases",
-     "WS$ENV{WORMBASE_VERSION}",
-     "species",
-     $wormbase_species, 
-     uc($bioproject),
-     "annotation",
-     join(".", $wormbase_species, uc($bioproject), "WS$ENV{WORMBASE_VERSION}", "xrefs.txt.gz"),
-   );
+
+   my %taxons;
+   my %wormbase_annotation_paths;
+   my %aliases;
+   for my $core_db (@core_dbs) {
+      my ($_spe, $_cies, $bioproject) = split "_", $core_db;
+      $taxons{ProductionMysql->staging->meta_value($core_db, "species.taxonomy_id")}++;
+      my $possible_wormbase_annotation_path = 
+       join ("/",
+         "/ebi/ftp/pub/databases/wormbase/releases",
+         "WS$ENV{WORMBASE_VERSION}",
+         "species",
+         $wormbase_species,
+         uc($bioproject),
+         "annotation",
+         join(".", $wormbase_species, uc($bioproject), "WS$ENV{WORMBASE_VERSION}", "xrefs.txt.gz")
+       );
+      $wormbase_annotation_paths{$possible_wormbase_annotation_path} ++ if -f $possible_wormbase_annotation_path;
+     $aliases{
+       "${spe}_${cies}_${bioproject}"
+     }++;
+   }
+   my ($taxon, @other_taxons) = keys %taxons;
+   die @core_dbs if @other_taxons;
+   my $aliases= join ",", keys %aliases;
+
    print "[species $species]\n";
-   print "alias           = $alias\n";
+   print "aliases         = $aliases\n";
    print "taxonomy_id     = $taxon\n";
    print $templates->{STANDARD_SOURCES};
-   if (-f $wormbase_annotation_path){
+   if (%wormbase_annotation_paths){
+       my ($wormbase_annotation_path, @other_wormbase_annotation_paths) = keys %wormbase_annotation_paths;
+       die %wormbase_annotation_paths if @other_wormbase_annotation_paths;
        $has_wormbase_parsers++;
        (my $ftp_path = $wormbase_annotation_path) =~ s/\/ebi\/ftp/ftp:\/\/ftp.ebi.ac.uk/;
        my $spe_1 = substr ($spe, 0, 1 );
