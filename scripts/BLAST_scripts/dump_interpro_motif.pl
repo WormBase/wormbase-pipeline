@@ -193,8 +193,6 @@ foreach my $method (@methods) {
 }
 
 
-# print ace file
-my $prefix = $wormbase->wormpep_prefix; 
 
 # here we need to do:
 # foreach protein:
@@ -287,7 +285,7 @@ my %domain_counts = ();
 foreach my $p (sort {$a cmp $b} keys %merged) {
     my $prot=($cds2wormpep{$p}||$p);
     print ACE "\n";
-    print ACE "Protein : \"$prefix:$prot\"\n";
+    print ACE "Protein : \"$prot\"\n";
 
     # count the number of domains in this protein for the statistics
     my $domains = scalar(@{$merged{$p}});
