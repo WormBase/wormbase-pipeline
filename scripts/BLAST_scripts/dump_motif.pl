@@ -1,4 +1,4 @@
-#!/usr/local/ensembl/bin/perl -w
+#!/usr/bin/env perl
 #
 # Originally written by Marc Sohrmann (ms2@sanger.ac.uk)
 #
@@ -147,14 +147,11 @@ foreach my $meth (@methods) {
   }
 }
 
-# print ace file
-my $prefix = $wormbase->wormpep_prefix;
-
 
 foreach my $prot (sort {$a cmp $b} keys %motifs) {
     print ACE "\n";
     # cds2wormpep conversion
-    print ACE "Protein : \"$prefix:$prot\"\n";
+    print ACE "Protein : \"$prot\"\n";
     foreach my $line (@{$motifs{$prot}}) {
         print ACE "$line\n";
     }
