@@ -408,7 +408,8 @@ sub make_fpkm {
       if ($f[0] =~ /CUFF/) {$log->log_and_die("Cufflinks for $experiment_accession has failed to put the Transcript IDs in the output file - problem with the GTF file?\n");}
       if ($f[12] ne "FAIL") {
 	if (defined $life_stage && $life_stage ne "") {
-	  my ($sequence_name) = ($f[0] =~ /(^\S+?\.\d+[a-z]?)/);
+	  my $cds_regex = $wormbase->cds_regex_noend;
+	  my ($sequence_name) = ($f[0] =~ /($cds_regex)/);
 	  if (!defined $sequence_name) {
 	    # complain up to 5 times if it is not even like 'T27B1.t1' - a tRNA gene
 	    if ($f[0] !~ /(^\S+?\.t\d+)/ && $number_of_complaints-- > 0 && $species eq 'elegans') {print "Sequence name $f[0] is not in the normal format\n";} 
