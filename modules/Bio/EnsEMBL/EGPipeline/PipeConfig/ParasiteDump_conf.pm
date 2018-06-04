@@ -30,7 +30,7 @@ sub default_options {
     %{$self->SUPER::default_options},
     max_hive_capacity => 150,
 
-    division => ['parasite'],
+    division => [],
     dump_genome     => $ENV{WORM_CODE}."/scripts/ENSEMBL/scripts/dump_genome.pl",
     dump_transcript => $ENV{WORM_CODE}."/scripts/ENSEMBL/scripts/dump_transcripts.pl",
     dump_gff3       => $ENV{WORM_CODE}."/scripts/ENSEMBL/scripts/dump_gff3.pl",
@@ -113,7 +113,7 @@ sub pipeline_analyses {
       -parameters        => {
                               species         => $self->o('species'),
                               antispecies     => $self->o('antispecies'),
-                              division        => $self->o('species') ? [] : $self->o('division'),
+                              division        => $self->o('division'),
                               meta_filters    => {},
                               chromosome_flow => 0,
                               variation_flow  => 0,
@@ -187,7 +187,7 @@ sub pipeline_analyses {
       -parameters        => {
                               species         => $self->o('species'),
                               antispecies     => $self->o('antispecies'),
-                              division        => $self->o('species') ? [] : $self->o('division'),
+                              division        => $self->o('division'),
                               meta_filters    => {},
                               chromosome_flow => 0,
                               variation_flow  => 0,
