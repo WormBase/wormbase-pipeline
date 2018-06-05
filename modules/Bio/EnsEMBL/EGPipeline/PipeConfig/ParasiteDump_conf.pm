@@ -132,7 +132,7 @@ sub pipeline_analyses {
       -max_retry_count   => 1,
       -parameters        => {
                               script    => $self->o('dump_genome'),
-                              blast_dir => $self->o('blast_outdir'),
+                              out_dir => $self->o('blast_outdir'),
                               suffix    => "dna.toplevel.fa",
                               params    => "-ebiblastheader WBPS",
                             },
@@ -145,7 +145,7 @@ sub pipeline_analyses {
       -max_retry_count   => 1,
       -parameters        => {
                               script    => $self->o('dump_genome'),
-                              blast_dir => $self->o('blast_outdir'),
+                              out_dir => $self->o('blast_outdir'),
                               suffix    => "dna_rm.toplevel.fa",
                               params    => "-mask -ebiblastheader WBPS",
                             },
@@ -158,7 +158,7 @@ sub pipeline_analyses {
       -max_retry_count   => 1,
       -parameters        => {
                               script    => $self->o('dump_transcript'),
-                              blast_dir => $self->o('blast_outdir'),
+                              out_dir => $self->o('blast_outdir'),
                               suffix    => "cdna.all.fa",
                               params    => "-mrna -ebiblastheader WBPS",
                             },
@@ -171,7 +171,7 @@ sub pipeline_analyses {
       -max_retry_count   => 1,
       -parameters        => {
                               script     => $self->o('dump_transcript'),
-                              blast_dir => $self->o('blast_outdir'),
+                              out_dir => $self->o('blast_outdir'),
                               suffix    => "pep.all.fa",
                               params    => "-pep -ebiblastheader WBPS",
                             },

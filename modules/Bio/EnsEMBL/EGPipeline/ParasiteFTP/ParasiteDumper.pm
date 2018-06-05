@@ -55,7 +55,7 @@ sub run {
   $mc->dbc->disconnect_if_idle();
 
 #create directory structure
-  my $dir = "$out_dir/WBPS$ps_rel/species/$sp/$bioproject";
+  my $dir = "$out_dir/$sp/$bioproject";
   make_path($dir);
 
 #define file name

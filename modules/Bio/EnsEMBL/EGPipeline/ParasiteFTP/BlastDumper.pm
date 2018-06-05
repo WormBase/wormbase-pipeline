@@ -40,7 +40,7 @@ sub run {
   my $script = $self->param_required('script');
   my $params = $self->param('params');
   my $species = $self->param_required('species');
-  my $out_dir = $self->param_required('blast_dir');
+  my $out_dir = $self->param_required('out_dir');
   my $suffix = $self->param_required('suffix');
 
 #connect to core database and get info
