@@ -1,4 +1,4 @@
-
+#!/usr/bin/bash
 ## Script to copy core databases from previous staging site to current
 ## After copy, relevant patches are applied to bring databases up to the relevant Ensembl schema
 ## Before running, load the correct module as this creates the environment variables, e.g. "module load parasite_prod_rel6"
@@ -8,7 +8,7 @@ $PREVIOUS_PARASITE_STAGING_MYSQL -e "show databases like \"%_core_%\"" | grep -v
 echo "Begin database copying"
 
 if [ $# -gt 0 ] ; then
- databases=$@
+ databases=("$@")
 else
  databaselist=$($PREVIOUS_PARASITE_STAGING_MYSQL -NB -e 'SHOW DATABASES LIKE "%\_core\_%"')
  databases=( `echo ${databaselist}` )
