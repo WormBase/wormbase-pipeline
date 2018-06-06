@@ -87,15 +87,12 @@ for my $species (keys %core_dbs_per_species){
        (my $ftp_path = $wormbase_annotation_path) =~ s/\/ebi\/ftp/ftp:\/\/ftp.ebi.ac.uk/;
        my $spe_1 = substr ($spe, 0, 1 );
        my $source =  "wormbase::$spe_1$cies";
-       print "taxon = wormbase\n";
        print "source = $source\n";
        print "\n";
        print "[source $source]\n";
        print "name            = wormbase_$spe_1$cies\n";
        print $templates->{WORMBASE_SOURCE};
        print "data_uri = $ftp_path\n";
-   } else {
-       print "taxon = parasite\n";
    }
    print "\n";
 }
