@@ -15,8 +15,9 @@ for my $section ( grep /source/, $cfg -> Sections ) {
    my %ans_here;
    for my $param ($cfg->Parameters($section)){
      next if $param eq "data_uri" or $param eq "download";
+     $param = "release" if $param eq "release_uri";
      $ans_here{$param} = $cfg->val($section, $param) if $cfg->val($section, $param);
-     $ans_here{$param} = int($ans_here{$param}) if $ans_here{$param} =~ /[0-9]+/;
+     $ans_here{$param} = int($ans_here{$param}) if $ans_here{$param} =~ /^[0-9]+$/;
    }
    $uri =~ s/RELEASE/WS$ENV{WORMBASE_VERSION}/g;
    $ans_here{file}= $uri;

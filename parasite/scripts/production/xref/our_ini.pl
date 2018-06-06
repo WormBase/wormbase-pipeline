@@ -156,6 +156,9 @@ prio_descr      = refseq
 parser          = RefSeqGPFFParser
 release_uri     = ftp://ftp.ncbi.nih.gov/refseq/release/release-notes/RefSeq-release*.txt
 data_uri        = ftp://ftp.ncbi.nih.gov/refseq/release/invertebrate/invertebrate*.rna.gbff.gz
+method = --bestn 5
+query_cutoff = 95
+target_cutoff = 70
 
 [source RefSeq_peptide::MULTI-invertebrate]
 name            = RefSeq_peptide
@@ -166,6 +169,9 @@ prio_descr      =
 parser          = RefSeqGPFFParser
 release_uri     = ftp://ftp.ncbi.nih.gov/refseq/release/release-notes/RefSeq-release*.txt
 data_uri        = ftp://ftp.ncbi.nih.gov/refseq/release/invertebrate/invertebrate*.protein.gpff.gz
+method = --bestn 1
+query_cutoff = 100
+target_cutoff = 100
 
 [source Uniprot/SPTREMBL::MULTI-invertebrate]
 name            = Uniprot/SPTREMBL
@@ -177,6 +183,9 @@ parser          = UniProtParser
 dependent_on    = MIM
 release_uri     = ftp://ftp.ebi.ac.uk/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/reldate.txt
 data_uri        = ftp://ftp.ebi.ac.uk/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/uniprot_trembl_invertebrates.dat.gz
+method = --bestn 1
+query_cutoff = 100
+target_cutoff = 100
 
 [source Uniprot/SWISSPROT::MULTI-invertebrate]
 name            = Uniprot/SWISSPROT
@@ -188,6 +197,9 @@ parser          = UniProtParser
 dependent_on    = MIM
 release_uri     = ftp://ftp.ebi.ac.uk/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/reldate.txt
 data_uri        = ftp://ftp.ebi.ac.uk/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/uniprot_sprot_invertebrates.dat.gz
+method = --bestn 1
+query_cutoff = 100
+target_cutoff = 100
 
 [source UniParc::MULTI]
 name        = UniParc
