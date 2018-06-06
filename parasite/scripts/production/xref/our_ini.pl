@@ -38,7 +38,8 @@ print $templates->{ENSEMBL_PARSERS};
 print $templates->{ENSEMBL_FAKE_SOURCES};
 my %core_dbs_per_species;
 for my $core_db (@core_dbs){
-   my ($spe, $cies) = split "_", $core_db;
+   my ($spe, $cies, $bioproject) = split "_", $core_db;
+   next if $bioproject eq "core";
    my $species = "${spe}_${cies}";
    $core_dbs_per_species{$species} //= [];
    push $core_dbs_per_species{$species}, $core_db;
@@ -73,7 +74,7 @@ for my $species (keys %core_dbs_per_species){
    }
    my ($taxon, @other_taxons) = keys %taxons;
    die @core_dbs if @other_taxons;
-   my $aliases= join ",", keys %aliases;
+   my $aliases= join ", ", keys %aliases;
 
    print "[species $species]\n";
    print "aliases         = $aliases\n";
