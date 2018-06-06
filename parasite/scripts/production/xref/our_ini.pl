@@ -153,9 +153,9 @@ download        = Y
 order           = 20
 priority        = 1
 prio_descr      = refseq
-parser          = RefSeqParser
+parser          = RefSeqGPFFParser
 release_uri     = ftp://ftp.ncbi.nih.gov/refseq/release/release-notes/RefSeq-release*.txt
-data_uri        = ftp://ftp.ncbi.nih.gov/refseq/release/invertebrate/invertebrate*.rna.fna.gz
+data_uri        = ftp://ftp.ncbi.nih.gov/refseq/release/invertebrate/invertebrate*.rna.gbff.gz
 
 [source RefSeq_peptide::MULTI-invertebrate]
 name            = RefSeq_peptide
