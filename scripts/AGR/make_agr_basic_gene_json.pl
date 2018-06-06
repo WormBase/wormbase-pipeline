@@ -235,7 +235,7 @@ foreach my $sub_query (
     # which (as defined by Wen Chen) is: 
     if ($obj->RNASeq_FPKM or $obj->Microarray_results) {
       push @xrefs, {
-        id => "WB_SPELL:$symbol",
+        id => "WB:$symbol",
         pages => ["gene/spell"],
       };
     }
