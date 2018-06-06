@@ -112,6 +112,8 @@ source          = RefSeq_peptide::MULTI-invertebrate
 source          = Uniprot/SPTREMBL::MULTI-invertebrate
 source          = Uniprot/SWISSPROT::MULTI-invertebrate
 source          = UniParc::MULTI
+source          = Reactome::MULTI
+source          = ArrayExpress::MULTI
 END_STANDARD_SOURCES_TEMPLATE
 
 BEGIN_WORMBASE_SOURCE_TEMPLATE
@@ -196,6 +198,7 @@ prio_descr  =
 parser      = ChecksumParser
 release_uri =
 data_uri    = ftp://ftp.ebi.ac.uk/pub/contrib/uniparc/upidump.lis
+db          = checksum
 
 [source RNACentral::MULTI]
 name        = RNAcentral
@@ -206,6 +209,29 @@ prio_descr  =
 parser      = ChecksumParser
 release_uri =
 data_uri    = ftp://ftp.ebi.ac.uk/pub/databases/RNAcentral/current_release/md5/md5.tsv.gz
+db          = checksum
+
+[source Reactome::MULTI]
+name            = Reactome
+download        = Y
+order           = 80
+priority        = 1
+prio_descr      = direct
+parser          = ReactomeParser
+release_uri     = http://www.reactome.org/ReactomeRESTfulAPI/RESTfulWS/version
+data_uri        = http://www.reactome.org/download/current/Ensembl2Reactome_All_Levels.txt
+data_uri        = http://www.reactome.org/download/current/UniProt2Reactome_All_Levels.txt
+
+[source ArrayExpress::MULTI]
+name            = ArrayExpress
+download        = Y
+order           = 50
+priority        = 1
+prio_descr      =
+parser          = ArrayExpressParser
+release_uri     =
+data_uri = Database
+db = core
 
 END_ENSEMBL_PARSERS_TEMPLATE
 
@@ -386,6 +412,31 @@ order           = 30
 priority        = 2
 prio_descr      =
 parser          = RefSeqGPFFParser
+release_uri     =
+
+[source Reactome_transcript::MULTI]
+name            = Reactome_transcript
+download        = N
+order           = 20
+priority        = 1
+prio_descr      = transcript
+parser          = ReactomeParser
+
+[source Reactome_gene::MULTI]
+name            = Reactome_gene
+download        = N
+order           = 20
+priority        = 1
+prio_descr      = gene
+parser          = ReactomeParser
+
+[source Reactome::MULTI-Uniprot]
+name            = Reactome
+download        = N
+order           = 20
+priority        = 1
+prio_descr      = uniprot
+parser          = ReactomeParser
 release_uri     =
 
 END_ENSEMBL_FAKE_SOURCES_TEMPLATE
