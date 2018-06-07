@@ -1,4 +1,4 @@
-#!/usr/bin/env perl 
+run#!/usr/bin/env perl 
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -31,7 +31,7 @@ my ($debug,
 GetOptions(
   'debug=s'          => \$debug,
   'store=s'          => \$store,
-  'runspecies=s'     => \@run_species,
+  'runspecies=s@'    => \@run_species,
   'test=s'           => \$test,
   'host=s'           => \$rdb_host,
   'port=s'           => \$rdb_port,
