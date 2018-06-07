@@ -162,7 +162,7 @@ $log->write_to("\nNow loading BLAST, protein and repeat data . . .\n");
 foreach my $spDB (values %accessors) {
   my $species = $spDB->species;
 
-  my @blastfiles = qw( SPECIES_blastp.ace worm_ensembl_SPECIES_interpro_motif_info.ace worm_ensembl_SPECIES_motif_info.ace repeat_homologies.ace inverted_repeats.ace pepace.ace);
+  my @blastfiles = qw( SPECIES_blastp.ace worm_ensembl_SPECIES_interpro_motif_info.ace worm_ensembl_SPECIES_motif_info.ace repeat_homologies.ace inverted_repeats.ace);
   foreach my $f (@blastfiles){
     my $file = $f;		# don't use $f as it is a reference to the array element
     $file =~ s/SPECIES/$species/;
