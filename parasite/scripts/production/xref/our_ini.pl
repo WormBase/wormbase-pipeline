@@ -210,7 +210,7 @@ data_uri    = ftp://ftp.ebi.ac.uk/pub/contrib/uniparc/upidump.lis
 db          = checksum
 
 [source RNACentral::MULTI]
-name        = RNAcentral
+name        = RNACentral
 download    = Y
 order       = 1
 priority    = 1
