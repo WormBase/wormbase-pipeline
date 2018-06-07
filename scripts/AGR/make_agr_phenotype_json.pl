@@ -90,14 +90,14 @@ while (my $obj = $it->next) {
     foreach my $evi ($pt->col()) {
       if ($evi->name eq 'Paper_evidence') {
         foreach my $wb_paper ($evi->col ) {
-          push @paper, &get_paper( $wb_paper );
+          push @paper, &get_paper_json( $wb_paper );
         }
       }
     }
     
     foreach my $pap (@paper) {
       my $json_obj = {
-        objectId     => "WBVar:$obj", 
+        objectId     => "WB:$obj", 
         phenotypeTermIdentifiers => [ { termId => $phen_id, termOrder => 1 } ],
         phenotypeStatement => $phen_desc,
         dateAssigned => $date,
@@ -178,7 +178,7 @@ sub get_paper_json {
       last;
     }
   }
-  $json_paper->{modPublicationId} = "WBPaper:$wb_paper";
+  $json_paper->{modPublicationId} = "WB:$wb_paper";
   if ($pmid) {
     $json_paper->{pubMedId} = "PMID:$pmid";
   }
@@ -186,23 +186,3 @@ sub get_paper_json {
   return $json_paper;
 }
 
-sub get_paper {
-  my ($wb_paper) = @_;
-  
-  my $pmid;
-  foreach my $db ($wb_paper->Database) {
-    if ($db->name eq 'MEDLINE') {
-      $pmid = $db->right->right->name;
-      last;
-    }
-  }
-  
-  my $obj = {
-    pubModId => "WBPaper:$wb_paper",
-  }; 
-  if ($pmid) {
-    $obj->{pubMedId} = "PMID:$pmid";
-  }
-  
-  return $obj;
-}

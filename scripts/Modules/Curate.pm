@@ -958,6 +958,12 @@ sub replace_cds {
   my $existing = $line{EXISTING};
   my $model = $line{MODEL};
 
+  my $duplicate = $self->check_duplicates($existing, $model);
+  if ($duplicate) {
+    print "WARNING: The ID '$duplicate' has been specified twice\n\n";
+    $self->force();
+  }
+
   if ($self->structure_comparison_sanity_check($class, $existing, $model)) {print "WARNING $existing and $model have the same structure.\n"; ; $self->force()}
 
   $self->structure_update_sanity_check($class, $existing, $model);
@@ -987,6 +993,12 @@ sub new_isoform {
   my $class = $line{CLASS};
   my $existing = $line{EXISTING};
   my @models = @{$line{MODELS}};
+
+  my $duplicate = $self->check_duplicates($existing, @models);
+  if ($duplicate) {
+    print "WARNING: The ID '$duplicate' has been specified twice\n\n";
+    $self->force();
+  }
 
   my $gene = $self->SeqName2Gene($existing);
 
@@ -1060,6 +1072,12 @@ sub make_transposon {
   my $existing = $line{EXISTING};
   my $family = $line{FAMILY};
 
+  my $duplicate = $self->check_duplicates($existing, $family);
+  if ($duplicate) {
+    print "WARNING: The ID '$duplicate' has been specified twice\n\n";
+    $self->force();
+  }
+
   my $gene = $self->SeqName2Gene($existing);
 
   # check to see if the existing gene has isoforms - die if so
@@ -1108,6 +1126,12 @@ sub make_operon {
   my $method = $line{METHOD}; # either 'Operon' or 'dicistronic_mRNA'
   my @existing = @{$line{IN_OPERON}}; # the genes in the operon
 
+  my $duplicate = $self->check_duplicates(@existing);
+  if ($duplicate) {
+    print "WARNING: The ID '$duplicate' has been specified twice\n\n";
+    $self->force();
+  }
+
   my @genes;
   foreach my $old_seqname (@existing) {
     my $gene = $self->SeqName2Gene($old_seqname);
@@ -1155,6 +1179,12 @@ sub new_gene {
   my @models = @{$line{MODELS}};
   my $sequence = $self->get_Clone($class, $models[0]);
   my $cds = $self->Next_CDS_ID($sequence);
+
+  my $duplicate = $self->check_duplicates(@models);
+  if ($duplicate) {
+    print "WARNING: The ID '$duplicate' has been specified twice\n\n";
+    $self->force();
+  }
 
   my @new_cds;
 
@@ -1208,6 +1238,12 @@ sub split_gene {
   my $class = $line{CLASS};
   my $existing = $line{EXISTING};
   my @splitgroups = @{$line{SPLITGROUP}};
+
+  my $duplicate = $self->check_duplicates($existing, @splitgroups);
+  if ($duplicate) {
+    print "WARNING: The ID '$duplicate' has been specified twice\n\n";
+    $self->force();
+  }
 
   my $gene = $self->SeqName2Gene($existing);
 
@@ -1322,6 +1358,12 @@ sub merge_gene {
   my $class = $line{CLASS};
   my @existing = @{$line{DIE}};
   my @models = @{$line{MODELS}};
+
+  my $duplicate = $self->check_duplicates(@existing, @models);
+  if ($duplicate) {
+    print "WARNING: The ID '$duplicate' has been specified twice\n\n";
+    $self->force();
+  }
 
   my %unused;
   my %single;
@@ -2168,6 +2210,24 @@ sub structure_comparison_sanity_check {
     return 0;
   }
 
+}
+
+######################################
+# compare the input list of IDs looking for duplicates
+# return the duplicate, or '' if none found
+sub check_duplicates {
+  my ($self, @IDs) = @_;
+
+
+  my %seen;
+
+  foreach my $string (@IDs) {
+    
+    next unless $seen{$string}++;
+    return $string;
+  }
+
+  return '';
 }
 
 ######################################
