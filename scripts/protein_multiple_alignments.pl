@@ -1,4 +1,4 @@
-run#!/usr/bin/env perl 
+#!/usr/bin/env perl 
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
