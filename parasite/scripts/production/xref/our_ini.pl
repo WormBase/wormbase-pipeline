@@ -97,7 +97,6 @@ for my $species (keys %core_dbs_per_species){
    print "\n";
 }
 print $templates->{WORMBASE_FAKE_SOURCES} if $has_wormbase_parsers;
-
 1;
 __DATA__
 
@@ -448,4 +447,109 @@ prio_descr      = uniprot
 parser          = ReactomeParser
 release_uri     =
 
+[source UniProt::protein_id-predicted]
+name            = protein_id_predicted
+download        = N
+order           = 20
+priority        = 1
+prio_descr      =
+parser          = UniProtParser
+release_uri     =
+
+[source UniProt::protein_id]
+name            = protein_id
+download        = N
+order           = 20
+priority        = 1
+prio_descr      =
+parser          = UniProtParser
+release_uri     =
+
+[source UniProt::PDB]
+name            = PDB
+download        = N
+order           = 20
+priority        = 1
+prio_descr      =
+parser          = UniProtParser
+release_uri     =
+
+
+[source Uniprot/SWISSPROT::DIRECT]
+name            = Uniprot/SWISSPROT
+download        = N
+order           = 22
+priority        = 1
+prio_descr      = direct
+parser          = UniProtParser
+release_uri     =
+data_uri        =
+
+[source Uniprot/SPTREMBL::DIRECT]
+name            = Uniprot/SPTREMBL
+download        = N
+order           = 22
+priority        = 1
+prio_descr      = direct
+parser          = UniProtParser
+release_uri     =
+data_uri        =
+
+[source Uniprot/SWISSPROT::MULTI-predicted]
+name            = Uniprot/SWISSPROT_predicted
+download        = N
+order           = 20
+priority        = 1
+prio_descr      =
+parser          = UniProtParser
+release_uri     =
+
+[source Uniprot_gn]
+name            = Uniprot_gn
+download        = N
+order           = 20
+priority        = 1
+prio_descr      =
+parser          = UniProtParser
+release_uri     =
+data_uri        =
+
+[source Uniprot::EMBL-predicted]
+name            = EMBL_predicted
+download        = N
+order           = 20
+priority        = 1
+prio_descr      =
+parser          = UniProtParser
+release_uri     =
+
+[source Uniprot::EMBL]
+name            = EMBL
+download        = N
+order           = 20
+priority        = 1
+prio_descr      =
+parser          = UniProtParser
+release_uri     =
+
+[source Uniprot::ChEMBL]
+name            = ChEMBL
+download        = N
+order           = 20
+priority        = 1
+prio_descr      =
+parser          = UniProtParser
+release_uri     =
+
+[source Uniprot/SPTREMBL::MULTI-evidence_gt_2]
+name            = Uniprot/SPTREMBL
+download        = N
+order           = 20
+priority        = 10
+prio_descr      = protein_evidence_gt_2
+parser          = UniProtParser
+release_uri     =
+status          = LOWEVIDENCE
+
 END_ENSEMBL_FAKE_SOURCES_TEMPLATE
+
