@@ -43,10 +43,10 @@ if ($store) {
 my @script_conf = (
   { script => 'dump_species_functional_descriptions.pl', output => 'functional_descriptions.txt', all => 1 },
   { script => 'dump_protein_domains.pl',                 output => 'protein_domains.csv',         all => 1 },
-  { script => 'dump_species_orthologs.pl',               output => 'orthologs.txt',               all => 1 },
+  { script => 'dump_species_orthologs.pl',               output => 'orthologs.txt',               all => 1,  mem => 6000 },
   { script => 'dump_confirmed_genes.pl',                 output => 'confirmed_genes.fa',          all => 1 },
-  { script => 'dump_gpi.pl',                             output => 'gene_product_info.gpi',       all => 1 },
-  { script => 'dump_species_gene_interactions.pl',       output => 'interactions.txt'                },
+  { script => 'dump_gpi.pl',                             output => 'gene_product_info.gpi',       all => 1, mem => 6000 },
+  { script => 'dump_species_gene_interactions.pl',       output => 'interactions.txt',  mem => 6000   },
   { script => 'dump_interpolated.pl',                    output => 'interpolated_clones.txt'         },
   { script => 'dump_promoters.pl',                       output => 'potential_promotors.fa'          },
   { script => 'dump_swissprot.pl',                       output => 'swissprot.txt'                   },
@@ -64,12 +64,8 @@ my @script_conf = (
 # global aspects
 my $log = Log_files->make_build_log($wormbase);
 my $defaultMem = 4000;
-my $lsf = LSF::JobManager->new(-M => $defaultMem, 
-                               -R => "select[mem>$defaultMem] rusage[mem=$defaultMem]",
-                               -J => 'perSpeciesDumps', 
-                               -e => '/dev/null',
-                               -o => '/dev/null'
-                              );
+my $lsf_out = $wormbase->build_lsfout;
+my $lsf = LSF::JobManager->new();
 
 my %files_to_check;
 my %core_species = $wormbase->species_accessors;
@@ -87,13 +83,14 @@ foreach my $wb ($wormbase, values %core_species ) {
     # note that all scripts need to be run against autoace, because only that has all
     # of the necessary objects filled in
     my $options = $item->{options} . " -database " . $wormbase->autoace;
-
+    my $mem = (exists $item->{mem}) ? $item->{mem} : $defaultMem;
     next unless $item->{all} or $spe eq 'elegans';
+    
     next unless &check_script($script);
 
     my $outfile = "$report_dir/${spe}.${output}";
     &clean_previous_output($outfile);
-    &queue_script($wb,$script, $outfile, $options);
+    &queue_script($wb, $script, $spe, $outfile, $mem, $options);
     push @{$files_to_check{$script}}, $outfile;
   }  
 }
@@ -127,7 +124,7 @@ $log->mail;
 
 # LSF submit $script
 sub queue_script {
-  my ($wb,$script, $outf, $opts) = @_;
+  my ( $wb, $script, $sp, $outf, $mem,  $opts) = @_;
   
   my $cmd = "preFTPdumps/perSpecies/$script";
   $cmd .= " -outfile $outf";
@@ -135,7 +132,13 @@ sub queue_script {
     $cmd .= " $opts";
   }
   $cmd = $wb->build_cmd($cmd);
-  $lsf->submit($cmd);
+
+  my @lsf_opts = (-M => $mem, 
+                  -R => "select[mem>=$mem] rusage[mem=$mem]",
+                  -J => 'perSpeciesDumps', 
+                  -o => "${lsf_out}/${script}.${sp}.lsfout");
+
+  $lsf->submit(@lsf_opts, $cmd);
 }
 
 # basically try to delete $file
