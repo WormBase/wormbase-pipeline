@@ -1,11 +1,11 @@
-
+#!/usr/bin/env perl
 #
 # Note: this script should only be run after the data has been put in the FTP staging area, and the correct symlinks are in place
 #
 
 use strict;
 use Getopt::Long;
-
+use File::Path qw (make_path);
 use Bio::EnsEMBL::Registry;
 
 my ($gxa_staging_dir,
@@ -13,12 +13,14 @@ my ($gxa_staging_dir,
     $rel_num,
     $reg_conf,
     @entries,
+    $force_copy
     );
 
 &GetOptions("gxastaging=s"    => \$gxa_staging_dir,
             "ftpsourcedir=s"  => \$ftp_source_dir,
             "reg_conf=s"      => \$reg_conf,
             "relnum=s"        => \$rel_num,
+            "force_copy=s"    => \$force_copy 
     );
 
 die "You must supply a ParaSite release number with -relnum\n" if not defined $rel_num;
@@ -27,7 +29,7 @@ die "You must supply a Registry file with -reg_conf\n" if not defined $reg_conf;
 Bio::EnsEMBL::Registry->load_all( $reg_conf );
 
 $gxa_staging_dir = "/nfs/ftp/pub/databases/wormbase/collaboration/EBI/GxA" if not defined $gxa_staging_dir;
-$ftp_source_dir = "/nfs/ftp/pub/databases/wormbase/staging/parasite/releases" if not defined $ftp_source_dir;
+$ftp_source_dir = "/nfs/ftp/pub/databases/wormbase/staging/parasite/releases/WBPS${rel_num}/species" if not defined $ftp_source_dir;
 
 
 my $all_dbas = Bio::EnsEMBL::Registry->get_all_DBAdaptors(-GROUP => 'core');
@@ -49,24 +51,17 @@ foreach my $dba (@$all_dbas) {
   my $taxon      = $mc->single_value_by_key('species.taxonomy_id');
   
   my $prefix = join(".", $species, $bioproject, "WBPS${rel_num}");
-  my $gtf_suffix = $prefix . ".canonical_geneset.gtf.gz";
-  my $genome_suffix = $prefix . ".genomic.fa.gz";
-  my $cdna_suffix = $prefix . ".mRNA_transcripts.fa.gz";
-
-  my $source_genome = "$ftp_source_dir/WBPS${rel_num}/species/$species/$bioproject/$genome_suffix";
-  my $source_gtf = "$ftp_source_dir/WBPS${rel_num}/species/$species/$bioproject/$gtf_suffix";
-  my $source_cdna = "$ftp_source_dir/WBPS${rel_num}/species/$species/$bioproject/$cdna_suffix";
-
-  die "Could not find $source_genome\n" if not -e $source_genome;
-  die "Could not find $source_gtf\n" if not -e $source_gtf;
-  die "Could not find $source_cdna\n" if not -e $source_cdna;
 
   push @entries, {
     species    => $species,
     bioproject => $bioproject,
     taxon      => $taxon,
     assembly   => $assembly,
-    to_copy    => [$source_genome, $source_gtf, $source_cdna],
+    to_copy    => [
+      $prefix . ".canonical_geneset.gtf.gz",
+      $prefix . ".genomic.fa.gz",
+      $prefix . ".mRNA_transcripts.fa.gz",
+    ]
   };
 }
 
@@ -74,11 +69,14 @@ foreach my $dba (@$all_dbas) {
 # copy the Genome and GTF files
 # 
 my $outdir = "$gxa_staging_dir/WBPS${rel_num}";
-mkdir $outdir if not -d $outdir;
+make_path $outdir;
 
 foreach my $entry (@entries) {
-  foreach my $file (@{$entry->{to_copy}}) {
-    system("cp $file $outdir/") and die "Could not copy $file to $outdir\n";
+  foreach my $file_name (@{$entry->{to_copy}}) {
+    my $f = join ("/", $ftp_source_dir, $entry->{species}, $entry->{bioproject}, $file_name);
+    die "Missing: $f" unless -f $f;
+    next if -f "$outdir/$file_name" and not $force_copy;
+    system("cp -v $f $outdir/$file_name") and die "Could not copy $f to $outdir\n";
   }
 }
 
@@ -94,4 +92,4 @@ close($out_fh);
 #
 # And finally, update the "latest" symlink
 #
-system("cd $gxa_staging_dir && rm latest && ln -s WBPS${rel_num} latest") and die "Could not update latest symlink\n";
+system("cd $gxa_staging_dir && rm latest && ln -sv WBPS${rel_num} latest") and die "Could not update latest symlink\n";
