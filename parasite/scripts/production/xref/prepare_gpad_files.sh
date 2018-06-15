@@ -46,7 +46,11 @@ num_core_dbs=$( wc -l < $DIR/.tmp/core_db_and_taxon_list.tsv)
 >&2 echo "Finished! Created files: $num_files for $num_core_dbs core databases" 
 
 if [ "$num_files" -ne "$num_core_dbs" ] ; then
-  >&2 echo "Error: WHY ARE THESE NUMBERS NOT THE SAME LOL"
+  >&2 echo "The two numbers are not the same. Blimey! "
+  >&2 echo "Diff directory content vs core dbs: "
+  >&2 diff \
+    <( ls -1 $DIR | perl -pe 's/annotations_ensembl-(.*).gpa/$1/' | sort )  \
+    <( perl -pe 's/_core.*//' < $DIR/.tmp/core_db_and_taxon_list.tsv | sort )
   exit 1
 else
   rm -v $DIR/.tmp/**
