@@ -20,6 +20,8 @@ use NameDB_handler;
 my ($help, $debug, $test, $verbose, $store, $wormbase, $user);
 my $database;
 my $sanitycheck;
+my $explain_gene;
+my $explain_gene_output='';
 
 my $acefile = "/nfs/wormpub/DATABASES/geneace/CGC/orthos.ace";
 my $batchfile  = "/nfs/wormpub/DATABASES/geneace/CGC/batch_load";
@@ -36,6 +38,7 @@ GetOptions ("help"       => \$help,
 	    "batch:s"    => \$batchfile, # list of genes with names to be added using batch_pname_update.pl
 	    "user:s"     => \$user, #manditory option as required for .ace output.
 	    "sanitycheck" => \$sanitycheck, # check everything is OK
+	    "explain_gene:s" => \$explain_gene, # provide a detailed explanation of what has been done to a GeneID
             );
 
 if ( $store ) {
@@ -104,28 +107,38 @@ unless (defined $user) {
 #1 to 1 - check if already assigned ok. If so and it is different then report it as needing work. If not assigned then assign it. 
 #1 to many - then construct a split name or a merged name. check if already assigned. If so and it is different then report it as needing work. If not assigned then assign it. 
 
+if (defined $explain_gene) {$explain_gene_output = "EXPLANATION OF GENE $explain_gene\n"}
+
 my $acedb = Ace->connect('-path' => $database) || Ace->error; # geneace
 
 # get elegans genes with a CGC_name
 $log->write_to("Fetch elegans genes\n");
 my @elegans_genes = $acedb->fetch (-query => 'FIND Gene WBGene* WHERE Live AND Species = "Caenorhabditis elegans" AND Ortholog');
+if (defined $explain_gene && grep /^$explain_gene$/, @elegans_genes) {$explain_gene_output .= "It is a Live elegans gene with Orthologs\n"}
 
 # get other species genes
 # Currently the policy is not to transfer names to T. muris, S. ratti and O. volvulus because MB doesn't wish it.
 $log->write_to("Fetch non-elegans non-ovolvulus non-tmuris non-sratti genes\n");
 my @other_genes = $acedb->fetch (-query => 'FIND Gene WBGene* WHERE Live AND Species != "Caenorhabditis elegans" AND Species != "Onchocerca volvulus" AND Species != "Trichuris muris" AND Species != "Strongyloides ratti"');
+if (defined $explain_gene && grep /^$explain_gene$/, @other_genes) {$explain_gene_output .= "It is a Live non-elegans gene\n"}
 
 # get other species DEAD genes
 # We wish to be able to display a warning if we assign a CGC_name and there is another gene that is already DEAD but which still has the CGC_name - it needs to be manually removed from the DEAD gene.
 $log->write_to("Fetch DEAD non-elegans non-ovolvulus non-tmuris non-sratti genes\n");
 my @dead_other_genes = $acedb->fetch (-query => 'FIND Gene WBGene* WHERE Dead AND Species != "Caenorhabditis elegans" AND Species != "Onchocerca volvulus" AND Species != "Trichuris muris" AND Species != "Strongyloides ratti"');
+if (defined $explain_gene && grep /^$explain_gene$/, @dead_other_genes) {$explain_gene_output .= "It is a Dead non-elegans gene\n"}
+
+if (defined $explain_gene && $explain_gene_output eq 'EXPLANATION OF GENE $explain_gene\n') {$explain_gene_output .= "It is not a gene that has been searched for - possibly a species we are not considering\n"}
+
 
 
 $log->write_to("Ignore genes with paper_evidence for the name\n");
 my %paper_bork_list = get_paper_bork_list(@other_genes);
+if (defined $explain_gene && exists $paper_bork_list{$explain_gene}) {$explain_gene_output .= "It has a paper giving evidence for its manually-assigned gene name\n"}
 
 $log->write_to("Ignore genes with a ncRNA Biotype\n");
 my %RNA_bork_list = get_RNA_bork_list(@other_genes);
+if (defined $explain_gene && exists $RNA_bork_list{$explain_gene}) {$explain_gene_output .= "It is an ncRNA gene, so has a manually-assigned gene name\n"}
 
 # store existing non-elegans gene CGC names 
 # list of existing names to check that all have been set up correctly
@@ -133,12 +146,14 @@ $log->write_to("Store the existing genes with names\n");
 my %existing = store_existing(@other_genes);
 my %assigned_names;
 my %correct_already;
+if (defined $explain_gene && exists $existing{$explain_gene}) {$explain_gene_output .= "It already has the existing gene name $existing{$explain_gene}\n"}
 
 
 # store existing DEAD non-elegans gene CGC names 
-# list of existing DAED names to check that all have been set up correctly
+# list of existing DEAD names to check that all have been set up correctly
 $log->write_to("Store the existing DEAD genes with names\n");
 my %dead_existing = store_existing(@dead_other_genes);
+if (defined $explain_gene && exists $dead_existing{$explain_gene}) {$explain_gene_output .= "It has the existing gene name $dead_existing{$explain_gene}\n"}
 
 if ($sanitycheck) {
   $log->write_to("Sanity check\n");
@@ -153,6 +168,7 @@ if ($sanitycheck) {
   $log->write_to("Get non-elegans orthologs\n");
   my %other_ortholog = get_orthologs(@other_genes);
   
+
   # delete unused data
   @elegans_genes = ();
   @other_genes = ();
@@ -186,6 +202,8 @@ if ($sanitycheck) {
 close $ace;
 close $namedb;
 close $deletenamedb;
+
+if (defined $explain_gene) {$log->write_to("\n==================================\n$explain_gene_output\n==================================\n\n")}
 
 
 $log->write_to("\nCreated orthos.ace and batch_load and delete_batch_load under /nfs/wormpub/DATABASES/geneace/CGC/\n\n
@@ -248,10 +266,48 @@ sub classify {
 
   my (%one2one, %many2one, %one2many);
 
+
+  # explain a gene stuff
+  if (defined $explain_gene) {
+    if (exists $elegans_ortholog->{$explain_gene}) {
+      $explain_gene_output .= "It has the following orthologs:\n";
+      foreach my $species (keys %{$elegans_ortholog->{$explain_gene}}) {
+	$explain_gene_output .= "\t$species\n";
+	foreach my $explain_ortholog (keys %{$elegans_ortholog->{$explain_gene}{$species}}) {
+	  $explain_gene_output .= "\t\t$explain_ortholog\twith $elegans_ortholog->{$explain_gene}{$species}{$explain_ortholog} supporting databases\n";
+	}
+      }      
+    } elsif (exists $other_ortholog->{$explain_gene}) {
+      $explain_gene_output .= "It has the following elegans orthologs:\n";
+      foreach my $species (keys %{$other_ortholog->{$explain_gene}}) {
+	if ($species eq 'elegans') {
+	  foreach my $explain_ortholog (keys %{$other_ortholog->{$explain_gene}{$species}}) {
+	    $explain_gene_output .= "\t\t$explain_ortholog\twith $other_ortholog->{$explain_gene}{$species}{$explain_ortholog} supporting databases\n";
+	    # take a look at the elegans orthologs
+	    foreach my $explain_species (keys %{$elegans_ortholog->{$explain_ortholog}}) {
+	      foreach my $explain_elegans_ortholog (keys %{$elegans_ortholog->{$explain_ortholog}{$explain_species}}) {
+		$explain_gene_output .= "\twith orthologs back:\t$explain_species\t$explain_elegans_ortholog\twith $elegans_ortholog->{$explain_ortholog}{$explain_species}{$explain_elegans_ortholog} supporting databases\n";
+		
+	      }
+
+	    } 
+
+	  }
+	}
+      }      
+      
+    } else {
+      $explain_gene_output .= "It has no orthologs, so gene names cannot be transferred using this gene.\n";
+    }
+  }
+  
+
+  # classify stuff
   foreach my $elegans_gene_name (keys %{$elegans_ortholog}) {
     foreach my $species (keys %{$elegans_ortholog->{$elegans_gene_name}}) {
       my $number = scalar keys %{$elegans_ortholog->{$elegans_gene_name}{$species}}; # number of orthologs to this species
       my @ortholog_gene_names  = keys %{$elegans_ortholog->{$elegans_gene_name}{$species}};
+      if (defined $explain_gene && $elegans_gene_name eq $explain_gene) {$explain_gene_output .= "There are $number $species orthologs for this elegans gene.\n"}
 
       if ($number == 1) {
 	my $ortholog_gene_name = $ortholog_gene_names[0];
@@ -262,6 +318,7 @@ sub classify {
 	  # 1-to-1
 	  if ($elegans_ids[0] eq $elegans_gene_name) {
 	    $one2one{$elegans_gene_name}{$species}{$ortholog_gene_name} = 1; # NB %one2one has the elegans gene ID as the first key
+	    if (defined $explain_gene && ($elegans_gene_name eq $explain_gene  || $ortholog_gene_name eq $explain_gene )) {$explain_gene_output .= "There is a 1:1 orthology between elegans $elegans_gene_name and $species $ortholog_gene_name\n"}
 	  }
 	  
 	} else {
@@ -274,6 +331,7 @@ sub classify {
 	  if ($all_match) {
 	    foreach my $reverse_elegans (@elegans_ids) {
 	      $many2one{$ortholog_gene_name}{$species}{$reverse_elegans} = 1; # NB %many2one has the non-elegans gene ID as the first key
+	      if (defined $explain_gene && ($elegans_gene_name eq $explain_gene  || $ortholog_gene_name eq $explain_gene )) {$explain_gene_output .= "There is a many:1 orthology between elegans $elegans_gene_name and $species $ortholog_gene_name\n"}
 	    }
 	  }
 	  
@@ -287,13 +345,26 @@ sub classify {
 	foreach my $ortholog_gene_name (@ortholog_gene_names) {
 	  # if no homology back or have homologies to other elegans genes then this is not a 1-to-many, it is some sort of many-to-many and we ignore those
 	  if (!exists $other_ortholog->{$ortholog_gene_name}{elegans}{$elegans_gene_name}) {$all_match = 0}
+	  if (defined $explain_gene && ($elegans_gene_name eq $explain_gene || (grep /^$explain_gene$/, @ortholog_gene_names) )) {
+	    $explain_gene_output .= "Testing for a 1:many orthology between elegans $elegans_gene_name and $species $ortholog_gene_name - the $species  $ortholog_gene_name gene ";
+	    if ($all_match == 1) {$explain_gene_output .= "has some orthology to elegans $elegans_gene_name - so it could be OK\n"}
+	    if ($all_match != 1) {$explain_gene_output .= "has no orthology to elegans $elegans_gene_name - so it is not a 1:many - we ignore complex matches like this\n"}
+	  }
 	  my $ortholog_number = scalar keys %{$other_ortholog->{$ortholog_gene_name}{elegans}};
 	  if ($ortholog_number != 1) {$all_match = 0}
+	  if (defined $explain_gene && ($elegans_gene_name eq $explain_gene || (grep /^$explain_gene$/, @ortholog_gene_names) )) {
+	    $explain_gene_output .= "Testing for a 1:many orthology between elegans $elegans_gene_name and $species $ortholog_gene_name - the $species  $ortholog_gene_name gene has $ortholog_number matches to elegans $elegans_gene_name ";
+	    if ($ortholog_number == 1) {$explain_gene_output .= "so it could be OK\n"}
+	    if ($ortholog_number != 1) {$explain_gene_output .= "so it is not a 1:many - we ignore complex matches like this\n"}
+	  }
 	}	
 	if ($all_match) {
 	  foreach my $ortholog_gene_name (@ortholog_gene_names) {
 	    $one2many{$elegans_gene_name}{$species}{$ortholog_gene_name} = 1; # NB %one2many has the elegans gene ID as the first key
+	    if (defined $explain_gene && ($elegans_gene_name eq $explain_gene  || $ortholog_gene_name eq $explain_gene )) {$explain_gene_output .= "There is a 1:many orthology between elegans $elegans_gene_name and $species $ortholog_gene_name\n"}
 	  }
+	} else {
+	    if (defined $explain_gene && $elegans_gene_name eq $explain_gene ) {$explain_gene_output .= "There is a many:many orthology between elegans $elegans_gene_name and $species genes - we ignore complex matches like this\n"}
 	}
       }
     }
