@@ -24,7 +24,7 @@ GetOptions(
    'species=s' => \$species, # specify the species to run on
    'test'      => \$test,    # use the test database instead of the live one
    'store=s'   => \$store,   # pass a storable (for the build)
-   'output=s'  => \$output,  # write somewhere else and not to REPORTS/
+   'outfile=s' => \$output,  # write somewhere else and not to REPORTS/
    'database=s'=> \$database,# specify a different database than BUILD/$species
 )||die(@!);
 
