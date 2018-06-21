@@ -101,10 +101,8 @@ while (my $obj = $it->next) {
         phenotypeTermIdentifiers => [ { termId => $phen_id, termOrder => 1 } ],
         phenotypeStatement => $phen_desc,
         dateAssigned => $date,
+        evidence => $pap,
       };
-      foreach my $k (keys %$pap) {
-        $json_obj->{$k} = $pap->{$k};
-      }
       
       push @pheno_annots, $json_obj;
     }
@@ -143,9 +141,6 @@ my $string = $json_obj->allow_nonref->canonical->pretty->encode($data);
 print $out_fh $string;
 
 $db->close;
-
-exit(0);
-
 
 exit(0);
 

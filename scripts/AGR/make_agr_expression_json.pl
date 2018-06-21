@@ -293,12 +293,13 @@ sub record_anatomy_term_name {
   if (not exists $anatomy_term->{$at->name}) {
     if (not $at->Term) {
       warn "Term field not populated for Anatomy_term $at; skipping\n";
+      $anatomy_term->{$at->name} = 'UNDEFINED';
     } else {
       $anatomy_term->{$at->name} = $at->Term->name;
     }
   }
 
-  return exists($anatomy_term->{$at->name}) ? 1 : 0;
+  return (exists($anatomy_term->{$at->name}) and $anatomy_term->{$at->name} ne 'UNDEFINED') ? 1 : 0;
 }
 
 ###############################################

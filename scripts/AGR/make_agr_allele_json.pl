@@ -106,14 +106,14 @@ while (my $obj = $it->next) {
   }
 
   my $json_obj = {
-    primaryId     => "WBVar:$obj", 
+    primaryId     => "WB:$obj", 
     symbol        => $symbol,
     symbolText    => $symbol,
     synonyms      => [keys \%synonyms],
     secondaryIds => [],
     taxonId       => "NCBITaxon:" . $taxid,
     gene          => "WB:$gene",
-    crossReferences => [ { id => "WBVar:$obj", pages => ["allele"] }],
+    crossReferences => [ { id => "WB:$obj", pages => ["allele"] }],
   };
 
 
