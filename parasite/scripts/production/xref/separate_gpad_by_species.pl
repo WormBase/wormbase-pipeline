@@ -19,7 +19,7 @@ my %fhs;
 while(<$gaf_file>){
   my ($pre, $taxon, $post) = split /tgt_taxon=([0-9]*)/;
   for my $species (@{$species_per_taxon->{$taxon} // [] }){
-    open($fhs{$species}, ">", File::Spec->catfile($ARGV[2], "annotations_ensembl.$species.gpa")) unless $fhs{$species};
+    open($fhs{$species}, ">", File::Spec->catfile($ARGV[2], "annotations_ensembl-$species.gpa")) unless $fhs{$species};
     print { $fhs{$species} } "${pre}tgt_species=${species}${post}";
   }
 }
