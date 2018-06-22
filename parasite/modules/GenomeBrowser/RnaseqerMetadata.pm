@@ -3,14 +3,27 @@ package GenomeBrowser::RnaseqerMetadata;
 use List::MoreUtils qw(uniq);
 use parent GenomeBrowser::LocallyCachedResource;
 
-# Store:  "study->run->attribute_type->attribute_value";
+# Assembly -> study -> run -> type -> value
 
+# Could have more API:
+# sample_characteristic_types_for_run
+# sample_characteristic_values
+
+# deprecated
 sub studies_for_assembly {
    my ($self,$assembly) = @_;
    my %h = %{$self->{$assembly}};
    return [keys %h];
 }
 
+# I wonder how well this will work
+sub access {
+  my $h = shift;
+  while(@_){
+    $h = $h->{$_};
+  }
+  return [keys %$h ];
+}
 sub _fetch {
   my ($class, $species) = @_;
   $species= lc($species);
