@@ -5,24 +5,12 @@ use parent GenomeBrowser::LocallyCachedResource;
 
 # Assembly -> study -> run -> type -> value
 
-# Could have more API:
-# sample_characteristic_types_for_run
-# sample_characteristic_values
-
-# deprecated
-sub studies_for_assembly {
-   my ($self,$assembly) = @_;
-   my %h = %{$self->{$assembly}};
-   return [keys %h];
-}
-
-# I wonder how well this will work
 sub access {
   my $h = shift;
   while(@_){
-    $h = $h->{$_};
+    $h = $h->{shift @_} or return [];
   }
-  return [keys %$h ];
+  return [sort keys %$h ];
 }
 sub _fetch {
   my ($class, $species) = @_;
@@ -47,7 +35,7 @@ sub _fetch {
       $data
         {$run_record->{ASSEMBLY_USED}}
         {$run_record->{STUDY_ID}}
-        = $run_attributes{$run_record->{RUN_ID}};
+        = $run_attributes{$run_record->{RUN_IDS}}; 
   }
   return \%data;
 }

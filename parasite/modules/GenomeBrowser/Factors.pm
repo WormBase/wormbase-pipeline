@@ -26,3 +26,4 @@ sub _fetch {
   }
   return \{sort (uniq( map {@{$_}} (values %data)))};
 }
+1;

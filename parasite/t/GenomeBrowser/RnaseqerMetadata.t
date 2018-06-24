@@ -24,16 +24,32 @@ my $species = "schistosoma_mansoni";
 my $subject = GenomeBrowser::RnaseqerMetadata->new($root_dir, $species);
 
 is_deeply(
-   $subject->studies_for_assembly("ASM23792v2"), 
+   $subject->access("ASM23792v2"), 
    ["SRP026308"], 
    "Studies for assembly"
 ) or diag explain $subject;
 is_deeply(
-  $subject->studies_for_assembly("wrong assembly"),
+  $subject->access("wrong assembly"),
   [],
   "No studies for wrong assembly"
 );
 
+is_deeply(
+   $subject->access("ASM23792v2","SRP026308"), 
+   ['Sample Name', 'development stage','organism part','source name','strain'],
+   "Runs for assembly and study"
+) or diag explain $subject;
+
+is_deeply(
+   $subject->access("ASM23792v2","wrong study"), 
+   [], 
+   "No runs for assembly and wrong study"
+) or diag explain $subject;
+is_deeply(
+   $subject->access("wrong assembly","SRP026308"), 
+   [], 
+   "No runs for wrong assembly and study"
+) or diag explain $subject;
 done_testing();
 __DATA__
 [

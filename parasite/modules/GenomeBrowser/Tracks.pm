@@ -60,3 +60,4 @@ sub _public_url {
   my $track_id = shift;
   return "https://ngs.sanger.ac.uk/$track_id.bw";
 }
+1;
