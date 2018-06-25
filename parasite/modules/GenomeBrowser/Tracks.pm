@@ -18,17 +18,17 @@ use GenomeBrowser::RnaseqerMetadata;
 # Do we need more data fetched from somewhere?
 # make yourself a FactorsCurationWizard
 sub new {
-  my ($class, $root_dir, $species, $assembly, $rnaseqer_metadata, $factors) = @_;
+  my ($class, $root_dir, $species, $assembly) = @_;
   my $rnaseqer_metadata = GenomeBrowser::RnaseqerMetadata->new($root_dir, $species);
   my $array_express_metadata = GenomeBrowser::ArrayExpressMetadata->new($root_dir, $species);
   my $factors = GenomeBrowser::Factors->new($root_dir, $species, $assembly, $rnaseqer_metadata, $array_express_metadata);
   my %data;
-  for my $study_id ($rnaseqer_metadata->access($assembly)){
-    for my $run_id ($rnaseqer_metadata->access($assembly, $study_id)){
-       my %attributes = %{$rnaseqer_metadata->{$assembly}{$study_id}{$run}};
+  for my $study_id (@{$rnaseqer_metadata->access($assembly)}){
+    for my $run_id (@{$rnaseqer_metadata->access($assembly, $study_id)}){
+       my %attributes = %{$rnaseqer_metadata->{$assembly}{$study_id}{$run_id}};
        $attributes{Path} = &_public_url($run_id);
        $attributes{Label} = "$study_id/$run_id\t".join (", ",
-          map {$_ if $_} @attributes{@$factors}
+          map {exists $attributes{$_} ? $attributes{$_}: ()} @$factors
        );
        $data{$run_id}=\%attributes;
     }
