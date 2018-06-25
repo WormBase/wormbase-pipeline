@@ -4,6 +4,8 @@ use LWP;
 use YAML;
 use File::Path qw(make_path);
 use JSON;
+use XML::Simple;
+
 sub new {
     my ($class,$root_dir,$species, @other_args) = @_;
     my $dir = "$root_dir/$species";
@@ -25,4 +27,11 @@ sub get_json {
   return from_json($response->decoded_content);
 }
 
+sub get_xml { 
+  my ($class,$url) = @_;
+  my $response = LWP::UserAgent->new->get($url);
+  die "$url error:".$response->status_line unless $response->is_success;
+
+  return XMLin($response->decoded_content);
+}
 1;

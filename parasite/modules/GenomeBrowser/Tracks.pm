@@ -2,8 +2,9 @@
 package GenomeBrowser::Tracks;
 
 use GenomeBrowser::ArrayExpressMetadata;
-use GenomeBrowser::Factors;
 use GenomeBrowser::RnaseqerMetadata;
+use GenomeBrowser::Studies;
+use GenomeBrowser::Factors;
 # This is the convenient representation of tracks
 # Fetches its dependent data and puts them on disk
 
@@ -21,19 +22,30 @@ sub new {
   my ($class, $root_dir, $species, $assembly) = @_;
   my $rnaseqer_metadata = GenomeBrowser::RnaseqerMetadata->new($root_dir, $species);
   my $array_express_metadata = GenomeBrowser::ArrayExpressMetadata->new($root_dir, $species);
+  my $studies = GenomeBrowser::Studies->new($root_dir, $species, $assembly, $rnaseqer_metadata); 
   my $factors = GenomeBrowser::Factors->new($root_dir, $species, $assembly, $rnaseqer_metadata, $array_express_metadata);
   my %data;
   for my $study_id (@{$rnaseqer_metadata->access($assembly)}){
+    my $study_attributes = $studies->{$study_id};
     for my $run_id (@{$rnaseqer_metadata->access($assembly, $study_id)}){
-       my %attributes = %{$rnaseqer_metadata->{$assembly}{$study_id}{$run_id}};
+       my $run_attributes = $rnaseqer_metadata->{$assembly}{$study_id}{$run_id};
+       my %attributes = %{{ %$study_attributes, %$run_attributes }};
        $attributes{Path} = &_public_url($run_id);
-       $attributes{Label} = "$study_id/$run_id\t".join (", ",
+       $attributes{Label} = &_label($run_id,
           map {exists $attributes{$_} ? $attributes{$_}: ()} @$factors
        );
        $data{$run_id}=\%attributes;
     }
   }
   return bless \%data, $class;
+}
+
+sub _label {
+  my ($run_id, @factor_values) = @_;
+  return $run_id unless @factor_values;
+  return "$run_id: ". join (", ",
+    grep !/[A-Z]+[0-9]+/, @factor_values
+  ); 
 }
 
 sub list_names {

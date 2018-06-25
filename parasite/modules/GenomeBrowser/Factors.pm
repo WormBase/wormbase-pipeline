@@ -22,7 +22,7 @@ sub _fetch {
     }
     my @factors = @{$array_express_metadata->factor_types($study_id) // []};
     @factors = keys %rnaseqer_characteristics unless @factors;
-    @factors = grep { keys $rnaseqer_characteristics{$_} > 1 or sum (values $rnaseqer_characteristics{$_}) == 1 } @factors;
+    @factors = grep { exists $rnaseqer_characteristics{$_} and (keys $rnaseqer_characteristics{$_} > 1 or sum (values $rnaseqer_characteristics{$_}) == 1 ) } @factors;
     $data{$study_id}=\@factors;
   }
   my @factors = sort (uniq( map {@{$_}} (values %data)));
