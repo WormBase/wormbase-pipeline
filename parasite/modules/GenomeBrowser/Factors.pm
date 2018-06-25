@@ -1,6 +1,6 @@
 
 package GenomeBrowser::Factors;
-
+use List::Util qw(sum);
 use List::MoreUtils qw(uniq);
 use parent GenomeBrowser::LocallyCachedResource;
 
@@ -12,18 +12,20 @@ use parent GenomeBrowser::LocallyCachedResource;
 sub _fetch {
   my ($class, $species, $assembly, $rnaseqer_metadata, $array_express_metadata) = @_;
   my %data;
-  for my $study_id ($rnaseqer_metadata->access($assembly)){
+  for my $study_id (@{$rnaseqer_metadata->access($assembly)}){
     my %rnaseqer_characteristics;
-    for my $run ($rnaseqer_metadata->access($assembly, $study_id)){
-       for my $characteristic_type ($rnaseqer_metadata->access($assembly, $study_id, $run)){
-         $rnaseqer_characteristics{$characteristic_type}++;
+    my @runs = @{$rnaseqer_metadata->access($assembly, $study_id)};
+    for my $run (@runs){
+       for my $characteristic_type (@{$rnaseqer_metadata->access($assembly, $study_id, $run)}){
+         $rnaseqer_characteristics{$characteristic_type}{$rnaseqer_metadata->access($assembly, $study_id, $run, $characteristic_type)}++;
        } 
     }
     my @factors = @{$array_express_metadata->factor_types($study_id) // []};
     @factors = keys %rnaseqer_characteristics unless @factors;
-    @factors = map {$_ if $rnaseqer_characteristics{$_} > 1 } @factors;
+    @factors = grep { keys $rnaseqer_characteristics{$_} > 1 or sum (values $rnaseqer_characteristics{$_}) == 1 } @factors;
     $data{$study_id}=\@factors;
   }
-  return \{sort (uniq( map {@{$_}} (values %data)))};
+  my @factors = sort (uniq( map {@{$_}} (values %data)));
+  return \@factors;
 }
 1;

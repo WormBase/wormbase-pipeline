@@ -7,10 +7,12 @@ use parent GenomeBrowser::LocallyCachedResource;
 
 sub access {
   my $h = shift;
-  while(@_){
-    $h = $h->{shift @_} or return [];
+  while(@_ and ref $h){
+    $h = $h->{shift @_};
   }
-  return [sort keys %$h ];
+  return [sort keys %$h ] if ref $h;
+  return [] unless $h;
+  return $h;
 }
 sub _fetch {
   my ($class, $species) = @_;
@@ -35,6 +37,7 @@ sub _fetch {
       $data
         {$run_record->{ASSEMBLY_USED}}
         {$run_record->{STUDY_ID}}
+        {$run_record->{RUN_IDS}}
         = $run_attributes{$run_record->{RUN_IDS}}; 
   }
   return \%data;
