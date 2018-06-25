@@ -376,11 +376,11 @@ sub map_features_to_genome {
 
   my $assembly_mapper = Remap_Sequence_Change->new($previous_release, $release, $wormbase->species, $wormbase->genome_diffs);
 
+  if ($wormbase->species eq 'elegans') {    
+    #
+    # PCR_products - only C. elegans, but must be run before RNAiGenome
+    #
 
-  #
-  # PCR_products - only C. elegans, but must be run before RNAiGenome
-  #
-  if ($wormbase->species eq 'elegans') {
     my $pcr_file = "misc_PCR_mappings_" . $wormbase->species . ".ace";
     my $pcr_mappings = $wormbase->misc_dynamic . "/" . $pcr_file;
     
@@ -393,27 +393,26 @@ sub map_features_to_genome {
       unlink $pcr_mappings if -e $pcr_mappings;
       $wormbase->run_script( "PCR_product2Genome.pl -acefile $pcr_mappings", $log );
     }
-  }
- 
-  #
-  # RNAi
-  #
-  my $rnai_file = "misc_RNAi_homols_" . $wormbase->species . ".ace";
-  my $rnai_mappings = $wormbase->misc_dynamic . "/" . $rnai_file;
 
-  if (not $assembly_mapper->remap_test and -e $rnai_mappings) {
-    # genome has not changed. Load the current mappings, and supplement with new data
-    $wormbase->load_to_database( $wormbase->autoace, $rnai_mappings, "RNAi_MISC_DYN", $log );
-    $wormbase->run_script( 'RNAi2Genome.pl -onlyunmapped', $log );
-  } else {
-    # genome has changed. Need to remap everything
-    unlink $rnai_mappings if -e $rnai_mappings;
-    $wormbase->run_script( "RNAi2Genome.pl -acefile $rnai_mappings", $log );
+    #
+    # RNAi
+    #
+    my $rnai_file = "misc_RNAi_homols_" . $wormbase->species . ".ace";
+    my $rnai_mappings = $wormbase->misc_dynamic . "/" . $rnai_file;
+    
+    if (not $assembly_mapper->remap_test and -e $rnai_mappings) {
+      # genome has not changed. Load the current mappings, and supplement with new data
+      $wormbase->load_to_database( $wormbase->autoace, $rnai_mappings, "RNAi_MISC_DYN", $log );
+      $wormbase->run_script( 'RNAi2Genome.pl -onlyunmapped', $log );
+    } else {
+      # genome has changed. Need to remap everything
+      unlink $rnai_mappings if -e $rnai_mappings;
+      $wormbase->run_script( "RNAi2Genome.pl -acefile $rnai_mappings", $log );
+    }
+    
+    # check count of classes loaded
+    $wormbase->run_script("check_class.pl -stage map_features_elegans -classes PCR_product,Homol_data,Sequence", $log) 
   }
- 
-  # check count of classes loaded
-  $wormbase->run_script("check_class.pl -stage map_features_elegans -classes PCR_product,Homol_data,Sequence", $log) 
-      if $wormbase->species eq 'elegans';
  
 }
 
