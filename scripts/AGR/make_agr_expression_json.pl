@@ -126,7 +126,7 @@ while (my $obj = $it->next) {
 
       next if not &record_lifestage_term_name( $ls );
 
-      my @ats;
+      my (@ats, $uncertain);
 
       foreach my $thing ($ls->col()) {
         if ($thing->name eq 'Anatomy_term') {
@@ -134,14 +134,18 @@ while (my $obj = $it->next) {
             next if not &record_anatomy_term_name($at);
             push @ats, $at;
           }
+        } elsif ($thing->name eq 'Uncertain') {
+          $uncertain = 1;
         }
       }
-      if (@ats) {
-        foreach my $at (@ats) {
-          $annots{$ls->name}->{$at->name} = {};
-        } 
-      } else {
-        $annots{$ls->name}->{$TL_ANATOMY_TERM} = {};
+      if (not $uncertain) {
+        if (@ats) {
+          foreach my $at (@ats) {
+            $annots{$ls->name}->{$at->name} = {};
+          } 
+        } else {
+          $annots{$ls->name}->{$TL_ANATOMY_TERM} = {};
+        }
       }
     }
 
@@ -149,7 +153,7 @@ while (my $obj = $it->next) {
 
       next if not &record_anatomy_term_name( $at );
 
-      my @lss;
+      my (@lss, $uncertain);
 
       foreach my $thing ($at->col()) {
         if ($thing->name eq 'Life_stage') {
@@ -157,14 +161,18 @@ while (my $obj = $it->next) {
             next if not &record_lifestage_term_name($ls);
             push @lss, $ls;
           }
+        } elsif ($thing->name eq 'Uncertain') {
+          $uncertain = 1;
         }
       }
-      if (@lss) {
-        foreach my $ls (@lss) {
-          $annots{$ls->name}->{$at->name} = {};
-        } 
-      } else {
-        $annots{$TL_LIFESTAGE_TERM}->{$at->name} = {};
+      if (not $uncertain) {
+        if (@lss) {
+          foreach my $ls (@lss) {
+            $annots{$ls->name}->{$at->name} = {};
+          } 
+        } else {
+          $annots{$TL_LIFESTAGE_TERM}->{$at->name} = {};
+        }
       }
     }
 
