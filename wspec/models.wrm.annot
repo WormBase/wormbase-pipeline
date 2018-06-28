@@ -41,7 +41,7 @@
 
 ////////////////////////
 // Basic map classes  //
-v////////////////////////
+////////////////////////
 
 // TAD xref
 // TAD tupleize
@@ -1124,12 +1124,8 @@ v////////////////////////
 ?GO_annotation  Gene UNIQUE ?Gene OUTXREF GO_annotation
                 GO_term UNIQUE ?GO_term OUTXREF GO_annotation
                 GO_code UNIQUE ?GO_code
-                Annotation_relation NOT
-                                    colocalizes_with
-                                    contributes_to
-                                    enables
-                                    involved_in
-                                    part_of
+                Annotation_relation UNIQUE ?RO_term XREF GO_annotation
+                Annotation_relation_not UNIQUE ?RO_term XREF Not_GO_annotation
                 Annotation_made_with Interacting_gene ?Gene
                                      Inferred_from_GO_term ?GO_term
                                      Motif ?Motif
@@ -1281,9 +1277,36 @@ v////////////////////////
                       Associated_transgene ?Transgene INXREF Transgene_for_disease
          Version UNIQUE Text
 
+
 ///////////////////////////////////////////////////////////////
 //
-//?PATO_termclass-ChrisWS251
+// ?RO_term class - Kimberly WS267
+//
+////////////////////////////////////////////////////////////////
+
+
+?RO_term Name UNIQUE ?Text
+         Status UNIQUE Valid
+                       Obsolete
+         Alt_id ?Text
+         Definition UNIQUE ?Text
+         Synonym ENUM ^scope Broad ?Text
+                             Exact ?Text
+                             Narrow ?Text
+                             Related ?Text
+         Child Instance ?RO_term XREF Instance_of
+         Parent Instance_of ?RO_term XREF Instance
+         Index Ancestor ?RO_term XREF Descendant
+               Descendant ?RO_term XREF Ancestor
+         Attribute_of GO_annotation ?GO_annotation XREF Annotation_relation
+                      Not_GO_annotation ?GO_annotation XREF Annotation_relation_not
+	 Version UNIQUE Text
+
+
+
+///////////////////////////////////////////////////////////////
+//
+//?PATO_term class-ChrisWS251
 //
 ////////////////////////////////////////////////////////////////
 
