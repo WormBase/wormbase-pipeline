@@ -1157,8 +1157,8 @@
                        Sequence ?Sequence XREF GO_term // Erich, [011210 krb]
                        Transcript ?Transcript XREF GO_term // [030411 krb]
                        Phenotype ?Phenotype XREF GO_term // Erich, [020128 dl]
-                       Index Ancestor ?GO_term XREF Descendent // Lincoln [020709 [krb]
-                             Descendent ?GO_term XREF Ancestor
+                       Index Ancestor ?GO_term XREF Descendant // Lincoln [020709 [krb]
+                             Descendant ?GO_term XREF Ancestor
                        Anatomy_term ?Anatomy_term XREF GO_term // added [031107 krb]
                        Homology_group ?Homology_group XREF GO_term // added [031120 krb]
                        Expr_pattern ?Expr_pattern XREF GO_term
@@ -1198,8 +1198,8 @@
                Part ?SO_term XREF Part_of
                Derives ?SO_term XREF Derived_from
                Member ?SO_term XREF Member_of
-         Ancestor ?SO_term XREF Descendent
-         Descendent ?SO_term XREF Ancestor
+         Ancestor ?SO_term XREF Descendant
+         Descendant ?SO_term XREF Ancestor
 
 
 ///////////////////////////////////////////////////////////////
@@ -2566,8 +2566,8 @@
                               Expr_descendent ?Expr_pattern
                               GO_ancestor ?GO_term         //attribute assigned to narrower terms
                               GO_descendent ?GO_term
-              Index Ancestor ?Anatomy_term XREF Descendent  //store ancestors of relationship IS_A and PART_OF
-                    Descendent ?Anatomy_term XREF Ancestor  //store descendents of relationship IS_A and PART_OF
+              Index Ancestor ?Anatomy_term XREF Descendant  //store ancestors of relationship IS_A and PART_OF
+                    Descendant ?Anatomy_term XREF Ancestor  //store descendents of relationship IS_A and PART_OF
               Remark ?Text #Evidence
               Picture ?Picture XREF Anatomy
               WBProcess ?WBProcess XREF Anatomy_term

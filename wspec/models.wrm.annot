@@ -1174,8 +1174,8 @@
                        Sequence ?Sequence INXREF GO_term // Erich, [011210 krb]
                        Transcript ?Transcript INXREF GO_term // [030411 krb]
                        Phenotype ?Phenotype INXREF GO_term // Erich, [020128 dl]
-                       Index Ancestor ?GO_term OUTXREF Descendent // Lincoln [020709 [krb]
-                             Descendent ?GO_term NOXREF Ancestor
+                       Index Ancestor ?GO_term OUTXREF Descendant // Lincoln [020709 [krb]
+                             Descendant ?GO_term NOXREF Ancestor
                        Anatomy_term ?Anatomy_term INXREF GO_term // added [031107 krb]
                        Homology_group ?Homology_group INXREF GO_term // added [031120 krb]
                        Expr_pattern ?Expr_pattern INXREF GO_term
@@ -1215,8 +1215,8 @@
                Part ?SO_term NOXREF Part_of
                Derives ?SO_term NOXREF Derived_from
                Member ?SO_term NOXREF Member_of
-         Ancestor ?SO_term OUTXREF Descendent
-         Descendent ?SO_term NOXREF Ancestor
+         Ancestor ?SO_term OUTXREF Descendant
+         Descendant ?SO_term NOXREF Ancestor
 
 ///////////////////////////////////////////////////////////////
 // ?Ace2SO class: gives a mapping from Acedb objects to their SO terms.
@@ -2594,8 +2594,8 @@
                                 Expr_descendent ?Expr_pattern
                                 GO_ancestor ?GO_term         //attribute assigned to narrower terms
                                 GO_descendent ?GO_term
-                Index Ancestor ?Anatomy_term OUTXREF Descendent  //store ancestors of relationship IS_A and PART_OF
-                      Descendent ?Anatomy_term INXREF Ancestor  //store descendents of relationship IS_A and PART_OF
+                Index Ancestor ?Anatomy_term OUTXREF Descendant  //store ancestors of relationship IS_A and PART_OF
+                      Descendant ?Anatomy_term INXREF Ancestor  //store descendents of relationship IS_A and PART_OF
                 Remark ?Text #Evidence
                 Picture ?Picture INXREF Anatomy
                 WBProcess ?WBProcess INXREF Anatomy_term
