@@ -1300,7 +1300,7 @@
                Descendant ?RO_term XREF Ancestor
          Attribute_of GO_annotation ?GO_annotation XREF Annotation_relation
                       Not_GO_annotation ?GO_annotation XREF Annotation_relation_not
-	 Version UNIQUE Text
+         Version UNIQUE Text
 
 
 
