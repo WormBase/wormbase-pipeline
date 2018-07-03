@@ -382,7 +382,7 @@ sub update_one2one {
     my $gene_obj = $acedb->fetch('Gene', $elegans_gene_name);
     if ($gene_obj->CGC_name) {
       my $cgc = $gene_obj->CGC_name->name;
-
+          if ($cgc =~ /tag/) {next;}
       foreach my $species (keys %{$one2one->{$elegans_gene_name}}) {
 	if (! exists $CGC_species{$species}) {$log->log_and_die("Species '$species' is not found in the hash \%CGC_species\n")}
 	my $new_name = $CGC_species{$species}."-$cgc";
