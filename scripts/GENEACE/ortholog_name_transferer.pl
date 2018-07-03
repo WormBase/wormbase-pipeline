@@ -382,7 +382,8 @@ sub update_one2one {
     my $gene_obj = $acedb->fetch('Gene', $elegans_gene_name);
     if ($gene_obj->CGC_name) {
       my $cgc = $gene_obj->CGC_name->name;
-          if ($cgc =~ /tag/) {next;}
+      if ($cgc =~ /^tag/) {next;}
+
       foreach my $species (keys %{$one2one->{$elegans_gene_name}}) {
 	if (! exists $CGC_species{$species}) {$log->log_and_die("Species '$species' is not found in the hash \%CGC_species\n")}
 	my $new_name = $CGC_species{$species}."-$cgc";
@@ -422,6 +423,7 @@ sub update_one2many {
     my $gene_obj = $acedb->fetch('Gene', $elegans_gene_name);
     if ($gene_obj->CGC_name) {
       my $cgc = $gene_obj->CGC_name->name;
+      if ($cgc =~ /^tag/) {next;}
 
       foreach my $species (keys %{$one2many->{$elegans_gene_name}}) {
 	if (! exists $CGC_species{$species}) {$log->log_and_die("Species '$species' is not found in the hash \%CGC_species\n")}
@@ -517,6 +519,7 @@ sub update_many2one {
 	  if (!defined $root) {$all_match = 0; $root = ''}
 	  if ($cgc_root eq '') {$cgc_root = $root}
 	  if ($cgc_root ne $root) {$all_match = 0}
+	  if ($cgc_root eq 'tag') {$all_match = 0}
 	} else {
 	  $all_match = 0; # if any of the elegans genes has no CGC name, then don't transfer a name - better safe than sorry
 	}
