@@ -21,6 +21,7 @@ package Bio::EnsEMBL::EGPipeline::ParasiteFTP::BlastDumper;
 use strict;
 use warnings;
 
+use Bio::EnsEMBL::Registry;
 use base ('Bio::EnsEMBL::Hive::Process');
 use File::Path qw(make_path);
 use File::Copy;
@@ -44,7 +45,7 @@ sub run {
   my $suffix = $self->param_required('suffix');
 
 #connect to core database and get info
-  my $mc       = $self->core_dba->get_MetaContainer();
+  my $mc = Bio::EnsEMBL::Registry->get_adaptor($species, 'Core', 'MetaContainer');
   my $host     = $mc->dbc->host();
   my $port     = $mc->dbc->port();
   my $prod_name = ucfirst( $mc->single_value_by_key('species.production_name') );
