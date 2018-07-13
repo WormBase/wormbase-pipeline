@@ -36,6 +36,14 @@ sub core_databases {
   }
   return @result;
 }
+sub all_species {
+   my @result;
+   for (&core_databases(@_)){
+     s/_core.*//;
+     push @result, $_;
+   }
+   return @result;
+}
 sub meta_value {
   my $db_cmd= shift -> {db_cmd};
   my $db_name = shift;
