@@ -1,5 +1,12 @@
 #!/usr/bin/env perl
-  
+# Populate these meta keys with interesting enough results:
+# sample.gene_param    Gene ID (ex: maker-uti_cns_0003289-snap-gene-0.4)
+# sample.gene_text  Gene ID or name (ex: fkbp6)
+# sample.location_param   Location around gene (ex: uti_cns_0003289:9000-13000)
+# sample.location_text  Location around gene (ex: uti_cns_0003289:9000-13000)
+# sample.search_text  Random word from the gene description (ex: isomerase)
+# sample.transcript_param Transcript ID (ex: maker-uti_cns_0003289-snap-gene-0.4-mRNA-1)
+# sample.transcript_text  Transcript ID (ex: maker-uti_cns_0003289-snap-gene-0.4-mRNA-1)
 use strict;
 use warnings;
 
@@ -51,30 +58,12 @@ my $core_db = Bio::EnsEMBL::DBSQL::DBAdaptor->new( -dbname => $dbname,
                                                    -user => $user, 
                                                    -pass => $pass );
 
-# longest slice is bound to have multiple genes, right?
-
-sub score {
-  my ($stats, $weights) = @_;
-  $weights //= {
-	description => 1,
-	domains => 10,
-	model_orthologs => 5	
-  } ;
-  my $desc = @{$stats->{description}};
-  my $dom = @{$stats->{domains}};
-  my $o = @{$stats->{model_orthologs}};
-  # We want a description, three orthologs, and ten protein domains
-  return (3 * $desc + 1) * ( 5 * (6-$o)*$o + 1 ) * ((20 - $dom) * $dom + 1 ) ; 
-
-}
 my @all_genes;
 
-SEQ:foreach my $slice (sort { $b->length <=> $a->length } @{$core_db->get_SliceAdaptor->fetch_all('toplevel')}) {
+# longest slice is bound to have multiple genes, right?
+SEQ: for my $slice (sort { $b->length <=> $a->length } @{$core_db->get_SliceAdaptor->fetch_all('toplevel')}) {
 
-  my @genes = sort { $a->start <=> $b->start } @{$slice->get_all_Genes_by_type('protein_coding')};
-  
-  foreach my $g (@genes) {
-
+  for my $g (sort { $a->start <=> $b->start } @{$slice->get_all_Genes_by_type('protein_coding')}) {
     my $stats = { 
       description     => [],
       domains         => [],
@@ -91,13 +80,13 @@ SEQ:foreach my $slice (sort { $b->length <=> $a->length } @{$core_db->get_SliceA
     @domains= uniq(@domains);
     $stats->{domains} = \@domains;
     my $gm = $compara_db->get_GeneMemberAdaptor->fetch_by_stable_id($g->stable_id);
-    foreach my $target_species ('homo_sapiens',
+    for my $target_species ('homo_sapiens',
                                 'mus_musculus',
                                 'danio_rerio',
                                 'drosophila_melanogaster',
                                 'saccharomyces_cerevisiae',
                                 'caenorhabditis_elegans_prjna13758') {
-      foreach my $homology (@{$compara_db->get_HomologyAdaptor->fetch_all_by_Member($gm, -TARGET_SPECIES => $target_species)}) {
+      for my $homology (@{$compara_db->get_HomologyAdaptor->fetch_all_by_Member($gm, -TARGET_SPECIES => $target_species)}) {
         if ($homology->description() eq 'ortholog_one2one') {
           push @{$stats->{model_orthologs}}, $target_species;
         }
@@ -117,18 +106,28 @@ my ($best, $second, $third) = sort {
   $b->{score} <=> $a->{score}
 } @all_genes;
 
-sub choice_to_string {
-  my $o = shift;
-  return $o->{gene}->stable_id . " score ".$o->{score}."\n" . Data::Dumper::Dumper($o->{stats})."\n";
-}
-print "Third place: " . choice_to_string($third) if $test;
-print "Second place: " . choice_to_string($second) if $test;
-print "Chose gene " . choice_to_string($best);
+print "Third place: " . &choice_to_string($third) if $test;
+print "Second place: " . &choice_to_string($second) if $test;
+print "Chose gene " . &choice_to_string($best);
 
 &store_gene_sample( $core_db, $best->{gene} ) unless ($test);
 
 
 #######################################3
+
+sub choice_to_string {
+  my $o = shift;
+  return $o->{gene}->stable_id . " score ".$o->{score}."\n" . Data::Dumper::Dumper($o->{stats})."\n";
+}
+sub score {
+  my ($stats) = @_;
+  my $desc = @{$stats->{description}};
+  my $dom = @{$stats->{domains}};
+  my $o = @{$stats->{model_orthologs}};
+  # We want a description, three orthologs, and ten protein domains
+  return (3 * $desc + 1) * ( 5 * (6-$o)*$o + 1 ) * ((20 - $dom) * $dom + 1 ) ; 
+
+}
 sub store_gene_sample {
     my ( $dba, $gene ) = @_;
     my $meta     = $dba->get_MetaContainer();
