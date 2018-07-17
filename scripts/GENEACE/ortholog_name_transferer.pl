@@ -702,9 +702,11 @@ sub check_existing {
 sub get_paper_bork_list {
 
   my @paper_genes = $acedb->fetch (-query => 'FIND Gene WBGene* WHERE CGC_name AND NEXT AND NEXT = "Paper_evidence"');
+  my @person_genes= $acedb->fetch (-query => 'FIND Gene WBGene* WHERE CGC_name AND NEXT AND NEXT = "Person_evidence"');
+
   my %paper_bork;
 
-  foreach my $paper_gene (@paper_genes) {
+  foreach my $paper_gene (@paper_genes,@person_genes) {
     $paper_bork{$paper_gene->name} = 1;
   }
 
