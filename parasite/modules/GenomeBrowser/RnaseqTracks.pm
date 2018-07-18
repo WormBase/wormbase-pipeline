@@ -30,7 +30,7 @@ sub get {
        my %attributes = %{{ %$study_attributes, %$run_attributes }};
 
        push @tracks, {
-          sra_run_id => $run_id,
+          run_id => $run_id,
           attributes => \%attributes,
           label => 
             &_label($run_id, map {exists $attributes{$_} ? $attributes{$_}: ()} @$factors),

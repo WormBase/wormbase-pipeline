@@ -6,13 +6,13 @@ use IO::Uncompress::Gunzip qw(gunzip);
 
 sub new {
     my ( $class, %args ) = @_;
-    die unless "$args{install_location}";
-    die unless "$args{tmp}";
+    die @_ unless "$args{install_location}";
+    die @_ unless "$args{tmp}";
     bless \%args, $class;
 }
 
 sub tool_cmd {
-    my ( $self, $name ) = shift;
+    my ( $self, $name ) = @_;
     return "perl " . join "/", $self->{install_location}, "bin", $name;
 }
 
@@ -43,9 +43,9 @@ sub track_from_annotation {
     ( my $track_label = $args{'trackLabel'} ) =~ s/\s/_/g;
     my $cmd = $self->tool_cmd("flatfile-to-json.pl");
     $cmd .= " --gff $processing_path";
-    $cmd .= " --type " . join ",", $args{type};
-    $cmd .= " --key \"$args{trackLabel}\"";
-    $cmd .= " --trackLabel $track_label";
+    $cmd .= " --type " . join ",", @{ $args{type} };
+    $cmd .= " --key '$args{trackLabel}'";
+    $cmd .= " --trackLabel '$track_label'";
     $cmd .= " --trackType $args{trackType}";
     $cmd .= ' --nameAttributes "name,id,alias,locus"';
     $cmd .= ' --compress';
@@ -55,7 +55,9 @@ sub track_from_annotation {
 #--metadata '{ "category": "%s", "menuTemplate" : [{ "label" : "View gene at WormBase ParaSite", "action" : "newWindow", "url" : "/Gene/Summary?g={name}" }] }'
 #$gff3_track->{'type'} =~ /^gene/ ? qq(--clientConfig '{ "color" : "{geneColor}", "label" : "{geneLabel}" }') : '',
 
+    print STDERR "Executing: $cmd\n" if $self->{verbose};
     `$cmd`;
+    $? and die "Failed: $cmd\n";
 }
 
 sub prepare_sequence {
@@ -71,17 +73,23 @@ sub prepare_sequence {
         gunzip( $path, $tmp );
         $path = $tmp;
     }
-    my $cmd = $self->tool_cmd("flatfile-to-json.pl");
+    my $cmd = $self->tool_cmd("prepare-refseqs.pl");
     $cmd .= " --fasta $path";
     $cmd .= " --compress";
     $cmd .= " --out $args{output_path}";
+    print STDERR "Executing: $cmd\n" if $self->{verbose};
     `$cmd`;
+    $? and die "Failed: $cmd\n";
 }
 
 sub index_names {
-  my ($self, %args ) = @_;
-  my $cmd = $self->tool_cmd("generate-names.pl");
-  $cmd .= " --compress";
-  $cmd .= " --out $args{output_path}";
+    my ( $self, %args ) = @_;
+    my $cmd = $self->tool_cmd("generate-names.pl");
+    $cmd .= " --compress";
+    $cmd .= " --mem 1024000000";         # 1GB is four times the default, 256 MB
+    $cmd .= " --out $args{output_path}";
+    print STDERR "Executing: $cmd\n" if $self->{verbose};
+    `$cmd`;
+    $? and die "Failed: $cmd\n";
 }
 1;
