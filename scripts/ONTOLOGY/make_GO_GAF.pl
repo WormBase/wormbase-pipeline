@@ -213,6 +213,8 @@ foreach my $suf (0..9) {
                      $dbfield eq 'UniProtKB-SubCell' or 
                      $dbfield eq 'UniRule') {
               $dbname = $dbfield;
+            } elsif ($dbname =~ /UniProt/) {
+              $dbname = "UniProtKB";
             } else {
               # do nothing; dbname is already correct
             }
@@ -230,7 +232,7 @@ foreach my $suf (0..9) {
     if ($obj->Contributed_by) {
       $cb = $obj->Contributed_by->name;
       $cb = "WB" if $cb eq 'WormBase';
-      $cb = "UniProt" if $cb =~ /UniProt/;
+      $cb = "UniProtKB" if $cb =~ /UniProt/;
     }
     $gaf_line->{contributor} = $cb;
     
