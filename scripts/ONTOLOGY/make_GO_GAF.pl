@@ -232,7 +232,7 @@ foreach my $suf (0..9) {
     if ($obj->Contributed_by) {
       $cb = $obj->Contributed_by->name;
       $cb = "WB" if $cb eq 'WormBase';
-      $cb = "UniProtKB" if $cb =~ /UniProt/;
+      $cb = "UniProt" if $cb =~ /UniProt/;
     }
     $gaf_line->{contributor} = $cb;
     
