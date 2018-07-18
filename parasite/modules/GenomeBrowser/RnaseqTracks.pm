@@ -1,7 +1,6 @@
 
 package GenomeBrowser::RnaseqTracks;
 
-use ProductionMysql;
 use GenomeBrowser::ArrayExpressMetadata;
 use GenomeBrowser::RnaseqerMetadata;
 use GenomeBrowser::Studies;
@@ -14,10 +13,15 @@ use GenomeBrowser::Factors;
 # in: 
 #   - data production directory where we can cache resources
 #   - current core database
+
+sub new {
+  my ($class, $root_dir) = @_;
+  bless {root_dir => $root_dir}, $class; 
+}
 sub get {
-  my ($class, $root_dir, $core_db) = @_;
-  my $assembly = ProductionMysql->staging->meta_value($core_db, "assembly.name");
-  my ($spe, $cies, $bioproject) = split "_", $core_db;
+  my ($self, $species, $assembly) = @_;
+  my $root_dir = $self->{root_dir};
+  my ($spe, $cies, $bioproject) = split "_", $species;
   my $rnaseqer_metadata = GenomeBrowser::RnaseqerMetadata->new($root_dir, "${spe}_${cies}");
   my $array_express_metadata = GenomeBrowser::ArrayExpressMetadata->new($root_dir, "${spe}_${cies}");
   my $studies = GenomeBrowser::Studies->new($root_dir, "${spe}_${cies}", $assembly, $rnaseqer_metadata); 

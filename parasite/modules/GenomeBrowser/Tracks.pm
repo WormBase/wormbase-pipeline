@@ -1,5 +1,5 @@
 
-package GenomeBrowser::JBrowseDataFolder;
+package GenomeBrowser::Tracks;
 use strict;
 use Carp;
 use File::Path qw(make_path);
@@ -7,6 +7,7 @@ use File::Slurp qw(write_file);
 use JSON;
 use SpeciesFtp;
 use GenomeBrowser::JBrowseTools;
+use ProductionMysql;
 
 # This is the data folder for jbrowse consumption
 #
@@ -16,19 +17,17 @@ use GenomeBrowser::JBrowseTools;
 
 
 sub new {
-  my ($class, $root_dir, $core_db) = @_;
-  croak "Not enough args: @_" unless $root_dir and $core_db;
-
-  my ($spe, $cies, $bioproject) = split "_", $core_db;
-  my $species = join "_", $spe, $cies, $bioproject;
-  my $dir = "$root_dir/$species";
-
-  make_path $dir;
-
+  my ($class, %args) = @_;
+  
+  $args{jbrowse_install} //= "/nfs/production/panda/ensemblgenomes/wormbase/software/packages/jbrowse/JBrowse-1.12.5";
+  $args{root_dir} //= "$ENV{PARASITE_SCRATCH}/jbrowse/WBPS$ENV{PARASITE_VERSION}";
+  make_path "$args{root_dir}/out";
+  make_path "$args{root_dir}/JBrowseTools";
+  make_path "$args{root_dir}/RnaseqTracks";
   return bless {
-    species => $species,
-    core_db => $core_db,
-    dir => $dir,
+    dir => "$args{root_dir}/out",
+    jbrowse_tools => GenomeBrowser::JBrowseTools->new(install_location => $args{jbrowse_install}, tmp => "$args{root_dir}/JBrowseTools");
+    rnaseq_tracks => GenomeBrowser::RnaseqTracks->new("$args{root_dir}/RnaseqTracks");
   }, $class;
 }
 
@@ -90,12 +89,11 @@ my $local_tracks = [
   }
 ];
 sub make_all {
-  my ($self, $jbrowse_install, $processing_dir) = @_;
+  my ($self,$core_db) = @_;
   
-  my $jbrowse_tools= GenomeBrowser::JBrowseTools->new(install_location => $jbrowse_install, tmp => $processing_dir, verbose => 1);
   my @track_configs;
 
-  $jbrowse_tools->prepare_sequence(
+  $self{jbrowse_tools}->prepare_sequence(
     output_path => $self->{dir},
     input_path => SpeciesFtp->current_staging->path_to($self->{core_db}, "genomic.fa")
   ) unless -d $self->path_to("SEQUENCE");
@@ -103,14 +101,14 @@ sub make_all {
 
   for my $local_track (@$local_tracks){
     my $f = $self->path_to("TRACK_FILES_LOCAL", $local_track->{track_label});
-    $jbrowse_tools->track_from_annotation(
+    $self{jbrowse_tools}->track_from_annotation(
         %$local_track, 
         output_path => $f,
         input_path => SpeciesFtp->current_staging->path_to($self->{core_db}, "annotations.gff3")
     ) unless ( -f $f );
 
   }
-  $jbrowse_tools->index_names(output_path => $self->{dir})
+  $self{jbrowse_tools}->index_names(output_path => $self->{dir})
     unless -d $self->path_to("INDEXES");
   
   print "Copy includes TODO" 
@@ -121,7 +119,8 @@ sub make_all {
   #push @track_configs, $self->gene_models_track;
   #push @track_configs, $self->feature_tracks;
 
-  my ($attribute_query_order, @rnaseq_tracks) = GenomeBrowser::RnaseqTracks("$processing_dir/rnaseq", $self->{core_db});
+  my $assembly = ProductionMysql->staging->meta_value($core_db, "assembly.name");  
+  my ($attribute_query_order, @rnaseq_tracks) = $self->{rnaseq_tracks}->get($core_db, $assembly);
   
   for my $rnaseq_track (@rnaseq_tracks) {
      GenomeBrowser::Deployment::sync_ebi_to_sanger($rnaseq_track->{run_id});
