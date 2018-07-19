@@ -41,7 +41,7 @@ sub get {
        };
     }
   }
-  return $factors, @tracks;
+  return $factors, $rnaseqer_metadata->{location_per_run_id}, @tracks;
 }
 # You can move this out if convenient!
 sub _label {

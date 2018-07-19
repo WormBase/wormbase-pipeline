@@ -6,7 +6,8 @@ use parent GenomeBrowser::LocallyCachedResource;
 # Assembly -> study -> run -> type -> value
 
 sub access {
-  my $h = shift;
+  my $self = shift;
+  my $h = $self->{metadata};
   while(@_ and ref $h){
     $h = $h->{shift @_};
   }
@@ -33,14 +34,21 @@ sub _fetch {
      }
   }
   my %data;
-  for my $run_record (@{$class->_get_rnaseqer_runs_for_organism($species)}){
+  for my $run_record (@$run_records){
       $data
         {$run_record->{ASSEMBLY_USED}}
         {$run_record->{STUDY_ID}}
         {$run_record->{RUN_IDS}}
         = $run_attributes{$run_record->{RUN_IDS}}; 
   }
-  return \%data;
+
+  my %location_per_run_id;
+  for my $run_record (@$run_records){
+      $location_per_run_id
+         {$run_record->{RUN_IDS}}
+         = $run_record->{BIGWIG_LOCATION}
+  }
+  return {metadata => \%data, location_per_run_id => \%location_per_run_id};
 }
 sub _get_rnaseqer_json {
   my $class = shift;

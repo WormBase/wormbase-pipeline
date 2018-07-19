@@ -26,8 +26,9 @@ sub file_present_at_ebi {
 }
 
 sub sync_ebi_to_sanger {
-  my $source_url = join "/", $EBI_URL, location(@_);
-  my $target_path = join "/", $SANGER_PATH, location(@_);
+  my ($run_id, $source_url) = @_;
+  my $source_url //= join "/", $EBI_URL, location($run_id);
+  my $target_path = join "/", $SANGER_PATH, location($run_id);
   my $target_dir = dirname $target_path;
   print qx/ssh $SANGER_HOST mkdir -p $target_dir/;
   print qx/ssh $SANGER_HOST wget --continue --no-verbose -O $target_path $source_url/; 

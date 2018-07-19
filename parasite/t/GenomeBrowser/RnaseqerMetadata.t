@@ -24,6 +24,14 @@ my $species = "schistosoma_mansoni";
 my $subject = GenomeBrowser::RnaseqerMetadata->new($root_dir, $species);
 
 is_deeply(
+  $subject->{location_per_run_id},
+  {
+    SRR922067 => "ftp://ftp.ebi.ac.uk/pub/databases/arrayexpress/data/atlas/rnaseq/SRR922/SRR922067/SRR922067.bw",
+    SRR922068=> "ftp://ftp.ebi.ac.uk/pub/databases/arrayexpress/data/atlas/rnaseq/SRR922/SRR922068/SRR922068.bw",
+  },
+  "Get location from RNASeq-er"
+);
+is_deeply(
    $subject->access("ASM23792v2"), 
    ["SRP026308"], 
    "Studies for assembly"
