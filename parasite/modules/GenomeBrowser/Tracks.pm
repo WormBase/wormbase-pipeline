@@ -21,12 +21,18 @@ sub new {
   
   $args{jbrowse_install} //= "/nfs/production/panda/ensemblgenomes/wormbase/software/packages/jbrowse/JBrowse-1.12.5";
   $args{root_dir} //= "$ENV{PARASITE_SCRATCH}/jbrowse/WBPS$ENV{PARASITE_VERSION}";
+
   make_path "$args{root_dir}/out";
   make_path "$args{root_dir}/JBrowseTools";
   make_path "$args{root_dir}/RnaseqTracks";
   return bless {
     dir => "$args{root_dir}/out",
-    jbrowse_tools => GenomeBrowser::JBrowseTools->new(install_location => $args{jbrowse_install}, tmp => "$args{root_dir}/JBrowseTools");
+    jbrowse_tools => GenomeBrowser::JBrowseTools->new(
+       install_location => $args{jbrowse_install},
+       tmp_dir => "$args{root_dir}/JBrowseTools",
+       out_dir => "$args{root_dir}/out",
+       species_ftp =>  $args{ftp_path} ? SpeciesFtp->new($args{ftp_path}) : SpeciesFtp->current_staging, 
+    ),
     rnaseq_tracks => GenomeBrowser::RnaseqTracks->new("$args{root_dir}/RnaseqTracks");
   }, $class;
 }
@@ -90,29 +96,27 @@ my $local_tracks = [
 ];
 sub make_all {
   my ($self,$core_db) = @_;
-  
+ 
+  my ($spe, $cies, $bioproject) = split "_" $core_db;
+  my $species = join "_", $spe, $cies, $bioproject;
+   
   my @track_configs;
 
   $self{jbrowse_tools}->prepare_sequence(
-    output_path => $self->{dir},
-    input_path => SpeciesFtp->current_staging->path_to($self->{core_db}, "genomic.fa")
-  ) unless -d $self->path_to("SEQUENCE");
+    core_db => $core_db,
+  );
   #push @track_configs, GenomeBrowser::TrackConfig::sequence_track();
 
   for my $local_track (@$local_tracks){
-    my $f = $self->path_to("TRACK_FILES_LOCAL", $local_track->{track_label});
     $self{jbrowse_tools}->track_from_annotation(
         %$local_track, 
-        output_path => $f,
-        input_path => SpeciesFtp->current_staging->path_to($self->{core_db}, "annotations.gff3")
-    ) unless ( -f $f );
+        core_db => $core_db,
+    );
 
   }
-  $self{jbrowse_tools}->index_names(output_path => $self->{dir})
-    unless -d $self->path_to("INDEXES");
+  $self{jbrowse_tools}->index_names(core_db=>$core_db);
   
-  print "Copy includes TODO" 
-    unless -d $self->path_to("INCLUDES"); 
+  print "Copy includes TODO" ;
  
   print "TODO read config in?"; 
   my %config = %$CONFIG_STANZA;
@@ -134,23 +138,9 @@ sub make_all {
    } if @rnaseq_tracks;
 
   $config{tracks}=\@track_configs; 
-
-  write_file($self->path_to("CONFIG").".1", \%config);
+  $self{jbrowse_tools}->update_config(core_db=>$core_db, new_config=> \%config);
 }
 
-my $CONTENT_NAMES = {
-  SEQUENCE => "seq",
-  INDEXES => "names",
-  TRACK_FILES_LOCAL => "tracks",
-  CONFIG => "trackList.json",
-  INCLUDES => "functions.conf",
-};
-
-sub path_to {
-  my ($self, $name, @others) = @_;
-  confess "No such JBrowse item: $name" unless $CONTENT_NAMES->{$name};
-  return join "/", $self->{dir}, $CONTENT_NAMES->{$name}, @others; 
-}
 sub rnaseq_track_config {
   my ($self, %args) = @_;
 
