@@ -2,7 +2,7 @@
 package GenomeBrowser::Deployment;
 use LWP;
 use File::Basename;
-
+use Carp;
 # Be in EBI
 # Have tunnels enabled
 # Then you can do everything
@@ -15,33 +15,32 @@ our $SANGER_PATH="/data/production/parasites/rnaseqer";
 our $SANGER_URL="http://ngs.sanger.ac.uk/production/parasites/rnaseqer";
 
 sub location {
- my $run_id = shift;
- (my $prefix = $run_id) =~ s/(.{6}).*/$1/;
- return join "/", $prefix, $run_id, "$run_id.bw";
+  my ( $root, $run_id ) = @_;
+  (my $prefix = $run_id) =~ s/(.{6}).*/$1/;
+  return join "/", $root, $prefix, "$run_id.bw";
 }
-
-sub file_present_at_ebi {
-  my $path = join "/", $EBI_PATH, location(@_);
-  return -f $path;
+sub run_in_sanger {
+  my $cmd = "ssh $SANGER_HOST ".shift;
+  `$cmd`;
+  croak "Failed: $cmd" if $?;
 }
-
 sub sync_ebi_to_sanger {
   my ($run_id, $source_url) = @_;
-  my $source_url //= join "/", $EBI_URL, location($run_id);
-  my $target_path = join "/", $SANGER_PATH, location($run_id);
+  my $target_path = location ($SANGER_PATH, $run_id);
   my $target_dir = dirname $target_path;
-  print qx/ssh $SANGER_HOST mkdir -p $target_dir/;
-  print qx/ssh $SANGER_HOST wget --continue --no-verbose -O $target_path $source_url/; 
+  run_in_sanger("mkdir -p $target_dir");
+  run_in_sanger("wget --continue --no-verbose -O $target_path $source_url");
+  return location($SANGER_URL, $run_id); 
 }
 
 sub file_present_at_sanger {
-  my $path = join "/", $SANGER_PATH, location(@_);
+  my $path = location ($SANGER_PATH, shift);
   system("ssh $SANGER_HOST ls $path > /dev/null 2>&1");
   return 0 == $?;
 }
 
 sub file_is_online {
-  my $path = join "/", $SANGER_URL, location(@_);
+  my $path = location($SANGER_URL, shift);
   return LWP::UserAgent->new->head($path)->is_success;
 }
 1;

@@ -39,11 +39,8 @@ sub new {
   }, $class;
 }
 
-
+# bugs: this is gonna be merged with itself on repeated runs
 my $CONFIG_STANZA = {
-   "include" => [
-      "functions.conf"
-   ],
    "names" => {
       "type" => "Hash",
       "url" => "names/"
@@ -119,22 +116,17 @@ sub make_all {
   }
   $self->{jbrowse_tools}->index_names(core_db=>$core_db);
   
-  print "Copy includes TODO" ;
- 
-  print "TODO read config in?"; 
-  my %config = %$CONFIG_STANZA;
-  #push @track_configs, $self->gene_models_track;
-  #push @track_configs, $self->feature_tracks;
 
   my $assembly = ProductionMysql->staging->meta_value($core_db, "assembly.name");  
   my ($attribute_query_order, $location_per_run_id, @rnaseq_tracks) = $self->{rnaseq_tracks}->get($core_db, $assembly);
   for my $rnaseq_track (@rnaseq_tracks) {
      my $run_id = $rnaseq_track->{run_id};
-     GenomeBrowser::Deployment::sync_ebi_to_sanger($run_id, $location_per_run_id->{$run_id});
-     push @track_configs, $self->rnaseq_track_config($_);
+     my $url = GenomeBrowser::Deployment::sync_ebi_to_sanger($run_id, $location_per_run_id->{$run_id});
+     push @track_configs, $self->rnaseq_track_config(urlTemplate => $url, $_);
   }
   
   
+  my %config = %$CONFIG_STANZA;
    $config{trackSelector} = {
      type => "Faceted",
      displayColumns => ["type", "category", @$attribute_query_order]
