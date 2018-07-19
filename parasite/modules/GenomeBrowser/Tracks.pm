@@ -122,7 +122,12 @@ sub make_all {
   for my $rnaseq_track (@rnaseq_tracks) {
      my $run_id = $rnaseq_track->{run_id};
      my $url = GenomeBrowser::Deployment::sync_ebi_to_sanger($run_id, $location_per_run_id->{$run_id});
-     push @track_configs, $self->rnaseq_track_config(urlTemplate => $url, $_);
+     push @track_configs, {
+       %$TRACK_STANZA,
+       urlTemplate => $url,
+       label => $rnaseq_track->{label},
+       metadata => $rnaseq_track->{attributes}
+     };
   }
   
   
@@ -134,11 +139,5 @@ sub make_all {
 
   $config{tracks}=\@track_configs; 
   $self->{jbrowse_tools}->update_config(core_db=>$core_db, new_config=> \%config);
-}
-
-sub rnaseq_track_config {
-  my ($self, %args) = @_;
-
-  return {what => "rnaseq track placeholder", %args};
 }
 1;
