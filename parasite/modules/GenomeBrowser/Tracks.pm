@@ -7,6 +7,8 @@ use File::Slurp qw(write_file);
 use JSON;
 use SpeciesFtp;
 use GenomeBrowser::JBrowseTools;
+use GenomeBrowser::RnaseqTracks;
+use GenomeBrowser::Deployment;
 use ProductionMysql;
 
 # This is the data folder for jbrowse consumption
@@ -33,7 +35,7 @@ sub new {
        out_dir => "$args{root_dir}/out",
        species_ftp =>  $args{ftp_path} ? SpeciesFtp->new($args{ftp_path}) : SpeciesFtp->current_staging, 
     ),
-    rnaseq_tracks => GenomeBrowser::RnaseqTracks->new("$args{root_dir}/RnaseqTracks");
+    rnaseq_tracks => GenomeBrowser::RnaseqTracks->new("$args{root_dir}/RnaseqTracks"),
   }, $class;
 }
 
@@ -59,35 +61,35 @@ my $TRACK_STANZA = {
 
 my $local_tracks = [
   {
-    'feature' => 'WormBase,WormBase_imported',
+    'feature' => [qw/WormBase WormBase_imported/],
     'trackLabel' => 'Gene Models',
     'trackType' => 'CanvasFeatures',
     'category' => 'Genome Annotation',
     'type' => [qw/gene mRNA exon CDS five_prime_UTR three_prime_UTR tRNA rRNA pseudogene tRNA_pseudogene antisense_RNA lincRNA miRNA miRNA_primary_transcript mRNA piRNA pre_miRNA pseudogenic_rRNA pseudogenic_transcript pseudogenic_tRNA scRNA snoRNA snRNA ncRNA/]
   },
   {
-    'feature' => 'ncrnas_predicted',
+    'feature' => ['ncrnas_predicted'],
     'trackLabel' => 'Predicted non-coding RNA (ncRNA)',
     'trackType' => 'FeatureTrack',
     'category' => 'Genome Annotation',
     'type' => ['nucleotide_match']
   },
   {
-    'feature' => 'RepeatMasker',
+    'feature' => ['RepeatMasker'],
     'trackLabel' => 'Repeat Region',
     'trackType' => 'FeatureTrack',
     'category' => 'Repeat Regions',
     'type' => ['repeat_region']
   },
   {
-    'feature' => 'dust',
+    'feature' => ['dust'],
     'trackLabel' => 'Low Complexity Region (Dust)',
     'trackType' => 'FeatureTrack',
     'category' => 'Repeat Regions',
     'type' => ['low_complexity_region']
   },
   {
-    'feature' => 'tandem',
+    'feature' => ['tandem'],
     'trackLabel' => 'Tandem Repeat (TRFs)',
     'trackType' => 'FeatureTrack',
     'category' => 'Repeat Regions',
@@ -97,24 +99,25 @@ my $local_tracks = [
 sub make_all {
   my ($self,$core_db) = @_;
  
-  my ($spe, $cies, $bioproject) = split "_" $core_db;
+  my ($spe, $cies, $bioproject) = split "_", $core_db;
+
   my $species = join "_", $spe, $cies, $bioproject;
    
   my @track_configs;
 
-  $self{jbrowse_tools}->prepare_sequence(
+  $self->{jbrowse_tools}->prepare_sequence(
     core_db => $core_db,
   );
   #push @track_configs, GenomeBrowser::TrackConfig::sequence_track();
 
   for my $local_track (@$local_tracks){
-    $self{jbrowse_tools}->track_from_annotation(
+    $self->{jbrowse_tools}->track_from_annotation(
         %$local_track, 
         core_db => $core_db,
     );
 
   }
-  $self{jbrowse_tools}->index_names(core_db=>$core_db);
+  $self->{jbrowse_tools}->index_names(core_db=>$core_db);
   
   print "Copy includes TODO" ;
  
@@ -125,7 +128,6 @@ sub make_all {
 
   my $assembly = ProductionMysql->staging->meta_value($core_db, "assembly.name");  
   my ($attribute_query_order, @rnaseq_tracks) = $self->{rnaseq_tracks}->get($core_db, $assembly);
-  
   for my $rnaseq_track (@rnaseq_tracks) {
      GenomeBrowser::Deployment::sync_ebi_to_sanger($rnaseq_track->{run_id});
      push @track_configs, $self->rnaseq_track_config($_);
@@ -138,7 +140,7 @@ sub make_all {
    } if @rnaseq_tracks;
 
   $config{tracks}=\@track_configs; 
-  $self{jbrowse_tools}->update_config(core_db=>$core_db, new_config=> \%config);
+  $self->{jbrowse_tools}->update_config(core_db=>$core_db, new_config=> \%config);
 }
 
 sub rnaseq_track_config {
