@@ -9,6 +9,8 @@ use parent GenomeBrowser::LocallyCachedResource;
 # - or RNASeq-er characteristic types that vary across runs for the study
 # Compare in ArrayExpress: a factor is an "important" sample characteristic
 
+my @blacklist = qw/synonym/;
+
 sub _fetch {
   my ($class, $species, $assembly, $rnaseqer_metadata, $array_express_metadata) = @_;
   my %data;
@@ -25,7 +27,10 @@ sub _fetch {
     @factors = grep { exists $rnaseqer_characteristics{$_} and (keys $rnaseqer_characteristics{$_} > 1 or sum (values $rnaseqer_characteristics{$_}) == 1 ) } @factors;
     $data{$study_id}=\@factors;
   }
-  my @factors = sort (uniq( map {@{$_}} (values %data)));
-  return \@factors;
+  my @result =  map {@{$_}} (values %data);
+  @result = grep {not ($_ ~~ @blacklist)} @result;
+  @result = uniq @result;
+  @result = sort @result;
+  return \@result;
 }
 1;
