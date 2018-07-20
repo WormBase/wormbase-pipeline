@@ -64,9 +64,11 @@ sub _get_rnaseqer_json {
 # RNASeq-er doesn't have complete records anyway!
 sub _get_rnaseqer_runs_for_organism {
   my ($class, $species) = @_;
-  return $class->_get_rnaseqer_json(
+  my $payload = $class->_get_rnaseqer_json(
     "30", "getRunsByOrganism", $species
   );
+  my @a = grep {$_->{BIGWIG_LOCATION} ne "NA"} @$payload;
+  return \@a;
 }
 sub _get_rnaseqer_sample_attributes_per_run_for_study {
   my ($class, $study) = @_;
