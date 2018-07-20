@@ -14,7 +14,7 @@ sub studies_grouped_by_factor_as_expected {
     my $root_dir = tempdir( CLEANUP => 1 );
     my $species  = "schistosoma_mansoni";
     my $assembly = "schisto_v7.2";
-    my $mock_rm  = bless { $assembly => $rnaseqer_characteristics_per_study },
+    my $mock_rm  = bless { metadata => { $assembly => $rnaseqer_characteristics_per_study }},
       'GenomeBrowser::RnaseqerMetadata';
     my $mock_aem = bless {
         primary_accession_to_factor_type => $array_express_factors_per_study,
@@ -32,7 +32,13 @@ sub studies_grouped_by_factor_as_expected {
 studies_grouped_by_factor_as_expected( {}, {}, [], "Null case" );
 studies_grouped_by_factor_as_expected(
     { study => { run => { "type" => "value" } } },
-    {}, ["type"], "One type" );
+    {}, ["type"], "One type one run" );
+studies_grouped_by_factor_as_expected(
+    { study => { run => { "type" => "value", "type_2" => "value_2" } } },
+    {}, ["type","type_2"], "Two types one run" );
+studies_grouped_by_factor_as_expected(
+    { study => { run => { "type" => "value" , "synonym"=> "value of blacklisted type"} } },
+    {}, ["type"], "Blacklisted type one run" );
 studies_grouped_by_factor_as_expected(
     {
         study => {

@@ -12,23 +12,41 @@ use parent GenomeBrowser::LocallyCachedResource;
 my @blacklist = qw/synonym/;
 
 sub _fetch {
-  my ($class, $species, $assembly, $rnaseqer_metadata, $array_express_metadata) = @_;
+  my ( $class, $species, $assembly, $rnaseqer_metadata,
+    $array_express_metadata ) = @_;
   my %data;
-  for my $study_id (@{$rnaseqer_metadata->access($assembly)}){
+  for my $study_id ( @{ $rnaseqer_metadata->access($assembly) } ) {
     my %rnaseqer_characteristics;
-    my @runs = @{$rnaseqer_metadata->access($assembly, $study_id)};
-    for my $run (@runs){
-       for my $characteristic_type (@{$rnaseqer_metadata->access($assembly, $study_id, $run)}){
-         $rnaseqer_characteristics{$characteristic_type}{$rnaseqer_metadata->access($assembly, $study_id, $run, $characteristic_type)}++;
-       } 
+    my @runs = @{ $rnaseqer_metadata->access( $assembly, $study_id ) };
+    for my $run (@runs) {
+      for my $characteristic_type (
+        @{ $rnaseqer_metadata->access( $assembly, $study_id, $run ) } )
+      {
+        $rnaseqer_characteristics{$characteristic_type}{
+          $rnaseqer_metadata->access( $assembly, $study_id, $run,
+            $characteristic_type )
+        }++;
+      }
     }
-    my @factors = @{$array_express_metadata->factor_types($study_id) // []};
-    @factors = keys %rnaseqer_characteristics unless @factors;
-    @factors = grep { exists $rnaseqer_characteristics{$_} and (keys $rnaseqer_characteristics{$_} > 1 or sum (values $rnaseqer_characteristics{$_}) == 1 ) } @factors;
-    $data{$study_id}=\@factors;
+    my @factors;
+    my @ae_factors =
+      @{ $array_express_metadata->factor_types($study_id) // [] };
+    if (@ae_factors) {
+      @factors =
+        grep { exists $rnaseqer_characteristics{$_} } @ae_factors;
+    }
+    else {
+      for ( keys %rnaseqer_characteristics ) {
+        my %d      = %{ $rnaseqer_characteristics{$_} };
+        my @values = keys %d;
+        my @counts = values %d;
+        push @factors, $_ if @values > 1 or sum(@counts) == 1;
+      }
+    }
+    $data{$study_id} = \@factors;
   }
-  my @result =  map {@{$_}} (values %data);
-  @result = grep {not ($_ ~~ @blacklist)} @result;
+  my @result = map { @{$_} } ( values %data );
+  @result = grep { not( $_ ~~ @blacklist ) } @result;
   @result = uniq @result;
   @result = sort @result;
   return \@result;
