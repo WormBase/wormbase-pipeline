@@ -623,7 +623,7 @@ sub getPrefix {
       my $name = shift;
       if ( $ACC2DB{$name} ) {
 	print IPI_HITS "$name\n";
-	return $ACC2DB{$name} 
+	return $ACC2DB{$name} . ":";
       }
       # NOTE this is only the prefix - not the method (it will look like wublastp_ipi_human ENSEMBL:ENS00342342 etc)
       if ( $name =~ /ENS\w+/ ) {
