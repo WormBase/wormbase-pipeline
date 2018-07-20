@@ -125,7 +125,8 @@ sub make_all {
      push @track_configs, {
        %$TRACK_STANZA,
        urlTemplate => $url,
-       label => $rnaseq_track->{label},
+       key => $rnaseq_track->{label},
+       label => "RNASeq/$run_id",
        metadata => $rnaseq_track->{attributes}
      };
   }
@@ -138,6 +139,6 @@ sub make_all {
    } if @rnaseq_tracks;
 
   $config{tracks}=\@track_configs; 
-  $self->{jbrowse_tools}->update_config(core_db=>$core_db, new_config=> \%config);
+  return $self->{jbrowse_tools}->update_config(core_db=>$core_db, new_config=> \%config);
 }
 1;

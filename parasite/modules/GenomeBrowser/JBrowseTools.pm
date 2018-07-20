@@ -119,15 +119,16 @@ sub index_names {
 sub update_config {
    my ( $self, %args ) = @_;
    my $config_path = join "/", $self->out_dir($args{core_db}), "trackList.json";
-   write_file(
-      $config_path, 
-      to_json($self->merge_configs( 
+   my $result = $self->merge_configs( 
         -s $config_path 
         ? from_json(read_file($config_path)) 
         : {}
-        , $args{new_config}), {pretty=>1}
-      )
+     ,
+     $args{new_config},
    );
+
+   write_file($config_path, to_json ($result, {pretty=>1} ));
+   return $result;
 }
 sub merge_configs {
   my ($self, $current_config, $new_config) = @_;
