@@ -26,8 +26,8 @@ my $subject = GenomeBrowser::RnaseqerMetadata->new($root_dir, $species);
 is_deeply(
   $subject->{location_per_run_id},
   {
-    SRR922067 => "ftp://ftp.ebi.ac.uk/pub/databases/arrayexpress/data/atlas/rnaseq/SRR922/SRR922067/SRR922067.bw",
-    SRR922068=> "ftp://ftp.ebi.ac.uk/pub/databases/arrayexpress/data/atlas/rnaseq/SRR922/SRR922068/SRR922068.bw",
+    SRR922067 => "ftp://ftp.ebi.ac.uk/pub/databases/arrayexpress/data/atlas/rnaseq/SRR922/SRR922067/SRR922067.nospliced.bw",
+    SRR922068=> "ftp://ftp.ebi.ac.uk/pub/databases/arrayexpress/data/atlas/rnaseq/SRR922/SRR922068/SRR922068.nospliced.bw",
   },
   "Get location from RNASeq-er"
 );
@@ -62,7 +62,7 @@ is_deeply(
 is_deeply(
    $subject->access("ASM23792v2","SRP026308", "SRR922067"), 
    ['Sample Name', 'development stage','organism part','source name','strain'],
-   "Property types for assembly, study, and run"
+   "Property types for assembly, study, and run. Skip dummy type with bad value of 'not applicable'"
 ) or diag explain $subject;
 is_deeply(
    $subject->access("ASM23792v2","SRP026308", "SRR922067","Sample Name"), 
@@ -175,6 +175,13 @@ __DATA__
       "RUN_ID": "SRR922068",
       "TYPE": "strain",
       "VALUE": "NMRI",
+      "EFO_URL": "NA"
+    },
+        {
+      "STUDY_ID": "SRP026308",
+      "RUN_ID": "SRR922067",
+      "TYPE": "Dummy",
+      "VALUE": "not applicable",
       "EFO_URL": "NA"
     }
   ]

@@ -15,6 +15,12 @@ sub access {
   return [] unless $h;
   return $h;
 }
+
+sub exclude_characteristic {
+  my ($type, $value) = @_;
+  return $value =~ /^not applicable/i;
+}
+
 sub _fetch {
   my ($class, $species) = @_;
   $species= lc($species);
@@ -30,7 +36,7 @@ sub _fetch {
        $run_attributes
          {$attribute_record->{RUN_ID}}
          {$attribute_record->{TYPE}} 
-         = $attribute_record->{VALUE};
+         = $attribute_record->{VALUE} unless exclude_characteristic($attribute_record->{TYPE}, $attribute_record->{VALUE});
      }
   }
   my %data;
