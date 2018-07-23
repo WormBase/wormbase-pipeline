@@ -133,12 +133,29 @@ sub make_all {
   
   
   my %config = %$CONFIG_STANZA;
-   $config{trackSelector} = {
-     type => "Faceted",
-     displayColumns => ["type", "category", @$attribute_query_order]
-   } if @rnaseq_tracks;
+   $config{trackSelector} =
+     $self->track_selector(@$attribute_query_order)
+     if @rnaseq_tracks;
 
   $config{tracks}=\@track_configs; 
   return $self->{jbrowse_tools}->update_config(core_db=>$core_db, new_config=> \%config);
+}
+
+sub track_selector {
+  my ($self, @as) = @_;
+  my %pretty;
+  my @ks;
+  for my $a (@as){
+    (my $k = $a) =~ s/\W+/-/;
+    $k = lc($k);
+    push @ks, $k;
+    $pretty{$k}=$a;
+  }
+  return {
+    type => "Faceted",
+    displayColumns => \@ks,
+    selectableFacets => [ "category", @ks],
+    renameFacets => \%pretty
+  }
 }
 1;
