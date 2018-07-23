@@ -44,9 +44,10 @@ sub _fetch {
 
   my %location_per_run_id;
   for my $run_record (@$run_records){
+  (my $bigwig_we_want = $run_record->{BIGWIG_LOCATION}) =~ s/.bw$/.nospliced.bw/;
       $location_per_run_id
          {$run_record->{RUN_IDS}}
-         = $run_record->{BIGWIG_LOCATION}
+         = $bigwig_we_want;
   }
   return {metadata => \%data, location_per_run_id => \%location_per_run_id};
 }
