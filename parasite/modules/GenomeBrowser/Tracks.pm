@@ -153,9 +153,9 @@ sub track_selector {
   }
   return {
     type => "Faceted",
-    displayColumns => \@ks,
-    selectableFacets => [ "category", @ks],
-    renameFacets => \%pretty
+    displayColumns => \@as,
+    selectableFacets => [ "category", "study", @ks],
+    renameFacets => %pretty
   }
 }
 1;
