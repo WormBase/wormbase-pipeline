@@ -1,4 +1,3 @@
-
 package SpeciesFtp;
 
 sub new {
@@ -15,10 +14,17 @@ sub path_to {
   $core_db = lc ($core_db);
   my ($spe, $cies, $bp ) = split "_", $core_db;
   $bp = uc($bp);
+  $bp =~ s/ISS([0-9]+)PRJNA([0-9]+)/ISS$1_PRJNA$2/;
   $zipped //= 1;
 
-  return join("/", $self->{root}, "${spe}_${cies}", $bp, join( ".", 
-    "${spe}_${cies}",$bp, "WBPS".$self->{parasite_version}, $extension, ($zipped ? "gz" : ()) 
-  ));
+  my $dir = join("/", $self->{root}, "${spe}_${cies}", $bp);
+
+  if ($extension) {
+     return join "/", $dir, join( ".",
+       "${spe}_${cies}",$bp, "WBPS".$self->{parasite_version}, $extension, ($zipped ? "gz" : ())
+     );
+  } else {
+    return $dir;
+  } 
 }
 1;
