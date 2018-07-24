@@ -139,6 +139,7 @@ sub merge_configs {
     @tracks = grep {$_->{urlTemplate} !~ /rnaseq/i } @tracks;
     $current_config->{tracks} = \@tracks;
   }
+  delete $current_config->{trackSelector};
 
   return Hash::Merge::merge($current_config, $new_config);
 }
