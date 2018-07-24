@@ -38,11 +38,17 @@ sub get {
           run_id => $run_id,
           attributes => \%attributes,
           label => 
-            &_label($run_id, ($attributes{sample_name} or ""),  map {exists $attributes{$_} ? $attributes{$_}: ()} @$factors),
+            &_label($run_id, &_restrict_sample_name($cies, $attributes{sample_name}),  map {exists $attributes{$_} ? $attributes{$_}: ()} @$factors),
        };
     }
   }
   return $factors, $rnaseqer_metadata->{location_per_run_id}, @tracks;
+}
+sub _restrict_sample_name {
+  my ($cies, $sample_name) = @_;
+  return "" unless $sample_name;
+  return "" if $sample_name =~ /$cies/i and $sample_name =~ /sample from/i;
+  return $sample_name;
 }
 
 #"Sample Name" is a special attribute in ENA, and therefore usually present
