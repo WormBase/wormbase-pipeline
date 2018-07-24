@@ -144,18 +144,15 @@ sub make_all {
 sub track_selector {
   my ($self, @as) = @_;
   my %pretty;
-  my @ks;
   for my $a (@as){
-    (my $k = $a) =~ s/\W+/-/;
-    $k = lc($k);
-    push @ks, $k;
-    $pretty{$k}=$a;
+   (my $p = $a) =~ s/[\W_-]+/ /;
+    $pretty{$a}=ucfirst($p);
   }
   return {
     type => "Faceted",
-    displayColumns => \@as,
-    selectableFacets => [ "category", "study", @ks],
-    renameFacets => %pretty
+    displayColumns => ["key", @as],
+    selectableFacets => [ "category", "study", @as],
+    renameFacets => {study=>"Study", key=>"Track", %pretty}
   }
 }
 1;

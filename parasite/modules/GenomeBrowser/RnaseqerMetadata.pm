@@ -15,10 +15,22 @@ sub access {
   return [] unless $h;
   return $h;
 }
-
-sub exclude_characteristic {
+sub normalise_characteristics {
   my ($type, $value) = @_;
-  return $value =~ /^not applicable/i;
+
+  $type = lc($type);
+  $type =~ s/\W+/_/;
+#TODO use EFO ;-)
+  $type =~ s/^age$/developmental_stage/;
+  $type =~ s/^stage$/developmental_stage/;
+  $type =~ s/life_cycle_stage/developmental_stage/;
+  $type =~ s/dev_stage/developmental_stage/;
+  $type =~ s/development_stage/developmental_stage/;
+
+  $value =~s/^not applicable.*$//i;
+  $value =~s/^\W+$//;
+
+  return $type, $value;
 }
 
 sub _fetch {
@@ -33,10 +45,8 @@ sub _fetch {
      for my $attribute_record (@{ 
        $class->_get_rnaseqer_sample_attributes_per_run_for_study($study_id)
      }){
-       $run_attributes
-         {$attribute_record->{RUN_ID}}
-         {$attribute_record->{TYPE}} 
-         = $attribute_record->{VALUE} unless exclude_characteristic($attribute_record->{TYPE}, $attribute_record->{VALUE});
+       my ($type, $value) = normalise_characteristics($attribute_record->{TYPE}, $attribute_record->{VALUE});
+       $run_attributes{$attribute_record->{RUN_ID}}{$type} = $value if $type and $value;
      }
   }
   my %data;
