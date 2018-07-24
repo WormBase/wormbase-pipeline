@@ -83,12 +83,6 @@ sub _get_rnaseqer_sample_attributes_per_run_for_study {
     "getSampleAttributesPerRunByStudy", $study
   );
 }
-sub _url {
-  $species = shift;
-  $species= lc($species);
-  $species =~ s/[^a-zA-Z0-9]+/%20/g;
-  return "https://www.ebi.ac.uk/arrayexpress/json/v3/experiments?species=$species";
-}
 
 sub _create_from_payload {
   $payload = shift;
