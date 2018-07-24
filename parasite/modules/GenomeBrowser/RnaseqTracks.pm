@@ -30,9 +30,10 @@ sub get {
   for my $study_id (@{$rnaseqer_metadata->access($assembly)}){
     my $study_attributes = $studies->{$study_id};
     for my $run_id (@{$rnaseqer_metadata->access($assembly, $study_id)}){
-       my $run_attributes = $rnaseqer_metadata->{$assembly}{$study_id}{$run_id};
-       my %attributes = %{{ %$study_attributes, %$run_attributes }};
-
+       my %attributes = %$study_attributes;
+       for my $characteristic_type (@{$rnaseqer_metadata->access($assembly, $study_id, $run_id)}){
+         $attributes{$characteristic_type} = $rnaseqer_metadata->access($assembly, $study_id, $run_id, $characteristic_type);
+       }
        push @tracks, {
           run_id => $run_id,
           attributes => \%attributes,
