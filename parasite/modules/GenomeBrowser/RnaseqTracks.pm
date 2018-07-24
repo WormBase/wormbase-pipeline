@@ -38,18 +38,31 @@ sub get {
           run_id => $run_id,
           attributes => \%attributes,
           label => 
-            &_label($run_id, map {exists $attributes{$_} ? $attributes{$_}: ()} @$factors),
+            &_label($run_id, ($attributes{sample_name} or ""),  map {exists $attributes{$_} ? $attributes{$_}: ()} @$factors),
        };
     }
   }
   return $factors, $rnaseqer_metadata->{location_per_run_id}, @tracks;
 }
-# You can move this out if convenient!
+
+#"Sample Name" is a special attribute in ENA, and therefore usually present
+#Sometimes it's not informative enough
+sub _sample_name_seems_good_enough {
+  my $sample_name = shift;
+  my @ws = split /\W+/, $sample_name;
+  return ($sample_name and length ($sample_name) > 10 and @ws > 1);
+}
 sub _label {
-  my ($run_id, @factor_values) = @_;
-  return $run_id unless @factor_values;
-  return "$run_id: ". join (", ",
-    grep !/[A-Z]+[0-9]+/, @factor_values
-  ); 
+  my ($run_id,$sample_name, @factor_values) = @_;
+
+  my $description;
+  if(_sample_name_seems_good_enough($sample_name)){
+    @factor_values = grep (!/^[A-Z]+[0-9]+$/, @factor_values);
+    $description = $sample_name;
+  } else {
+    @factor_values = grep (/\w+/, @factor_values);
+    $description = join(", ", @factor_values);
+  }
+  return $description ? "$run_id: $description" : $run_id;
 }
 1;

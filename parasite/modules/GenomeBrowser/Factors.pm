@@ -14,13 +14,11 @@ my @blacklist = (
  "bioproject_id",
   "species",
   "organism",
-  "replicate"
+  "replicate",
+  "sample_name"
 );
 sub not_in_blacklist {
-  my $item = shift;
-  $item = lc($item);
-  $item =~ s/\W+/_/;
-  return not($item ~~ @blacklist);
+  return not(shift ~~ @blacklist);
 }
 sub _fetch {
   my ( $class, $species, $assembly, $rnaseqer_metadata,
