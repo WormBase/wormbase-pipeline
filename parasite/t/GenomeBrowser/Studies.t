@@ -21,9 +21,11 @@ my $root_dir = tempdir( CLEANUP => 1 );
 my $species = "fasciola_hepatica";
 my $assembly = "Fasciola_10x_pilon";
 my $rnaseqer_metadata = bless {
-  $assembly => {
-    $study_id => {
-      "run_id" => { "characteristic_type" => "characteristic_value"}
+  metadata => {
+    $assembly => {
+      $study_id => {
+        "run_id" => { "characteristic_type" => "characteristic_value"}
+      }
     }
   }
 } , 'GenomeBrowser::RnaseqerMetadata';
@@ -32,10 +34,10 @@ my $subject = GenomeBrowser::Studies->new($root_dir, $species, $assembly, $rnase
 is_deeply (
   $subject,
   (bless {$study_id => {
-     "Study title" => "Some RNA-seq reads form different developmental stages of the liver fluke Fasciola hepatica",
+     "Study" => "ERP006623: Some RNA-seq reads form different developmental stages of the liver fluke Fasciola hepatica",
      "Study description" => "RNA was prepared from various stages of the liver fluke Fasciola hepatica by John Dalton's group and sequenced by Genome Quebec.",
-     "PubMed references" => [25887684],
-     "First public in ENA" => "2014-12-31",
+     "PubMed references" => "25887684",
+     "ENA first public" => "2014-12-31",
      "ENA last update" => "2016-04-19",
   }}, 'GenomeBrowser::Studies'), "Get properties from ENA xml"
 ) or diag explain $subject;

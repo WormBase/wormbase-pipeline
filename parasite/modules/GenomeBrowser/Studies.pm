@@ -19,9 +19,8 @@ sub _fetch {
 sub _properties_for_study_from_ena_payload {
     my $payload = shift;
     return {} unless $payload;
-
     my $result = {
-        "Study title" => $payload->{STUDY}{DESCRIPTOR}{STUDY_TITLE},
+        "Study" => join( ": ", $payload->{STUDY}{IDENTIFIERS}{PRIMARY_ID}, $payload->{STUDY}{DESCRIPTOR}{STUDY_TITLE}),
         "ENA first public" => join( " ",
             map { $_->{TAG} eq 'ENA-FIRST-PUBLIC' ? $_->{VALUE} : () }
               @{ $payload->{STUDY}{STUDY_ATTRIBUTES}{STUDY_ATTRIBUTE} } ),
@@ -35,7 +34,7 @@ sub _properties_for_study_from_ena_payload {
     $result->{"PubMed references"} = join(", ", @pubmed_refs) if @pubmed_refs;
     
     my $sd = $payload->{STUDY}{DESCRIPTOR}{STUDY_DESCRIPTION};
-    $result->{"Study description"} = $sd if $sd and length($sd) < 500 and $sd =~ !/This data is part of a pre-publication release/;
+    $result->{"Study description"} = $sd if $sd and length($sd) < 500 and $sd !~ /This data is part of a pre-publication release/;
     return $result;
 }
 1;
