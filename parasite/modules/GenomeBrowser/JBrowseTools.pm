@@ -140,6 +140,7 @@ sub merge_configs {
     $current_config->{tracks} = \@tracks;
   }
   delete $current_config->{trackSelector};
+  delete $current_config->{defaultTracks};
 
   return Hash::Merge::merge($current_config, $new_config);
 }

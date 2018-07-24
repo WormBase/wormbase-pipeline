@@ -133,10 +133,13 @@ sub make_all {
   
   
   my %config = %$CONFIG_STANZA;
-   $config{trackSelector} =
-     $self->track_selector(@$attribute_query_order)
-     if @rnaseq_tracks;
-
+  if(@rnaseq_tracks){
+     $config{trackSelector} = $self->track_selector(@$attribute_query_order);
+     $config{defaultTracks} = ["DNA", "Gene_Models"];
+  } else {
+     #All local tracks on by default
+     $config{defaultTracks} = ["DNA", map {my $m = $_->{'trackLabel'};$m =~s/\s/_/g; $m} @$local_tracks ];
+  }
   $config{tracks}=\@track_configs; 
   return $self->{jbrowse_tools}->update_config(core_db=>$core_db, new_config=> \%config);
 }
