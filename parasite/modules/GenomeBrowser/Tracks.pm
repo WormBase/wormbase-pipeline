@@ -94,7 +94,7 @@ my $local_tracks = [
   }
 ];
 sub make_all {
-  my ($self,$core_db) = @_;
+  my ($self,$core_db, %opts) = @_;
  
   my ($spe, $cies, $bioproject) = split "_", $core_db;
 
@@ -121,7 +121,7 @@ sub make_all {
   my ($attribute_query_order, $location_per_run_id, @rnaseq_tracks) = $self->{rnaseq_tracks}->get($core_db, $assembly);
   for my $rnaseq_track (@rnaseq_tracks) {
      my $run_id = $rnaseq_track->{run_id};
-     my $url = GenomeBrowser::Deployment::sync_ebi_to_sanger($run_id, $location_per_run_id->{$run_id});
+     my $url = GenomeBrowser::Deployment::sync_ebi_to_sanger($run_id, $location_per_run_id->{$run_id}, %opts);
      push @track_configs, {
        %$TRACK_STANZA,
        urlTemplate => $url,

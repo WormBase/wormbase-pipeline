@@ -25,10 +25,10 @@ sub run_in_sanger {
   croak "Failed: $cmd" if $?;
 }
 sub sync_ebi_to_sanger {
-  my ($run_id, $source_url) = @_;
+  my ($run_id, $source_url, %opts) = @_;
   my $target_path = location ($SANGER_PATH, $run_id);
   my $target_dir = dirname $target_path;
-  unless (file_is_online($run_id)){
+  if ($opts{force_sync} or not file_is_online($run_id)){
     run_in_sanger("mkdir -p $target_dir");
     run_in_sanger("wget --continue --no-verbose -O $target_path $source_url");
   }
