@@ -22,6 +22,7 @@ my @blacklist = (
   "insdc_first_public",
   "insdc_secondary_accession",
   "insdc_status",
+  "insdc_last_update",
   "label",
   "model",
   "package",
@@ -30,6 +31,11 @@ my @blacklist = (
   "sample_comment",
   "sample_title",
   "geo_accession",
+  "biological_replicate",
+  "block",
+  "zone", #schmidtea mediterranea
+  "repplicate",
+  "in_house_sample_code"
 );
 sub not_in_blacklist {
   return not(shift ~~ @blacklist);

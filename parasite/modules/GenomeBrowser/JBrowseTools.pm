@@ -121,7 +121,7 @@ sub update_config {
    my $config_path = join "/", $self->out_dir($args{core_db}), "trackList.json";
    my $result = $self->merge_configs( 
         -s $config_path 
-        ? from_json(read_file($config_path), {binmode => ':utf8'}) 
+        ? from_json(read_file($config_path, {binmode => ':utf8'})) 
         : {}
      ,
      $args{new_config},

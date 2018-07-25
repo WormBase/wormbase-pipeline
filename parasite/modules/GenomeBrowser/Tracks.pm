@@ -148,7 +148,7 @@ sub track_selector {
   my ($self, @as) = @_;
   my %pretty;
   for my $a (@as){
-   (my $p = $a) =~ s/[\W_-]+/ /;
+   (my $p = $a) =~ s/[\W_-]+/ /g;
     $pretty{$a}=ucfirst($p);
   }
   return {

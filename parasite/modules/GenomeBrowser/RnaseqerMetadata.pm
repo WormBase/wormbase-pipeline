@@ -28,6 +28,8 @@ sub normalise_characteristics {
   $type =~ s/development_stage/developmental_stage/;
 
   $value =~s/^not applicable.*$//i;
+  $value =~s/^unknown$//i;
+  $value =~s/^N\\?A$//i;
   $value =~s/^\W+$//;
 
   return $type, $value;

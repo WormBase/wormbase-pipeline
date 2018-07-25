@@ -6,7 +6,7 @@ use JSON;
 use GenomeBrowser::ArrayExpressMetadata;
 
 my $module = new Test::MockModule('GenomeBrowser::LocallyCachedResource');
-$module->mock('get_json', from_json(do {local $/; <DATA>}));
+$module->mock('get_text', do {local $/; <DATA>});
 
 my $root_dir = tempdir( CLEANUP => 1 );
 my $species = "schistosoma_mansoni";

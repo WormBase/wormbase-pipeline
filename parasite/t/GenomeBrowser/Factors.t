@@ -40,9 +40,6 @@ studies_grouped_by_factor_as_expected(
     { study => { run => { "type" => "value" , "synonym"=> "value of blacklisted type"} } },
     {}, ["type"], "Blacklisted type one run" );
 studies_grouped_by_factor_as_expected(
-    { study => { run => { "type" => "value" , "Synonym"=> "value of blacklisted type"} } },
-    {}, ["type"], "Blacklisted type one run case insensitive" );
-studies_grouped_by_factor_as_expected(
     {
         study => {
             run   => { "type" => "value" },

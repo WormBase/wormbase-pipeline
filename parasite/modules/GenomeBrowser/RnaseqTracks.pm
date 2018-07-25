@@ -5,6 +5,7 @@ use GenomeBrowser::ArrayExpressMetadata;
 use GenomeBrowser::RnaseqerMetadata;
 use GenomeBrowser::Studies;
 use GenomeBrowser::Factors;
+use GenomeBrowser::RnaseqerStats;
 # This represents track metadata
 # Creating the object fetches info and saves it on disk
 # You can then hand-edit the files, especially the factors file
@@ -25,6 +26,7 @@ sub get {
   my $rnaseqer_metadata = GenomeBrowser::RnaseqerMetadata->new($root_dir, "${spe}_${cies}");
   my $array_express_metadata = GenomeBrowser::ArrayExpressMetadata->new($root_dir, "${spe}_${cies}");
   my $studies = GenomeBrowser::Studies->new($root_dir, "${spe}_${cies}", $assembly, $rnaseqer_metadata); 
+  my $stats = GenomeBrowser::RnaseqerStats->new($root_dir, "${spe}_${cies}", $assembly, $rnaseqer_metadata); 
   my $factors = GenomeBrowser::Factors->new($root_dir, "${spe}_${cies}", $assembly, $rnaseqer_metadata, $array_express_metadata);
   my @tracks;
   for my $study_id (@{$rnaseqer_metadata->access($assembly)}){
