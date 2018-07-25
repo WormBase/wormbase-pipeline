@@ -15,7 +15,21 @@ my @blacklist = (
   "species",
   "organism",
   "replicate",
-  "sample_name"
+  "sample_name",
+  "batch",
+  "barcode",
+  "insdc_center_name",
+  "insdc_first_public",
+  "insdc_secondary_accession",
+  "insdc_status",
+  "label",
+  "model",
+  "package",
+  "ncbi_submission_model",
+  "ncbi_submission_package",
+  "sample_comment",
+  "sample_title",
+  "geo_accession",
 );
 sub not_in_blacklist {
   return not(shift ~~ @blacklist);

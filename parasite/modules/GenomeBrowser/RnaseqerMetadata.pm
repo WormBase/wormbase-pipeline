@@ -19,7 +19,7 @@ sub normalise_characteristics {
   my ($type, $value) = @_;
 
   $type = lc($type);
-  $type =~ s/\W+/_/;
+  $type =~ s/\W+/_/g;
 #TODO use EFO ;-)
   $type =~ s/^age$/developmental_stage/;
   $type =~ s/^stage$/developmental_stage/;
