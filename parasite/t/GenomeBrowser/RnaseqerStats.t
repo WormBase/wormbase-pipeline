@@ -55,6 +55,16 @@ is_deeply(
     ),
     "Get properties from FTP"
 ) or diag explain $subject;
+is_deeply(
+    $subject->get_formatted_stats('SRR1124914'),
+ {
+    'library_size_approx' => '50-75mln',
+    'library_total_amount_of_reads' => '59712662',
+    'mapping_fraction_of_uniquely_mapped_reads' => '0.855838347987232591',
+    'mapping_quality_approx' => '80-90%'
+  },
+   "Can format stats" 
+) or diag explain $subject->get_formatted_stats('SRR1124914');
 done_testing();
 __DATA__
 All_entries,59712662
