@@ -20,23 +20,30 @@ sub new {
 }
 
 sub get_text {
-  my ($class,$url) = @_;
-  my $response = LWP::UserAgent->new->get($url);
-  die "$url error:".$response->status_line unless $response->is_success;
-  return $response->decoded_content;
+  my ($class,@urls) = @_;
+  my $errors;
+  for my $url (@urls){
+   my $response = LWP::UserAgent->new->get($url);
+   if($response->is_success){
+     return $response->decoded_content;
+   } else {
+     $errors.="$url error:".$response->status_line."\n";
+   }
+  }
+  die $errors;
 }
 sub get_csv {
-  my ($class,$url) = @_;
-  my $text = $class->get_text($url);
+  my $class = shift;
+  my $text = $class->get_text(@_);
   return csv ({ allow_whitespace => 1, in=>\$text});
 }
 sub get_json { 
-  my ($class,$url) = @_;
-  return from_json($class->get_text($url));
+  my $class = shift;
+  return from_json($class->get_text(@_));
 }
 
 sub get_xml { 
-  my ($class,$url) = @_;
-  return XMLin($class->get_text($url));
+  my $class= shift;
+  return XMLin($class->get_text(@_));
 }
 1;

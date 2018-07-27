@@ -26,19 +26,20 @@ sub get {
   my $rnaseqer_metadata = GenomeBrowser::RnaseqerMetadata->new($root_dir, "${spe}_${cies}");
   my $array_express_metadata = GenomeBrowser::ArrayExpressMetadata->new($root_dir, "${spe}_${cies}");
   my $studies = GenomeBrowser::Studies->new($root_dir, "${spe}_${cies}", $assembly, $rnaseqer_metadata); 
-  my $stats = GenomeBrowser::RnaseqerStats->new($root_dir, "${spe}_${cies}", $assembly, $rnaseqer_metadata); 
+  my $rnaseqer_stats = GenomeBrowser::RnaseqerStats->new($root_dir, "${spe}_${cies}", $assembly, $rnaseqer_metadata); 
   my $factors = GenomeBrowser::Factors->new($root_dir, "${spe}_${cies}", $assembly, $rnaseqer_metadata, $array_express_metadata);
   my @tracks;
   for my $study_id (@{$rnaseqer_metadata->access($assembly)}){
-    my $study_attributes = $studies->{$study_id};
+    my $study = $studies->{$study_id};
     for my $run_id (@{$rnaseqer_metadata->access($assembly, $study_id)}){
-       my %attributes = %$study_attributes;
+       my $stats = $rnaseqer_stats->get_formatted_stats($run_id);
+       my %attributes;
        for my $characteristic_type (@{$rnaseqer_metadata->access($assembly, $study_id, $run_id)}){
          $attributes{$characteristic_type} = $rnaseqer_metadata->access($assembly, $study_id, $run_id, $characteristic_type);
        }
        push @tracks, {
           run_id => $run_id,
-          attributes => \%attributes,
+          attributes => {%$study, %$stats, %attributes},
           label => 
             &_label($run_id, &_restrict_sample_name($cies, $attributes{sample_name}),  map {exists $attributes{$_} ? $attributes{$_}: ()} @$factors),
        };

@@ -28,9 +28,12 @@ sub sync_ebi_to_sanger {
   my ($run_id, $source_url, %opts) = @_;
   my $target_path = location ($SANGER_PATH, $run_id);
   my $target_dir = dirname $target_path;
-  if ($opts{do_sync} // file_is_online($run_id)){
+
+  if ($opts{do_sync} // not file_is_online($run_id)){
     run_in_sanger("mkdir -p $target_dir");
     run_in_sanger("wget --continue --no-verbose -O $target_path $source_url");
+  } else {
+    print STDERR "Skipping sync: $run_id\n" if $ENV{DEPLOYMENT_VERBOSE};
   }
   return location($SANGER_URL, $run_id); 
 }

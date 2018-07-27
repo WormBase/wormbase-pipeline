@@ -6,7 +6,6 @@ use File::Copy qw(copy);
 use IO::Uncompress::Gunzip qw(gunzip);
 use JSON;
 use File::Slurp;
-use Hash::Merge;
 sub new {
     my ( $class, %args ) = @_;
     die @_ unless $args{install_location} and $args{tmp_dir} and $args{out_dir} and $args{species_ftp};
@@ -33,27 +32,32 @@ sub out_dir {
 }
 
 sub exec_if_dir_absent {
-    my ($self, $dir, $cmd) = @_;
-    if (-d $dir) {
-       print STDERR "Skipping: $cmd\n" if $ENV{JBROWSE_TOOLS_VERBOSE};
-    } else {
+    my ($self, $dir, $cmd, %args) = @_;
+    if ($args{do_jbrowse} // not -d $dir ) {
       print STDERR "Executing: $cmd\n" if $ENV{JBROWSE_TOOLS_VERBOSE};
       `$cmd`;
       $? and die "Failed: $cmd\n";
+    } else {
+       print STDERR "Skipping: $cmd\n" if $ENV{JBROWSE_TOOLS_VERBOSE};
     }
 }
 sub filter_gff {
-  my ($self, $path,$processing_path, $features) =@_;
-  print STDERR "Processing path: $processing_path\n" if $ENV{JBROWSE_TOOLS_VERBOSE};
-    open ANNOTATION, "$path" or die "Could not open: $path";
-    open PROCESSING, ">$processing_path"
-      or die "Could not write: $processing_path";
-    while (<ANNOTATION>) {
-        my @gff_elements = split( "\t", $_ );
-        print PROCESSING $_ if ( $gff_elements[1] ~~ $features );
-    }
-    close ANNOTATION;
-    close PROCESSING;
+  my ($self, $path,$processing_path, $features, %args) =@_;
+
+  if ($args{do_jbrowse} // -f $processing_path){ 
+    print STDERR "Processing path: $processing_path\n" if $ENV{JBROWSE_TOOLS_VERBOSE};
+      open ANNOTATION, "$path" or die "Could not open: $path";
+      open PROCESSING, ">$processing_path"
+        or die "Could not write: $processing_path";
+      while (<ANNOTATION>) {
+          my @gff_elements = split( "\t", $_ );
+          print PROCESSING $_ if ( $gff_elements[1] ~~ $features );
+      }
+      close ANNOTATION;
+      close PROCESSING;
+   } else {
+       print STDERR "Skipping filter_gff:  $processing_path\n" if $ENV{JBROWSE_TOOLS_VERBOSE};
+   }
 }
 sub track_from_annotation {
     my ( $self, %args ) = @_;
@@ -68,7 +72,7 @@ sub track_from_annotation {
     }
     my $processing_path = $self->tmp_path($args{core_db}, (join ",", @{$args{feature}}));
 
-    $self->filter_gff($path, $processing_path, $args{feature}) unless -f $processing_path;
+    $self->filter_gff($path, $processing_path, $args{feature}, %args);
 
     ( my $track_label = $args{'trackLabel'} ) =~ s/\s/_/g;
     my $cmd = $self->tool_cmd("flatfile-to-json.pl");
@@ -81,7 +85,7 @@ sub track_from_annotation {
     $cmd .= ' --compress';
     $cmd .= " --out $out";
     
-    $self->exec_if_dir_absent("$out/tracks/$track_label", $cmd);
+    $self->exec_if_dir_absent("$out/tracks/$track_label", $cmd, %args);
 #TODO
 #--metadata '{ "category": "%s", "menuTemplate" : [{ "label" : "View gene at WormBase ParaSite", "action" : "newWindow", "url" : "/Gene/Summary?g={name}" }] }'
 #$gff3_track->{'type'} =~ /^gene/ ? qq(--clientConfig '{ "color" : "{geneColor}", "label" : "{geneLabel}" }') : '',
@@ -103,7 +107,7 @@ sub prepare_sequence {
     $cmd .= " --compress";
     $cmd .= " --out $out";
 
-    $self->exec_if_dir_absent("$out/seq", $cmd);
+    $self->exec_if_dir_absent("$out/seq", $cmd, %args);
 }
 
 sub index_names {
@@ -113,7 +117,7 @@ sub index_names {
     $cmd .= " --compress";
     $cmd .= " --mem 1024000000";         # 1GB is four times the default, 256 MB
     $cmd .= " --out $out";
-    $self->exec_if_dir_absent("$out/names", $cmd);
+    $self->exec_if_dir_absent("$out/names", $cmd, %args);
 }
 
 sub update_config {
@@ -133,15 +137,11 @@ sub update_config {
 sub merge_configs {
   my ($self, $current_config, $new_config) = @_;
 
-# remove rnaseq tracks from the config
-  if ($current_config->{tracks}) {
-    my @tracks = @{$current_config->{tracks}}; 
-    @tracks = grep {$_->{urlTemplate} !~ /rnaseq/i } @tracks;
-    $current_config->{tracks} = \@tracks;
-  }
-  delete $current_config->{trackSelector};
-  delete $current_config->{defaultTracks};
-
-  return Hash::Merge::merge($current_config, $new_config);
+#JBrowse leaves behind the tracks for sequence and local tracks. We want that only.
+  my @local_tracks = @{$current_config->{tracks} // []};
+  @local_tracks = grep {$_->{urlTemplate} !~ /rnaseq/i } @local_tracks;
+  die if scalar(@local_tracks)>6;
+  $new_config->{tracks} = [@local_tracks, @{$new_config->{tracks} //[]}];
+  return $new_config;
 }
 1;

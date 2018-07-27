@@ -13,7 +13,6 @@ my $subject = GenomeBrowser::JBrowseTools->new(
   species_ftp => SpeciesFtp->new("/invalid/ftp")
 );
 
-is_deeply($subject->merge_configs({},{}), {}, "null case");
 is_deeply($subject->merge_configs(from_json($canned_json),{}), from_json($canned_json), "merge empty hash");
 
 my $track = {
@@ -162,12 +161,5 @@ __DATA__
         ]
       }
     }
-  ],
-  "names": {
-    "url": "names/",
-    "type": "Hash"
-  },
-  "include": [
-    "functions.conf"
   ]
 }

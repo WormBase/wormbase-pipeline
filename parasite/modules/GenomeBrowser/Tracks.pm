@@ -104,18 +104,17 @@ sub make_all {
 
   $self->{jbrowse_tools}->prepare_sequence(
     core_db => $core_db,
+    %opts
   );
-  #push @track_configs, GenomeBrowser::TrackConfig::sequence_track();
 
   for my $local_track (@$local_tracks){
     $self->{jbrowse_tools}->track_from_annotation(
         %$local_track, 
         core_db => $core_db,
+        %opts
     );
-
   }
-  $self->{jbrowse_tools}->index_names(core_db=>$core_db);
-  
+  $self->{jbrowse_tools}->index_names(core_db=>$core_db, %opts);
 
   my $assembly = ProductionMysql->staging->meta_value($core_db, "assembly.name");  
   my ($attribute_query_order, $location_per_run_id, @rnaseq_tracks) = $self->{rnaseq_tracks}->get($core_db, $assembly);
@@ -154,8 +153,8 @@ sub track_selector {
   return {
     type => "Faceted",
     displayColumns => ["key", @as],
-    selectableFacets => [ "category", "study", @as],
-    renameFacets => {study=>"Study", key=>"Track", %pretty}
+    selectableFacets => [ "category", "study","library_size_approx", "mapping_quality_approx", @as],
+    renameFacets => {study=>"Study", key=>"Track",library_size_approx=> "Library size (reads)", mapping_quality_approx=>"Mapping quality (reads uniquely mapped)", %pretty}
   }
 }
 1;
