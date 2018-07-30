@@ -39,7 +39,7 @@ GetOptions ("help"       => \$help,       #
 	    "nolongtext" => \$nolongtext, # Don't dump longtext
 	    "input=s"    => \$input,      # EMBL flat file to be parse if doing manually.
 	    "fasta=s"    => \$fasta,      # Fasta flat file to parse if doing manually (e.g. a Trinity contig file of RNASeq reads).
-	    "source=s"   => \$source,     # Specify the source that that the fasta file comes from. E.G. 'trinity', ....
+	    "source=s"   => \$source,     # Specify the source that that the fasta file comes from. E.G. 'trinity','IsoSeq' ....
 	    "repull"     => \$repull,     # overrides the sequence data stored locally and re-fetches.
 	    "noload"     => \$noload,     # Causes files to be generated but not loaded.
 	    "output:s"   => \$output,     # Allows the user to specify the directory you want to save the data in.
@@ -413,7 +413,7 @@ sub generate_data_from_fasta {
       }
       
       $idF = $1;
-      if ($source eq 'trinity') {
+      if ($source eq 'trinity' || $source eq 'IsoSeq') {
 	$ID = $idF; 
       }
       $retrieved++;
@@ -443,7 +443,7 @@ sub generate_data_from_fasta {
   close (OUT_DNA) if $dna;
   $log->write_to("\n\nOutput Files:\n");
   $log->write_to("Ace file => $acefile\n");
-  $log->write_to ("DNA file => $dnafile\n") if ($dna);
+  $log->write_to("DNA file => $dnafile\n") if ($dna);
 }
 
 #####################################################################################################################
@@ -468,8 +468,10 @@ sub output_seq {
   if ($source eq 'trinity') {
     print OUT_ACE "Properties cDNA cDNA_EST\n";
     print OUT_ACE "Method \"RNASeq_${source}\"\n";
-  } 
-  else {
+  }elsif ($source eq 'IsoSeq') {
+    print OUT_ACE "Properties cDNA cDNA_EST\n";
+    print OUT_ACE "Method \"RNASeq_${source}\"\n";
+  }else {
     die "Can't determine the type from the ID line for\n";
   }
 }
