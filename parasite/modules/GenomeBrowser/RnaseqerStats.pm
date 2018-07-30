@@ -10,7 +10,7 @@ sub _fetch {
       for my $run_id (@{ $rnaseqer_metadata->access($assembly, $study_id) } ) {
         my $location = $rnaseqer_metadata->data_location($run_id); 
         my $stats = &_get_pairs(
-            $class->get_csv("$location/$run_id.pe.hits.bam.stats.csv", "$location/$run_id.se.hits.bam.stats.csv")
+            $class->get_csv("$location/$run_id.se.hits.bam.stats.csv", "$location/$run_id.pe.hits.bam.stats.csv")
         );
         my $a = $stats->{All_entries};
         my $u = $stats->{UniquelyMappedReads};
