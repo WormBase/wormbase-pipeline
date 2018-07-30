@@ -39,7 +39,7 @@ sub get_csv {
 }
 sub get_json { 
   my $class = shift;
-  return from_json($class->get_text(@_));
+  return decode_json($class->get_text(@_));
 }
 
 sub get_xml { 

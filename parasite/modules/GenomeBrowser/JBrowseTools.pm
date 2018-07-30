@@ -124,7 +124,7 @@ sub update_config {
    my ( $self, %args ) = @_;
    my $config_path = join "/", $self->out_dir($args{core_db}), "trackList.json";
    die "Could not find config, and I can't regenerate it from scratch: $config_path" unless -s $config_path;
-   my $current_config = from_json(read_file($config_path, {binmode => ':utf8'}));
+   my $current_config = decode_json(read_file($config_path));
    my $new_config = $args{new_config};
 
 #JBrowse leaves behind the tracks for sequence and local tracks. We want that only.
@@ -141,6 +141,6 @@ sub update_config {
 
   $new_config->{tracks} = [@local_tracks, @{$new_config->{tracks} //[]}];
 
-   write_file($config_path, {binmode => ':utf8'}, to_json ($new_config, {pretty=>1} ));
+   write_file($config_path, JSON->new->utf8->pretty->encode ($new_config));
 }
 1;
