@@ -23,6 +23,7 @@ sub get_text {
   my ($class,@urls) = @_;
   my $errors;
   for my $url (@urls){
+   print STDERR "Retrieving: $url\n" if $ENV{LOCALLY_CACHED_RESOURCE_VERBOSE};
    my $response = LWP::UserAgent->new->get($url);
    if($response->is_success){
      return $response->decoded_content;
