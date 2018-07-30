@@ -39,12 +39,14 @@ sub new {
   }, $class;
 }
 
-# bugs: this is gonna be merged with itself on repeated runs
 my $CONFIG_STANZA = {
    "names" => {
       "type" => "Hash",
       "url" => "names/"
    },
+   "include" => [  #Gives us the nice gene labels. TODO there's no code to copy them now I think!
+     "functions.conf"
+  ]
 };
 
 my $TRACK_STANZA = {
@@ -95,7 +97,7 @@ my $local_tracks = [
 ];
 sub make_all {
   my ($self,$core_db, %opts) = @_;
- 
+ #TODO functions.conf
   my ($spe, $cies, $bioproject) = split "_", $core_db;
 
   my $species = join "_", $spe, $cies, $bioproject;

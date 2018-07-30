@@ -123,25 +123,24 @@ sub index_names {
 sub update_config {
    my ( $self, %args ) = @_;
    my $config_path = join "/", $self->out_dir($args{core_db}), "trackList.json";
-   my $result = $self->merge_configs( 
-        -s $config_path 
-        ? from_json(read_file($config_path, {binmode => ':utf8'})) 
-        : {}
-     ,
-     $args{new_config},
-   );
-
-   write_file($config_path, {binmode => ':utf8'}, to_json ($result, {pretty=>1} ));
-   return $result;
-}
-sub merge_configs {
-  my ($self, $current_config, $new_config) = @_;
+   die "Could not find config, and I can't regenerate it from scratch: $config_path" unless -s $config_path;
+   my $current_config = from_json(read_file($config_path, {binmode => ':utf8'}));
+   my $new_config = $args{new_config};
 
 #JBrowse leaves behind the tracks for sequence and local tracks. We want that only.
-  my @local_tracks = @{$current_config->{tracks} // []};
-  @local_tracks = grep {$_->{urlTemplate} !~ /rnaseq/i } @local_tracks;
-  die if scalar(@local_tracks)>6;
+#Only pick the ones that actually got generated (work around WBPS11 bug)
+  my @local_tracks;
+  for my $track (@{$current_config->{tracks} // []}){
+     next if $track->{urlTemplate} =~ /rnaseq/;
+     push @local_tracks, $track if $track->{label} eq "DNA";
+     my $local_track_path = join "/", $self->out_dir($args{core_db}), "tracks", $track->{label};
+     push @local_tracks, $track if -d $local_track_path;
+  }
+  die "Too many local tracks" if scalar(@local_tracks)>6;
+  die "Should at least have sequence and gene models" if scalar(@local_tracks)<2;
+
   $new_config->{tracks} = [@local_tracks, @{$new_config->{tracks} //[]}];
-  return $new_config;
+
+   write_file($config_path, {binmode => ':utf8'}, to_json ($new_config, {pretty=>1} ));
 }
 1;
