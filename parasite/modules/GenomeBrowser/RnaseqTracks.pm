@@ -4,17 +4,10 @@ package GenomeBrowser::RnaseqTracks;
 use GenomeBrowser::ArrayExpressMetadata;
 use GenomeBrowser::RnaseqerMetadata;
 use GenomeBrowser::Studies;
+use GenomeBrowser::Links;
 use GenomeBrowser::Factors;
 use GenomeBrowser::RnaseqerStats;
-# This represents track metadata
-# Creating the object fetches info and saves it on disk
-# You can then hand-edit the files, especially the factors file
 # TODO: Be able to create hub.txt from this
-
-# in: 
-#   - data production directory where we can cache resources
-#   - current core database
-
 sub new {
   my ($class, $root_dir) = @_;
   bless {root_dir => $root_dir}, $class; 
@@ -26,6 +19,7 @@ sub get {
   my $rnaseqer_metadata = GenomeBrowser::RnaseqerMetadata->new($root_dir, "${spe}_${cies}");
   my $array_express_metadata = GenomeBrowser::ArrayExpressMetadata->new($root_dir, "${spe}_${cies}");
   my $studies = GenomeBrowser::Studies->new($root_dir, "${spe}_${cies}", $assembly, $rnaseqer_metadata); 
+  my $links = GenomeBrowser::Links->new($root_dir, "${spe}_${cies}", $assembly, $rnaseqer_metadata);
   my $rnaseqer_stats = GenomeBrowser::RnaseqerStats->new($root_dir, "${spe}_${cies}", $assembly, $rnaseqer_metadata); 
   my $factors = GenomeBrowser::Factors->new($root_dir, "${spe}_${cies}", $assembly, $rnaseqer_metadata, $array_express_metadata);
   my @tracks;
@@ -33,13 +27,14 @@ sub get {
     my $study = $studies->{$study_id};
     for my $run_id (@{$rnaseqer_metadata->access($assembly, $study_id)}){
        my $stats = $rnaseqer_stats->get_formatted_stats($run_id);
+       my $links_to_this_run = $links->{$run_id};
        my %attributes;
        for my $characteristic_type (@{$rnaseqer_metadata->access($assembly, $study_id, $run_id)}){
          $attributes{$characteristic_type} = $rnaseqer_metadata->access($assembly, $study_id, $run_id, $characteristic_type);
        }
        push @tracks, {
           run_id => $run_id,
-          attributes => {%$study, %$stats, %attributes},
+          attributes => {%$study, %$stats, %$links_to_this_run, %attributes},
           label => 
             &_label($run_id, &_restrict_sample_name($cies, $attributes{sample_name}),  map {exists $attributes{$_} ? $attributes{$_}: ()} @$factors),
        };
