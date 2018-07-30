@@ -47,7 +47,7 @@ is_deeply(
     bless(
         {
             'SRR1124914' => {
-                'fraction_reads_uniquely_mapped' => '0.855838347987232591',
+                'fraction_reads_uniquely_mapped' => '0.856',
                 'library_size'                   => '59712662'
             }
         },
@@ -60,7 +60,7 @@ is_deeply(
  {
     'library_size_approx' => '50-75mln',
     'library_total_amount_of_reads' => '59712662',
-    'mapping_fraction_of_uniquely_mapped_reads' => '0.855838347987232591',
+    'mapping_fraction_of_uniquely_mapped_reads' => '0.856',
     'mapping_quality_approx' => '80-90%'
   },
    "Can format stats" 

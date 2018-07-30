@@ -15,7 +15,7 @@ sub _fetch {
         my $a = $stats->{All_entries};
         my $u = $stats->{UniquelyMappedReads};
         $data{$run_id}{library_size} = $a || 0 ;
-        $data{$run_id}{fraction_reads_uniquely_mapped} = $a ? ($u || 0) / $a : 0;
+        $data{$run_id}{fraction_reads_uniquely_mapped} = $a ? sprintf("%.3f", ($u || 0) / $a) : 0;
       }
     }
     return \%data;
