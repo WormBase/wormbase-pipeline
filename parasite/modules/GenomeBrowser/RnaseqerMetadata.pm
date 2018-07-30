@@ -1,6 +1,7 @@
 
 package GenomeBrowser::RnaseqerMetadata;
 use List::MoreUtils qw(uniq);
+use File::Basename;
 use parent GenomeBrowser::LocallyCachedResource;
 
 # Assembly -> study -> run -> type -> value
@@ -15,24 +16,11 @@ sub access {
   return [] unless $h;
   return $h;
 }
-sub normalise_characteristics {
-  my ($type, $value) = @_;
 
-  $type = lc($type);
-  $type =~ s/\W+/_/g;
-#TODO use EFO ;-)
-  $type =~ s/^age$/developmental_stage/;
-  $type =~ s/^stage$/developmental_stage/;
-  $type =~ s/life_cycle_stage/developmental_stage/;
-  $type =~ s/dev_stage/developmental_stage/;
-  $type =~ s/development_stage/developmental_stage/;
-
-  $value =~s/^not applicable.*$//i;
-  $value =~s/^unknown$//i;
-  $value =~s/^N\\?A$//i;
-  $value =~s/^\W+$//;
-
-  return $type, $value;
+sub data_location {
+  my ($self, $run_id) = @_; 
+  my $bigwig_location = $self->{location_per_run_id}{$run_id};
+  return dirname $bigwig_location; 
 }
 
 sub _fetch {
@@ -47,7 +35,7 @@ sub _fetch {
      for my $attribute_record (@{ 
        $class->_get_rnaseqer_sample_attributes_per_run_for_study($study_id)
      }){
-       my ($type, $value) = normalise_characteristics($attribute_record->{TYPE}, $attribute_record->{VALUE});
+       my ($type, $value) = _normalise_characteristics($attribute_record->{TYPE}, $attribute_record->{VALUE});
        $run_attributes{$attribute_record->{RUN_ID}}{$type} = $value if $type and $value;
      }
   }
@@ -69,6 +57,26 @@ sub _fetch {
   }
   return {metadata => \%data, location_per_run_id => \%location_per_run_id};
 }
+sub _normalise_characteristics {
+  my ($type, $value) = @_;
+
+  $type = lc($type);
+  $type =~ s/\W+/_/g;
+#TODO use EFO ;-)
+  $type =~ s/^age$/developmental_stage/;
+  $type =~ s/^stage$/developmental_stage/;
+  $type =~ s/life_cycle_stage/developmental_stage/;
+  $type =~ s/dev_stage/developmental_stage/;
+  $type =~ s/development_stage/developmental_stage/;
+
+  $value =~s/^not applicable.*$//i;
+  $value =~s/^unknown$//i;
+  $value =~s/^N\\?A$//i;
+  $value =~s/^\W+$//;
+
+  return $type, $value;
+}
+
 sub _get_rnaseqer_json {
   my $class = shift;
   return $class->get_json(

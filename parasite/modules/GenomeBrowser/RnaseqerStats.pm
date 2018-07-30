@@ -1,6 +1,5 @@
 
 package GenomeBrowser::RnaseqerStats;
-use File::Basename;
 use parent GenomeBrowser::LocallyCachedResource;
 
 
@@ -9,8 +8,7 @@ sub _fetch {
     my %data;
     for my $study_id ( @{ $rnaseqer_metadata->access($assembly) } ) {
       for my $run_id (@{ $rnaseqer_metadata->access($assembly, $study_id) } ) {
-        my $bigwig_location = $rnaseqer_metadata->{location_per_run_id}{$run_id};
-        my $location = dirname $bigwig_location; 
+        my $location = $rnaseqer_metadata->data_location($run_id); 
         my $stats = &_get_pairs(
             $class->get_csv("$location/$run_id.pe.hits.bam.stats.csv", "$location/$run_id.se.hits.bam.stats.csv")
         );
