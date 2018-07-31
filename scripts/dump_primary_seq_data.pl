@@ -208,7 +208,7 @@ query find Sequence where method = RNASeq_trinity & !Ignore\n
 Dna -mismatch $EST_dir/Trinity\n
 clear\n
 query find Sequence where method = RNASeq_IsoSeq & !Ignore\n
-Dna -mismatch $EST_dir/Trinity\n
+Dna -mismatch $EST_dir/IsoSeq\n
 clear\n
 query find Sequence TC*\n
 Dna -mismatch $EST_dir/tc1\n
