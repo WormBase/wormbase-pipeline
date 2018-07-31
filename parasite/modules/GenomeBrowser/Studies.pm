@@ -15,12 +15,20 @@ sub _fetch {
     }
     return \%data;
 }
-
+sub _clean_messy_text {
+   my $name = shift;
+   $name =~s/_+/ /g if scalar(split " ", $name) == 1;
+   $name = ucfirst(lc($name)) if $name eq uc($name);
+   return $name;
+}
 sub _properties_for_study_from_ena_payload {
     my $payload = shift;
     return {} unless $payload;
     my $result = {
-        "Study" => join( ": ", $payload->{STUDY}{IDENTIFIERS}{PRIMARY_ID}, $payload->{STUDY}{DESCRIPTOR}{STUDY_TITLE}),
+        "study" => join( ": ",
+            $payload->{STUDY}{IDENTIFIERS}{PRIMARY_ID},
+            _clean_messy_text($payload->{STUDY}{DESCRIPTOR}{STUDY_TITLE})
+        ),
         "ENA first public" => join( " ",
             map { $_->{TAG} eq 'ENA-FIRST-PUBLIC' ? $_->{VALUE} : () }
               @{ $payload->{STUDY}{STUDY_ATTRIBUTES}{STUDY_ATTRIBUTE} } ),

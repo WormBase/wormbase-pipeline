@@ -41,6 +41,18 @@ is_deeply (
      "ENA last update" => "2016-04-19",
   }}, 'GenomeBrowser::Studies'), "Get properties from ENA xml"
 ) or diag explain $subject;
+
+is_deeply (
+  GenomeBrowser::Studies::_clean_messy_text("Globodera_pallida_transcriptomics"),
+  "Globodera pallida transcriptomics",
+  "Names get better"
+);
+
+is_deeply (
+  GenomeBrowser::Studies::_clean_messy_text("MIYAZAKI"),
+  "Miyazaki",
+  "Names get better 2"
+);
 done_testing();
 __DATA__
 <?xml version="1.0" encoding="UTF-8"?>
