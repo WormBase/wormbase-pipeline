@@ -147,7 +147,7 @@ Write $EST_dir/RST.ace\n
 clear\n
 query find Sequence where method = RNASeq_trinity & !Ignore\n
 Write $EST_dir/Trinity.ace\n
-query find Sequence where method = RNASeq_isoseq & !Ignore\n
+query find Sequence where method = RNASeq_IsoSeq & !Ignore\n
 Write $EST_dir/IsoSeq.ace\n
 clear\n
 query find Sequence TC*\n
