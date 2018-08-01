@@ -74,21 +74,21 @@ sub track_from_annotation {
 
     $self->filter_gff($path, $processing_path, $args{feature}, %args);
 
-    ( my $track_label = $args{'trackLabel'} ) =~ s/\s/_/g;
-    my $cmd = $self->tool_cmd("flatfile-to-json.pl");
-    $cmd .= " --gff $processing_path";
-    $cmd .= " --type " . join ",", @{ $args{type} };
-    $cmd .= " --key '$args{trackLabel}'";
-    $cmd .= " --trackLabel '$track_label'";
-    $cmd .= " --trackType $args{trackType}";
-    $cmd .= ' --nameAttributes "name,id,alias,locus"';
-    $cmd .= ' --compress';
-    $cmd .= " --out $out";
-    
-    $self->exec_if_dir_absent("$out/tracks/$track_label", $cmd, %args);
-#TODO
-#--metadata '{ "category": "%s", "menuTemplate" : [{ "label" : "View gene at WormBase ParaSite", "action" : "newWindow", "url" : "/Gene/Summary?g={name}" }] }'
-#$gff3_track->{'type'} =~ /^gene/ ? qq(--clientConfig '{ "color" : "{geneColor}", "label" : "{geneLabel}" }') : '',
+    if (-s $processing_path) {
+        ( my $track_label = $args{'trackLabel'} ) =~ s/\s/_/g;
+        my $cmd = $self->tool_cmd("flatfile-to-json.pl");
+        $cmd .= " --gff $processing_path";
+        $cmd .= " --type " . join ",", @{ $args{type} };
+        $cmd .= " --key '$args{trackLabel}'";
+        $cmd .= " --trackLabel '$track_label'";
+        $cmd .= " --trackType $args{trackType}";
+        $cmd .= ' --nameAttributes "name,id,alias,locus"';
+        $cmd .= ' --compress';
+        $cmd .= " --out $out";
+        $self->exec_if_dir_absent("$out/tracks/$track_label", $cmd, %args);
+    } else {
+       print STDERR "Skipping flatfile-to-json.pl:  $processing_path\n" if $ENV{JBROWSE_TOOLS_VERBOSE};
+    }
 }
 
 sub prepare_sequence {
