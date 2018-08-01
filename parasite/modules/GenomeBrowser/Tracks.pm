@@ -116,7 +116,9 @@ sub make_all {
         %opts
     );
   }
+
   $self->{jbrowse_tools}->index_names(core_db=>$core_db, %opts);
+  $self->{jbrowse_tools}->add_static_files(core_db=>$core_db, %opts);
 
   my $assembly = ProductionMysql->staging->meta_value($core_db, "assembly.name");  
   my ($attribute_query_order, $location_per_run_id, @rnaseq_tracks) = $self->{rnaseq_tracks}->get($core_db, $assembly);

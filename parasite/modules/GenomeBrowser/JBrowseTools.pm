@@ -119,6 +119,42 @@ sub index_names {
     $cmd .= " --out $out";
     $self->exec_if_dir_absent("$out/names", $cmd, %args);
 }
+sub add_static_files {
+    my ( $self, %args ) = @_;
+    my $out = $self->out_dir($args{core_db});
+    my $doc = <<END_FUNCTIONS_CONF;
+geneLabel = function(f) {
+  var type = f.get('type');
+  var locus = f.get('locus');
+  var seq_name = f.get('sequence_name');
+  var feature_name = f.get('Name');
+  var patt = /RNA|transcript/;
+  if(patt.test(type)) { return feature_name; }
+  if(typeof seq_name !== 'undefined') {
+    if(typeof locus !== 'undefined') {
+      return locus + " (" + seq_name + ")";
+    } else {
+      return seq_name;
+    }
+  } else {
+    if(typeof locus !== 'undefined') {
+      return locus;
+    } else {
+      return feature_name;
+    }
+  }}
+
+geneColor = function(f) {
+  var type = f.get('type');
+  if (type.match(/exon/)) {return 'pink';}
+  if (type.match(/pseudo/)) {return 'pink';}
+  var strand = f.get('strand');
+  if (strand == -1) {return 'turquoise';}
+  if (strand ==  1) {return 'violet';}
+  return 'gray'; }
+END_FUNCTIONS_CONF
+    write_file("$out/functions.conf", $doc);
+}
 
 sub update_config {
    my ( $self, %args ) = @_;
