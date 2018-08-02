@@ -14,8 +14,8 @@ my $species = "schistosoma_mansoni";
 my $subject = GenomeBrowser::ArrayExpressMetadata->new($root_dir, $species);
 
 my $expected_factor_types = [
-  "organism part",
-  "sample description",
+  "organism_part",
+  "sample_description",
   "sex"
 ];
 

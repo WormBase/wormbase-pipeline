@@ -62,8 +62,13 @@ sub _normalise_characteristics {
 
   $type = lc($type);
   $type =~ s/\W+/_/g;
-#TODO use EFO ;-)
+
+#Sometimes there's curation like: age+time unit
+  return $type, $value if $type eq "age" and $value =~s/^\W+$//;
+# But sometimes age means developmental stage
   $type =~ s/^age$/developmental_stage/;
+
+# Try give developmental stages first-class support
   $type =~ s/^stage$/developmental_stage/;
   $type =~ s/life_cycle_stage/developmental_stage/;
   $type =~ s/dev_stage/developmental_stage/;

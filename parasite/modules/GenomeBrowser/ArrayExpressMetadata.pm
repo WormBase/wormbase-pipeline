@@ -31,12 +31,18 @@ sub _create_from_payload {
     secondary_to_primary_accession => &_get_secondary_to_primary_accession_from_ae_response($payload),
   };
 }
-
+# We use these values to pick up factors, so make sure they're the same format!
+sub _normalise_characteristic {
+  my $type = shift;
+  $type = lc($type);
+  $type =~ s/\W+/_/g;
+  return $type;
+}
 sub _get_factor_types_from_ae_response{
   my $payload = shift;
   my %result;
   for my $experiment (@{$payload->{experiments}->{experiment}}){
-    my @factor_types = map { $_->{name}} @{ $experiment->{experimentalvariable}};
+    my @factor_types = map { _normalise_characteristic($_->{name})} @{ $experiment->{experimentalvariable}};
     $result{$experiment->{accession}} = \@factor_types;
   }
   return \%result;
