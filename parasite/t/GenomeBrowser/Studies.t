@@ -34,9 +34,11 @@ my $subject = GenomeBrowser::Studies->new($root_dir, $species, $assembly, $rnase
 is_deeply (
   $subject,
   (bless {$study_id => {
-     "Study" => "ERP006623: Some RNA-seq reads form different developmental stages of the liver fluke Fasciola hepatica",
+#lowercase because it's a facet
+     "study" => "ERP006623: Some RNA-seq reads form different developmental stages of the liver fluke Fasciola hepatica",
      "Study description" => "RNA was prepared from various stages of the liver fluke Fasciola hepatica by John Dalton's group and sequenced by Genome Quebec.",
-     "PubMed references" => "25887684",
+     "PubMed" => '<a href="https://www.ncbi.nlm.nih.gov/pubmed/25887684">25887684</a>',
+     "ArrayExpress" => '<a href="http://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-451">E-MTAB-451 in ArrayExpress</a>',
      "ENA first public" => "2014-12-31",
      "ENA last update" => "2016-04-19",
   }}, 'GenomeBrowser::Studies'), "Get properties from ENA xml"
@@ -76,6 +78,12 @@ __DATA__
                     <DB>PUBMED</DB>
                     <ID>25887684</ID>
                </XREF_LINK>
+          </STUDY_LINK>
+          <STUDY_LINK>
+               <URL_LINK>
+                    <LABEL>E-MTAB-451 in ArrayExpress</LABEL>
+                    <URL>http://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-451</URL>
+               </URL_LINK>
           </STUDY_LINK>
           <STUDY_LINK>
                <XREF_LINK>
