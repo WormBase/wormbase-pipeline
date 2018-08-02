@@ -167,10 +167,11 @@ END_FUNCTIONS_CONF
 # JBrowse leaves its own configs in trackList.json.
 # They're hard to manipulate programmatically so we overwrite them
 # and add canned copies.
+# You can JSON->new->pretty if you like pretty, but it will make the files bigger.
 sub update_config {
    my ( $self, %args ) = @_;
    my $config_path = join "/", $self->out_dir($args{core_db}), "trackList.json";
    my $new_config = $args{new_config};
-   write_file($config_path, JSON->new->pretty->utf8->encode($new_config));
+   write_file($config_path, JSON->new->utf8->encode($new_config));
 }
 1;
