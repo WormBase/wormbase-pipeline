@@ -63,6 +63,7 @@ sub track_from_annotation {
     my ( $self, %args ) = @_;
 
     my $out = $self->out_dir($args{core_db});
+    ( my $track_label = $args{'trackLabel'} ) =~ s/\s/_/g;
     my $path = $self->{species_ftp}->path_to($args{core_db}, "annotations.gff3") ;
 
     if ( $path =~ /.gz$/ ) {
@@ -75,7 +76,6 @@ sub track_from_annotation {
     $self->filter_gff($path, $processing_path, $args{feature}, %args);
 
     if (-s $processing_path) {
-        ( my $track_label = $args{'trackLabel'} ) =~ s/\s/_/g;
         my $cmd = $self->tool_cmd("flatfile-to-json.pl");
         $cmd .= " --gff $processing_path";
         $cmd .= " --type " . join ",", @{ $args{type} };
@@ -89,6 +89,14 @@ sub track_from_annotation {
     } else {
        print STDERR "Skipping flatfile-to-json.pl:  $processing_path\n" if $ENV{JBROWSE_TOOLS_VERBOSE};
     }
+}
+sub track_present {
+   my ( $self, %args ) = @_;
+
+   my $out = $self->out_dir($args{core_db});
+   ( my $track_label = $args{'trackLabel'} ) =~ s/\s/_/g;
+
+   return -d "$out/tracks/$track_label";
 }
 
 sub prepare_sequence {
@@ -156,27 +164,13 @@ END_FUNCTIONS_CONF
     write_file("$out/functions.conf", $doc);
 }
 
+# JBrowse leaves its own configs in trackList.json.
+# They're hard to manipulate programmatically so we overwrite them
+# and add canned copies.
 sub update_config {
    my ( $self, %args ) = @_;
    my $config_path = join "/", $self->out_dir($args{core_db}), "trackList.json";
-   die "Could not find config, and I can't regenerate it from scratch: $config_path" unless -s $config_path;
-   my $current_config = decode_json(read_file($config_path));
    my $new_config = $args{new_config};
-
-#JBrowse leaves behind the tracks for sequence and local tracks. We want that only.
-#Only pick the ones that actually got generated (work around WBPS11 bug)
-  my @local_tracks;
-  for my $track (@{$current_config->{tracks} // []}){
-     next if $track->{urlTemplate} =~ /rnaseq/;
-     push @local_tracks, $track if $track->{label} eq "DNA";
-     my $local_track_path = join "/", $self->out_dir($args{core_db}), "tracks", $track->{label};
-     push @local_tracks, $track if -d $local_track_path;
-  }
-  die "Too many local tracks" if scalar(@local_tracks)>6;
-  die "Should at least have sequence and gene models" if scalar(@local_tracks)<2;
-
-  $new_config->{tracks} = [@local_tracks, @{$new_config->{tracks} //[]}];
-
-   write_file($config_path, JSON->new->utf8->pretty->encode ($new_config));
+   write_file($config_path, JSON->new->pretty->utf8->encode($new_config));
 }
 1;

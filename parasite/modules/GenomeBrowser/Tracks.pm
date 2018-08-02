@@ -61,43 +61,95 @@ my $TRACK_STANZA = {
     autoscale     => "local",
     ScalePosition => "right",
 };
+my $sequence_track_config = {
+    'seqType'     => 'dna',
+    'key'         => 'Reference sequence',
+    'chunkSize'   => 80000,
+    'storeClass'  => 'JBrowse/Store/Sequence/StaticChunked',
+    'urlTemplate' => 'seq/{refseq_dirpath}/{refseq}-',
+    'compress'    => 1,
+    'label'       => 'DNA',
+    'type'        => 'SequenceTrack',
+    'category'    => 'Reference sequence'
+};
 
-my $local_tracks = [
-    {
-        'feature'    => [qw/WormBase WormBase_imported/],
-        'trackLabel' => 'Gene Models',
-        'trackType'  => 'CanvasFeatures',
-        'category'   => 'Genome Annotation',
-        'type'       => [
-            qw/gene mRNA exon CDS five_prime_UTR three_prime_UTR tRNA rRNA pseudogene tRNA_pseudogene antisense_RNA lincRNA miRNA miRNA_primary_transcript mRNA piRNA pre_miRNA pseudogenic_rRNA pseudogenic_transcript pseudogenic_tRNA scRNA snoRNA snRNA ncRNA/
-        ]
+my $genes_track_config = {
+    'style' => {
+        'className' => 'feature',
+        'color'     => '{geneColor}',
+        'label'     => '{geneLabel}'
     },
+    'key'          => 'Gene Models',
+    'storeClass'   => 'JBrowse/Store/SeqFeature/NCList',
+    'trackType'    => 'CanvasFeatures',
+    'urlTemplate'  => 'tracks/Gene_Models/{refseq}/trackData.jsonz',
+    'compress'     => 1,
+    'menuTemplate' => [
+        {
+            'url'    => '/Gene/Summary?g={name}',
+            'action' => 'newWindow',
+            'label'  => 'View gene at WormBase ParaSite'
+        }
+    ],
+    'metadata' => {
+        'category' => 'Genome Annotation',
+    },
+    'type'  => 'CanvasFeatures',
+    'label' => 'Gene_Models'
+};
+
+sub feature_track_config {
+    my $niceLabelForReading = shift;
+    (my $label = $niceLabelForReading ) =~ s/ /_/g;
+
+    return {
+        'style' => {
+            'className' => 'feature'
+        },
+        'key'         => $niceLabelForReading,
+        'storeClass'  => 'JBrowse/Store/SeqFeature/NCList',
+        'trackType'   => 'FeatureTrack',
+        'urlTemplate' => "tracks/$label/{refseq}/trackData.jsonz",
+        'compress'    => 1,
+        'metadata'    => {
+            'category' => 'Repeat Regions',    #All our features are repeats now
+        },
+        'type'  => 'FeatureTrack',
+        'label' => $label,
+    };
+}
+my $genes_track = {
+    'feature'    => [qw/WormBase WormBase_imported/],
+    'trackLabel' => 'Gene Models',
+    'trackType'  => 'CanvasFeatures',
+    'type'       => [
+        qw/gene mRNA exon CDS five_prime_UTR three_prime_UTR tRNA rRNA pseudogene tRNA_pseudogene antisense_RNA lincRNA miRNA miRNA_primary_transcript mRNA piRNA pre_miRNA pseudogenic_rRNA pseudogenic_transcript pseudogenic_tRNA scRNA snoRNA snRNA ncRNA/
+    ]
+};
+
+my $feature_tracks = [
     {
         'feature'    => ['ncrnas_predicted'],
         'trackLabel' => 'Predicted non-coding RNA (ncRNA)',
         'trackType'  => 'FeatureTrack',
-        'category'   => 'Genome Annotation',
         'type'       => ['nucleotide_match']
     },
     {
         'feature'    => ['RepeatMasker'],
         'trackLabel' => 'Repeat Region',
         'trackType'  => 'FeatureTrack',
-        'category'   => 'Repeat Regions',
         'type'       => ['repeat_region']
     },
     {
         'feature'    => ['dust'],
         'trackLabel' => 'Low Complexity Region (Dust)',
         'trackType'  => 'FeatureTrack',
-        'category'   => 'Repeat Regions',
         'type'       => ['low_complexity_region']
     },
     {
         'feature'    => ['tandem'],
         'trackLabel' => 'Tandem Repeat (TRFs)',
         'trackType'  => 'FeatureTrack',
-        'category'   => 'Repeat Regions',
         'type'       => ['tandem_repeat']
     }
 ];
@@ -105,24 +157,32 @@ my $local_tracks = [
 sub make_all {
     my ( $self, $core_db, %opts ) = @_;
 
-    #TODO functions.conf
     my ( $spe, $cies, $bioproject ) = split "_", $core_db;
 
     my $species = join "_", $spe, $cies, $bioproject;
-
-    my @track_configs;
 
     $self->{jbrowse_tools}->prepare_sequence(
         core_db => $core_db,
         %opts
     );
+    $self->{jbrowse_tools}->track_from_annotation(
+        %$genes_track,
+        core_db => $core_db,
+        %opts
+    );
 
-    for my $local_track (@$local_tracks) {
-        $self->{jbrowse_tools}->track_from_annotation(
-            %$local_track,
+    my @feature_track_configs;
+    for my $feature_track (@$feature_tracks) {
+        my $args = {
+            %$feature_track,
             core_db => $core_db,
             %opts
-        );
+        };
+        $self->{jbrowse_tools}->track_from_annotation(%$args);
+
+        push @feature_track_configs,
+          feature_track_config( $feature_track->{trackLabel} )
+          if $self->{jbrowse_tools}->track_present(%$args);
     }
 
     $self->{jbrowse_tools}->index_names( core_db => $core_db, %opts );
@@ -132,11 +192,12 @@ sub make_all {
       ProductionMysql->staging->meta_value( $core_db, "assembly.name" );
     my ( $attribute_query_order, $location_per_run_id, @rnaseq_tracks ) =
       $self->{rnaseq_tracks}->get( $core_db, $assembly );
+    my @rnaseq_track_configs;
     for my $rnaseq_track (@rnaseq_tracks) {
         my $run_id = $rnaseq_track->{run_id};
         my $url    = GenomeBrowser::Deployment::sync_ebi_to_sanger( $run_id,
             $location_per_run_id->{$run_id}, %opts );
-        push @track_configs,
+        push @rnaseq_track_configs,
           {
             %$TRACK_STANZA,
             urlTemplate => $url,
@@ -152,12 +213,19 @@ sub make_all {
         $config{defaultTracks} = "DNA,Gene_Models";
     }
     else {
-        #All local tracks on by default
+        #Default track selector
+        #All local tracks on
         $config{defaultTracks} = join ",", "DNA",
-          map { my $m = $_->{'trackLabel'}; $m =~ s/\s/_/g; $m } @$local_tracks;
+          map { my $m = $_->{'trackLabel'}; $m =~ s/\s/_/g; $m }
+          @$feature_tracks;
     }
-    $config{tracks}      = \@track_configs;
-    $config{containerID} = "WBPS$ENV{PARASITE_VERSION}_$species";
+
+    $config{tracks} = [
+        $sequence_track_config, $genes_track_config,
+        @feature_track_configs, @rnaseq_track_configs
+    ];
+    $config{containerID} =
+      "WBPS$ENV{PARASITE_VERSION}_${species}_" . scalar( @{ $config{tracks} } );
     return $self->{jbrowse_tools}
       ->update_config( core_db => $core_db, new_config => \%config );
 }
