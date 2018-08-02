@@ -871,7 +871,7 @@ sub get_IsoSeq_BEST {
    (
      method			=> "BLAT_IsoSeq_BEST",
      gff_source			=> "BLAT_IsoSeq_BEST",
-     gff_type			=> "expressed_sequence_match",
+     gff_type			=> "similarity",
      ID_after			=> "Target\\s+\"Sequence:",
      reverse_orientation        => 1,
      homology                   => 1,
