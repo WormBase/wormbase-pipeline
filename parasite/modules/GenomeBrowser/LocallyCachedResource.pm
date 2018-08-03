@@ -14,7 +14,7 @@ sub new {
 
     YAML::DumpFile($path_to_local_copy, 
        $class->_fetch($species, @other_args)
-    ) unless -f $path_to_local_copy;
+    ) unless -s $path_to_local_copy;
 
     return bless YAML::LoadFile($path_to_local_copy), $class;
 }
