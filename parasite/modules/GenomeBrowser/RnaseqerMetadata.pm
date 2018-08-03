@@ -74,6 +74,8 @@ sub _normalise_characteristics {
   $type =~ s/dev_stage/developmental_stage/;
   $type =~ s/development_stage/developmental_stage/;
 
+  $type =~ s/time_point/timepoint/;
+
   $value =~s/^not applicable.*$//i;
   $value =~s/^unknown$//i;
   $value =~s/^N\\?A$//i;

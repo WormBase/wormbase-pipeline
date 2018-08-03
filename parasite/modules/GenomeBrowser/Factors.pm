@@ -35,7 +35,8 @@ my @blacklist = (
   "block",
   "zone", #schmidtea mediterranea
   "repplicate",
-  "in_house_sample_code"
+  "in_house_sample_code",
+  "collected_by",
 );
 sub not_in_blacklist {
   return not(shift ~~ @blacklist);
