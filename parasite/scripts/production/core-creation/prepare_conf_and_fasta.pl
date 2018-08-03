@@ -59,6 +59,7 @@ print Dump (YAML::LoadFile($conf_path));
 __DATA__
 ---
 taxon_id: ?
+# Should have format: GCA_[0-9]+.[0-9]
 assembly_version: ?
 #look through the GFF's source column. worm_lite.pl will ignore things not mentioned here.
 gff_sources: ?
