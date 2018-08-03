@@ -1,5 +1,0 @@
-WormBase,WormBase_imported	gene,mRNA,exon,CDS,five_prime_UTR,three_prime_UTR,tRNA,rRNA,pseudogene,tRNA_pseudogene,antisense_RNA,lincRNA,miRNA,miRNA_primary_transcript,mRNA,piRNA,pre_miRNA,pseudogenic_rRNA,pseudogenic_transcript,pseudogenic_tRNA,scRNA,snoRNA,snRNA,ncRNA	Genome Annotation	Gene Models	CanvasFeatures
-ncrnas_predicted	nucleotide_match	Genome Annotation	Predicted non-coding RNA (ncRNA)	FeatureTrack
-RepeatMasker	repeat_region	Repeat Regions	Repeat Region	FeatureTrack
-dust	low_complexity_region	Repeat Regions	Low Complexity Region (Dust)	FeatureTrack
-tandem	tandem_repeat	Repeat Regions	Tandem Repeat (TRFs)	FeatureTrack
