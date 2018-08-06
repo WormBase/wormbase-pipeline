@@ -3,7 +3,7 @@ package GenomeBrowser::Resources;
 
 use GenomeBrowser::ArrayExpressMetadata;
 use GenomeBrowser::RnaseqerMetadata;
-use GenomeBrowser::Studies;
+use GenomeBrowser::StudyAttributes;
 use GenomeBrowser::Links;
 use GenomeBrowser::Factors;
 use GenomeBrowser::RnaseqerStats;
@@ -21,13 +21,13 @@ sub get {
   my ($spe, $cies, $bioproject) = split "_", $species;
   my $rnaseqer_metadata = GenomeBrowser::RnaseqerMetadata->new($root_dir, "${spe}_${cies}");
   my $array_express_metadata = GenomeBrowser::ArrayExpressMetadata->new($root_dir, "${spe}_${cies}");
-  my $studies = GenomeBrowser::Studies->new($root_dir, "${spe}_${cies}", $assembly, $rnaseqer_metadata); 
+  my $study_attributes = GenomeBrowser::StudyAttributes->new($root_dir, "${spe}_${cies}", $assembly, $rnaseqer_metadata); 
   my $links = GenomeBrowser::Links->new($root_dir, "${spe}_${cies}", $assembly, $rnaseqer_metadata);
   my $rnaseqer_stats = GenomeBrowser::RnaseqerStats->new($root_dir, "${spe}_${cies}", $assembly, $rnaseqer_metadata); 
   my $factors = GenomeBrowser::Factors->new($root_dir, "${spe}_${cies}", $assembly, $rnaseqer_metadata, $array_express_metadata);
-  my @tracks;
+  my @studies;
   for my $study_id (@{$rnaseqer_metadata->access($assembly)}){
-    my $study = $studies->{$study_id};
+    my @runs;
     for my $run_id (@{$rnaseqer_metadata->access($assembly, $study_id)}){
        my $stats = $rnaseqer_stats->get_formatted_stats($run_id);
        my $links_to_this_run = $links->{$run_id};
@@ -35,15 +35,20 @@ sub get {
        for my $characteristic_type (@{$rnaseqer_metadata->access($assembly, $study_id, $run_id)}){
          $attributes{$characteristic_type} = $rnaseqer_metadata->access($assembly, $study_id, $run_id, $characteristic_type);
        }
-       push @tracks, {
+       push @runs, {
           run_id => $run_id,
-          attributes => {%$study, %$stats, %$links_to_this_run, %attributes},
+          attributes => {%$stats, %$links_to_this_run, %attributes},
           label => 
             &_label($run_id, &_restrict_sample_name($cies, $attributes{sample_name}),  map {exists $attributes{$_} ? $attributes{$_}: ()} @$factors),
        };
     }
+    push @studies, {
+      study_id => $study_id,
+      runs => \@runs,
+      attributes => $study_attributes->{$study_id},
+    };
   }
-  return $factors, $rnaseqer_metadata->{location_per_run_id}, @tracks;
+  return $factors, $rnaseqer_metadata->{location_per_run_id}, @studies;
 }
 sub _restrict_sample_name {
   my ($cies, $sample_name) = @_;

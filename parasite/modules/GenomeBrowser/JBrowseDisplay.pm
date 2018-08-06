@@ -189,21 +189,23 @@ sub make_all {
 
     my $assembly =
       ProductionMysql->staging->meta_value( $core_db, "assembly.name" );
-    my ( $attribute_query_order, $location_per_run_id, @resources ) =
+    my ( $attribute_query_order, $location_per_run_id, @studies ) =
       $self->{resources}->get( $core_db, $assembly );
     my @rnaseq_track_configs;
-    for my $rnaseq_track (@resources) {
-        my $run_id = $rnaseq_track->{run_id};
-        my $url    = GenomeBrowser::Deployment::sync_ebi_to_sanger( $run_id,
-            $location_per_run_id->{$run_id}, %opts );
-        push @rnaseq_track_configs,
-          {
-            %$TRACK_STANZA,
-            urlTemplate => $url,
-            key         => $rnaseq_track->{label},
-            label       => "RNASeq/$run_id",
-            metadata    => $rnaseq_track->{attributes}
-          };
+    for my $study (@studies) {
+        for my $run ($study->{runs}) {
+          my $run_id = $run->{run_id};
+          my $url    = GenomeBrowser::Deployment::sync_ebi_to_sanger( $run_id,
+              $location_per_run_id->{$run_id}, %opts );
+          push @rnaseq_track_configs,
+            {
+              %$TRACK_STANZA,
+              urlTemplate => $url,
+              key         => $run->{label},
+              label       => "RNASeq/$run_id",
+              metadata    => {%{$study->{attributes}}, %{$run->{attributes}}}
+            };
+        }
     }
 
     my %config = %$CONFIG_STANZA;
