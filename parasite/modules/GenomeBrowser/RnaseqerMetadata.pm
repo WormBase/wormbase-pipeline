@@ -73,7 +73,19 @@ sub _normalise_characteristics {
   $type =~ s/life_cycle_stage/developmental_stage/;
   $type =~ s/dev_stage/developmental_stage/;
   $type =~ s/development_stage/developmental_stage/;
-
+  if( $type eq "developmental_stage"){
+     $value =~ s/^ADULT$/adult/;
+     $value =~ s/^Adult$/adult/;
+  }
+  if($type eq "organism_part" ){
+     $value = lc($value);
+#http://purl.obolibrary.org/obo/UBERON_0000468
+     $value =~ s/^whole$/whole organism/;
+     $value =~ s/^whole body$/whole organism/;
+     $value =~ s/^whole ?-?_?worms?$/whole organism/;
+     $value =~ s/^whole ?-?_?organisi?m$/whole organism/;
+     $value =~ s/^whole ?-?_?animal$/whole organism/;
+  }
   $type =~ s/time_point/timepoint/;
 
   $value =~s/^not applicable.*$//i;
