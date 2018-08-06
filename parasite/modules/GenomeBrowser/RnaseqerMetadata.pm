@@ -77,14 +77,16 @@ sub _normalise_characteristics {
      $value =~ s/^ADULT$/adult/;
      $value =~ s/^Adult$/adult/;
   }
+  $type =~ s/^tissue$/organism_part/;
   if($type eq "organism_part" ){
      $value = lc($value);
 #http://purl.obolibrary.org/obo/UBERON_0000468
      $value =~ s/^whole$/whole organism/;
      $value =~ s/^whole body$/whole organism/;
-     $value =~ s/^whole ?-?_?worms?$/whole organism/;
+     $value =~ s/^whole ?-?_?worms? ?-?_?(tissue)?$/whole organism/;
      $value =~ s/^whole ?-?_?organisi?m$/whole organism/;
-     $value =~ s/^whole ?-?_?animal$/whole organism/;
+     $value =~ s/^whole ?-?_?animals?$/whole organism/;
+     $value =~ s/^intact ?-?_?animals?$/whole organism/;
   }
   $type =~ s/time_point/timepoint/;
 

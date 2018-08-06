@@ -37,6 +37,9 @@ my @blacklist = (
   "repplicate",
   "in_house_sample_code",
   "collected_by",
+  "biomaterial_provider",
+  "description_title",
+  "treatment_sources",
 );
 sub not_in_blacklist {
   return not(shift ~~ @blacklist);
