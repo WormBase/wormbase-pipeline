@@ -1,5 +1,5 @@
 
-package GenomeBrowser::Tracks;
+package GenomeBrowser::JBrowseDisplay;
 use strict;
 use Carp;
 use File::Path qw(make_path);
@@ -16,7 +16,6 @@ use ProductionMysql;
 # input parameters:
 #  - where to construct the folder
 #  - corresponding data production location
-
 sub new {
     my ( $class, %args ) = @_;
 

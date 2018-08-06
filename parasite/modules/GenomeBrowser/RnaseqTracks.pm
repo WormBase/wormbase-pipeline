@@ -8,6 +8,10 @@ use GenomeBrowser::Links;
 use GenomeBrowser::Factors;
 use GenomeBrowser::RnaseqerStats;
 # TODO: Be able to create hub.txt from this
+# Structure the returned data as study->run
+# The client code can squash the study and run code if it likes to
+# Let them have short/long label
+# Needs a new name, too! Maybe: Properties?
 sub new {
   my ($class, $root_dir) = @_;
   bless {root_dir => $root_dir}, $class; 
