@@ -26,7 +26,7 @@ sub new {
 
     make_path "$args{root_dir}/out";
     make_path "$args{root_dir}/JBrowseTools";
-    make_path "$args{root_dir}/RnaseqTracks";
+    make_path "$args{root_dir}/Resources";
     return bless {
         dir           => "$args{root_dir}/out",
         jbrowse_tools => GenomeBrowser::JBrowseTools->new(
@@ -38,7 +38,7 @@ sub new {
             : SpeciesFtp->current_staging,
         ),
         resources =>
-          GenomeBrowser::Resources->new("$args{root_dir}/RnaseqTracks"),
+          GenomeBrowser::Resources->new("$args{root_dir}/Resources"),
     }, $class;
 }
 
@@ -201,7 +201,7 @@ sub make_all {
             {
               %$TRACK_STANZA,
               urlTemplate => $url,
-              key         => $run->{label},
+              key         => $run->{run_description},
               label       => "RNASeq/$run_id",
               metadata    => {%{$study->{attributes}}, %{$run->{attributes}}}
             };

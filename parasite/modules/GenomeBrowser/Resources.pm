@@ -38,13 +38,14 @@ sub get {
        push @runs, {
           run_id => $run_id,
           attributes => {%$stats, %$links_to_this_run, %attributes},
-          label => 
-            &_label($run_id, &_restrict_sample_name($cies, $attributes{sample_name}),  map {exists $attributes{$_} ? $attributes{$_}: ()} @$factors),
+          run_description => 
+            &_run_description($run_id, &_restrict_sample_name($cies, $attributes{sample_name}),  map {exists $attributes{$_} ? $attributes{$_}: ()} @$factors),
        };
     }
     push @studies, {
       study_id => $study_id,
       runs => \@runs,
+      study_description => &_study_description(%$study_attributes),
       attributes => $study_attributes->{$study_id},
     };
   }
@@ -64,11 +65,11 @@ sub _sample_name_seems_good_enough {
   my @ws = split /\W+/, $sample_name;
   return ($sample_name and length ($sample_name) > 10 and @ws > 1);
 }
-sub _label {
+sub _run_description {
   my ($run_id,$sample_name, @factor_values) = @_;
 
   my $description;
-  if(_sample_name_seems_good_enough($sample_name)){
+  if(&_sample_name_seems_good_enough($sample_name)){
     @factor_values = grep (!/^[A-Z]+[0-9]+$/, @factor_values);
     $description = $sample_name;
   } else {
@@ -76,5 +77,9 @@ sub _label {
     $description = join(", ", @factor_values);
   }
   return $description ? "$run_id: $description" : $run_id;
+}
+sub _study_description {
+  my (%study_attributes) = @_;
+  return ( $study_attributes{"Study description"} || $study_attributes{study} || $study_attributes{study_id}); 
 }
 1;
