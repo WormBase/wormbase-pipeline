@@ -7,7 +7,7 @@ use File::Slurp qw(write_file);
 use JSON;
 use SpeciesFtp;
 use GenomeBrowser::JBrowseTools;
-use GenomeBrowser::RnaseqTracks;
+use GenomeBrowser::Resources;
 use GenomeBrowser::Deployment;
 use ProductionMysql;
 
@@ -37,8 +37,8 @@ sub new {
             ? SpeciesFtp->new( $args{ftp_path} )
             : SpeciesFtp->current_staging,
         ),
-        rnaseq_tracks =>
-          GenomeBrowser::RnaseqTracks->new("$args{root_dir}/RnaseqTracks"),
+        resources =>
+          GenomeBrowser::Resources->new("$args{root_dir}/RnaseqTracks"),
     }, $class;
 }
 
@@ -189,10 +189,10 @@ sub make_all {
 
     my $assembly =
       ProductionMysql->staging->meta_value( $core_db, "assembly.name" );
-    my ( $attribute_query_order, $location_per_run_id, @rnaseq_tracks ) =
-      $self->{rnaseq_tracks}->get( $core_db, $assembly );
+    my ( $attribute_query_order, $location_per_run_id, @resources ) =
+      $self->{resources}->get( $core_db, $assembly );
     my @rnaseq_track_configs;
-    for my $rnaseq_track (@rnaseq_tracks) {
+    for my $rnaseq_track (@resources) {
         my $run_id = $rnaseq_track->{run_id};
         my $url    = GenomeBrowser::Deployment::sync_ebi_to_sanger( $run_id,
             $location_per_run_id->{$run_id}, %opts );
@@ -207,7 +207,7 @@ sub make_all {
     }
 
     my %config = %$CONFIG_STANZA;
-    if (@rnaseq_tracks) {
+    if (@resources) {
         $config{trackSelector} = $self->track_selector(@$attribute_query_order);
         $config{defaultTracks} = "DNA,Gene_Models";
     }
