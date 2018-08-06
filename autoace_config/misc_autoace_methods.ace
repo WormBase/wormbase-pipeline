@@ -1517,7 +1517,7 @@ GFF_feature      "expressed_sequence_match"
 GFF_SO   "SO:0000102"
 
 Method : "BLAT_IsoSeq_BEST" 
-Colour PALEVIOLET
+Colour PALEGREEN
 Show_up_strand
 Score_by_width
 Score_bounds 50.000000 100.000000
