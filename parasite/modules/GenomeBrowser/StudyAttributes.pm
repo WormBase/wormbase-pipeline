@@ -51,7 +51,7 @@ sub _properties_for_study_from_ena_payload {
     
     my @pubmed_refs;
     for my $study_link (@{ $payload->{STUDY}{STUDY_LINKS}{STUDY_LINK} }){
-       if($study_link->{XREF_LINK}{DB} eq 'PUBMED') {
+       if(uc($study_link->{XREF_LINK}{DB}) eq 'PUBMED') {
           push @pubmed_refs, $study_link->{XREF_LINK}{ID};
        } elsif ($study_link->{URL_LINK}{LABEL} and $study_link->{URL_LINK}{URL}){
           my ($k, $v) = _url_link($study_link->{URL_LINK}{LABEL}, $study_link->{URL_LINK}{URL});
