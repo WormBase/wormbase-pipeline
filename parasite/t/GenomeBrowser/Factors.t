@@ -75,6 +75,17 @@ studies_grouped_by_factor_as_expected(
 studies_grouped_by_factor_as_expected(
     {
         study => {
+            run   => { "type" => "value", "type_2"=>"value_2" },
+            run_2 => { "type" => "value_3" , "type_2"=>"value_4" }
+        }
+    },
+    {"study"=>["type", "type 2 that got renamed by AE"]},
+    ["type", "type_2"],
+    "Two types two runs do not use AE if they renamed values"
+);
+studies_grouped_by_factor_as_expected(
+    {
+        study => {
             run   => { "type" => "value", "common_type"=>"common_value" },
             run_2 => { "type" => "value_2" , "common_type"=>"common_value" }
         }

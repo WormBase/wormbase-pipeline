@@ -1,6 +1,6 @@
 
 package GenomeBrowser::Factors;
-use List::Util qw(sum);
+use List::Util qw(sum all);
 use List::MoreUtils qw(uniq);
 use parent GenomeBrowser::LocallyCachedResource;
 
@@ -64,9 +64,8 @@ sub _fetch {
     my @factors;
     my @ae_factors =
       @{ $array_express_metadata->factor_types($study_id) // [] };
-    if (@ae_factors) {
-      @factors =
-        grep { exists $rnaseqer_characteristics{$_} } @ae_factors;
+    if (@ae_factors and all { exists $rnaseqer_characteristics{$_} } @ae_factors) {
+      @factors = @ae_factors;
     }
     else {
       for ( keys %rnaseqer_characteristics ) {
