@@ -21,13 +21,13 @@ sub get {
   my ($spe, $cies, $bioproject) = split "_", $species;
   my $rnaseqer_metadata = GenomeBrowser::RnaseqerMetadata->new($root_dir, "${spe}_${cies}");
   my $array_express_metadata = GenomeBrowser::ArrayExpressMetadata->new($root_dir, "${spe}_${cies}");
-  my $study_attributes = GenomeBrowser::StudyAttributes->new($root_dir, "${spe}_${cies}", $assembly, $rnaseqer_metadata); 
+  my $study_attributes = GenomeBrowser::StudyAttributes->new($root_dir, "${spe}_${cies}", $rnaseqer_metadata); 
   my $links = GenomeBrowser::Links->new($root_dir, "${spe}_${cies}", $assembly, $rnaseqer_metadata);
   my $rnaseqer_stats = GenomeBrowser::RnaseqerStats->new($root_dir, "${spe}_${cies}", $assembly, $rnaseqer_metadata); 
   my $factors = GenomeBrowser::Factors->new($root_dir, "${spe}_${cies}", $assembly, $rnaseqer_metadata, $array_express_metadata);
   my @studies;
   for my $study_id (@{$rnaseqer_metadata->access($assembly)}){
-    unless ($study_attributes->{$study_id}){
+    unless ($study_attributes->{$assembly}{$study_id}){
        print STDERR "Study $study_id not in ENA, skipping\n";
        next;
     }
@@ -50,7 +50,7 @@ sub get {
       study_id => $study_id,
       runs => \@runs,
       study_description => &_study_description(%$study_attributes),
-      attributes => $study_attributes->{$study_id},
+      attributes => $study_attributes->{$assembly}{$study_id},
     };
   }
   return $factors, $rnaseqer_metadata->{location_per_run_id}, @studies;

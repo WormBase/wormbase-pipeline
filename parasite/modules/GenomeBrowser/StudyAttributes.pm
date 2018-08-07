@@ -5,13 +5,15 @@ use List::MoreUtils qw(uniq);
 use parent GenomeBrowser::LocallyCachedResource;
 
 sub _fetch {
-    my ( $class, $species, $assembly, $rnaseqer_metadata ) = @_;
+    my ( $class, $species, $rnaseqer_metadata ) = @_;
     my %data;
-    for my $study_id ( @{ $rnaseqer_metadata->access($assembly) } ) {
-        $data{$study_id} = &_properties_for_study_from_ena_payload(
-            $class->get_xml(
-                "https://www.ebi.ac.uk/ena/data/view/$study_id&display=xml")
-        );
+    for my $assembly (@{ $rnaseqer_metadata->access}) {
+        for my $study_id ( @{ $rnaseqer_metadata->access($assembly) } ) {
+            $data{$assembly}{$study_id} = &_properties_for_study_from_ena_payload(
+                $class->get_xml(
+                    "https://www.ebi.ac.uk/ena/data/view/$study_id&display=xml")
+            );
+        }
     }
     return \%data;
 }
