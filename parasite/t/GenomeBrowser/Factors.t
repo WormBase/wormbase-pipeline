@@ -23,7 +23,7 @@ sub studies_grouped_by_factor_as_expected {
       'GenomeBrowser::ArrayExpressMetadata';
 
     my $subject =
-      GenomeBrowser::Factors->new( $root_dir, $species, $assembly, $mock_rm,
+      GenomeBrowser::Factors->new( $root_dir, $species, $mock_rm,
         $mock_aem );
     is_deeply( $subject, bless( $expected, 'GenomeBrowser::Factors' ),
         $description ) or diag explain $subject, $expected;

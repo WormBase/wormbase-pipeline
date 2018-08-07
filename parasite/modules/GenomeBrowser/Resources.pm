@@ -22,9 +22,9 @@ sub get {
   my $rnaseqer_metadata = GenomeBrowser::RnaseqerMetadata->new($root_dir, "${spe}_${cies}");
   my $array_express_metadata = GenomeBrowser::ArrayExpressMetadata->new($root_dir, "${spe}_${cies}");
   my $study_attributes = GenomeBrowser::StudyAttributes->new($root_dir, "${spe}_${cies}", $rnaseqer_metadata); 
-  my $links = GenomeBrowser::Links->new($root_dir, "${spe}_${cies}", $assembly, $rnaseqer_metadata);
-  my $rnaseqer_stats = GenomeBrowser::RnaseqerStats->new($root_dir, "${spe}_${cies}", $assembly, $rnaseqer_metadata); 
-  my $factors = GenomeBrowser::Factors->new($root_dir, "${spe}_${cies}", $assembly, $rnaseqer_metadata, $array_express_metadata);
+  my $links = GenomeBrowser::Links->new($root_dir, "${spe}_${cies}", $rnaseqer_metadata);
+  my $rnaseqer_stats = GenomeBrowser::RnaseqerStats->new($root_dir, "${spe}_${cies}", $rnaseqer_metadata); 
+  my $factors = GenomeBrowser::Factors->new($root_dir, "${spe}_${cies}", $rnaseqer_metadata, $array_express_metadata);
   my @studies;
   for my $study_id (@{$rnaseqer_metadata->access($assembly)}){
     unless ($study_attributes->{$assembly}{$study_id}){

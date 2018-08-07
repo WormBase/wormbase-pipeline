@@ -46,37 +46,38 @@ sub not_in_blacklist {
   return not(shift ~~ @blacklist);
 }
 sub _fetch {
-  my ( $class, $species, $assembly, $rnaseqer_metadata,
-    $array_express_metadata ) = @_;
+  my ( $class, $species, $rnaseqer_metadata, $array_express_metadata ) = @_;
   my %data;
-  for my $study_id ( @{ $rnaseqer_metadata->access($assembly) } ) {
-    my %rnaseqer_characteristics;
-    my @runs = @{ $rnaseqer_metadata->access( $assembly, $study_id ) };
-    for my $run (@runs) {
-      for my $characteristic_type (
-        @{ $rnaseqer_metadata->access( $assembly, $study_id, $run ) } )
-      {
-        $rnaseqer_characteristics{$characteristic_type}{
-          $rnaseqer_metadata->access( $assembly, $study_id, $run,
-            $characteristic_type )
-        }++;
+  for my $assembly ( @{ $rnaseqer_metadata->access } ) {
+    for my $study_id ( @{ $rnaseqer_metadata->access($assembly) } ) {
+      my %rnaseqer_characteristics;
+      my @runs = @{ $rnaseqer_metadata->access( $assembly, $study_id ) };
+      for my $run (@runs) {
+        for my $characteristic_type (
+          @{ $rnaseqer_metadata->access( $assembly, $study_id, $run ) } )
+        {
+          $rnaseqer_characteristics{$characteristic_type}{
+            $rnaseqer_metadata->access( $assembly, $study_id, $run,
+              $characteristic_type )
+          }++;
+        }
       }
-    }
-    my @factors;
-    my @ae_factors =
-      @{ $array_express_metadata->factor_types($study_id) // [] };
-    if (@ae_factors and all { exists $rnaseqer_characteristics{$_} } @ae_factors) {
-      @factors = @ae_factors;
-    }
-    else {
-      for ( keys %rnaseqer_characteristics ) {
-        my %d      = %{ $rnaseqer_characteristics{$_} };
-        my @values = keys %d;
-        my @counts = values %d;
-        push @factors, $_ if @values > 1 or sum(@counts) == 1;
+      my @factors;
+      my @ae_factors =
+        @{ $array_express_metadata->factor_types($study_id) // [] };
+      if (@ae_factors and all { exists $rnaseqer_characteristics{$_} } @ae_factors) {
+        @factors = @ae_factors;
       }
+      else {
+        for ( keys %rnaseqer_characteristics ) {
+          my %d      = %{ $rnaseqer_characteristics{$_} };
+          my @values = keys %d;
+          my @counts = values %d;
+          push @factors, $_ if @values > 1 or sum(@counts) == 1;
+        }
+      }
+      $data{$study_id} = \@factors;
     }
-    $data{$study_id} = \@factors;
   }
   my @result = map { @{$_} } ( values %data );
   @result = grep { not_in_blacklist($_) } @result;

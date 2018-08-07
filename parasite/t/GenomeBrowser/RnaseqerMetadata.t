@@ -32,6 +32,11 @@ is_deeply(
   "Get location from RNASeq-er"
 );
 is_deeply(
+  $subject->access,
+  ["ASM23792v2"],
+  "Assemblies",
+) or diag explain $subject;
+is_deeply(
    $subject->access("ASM23792v2"), 
    ["SRP026308"], 
    "Studies for assembly"

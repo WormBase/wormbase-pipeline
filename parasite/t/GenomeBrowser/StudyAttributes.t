@@ -30,10 +30,10 @@ my $rnaseqer_metadata = bless {
   }
 } , 'GenomeBrowser::RnaseqerMetadata';
 
-my $subject = GenomeBrowser::StudyAttributes->new($root_dir, $species, $assembly, $rnaseqer_metadata);
+my $subject = GenomeBrowser::StudyAttributes->new($root_dir, $species, $rnaseqer_metadata);
 is_deeply (
   $subject,
-  (bless {$study_id => {
+  (bless {$assembly => { $study_id => {
 #lowercase because it's a facet
      "study" => "ERP006623: Some RNA-seq reads form different developmental stages of the liver fluke Fasciola hepatica",
      "Study description" => "RNA was prepared from various stages of the liver fluke Fasciola hepatica by John Dalton's group and sequenced by Genome Quebec.",
@@ -41,7 +41,7 @@ is_deeply (
      "ArrayExpress" => '<a href="http://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-451">E-MTAB-451 in ArrayExpress</a>',
      "ENA first public" => "2014-12-31",
      "ENA last update" => "2016-04-19",
-  }}, 'GenomeBrowser::StudyAttributes'), "Get properties from ENA xml"
+  }}}, 'GenomeBrowser::StudyAttributes'), "Get properties from ENA xml"
 ) or diag explain $subject;
 
 is_deeply (

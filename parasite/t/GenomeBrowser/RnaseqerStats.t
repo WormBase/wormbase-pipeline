@@ -40,7 +40,7 @@ my $rnaseqer_metadata = bless {
   },
   'GenomeBrowser::RnaseqerMetadata';
 
-my $subject = GenomeBrowser::RnaseqerStats->new( $root_dir, $species, $assembly,
+my $subject = GenomeBrowser::RnaseqerStats->new( $root_dir, $species,
     $rnaseqer_metadata );
 is_deeply(
     $subject,

@@ -8,14 +8,16 @@ sub _link {
    return "<a href=\"$url\">$name</a>";
 }
 sub _fetch {
-    my ( $class, $species, $assembly, $rnaseqer_metadata ) = @_;
+    my ( $class, $species, $rnaseqer_metadata ) = @_;
     my %data;
-    for my $study_id ( @{ $rnaseqer_metadata->access($assembly) } ) {
-        for my $run_id (@{ $rnaseqer_metadata->access($assembly, $study_id)}) {
-            $data{$run_id}{"Mapping results"} =
-               _link($rnaseqer_metadata->data_location($run_id), "RNASeq-er processing directory: $run_id");
-            $data{$run_id}{"ENA study"} =
-               _link("http://www.ebi.ac.uk/ena/data/view/$study_id", "Study page: $study_id");
+    for my $assembly (@{ $rnaseqer_metadata->access}){
+        for my $study_id ( @{ $rnaseqer_metadata->access($assembly) } ) {
+            for my $run_id (@{ $rnaseqer_metadata->access($assembly, $study_id)}) {
+                $data{$run_id}{"Mapping results"} =
+                   _link($rnaseqer_metadata->data_location($run_id), "RNASeq-er processing directory: $run_id");
+                $data{$run_id}{"ENA study"} =
+                   _link("http://www.ebi.ac.uk/ena/data/view/$study_id", "Study page: $study_id");
+            }
         }
     }
     return \%data;
