@@ -169,6 +169,7 @@ _VGO_code	   -V
 _VSO_term	   -V
 _VDO_term          -V
 _VPATO_term        -V
+_VRO_term          -V
 _VPosition_Matrix  -V 
 _VWBProcess        -V
 _VDisease_model_annotation -V
