@@ -27,6 +27,10 @@ sub get {
   my $factors = GenomeBrowser::Factors->new($root_dir, "${spe}_${cies}", $assembly, $rnaseqer_metadata, $array_express_metadata);
   my @studies;
   for my $study_id (@{$rnaseqer_metadata->access($assembly)}){
+    unless ($study_attributes->{$study_id}){
+       print STDERR "Study $study_id not in ENA, skipping\n";
+       next;
+    }
     my @runs;
     for my $run_id (@{$rnaseqer_metadata->access($assembly, $study_id)}){
        my $stats = $rnaseqer_stats->get_formatted_stats($run_id);

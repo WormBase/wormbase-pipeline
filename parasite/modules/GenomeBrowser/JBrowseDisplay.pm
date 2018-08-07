@@ -193,7 +193,7 @@ sub make_all {
       $self->{resources}->get( $core_db, $assembly );
     my @rnaseq_track_configs;
     for my $study (@studies) {
-        for my $run ($study->{runs}) {
+        for my $run (@{$study->{runs}}) {
           my $run_id = $run->{run_id};
           my $url    = GenomeBrowser::Deployment::sync_ebi_to_sanger( $run_id,
               $location_per_run_id->{$run_id}, %opts );
@@ -209,7 +209,7 @@ sub make_all {
     }
 
     my %config = %$CONFIG_STANZA;
-    if (@resources) {
+    if (@rnaseq_track_configs) {
         $config{trackSelector} = $self->track_selector(@$attribute_query_order);
         $config{defaultTracks} = "DNA,Gene_Models";
     }

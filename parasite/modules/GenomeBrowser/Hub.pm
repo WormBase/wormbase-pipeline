@@ -158,8 +158,9 @@ sub create_trackDb {
 
 sub _study_intro {
     my $study = shift;
-    return sprintf "Study %s: %s\n", $study->{study_id},
-      $study->{study_description};
+    my $si = $study->{study_id};
+    my $sd = $study->{study_description};
+    return $sd ? "Study $si: $sd\n" : "Study $si\n"; 
 }
 
 #TODO I'm not sure where this gets displayed
@@ -173,8 +174,9 @@ sub create_run_doc {
     my ( $path, $study, $run ) = @_;
 
     my $result = &_study_intro($study);
-    $result = "<h4>$result</h4>";
-    $result .= sprintf "<h5>Run %s</h5>\n", $run->{run_description};
+    $result = "<b>$result</b>\n";
+    my $rd = $run->{run_description};
+    $result .= sprintf "<b>Run $rd</b>\n" if $rd; 
     $result .= "\n";
     for my $k ( sort keys $run->{attributes} ) {
         ( my $property_name = $k ) =~ s/_/ /g;
