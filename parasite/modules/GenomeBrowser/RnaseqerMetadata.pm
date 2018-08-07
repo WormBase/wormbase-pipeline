@@ -90,6 +90,10 @@ sub _normalise_type_and_value {
      $value =~ s/^whole ?-?_?animals?$/whole organism/;
      $value =~ s/^intact ?-?_?animals?$/whole organism/;
   }
+  if($type eq "host_disease"){
+     $value = lc($value);
+     $value =~ s/^schistosomiase$/schistosomiasis/;
+  }
   $type =~ s/time_point/timepoint/;
 
   $value =~s/^not applicable.*$//i;
