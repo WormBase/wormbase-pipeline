@@ -243,11 +243,13 @@ sub track_selector {
         displayColumns   => [ "key", @as ],
         selectableFacets => [
             "category",            "study",
+            "submitting_centre",
             "library_size_approx", "mapping_quality_approx",
             @as
         ],
         renameFacets => {
             study                  => "Study",
+            submitting_centre      => "Submitting centre",
             key                    => "Track",
             library_size_approx    => "Library size (reads)",
             mapping_quality_approx => "Mapping quality (reads uniquely mapped)",

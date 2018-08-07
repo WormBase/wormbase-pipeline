@@ -9,10 +9,19 @@ sub _fetch {
     my %data;
     for my $assembly (@{ $rnaseqer_metadata->access}) {
         for my $study_id ( @{ $rnaseqer_metadata->access($assembly) } ) {
-            $data{$assembly}{$study_id} = &_properties_for_study_from_ena_payload(
+            my $properties = &_properties_for_study_from_ena_study_xml(
                 $class->get_xml(
                     "https://www.ebi.ac.uk/ena/data/view/$study_id&display=xml")
             );
+            my $bioproject_id = $properties->{BioProject};
+            if($bioproject_id and not $properties->{submitting_centre}){
+              my $bioproject_properties = &_properties_for_study_from_ena_bioproject_xml(
+                    $class->get_xml("https://www.ebi.ac.uk/ena/data/view/$bioproject_id&display=xml")
+              );
+              $data{$assembly}{$study_id} = {%$properties, %$bioproject_properties};
+            } else {
+               $data{$assembly}{$study_id} = $properties; 
+            }
         }
     }
     return \%data;
@@ -35,7 +44,16 @@ sub _url_link {
 
    return ($property_name , "<a href=\"$url\">$label</a>");
 }
-sub _properties_for_study_from_ena_payload {
+sub _properties_for_study_from_ena_bioproject_xml {
+    my $payload = shift;
+    my $result = {};
+    return $result unless $payload;
+
+    my $submitting_centre = $payload->{PROJECT}{center_name};
+    $result->{submitting_centre} = $submitting_centre if $submitting_centre;
+    return $result;
+}
+sub _properties_for_study_from_ena_study_xml {
     my $payload = shift;
     return {} unless $payload;
     my $result = {
@@ -52,8 +70,19 @@ sub _properties_for_study_from_ena_payload {
     };
 
     $result->{submitting_centre} = $payload->{STUDY}{center_name} 
-       unless $payload->{STUDY}{broker_name};
-    
+       unless uc($payload->{STUDY}{broker_name}) eq 'NCBI';
+    my @bioprojects;
+    my $ids = $payload->{STUDY}{IDENTIFIERS}{EXTERNAL_ID};
+    # XML::Simple is being a bit too simple
+    # many ids -> array here: ERP016356
+    # one id -> hash here: SRP093920
+    my @ids = ref $ids eq 'ARRAY' ? @$ids : ref $ids eq 'HASH' ? ($ids) : ();
+    for my $identifier (@ids){
+       push @bioprojects, $identifier->{content} if uc($identifier->{namespace}) eq "BIOPROJECT"; 
+    }
+    my ($bp, @other_bioprojects) = @bioprojects;
+    die %$result if @other_bioprojects;
+    $result->{BioProject} = $bp if $bp;
     my @pubmed_refs;
     for my $study_link (@{ $payload->{STUDY}{STUDY_LINKS}{STUDY_LINK} }){
        if(uc($study_link->{XREF_LINK}{DB}) eq 'PUBMED') {

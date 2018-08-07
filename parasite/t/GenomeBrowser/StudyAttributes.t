@@ -38,7 +38,15 @@ my $imported_study_str = <<EOF;
 </ROOT>
 EOF
 my $imported_study_xml = XMLin($imported_study_str);
-
+my $bioproject_id = "PRJNA417697"; 
+my $bioproject_str = <<EOF;
+<?xml version="1.0" encoding="UTF-8"?>
+<ROOT request="PRJNA417697&amp;display=xml">
+<PROJECT accession="PRJNA417697" center_name="Pharmacology, UT Southwestern" alias="PRJNA417697">
+</PROJECT>
+</ROOT>
+EOF
+my $bioproject_xml = XMLin($bioproject_str);
 $module->mock(
     'get_xml',
     sub {
@@ -48,6 +56,9 @@ $module->mock(
         }
         elsif ( $url =~ /$imported_study_id/ ) {
             return $imported_study_xml;
+        }
+        elsif ($url =~ /$bioproject_id/ ) {
+            return $bioproject_xml;
         }
         else {
             return undef;
@@ -93,7 +104,9 @@ is_deeply(
                 'SRP124650' => {
                     'ENA first public' => '2017-11-30',
                     'ENA last update'  => '2017-11-30',
-                    'study'            => 'SRP124650'
+                    'study'            => 'SRP124650',
+                    'BioProject' => $bioproject_id,
+                    'submitting_centre' => "Pharmacology, UT Southwestern",
                 }
             }
         },
