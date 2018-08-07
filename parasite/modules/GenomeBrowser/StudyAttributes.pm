@@ -21,7 +21,7 @@ sub _clean_messy_text {
    my $name = shift;
    $name =~s/_+/ /g if scalar(split " ", $name) == 1;
    $name = ucfirst(lc($name)) if $name eq uc($name);
-   return $name;
+   return $name ? $name : ();
 }
 sub _pubmed_link {
     my $id = shift;
@@ -50,6 +50,9 @@ sub _properties_for_study_from_ena_payload {
             map { $_->{TAG} eq 'ENA-LAST-UPDATE' ? $_->{VALUE} : () }
               @{ $payload->{STUDY}{STUDY_ATTRIBUTES}{STUDY_ATTRIBUTE} } ),
     };
+
+    $result->{submitting_centre} = $payload->{STUDY}{center_name} 
+       unless $payload->{STUDY}{broker_name};
     
     my @pubmed_refs;
     for my $study_link (@{ $payload->{STUDY}{STUDY_LINKS}{STUDY_LINK} }){
