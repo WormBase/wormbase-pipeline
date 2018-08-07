@@ -35,9 +35,10 @@ sub _fetch {
      for my $attribute_record (@{ 
        $class->_get_rnaseqer_sample_attributes_per_run_for_study($study_id)
      }){
-       my ($type, $value) = _normalise_characteristics($attribute_record->{TYPE}, $attribute_record->{VALUE});
+       my ($type, $value) = _normalise_type_and_value($attribute_record->{TYPE}, $attribute_record->{VALUE});
        $run_attributes{$attribute_record->{RUN_ID}}{$type} = $value if $type and $value;
      }
+     $run_attributes{$attribute_record->{RUN_ID}} = _normalise_characteristics_hash($run_attributes{$attribute_record->{RUN_ID}});
   }
   my %data;
   for my $run_record (@$run_records){
@@ -57,7 +58,7 @@ sub _fetch {
   }
   return {metadata => \%data, location_per_run_id => \%location_per_run_id};
 }
-sub _normalise_characteristics {
+sub _normalise_type_and_value {
   my ($type, $value) = @_;
 
   $type = lc($type);
@@ -76,6 +77,7 @@ sub _normalise_characteristics {
   if( $type eq "developmental_stage"){
      $value =~ s/^ADULT$/adult/;
      $value =~ s/^Adult$/adult/;
+     $value =~ s/^adult worms?$/adult/;
   }
   $type =~ s/^tissue$/organism_part/;
   if($type eq "organism_part" ){
@@ -98,6 +100,27 @@ sub _normalise_characteristics {
   return $type, $value;
 }
 
+# Pretends to be referentially transparent
+sub _normalise_characteristics_hash {
+  my $o = shift;
+  if(not $o->{sex} and $o->{developmental_stage} =~ /^adult ?-?_?males?$/){
+     $o->{sex} = "male";
+     $o->{developmental_stage} = "adult";
+  }
+  if(not $o->{sex} and $o->{developmental_stage} =~ /^adult ?-?_?females?$/){
+     $o->{sex} = "female";
+     $o->{developmental_stage} = "adult";
+  }
+  if(not $o->{sex} and $o->{organism_part} =~ /^whole ?-?_?males?$/){
+     $o->{sex} = "male";
+     $o->{organism_part} = "whole organism";
+  }
+  if(not $o->{sex} and $o->{organism_part} =~ /^whole ?-?_?females?$/){
+     $o->{sex} = "female";
+     $o->{organism_part} = "whole organism";
+  }
+  return $o;
+}
 sub _get_rnaseqer_json {
   my $class = shift;
   return $class->get_json(

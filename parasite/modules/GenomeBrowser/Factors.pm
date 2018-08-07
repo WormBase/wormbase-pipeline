@@ -40,6 +40,7 @@ my @blacklist = (
   "biomaterial_provider",
   "description_title",
   "treatment_sources",
+  "population",
 );
 sub not_in_blacklist {
   return not(shift ~~ @blacklist);
