@@ -121,7 +121,7 @@ sub check             { my $self = shift; return $self->{'check'}; }
 
     Title   :   read_accession
     Usage   :   $data = $self->read_accession($accession);
-    Function:   Returns data about the runs in a run, experiment or study by their accession by querying the ENA
+    Function:   Returns data about the runs in a study by their accession by querying the ENA
     Returns :   ref to hash of hash: primary keys are the run accessions, secondary are types of information about each run
     Args    :   Accession ID
 
@@ -277,6 +277,49 @@ sub get_pubmed {
   close(DATA);
 
   return %pubmed;
+}
+
+=head2 
+
+    Title   :   get_GEO_pubmed
+    Usage   :   $pubmed_id = $self->get_GEO_pubmed($study);
+    Function:   given a Sudy ID, get the PubMed ID from GEO
+    Returns :   Pubmed ID
+    Args    :   
+
+Go to GEO and get the GEO integer ID for the Study accession
+Then use the integer ID to pull out the Study data and extract the Pubmed ID from the XML.
+
+=cut
+
+
+sub get_GEO_pubmed {
+  my ($self, $study_accession) = @_;
+
+  #assemble the esearch URL
+  my $base = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/';
+  my $url = $base . "esearch.fcgi?db=gds&term=${study_accession}[accn]&usehistory=y";
+  
+  open (DATA, "wget -q -O - '$url' |") || die("RNASeq: Can't get information on PubMed in get_GEO_pubmed()\n");
+
+  my $web;
+  my $key;
+  while (my $line = <DATA>) {
+    #parse WebEnv and QueryKey
+    $web = $1 if ($line =~ /<WebEnv>(\S+)<\/WebEnv>/);
+    $key = $1 if ($line =~ /<QueryKey>(\d+)<\/QueryKey>/);
+  }
+
+  ### include this code for ESearch-ESummary
+  #assemble the esummary URL
+  $url = $base . "esummary.fcgi?db=gds&query_key=$key&WebEnv=$web";
+
+  my $study_docs = `wget -q -O - '$url'`;
+
+  # get the pubmed ID
+  my $pubmed = $1 if ($study_docs =~ /Item Name=\"PubMedIds\" Type=\"List\">\s+<Item Name=\"int\" Type=\"Integer\">(\d+)<\/Item>/);
+
+  return $pubmed;
 }
 
 =head2 
@@ -747,6 +790,11 @@ sub add_one_new_experiment_to_config {
     if (exists $experiments->{$experiment_accession}{study_alias}) {
       my $study_alias = $experiments->{$experiment_accession}{study_alias};
       my $pubmed = $pubmed->{$study_alias};
+      if (!defined $pubmed) { # if we didn't get the Pubmed ID from ENA, try getting it from GEO and store it
+	$pubmed = $self->get_GEO_pubmed($study_alias);
+	$pubmed->{$study_alias} = $pubmed;
+      }
+
       if (defined $pubmed) {
 	$study_ini->newval($study_accession, 'pubmed', $pubmed);
 	my $wbpaper = $wbpaper->{$pubmed};
@@ -873,6 +921,11 @@ sub update_experiment_config_record {
   } elsif (exists $experiments->{$experiment_accession}{study_alias}) {
     my $study_alias = $experiments->{$experiment_accession}{study_alias};
     $pubmed_id = $pubmed->{$study_alias};
+    if (!defined $pubmed_id) { # if we didn't get the Pubmed ID from ENA, try getting it from GEO and store it
+      $pubmed_id = $self->get_GEO_pubmed($study_alias);
+      $pubmed->{$study_alias} = $pubmed_id;
+    }
+
     if (defined $pubmed_id) {
       $study_ini->newval($study_accession, 'pubmed', $pubmed_id);
       $changed_study = 1;
