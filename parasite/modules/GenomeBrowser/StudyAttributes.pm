@@ -70,7 +70,7 @@ sub _properties_for_study_from_ena_study_xml {
     };
 
     $result->{submitting_centre} = $payload->{STUDY}{center_name} 
-       unless uc($payload->{STUDY}{broker_name}) eq 'NCBI';
+       unless uc($payload->{STUDY}{broker_name}) eq 'NCBI' and length ($payload->{STUDY}{center_name}) < 10;
     my @bioprojects;
     my $ids = $payload->{STUDY}{IDENTIFIERS}{EXTERNAL_ID};
     # XML::Simple is being a bit too simple
@@ -78,7 +78,7 @@ sub _properties_for_study_from_ena_study_xml {
     # one id -> hash here: SRP093920
     my @ids = ref $ids eq 'ARRAY' ? @$ids : ref $ids eq 'HASH' ? ($ids) : ();
     for my $identifier (@ids){
-       push @bioprojects, $identifier->{content} if uc($identifier->{namespace}) eq "BIOPROJECT"; 
+       push @bioprojects, $identifier->{content} if uc($identifier->{namespace}) eq "BIOPROJECT" and $identifier->{label} eq "primary"; 
     }
     my ($bp, @other_bioprojects) = @bioprojects;
     die %$result if @other_bioprojects;
