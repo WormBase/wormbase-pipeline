@@ -40,7 +40,7 @@ sub path {
     return $result;
 }
 
-sub create_hub {
+sub make_hub {
     my ( $self, %opts ) = @_;
 
     make_path $self->path;
