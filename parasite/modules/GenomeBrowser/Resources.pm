@@ -70,7 +70,7 @@ sub _restrict_sample_name {
 sub _sample_name_seems_good_enough {
   my $sample_name = shift;
   my @ws = split /\W+/, $sample_name;
-  return ($sample_name and length ($sample_name) > 10 and @ws > 1);
+  return ($sample_name and length ($sample_name) > 10 and @ws > 1 and $sample_name !~ /private/);
 }
 sub _run_description {
   my ($run_id,$sample_name, @factor_values) = @_;

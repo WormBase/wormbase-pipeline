@@ -41,6 +41,7 @@ my @blacklist = (
   "description_title",
   "treatment_sources",
   "population",
+  "sample_name",
 );
 sub not_in_blacklist {
   return not(shift ~~ @blacklist);
