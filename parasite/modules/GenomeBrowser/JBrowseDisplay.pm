@@ -209,9 +209,13 @@ sub make_tracks {
             {
               %$TRACK_STANZA,
               urlTemplate => $url,
-              key         => $run->{run_description},
+              key         => $run->{run_description_full},
               label       => "RNASeq/$run_id",
-              metadata    => {%{$study->{attributes}}, %{$run->{attributes}}}
+              metadata    => {
+                 %{$study->{attributes}},
+                 %{$run->{attributes},
+                 run_description_short => $run->{run_description_short}}
+              }
             };
         }
     }
@@ -248,7 +252,7 @@ sub track_selector {
     }
     return {
         type             => "Faceted",
-        displayColumns   => [ "key", @as ],
+        displayColumns   => [ "run_description_short", @as ],
         selectableFacets => [
             "category",            "study",
             "submitting_centre",
@@ -258,7 +262,7 @@ sub track_selector {
         renameFacets => {
             study                  => "Study",
             submitting_centre      => "Submitting centre",
-            key                    => "Track",
+            run_description_short  => "Track",
             library_size_approx    => "Library size (reads)",
             mapping_quality_approx => "Mapping quality (reads uniquely mapped)",
             %pretty

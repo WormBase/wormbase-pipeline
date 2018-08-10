@@ -64,7 +64,7 @@ sub make_tsv {
         for my $run ( @{ $study->{runs} } ) {
             my $run_id = $run->{run_id};
             print $fh join ("\t",
-                 $study_id, $study->{attributes}{submitting_centre}, $run->{run_description},
+                 $study_id, $study->{attributes}{submitting_centre}, $run->{run_description_short},
                  $run->{attributes}{library_size_approx}, $run->{attributes}{mapping_quality_approx},
                  dirname($location_per_run_id->{$run_id}),
                  map {$run->{attributes}{$_} || '' } @$attribute_query_order

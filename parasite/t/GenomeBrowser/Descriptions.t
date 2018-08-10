@@ -7,9 +7,8 @@ my $run_id = "SRR1230321";
 my $default_long_desc = "$run_id: sample from Schistosoma mansoni";
 sub assert_run_description {
   my ($factors, $attributes, $curated, $expected_description_short, $expected_description_full, $desc) = @_;
-
    my ($description_short, $description_full) = GenomeBrowser::Descriptions->new(
-        {$species=>{$study_id=>$curated}})->run_description($species, $study_id, $run_id, $factors, $attributes);
+        $species, {$study_id=>$curated})->run_description($study_id, $run_id, $factors, $attributes);
    is_deeply($description_short, $expected_description_short, "description_short $desc");
    is_deeply($description_full, $expected_description_full, "description_full $desc");
 }

@@ -11,9 +11,10 @@ my $curated_descriptions_canned = {
 };
 
 sub new {
-  my ($class, $curated_descriptions) = @_;
+  my ($class, $species, $curated_descriptions) = @_;
   return bless {
-    curated => $curated_descriptions // $curated_descriptions_canned,
+    species => $species,
+    curated => $curated_descriptions || $curated_descriptions_canned->{$species},
   }, $class;
 }
 
@@ -48,26 +49,27 @@ sub run_description_from_factors {
   return [join (", ", @result_short), join (", ", @result_full)];
 }
 sub _get_run_description {
-   my ($self, $species, $study_id, $run_id, $factors, $attributes) = @_;
+   my ($self, $study_id, $run_id, $factors, $attributes) = @_;
    return (
-      $self->{curated}{$species}{$study_id}{$run_id}
-      or run_description_from_sample_name($species, $attributes->{sample_name})
+      $self->{curated}{$study_id}{$run_id}
+      or run_description_from_sample_name($self->{species}, $attributes->{sample_name})
       or run_description_from_factors($factors, $attributes)
       or ""
    );
 }
 sub run_description {
-   my ($self, $species, $study_id, $run_id, $factors, $attributes) = @_;
+   my ($self, $study_id, $run_id, $factors, $attributes) = @_;
    my $r = _get_run_description(@_);
    return map {"$run_id: $_"} @$r if ref $r eq 'ARRAY';
    return "$run_id: $r", "$run_id: $r", if $r;
+   my $species = $self->{species};
    $species =~ s/_/ /g;
    $species = ucfirst($species);
    return "$run_id", "$run_id: sample from $species";
 }
 # Do we also want to curate these?
 sub study_description {
-  my ($self, $species, $study_id, $study_attributes) = @_;
+  my ($self, $study_id, $study_attributes) = @_;
   return ( 
     $study_attributes->{"Study description"} 
     or $study_attributes->{study} 

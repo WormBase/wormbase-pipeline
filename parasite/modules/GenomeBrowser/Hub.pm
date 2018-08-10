@@ -109,7 +109,7 @@ sub create_for_species {
             my $url = GenomeBrowser::Deployment::sync_ebi_to_sanger( $run_id,
                 $location_per_run_id->{$run_id}, %opts );
             push @run_tracks,
-              &run_track( $study_id, $run_id, $run->{run_description}, $url );
+              &run_track( $study_id, $run_id, $run->{run_description_short}, $run->{run_description_full}, $url );
         }
     }
 
@@ -135,14 +135,14 @@ html doc/$study_id
 }
 
 sub run_track {
-    my ( $study_id, $run_id, $run_description, $url ) = @_;
+    my ( $study_id, $run_id, $run_description_short, $run_description_full, $url ) = @_;
     return (
         "track $run_id
 parent $study_id
 type bigWig
 bigDataUrl $url
-shortLabel $run_id
-longLabel $run_description
+shortLabel $run_description_short
+longLabel $run_description_full
 color 0,0,0
 html doc/$run_id
 visibility hide
