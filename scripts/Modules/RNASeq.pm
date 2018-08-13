@@ -162,7 +162,7 @@ sub read_accession {
 
   my $fields = join ',', @fields;
 
-  my $query = "http://www.ebi.ac.uk/ena/data/warehouse/filereport?accession=$accession&result=read_run&fields=$fields";
+  my $query = "https://www.ebi.ac.uk/ena/portal/api/filereport?accession=$accession&result=read_run&fields=$fields";
     
   open (DATA, "wget -q -O - '$query' |") || die("RNASeq: Can't get information on SRA entry $accession in read_accession()\n");
 
