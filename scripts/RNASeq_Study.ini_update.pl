@@ -64,15 +64,19 @@ my %updated_files;
 # %29 is )
 
 # To get all nematode and platyhelminth Studies:
-# http://www.ebi.ac.uk/ena/data/warehouse/search?query=%22tax_tree(6231)%20AND%20(library_strategy=%22RNA-Seq%22%22&domain=read
+# https://www.ebi.ac.uk/ena/portal/api/search?query=%22tax_tree(6231)%20AND%20library_strategy=%22RNA-Seq%22%22&domain=read&result=read_run
 # and
-# http://www.ebi.ac.uk/ena/data/warehouse/search?query=%22tax_tree(6157)%20AND%20library_strategy=%22RNA-Seq%22%22&domain=read
+# https://www.ebi.ac.uk/ena/portal/api/search?query=%22tax_tree(6157)%20AND%20library_strategy=%22RNA-Seq%22%22&domain=read&result=read_run
 
 # tabulated data is returned by:
-# http://www.ebi.ac.uk/ena/data/warehouse/search?query=<query string>&result=<result>&fields=<fields>&display=report[&sortfields=<sortfields>][&download=txt][Pagination options]
+# was the old interface: http://www.ebi.ac.uk/ena/data/warehouse/search?query=<query string>&result=<result>&fields=<fields>&display=report[&sortfields=<sortfields>][&download=txt][Pagination options]
+# 2018-08-13 changed the above to the ENA Discovery portal:
+#https://www.ebi.ac.uk/ena/portal/api/search?query=<query string>&result=<result>&fields=<fields>&display=report[&sortfields=<sortfields>][&download=txt][Pagination options]
 
 # So for all nematode species:
-# http://www.ebi.ac.uk/ena/data/warehouse/search?query=tax_tree(6231)%20AND%20library_strategy=%22RNA-Seq%22&result=read_run&fields=study_accession,secondary_study_accession,study_title,experiment_accession,library_source,library_selection,center_name,scientific_name,tax_id&display=report
+# was this old interface: http://www.ebi.ac.uk/ena/data/warehouse/search?query=tax_tree(6231)%20AND%20library_strategy=%22RNA-Seq%22&result=read_run&fields=study_accession,secondary_study_accession,study_title,experiment_accession,library_source,library_selection,center_name,scientific_name,tax_id&display=report
+# 2018-08-13 changed the above to the ENA Discovery portal:
+#https://www.ebi.ac.uk/ena/portal/api/search?query=tax_tree(6231)%20AND%20library_strategy=%22RNA-Seq%22&result=read_run&fields=study_accession,secondary_study_accession,study_title,experiment_accession,library_source,library_selection,center_name,scientific_name,tax_id&display=report
 
 my %species_files_seen; # keep track on which species have been pulled out of the ENA
 my %studies_not_seen; # note which studies have not been pulled out of the ENA
@@ -269,7 +273,7 @@ if ($report_stats) {
 sub get_phylup_data {
   my ($phylum) = @_;
   
-  my $query = 'http://www.ebi.ac.uk/ena/data/warehouse/search?query=tax_tree(PHYLUM)%20AND%20(library_strategy=%22RNA-Seq%22%20OR%20library_strategy=%22FL-cDNA%22%20OR%20library_strategy=%22EST%22)&result=read_run&fields=study_accession,secondary_study_accession,study_title,secondary_sample_accession,experiment_accession,library_source,library_selection,library_strategy,center_name,scientific_name,tax_id,library_layout&display=report';
+  my $query = 'https://www.ebi.ac.uk/ena/portal/api/search?query=tax_tree(PHYLUM)%20AND%20(library_strategy=%22RNA-Seq%22%20OR%20library_strategy=%22FL-cDNA%22%20OR%20library_strategy=%22EST%22)&result=read_run&fields=study_accession,secondary_study_accession,study_title,secondary_sample_accession,experiment_accession,library_source,library_selection,library_strategy,center_name,scientific_name,tax_id,library_layout&display=report';
   $query =~ s/PHYLUM/$phylum/;
   
   my %data;
@@ -316,7 +320,7 @@ sub get_phylup_data {
 sub get_study_description {
   my ($secondary_study_accession) = @_;
 
-  my $query = 'http://www.ebi.ac.uk/ena/data/warehouse/search?query=secondary_study_accession=SECONDARY_STUDY_ACCESSION&result=study&fields=study_description&display=report';
+  my $query = 'https://www.ebi.ac.uk/ena/portal/api/search?query=secondary_study_accession=SECONDARY_STUDY_ACCESSION&result=study&fields=study_description&display=report';
   $query =~ s/SECONDARY_STUDY_ACCESSION/$secondary_study_accession/;
   
   my $result;
