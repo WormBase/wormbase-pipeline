@@ -279,6 +279,7 @@ sub get_pubmed {
   return %pubmed;
 }
 
+
 =head2 
 
     Title   :   get_GEO_pubmed
@@ -318,6 +319,34 @@ sub get_GEO_pubmed {
 
   # get the pubmed ID
   my $pubmed = $1 if ($study_docs =~ /Item Name=\"PubMedIds\" Type=\"List\">\s+<Item Name=\"int\" Type=\"Integer\">(\d+)<\/Item>/);
+
+  return $pubmed;
+}
+
+
+=head2 
+
+    Title   :   get_ArrayExpress_pubmed
+    Usage   :   $pubmed_id = $self->get_ArrayExpress_pubmed($study);
+    Function:   given a Sudy ID, get the PubMed ID from ArrayExpress
+    Returns :   Pubmed ID
+    Args    :   
+
+Go to ArrayExpress and extract the Pubmed ID from the Study's XML.
+
+=cut
+
+
+sub get_ArrayExpress_pubmed {
+  my ($self, $study_accession) = @_;
+
+  my $base = 'https://www.ebi.ac.uk/arrayexpress/xml/v2/experiments';
+  my $url = $base . "?query=${study_accession}";
+  
+  my $data = `wget -q -O - "$url"`;
+
+  # get the pubmed ID
+  my $pubmed = $1 if ($data =~ /<bibliography>\s*<accession>(\d+)<\/accession>/);
 
   return $pubmed;
 }
@@ -794,6 +823,10 @@ sub add_one_new_experiment_to_config {
 	$pubmed = $self->get_GEO_pubmed($study_alias);
 	$pubmed->{$study_alias} = $pubmed;
       }
+      if (!defined $pubmed) { # if we didn't get the Pubmed ID from ENA, try getting it from ArrayExpress and store it
+	$pubmed = $self->get_ArrayExpress_pubmed($study_alias);
+	$pubmed->{$study_alias} = $pubmed;
+      }
 
       if (defined $pubmed) {
 	$study_ini->newval($study_accession, 'pubmed', $pubmed);
@@ -924,6 +957,10 @@ sub update_experiment_config_record {
     if (!defined $pubmed_id) { # if we didn't get the Pubmed ID from ENA, try getting it from GEO and store it
       $pubmed_id = $self->get_GEO_pubmed($study_alias);
       $pubmed->{$study_alias} = $pubmed_id;
+    }
+    if (!defined $pubmed) { # if we didn't get the Pubmed ID from ENA, try getting it from ArrayExpress and store it
+      $pubmed = $self->get_ArrayExpress_pubmed($study_alias);
+      $pubmed->{$study_alias} = $pubmed;
     }
 
     if (defined $pubmed_id) {
