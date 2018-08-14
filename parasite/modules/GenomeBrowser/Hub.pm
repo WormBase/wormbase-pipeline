@@ -152,7 +152,23 @@ sub create_study_doc {
     my $result = &_study_intro($study);
     write_file( $path, {binmode => ':utf8'}, $result );
 }
-
+my @blacklist = (
+ "bioproject_id",
+  "species",
+  "organism",
+  "sample_name",
+  "insdc_center_name",
+  "insdc_first_public",
+  "insdc_secondary_accession",
+  "insdc_status",
+  "insdc_last_update",
+  "package",
+  "ncbi_submission_model",
+  "ncbi_submission_package",
+  "geo_accession",
+  "library_size_reads_approximate",
+  "fraction_of_reads_mapping_uniquely_approximate",
+);
 sub create_run_doc {
     my ( $path, $study, $run ) = @_;
 
@@ -161,7 +177,7 @@ sub create_run_doc {
     $result .= sprintf "<b>Run $rd</b>\n" if $rd; 
     $result .= "\n";
     for my $k ( sort keys $run->{attributes} ) {
-        next if grep {$_ eq $k} qw/library_size_reads_approximate fraction_of_reads_mapping_uniquely_approximate sample_name/;
+        next if grep {$_ eq $k} @blacklist;
         ( my $property_name = $k ) =~ s/_/ /g;
         $property_name = ucfirst($property_name)
           if $property_name eq lc($property_name);
