@@ -156,9 +156,8 @@ sub create_study_doc {
 sub create_run_doc {
     my ( $path, $study, $run ) = @_;
 
-    my $result = &_study_intro($study);
-    $result = "<b>$result</b>\n";
-    my $rd = $run->{run_description};
+    my $rd = $run->{run_description_full};
+    my $result = "<table><th>$d</th>";
     $result .= sprintf "<b>Run $rd</b>\n" if $rd; 
     $result .= "\n";
     for my $k ( sort keys $run->{attributes} ) {
@@ -168,9 +167,9 @@ sub create_run_doc {
           if $property_name eq lc($property_name);
         $property_name = "Library size (reads)" if $k eq "library_size_reads";
         my $property_value = $run->{attributes}{$k};
-        $result .= sprintf "<b>%s</b>\t%s\n", $property_name, $property_value;
+        $result .= sprintf "<tr><td>%s</td><td>%s</td></tr>", $property_name, $property_value;
     }
-    $result =~ s/\n/<br>\n/g;
+    $result .= "</table>";
     write_file( $path, {binmode => ':utf8'}, $result );
 }
 1;
