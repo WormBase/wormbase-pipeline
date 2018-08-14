@@ -39,48 +39,32 @@ sub path {
     print "$result\n" if $ENV{HUB_VERBOSE};
     return $result;
 }
-
-sub make_hub {
+sub make_all {
     my ( $self, %opts ) = @_;
 
     make_path $self->path;
-    my @core_dbs_with_tracks;
 
-    my @genomes;
     for my $core_db ( ProductionMysql->staging->core_databases ) {
-        my $genome = $self->create_for_species( $core_db, %opts );
-        push @genomes, $genome if $genome;
+        $self->make_hub($core_db, %opts);
     }
-
-    &create_genomes_file( $self->path("genomes.txt"), @genomes );
-    &create_hub_file( $self->path("hub.txt") );
 }
 
 sub create_hub_file {
-    my ($path) = @_;
+    my ($path, $species) = @_;
+    my ($spe, $cies) = split "_", $species;
+    my $species_nice= ucfirst($spe)." ".$cies;
     write_file(
         $path,
-        'hub WBPS-RNASeq
+        "hub $species-RNASeq
 shortLabel RNA-Seq Alignments
-longLabel RNA-Seq Alignments for WormBase ParaSite
+longLabel $species_nice RNA-Seq Alignments for WormBase ParaSite
 genomesFile genomes.txt
-email parasite-help@sanger.ac.uk
-'
+email parasite-help\@sanger.ac.uk
+"
     );
 }
 
-sub create_genomes_file {
-    my ( $path, @genomes ) = @_;
-    open( my $fh, '>', $path ) or die $path;
-    for my $genome (@genomes) {
-        my $g = $genome->{genome};
-        my $t = $genome->{trackDb};
-        print $fh "genome $g\ntrackDb $t\n\n";
-    }
-    close $fh;
-}
-
-sub create_for_species {
+sub make_hub {
     my ( $self, $core_db, %opts ) = @_;
 
     my ( $spe, $cies, $bioproject ) = split "_", $core_db;
@@ -115,10 +99,9 @@ sub create_for_species {
 
     &create_trackDb( $self->path( $_Species, "trackDb.txt" ),
         @study_tracks, @run_tracks );
-    return {
-        genome  => $assembly,
-        trackDb => "$_Species/trackDb.txt"
-    };
+
+    write_file($self->path($_Species, "genomes.txt"), "genome $assembly\ntrackDb trackDb.txt\n");
+    &create_hub_file( $self->path($_Species, "hub.txt") , $species);
 }
 
 sub study_track {
