@@ -205,17 +205,22 @@ sub make_tracks {
           my $run_id = $run->{run_id};
           my $url    = GenomeBrowser::Deployment::sync_ebi_to_sanger( $run_id,
               $location_per_run_id->{$run_id}, %opts );
+          my $attributes = {
+             %{$study->{attributes}},
+             %{$run->{attributes}},
+             track => $run->{run_description_short}
+          };
+# We don't want both exact and approximate values to show, but we need the approximate values for facets
+# So, delete exact values ( I don't know how to stop JBrowse from displaying some values) 
+          delete $attributes->{library_size_reads};
+          delete $attributes->{fraction_of_reads_mapping_uniquely};
           push @rnaseq_track_configs,
             {
               %$TRACK_STANZA,
               urlTemplate => $url,
               key         => $run->{run_description_full},
               label       => "RNASeq/$run_id",
-              metadata    => {
-                 %{$study->{attributes}},
-                 %{$run->{attributes}},
-                 run_description_short => $run->{run_description_short}
-              }
+              metadata    => $attributes,
             };
         }
     }
@@ -252,7 +257,7 @@ sub track_selector {
     }
     return {
         type             => "Faceted",
-        displayColumns   => [ "run_description_short", @as ],
+        displayColumns   => [ "track", @as ],
         selectableFacets => [
             "category",            "study",
             "submitting_centre",
@@ -263,7 +268,7 @@ sub track_selector {
         renameFacets => {
             study                  => "Study",
             submitting_centre      => "Submitting centre",
-            run_description_short  => "Track",
+            track  => "Track",
             library_size_reads_approximate    => "Library size (reads)",
             fraction_of_reads_mapping_uniquely_approximate  => "Fraction of reads mapping uniquely",
             %pretty
