@@ -7,6 +7,7 @@ use GenomeBrowser::StudyAttributes;
 use GenomeBrowser::Links;
 use GenomeBrowser::Factors;
 use GenomeBrowser::RnaseqerStats;
+use GenomeBrowser::Descriptions;
 sub new {
   my ($class, $root_dir) = @_;
   bless {root_dir => $root_dir}, $class; 
@@ -39,7 +40,7 @@ sub get {
          $attributes{$characteristic_type} = $rnaseqer_metadata->access($assembly, $study_id, $run_id, $characteristic_type);
        }
        my ($run_description_short, $run_description_full) = 
-          $descriptions->run_description($study_id, $run_id, $factors, $attributes);
+          $descriptions->run_description($study_id, $run_id, $factors, \%attributes);
        push @runs, {
           run_id => $run_id,
           attributes => {%$stats, %$links_to_this_run, %attributes},
