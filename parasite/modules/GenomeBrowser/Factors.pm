@@ -42,6 +42,15 @@ my @blacklist = (
   "treatment_sources",
   "population",
   "sample_name",
+  "agarosemigrationtemperature",
+  "agarosemigrationttime",
+  "baermanntemperature",
+  "base_calling_software_version",
+  "culturetemperature",
+  "culturetime",
+  "library_id",
+  "library_preparation",
+  "wash",
 );
 sub not_in_blacklist {
   return not(shift ~~ @blacklist);
