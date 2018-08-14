@@ -246,7 +246,7 @@ sub read_accession {
     Title   :   get_pubmed
     Usage   :   %pubmed = $self->get_pubmed();
     Function:   get the xref of study ID and PubMed ID from the ENA
-    Returns :   hash of pubmed IDs keyed by primary study ID (study_alias=PRJNA259320)
+    Returns :   hash of pubmed IDs keyed by primary study ID (study_accession=PRJNA259320)
     Args    :   
 
   Get Pubmed for each Study (primary 'PRJN' accession)
@@ -816,21 +816,22 @@ sub add_one_new_experiment_to_config {
   
 
   # now update the Study.ini record based on this experiment information
-    if (exists $experiments->{$experiment_accession}{study_alias}) {
-      my $study_alias = $experiments->{$experiment_accession}{study_alias};
-      my $pubmed = $pubmed->{$study_alias};
-      if (!defined $pubmed) { # if we didn't get the Pubmed ID from ENA, try getting it from GEO and store it
-	$pubmed = $self->get_GEO_pubmed($study_alias);
-	$pubmed->{$study_alias} = $pubmed;
+    if (exists $experiments->{$experiment_accession}{study_accession}) {
+      my $primary_study_accession = $experiments->{$experiment_accession}{study_accession};
+      my $secondary_study_accession = $experiments->{$experiment_accession}{secondary_study_accession};
+      my $pubmed_id = $pubmed->{$primary_study_accession};
+      if (!defined $pubmed_id) { # if we didn't get the Pubmed ID from ENA, try getting it from GEO and store it
+	$pubmed_id = $self->get_GEO_pubmed($secondary_study_accession);
+	$pubmed->{$primary_study_accession} = $pubmed_id;
       }
-      if (!defined $pubmed) { # if we didn't get the Pubmed ID from ENA, try getting it from ArrayExpress and store it
-	$pubmed = $self->get_ArrayExpress_pubmed($study_alias);
-	$pubmed->{$study_alias} = $pubmed;
+      if (!defined $pubmed_id) { # if we didn't get the Pubmed ID from ENA, try getting it from ArrayExpress and store it
+	$pubmed_id = $self->get_ArrayExpress_pubmed($secondary_study_accession);
+	$pubmed->{$primary_study_accession} = $pubmed_id;
       }
 
-      if (defined $pubmed) {
-	$study_ini->newval($study_accession, 'pubmed', $pubmed);
-	my $wbpaper = $wbpaper->{$pubmed};
+      if (defined $pubmed_id) {
+	$study_ini->newval($study_accession, 'pubmed', $pubmed_id);
+	my $wbpaper = $wbpaper->{$pubmed_id};
 	if (defined $wbpaper) {
 	  $study_ini->newval($study_accession, 'wbpaper', $wbpaper);
 	}
@@ -951,16 +952,17 @@ sub update_experiment_config_record {
   my $pubmed_id = undef;
   if (exists  $expt_config{pubmed}) {
     $pubmed_id = $expt_config{pubmed};
-  } elsif (exists $experiments->{$experiment_accession}{study_alias}) {
-    my $study_alias = $experiments->{$experiment_accession}{study_alias};
-    $pubmed_id = $pubmed->{$study_alias};
+  } elsif (exists $experiments->{$experiment_accession}{secondary_study_accession}) {
+    my $primary_study_accession = $experiments->{$experiment_accession}{study_accession};
+    my $secondary_study_accession = $experiments->{$experiment_accession}{secondary_study_accession};
+    $pubmed_id = $pubmed->{$primary_study_accession};
     if (!defined $pubmed_id) { # if we didn't get the Pubmed ID from ENA, try getting it from GEO and store it
-      $pubmed_id = $self->get_GEO_pubmed($study_alias);
-      $pubmed->{$study_alias} = $pubmed_id;
+      $pubmed_id = $self->get_GEO_pubmed($secondary_study_accession);
+      $pubmed->{$primary_study_accession} = $pubmed_id;
     }
-    if (!defined $pubmed) { # if we didn't get the Pubmed ID from ENA, try getting it from ArrayExpress and store it
-      $pubmed = $self->get_ArrayExpress_pubmed($study_alias);
-      $pubmed->{$study_alias} = $pubmed;
+    if (!defined $pubmed_id) { # if we didn't get the Pubmed ID from ENA, try getting it from ArrayExpress and store it
+      $pubmed_id = $self->get_ArrayExpress_pubmed($secondary_study_accession);
+      $pubmed->{$primary_study_accession} = $pubmed_id;
     }
 
     if (defined $pubmed_id) {
@@ -1119,7 +1121,7 @@ sub update_experiment_config_data {
   my @new_experiment_accessions;
   my @existing_experiment_accessions;
 
-  my %pubmed = $self->get_pubmed(); # hash of pubmed IDs keyed by primary study ID (study_alias=PRJNA259320)
+  my %pubmed = $self->get_pubmed(); # hash of pubmed IDs keyed by primary study ID (study_accession=PRJNA259320)
   my %wbpaper = $self->get_WBPaper(); # hash of WBPaper IDs keyed by PubMed ID
 
   foreach my $experiment (keys %{$ena_experiments}) {
