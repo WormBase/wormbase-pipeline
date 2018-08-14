@@ -213,8 +213,8 @@ sub make_tracks {
               label       => "RNASeq/$run_id",
               metadata    => {
                  %{$study->{attributes}},
-                 %{$run->{attributes},
-                 run_description_short => $run->{run_description_short}}
+                 %{$run->{attributes}},
+                 run_description_short => $run->{run_description_short}
               }
             };
         }

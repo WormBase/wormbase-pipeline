@@ -748,7 +748,7 @@ sub run_description_from_sample_name {
 
 # if some of these types can be made nicer in labels,
 # e.g. if they have _, add some code that prettifies them
-my @types_that_help_explain_values = qw/strain/;
+my @types_that_help_explain_values = qw/strain isolate/;
 
 sub run_description_from_factors {
     my ( $factors, $attributes ) = @_;
