@@ -162,11 +162,13 @@ sub create_run_doc {
     $result .= sprintf "<b>Run $rd</b>\n" if $rd; 
     $result .= "\n";
     for my $k ( sort keys $run->{attributes} ) {
+        next if grep {$_ eq $k} qw/library_size_reads_approximate fraction_of_reads_mapping_uniquely_approximate sample_name/;
         ( my $property_name = $k ) =~ s/_/ /g;
         $property_name = ucfirst($property_name)
           if $property_name eq lc($property_name);
-        $result .= sprintf "<b>%s</b>\t%s\n", $property_name,
-          $run->{attributes}{$k};
+        $property_name = "Library size (reads)" if $k eq "library_size_reads";
+        my $property_value = $run->{attributes}{$k};
+        $result .= sprintf "<b>%s</b>\t%s\n", $property_name, $property_value;
     }
     $result =~ s/\n/<br>\n/g;
     write_file( $path, {binmode => ':utf8'}, $result );

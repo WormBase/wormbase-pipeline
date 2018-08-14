@@ -256,15 +256,16 @@ sub track_selector {
         selectableFacets => [
             "category",            "study",
             "submitting_centre",
-            "library_size_approx", "mapping_quality_approx",
+            "library_size_reads_approximate",
+            "fraction_of_reads_mapping_uniquely_approximate",
             @as
         ],
         renameFacets => {
             study                  => "Study",
             submitting_centre      => "Submitting centre",
             run_description_short  => "Track",
-            library_size_approx    => "Library size (reads)",
-            mapping_quality_approx => "Mapping quality (reads uniquely mapped)",
+            library_size_reads_approximate    => "Library size (reads)",
+            fraction_of_reads_mapping_uniquely_approximate  => "Fraction of reads mapping uniquely",
             %pretty
         }
     };

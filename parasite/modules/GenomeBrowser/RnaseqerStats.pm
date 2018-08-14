@@ -25,12 +25,12 @@ sub _fetch {
 sub round_library_size {
    my $n = shift;
    return "?" unless $n;
-   return "75mln+" if $n   > 75000000;
-   return "50-75mln" if $n > 50000000;
-   return "25-50mln" if $n > 25000000;
-   return  "5-25mln" if $n > 5000000;
-   return   "1-5mln" if $n > 1000000;
-   return "200k-1mln" if $n >200000;
+   return "75M+" if $n   > 75000000;
+   return "50-75M" if $n > 50000000;
+   return "25-50M" if $n > 25000000;
+   return  "5-25M" if $n > 5000000;
+   return   "1-5M" if $n > 1000000;
+   return "200k-1M" if $n >200000;
    return "under 200k"; 
 }
 
@@ -48,10 +48,10 @@ sub round_fraction_reads_uniquely_mapped {
 sub get_formatted_stats {
   my ($self, $run_id) = @_;
   return {
-    library_total_amount_of_reads=>$self->{$run_id}{library_size},
-    library_size_approx => round_library_size($self->{$run_id}{library_size}),
-    mapping_fraction_of_uniquely_mapped_reads=>$self->{$run_id}{fraction_reads_uniquely_mapped},
-    mapping_quality_approx => round_fraction_reads_uniquely_mapped($self->{$run_id}{fraction_reads_uniquely_mapped}),
+    library_size_reads=> $self->{$run_id}{library_size},
+    library_size_reads_approximate => round_library_size($self->{$run_id}{library_size}),
+    fraction_of_reads_mapping_uniquely_approximate => round_fraction_reads_uniquely_mapped($self->{$run_id}{fraction_reads_uniquely_mapped}),
+    fraction_of_reads_mapping_uniquely=> $self->{$run_id}{fraction_reads_uniquely_mapped}
   };
 }
 
