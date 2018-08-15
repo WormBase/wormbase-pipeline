@@ -52,6 +52,10 @@ my $CONFIG_STANZA = {
         "functions.conf"
       ],
   "css" => ".detail .field_container .field.track {display: none} .detail .field_container .value_container.track {display: none}",
+  "aboutThisBrowser" =>  {
+      "title"=> "WormBase ParaSite:",
+      "description" => "<div class=\"default_about\"><img src='/i/parasite.png' /><br>Browser for WormBase ParaSite genomes and annotation features <br>RNASeq tracks have been imported from <a href=\"https://www.ebi.ac.uk/fg/rnaseq/api/\">the RNASeq-er project</a><br></div>",
+  },
 };
 
 my $TRACK_STANZA = {
@@ -93,7 +97,7 @@ my $genes_track_config = {
         {
             'url'    => '/Gene/Summary?g={name}',
             'action' => 'newWindow',
-            'label'  => 'View gene at WormBase ParaSite'
+            'label'  => 'View gene in WormBase ParaSite'
         }
     ],
     'metadata' => {
