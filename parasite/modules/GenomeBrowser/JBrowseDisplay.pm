@@ -71,7 +71,12 @@ my $sequence_track_config = {
     'type'        => 'SequenceTrack',
     'category'    => 'Reference sequence'
 };
-
+my $local_tracks_metadata_stanza = {
+           "study"=> "(WormBase track)",
+        "submitting_centre"=> "WormBase",
+        "fraction_of_reads_mapping_uniquely_approximate"=> "(not applicable)",
+        "library_size_reads_approximate"=> "(not applicable)"
+};
 my $genes_track_config = {
     'style' => {
         'className' => 'feature',
@@ -92,6 +97,8 @@ my $genes_track_config = {
     ],
     'metadata' => {
         'category' => 'Genome Annotation',
+        'track' => 'Gene Models',
+        %$local_tracks_metadata_stanza
     },
     'type'  => 'CanvasFeatures',
     'label' => 'Gene_Models'
@@ -112,6 +119,8 @@ sub feature_track_config {
         'compress'    => 1,
         'metadata'    => {
             'category' => 'Repeat Regions',    #All our features are repeats now
+        'track' => $niceLabelForReading,
+        %$local_tracks_metadata_stanza
         },
         'type'  => 'FeatureTrack',
         'label' => $label,
