@@ -50,7 +50,8 @@ my $CONFIG_STANZA = {
     "include" =>
       [ #Gives us the nice gene labels. TODO there's no code to copy them now I think!
         "functions.conf"
-      ]
+      ],
+  "css" => ".detail .field_container .field.track {display: none} .detail .field_container .value_container.track {display: none}",
 };
 
 my $TRACK_STANZA = {
