@@ -743,6 +743,11 @@ sub run_description_from_sample_name {
     return "" if ( scalar( split /\W+/, $sample_name ) == 1 );
     return "" if $sample_name =~ /private/;
     return "" if length($sample_name) < 10;
+
+
+    $sample_name =~ s/\[\w+ $cies RNAseq\]//;#https://www.ebi.ac.uk/ena/data/view/DRS026763&display=xml
+    $sample_name =~ s/^\s+//;
+    $sample_name =~ s/\s+$//;
     return $sample_name;
 }
 
