@@ -353,6 +353,33 @@ sub get_ArrayExpress_pubmed {
 
 =head2 
 
+    Title   :   get_ENA_pubmed
+    Usage   :   $pubmed_id = $self->get_ENA_pubmed($study);
+    Function:   given a Sudy ID, get the PubMed ID from ENA
+    Returns :   Pubmed ID
+    Args    :   
+
+Go to ENA and extract the Pubmed ID from the Study's XML.
+
+=cut
+
+
+sub get_ENA_pubmed {
+  my ($self, $study_accession) = @_;
+
+  my $base = 'https://www.ebi.ac.uk/ena/data/view/';
+  my $url = $base . "${study_accession}&display=xml";
+  
+  my $data = `wget -q -O - "$url"`;
+
+  # get the pubmed ID
+  my $pubmed = $1 if ($data =~ /<DB>pubmed<\/DB>\s+<ID>(\d+)<\/ID>/);
+
+  return $pubmed;
+}
+
+=head2 
+
     Title   :   get_WBPaper
     Usage   :   %wbpaper = $self->get_WBPaper();
     Function:   get the xref of WBPaper ID and PubMed ID from Caltech
