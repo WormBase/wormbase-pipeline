@@ -147,6 +147,7 @@ foreach my $study_accession (@studies) {
       $experiment_title = $hashref->{$expt}{experiment_title};
       $library_name     = $hashref->{$expt}{library_name};
       $run_alias        = $hashref->{$expt}{run_alias};
+      my ($ENA_dev_stage, $ENA_sex, $ENA_strain, $ENA_temperature, $ENA_tissue, $ENA_description) = query_ENA($expt);
 
       print "\nExperiment: $expt\n";
       print "Study title: $study_title\n" if ($study_title ne '');
@@ -154,12 +155,13 @@ foreach my $study_accession (@studies) {
       print "Experiment title: $experiment_title\n" if ($experiment_title ne '');
       print "Library name: $library_name\n" if ($library_name ne '');
       print "Run alias: $run_alias\n" if ($run_alias ne '');
+      print "ENA description: $ENA_description\n" if ($ENA_description);
       print "\n";
 
 
       # look for temperature
       # default is nothing
-      $temperature = get_temperature();
+      $temperature = get_temperature($ENA_temperature);
 
       # look for genotype
       # default is nothing
@@ -172,7 +174,7 @@ foreach my $study_accession (@studies) {
       # look for strain
       # default is initially N2 in elegans
       if (!defined $genotype || $genotype eq "") {
-	$strain = get_strain();
+	$strain = get_strain($ENA_strain);
       } else {
 	$strain = $default_strain{$species};
       }
@@ -180,17 +182,17 @@ foreach my $study_accession (@studies) {
       # look for sex
       # one probable synonym is 'him-8:Male'
       # synonym / lookup will be different in different species
-      $sex = get_sex();
+      $sex = get_sex($ENA_sex);
 
       # look for tissue
       # use synonym / lookup hash with recently found synonyms being checked first in the title they were last found in
       # default is initially whole organism
-      ($tissue, $tissue_name) = get_tissue(%anatomy);
+      ($tissue, $tissue_name) = get_tissue($ENA_tissue, %anatomy);
       
       # look for life stage
       # use synonym / lookup hash with recently found synonyms being checked first in the title they were last found in
       # synonym / lookup will be different in different species
-      ($life_stage, $life_stage_name) = get_life_stage();
+      ($life_stage, $life_stage_name) = get_life_stage($ENA_dev_stage);
 
       # backslash double quotes in $study_title, "$experiment_title
       $study_title =~ s/"/\"/;
@@ -275,18 +277,32 @@ exit(0);
 #############################################################################
 # for temperature, we just accept what is given with default always being blank
 sub get_temperature {
+  my ($ENA_temperature) = @_;
 
-  print "Temperature > ";
+
+  my $candidate_temp = '';
+  my $why = '';
+
+  # assume we are using the same sex as in the last experiment
+  if (defined $ENA_temperature) {
+    $candidate_temp = $ENA_temperature;
+    $why = '(from ENA)';
+  }
+
+  print "Temp [$candidate_temp] $why > ";
   my $error;
   my $input;
   do {
     $input =  <STDIN>;
     chomp ($input);
-    $error = 0;
+    if ($input eq '') {
+      $input = $candidate_temp;
+    }
     if ($input ne '' && $input !~ /^[\d\.]+$/) {
       print "Temperature must be numeric\n";
       $error = 1;
     }
+
   } while ($error);
   return $input;
 }
@@ -322,6 +338,8 @@ sub get_genotype {
 # but we have a default of N2 for elegans
 
 sub get_strain {
+  my ($ENA_strain) = @_;
+
   my $strain; 
   my $candidate_strain = undef;
   my $line;
@@ -337,6 +355,7 @@ sub get_strain {
 		 'ovolvulus' => 'O_volvulus_Cameroon_isolate',
 		 'remanei'   => 'SB146',
 		 'pristionchus'   => 'PS312',
+		 'tmuris'    => 'Edinburgh',
 		);
   my $default = $default{$species};
 
@@ -369,6 +388,13 @@ sub get_strain {
 	$why = "after 'strain'";
 	last;
       }
+    }
+  }
+
+  if (!defined  $candidate_strain) {
+    if (defined $ENA_strain) {
+      $candidate_strain = $ENA_strain;
+      $why = 'from ENA';
     }
   }
 
@@ -405,6 +431,7 @@ sub get_strain {
 # Females are Hermaphrodites in elegans
 
 sub get_sex {
+  my ($ENA_sex) = @_;
 
   my $sex; 
   my $candidate_sex = undef;
@@ -420,6 +447,7 @@ sub get_sex {
 		 'japonica'  => 'Unknown',
 		 'ovolvulus' => 'Unknown',
 		 'remanei'   => 'Unknown',
+		 'tmuris'    => 'Unknown',
 		);
   my $default = $default{$species};
 
@@ -435,6 +463,12 @@ sub get_sex {
     }    
   }
 
+  if (!defined  $candidate_sex) {
+    if (defined $ENA_sex) {
+      $candidate_sex = $ENA_sex;
+      $why = 'from ENA';
+    }
+  }
 
   # look for sex in the usual places
   if (!defined $candidate_sex) {
@@ -498,7 +532,7 @@ sub get_sex {
 # We use a stored hash of synonyms and codes etc for tissue
 
 sub get_tissue {
-  my (%tissue_ontology) = @_;
+  my ($ENA_tissue, %tissue_ontology) = @_;
 
   my $tissue = undef; 
   my $tissue_name = undef; 
@@ -534,7 +568,14 @@ sub get_tissue {
     }    
   }
 
-  # assume we are using the same tissue as in the last experiment
+  if (!defined  $candidate_tissue) {
+    if (defined $ENA_tissue) {
+      $candidate_tissue = $ENA_tissue;
+      $why = 'from ENA';
+    }
+  }
+
+  # look for sex in the usual places  # assume we are using the same tissue as in the last experiment
   if (!defined $candidate_tissue && defined $tissue_session{previous}) {
     $candidate_tissue = $tissue_session{previous};
     $why = 'repeat of last expt';
@@ -584,6 +625,8 @@ sub get_tissue {
 # We use a stored hash of synonyms and codes etc for life_stage
 
 sub get_life_stage {
+  my ($ENA_dev_stage) = @_;
+
   my $life_stage; 
   my $life_stage_name; 
   my $candidate_life_stage = undef;
@@ -622,6 +665,15 @@ sub get_life_stage {
 			    'infective larvae (iL3)'	=>	'WBls:0000680',
 			   );
     
+  } elsif ($species eq 'tmuris') {
+    %life_stage_ontology = (
+			    'intestinal'                => 'WBls:0000721',
+			    'adult intestinal'          => 'WBls:0000721',
+			    'lumen'                     => 'WBls:0000722',
+			    'lumenal'                   => 'WBls:0000722',
+			    'adult lumenal'             => 'WBls:0000722',
+			    );
+
   } elsif ($species eq 'elegans' || $species eq 'brenneri' || $species eq 'briggsae' || $species eq 'remanei' || $species eq 'japonica') {
     
     %life_stage_ontology = (
@@ -891,6 +943,13 @@ sub get_life_stage {
     }    
   }
 
+  if (!defined  $candidate_life_stage) {
+    if (defined $ENA_dev_stage) {
+      $candidate_life_stage = $ENA_dev_stage;
+      $why = 'from ENA';
+    }
+  }
+
   # assume we are using the same life_stage as in the last experiment
   if (!defined $candidate_life_stage && defined $life_stage_session{previous}) {
     $candidate_life_stage = $life_stage_session{previous};
@@ -1035,4 +1094,26 @@ sub write_tm_def {
   close($fh) or $log->log_and_die("Could not close $fname after writing\n");
 
   return $file;
+}
+
+###################################################################
+sub query_ENA {
+  my ($experiment) = @_;
+
+my $query = "https://www.ebi.ac.uk/ena/portal/api/filereport?accession=${experiment}&result=read_experiment&fields=dev_stage,sex,strain,temperature,tissue_type,description";
+
+
+  open (DATA, "wget -q -O - '$query' |") || die("RNASeq: Can't get information on SRA entry $experiment in read_accession()\n");
+
+  my $line_count=0;
+  while (my $line = <DATA>) {
+    if (++$line_count == 1) {next;} # skip the title line
+    chomp $line;
+    
+    my @f = split /\t/, $line;
+
+    return @f; # dev_stage, sex,strain, temperature, tissue_type, description
+  }
+
+
 }
