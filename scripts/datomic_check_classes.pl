@@ -115,6 +115,8 @@ Condition
 Construct
 Contig
 Database
+Disease_model_annotation
+DNA
 DO_term
 Expression_cluster
 Expr_pattern
