@@ -102,19 +102,6 @@ my $run_alias;
 
 my $written_Study_analysis = 0;
 
-my %default_strain = (
-		      'elegans'   => 'N2',
-		      'brenneri'  => 'PB2801',
-		      'briggsae'  => 'AF16',
-		      'brugia'    => 'FR3',
-		      'sratti'    => 'ED321',
-		      'japonica'  => 'DF5081',
-		      'ovolvulus' => 'O_volvulus_Cameroon_isolate',
-		      'remanei'   => 'SB146',
-		      'pristionchus'   => 'PS312',
-		     );
-
-
 open(OUT, ">$output") || $log->log_and_die("Can't open $output\n");
 
 my %anatomy = get_anatomy();
@@ -139,7 +126,7 @@ foreach my $study_accession (@studies) {
 	  $hashref->{$expt}{library_strategy} ne 'EST') {print "\n$expt is not RNA-Seq or FL-cDNA or EST - skipping\n"; next}
       if ($hashref->{$expt}{library_selection} eq'size fractionation') {print "\n$expt is size selected - skipping\n"; next}
       if (exists $hashref->{$expt}{ignore}) {print "\n$expt is marked as 'ignore' - skipping\n"; next}
-      if (exists $hashref->{$expt}{analysis} && !$redo) {print "\n$expt has an Analysis already (",$hashref->{$expt}{analysis},") - skipping\n"; next}
+      if (exists $hashref->{$expt}{analysis} && !$redo) {print "\n$expt has an Analysis noted already in '${study_accession}.ini' (",$hashref->{$expt}{analysis},") - skipping\n"; next}
 
       # get the study_title, study_alias, experiment_title, library_name, run_alias and do things with them
       $study_title      = $hashref->{$expt}{study_title};
@@ -147,7 +134,7 @@ foreach my $study_accession (@studies) {
       $experiment_title = $hashref->{$expt}{experiment_title};
       $library_name     = $hashref->{$expt}{library_name};
       $run_alias        = $hashref->{$expt}{run_alias};
-      my ($ENA_dev_stage, $ENA_sex, $ENA_strain, $ENA_temperature, $ENA_tissue, $ENA_description) = query_ENA($expt);
+      my ($dummy, $ENA_dev_stage, $ENA_sex, $ENA_strain, $ENA_temperature, $ENA_tissue, $ENA_description) = query_ENA($expt);
 
       print "\nExperiment: $expt\n";
       print "Study title: $study_title\n" if ($study_title ne '');
@@ -175,8 +162,6 @@ foreach my $study_accession (@studies) {
       # default is initially N2 in elegans
       if (!defined $genotype || $genotype eq "") {
 	$strain = get_strain($ENA_strain);
-      } else {
-	$strain = $default_strain{$species};
       }
 
       # look for sex
@@ -513,6 +498,10 @@ sub get_sex {
     $why = 'default';
   }
 
+  if ($candidate_sex eq 'mixed sex') {
+    $candidate_sex = 'Unknown';
+  }
+
   # confirm and update status
   print "Sex [$candidate_sex] ($why) > ";
   my $input =  <STDIN>;
@@ -582,7 +571,7 @@ sub get_tissue {
   }
 
   # else if this is the first time in, use the default
-  if (!defined $candidate_tissue) {
+  if (!defined $candidate_tissue || $candidate_tissue eq '') {
     $candidate_tissue = $default;
     $why = 'default';
   }
@@ -637,44 +626,8 @@ sub get_life_stage {
   
   my %life_stage_ontology;
   
-  if ($species eq 'brugia') {
-    %life_stage_ontology = (
-			    'sheathed microfilaria' => 'WBls:0000077',
-			    'unsheathed microfilariae' => 'WBls:0000078',
-			    'L1 larva' => 'WBls:0000079',
-			    'L2 larva' => 'WBls:0000080',
-			    'L3 larva' => 'WBls:0000081',
-			    'L4 larva' => 'WBls:0000082',
-			    'adult' => 'WBls:0000083',
-			    'all stages' => 'WBls:0000091',
-			    'embryo' => 'WBls:0000092',
-			    'postembryonic' => 'WBls:0000093',
-			    'early embryo' => 'WBls:0000094',
-			    'middle embryo' => 'WBls:0000095',
-			    'late embryo' => 'WBls:0000096',
-			    'larva' => 'WBls:0000097',
-			    'vector-derived L3' => 'WBls:0000098',
-			    'post-infection L3' => 'WBls:0000099',
-			    'young adult' => 'WBls:0000100',
-			   );
-  } elsif ($species eq 'sratti') {
-    %life_stage_ontology = (
-			    'parasitic females'	 =>	'WBls:0000678',
-			    'free-living females'	 =>	'WBls:0000677',
-			    'free living adults'	 =>	'WBls:0000682',
-			    'infective larvae (iL3)'	=>	'WBls:0000680',
-			   );
-    
-  } elsif ($species eq 'tmuris') {
-    %life_stage_ontology = (
-			    'intestinal'                => 'WBls:0000721',
-			    'adult intestinal'          => 'WBls:0000721',
-			    'lumen'                     => 'WBls:0000722',
-			    'lumenal'                   => 'WBls:0000722',
-			    'adult lumenal'             => 'WBls:0000722',
-			    );
 
-  } elsif ($species eq 'elegans' || $species eq 'brenneri' || $species eq 'briggsae' || $species eq 'remanei' || $species eq 'japonica') {
+  if ($species ne 'brugia' && $species ne 'sratti' && $species ne 'tmuris') {
     
     %life_stage_ontology = (
 			    'all stages' => 'WBls:0000002',
@@ -901,7 +854,46 @@ sub get_life_stage {
 
 			 );
 
-  } else {
+
+
+  }
+
+  if ($species eq 'brugia') {
+    %life_stage_ontology = (
+			    'all stages' => 'WBls:0000101',
+			    'adult' => 'WBls:0000104',
+			    'dauer larva' => 'WBls:0000032', # using the Ce code, not the nematode one
+
+			    'sheathed microfilaria' => 'WBls:0000077',
+			    'unsheathed microfilariae' => 'WBls:0000078',
+			    'L1 larva' => 'WBls:0000079',
+			    'L2 larva' => 'WBls:0000080',
+			    'L3 larva' => 'WBls:0000081',
+			    'L4 larva' => 'WBls:0000082',
+			    'adult' => 'WBls:0000083',
+			    'all stages' => 'WBls:0000091',
+			    'embryo' => 'WBls:0000092',
+			    'postembryonic' => 'WBls:0000093',
+			    'early embryo' => 'WBls:0000094',
+			    'middle embryo' => 'WBls:0000095',
+			    'late embryo' => 'WBls:0000096',
+			    'larva' => 'WBls:0000097',
+			    'vector-derived L3' => 'WBls:0000098',
+			    'post-infection L3' => 'WBls:0000099',
+			    'young adult' => 'WBls:0000100',
+
+			    'L1 larvae' => 'WBls:0000079',
+			    'L2 larvae' => 'WBls:0000080',
+			    'L3 larvae' => 'WBls:0000081',
+			    'L4 larvae' => 'WBls:0000082',
+
+			    'L1' => 'WBls:0000079',
+			    'L2' => 'WBls:0000080',
+			    'L3' => 'WBls:0000081',
+			    'L4' => 'WBls:0000081',
+
+			   );
+  } elsif ($species eq 'sratti') {
     %life_stage_ontology = (
 			    'all stages' => 'WBls:0000101',
 			    'embryo' => 'WBls:0000102',
@@ -914,9 +906,56 @@ sub get_life_stage {
 			    'L4 larva' => 'WBls:0000109',
 			    'sheathed microfilaria' => 'WBls:0000110',
 			    'dauer larva' => 'WBls:0000032', # using the Ce code, not the nematode one
+
+			    'parasitic females'	 =>	'WBls:0000678',
+			    'free-living females'	 =>	'WBls:0000677',
+			    'free living adults'	 =>	'WBls:0000682',
+			    'infective larvae (iL3)'	=>	'WBls:0000680',
+
+			    'L1 larvae' => 'WBls:0000106',
+			    'L2 larvae' => 'WBls:0000107',
+			    'L3 larvae' => 'WBls:0000108',
+			    'L4 larvae' => 'WBls:0000109',
+
+			    'L1' => 'WBls:0000106',
+			    'L2' => 'WBls:0000107',
+			    'L3' => 'WBls:0000108',
+			    'L4' => 'WBls:0000109',
+
+			   );
+    
+  } elsif ($species eq 'tmuris') {
+    %life_stage_ontology = (
+			    'all stages' => 'WBls:0000101',
+			    'embryo' => 'WBls:0000102',
+			    'postembryonic' => 'WBls:0000103',
+			    'adult' => 'WBls:0000104',
+			    'larva' => 'WBls:0000105',
+			    'L1 larva' => 'WBls:0000106',
+			    'L2 larva' => 'WBls:0000107',
+			    'L3 larva' => 'WBls:0000108',
+			    'L4 larva' => 'WBls:0000109',
+			    'sheathed microfilaria' => 'WBls:0000110',
+			    'dauer larva' => 'WBls:0000032', # using the Ce code, not the nematode one
+
+			    'intestinal'                => 'WBls:0000721',
+			    'adult intestinal'          => 'WBls:0000721',
+			    'lumen'                     => 'WBls:0000722',
+			    'lumenal'                   => 'WBls:0000722',
+			    'adult lumenal'             => 'WBls:0000722',
+
+			    'L1 larvae' => 'WBls:0000106',
+			    'L2 larvae' => 'WBls:0000107',
+			    'L3 larvae' => 'WBls:0000108',
+			    'L4 larvae' => 'WBls:0000109',
+
+			    'L1' => 'WBls:0000106',
+			    'L2' => 'WBls:0000107',
+			    'L3' => 'WBls:0000108',
+			    'L4' => 'WBls:0000109',
+
 			    );
   }
-
 
 # see if we can find a life_stage already seen in this study
  NAMES:
@@ -943,7 +982,7 @@ sub get_life_stage {
     }    
   }
 
-  if (!defined  $candidate_life_stage) {
+  if (!defined  $candidate_life_stage || $candidate_life_stage eq '') {
     if (defined $ENA_dev_stage) {
       $candidate_life_stage = $ENA_dev_stage;
       $why = 'from ENA';
@@ -957,7 +996,7 @@ sub get_life_stage {
   }
 
   # else if this is the first time in, use the default
-  if (!defined $candidate_life_stage) {
+  if (!defined $candidate_life_stage || $candidate_life_stage eq '') {
     $candidate_life_stage = $default;
     $why = 'default';
   }
