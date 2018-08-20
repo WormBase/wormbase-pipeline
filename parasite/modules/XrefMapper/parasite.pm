@@ -40,8 +40,8 @@ sub gene_description_sources {
           "HGNC",
           "IMGT/GENE_DB",
 	  "Uniprot/SWISSPROT",
-	  "RefSeq_peptide",
           "Uniprot/SPTREMBL",
+	  "RefSeq_peptide",
       );
 
 }

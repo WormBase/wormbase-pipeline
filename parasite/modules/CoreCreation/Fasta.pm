@@ -3,6 +3,7 @@
 # that is suitable for loading into Ensembl
 # Used to be a script, $WORM_CODE/scripts/ENSEMBL/scripts/split_genome_for_ensembl.pl
 # Usage:
+# perl -MCoreCreation::Fasta -e "print CoreCreation::Fasta->new($path)->mito"
 # my $fasta = CoreCreation::Fasta->new($path);
 # my $needs_split = $fasta -> needs_contig_structure();
 # $fasta -> split("$path.split", $agp_path); 
@@ -21,7 +22,10 @@ sub new {
     bless $self, $class;
     return $self;
 }
-
+sub _parsed {
+   my $self = shift;
+   return defined $self->{need_agp};
+}
 sub _parse {
     my $self      = shift;
     my $genome_fa = $self->{genome_fa};
@@ -39,23 +43,22 @@ sub _parse {
         }
         push @toplevels, $seq;
     }
+    Carp::croak("Fasta appears empty: $self->{genome_fa}") unless @toplevels;
     $self->{toplevels} = \@toplevels;
     $self->{need_agp}  = $need_agp;
 }
 
 sub needs_contig_structure {
     my $self = shift;
-    if ( not defined $self->{need_agp} ) {
-        $self->_parse();
-    }
+    $self->_parse() unless $self->_parsed;
     return $self->{need_agp};
 }
 
 sub split {
-    my ( $self, $contig_fa_file, $agp_file ) = @_;
-    if ( not defined $self->{toplevels} ) {
-        $self->_parse();
-    }
+    my ( $self, %h) = @_;
+    $self->_parse() unless $self->_parsed;
+    my $contig_fa_file = $h{fasta};
+    my $agp_file = $h{agp};
     my @toplevels = @{ $self->{toplevels} };
 
     my $count = 0;
@@ -97,5 +100,16 @@ sub split {
 
 }
 
+sub mito {
+    my $self = shift;
+    $self->_parse() unless $self->_parsed;
+    my @mito;
+    for my $top_level (@{$self->{toplevels}}) {
+       my $id = $top_level->display_id;
+       push @mito , $id if $id =~ /mito/i or $id =~ /mtDNA/i;
+    } 
+    Carp::croak("Multiple mitochondrial scaffolds?: @mito") if @mito > 1;
+    return pop @mito;
+}
 1;
 

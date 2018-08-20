@@ -43,7 +43,7 @@
 
   Optional arguments:
 
-    -file         File to write the results to (default: none!)
+    -file         File to write the results to
     -file_err     File to write the proteins that have errors in 
     -slicename    Retrieve sequences from this slice
     -dnadbname    DNA database name
@@ -156,9 +156,8 @@ if ($file) {
     $verbose and print STDERR "Going to write peptides to '$file'\n";
     open(FH, '>' . $file) or die "couldn't open file " . $file . " $!";
     $fh = \*FH;
-}
-else {
-    $verbose and print STDERR "Going to skip correct peptides\n";
+} else {
+    $fh = \*STDOUT;
 }
 
 my $fh2;
@@ -166,6 +165,8 @@ if ($file_err) {
     $verbose and print STDERR "Going to write irregular peptides to '$file_err'\n";
     open(FH2, '>' . $file_err) or die "couldn't open file " . $file_err . " $!";
     $fh2 = \*FH2;
+} else {
+    $fh2 = \*STDOUT;
 }
 
 my $seqio = Bio::SeqIO->new('-format' => 'Fasta', -fh => $fh) if $fh;

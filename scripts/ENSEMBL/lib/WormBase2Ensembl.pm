@@ -120,6 +120,7 @@ sub parse_genes_gff3_fh {
 
   while(<$fh>) {
     chomp;
+    next unless $_;
     next if /^\#/;
     my @l = split(/\t+/, $_);
 
@@ -537,7 +538,8 @@ sub translation_fix {
   return $fixed;
 }
 
-
+# Sometimes submitters give us partial genes - the models are incomplete because of scaffold gap
+# We can rescue such genes by correcting the phase of the first exon.
 sub phase_fix {
   my ($self, $g_ref) = @_;
 
@@ -551,16 +553,15 @@ sub phase_fix {
       
       next if $exon_h->[0]->phase < 0;
 
-      my $orig_phase = $exon_h->[0]->phase;
-      
       my $seq = $t->translate->seq;
       my ($stops) = $seq =~ tr/\*/\*/; 
       
-      next if $stops == 0;
+      next unless $stops;
 
-      # find reading frame with fewest stops
-      my (%stops_by_phase, $best_phase);
-    
+      my $first_exon_original_phase = $exon_h->[0]->phase;
+      my $first_exon_better_phase = $first_exon_original_phase;
+
+      my %stops_by_phase;
       foreach my $phase (0, 1, 2) {
         $exon_h->[0]->phase($phase);
         
@@ -568,29 +569,12 @@ sub phase_fix {
         my ($alt_stops) = $alt_seq =~ tr/\*/\*/; 
         $stops_by_phase{$phase} = $alt_stops;
         
-        if (not defined $best_phase or $stops < $stops_by_phase{$best_phase}) {
-          $best_phase = $phase;
-        }
+        $first_exon_better_phase = $phase if $stops_by_phase{$phase} == 0;
       }
-      $exon_h->[0]->phase($orig_phase);
 
-      if ($stops_by_phase{$best_phase} == 0 and $orig_phase != $best_phase) {
-        $self->verbose and printf STDERR "Changing phase for %s from %d to %d\n", $t->stable_id, $exon_h->[0]->phase, $best_phase;
-        for(my $i=0; $i < @$exon_h; $i++) {
-          if ($exon_h->[$i]->phase >= 0) {
-            if ($i == 0) {
-              $exon_h->[$i]->phase( $best_phase );
-            } else {
-              $exon_h->[$i]->phase( $exon_h->[$i-1]->end_phase );
-            }
-            my $cds_len = $exon_h->seq_region_end - $exon_h->seq_region_start + 1;
-            if ($exon_h->[$i]->phase > 0) {
-              $cds_len += $exon_h->[$i]->phase;
-            }
-            $exon_h->[$i]->end_phase( $cds_len % 3 );
-          }
-        }
-      }
+      printf STDERR "Fixed transcript %s: changed phase of the first exon phase from %d to %d\n", $t->stable_id, $first_exon_original_phase, $first_exon_better_phase
+        if $first_exon_original_phase ne $first_exon_better_phase and $self->verbose;
+      $exon_h->[0]->phase($first_exon_better_phase);
     }
   }
 }
