@@ -41,14 +41,50 @@ sub new {
           GenomeBrowser::Resources->new("$args{root_dir}/Resources"),
     }, $class;
 }
-
+my $help_menu_html= <<EOF;
+<div class="jbrowse help_dialog">
+<div class="main">
+<dl>
+<dt>Welcome to the secret tips menu!</dt>
+<dd><ul>
+Here are a couple of less discoverable features you might want to try if you haven't used them yet.
+<br>
+For an overview of usual JBrowse features please refer to the <a href="http://jbrowse.org">JBrowse main page</a>.
+<br>
+</ul></dd>
+<dt>Advanced navigation</dt>
+<dd><ul>
+<li>You can use the search box to jump between regions and scaffolds: <br>
+e.g. inputting <i>chr4:79,500,000..80,000,000</i> jumps to the region on chromosome 4 between 79.5Mb and 80Mb</li>
+<li>You can also search for gene identifiers there:<br>
+e.g. <i>WBGene0001324</i></li>
+<li>Right clicking on a gene model lets you see the corresponding gene page in WormBase ParaSite </li>
+</ul></dd>
+<dt>"About this track"</dt>
+This option in the track label menu is full of useful information about the RNASeq tracks:
+<dd><ul>
+<li>All metadata available for the track</li>
+<li>Links to ENA study page and other resources where available</li>
+<li>Link to FTP location with data files: QC, quantification, and more</li>
+</ul></dd>
+<dt>Track selector</dt>
+There are frequently too many tracks to view at once. <br>
+Select runs in the study you need, or pick several runs with good library size across several studies with good metadata. <br>
+Searching for keywords may help you narrow down the results.</br>
+<br>
+If you have any questions, suggestions, or comments, write to us at <a href="mailto:parasite-help\@sanger.ac.uk">parasite-help\@sanger.ac.uk</a>!
+</dl>
+</div>
+</div>
+EOF
+$help_menu_html =~ s/\n//g;
 my $CONFIG_STANZA = {
     "names" => {
         "type" => "Hash",
         "url"  => "names/"
     },
     "include" =>
-      [ #Gives us the nice gene labels. TODO there's no code to copy them now I think!
+      [ 
         "functions.conf"
       ],
   "css" => ".detail .field_container .field.track {display: none} .detail .field_container .value_container.track {display: none}",
@@ -56,6 +92,10 @@ my $CONFIG_STANZA = {
       "title"=> "WormBase ParaSite:",
       "description" => "<div class=\"default_about\"><img src='/i/parasite.png' /><br>Browser for WormBase ParaSite genomes and annotation features <br>RNASeq tracks have been imported from <a href=\"https://www.ebi.ac.uk/fg/rnaseq/api/\">the RNASeq-er project</a><br></div>",
   },
+  "quickHelp" => {
+     "title"=> "Usage tips", 
+     "content" => $help_menu_html
+  }
 };
 
 my $TRACK_STANZA = {
@@ -64,6 +104,12 @@ my $TRACK_STANZA = {
     category      => "RNASeq",
     autoscale     => "local",
     ScalePosition => "right",
+};
+my $local_tracks_metadata_stanza = {
+           "study"=> "(WormBase track)",
+        "submitting_centre"=> "WormBase",
+        "fraction_of_reads_mapping_uniquely_approximate"=> "(not applicable)",
+        "library_size_reads_approximate"=> "(not applicable)"
 };
 my $sequence_track_config = {
     'seqType'     => 'dna',
@@ -74,13 +120,11 @@ my $sequence_track_config = {
     'compress'    => 1,
     'label'       => 'DNA',
     'type'        => 'SequenceTrack',
-    'category'    => 'Reference sequence'
-};
-my $local_tracks_metadata_stanza = {
-           "study"=> "(WormBase track)",
-        "submitting_centre"=> "WormBase",
-        "fraction_of_reads_mapping_uniquely_approximate"=> "(not applicable)",
-        "library_size_reads_approximate"=> "(not applicable)"
+    'metadata'    => {
+      'category' => 'Reference sequence',
+      'track' => 'Reference sequence',
+      %$local_tracks_metadata_stanza
+    }
 };
 my $genes_track_config = {
     'style' => {
