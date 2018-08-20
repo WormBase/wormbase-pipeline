@@ -51,7 +51,7 @@ sub get {
     push @studies, {
       study_id => $study_id,
       runs => \@runs,
-      study_description => $descriptions->study_description($study_id, $study_attributes),
+      study_description => $descriptions->study_description($study_id, $study_attributes->{$assembly}{$study_id}),
       attributes => $study_attributes->{$assembly}{$study_id},
     };
   }

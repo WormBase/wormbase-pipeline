@@ -59,4 +59,17 @@ factors_ok(["type", "other_type"], {"type"=>"value", "other_type"=>"other_value"
 factors_rejected([], {});
 factors_rejected(["type"], {});
 factors_rejected(["type"], {"other_type"=> "value"});
+
+sub assert_study_description {
+  my ($study_attributes, $expected, $desc) = @_;
+   $desc //= "assert_study_description $study_id -> $expected";
+   is_deeply(GenomeBrowser::Descriptions->new(
+        $species, {})->study_description($study_id, $study_attributes),
+     $expected, $desc);
+}
+
+assert_study_description({},$study_id);
+assert_study_description({"Study description" => "Desc", "study" => "Study field"},"Desc");
+assert_study_description({"study" => "Study field"},"Study field");
+
 done_testing();
