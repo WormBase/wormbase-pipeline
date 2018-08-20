@@ -37,7 +37,6 @@ my $log = Log_files->make_build_log($wb);
 my (%cds2wp, %pep_xrefs);
 
 $acefile = $wb->acefiles . "/protein_object_xrefs.ace" if not defined $acefile;
-my $pep_prefix = $wb->wormpep_prefix . ':';
 
 $wb->FetchData('cds2wormpep', \%cds2wp, $common_data_dir);
 
@@ -54,9 +53,7 @@ while(<$tm_query>) {
 
   if (exists $cds2wp{$cds_id}) {
     my $pep_acc = $cds2wp{$cds_id};
-    my $pep_name = $pep_prefix . $pep_acc;
-
-    $pep_xrefs{$pep_name}->{$db_name}->{$field}->{$acc} = 1; 
+    $pep_xrefs{$pep_acc}->{$db_name}->{$field}->{$acc} = 1; 
   }
 }
 unlink $tm_def;

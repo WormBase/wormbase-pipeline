@@ -23,7 +23,7 @@ use Storable;
 
 my $old;         # sequence name for existing gene
 my $new;         # sequence name for new gene
-my $who;         # Person ID for new genes being created (defaults to mt3 = WBPerson2970)
+my $who;         # Person ID for new genes being created
 my $id;          # force creation of gene using set ID
 my $gene_id;     # stores highest gene ID
 my $email;       # email new Gene IDs back to users to person who requested it
@@ -48,21 +48,12 @@ die "must specify -old and -new options\n"               if (!$old || !$new);
 die "-who option must be an integer\n"                   if ($who && ($who !~ m/^\d+$/));
 die "-old option is not a valid type of sequence name\n" unless( ($old =~ m/^\CB/) or ($old =~ /WBGene\d{8}/) );
 die "-new option is not a valid type of sequence name\n" if ($new !~ m/^\CB/);
-
+die "You must specify who you are with the -who option\n" unless ($who);
 
 ######################################
 # set person ID for curator
 ######################################
-my $person;
-
-if($who){
-    $person = "WBPerson$who";
-}
-else{
-    # defaults to mt3
-    $person = "WBPerson2970";
-}
-
+my $person = "WBPerson$who";
 
 ############################################################
 # set database path, open connection and open output file
@@ -196,15 +187,10 @@ sub process_gene{
 ######################################
 
     if($email){
-	# set default address to mt3 in case wrong user ID used
-	my $address = "mt3\@sanger.ac.uk";
-	
-	$address = "ar2\@sanger.ac.uk"          if ($person eq "WBPerson1847");
-	$address = "gw3\@sanger.ac.uk"          if ($person eq "WBPerson4025");
+	# set default address to wormpub in case wrong user ID used
+	my $address = "wormpub\@sanger.ac.uk";
+       	$address = "gw3\@sanger.ac.uk"          if ($person eq "WBPerson4025");
 	$address = "pad\@sanger.ac.uk"          if ($person eq "WBPerson1983");
-	$address = "dblasiar\@watson.wustl.edu" if ($person eq "WBPerson1848");
-	$address = "tbieri\@watson.wustl.edu"   if ($person eq "WBPerson1849");
-	$address = "pozersky\@watson.wustl.edu" if ($person eq "WBPerson1867");
 	
 	# write email
 	my $text;
@@ -222,10 +208,10 @@ sub process_gene{
 	    $text = "\n\nYou requested a new gene ID for $new (split from $old), this Gene ID is $gene_id\n\n";
 	    $subject = "WormBase Gene ID request for split gene $new:  SUCCESSFUL";
 	}
-	$text .= "This email was generated automatically, please reply to mt3\@sanger.ac.uk\n";
+	$text .= "This email was generated automatically, please reply to wormpub\@sanger.ac.uk\n";
 	$text .= "if there are any problems\n";
 	
-	open (MAIL,  "|/bin/mailx -r \"mt3\@sanger.ac.uk\" -s \"$subject\" $address");
+	open (MAIL,  "|/bin/mailx -r \"wormpub\@sanger.ac.uk\" -s \"$subject\" $address");
 	print MAIL "$text";
 	close (MAIL);
 	
@@ -287,12 +273,11 @@ sub process_gene{
     =item -who <number>
 
     Where number should correspond to a person ID...if this number doesn't match anyone then 
-    the script will assume that it is mt3
+    the script will die
     
     =item -email
 
-    person corresponding to -who option will be emailed notification, email goes to
-    mt3@sanger.ac.uk if -who option doesn't correspond to a curator
+    person corresponding to -who option will be emailed notification
 
     =item -verbose
 

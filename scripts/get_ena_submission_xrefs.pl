@@ -133,7 +133,6 @@ if ($gene_xrefs) {
 
 if ($protein_xrefs) {
   my (%cds_xrefs, %cds_product, %accession2clone, %cds2wormpep, $gcrp_version);
-  my $pepPrefix = $wb->wormpep_prefix . ':';
 
   $wb->FetchData('accession2clone', \%accession2clone, $common_data_dir);
   $wb->FetchData('cds2wormpep', \%cds2wormpep, $common_data_dir);

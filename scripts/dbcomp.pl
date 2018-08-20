@@ -115,7 +115,7 @@ $log->write_to("\n");
 $log->write_to("Previous db      : $dbname_1 '$db_1'\n");
 $log->write_to("Current db       : $dbname_2 '$db_2'\n");
 $log->write_to("\n\n");
-				
+		
 # open two main output files to store results
 $errfile = $wormbase->compare."/WS${WS_previous}-WS${WS_current}.out";
 $outfile = $wormbase->compare."/WS${WS_previous}-WS${WS_current}.dbcomp";
@@ -126,14 +126,14 @@ open (ERR, ">$errfile") || die "Couldn't write to err file\n";
 print OUT  " +--------------------------------------------+\n";
 print OUT  " | Class                  |   ACEDB database  |\n";
 print OUT  " |                        +---------+---------+---------+---------+---------+\n";
-printf OUT " |                        | %7s | %7s |    +    |    -    |   Net   |\n", $dbname_1,$dbname_2;
+print OUT  " |                        |   ${WS_previous}   |   ${WS_current}   |    +    |    -    |   Net   |\n";
 print OUT  " +------------------------+---------+---------+---------+---------+---------+\n";
 
 #########################################################################
 # Check numbers of of classes
 #########################################################################
 
-&classes("Sanger and St. Louis", &sanger_stlouis);
+#&classes("Sanger Sequence Data", &sanger_seq_data);
 &classes("Sanger", &sanger);
 &classes("CalTech", &caltech);
 &classes("Cold Spring Harbor", &csh);
@@ -354,7 +354,7 @@ sub diff {
 
 ###############################################
 
-sub sanger_stlouis {
+sub sanger {
   my @classes = (
 		 "Sequence",
 		 "CDS",
@@ -367,11 +367,6 @@ sub sanger_stlouis {
 		 "elegans_CDS",
 		 "elegans_pseudogenes",
 		 "elegans_RNA_genes",
-		 );
-}
-
-sub sanger {
-  my @classes = (
 		 "Class",
 		 "Model",
 		 "Method",
@@ -557,13 +552,11 @@ sub get_curation_stats {
     my $total_iso = $lab_count{RW_new_isoform} + $lab_count{HX_new_isoform};
 
     if ($species eq 'elegans') {
-      print OUT "Total $total\nlost: $total_lost ($lab_count{HX_lost}/$lab_count{RW_lost})\nchanged: $total_changed ($lab_count{HX_changed}/$lab_count{RW_changed})\nnew gene: $total_new_gene ($lab_count{HX_new_gene}/$lab_count{RW_new_gene})\nnew isoform: $total_iso ($lab_count{HX_new_isoform}/$lab_count{RW_new_isoform})\n";
-#      print OUT "Total ", $total,"\nHinxton: $HX\nSt. Louis: $RW\n\nlost (Hinxton): $lab_count{HX_lost}\nlost (St. Louis): $lab_count{RW_lost}\n\nchanged (Hinxton): $lab_count{HX_changed}\nchanged (St. Louis): $lab_count{RW_changed}\n\nnew gene (Hinxton): $lab_count{HX_new_gene}\nnew gene (St. Louis): $lab_count{RW_new_gene}\n\nnew isoform (Hinxton): $lab_count{HX_new_isoform}\nnew isoform (St. Louis): $lab_count{RW_new_isoform}\n";
+	print OUT "Total $total\nlost: $total_lost\nchanged: $total_changed\nnew gene: $total_new_gene\nnew isoform: $total_iso\n";
     } else {
-      print OUT "Total $RW\nlost: $lab_count{RW_lost}\nchanged: $lab_count{RW_changed}\nnew gene: $lab_count{RW_new_gene}\nnew isoform: $lab_count{RW_new_isoform}\n";
+	print OUT "Total $RW\nlost: $lab_count{RW_lost}\nchanged: $lab_count{RW_changed}\nnew gene: $lab_count{RW_new_gene}\nnew isoform: $lab_count{RW_new_isoform}\n";
     }
   }
-
 }
 
 ###############################################

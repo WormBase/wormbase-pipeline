@@ -42,13 +42,13 @@ $acedbpath = $wormbase->autoace unless $acedbpath;
 $ws_version = $wormbase->get_wormbase_version_name unless $ws_version;
 
 if (not defined $outfile) {
-  $outfile = "./wormbase.agr_allele.${ws_version}.json";
+  $outfile = "./wormbase.agr_phenotype.${ws_version}.json";
 }
 
 #
 # restrict to genes in the BGI, if provded
 #
-my (%only_these_genes, @alleles);
+my (%only_these_genes, @pheno_annots);
 
 if (defined $bgi_json) {
   # read it so that we can restrict to genes that have basic info
@@ -74,55 +74,44 @@ if (defined $bgi_json) {
 
 my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or die("Connection failure: ". Ace->error);
 
-my ( $it, @annots);
-
-
-$it = $db->fetch_many(-query => 'find Variation WHERE Live AND COUNT(Gene) == 1 AND (Description OR Interactor OR Disease_info) AND NOT Natural_variant');
+my $it = $db->fetch_many(-query => 'find Variation WHERE Live AND COUNT(Gene) == 1 AND Phenotype AND NOT Natural_variant');
 
 while (my $obj = $it->next) {
   next unless $obj->isObject();
-  #next unless $obj->Species;
-  #next unless $obj->Species->name eq $full_name;
-
-  my ($has_disease, $has_interaction, $has_phenotype) = (0,0,0);
-
-  $has_disease = 1 if $obj->Disease_info;
-  $has_phenotype = 1 if $obj->Description;
-  if ($obj->Interactor) {
-    foreach my $item ($obj->Interactor->col) {
-      $has_interaction = 1 if $item eq 'Regulatory';
-    }
-  }
-  
-  next unless $has_disease or $has_phenotype or $has_interaction;
 
   my ($gene) = $obj->Gene->name;
-  next if not exists $only_these_genes{$gene};
-
-  my $symbol = $obj->Public_name->name;
-  my %synonyms;
-  foreach my $on ($obj->Other_name) {
-    $synonyms{$on->name} = 1;
+  next if defined $bgi_json and not exists $only_these_genes{$gene};
+  
+  foreach my $pt ($obj->Phenotype) {
+    my $phen_id = $pt->name;
+    my $phen_desc = $pt->Primary_name->name;
+    my @paper;
+    
+    foreach my $evi ($pt->col()) {
+      if ($evi->name eq 'Paper_evidence') {
+        foreach my $wb_paper ($evi->col ) {
+          push @paper, &get_paper_json( $wb_paper );
+        }
+      }
+    }
+    
+    foreach my $pap (@paper) {
+      my $json_obj = {
+        objectId     => "WB:$obj", 
+        phenotypeTermIdentifiers => [ { termId => $phen_id, termOrder => 1 } ],
+        phenotypeStatement => $phen_desc,
+        dateAssigned => $date,
+        evidence => $pap,
+      };
+      
+      push @pheno_annots, $json_obj;
+    }
   }
-
-  my $json_obj = {
-    primaryId     => "WB:$obj", 
-    symbol        => $symbol,
-    symbolText    => $symbol,
-    synonyms      => [keys \%synonyms],
-    secondaryIds => [],
-    taxonId       => "NCBITaxon:" . $taxid,
-    gene          => "WB:$gene",
-    crossReferences => [ { id => "WB:$obj", pages => ["allele"] }],
-  };
-
-
-  push @alleles, $json_obj;
 }
 
 
 my $meta_data = {
-  dateProduced => &get_rfc_date(),
+  dateProduced => $date,
   dataProvider => [
     { 
       crossReference => {
@@ -137,7 +126,7 @@ my $meta_data = {
 
 my $data = {
   metaData => $meta_data,
-  data     => \@alleles,
+  data     => \@pheno_annots,
 };
 
 if (defined $outfile) {
@@ -156,9 +145,6 @@ $db->close;
 exit(0);
 
 
-exit(0);
-
-
 ##############################################
 sub get_rfc_date {
 
@@ -172,5 +158,26 @@ sub get_rfc_date {
   }
   
   return $date;
+}
+
+##############################################
+sub get_paper_json {
+  my ($wb_paper) = @_;
+  
+  my $json_paper = {};
+  
+  my $pmid;
+  foreach my $db ($wb_paper->Database) {
+    if ($db->name eq 'MEDLINE') {
+      $pmid = $db->right->right->name;
+      last;
+    }
+  }
+  $json_paper->{modPublicationId} = "WB:$wb_paper";
+  if ($pmid) {
+    $json_paper->{pubMedId} = "PMID:$pmid";
+  }
+  
+  return $json_paper;
 }
 

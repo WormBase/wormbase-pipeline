@@ -24,7 +24,7 @@ GetOptions(
    'species=s' => \$species, # specify the species to run on
    'test'      => \$test,    # use the test database instead of the live one
    'store=s'   => \$store,   # pass a storable (for the build)
-   'output=s'  => \$output,  # write somewhere else and not to REPORTS/
+   'outfile=s' => \$output,  # write somewhere else and not to REPORTS/
    'database=s'=> \$database,# specify a different database than BUILD/$species
 )||die(@!);
 
@@ -49,73 +49,111 @@ $log->write_to("creating a GPI file at $output for ${\$wormbase->long_name}\n");
 
 my $db = Ace->connect(-path => ($database ||$wormbase->autoace));
 
-my $genes = $db->fetch_many(-query => 'Find Gene;Species="'.$wormbase->long_name.
+my $genesh = $db->fetch_many(-query => 'Find Gene;Species="'.$wormbase->long_name.
             '";Live;SMap;Corresponding_transcript OR Corresponding_CDS')
             or $log->log_and_die(Ace->error);
 
 print $outfile "!gpi-version: 1.2\n";
+print $outfile "!namespace: WB\n";
 
-while (my $g = $genes->next){
-   # Gene block
+my (%genes, %coding_trans, %nc_trans, %proteins);
+
+while (my $g = $genesh->next){
+  # Gene block
   my ($desc) = $g->Gene_class ? $g->Gene_class->Description : "";
-
-   print STDERR "processing $g\n" if $debug;
-   print $outfile join("\t",
-                        "WB",
-                        $g,
-                        $g->Public_name,
-                        $desc,
-                        join('|',$g->Other_name),
-                        "gene",
-                        "taxon:" . $g->Species->NCBITaxonomyID,
-                        "",
-                        join("|", &get_xrefs($g, "gene")),
-                        ""), "\n";
-
-   foreach my $t($g->Corresponding_CDS){
-     # Transcript/CDS block
-     print $outfile join("\t", 
-                         "WB", 
-                         $t,
-                         $g->Public_name,
-                         $desc,
-                         join('|',$g->Other_name),
-                         "transcript",
-                         "taxon:" . $t->Species->NCBITaxonomyID,
-                         "WB:$g",
-                         "", 
-                         ""), "\n";
-     foreach my $p($t->Corresponding_protein){
-       print $outfile join("\t", 
-                           "WB",
-                           $p,
-                           uc($g->Public_name),
-                           $desc,
-                           join('|',map { uc($_) } $g->Other_name),
-                           "protein",
-                           "taxon:" .$p->Species->NCBITaxonomyID,
-                           "WB:$t",
-                           join("|", &get_xrefs($p, "protein")),
-                           ""), "\n";
-     }
-   }
-
-   foreach my $t($g->Corresponding_transcript){
-       next if "${\$t->Method}" eq 'Coding_transcript';
-       # ncRNA transcript block
-       print $outfile join("\t", 
-                           "WB", 
-                           $t,
-                           $g->Public_name,
-                           $desc,
-                           '',
-                           $t->Method->GFF_SO->SO_name,
-                           "taxon:" . $t->Species->NCBITaxonomyID,
-                           "WB:$g",
-                           join("|". &get_xrefs($t, "transcript")), 
-                           ""), "\n";
-   }
+  
+  print STDERR "processing $g\n" if $debug;
+  push @{$genes{$g}}, [
+    "WB",
+    $g,
+    $g->Public_name,
+    $desc,
+    join('|',$g->Other_name),
+    "gene",
+    "taxon:" . $g->Species->NCBITaxonomyID,
+    "",
+    join("|", &get_xrefs($g, "gene")),
+    ""]; 
+  
+  foreach my $t($g->Corresponding_CDS){
+    # Transcript/CDS block
+    push @{$coding_trans{$t}}, [
+      "WB", 
+      $t,
+      $g->Public_name,
+      $desc,
+      join('|',$g->Other_name),
+      "transcript",
+      "taxon:" . $t->Species->NCBITaxonomyID,
+      "WB:$g",
+      "", 
+      ""];
+    
+    foreach my $p ($t->Corresponding_protein) {
+      push @{$proteins{$p}}, [
+        "WB",
+        $p,
+        uc($g->Public_name),
+        $desc,
+        join('|',map { uc($_) } $g->Other_name),
+        "protein",
+        "taxon:" .$p->Species->NCBITaxonomyID,
+        "WB:$t",
+        join("|", &get_xrefs($p, "protein")),
+        ""];
+    }
+  }
+  
+  foreach my $t($g->Corresponding_transcript){
+    next if "${\$t->Method}" eq 'Coding_transcript';
+    # ncRNA transcript block
+    push @{$nc_trans{$t}}, [
+      "WB", 
+      $t,
+      $g->Public_name,
+      $desc,
+      '',
+      $t->Method->GFF_SO->SO_name,
+      "taxon:" . $t->Species->NCBITaxonomyID,
+      "WB:$g",
+      join("|". &get_xrefs($t, "transcript")), 
+      ""];
+  }
 }
+
+foreach my $g (sort keys %genes) {
+  my @g = @{$genes{$g}};
+  $log->log_and_die("ERROR: multiple gene entries with id $g\n") if scalar(@g) != 1;
+
+  print $outfile join("\t", @{$g[0]}), "\n";
+}
+
+foreach my $ct (sort keys %coding_trans) {
+  my @ct = @{$coding_trans{$ct}};
+  $log->log_and_die("ERROR: multiple gene entries with id $ct\n") if scalar(@ct) != 1;
+
+  print $outfile join("\t", @{$ct[0]}), "\n";
+}
+foreach my $nct (sort keys %nc_trans) {
+  my @nct = @{$nc_trans{$nct}};
+  $log->log_and_die("ERROR: multiple gene entries with id $nct\n") if scalar(@nct) != 1;
+
+  print $outfile join("\t", @{$nct[0]}), "\n";
+}
+foreach my $p (sort keys %proteins) {
+  my @p = @{$proteins{$p}};
+
+  if (scalar(@p) > 1) {
+    my @all_t;
+    foreach my $op (@p) {
+      push @all_t, $op->[7];
+    }
+    $p[0]->[7] = join("|", @all_t);
+  }
+
+  print $outfile join("\t", @{$p[0]}), "\n";
+}
+
 
 
 sub get_xrefs {

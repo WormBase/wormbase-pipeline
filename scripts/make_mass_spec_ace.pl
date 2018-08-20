@@ -728,7 +728,7 @@ sub process_cds {
 	  # check to see if this peptide has a match in this experiment
 	  if (exists $experiment{$experiment_id}{HAS_PEPTIDE}{$ms_peptide}) {
 	    # the protein that this peptide in this experiment matches
-	    print OUT "Mass_spec_experiments \"$experiment_id\" Protein \"${wormpep_prefix}:$wormpep_id\"\n"; 
+	    print OUT "Mass_spec_experiments \"$experiment_id\" Protein \"$wormpep_id\"\n"; 
 	    # count the number of times this peptide maps to a protein in this experiment
 	    $peptide_count{$ms_peptide}{$experiment_id}++;
 	  }
@@ -743,7 +743,7 @@ sub process_cds {
 	my $motif_out = "";	# holds the motif output, if any
 
 	print OUT "\n";
-	print OUT "Protein : \"${wormpep_prefix}:$wormpep_id\"\n";                                          
+	print OUT "Protein : \"$wormpep_id\"\n";                                          
 	my $pos = $protein_positions{$ms_peptide}; # position in protein
 	my $len = length(&no_underscore($ms_peptide)); # length of peptide sequence
 	my $end = $pos+$len-1;
@@ -768,7 +768,7 @@ sub process_cds {
 		$motif_out .= "Motif : \"$pt_db:$CDS_name_isoform\"\n";
 		$motif_out .= "Title \"$experiment{$experiment_id}{'posttranslation_modification_type'}\"\n";
 		$motif_out .= "Database \"$pt_db\" \"${pt_db}_ID\" \"$CDS_name_isoform\"\n";
-		$motif_out .= "Pep_homol \"${wormpep_prefix}:$wormpep_id\"\n";
+		$motif_out .= "Pep_homol \"$wormpep_id\"\n";
 		$motif_out .= "\n";
 		$motif_out .= "\n";
 	      }
@@ -1221,8 +1221,6 @@ sub get_protein_details {
   print "Ace protein fetch->" if ($verbose);
   print "$protein_id\n" if ($verbose);
 
-
-  if ($protein_id !~ /^${wormpep_prefix}:/) {$protein_id = "${wormpep_prefix}:" . $protein_id}
   my $protein_obj = $db->fetch("Protein" => $protein_id);
 
   if (! defined $protein_obj) {
@@ -1263,8 +1261,6 @@ sub get_uniprot {
     
     if (!defined $uniprot) {next;}
     
-    $wormpep =~ s/${wormpep_prefix}\://;
-    
     $uniprot{$uniprot} = $wormpep;
     #print "$uniprot\t$wormpep\n";
   }
@@ -1291,7 +1287,7 @@ Visible
 Class 
 Class Protein 
 From 1 
-Condition IS "${wormpep_prefix}:*"
+Condition IS "${pep_prefix}*"
 
 Colonne 2 
 Width 12 

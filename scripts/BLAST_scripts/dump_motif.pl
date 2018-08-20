@@ -1,4 +1,4 @@
-#!/usr/local/ensembl/bin/perl -w
+#!/usr/bin/env perl
 #
 # Originally written by Marc Sohrmann (ms2@sanger.ac.uk)
 #
@@ -118,6 +118,8 @@ my %motifs;
 my %pfams;
 my %panther;
 my %cds2wormpep;
+my %feature2remark; # store remark lines, so we can populate them in the Motif objects
+
 $wormbase->FetchData('cds2wormpep',\%cds2wormpep);
 
 foreach my $meth (@methods) {
@@ -138,35 +140,45 @@ foreach my $meth (@methods) {
        $line = "Motif_homol \"PFAM:$hid\" \"pfam\" $score $start $end $hstart $hend";
     }elsif($meth=~/hmmpanther|pfscan|pirsf|prints|scanprosite|smart|tigrfam|superfamily/){
        my $prefix = uc($meth);
-       $line = "Motif_homol \"$prefix:$hid\" \"$meth\" $score $start $end $hstart $hend";
-       $panther{"$prefix:$hid"}=$hid if $meth eq 'hmmpanther';
-    }else { #tmhmm seg signalp ncoils
+       my $motif = "$prefix:$hid"; # shorthand for the acedb id
+       $line = "Motif_homol \"$motif\" \"$meth\" $score $start $end $hstart $hend";
+
+       $feature2remark{"$motif"}="Remark \"$meth motif $hid\" From_analysis $meth\nDatabase $meth ${meth}_ID \"$hid\"";
+
+       $panther{"$motif"}=$hid if $meth eq 'hmmpanther';
+    }else { # tmhmm seg signalp ncoils
        $line = "Feature \"$meth\" $start $end $score";
+
+       $feature2remark{"$meth"}="Remark \"$meth motif\" From_analysis $meth";
     }
     push (@{$motifs{$prot}} , $line) if $line;
   }
 }
 
-# print ace file
-my $prefix = $wormbase->wormpep_prefix;
-
 
 foreach my $prot (sort {$a cmp $b} keys %motifs) {
     print ACE "\n";
     # cds2wormpep conversion
-    print ACE "Protein : \"$prefix:$prot\"\n";
+    print ACE "Protein : \"$prot\"\n";
     foreach my $line (@{$motifs{$prot}}) {
         print ACE "$line\n";
     }
 }
 
 print ACE "\n";
+
+#################################
 while(my($k,$v)= each %panther){
    print ACE "Motif : \"$k\"\n";
    print ACE "Database hmmpanther PantherID \"$v\"\n\n"
 }
 
-    
+while(my($k,$v)=each %feature2remark){
+   print ACE "Motif : \"$k\"\n";
+   print ACE "$v\n\n";
+}
+#################################
+
 $sth->finish;
 $sth_f->finish;
 $dbh->disconnect;
@@ -177,3 +189,4 @@ $log->write_to("\nEnd of Motif dump\n");
 
 $log->mail;
 exit(0);
+

@@ -309,7 +309,7 @@ sub get_classes_and_ids_to_check {
 			       Position_Matrix => 'WBPmat00000273',
 			       Pos_neg_data => '1417',
 			       Protein => 'ENSEMBL:ENSMUSP00000042619',
-			       Protein => 'WP:CE10000',
+			       Protein => 'CE10000',
 			       Pseudogene => 'C44C10.2',
 			       Rearrangement => 'meDf5',
 			       RNAi => 'WBRNAi00000273',
@@ -321,7 +321,7 @@ sub get_classes_and_ids_to_check {
 			       Species => 'Achromobacter cycloclastes',
 			       Strain => 'BC2420',
 			       Structure_data => 'WBStructure000191',
-			       Transcript => 'B0205.9',
+			       Transcript => 'B0205.9.1',
 			       Transcription_factor => 'WBTranscriptionFactor000119',
 			       Transgene => 'eIs2137',
 			       Transposon => 'WBTransposon00000195',
@@ -345,7 +345,7 @@ sub get_classes_and_ids_to_check {
 			       Protein => 'ENSEMBL:ENSMUSP00000042619',
 			       Pseudogene => 'CBG25555',
 			       Sequence => ['cb25.fpc0002', 'cb25.fpc0011c', 'cb25.fpc0081', 'cb25.fpc0143a', 'chrI', 'chrII'],
-			       Transcript => 'CBG00122',
+			       Transcript => 'CBG00122.1',
 			       Variation => 'WBVar00000752',
 
 			       },
@@ -362,7 +362,7 @@ sub get_classes_and_ids_to_check {
 			       Method => 'cDNA_for_RNAi',
 			       Pseudogene => 'CBN09775',
 			       Sequence => ['Cbre_Contig1', 'Cbre_Contig10', 'Cbre_Contig20', 'Cbre_Contig50', 'Cbre_Contig100', 'Cbre_Contig200', 'Cbre_Contig400', 'Cbre_Contig600', 'Cbre_Contig800'],
-			       Transcript => 'CBN00079',
+			       Transcript => 'CBN00079.1',
 			       },
 		 'remanei' => {
 			       Ace2SO => 'transposable_element_ace2so',
@@ -384,7 +384,7 @@ sub get_classes_and_ids_to_check {
 			       Gene => 'WBGene00119208', # misses Ortholog Ortholog_other Other_name
 			       Gene_name => 'Cjp-acd-5',
 			       Sequence => ['Cjap.Contig2', 'Cjap.Contig7087', 'Cjap.Contig772', 'Cjap.Contig7751', 'Cjap.Contig8547', 'Cjap.Contig91', 'Cjap.Contig9449', 'Cjap.Contig981', 'Cjap.Contig9854'],
-			       Transcript => 'CJA00088',
+			       Transcript => 'CJA00088.1',
 			       },
 		 'pristionchus' => {
 			       CDS => 'PPA00099',
@@ -403,10 +403,10 @@ sub get_classes_and_ids_to_check {
 			       Gene_name => 'Bma-aagr-4',
 			       Homol_data => 'Bm_v4_Chr4_scaffold_001:wublastx_brenneri',
 			       Method => 'BLAT_EST_BEST',
-			       Protein => 'BM:BM32546',
+			       Protein => 'BM32546',
 			       Pseudogene => 'Bm477',
 			       Sequence => ['Bm_024', 'Bm_013', 'Bm_007', 'Bm_008', 'Bm_014', 'Bm_v4_Chr4_scaffold_001'],
-			       Transcript => 'Bm1',
+			       Transcript => 'Bm1.1',
 			     },
 		 'ovolvulus' => {
 			       Ace2SO => 'coding_transcript_ace2so',
@@ -416,9 +416,9 @@ sub get_classes_and_ids_to_check {
 			       Gene_name => 'Ovo-eat-4',
 			       Homol_data => 'OVOC_OO_000024:wublastx_brenneri',
 			       Method => 'BLAT_EST_BEST',
-			       Protein => 'OV:OVP01471',
+			       Protein => 'OVP01471',
 			       Sequence => ['OVOC_OO_000001', 'OVOC_OO_000008', 'OVOC_OO_000054', 'OVOC_OO_000132', 'OVOC_OO_000629', 'OVOC_OO_000690'],
-			       Transcript => 'OVOC8637',
+			       Transcript => 'OVOC8637.1',
 			     },
                   'sratti'  => { 
 			       Ace2SO => 'coding_transcript_ace2so',
@@ -428,9 +428,9 @@ sub get_classes_and_ids_to_check {
 			       Gene_name => 'SRAE_0000000800',
 			       Homol_data => 'SRAE_0000000800:wublastx_brenneri',
 			       Method => 'BLAT_EST_BEST',
-			       Protein => 'SRP:SRP01471',
+			       Protein => 'SRP01471',
 			       Sequence => ['SRAE_chr2', 'SRAE_scaffold1'],
-			       Transcript => 'SRAE_0000000800',
+			       Transcript => 'SRAE_0000000800.1',
                              },
 
 		);                  'tmuris'  => { 
@@ -441,9 +441,9 @@ sub get_classes_and_ids_to_check {
 			       Gene_name => 'TMUE_0000002363',
 			       Homol_data => 'TMUE_0000001503:wublastx_brenneri',
 			       Method => 'BLAT_EST_BEST',
-			       Protein => 'TMP:TMP00002',
+			       Protein => 'TMP00002',
 			       Sequence => ['TMUE_LG3', 'TMUE_scaffold273'],
-			       Transcript => 'TMUE_0000001726',
+			       Transcript => 'TMUE_0000001726.1',
                              },
 
   return $classes{$species};

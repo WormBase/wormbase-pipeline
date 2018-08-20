@@ -51,8 +51,9 @@ $outfh->close;
 $jeff->DESTROY;
 
 $log->write_to("finished dumping to $file\n");
-
 $log->mail();
+exit(0);
+
 
 # class definitions
 

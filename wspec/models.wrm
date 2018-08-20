@@ -1103,12 +1103,8 @@
 ?GO_annotation Gene UNIQUE ?Gene XREF GO_annotation
                GO_term UNIQUE ?GO_term XREF GO_annotation
                GO_code UNIQUE ?GO_code
-               Annotation_relation NOT
-                                   colocalizes_with
-                                   contributes_to
-                                   enables
-                                   involved_in
-                                   part_of
+               Annotation_relation UNIQUE ?RO_term XREF GO_annotation
+               Annotation_relation_not UNIQUE ?RO_term XREF Not_GO_annotation
                Annotation_made_with Interacting_gene ?Gene
                                     Inferred_from_GO_term ?GO_term
                                     Motif ?Motif
@@ -1161,8 +1157,8 @@
                        Sequence ?Sequence XREF GO_term // Erich, [011210 krb]
                        Transcript ?Transcript XREF GO_term // [030411 krb]
                        Phenotype ?Phenotype XREF GO_term // Erich, [020128 dl]
-                       Index Ancestor ?GO_term XREF Descendent // Lincoln [020709 [krb]
-                             Descendent ?GO_term XREF Ancestor
+                       Index Ancestor ?GO_term XREF Descendant // Lincoln [020709 [krb]
+                             Descendant ?GO_term XREF Ancestor
                        Anatomy_term ?Anatomy_term XREF GO_term // added [031107 krb]
                        Homology_group ?Homology_group XREF GO_term // added [031120 krb]
                        Expr_pattern ?Expr_pattern XREF GO_term
@@ -1202,8 +1198,8 @@
                Part ?SO_term XREF Part_of
                Derives ?SO_term XREF Derived_from
                Member ?SO_term XREF Member_of
-         Ancestor ?SO_term XREF Descendent
-         Descendent ?SO_term XREF Ancestor
+         Ancestor ?SO_term XREF Descendant
+         Descendant ?SO_term XREF Ancestor
 
 
 ///////////////////////////////////////////////////////////////
@@ -1264,6 +1260,33 @@
                       Associated_construct ?Construct XREF Construct_for_disease
                       Associated_transgene ?Transgene XREF Transgene_for_disease
          Version UNIQUE Text
+
+
+
+///////////////////////////////////////////////////////////////
+//
+// ?RO_term class - Kimberly WS267
+//
+////////////////////////////////////////////////////////////////
+
+
+?RO_term Name UNIQUE ?Text
+         Status UNIQUE Valid
+                       Obsolete
+         Alt_id ?Text
+         Definition UNIQUE ?Text
+         Synonym Broad ?Text
+                 Exact ?Text
+                 Narrow ?Text
+                 Related ?Text
+         Child Instance ?RO_term XREF Instance_of
+         Parent Instance_of ?RO_term XREF Instance
+         Index Ancestor ?RO_term XREF Descendant
+               Descendant ?RO_term XREF Ancestor
+         Attribute_of GO_annotation ?GO_annotation XREF Annotation_relation
+                      Not_GO_annotation ?GO_annotation XREF Annotation_relation_not
+         Version UNIQUE Text
+
 
 
 ///////////////////////////////////////////////////////////////
@@ -2543,8 +2566,8 @@
                               Expr_descendent ?Expr_pattern
                               GO_ancestor ?GO_term         //attribute assigned to narrower terms
                               GO_descendent ?GO_term
-              Index Ancestor ?Anatomy_term XREF Descendent  //store ancestors of relationship IS_A and PART_OF
-                    Descendent ?Anatomy_term XREF Ancestor  //store descendents of relationship IS_A and PART_OF
+              Index Ancestor ?Anatomy_term XREF Descendant  //store ancestors of relationship IS_A and PART_OF
+                    Descendant ?Anatomy_term XREF Ancestor  //store descendents of relationship IS_A and PART_OF
               Remark ?Text #Evidence
               Picture ?Picture XREF Anatomy
               WBProcess ?WBProcess XREF Anatomy_term
@@ -3852,25 +3875,4 @@
 // Add a line for the WS release the models file is going to be CVS tagged for
 // This give you a final shot at creating a nicely formatted CVS commit message
 //
-// WS242
-// WS243
-// WS244
-// WS245
-// WS246
-// WS247
-// WS248
-// WS249
-// WS250
-// WS251
-// WS252
-// WS253
-// WS254
-// WS255
-// WS256
-// WS257
-// WS258
-// WS259
-// WS260
-// WS261
-// WS262
-// WS263
+// WS268

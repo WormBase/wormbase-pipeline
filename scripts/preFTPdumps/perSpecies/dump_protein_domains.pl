@@ -57,6 +57,5 @@ while (my $cds = $cdses->next){
                       map {"$_". ($_->fetch->Title?' "'.$_->fetch->Title.'"':'')} @motifs)), "\n";
 }
 $db->close();
-
 $log->mail();
 exit(0);

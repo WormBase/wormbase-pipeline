@@ -768,7 +768,15 @@ sub check_history_seqname {
 
   my $version = $self->get_history_version($self->{wormbase}->database('current'));
   my $pepname = $self->{wormbase}->pepdir_prefix . 'pep';
-  if (!-e "/nfs/wormpub/BUILD/WORMPEP/${pepname}$version/${pepname}.history${version}") {$version--;}
+  my $count = 10;
+  while (!-e "/nfs/wormpub/BUILD/WORMPEP/${pepname}$version/${pepname}.history${version}") {
+    $count--;
+    if ($count == 0) {
+      print "\nThere is no old WORMPEP history file for this species within the last 10 releases - is this correct?\n\n";
+      return 0;
+    }
+    $version--;
+  }
   open (PEP, "< /nfs/wormpub/BUILD/WORMPEP/${pepname}$version/${pepname}.history${version}") || die "ERROR Can't find /nfs/wormpub/BUILD/WORMPEP/${pepname}$version/${pepname}.history${version}\n";
   while (my $line = <PEP>) {
     my @f = split /\s+/, $line;
@@ -950,6 +958,12 @@ sub replace_cds {
   my $existing = $line{EXISTING};
   my $model = $line{MODEL};
 
+  my $duplicate = $self->check_duplicates($existing, $model);
+  if ($duplicate) {
+    print "WARNING: The ID '$duplicate' has been specified twice\n\n";
+    $self->force();
+  }
+
   if ($self->structure_comparison_sanity_check($class, $existing, $model)) {print "WARNING $existing and $model have the same structure.\n"; ; $self->force()}
 
   $self->structure_update_sanity_check($class, $existing, $model);
@@ -979,6 +993,12 @@ sub new_isoform {
   my $class = $line{CLASS};
   my $existing = $line{EXISTING};
   my @models = @{$line{MODELS}};
+
+  my $duplicate = $self->check_duplicates($existing, @models);
+  if ($duplicate) {
+    print "WARNING: The ID '$duplicate' has been specified twice\n\n";
+    $self->force();
+  }
 
   my $gene = $self->SeqName2Gene($existing);
 
@@ -1052,6 +1072,12 @@ sub make_transposon {
   my $existing = $line{EXISTING};
   my $family = $line{FAMILY};
 
+  my $duplicate = $self->check_duplicates($existing, $family);
+  if ($duplicate) {
+    print "WARNING: The ID '$duplicate' has been specified twice\n\n";
+    $self->force();
+  }
+
   my $gene = $self->SeqName2Gene($existing);
 
   # check to see if the existing gene has isoforms - die if so
@@ -1100,6 +1126,12 @@ sub make_operon {
   my $method = $line{METHOD}; # either 'Operon' or 'dicistronic_mRNA'
   my @existing = @{$line{IN_OPERON}}; # the genes in the operon
 
+  my $duplicate = $self->check_duplicates(@existing);
+  if ($duplicate) {
+    print "WARNING: The ID '$duplicate' has been specified twice\n\n";
+    $self->force();
+  }
+
   my @genes;
   foreach my $old_seqname (@existing) {
     my $gene = $self->SeqName2Gene($old_seqname);
@@ -1147,6 +1179,12 @@ sub new_gene {
   my @models = @{$line{MODELS}};
   my $sequence = $self->get_Clone($class, $models[0]);
   my $cds = $self->Next_CDS_ID($sequence);
+
+  my $duplicate = $self->check_duplicates(@models);
+  if ($duplicate) {
+    print "WARNING: The ID '$duplicate' has been specified twice\n\n";
+    $self->force();
+  }
 
   my @new_cds;
 
@@ -1200,6 +1238,12 @@ sub split_gene {
   my $class = $line{CLASS};
   my $existing = $line{EXISTING};
   my @splitgroups = @{$line{SPLITGROUP}};
+
+  my $duplicate = $self->check_duplicates($existing, @splitgroups);
+  if ($duplicate) {
+    print "WARNING: The ID '$duplicate' has been specified twice\n\n";
+    $self->force();
+  }
 
   my $gene = $self->SeqName2Gene($existing);
 
@@ -1314,6 +1358,12 @@ sub merge_gene {
   my $class = $line{CLASS};
   my @existing = @{$line{DIE}};
   my @models = @{$line{MODELS}};
+
+  my $duplicate = $self->check_duplicates(@existing, @models);
+  if ($duplicate) {
+    print "WARNING: The ID '$duplicate' has been specified twice\n\n";
+    $self->force();
+  }
 
   my %unused;
   my %single;
@@ -1624,13 +1674,20 @@ sub date {
 }
 ######################################
 # add the Last_reviewed tag
+# ... and if this is Michael, then set the Evidence tag as well
 sub Last_reviewed {
   my ($self, $class, $cds) = @_;
+
+  my $evidence="\n";
+  if ($ENV{'USER'} eq 'mh6') {
+    $evidence = "Evidence Curator_confirmed WBPerson4055\n";
+  }
 
   my $fh = $self->{out};
   print $fh "\n// Last_reviewed\n";
   print $fh "$class : $cds\n";
   print $fh "Last_reviewed now $self->{person}\n";
+  print $fh $evidence;
   print $fh "\n";
 
 }
@@ -2153,6 +2210,24 @@ sub structure_comparison_sanity_check {
     return 0;
   }
 
+}
+
+######################################
+# compare the input list of IDs looking for duplicates
+# return the duplicate, or '' if none found
+sub check_duplicates {
+  my ($self, @IDs) = @_;
+
+
+  my %seen;
+
+  foreach my $string (@IDs) {
+    
+    next unless $seen{$string}++;
+    return $string;
+  }
+
+  return '';
 }
 
 ######################################

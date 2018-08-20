@@ -72,6 +72,7 @@ for my $g (@genes) {
     print $of $dna;
 }
 
-$log->mail;
 $of->close;
+$db->close();
+$log->mail;
 exit(0);

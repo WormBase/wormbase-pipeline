@@ -66,5 +66,9 @@ my @rows = $db->aql($query);
 
 map {print $of join("\t",@$_),"\n"} @rows;
 
-$log->mail;
+
+$db->close();
 $of->close;
+$log->mail;
+
+exit(0);

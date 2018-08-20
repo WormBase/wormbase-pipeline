@@ -147,16 +147,26 @@ foreach my $suf (0..9) {
     $gaf_line->{taxon} = \@taxids;
     
     # qualifier (Annotation_relation)
-    my $annot_rel = "";
-    if ($obj->Annotation_relation) {
-      my $al = $obj->Annotation_relation->name;
+    my @annot_rel;
+    if ($obj->Annotation_relation_not) {
+      push @annot_rel, "NOT";
+      my $al = $obj->Annotation_relation_not->Name;
+      $al =~ s/\s+/_/; 
       if ($al eq 'colocalizes_with' or
-          $al eq 'contributes_to' or
-          $al eq 'NOT') {
-        $annot_rel = $al;
+          $al eq 'contributes_to') {
+        push @annot_rel, $al;
       }
     }
-    $gaf_line->{qualifier} = $annot_rel;
+    if ($obj->Annotation_relation) {
+      my $al = $obj->Annotation_relation->Name;
+      $al =~ s/\s+/_/; 
+      if ($al eq 'colocalizes_with' or
+          $al eq 'contributes_to') {
+        push @annot_rel, $al;
+      }
+    }
+
+    $gaf_line->{qualifier} = join("|", @annot_rel);
     
     # Reference
     my @reference;
@@ -213,6 +223,8 @@ foreach my $suf (0..9) {
                      $dbfield eq 'UniProtKB-SubCell' or 
                      $dbfield eq 'UniRule') {
               $dbname = $dbfield;
+            } elsif ($dbname =~ /UniProt/) {
+              $dbname = "UniProtKB";
             } else {
               # do nothing; dbname is already correct
             }

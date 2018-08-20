@@ -204,19 +204,24 @@ foreach my $SeqGene(@SeqGenes) {
     }
   }
   else {
-    $log->write_to("$SeqGene: No live annotation");
-    if ($SeqGene->Corresponding_CDS_history) { 
-      $log->write_to(" - CHECK: Has History CDS\n");
-    }
-    elsif ($SeqGene->Corresponding_transcript_history) { 
-      $log->write_to(" - CHECK: Has History Transcript\n");
-    }
-    elsif ($SeqGene->Corresponding_pseudogene_history) { 
-      $log->write_to(" - CHECK: Has History Pseudogene\n");
-    }
-    else {$log->write_to(" - WARNING: Dangling annotation, please check the database $db?\n");}
-    print REP "$SeqGene - WARNING: Dangling annotation, please check the database $db for feature data\n" if ($report);
-    next;
+      if ($SeqGene->Corresponding_CDS_history) { 
+	  #$log->write_to("$SeqGene: No live annotation");
+	  #$log->write_to(" - CHECK: Has History CDS\n");
+      }
+      elsif ($SeqGene->Corresponding_transcript_history) { 
+	  #$log->write_to("$SeqGene: No live annotation");
+	  #$log->write_to(" - CHECK: Has History Transcript\n");
+      }
+      elsif ($SeqGene->Corresponding_pseudogene_history) { 
+	  #$log->write_to("$SeqGene: No live annotation");
+	  #$log->write_to(" - CHECK: Has History Pseudogene\n");
+      }
+      else {
+	  $log->write_to("$SeqGene: No live annotation");
+	  $log->write_to(" - WARNING: Dangling annotation, please check the database $db?\n");
+      }
+      print REP "$SeqGene - WARNING: Dangling annotation, please check the database $db for feature data\n" if ($report);
+      next;
   }
 }
 
@@ -259,7 +264,7 @@ foreach my $WBGene(@WBGenes) {
 	    #test just for the hell of it#
 	    if ($WBGeneBio eq $finalbio) {
 		$mcount++;
-		$log->write_to("$WBGene - MATCH\n");
+		#$log->write_to("$WBGene - MATCH\n");
 		
 	    }
 	    elsif ($WBGeneBio ne $finalbio) {

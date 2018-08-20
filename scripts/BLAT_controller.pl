@@ -76,7 +76,7 @@ my %mol_types = ( 'elegans'          => [qw( EST mRNA ncRNA OST tc1 RST Trinity)
 		  'pristionchus'     => [qw( mRNA EST Trinity)],
                   'ovolvulus'        => [qw( mRNA EST Trinity)],
                   'sratti'           => [qw( mRNA EST Trinity)],
-		  'tmuris'           => [qw( mRNA EST Trinity)],
+		  'tmuris'           => [qw( mRNA EST Trinity IsoSeq)],
 		  'nematode'         => [qw( EST )],
 		  'nembase'          => [qw( EST )],
 		  'washu'            => [qw( EST )],
@@ -513,7 +513,7 @@ sub check_and_shatter {
   unless( -e "$dir/$file" ) {
     my @shatteredfiles = glob("$dir/$file*");
     if(scalar @shatteredfiles == 0){
-      $log->log_and_die("shattered files also missing - not good");
+      $log->log_and_die("shattered files $dir/$file * also missing - not good");
     }
   }else {		
     my $seq_count = qx(grep -c '>' $dir/$file);

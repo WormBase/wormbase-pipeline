@@ -82,7 +82,7 @@ my %mol_types = ( 'elegans'          => [qw( EST mRNA OST RST Trinity)],
                   'pristionchus'     => [qw( mRNA EST)],
                   'ovolvulus'        => [qw( mRNA EST Trinity)],
                   'sratti'           => [qw( mRNA EST)],
-                  'tmuris'           => [qw( mRNA EST)],
+                  'tmuris'           => [qw( mRNA EST Trinity IsoSeq)],
                 );
 
 
@@ -108,19 +108,22 @@ foreach my $chromosome (@chromosomes) {
   my @ost_introns;
   my @mrn_introns;
   my @tri_introns;
+  my @iso_introns;
 
   my $est_match;
   my $rst_match;
   my $ost_match;
   my $mrn_match;
   my $tri_match;
+  my $iso_match;
 
   if (grep /^EST$/, @{$mol_types{$species}}) {@est_introns = $ovlp->get_intron_from_exons($ovlp->get_EST_BEST($chromosome))};
   if (grep /^RST$/, @{$mol_types{$species}}) {@rst_introns = $ovlp->get_intron_from_exons($ovlp->get_RST_BEST($chromosome))};
   if (grep /^OST$/, @{$mol_types{$species}}) {@ost_introns = $ovlp->get_intron_from_exons($ovlp->get_OST_BEST($chromosome))};
   if (grep /^mRNA$/, @{$mol_types{$species}}) {@mrn_introns = $ovlp->get_intron_from_exons($ovlp->get_mRNA_BEST($chromosome))};
   if (grep /^Trinity$/, @{$mol_types{$species}}) {@tri_introns = $ovlp->get_intron_from_exons($ovlp->get_Trinity_BEST($chromosome))};
-  
+  if (grep /^IsoSeq$/, @{$mol_types{$species}}) {@iso_introns = $ovlp->get_intron_from_exons($ovlp->get_IsoSeq_BEST($chromosome))};
+ 
   my @CDS_introns = $ovlp->get_curated_CDS_introns($chromosome);
 
   if (grep /^EST$/, @{$mol_types{$species}}) {$est_match = $ovlp->compare(\@est_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
@@ -128,6 +131,7 @@ foreach my $chromosome (@chromosomes) {
   if (grep /^OST$/, @{$mol_types{$species}}) {$ost_match = $ovlp->compare(\@ost_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
   if (grep /^mRNA$/, @{$mol_types{$species}}) {$mrn_match = $ovlp->compare(\@mrn_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
   if (grep /^Trinity$/, @{$mol_types{$species}}) {$tri_match = $ovlp->compare(\@tri_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
+  if (grep /^IsoSeq$/, @{$mol_types{$species}}) {$iso_match = $ovlp->compare(\@iso_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
 
 
   my %overlapping_hsps = (); # EST/RST/OST/mRNA/Trinity transcripts that match a CDS, keyed by transcript name, value is array of matching CDSs
@@ -165,8 +169,14 @@ foreach my $chromosome (@chromosomes) {
       foreach my $id (@ids) {
 	$overlapping_hsps{$id}{$cds_id} = 1;
       }
+    } elsif ((grep /^IsoSeq$/, @{$mol_types{$species}}) && $iso_match->match($cds)) {
+      my @ids = $iso_match->matching_IDs;
+      foreach my $id (@ids) {
+	$overlapping_hsps{$id}{$cds_id} = 1;
+      }
 
     }
+
   }
   
   # now look for transcripts that matched more than one CDS

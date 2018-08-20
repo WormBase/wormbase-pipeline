@@ -96,7 +96,7 @@ while(<$fh>) {
   my ($panther_gid, $panther_fid) = /^(\S+)\s+(\S+):\S+/; 
   my $wbgene;
   
-  if ($panther_gid =~ /WormBase=(\WBGene\d+)/) {
+  if ($panther_gid =~ /WormBase=(WBGene\d+)/) {
     # easy case; check
     $wbgene = $genelookup{$1} if exists $genelookup{$1};
   } elsif ($panther_gid =~ /WormBase=([^\|]+)/) {

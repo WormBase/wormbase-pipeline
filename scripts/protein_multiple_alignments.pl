@@ -31,7 +31,7 @@ my ($debug,
 GetOptions(
   'debug=s'          => \$debug,
   'store=s'          => \$store,
-  'runspecies=s'     => \@run_species,
+  'runspecies=s@'    => \@run_species,
   'test=s'           => \$test,
   'host=s'           => \$rdb_host,
   'port=s'           => \$rdb_port,
@@ -117,7 +117,7 @@ if ($run_clustal) {
     $log->log_and_die("Could not find $infile\n") if not -e $infile;
     $log->write_to("Will repopulate for $species using $infile\n");
 
-    my $prefix = $accessors{$species}->wormpep_prefix;        
+    my $prefix = $accessors{$species}->pep_prefix;        
     $dbconn->do("DELETE FROM clustal WHERE peptide_id LIKE \'$prefix\%\'") unless $dontclean;
     
     my $cmd_prefix = "$scratch_dir/clustal.$species.$$.";

@@ -85,8 +85,15 @@ while (my $obj = $it->next) {
         objectId => "WB:$g",
         objectName => $obj->Public_name->name,
         DOid     => $doterm->name,
-        taxonId  => "NCBITaxon:$taxid",
-        dataProvider => "WB", 
+        dataProvider => [
+          { 
+            crossReference => {
+              id => "WB",
+              pages => ["homepage"],
+            },
+            type => "curated",
+          },
+        ],
         dateAssigned => defined $evi_date ? $evi_date : $date,
         geneticSex   => "hermaphrodite",
         evidence     => {
@@ -126,8 +133,15 @@ while( my $obj = $it->next) {
 
   my $annot = {
     DOid         => $obj->Disease_term->name,
-    taxonId      => "NCBITaxon:$taxid",
-    dataProvider => "WB",
+    dataProvider => [
+      { 
+        crossReference => {
+          id => "WB",
+          pages => ["homepage"],
+        },
+        type => "curated",
+      },
+    ],
     dateAssigned => $evi_date,
     geneticSex  => ($obj->Genetic_sex) ? $obj->Genetic_sex->name : "hermaphrodite",
     evidence     => {
@@ -149,7 +163,7 @@ while( my $obj = $it->next) {
     $obj_type = "strain";
     $obj_name = ($strain->Genotype) ? $strain->Genotype->name : "";
     $assoc_type = "is_model_of";
-    $obj_id = "WBStrain:" . $strain->name;
+    $obj_id = "WB:" . $strain->name;
 
     #push @with_list, "WB:" . $gene->name if defined $gene;
     #push @with_list, "WBTransgene:" . $transgene->name if defined $transgene;
@@ -158,7 +172,7 @@ while( my $obj = $it->next) {
     $obj_type = "allele";
     $obj_name = $allele->Public_name->name;
     $assoc_type = "is_implicated_in";
-    $obj_id = "WBVar:" . $allele->name;
+    $obj_id = "WB:" . $allele->name;
 
     #push @with_list, "WB:" . $gene->name if defined $gene;
     #push @with_list, "WB_Transgene:" . $transgene->name if defined $transgene;
@@ -166,7 +180,7 @@ while( my $obj = $it->next) {
     $obj_type = "transgene";
     $obj_name = $transgene->Public_name->name;
     $assoc_type = "is_implicated_in";
-    $obj_id = "WBTransgene:" . $transgene->name;
+    $obj_id = "WB:" . $transgene->name;
     
     #push @with_list, "WB:" . $gene->name if defined $gene;
   } elsif (defined $gene) {
@@ -196,9 +210,9 @@ while( my $obj = $it->next) {
   if ($obj->Modifier_association_type) {
     my ($mod_assoc_type) = $obj->Modifier_association_type->name;
 
-    my @mod_strain    = map { "WBStrain:" . $_->name } $obj->Modifier_strain;
-    my @mod_transgene = map { "WBTransgene:" . $_->name } $obj->Modifier_transgene;
-    my @mod_var       = map { "WBVar:" . $_->name } $obj->Modifier_variation;
+    my @mod_strain    = map { "WB:" . $_->name } $obj->Modifier_strain;
+    my @mod_transgene = map { "WB:" . $_->name } $obj->Modifier_transgene;
+    my @mod_var       = map { "WB:" . $_->name } $obj->Modifier_variation;
     my @mod_gene      = map { "WB:" . $_->name } $obj->Modifier_gene;
     my @mod_molecule  = map { $_->name } $obj->Modifier_molecule;
     my @mod_other     = map { $_->name } $obj->Other_modifier;
@@ -243,7 +257,15 @@ if ($daf) {
 } else {
   my $meta_data = {
     dateProduced => $date,
-    dataProvider => "WB", 
+    dataProvider => [
+      { 
+        crossReference => {
+          id => "WB",
+          pages => ["homepage"],
+        },
+        type => "curated",
+      },
+        ],
     release      => (defined $ws_version) ? $ws_version : $wormbase->get_wormbase_version_name(),
   };
   
@@ -272,7 +294,7 @@ sub get_paper {
       last;
     }
   }
-  $json_paper->{modPublicationId} = "WBPaper:$wb_paper";
+  $json_paper->{modPublicationId} = "WB:$wb_paper";
   if ($pmid) {
     $json_paper->{pubMedId} = "PMID:$pmid";
   }
@@ -357,7 +379,7 @@ sub write_DAF_line {
   }
 
   printf($fh "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", 
-         $obj->{taxonId},
+         $taxid,
          $obj->{objectRelation}->{objectType}, 
          $obj->{objectId},
          $obj->{objectName},

@@ -57,6 +57,7 @@ while (my $p = $iterator->next) {
    }
 }
 
-$log->mail;
+$db->close();
 $of->close;
+$log->mail;
 exit(0);

@@ -100,22 +100,22 @@ my %processIds2prot_analysis = (
 
 
 our %org_prefix = ( 
-	            'wublastp_worm'          => 'WP',
-		    'wublastp_ensembl'       => 'ENSEMBL',
-		    'wublastp_fly'           => 'FLYBASE',
-		    'wublastp_yeast'         => 'SGD',
-		    'wublastp_slimswissprot' => 'SW',
-		    'wublastp_slimtrembl'    => 'TR',
-		    'wublastp_briggsae'      => 'BP',
-		    'wublastp_ipi_human'     => 'IP', # should never actually get included
-		    'wublastp_remanei'       => 'RP',
-		    'wublastp_pristionchus'  => 'PP',
-		    'wublastp_japonica'      => 'JA',
-		    'wublastp_brenneri'      => 'CN',
-		    'wublastp_brugia'        => 'BM',
-		    'wublastp_ovolvulus'     => 'OV',
-                    'wublastp_sratti'        => 'SRP',
-                    'wublastp_tmuris'        => 'TMP',
+	            'wublastp_worm'          => '',
+		    'wublastp_ensembl'       => 'ENSEMBL:',
+		    'wublastp_fly'           => 'FLYBASE:',
+		    'wublastp_yeast'         => 'SGD:',
+		    'wublastp_slimswissprot' => 'SW:',
+		    'wublastp_slimtrembl'    => 'TR:',
+		    'wublastp_briggsae'      => '',
+		    'wublastp_ipi_human'     => 'IP:', # should never actually get included
+		    'wublastp_remanei'       => '',
+		    'wublastp_pristionchus'  => '',
+		    'wublastp_japonica'      => '',
+		    'wublastp_brenneri'      => '',
+		    'wublastp_brugia'        => '',
+		    'wublastp_ovolvulus'     => '',
+                    'wublastp_sratti'        => '',
+                    'wublastp_tmuris'        => '',
 		  );
 
 my $QUERY_SPECIES = $wormbase->full_name;
@@ -430,8 +430,7 @@ sub dumpData {
       my $matches;
       my $pid = shift;
       my %BEST;
-      my $prot_pref = $wormbase->wormpep_prefix;
-      print OUT "\nProtein : \"$prot_pref:$pid\"\n";
+      print OUT "\nProtein : \"$pid\"\n";
       while ( $matches = shift) { #pass reference to the hash to dump
 	#write ace info
         my $output_count = 0;
@@ -474,12 +473,12 @@ sub dumpData {
 	      }
 	
 	      if ($best == 0) {
-               $BEST{$$data[1]} = "$prefix:$$data[4]"."score$$data[7]";
+               $BEST{$$data[1]} = $prefix."$$data[4]"."score$$data[7]";
                $best = 1;
                next HOMOLOGUES if $just_matches; # dont bother with all the rest
 	      }	
 	      print OUT "Pep_homol ";
-	      print OUT "\"$prefix:$$data[4]\" "; #  homolID
+	      print OUT "\"".$prefix."$$data[4]\" "; #  homolID
 	      print OUT "$$data[1] ";	#  analysis
 	      print OUT "$$data[7] ";	#  e value
 	      print OUT "$$data[2] ";	#  HomolStart
@@ -488,8 +487,8 @@ sub dumpData {
 	      print OUT "$$data[6] ";	#  pepHomolEnd
 	      print OUT "Target_species \"",&species_lookup($$data[1], $$data[4]),"\"\n";
 
-	      print RECIP "Protein : \"$prefix:$$data[4]\" line "; #  matching peptide
-	      print RECIP "\"$prot_pref:$pid\" ";	# worm protein
+	      print RECIP "Protein : \"".$prefix."$$data[4]\" line "; #  matching peptide
+	      print RECIP '"'."$pid\" ";#  worm protein
 	      print RECIP "$$data[1] "; #  analysis
 	      print RECIP "$$data[7] "; #  e value
 	      print RECIP "$$data[5] "; #  HomolStart
@@ -624,7 +623,7 @@ sub getPrefix {
       my $name = shift;
       if ( $ACC2DB{$name} ) {
 	print IPI_HITS "$name\n";
-	return $ACC2DB{$name} 
+	return $ACC2DB{$name} . ":";
       }
       # NOTE this is only the prefix - not the method (it will look like wublastp_ipi_human ENSEMBL:ENS00342342 etc)
       if ( $name =~ /ENS\w+/ ) {

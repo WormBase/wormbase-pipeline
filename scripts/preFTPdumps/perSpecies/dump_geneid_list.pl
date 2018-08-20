@@ -62,6 +62,7 @@ while(my $gene=$gene_it->next){
   }
 }
 
+$db->close();
 $of->close;
 $log->mail;
 exit(0);

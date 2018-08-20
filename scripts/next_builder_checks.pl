@@ -257,7 +257,7 @@ if($wormpep){
     close PEP;
     my ($Pcount, $Mcount); #pephomol motifhomol
     foreach my $pep(@newpeps){
-	my $pepObj = $ace->fetch('Protein' => $wormbase->wormpep_prefix.":$pep");
+	my $pepObj = $ace->fetch('Protein' => "$pep");
 	$Pcount++ if (defined $pepObj->Pep_homol);
 	#print STDERR $pepObj->name," P\n" unless(defined $pepObj->Pep_homol);
 	$Mcount++ if (defined $pepObj->Motif_homol);

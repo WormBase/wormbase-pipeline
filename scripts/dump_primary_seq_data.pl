@@ -120,7 +120,7 @@ sub dump_BLAT_ace_data {
 #  $EST_dir = $EST_dir.$subspecies;
  
   # Remove stale data if it exists on disk.
-  my @types = ('mRNA','ncRNA','EST','OST','tc1','RST','Trinity');
+  my @types = ('mRNA','ncRNA','EST','OST','tc1','RST','Trinity','IsoSeq');
   foreach my $type (@types) {
     my $file = "$EST_dir/${type}.ace";
     if (-e $file) {
@@ -147,6 +147,8 @@ Write $EST_dir/RST.ace\n
 clear\n
 query find Sequence where method = RNASeq_trinity & !Ignore\n
 Write $EST_dir/Trinity.ace\n
+query find Sequence where method = RNASeq_IsoSeq & !Ignore\n
+Write $EST_dir/IsoSeq.ace\n
 clear\n
 query find Sequence TC*\n
 Write $EST_dir/tc1.ace\n
@@ -161,7 +163,7 @@ END
   close DB;
 
   # special case for Trinity
-  if (not -e "$EST_dir/Trinity.ace") {
+  if (not -e "$EST_dir/Trinity.ace" || not -e "$EST_dir/IsoSeq.ace") {
     $wormbase->run_command("touch $EST_dir/Trinity.ace", $log);
   }
   $log->write_to("$subspecies Transcripts dumped\n\n");
@@ -178,7 +180,7 @@ sub dump_BLAT_data {
 #  $EST_dir = $EST_dir.$subspecies;
 
   # Remove stale data if it exists on disk.
-  my @types = ('mRNA','ncRNA','EST','OST','tc1','RST','Trinity');
+  my @types = ('mRNA','ncRNA','EST','OST','tc1','RST','Trinity','IsoSeq');
   foreach my $type (@types) {
     if (-e "$EST_dir/$type") {
       $wormbase->run_command ("rm $EST_dir/$type", $log);
@@ -205,6 +207,9 @@ clear\n
 query find Sequence where method = RNASeq_trinity & !Ignore\n
 Dna -mismatch $EST_dir/Trinity\n
 clear\n
+query find Sequence where method = RNASeq_IsoSeq & !Ignore\n
+Dna -mismatch $EST_dir/IsoSeq\n
+clear\n
 query find Sequence TC*\n
 Dna -mismatch $EST_dir/tc1\n
 clear\n
@@ -216,7 +221,7 @@ END
   close DB;
 
   # special case for Trinity
-  if (not -e "$EST_dir/Trinity") {
+  if (not -e "$EST_dir/Trinity" || not -e "$EST_dir/IsoSeq") {
     $wormbase->run_command("touch $EST_dir/Trinity", $log);
   }
   
