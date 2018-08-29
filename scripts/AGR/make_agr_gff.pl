@@ -3,10 +3,10 @@
 use strict;
 use Storable;	
 use Getopt::Long;
-use JSON; 
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
+use AGR;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase, $bgi_json);
 my ($gff_in, $gff_out, $ws_version);
@@ -34,21 +34,7 @@ die "You must supply an input GFF file\n" if not defined $gff_in or not -e $gff_
 die "You must supply an output file name\n" if not defined $gff_out;
 die "You must supply an BGI JSON file\n" if not defined $bgi_json;
 
-
-my (%bgi_genes, $json_string);
-open(my $json_fh, $bgi_json) or die "Could not open $bgi_json for reading\n";
-while(<$json_fh>) {
-  $json_string .= $_;
-}
-
-my $json_reader = JSON->new;
-my $json = $json_reader->decode($json_string);
-
-foreach my $entry (@{$json->{data}}) {
-  my $id = $entry->{primaryId};
-  $bgi_genes{$id} = $entry;
-}
-
+my %bgi_genes = %{&get_bgi_genes($bgi_json)};
 
 my $in_fh = &open_gff_file($gff_in);
 open(my $out_fh, ">$gff_out") or die "Could not open $gff_out for writing\n";

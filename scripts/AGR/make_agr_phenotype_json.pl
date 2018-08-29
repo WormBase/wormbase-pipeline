@@ -48,29 +48,9 @@ if (not defined $outfile) {
 #
 # restrict to genes in the BGI, if provded
 #
-my (%only_these_genes, @pheno_annots);
+my ($bgi_genes, @pheno_annots);
 
-if (defined $bgi_json) {
-  # read it so that we can restrict to genes that have basic info
-  my %genes;
-
-  my $json_string = "";
-  open(my $json_fh, $bgi_json) or die "Could not open $bgi_json for reading\n";
-  while(<$json_fh>) {
-    $json_string .= $_;
-  }
-
-  my $json_reader = JSON->new;
-  my $json = $json_reader->decode($json_string);
-  
-  foreach my $entry (@{$json->{data}}) {
-    my $id = $entry->{primaryId};
-    $id =~ s/WB://; 
-    $only_these_genes{$id} = 1;
-  }
-
-}
-
+$bgi_genes = &get_bgi_genes( $bgi_json ) if defined $bgi_json;
 
 my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or die("Connection failure: ". Ace->error);
 
@@ -80,7 +60,7 @@ while (my $obj = $it->next) {
   next unless $obj->isObject();
 
   my ($gene) = $obj->Gene->name;
-  next if defined $bgi_json and not exists $only_these_genes{$gene};
+  next if defined $bgi_json and not exists $bgi_genes->{"WB:$gene"};
   
   foreach my $pt ($obj->Phenotype) {
     my $phen_id = $pt->name;

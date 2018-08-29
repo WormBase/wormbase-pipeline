@@ -48,34 +48,11 @@ if (not defined $outfile) {
 #
 # restrict to genes in the BGI, if provded
 #
-my (%only_these_genes, @alleles);
+my ($bgi_genes, @alleles, $it, @annots);
 
-if (defined $bgi_json) {
-  # read it so that we can restrict to genes that have basic info
-  my %genes;
-
-  my $json_string = "";
-  open(my $json_fh, $bgi_json) or die "Could not open $bgi_json for reading\n";
-  while(<$json_fh>) {
-    $json_string .= $_;
-  }
-
-  my $json_reader = JSON->new;
-  my $json = $json_reader->decode($json_string);
-  
-  foreach my $entry (@{$json->{data}}) {
-    my $id = $entry->{primaryId};
-    $id =~ s/WB://; 
-    $only_these_genes{$id} = 1;
-  }
-
-}
-
+$bgi_genes = &get_bgi_genes( $bgi_json ) if defined $bgi_json;
 
 my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or die("Connection failure: ". Ace->error);
-
-my ( $it, @annots);
-
 
 $it = $db->fetch_many(-query => 'find Variation WHERE Live AND COUNT(Gene) == 1 AND (Description OR Interactor OR Disease_info) AND NOT Natural_variant');
 
@@ -97,7 +74,7 @@ while (my $obj = $it->next) {
   next unless $has_disease or $has_phenotype or $has_interaction;
 
   my ($gene) = $obj->Gene->name;
-  next if not exists $only_these_genes{$gene};
+  next if defined $bgi_genes and not exists $bgi_genes->{"WB:$gene"};
 
   my $symbol = $obj->Public_name->name;
   my %synonyms;
