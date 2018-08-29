@@ -3,6 +3,7 @@ package AGR;
 
 use strict;
 use Exporter;
+use JSON;
 
 our @ISA = qw(Exporter);
 our @EXPORT = qw(get_bgi_genes);
