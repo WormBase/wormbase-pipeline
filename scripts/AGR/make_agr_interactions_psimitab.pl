@@ -8,6 +8,7 @@ use JSON;
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
+use AGR;
 
 
 my $DETECTION_METHOD_MAPPING =  {
@@ -15,7 +16,7 @@ my $DETECTION_METHOD_MAPPING =  {
   Affinity_capture_MS                    => 'psi-mi:"MI:0004"(affinity chromatography technology)',
   Affinity_capture_Western	         => 'psi-mi:"MI:0004"(affinity chromatography technology)',
   Biochemical_activity	                 => 'psi-mi:"MI:0415"(enzymatic study)',
-  Chromatin_immunoprecipitation          => 'psi-mi:"MI:0402"(chromatin immunoprecipitation assay(MI:0402)',
+  Chromatin_immunoprecipitation          => 'psi-mi:"MI:0402"(chromatin immunoprecipitation assay)',
   Cocrystal_structure	                 => 'psi-mi:"MI:0114"(x-ray crystallography)',
   Cofractionation	                 => 'psi-mi:"MI:0401"(biochemical)',
   Colocalization	                 => 'psi-mi:"MI:0428"(imaging techniques)',
@@ -35,39 +36,33 @@ my $DETECTION_METHOD_MAPPING =  {
 };
 
 my $psi_mi_prot = 'psi-mi:"MI:0326"(protein)';
-my $psi_mi_dna = 'psi-mi:"MI:0319"(deoxyribonucleic acid)';
-my $psi_mi_rna = 'psi-mi:"MI:0320"(ribonucleic acid)';
+my $psi_mi_dna  = 'psi-mi:"MI:0319"(deoxyribonucleic acid)';
+my $psi_mi_rna  = 'psi-mi:"MI:0320"(ribonucleic acid)';
 
+my $psi_mi_bait = 'psi-mi:"MI:0496"(bait)';
+my $psi_mi_target = 'psi-mi:"MI:0498"(prey)';
+my $psi_mi_nondir = 'psi-mi:"MI:0497"(neutral component)';
 
 my ($debug, $test, $verbose, $store, $wormbase);
-my ($outfile, $acedbpath, $ws_version, $outfh);
+my ($outfile, $acedbpath, $ws_version, $outfh, $bgi_json, $bgi_genes);
 
 GetOptions (
-  "debug=s"     => \$debug,
-  "test"        => \$test,
-  "verbose"     => \$verbose,
-  "store:s"     => \$store,
   "database:s"  => \$acedbpath,
   "outfile:s"   => \$outfile,
+  "bgijson=s"   => \$bgi_json,
     );
 
-if ( $store ) {
-  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
-} else {
-  $wormbase = Wormbase->new( -debug   => $debug,
-                             -test    => $test,
-      );
+
+if (defined $bgi_json) {
+  $bgi_genes = &get_bgi_genes($bgi_json);
 }
 
+die "You must supply both -database and -outfile\n" if not defined $acedbpath or not defined $outfile;
 
-$acedbpath = $wormbase->autoace unless $acedbpath;
-if (not defined $outfile) {
-  $outfile = "./physical_interactions.".$wormbase->get_wormbase_version_name.".psimitab.txt";
-}
-
-my $db = Ace->connect(-path => $acedbpath, -program => $wormbase->tace) or die("Connection failure: ". Ace->error);
 
 open(my $out_fh, ">$outfile") or die "Could not open $outfile for writing\n";
+
+my $db = Ace->connect(-path => $acedbpath) or die("Connection failure: ". Ace->error);
 
 my $it = $db->fetch_many(-query => 'find Interaction Physical');
 #$it = $db->fetch_many(-query => 'find Interaction WBInteraction000505215');
@@ -83,15 +78,6 @@ INT: while (my $obj = $it->next) {
     warn("Skipping $obj - unspecified DNA/Protein\n");
     next;
   }
-
-  #
-  # ignore ProteinRNA interactions (for now)
-  #
-  if ($int_type eq 'ProteinRNA') {
-    warn("Skipping $obj - ProteinRNA\n");
-    next;
-  }
-
 
   my (%genes, %methods);
   foreach my $meth ($obj->Detection_method) {
@@ -111,7 +97,15 @@ INT: while (my $obj = $it->next) {
   foreach my $g ($obj->Interactor_overlapping_gene) {
     my $gn = $g->name;
     my $gnp = $g->Public_name->name;
-    my $gsp = sprintf("taxid:%d(%s)", $g->Species->NCBITaxonomyID->name,, $g->Species->name);
+    my $g_tax = $g->Species->NCBITaxonomyID->name;
+    my $g_sp_nm = $g->Species->name;
+
+    if ($g_sp_nm ne 'Caenorhabditis elegans') {
+      warn "Skipping $obj - not dealing with non-C.elegans genes for now\n";
+      next INT;
+    }
+
+    my $gsp = sprintf("taxid:%d(%s)|taxid:%d(%s)", $g_tax, "caeel", $g_tax, $g_sp_nm);
 
     $genes{$gn}->{id} = $gn;
     $genes{$gn}->{public_name} = $gnp;
@@ -146,15 +140,22 @@ INT: while (my $obj = $it->next) {
     }
   }
 
-  my ($id_a, $name_a, $sp_a, $type_a, $id_b, $name_b, $type_b, $sp_b);
+  my ($id_a, $name_a, $sp_a, $type_a, $role_a, $id_b, $name_b, $type_b, $sp_b, $role_b);
 
   if (scalar(keys %genes) == 1) {
     # special case of self-interactions
     my ($o) = values %genes;
 
+    if (defined $bgi_genes and not exists $bgi_genes->{"WB:$o->{id}"}) {
+      warn "Skipping $obj - gene $o->{id} is not part of the live gene set for this release\n";
+      next;
+    }
+
     $id_a = $id_b = $o->{id};
     $name_a = $name_b = $o->{public_name};
     $sp_a = $sp_b = $o->{species};
+    $role_a = $psi_mi_bait;
+    $role_b = $psi_mi_target;
 
     if (exists $o->{roles}->{Bait} and exists $o->{roles}->{Target}) {
       if ($int_type eq 'ProteinDNA') {
@@ -164,7 +165,7 @@ INT: while (my $obj = $it->next) {
         $type_a = $psi_mi_prot;
         $type_b = $psi_mi_prot;
       } else {
-        warn("Skipping  $obj - has unexpected content (bad interaction type: $int_type)\n");
+        warn("Skipping $obj - has unexpected content (bad interaction type: $int_type)\n");
       }
     } else {
       warn("Skipping $obj - has unexpected content (Bait / Target of single gene)\n");
@@ -172,6 +173,15 @@ INT: while (my $obj = $it->next) {
     }
   } elsif (scalar(keys %genes) == 2) {
     my ($obj_a, $obj_b) = values %genes;
+
+    if (defined $bgi_genes and not exists $bgi_genes->{"WB:$obj_a->{id}"}) {
+      warn "Skipping $obj - gene $obj_a->{id} is not part of the live gene set for this release\n";
+      next;
+    }
+    if (defined $bgi_genes and not exists $bgi_genes->{"WB:$obj_b->{id}"}) {
+      warn "Skipping $obj - gene $obj_b->{id} is not part of the live gene set for this release\n";
+      next;
+    }
 
     $id_a   = $obj_a->{id};
     $name_a = $obj_a->{public_name};
@@ -181,25 +191,43 @@ INT: while (my $obj = $it->next) {
     $name_b = $obj_b->{public_name};
     $sp_b   = $obj_b->{species};
 
+    if (scalar(keys %{$obj_a->{roles}}) != 1 or scalar(keys %{$obj_b->{roles}}) != 1) {
+      warn( "Skipping $obj - has unexpected content (multiple or missing roles for genes)\n");
+      next;
+    }
+
+    # role
+    #
+    if (exists $obj_a->{roles}->{Bait} and exists $obj_b->{roles}->{Target}) {
+      $role_a = $psi_mi_bait;
+      $role_b = $psi_mi_target;
+    } elsif (exists $obj_b->{roles}->{Bait} and exists $obj_a->{roles}->{Target}) {
+      $role_a = $psi_mi_target;
+      $role_b = $psi_mi_bait;
+    } elsif (exists $obj_a->{roles}->{Non_directional} and exists $obj_b->{roles}->{Non_directional}) {
+      $role_a = $psi_mi_nondir;
+      $role_b = $psi_mi_nondir;
+    } else {
+      warn("Skipping $obj - could not unambigously determine roles for interactors\n");
+      next;
+    }
+
+    # type
+    #
     if ($int_type eq 'ProteinProtein') {
       $type_a = $psi_mi_prot;
       $type_b = $psi_mi_prot;
-    } elsif ($int_type eq 'ProteinDNA') {
-      if (scalar(keys %{$obj_a->{roles}}) != 1 or scalar(keys %{$obj_b->{roles}}) != 1) {
-        warn( "Skipping $obj - has unexpected content (multiple or missing roles for genes)\n");
-        next;
-      }
+    } elsif ($int_type eq 'ProteinDNA' or $int_type eq 'ProteinRNA') {
       if (exists $obj_a->{roles}->{Bait} and exists $obj_b->{roles}->{Target}) {
-        $type_a = $psi_mi_dna;
+        $type_a = ($int_type eq 'ProteinDNA') ? $psi_mi_dna : $psi_mi_rna;
         $type_b = $psi_mi_prot;
       } elsif (exists $obj_a->{roles}->{Target} and exists $obj_b->{roles}->{Bait}) {
-        $type_b = $psi_mi_dna;
+        $type_b = ($int_type eq 'ProteinDNA') ? $psi_mi_dna : $psi_mi_rna;
         $type_a = $psi_mi_prot;
       } else {
-        warn("Skipping $obj - has unexpected content (odd roles of gene pair)\n");
+        warn("Skipping $obj - Could not unambiguously determine type (odd roles of gene pair)\n");
         next;
       }
-
     }
   } else {
     warn("Skipping $obj - has unexpected content (wrong gene count)\n");
@@ -223,6 +251,8 @@ INT: while (my $obj = $it->next) {
   $l[12] = 'psi-mi:"MI:0487"(wormbase)';
   $l[13] = "wormbase:$obj";
 
+  $l[18] = $role_a;
+  $l[19] = $role_b;
   $l[20] = $type_a;
   $l[21] = $type_b;
 
