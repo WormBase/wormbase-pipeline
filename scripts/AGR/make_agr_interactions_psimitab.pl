@@ -35,13 +35,23 @@ my $DETECTION_METHOD_MAPPING =  {
   #Antibody                               => '',
 };
 
-my $psi_mi_prot = 'psi-mi:"MI:0326"(protein)';
-my $psi_mi_dna  = 'psi-mi:"MI:0319"(deoxyribonucleic acid)';
-my $psi_mi_rna  = 'psi-mi:"MI:0320"(ribonucleic acid)';
+my $SRC_DB_MAPPING = {
+  wormbase => 'psi-mi:"MI:0487"(wormbase)',
+  BioGRID  => 'psi-mi:"MI:0463"(biogrid)',
+};
 
-my $psi_mi_bait = 'psi-mi:"MI:0496"(bait)';
-my $psi_mi_target = 'psi-mi:"MI:0498"(prey)';
-my $psi_mi_nondir = 'psi-mi:"MI:0497"(neutral component)';
+my $MOL_TYPE_MAPPING = {
+  Protein => 'psi-mi:"MI:0326"(protein)',
+  DNA     => 'psi-mi:"MI:0319"(deoxyribonucleic acid)',
+  RNA     => 'psi-mi:"MI:0320"(ribonucleic acid)',
+};
+
+my $ROLE_MAPPING = {
+  Bait            => 'psi-mi:"MI:0496"(bait)',
+  Target          => 'psi-mi:"MI:0498"(prey)',
+  Non_directional => 'psi-mi:"MI:0497"(neutral component)'
+}; 
+
 
 my ($debug, $test, $verbose, $store, $wormbase);
 my ($outfile, $acedbpath, $ws_version, $outfh, $bgi_json, $bgi_genes);
@@ -65,7 +75,7 @@ open(my $out_fh, ">$outfile") or die "Could not open $outfile for writing\n";
 my $db = Ace->connect(-path => $acedbpath) or die("Connection failure: ". Ace->error);
 
 my $it = $db->fetch_many(-query => 'find Interaction Physical');
-#$it = $db->fetch_many(-query => 'find Interaction WBInteraction000505215');
+#my $it = $db->fetch_many(-query => 'find Interaction WBInteraction000517417');
 
 INT: while (my $obj = $it->next) {
   next unless $obj->isObject();
@@ -128,8 +138,8 @@ INT: while (my $obj = $it->next) {
 
     my $fg = $fg[0]->name;
     my $fgp = $fg[0]->Public_name->name;
-    my $fg_tax = $g->Species->NCBITaxonomyID->name;
-    my $fg_sp_nm = $g->Species->name;
+    my $fg_tax = $fg[0]->Species->NCBITaxonomyID->name;
+    my $fg_sp_nm = $fg[0]->Species->name;
 
     if ($fg_sp_nm ne 'Caenorhabditis elegans') {
       warn "Skipping $obj - not dealing with non-C.elegans genes for now\n";
@@ -162,16 +172,15 @@ INT: while (my $obj = $it->next) {
     $id_a = $id_b = $o->{id};
     $name_a = $name_b = $o->{public_name};
     $sp_a = $sp_b = $o->{species};
-    $role_a = $psi_mi_bait;
-    $role_b = $psi_mi_target;
+    $role_a = $ROLE_MAPPING->{Bait};
+    $role_b = $ROLE_MAPPING->{Target};
 
     if (exists $o->{roles}->{Bait} and exists $o->{roles}->{Target}) {
       if ($int_type eq 'ProteinDNA') {
-        $type_a = $psi_mi_prot;
-        $type_b = $psi_mi_dna;
+        $type_a = $MOL_TYPE_MAPPING->{Protein};
+        $type_b = $MOL_TYPE_MAPPING->{DNA};
       } elsif ($int_type eq 'ProteinProtein') {
-        $type_a = $psi_mi_prot;
-        $type_b = $psi_mi_prot;
+        $type_a = $type_b = $MOL_TYPE_MAPPING->{Protein};
       } else {
         warn("Skipping $obj - has unexpected content (bad interaction type: $int_type)\n");
       }
@@ -207,14 +216,13 @@ INT: while (my $obj = $it->next) {
     # role
     #
     if (exists $obj_a->{roles}->{Bait} and exists $obj_b->{roles}->{Target}) {
-      $role_a = $psi_mi_bait;
-      $role_b = $psi_mi_target;
+      $role_a = $ROLE_MAPPING->{Bait};
+      $role_b = $ROLE_MAPPING->{Target};
     } elsif (exists $obj_b->{roles}->{Bait} and exists $obj_a->{roles}->{Target}) {
-      $role_a = $psi_mi_target;
-      $role_b = $psi_mi_bait;
+      $role_a = $ROLE_MAPPING->{Target};
+      $role_b = $ROLE_MAPPING->{Bait};
     } elsif (exists $obj_a->{roles}->{Non_directional} and exists $obj_b->{roles}->{Non_directional}) {
-      $role_a = $psi_mi_nondir;
-      $role_b = $psi_mi_nondir;
+      $role_a = $role_b = $ROLE_MAPPING->{Non_directional};
     } else {
       warn("Skipping $obj - could not unambigously determine roles for interactors\n");
       next;
@@ -223,15 +231,14 @@ INT: while (my $obj = $it->next) {
     # type
     #
     if ($int_type eq 'ProteinProtein') {
-      $type_a = $psi_mi_prot;
-      $type_b = $psi_mi_prot;
+      $type_a = $type_b = $MOL_TYPE_MAPPING->{Protein};
     } elsif ($int_type eq 'ProteinDNA' or $int_type eq 'ProteinRNA') {
       if (exists $obj_a->{roles}->{Bait} and exists $obj_b->{roles}->{Target}) {
-        $type_a = ($int_type eq 'ProteinDNA') ? $psi_mi_dna : $psi_mi_rna;
-        $type_b = $psi_mi_prot;
+        $type_a = ($int_type eq 'ProteinDNA') ? $MOL_TYPE_MAPPING->{DNA} : $MOL_TYPE_MAPPING->{RNA};
+        $type_b = $MOL_TYPE_MAPPING->{Protein};
       } elsif (exists $obj_a->{roles}->{Target} and exists $obj_b->{roles}->{Bait}) {
-        $type_b = ($int_type eq 'ProteinDNA') ? $psi_mi_dna : $psi_mi_rna;
-        $type_a = $psi_mi_prot;
+        $type_b = ($int_type eq 'ProteinDNA') ? $MOL_TYPE_MAPPING->{DNA} : $MOL_TYPE_MAPPING->{RNA};
+        $type_a = $MOL_TYPE_MAPPING->{Protein};;
       } else {
         warn("Skipping $obj - Could not unambiguously determine type (odd roles of gene pair)\n");
         next;
@@ -243,6 +250,22 @@ INT: while (my $obj = $it->next) {
   }
 
   my ($pmid, $author_year) = &get_paper_stuff( $obj->Paper );
+
+  my @src_db = ($SRC_DB_MAPPING->{wormbase});
+  my @src_db_acc = ("wormbase:$obj");
+
+  if ($obj->Database) {
+    foreach my $db ($obj->Database) {
+      if (exists $SRC_DB_MAPPING->{$db->name}) {
+        my $psi_mi_name = $SRC_DB_MAPPING->{$db->name};
+        my ($short_name) = $psi_mi_name =~ /\((\S+)\)/;
+
+        my $db_acc = $db->right->right->name;
+        unshift @src_db, $psi_mi_name;
+        unshift @src_db_acc, "$short_name:$db_acc";
+      }
+    }
+  }
 
   my @l = ('-') x 42;
 
@@ -256,8 +279,8 @@ INT: while (my $obj = $it->next) {
   $l[9]  = $sp_a;
   $l[10] = $sp_b;
   $l[11] = 'psi-mi:"MI:0914"(association)';
-  $l[12] = 'psi-mi:"MI:0487"(wormbase)';
-  $l[13] = "wormbase:$obj";
+  $l[12] = join("|", @src_db);
+  $l[13] = join("|", @src_db_acc);
 
   $l[18] = $role_a;
   $l[19] = $role_b;
