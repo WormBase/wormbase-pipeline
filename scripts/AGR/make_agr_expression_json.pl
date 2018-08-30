@@ -8,6 +8,7 @@ use JSON;
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
+use AGR;
 
 
 my $MMO_MAP = {
@@ -203,22 +204,8 @@ while (my $obj = $it->next) {
 }
 
 
-my $meta_data = {
-  dateProduced => $date,
-  dataProvider => [
-    { 
-      crossReference => {
-        id => "WB",
-        pages => ["homepage"],
-      },
-      type => "curated",
-    },
-      ],
-  release      => (defined $ws_version) ? $ws_version : $wormbase->get_wormbase_version_name(),
-};
-
 my $data = {
-  metaData => $meta_data,
+  metaData => &get_file_metadata_json( (defined $ws_version) ? $ws_version : $wormbase->get_wormbase_version_name(), $date ), 
   data     => \@expression_annots,
 };
 
@@ -237,21 +224,6 @@ $db->close;
 
 exit(0);
 
-
-##############################################
-sub get_rfc_date {
-
-  my $date;
-  
-  open(my $date_fh, "date --rfc-3339=seconds |");
-  while(<$date_fh>) {
-    if (/^(\S+)\s+(\S+)/) {
-      $date = "${1}T${2}";
-    }
-  }
-  
-  return $date;
-}
 
 ##############################################
 sub get_paper_json {

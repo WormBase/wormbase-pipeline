@@ -8,7 +8,7 @@ use JSON;
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
-
+use AGR;
 
 my ($debug, $test, $verbose, $store, $wormbase);
 my ($outfile, $acedbpath, $ws_version, $out_fh, $bgi_json);
@@ -98,22 +98,8 @@ while (my $obj = $it->next) {
 }
 
 
-my $meta_data = {
-  dateProduced => &get_rfc_date(),
-  dataProvider => [
-    { 
-      crossReference => {
-        id => "WB",
-        pages => ["homepage"],
-      },
-      type => "curated",
-    },
-      ],
-  release      => (defined $ws_version) ? $ws_version : $wormbase->get_wormbase_version_name(),
-};
-
 my $data = {
-  metaData => $meta_data,
+  metaData => &get_file_metadata_json( (defined $ws_version) ? $ws_version : $wormbase->get_wormbase_version_name() ),
   data     => \@alleles,
 };
 
@@ -131,23 +117,3 @@ print $out_fh $string;
 $db->close;
 
 exit(0);
-
-
-exit(0);
-
-
-##############################################
-sub get_rfc_date {
-
-  my $date;
-  
-  open(my $date_fh, "date --rfc-3339=seconds |");
-  while(<$date_fh>) {
-    if (/^(\S+)\s+(\S+)/) {
-      $date = "${1}T${2}";
-    }
-  }
-  
-  return $date;
-}
-

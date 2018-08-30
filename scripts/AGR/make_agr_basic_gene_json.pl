@@ -8,6 +8,7 @@ use JSON;
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
+use AGR;
 #use Log_files;
 
 my %XREF_MAP = (
@@ -71,21 +72,6 @@ my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or die("Connectio
 $locs = &get_location_data($db, $gtf_file);
 
 my $base_query = 'FIND Gene WHERE Live AND Species = "Caenorhabditis elegans"';
-
-my $meta_data = {
-  dateProduced => &get_rfc_date(),
-  dataProvider => [
-    { 
-      crossReference => {
-        id => "WB",
-        pages => ["homepage"],
-      },
-      type => "curated",
-    },
-      ],
-  release      => (defined $ws_version) ? $ws_version : $wormbase->get_wormbase_version_name(),
-};
-
 
 my @genes;
 
@@ -268,7 +254,7 @@ foreach my $sub_query (
 }
 
 my $data = {
-  metaData => $meta_data,
+  metaData => &get_file_metadata_json( (defined $ws_version) ? $ws_version : $wormbase->get_wormbase_version_name() ), 
   data => \@genes,
 };
 
@@ -287,24 +273,6 @@ $db->close;
 
 exit(0);
 
-
-##############################################
-
-sub get_rfc_date {
-
-  my $date;
-  
-  open(my $date_fh, "date --rfc-3339=seconds |");
-  while(<$date_fh>) {
-    if (/^(\S+)\s+(\S+)/) {
-      $date = "${1}T${2}";
-    }
-  }
-  
-  return $date;
-}
-
-##############################################
 
 sub get_location_data {
   my ($acedb, $gtf) = @_;
