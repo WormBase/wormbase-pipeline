@@ -128,7 +128,15 @@ INT: while (my $obj = $it->next) {
 
     my $fg = $fg[0]->name;
     my $fgp = $fg[0]->Public_name->name;
-    my $gsp = sprintf("taxid:%d(%s)", $fg[0]->Species->NCBITaxonomyID->name, $fg[0]->Species->name);
+    my $fg_tax = $g->Species->NCBITaxonomyID->name;
+    my $fg_sp_nm = $g->Species->name;
+
+    if ($fg_sp_nm ne 'Caenorhabditis elegans') {
+      warn "Skipping $obj - not dealing with non-C.elegans genes for now\n";
+      next INT;
+    }
+
+    my $gsp = sprintf("taxid:%d(%s)|taxid:%d(%s)", $fg_tax, "caeel", $fg_tax, $fg_sp_nm);
 
     $genes{$fg}->{id} = $fg;
     $genes{$fg}->{public_name} = $fgp;
