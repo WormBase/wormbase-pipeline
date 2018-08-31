@@ -27,6 +27,15 @@ my $MMO_MAP = {
 my $TL_ANATOMY_TERM = 'WBbt:0000100';
 my $TL_LIFESTAGE_TERM = 'WBls:0000075';
 
+my $WB_TO_UBERON = {
+  # these are not allowed in the 1.0.0.6 schema; so comment
+  # them out for now, so that they default to Other in the slim
+
+ # $TL_ANATOMY_TERM => 'UBERON:0000465',
+  $TL_ANATOMY_TERM => 'Other',
+ # $TL_LIFESTAGE_TERM => 'UBERON:0000105',
+};
+
 my $life_stage_term = {
   $TL_LIFESTAGE_TERM => 'Nematoda Life Stage'
 };
@@ -37,7 +46,7 @@ my $anatomy_term = {
 
 
 my ($debug, $test, $verbose, $store, $wormbase);
-my ($outfile, $acedbpath, $ws_version, $out_fh, $bgi_json);
+my ($outfile, $acedbpath, $ws_version, $out_fh, $bgi_json, $wb_to_uberon_file);
 
 GetOptions (
   "debug=s"     => \$debug,
@@ -48,6 +57,7 @@ GetOptions (
   "outfile:s"   => \$outfile,
   "wsversion=s" => \$ws_version,
   "bgijson=s"   => \$bgi_json,
+  "wb2uberon=s" => \$wb_to_uberon_file,
     );
 
 if ( $store ) {
@@ -72,6 +82,23 @@ if (not defined $outfile) {
 }
 
 #
+# Read WormBase->Uberon mapping file
+#
+open(my $wb2ub_fh, $wb_to_uberon_file) or die "You must supply a valid wb2uberon mapping file\n";
+while(<$wb2ub_fh>) {
+  /^(\S+)\s+(\S+)/ and do {
+    my $uberon = $1;
+    my @list = split(/,/, $2);
+
+    foreach my $item (@list) {
+      $WB_TO_UBERON->{$item} = $uberon;
+    }
+  };
+}
+
+
+
+#
 # restrict to genes in the BGI, if provded
 #
 my ($bgi_genes, @expression_annots);
@@ -85,8 +112,13 @@ my $it = $db->fetch_many(-query => 'find Expr_pattern WHERE Expression_data AND 
 while (my $obj = $it->next) {
   next unless $obj->isObject();
 
-
   my ($paper) = $obj->Reference;
+  # SKIP EPIC ANNOTATIONS FOR NOW
+  if ($paper->name eq 'WBPaper00040986') {
+    warn("Skipping $obj - from EPIC study\n");
+    next;
+  }
+
   my ($assay) = $obj->Type;
 
   if (not defined $assay or not exists $MMO_MAP->{$assay->name}) {
@@ -165,6 +197,23 @@ while (my $obj = $it->next) {
     foreach my $ls (sort keys %annots) {
       foreach my $at (sort keys %{$annots{$ls}}) {
 
+        #
+        # when expressed
+        #
+        my $when_expressed = {
+          stageTermId => $ls,
+          stageName   => $life_stage_term->{$ls},
+        };
+        if (exists $WB_TO_UBERON->{$ls}) {
+          $when_expressed->{stageUberonSlimTerm} = { uberonTerm =>  $WB_TO_UBERON->{$ls} };
+        } elsif ($ls ne $TL_LIFESTAGE_TERM) {
+          $when_expressed->{stageUberonSlimTerm} = { uberonTerm =>  "post embryonic, pre-adult" };
+        }
+         
+        #
+        # where expressed
+        #
+
         my @where_expressed;
 
         if (keys %{$annots{$ls}->{$at}}) {
@@ -173,16 +222,24 @@ while (my $obj = $it->next) {
               anatomicalStructureTermId => $at,
               whereExpressedStatement => $anatomy_term->{$at},
               cellularComponentTermId => $go_term,
-            };            
+            };
           }
         } else {
           push @where_expressed, {
             anatomicalStructureTermId => $at,
             whereExpressedStatement => $anatomy_term->{$at},
-          };            
+          };
         }
 
         foreach my $whereEx (@where_expressed) {
+          if (exists $WB_TO_UBERON->{$at}) {
+            $whereEx->{anatomcialStructureUberonSlimTermIds} = 
+                [ {uberonTerm => $WB_TO_UBERON->{$at} } ];
+          } elsif ($at ne $TL_ANATOMY_TERM) {
+            $whereEx->{anatomcialStructureUberonSlimTermIds} = 
+                [ {uberonTerm => 'Other' } ];
+          }
+        
           my $json_obj = {
             geneId => "WB:$gene",
             evidence => &get_paper_json( $paper ),
@@ -192,8 +249,8 @@ while (my $obj = $it->next) {
               id => "WB:$obj",
               pages => ["gene/expression/annotation/detail"],
             },
-            whenExpressedStage => $ls,
-            wildtypeExpressionTermIdentifiers => $whereEx,
+            whenExpressed => $when_expressed,
+            whereExpressed => $whereEx,
           };
 
           push @expression_annots, $json_obj;
