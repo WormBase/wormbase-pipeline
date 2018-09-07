@@ -16,7 +16,7 @@ sub _fetch {
                 $data{$run_id}{"Mapping results"} =
                    _link($rnaseqer_metadata->data_location($run_id), "RNASeq-er processing directory: $run_id");
                 $data{$run_id}{"ENA study"} =
-                   _link("http://www.ebi.ac.uk/ena/data/view/$study_id", "Study page: $study_id");
+                   _link("https://www.ebi.ac.uk/ena/data/view/$study_id", "Study page: $study_id");
             }
         }
     }

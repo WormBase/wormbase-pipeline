@@ -12,12 +12,12 @@ our $SANGER_HOST="sangerngs"; # Made up ssh alias
 our $EBI_PATH="/nfs/ftp/pub/databases/arrayexpress/data/atlas/rnaseq";
 our $EBI_URL="ftp://ftp.ebi.ac.uk/pub/databases/arrayexpress/data/atlas/rnaseq";
 our $SANGER_PATH="/data/production/parasites/rnaseqer";
-our $SANGER_URL="http://ngs.sanger.ac.uk/production/parasites/rnaseqer";
+our $SANGER_URL="https://ngs.sanger.ac.uk/production/parasites/rnaseqer";
 
 sub location {
-  my ( $root, $run_id ) = @_;
+  my ( $root, $species, $assembly, $run_id ) = @_;
   (my $prefix = $run_id) =~ s/(.{6}).*/$1/;
-  return join "/", $root, $prefix, "$run_id.bw";
+  return join "/", $root, $species, $assembly, $prefix, "$run_id.bw";
 }
 sub run_in_sanger {
   my $cmd = "ssh $SANGER_HOST ".shift;
@@ -25,7 +25,7 @@ sub run_in_sanger {
   croak "Failed: $cmd" if $?;
 }
 sub sync_ebi_to_sanger {
-  my ($run_id, $source_url, %opts) = @_;
+  my ($species, $assembly, $run_id, $source_url, %opts) = @_;
   my $target_path = location ($SANGER_PATH, $run_id);
   my $target_dir = dirname $target_path;
 

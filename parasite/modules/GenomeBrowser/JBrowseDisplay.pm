@@ -261,7 +261,8 @@ sub make_tracks {
     for my $study (@studies) {
         for my $run (@{$study->{runs}}) {
           my $run_id = $run->{run_id};
-          my $url    = GenomeBrowser::Deployment::sync_ebi_to_sanger( $run_id,
+          my $url    = GenomeBrowser::Deployment::sync_ebi_to_sanger(
+              $species, $assembly, $run_id,
               $location_per_run_id->{$run_id}, %opts );
           my $attributes = {
              %{$study->{attributes}},
