@@ -13,7 +13,7 @@ sub new {
   bless {root_dir => $root_dir}, $class; 
 }
 sub get {
-  my ($self, $species, $good_assembly) = @_;
+  my ($self, $species, $assembly) = @_;
   my $root_dir = $self->{root_dir};
   my ($spe, $cies, $bioproject) = split "_", $species;
   my $rnaseqer_metadata = GenomeBrowser::RnaseqerMetadata->new($root_dir, "${spe}_${cies}");
@@ -24,8 +24,6 @@ sub get {
   my $factors = GenomeBrowser::Factors->new($root_dir, "${spe}_${cies}", $rnaseqer_metadata, $array_express_metadata);
   my $descriptions = GenomeBrowser::Descriptions->new("${spe}_${cies}");
   my @studies;
-  return unless grep(/$good_assembly/, @{$rnaseqer_metadata->access}); # Patch for ISL bug. TODO remove!
-  for my $assembly (($good_assembly , '')){ # Patch for ISL bug. TODO remove!
   for my $study_id (@{$rnaseqer_metadata->access($assembly)}){
     unless ($study_attributes->{$assembly}{$study_id}){
        print STDERR "Study $study_id not in ENA, skipping\n";
@@ -55,7 +53,6 @@ sub get {
       attributes => $study_attributes->{$assembly}{$study_id},
     };
   }
-} #ENDPATCH
   return $factors, $rnaseqer_metadata->{location_per_run_id}, @studies;
 }
 1;
