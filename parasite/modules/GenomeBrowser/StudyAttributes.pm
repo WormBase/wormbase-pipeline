@@ -9,19 +9,19 @@ sub _fetch {
     my %data;
     for my $assembly (@{ $rnaseqer_metadata->access}) {
         for my $study_id ( @{ $rnaseqer_metadata->access($assembly) } ) {
-            my $properties = &_properties_for_study_from_ena_study_xml(
+            my $data_for_study = &_data_for_study_from_ena_study_xml(
                 $class->get_xml(
                     "https://www.ebi.ac.uk/ena/data/view/$study_id&display=xml")
             );
+            my $properties = $data_for_study->{properties};
             my $bioproject_id = $properties->{BioProject};
             if($bioproject_id and not $properties->{submitting_centre}){
               my $bioproject_properties = &_properties_for_study_from_ena_bioproject_xml(
                     $class->get_xml("https://www.ebi.ac.uk/ena/data/view/$bioproject_id&display=xml")
               );
-              $data{$assembly}{$study_id} = {%$properties, %$bioproject_properties};
-            } else {
-               $data{$assembly}{$study_id} = $properties; 
+              $properties = {%$properties, %$bioproject_properties};
             }
+            $data{$assembly}{$study_id} = {%$data_for_study, properties => $properties};
         }
     }
     return \%data;
@@ -46,21 +46,17 @@ sub _url_link {
 }
 sub _properties_for_study_from_ena_bioproject_xml {
     my $payload = shift;
-    my $result = {};
-    return $result unless $payload;
+    my $properties = {};
+    return $properties unless $payload;
 
     my $submitting_centre = $payload->{PROJECT}{center_name};
-    $result->{submitting_centre} = $submitting_centre if $submitting_centre;
-    return $result;
+    $properties->{submitting_centre} = $submitting_centre if $submitting_centre;
+    return $properties;
 }
-sub _properties_for_study_from_ena_study_xml {
+sub _data_for_study_from_ena_study_xml {
     my $payload = shift;
     return {} unless $payload;
-    my $result = {
-        "study" => join( ": ",
-            $payload->{STUDY}{IDENTIFIERS}{PRIMARY_ID},
-            _clean_messy_text($payload->{STUDY}{DESCRIPTOR}{STUDY_TITLE})
-        ),
+    my $properties = {
         "ENA first public" => join( " ",
             map { $_->{TAG} eq 'ENA-FIRST-PUBLIC' ? $_->{VALUE} : () }
               @{ $payload->{STUDY}{STUDY_ATTRIBUTES}{STUDY_ATTRIBUTE} } ),
@@ -69,7 +65,7 @@ sub _properties_for_study_from_ena_study_xml {
               @{ $payload->{STUDY}{STUDY_ATTRIBUTES}{STUDY_ATTRIBUTE} } ),
     };
 
-    $result->{submitting_centre} = $payload->{STUDY}{center_name} 
+    $properties->{submitting_centre} = $payload->{STUDY}{center_name} 
        unless uc($payload->{STUDY}{broker_name}) eq 'NCBI' and length ($payload->{STUDY}{center_name}) < 10;
     my @bioprojects;
     my $ids = $payload->{STUDY}{IDENTIFIERS}{EXTERNAL_ID};
@@ -81,23 +77,27 @@ sub _properties_for_study_from_ena_study_xml {
        push @bioprojects, $identifier->{content} if uc($identifier->{namespace}) eq "BIOPROJECT" and $identifier->{label} eq "primary"; 
     }
     my ($bp, @other_bioprojects) = @bioprojects;
-    die %$result if @other_bioprojects;
-    $result->{BioProject} = $bp if $bp;
+    die %$properties if @other_bioprojects;
+    $properties->{BioProject} = $bp if $bp;
     my @pubmed_refs;
     for my $study_link (@{ $payload->{STUDY}{STUDY_LINKS}{STUDY_LINK} }){
        if(uc($study_link->{XREF_LINK}{DB}) eq 'PUBMED') {
           push @pubmed_refs, $study_link->{XREF_LINK}{ID};
        } elsif ($study_link->{URL_LINK}{LABEL} and $study_link->{URL_LINK}{URL}){
           my ($k, $v) = _url_link($study_link->{URL_LINK}{LABEL}, $study_link->{URL_LINK}{URL});
-          $result->{$k} = $v;
+          $properties->{$k} = $v;
        } else {
           #probably a link to an ENA something - skip
        }
     }    
-    $result->{"PubMed"} = join(", ", map {_pubmed_link($_)} @pubmed_refs) if @pubmed_refs;
+    $properties->{"PubMed"} = join(", ", map {_pubmed_link($_)} @pubmed_refs) if @pubmed_refs;
     
     my $sd = $payload->{STUDY}{DESCRIPTOR}{STUDY_DESCRIPTION};
-    $result->{"Study description"} = $sd if $sd and length($sd) < 500 and $sd !~ /This data is part of a pre-publication release/;
-    return $result;
+    $properties->{"Study description"} = $sd if $sd and length($sd) < 500 and $sd !~ /This data is part of a pre-publication release/;
+    my $st = _clean_messy_text($payload->{STUDY}{DESCRIPTOR}{STUDY_TITLE});
+    return {
+      properties => $properties,
+      ($st ? (study_title => $st) : ()),
+    };
 }
 1;

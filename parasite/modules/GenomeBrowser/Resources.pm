@@ -46,11 +46,14 @@ sub get {
           run_description_full => $run_description_full 
        };
     }
+    my ($study_description_short, $study_description_full) =
+         $descriptions->study_description($study_id, $study_attributes->{$assembly}{$study_id});
     push @studies, {
       study_id => $study_id,
       runs => \@runs,
-      study_description => $descriptions->study_description($study_id, $study_attributes->{$assembly}{$study_id}),
-      attributes => $study_attributes->{$assembly}{$study_id},
+      study_description_short => $study_description_short,
+      study_description_full => $study_description_full, 
+      attributes => $study_attributes->{$assembly}{$study_id}{properties},
     };
   }
   return $factors, $rnaseqer_metadata->{location_per_run_id}, @studies;

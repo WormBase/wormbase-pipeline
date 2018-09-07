@@ -87,26 +87,27 @@ is_deeply(
         bless {
             $assembly => {
                 $study_id => {
-
-                    #lowercase because it's a facet
-                    "study" =>
-"ERP006623: Some RNA-seq reads form different developmental stages of the liver fluke Fasciola hepatica",
-                    "Study description" =>
+                    study_title => 
+"Some RNA-seq reads form different developmental stages of the liver fluke Fasciola hepatica",
+                    properties => {
+                        "Study description" =>
 "RNA was prepared from various stages of the liver fluke Fasciola hepatica by John Dalton's group and sequenced by Genome Quebec.",
-                    "PubMed" =>
+                        "PubMed" =>
 '<a href="https://www.ncbi.nlm.nih.gov/pubmed/25887684">25887684</a>',
-                    "ArrayExpress" =>
+                        "ArrayExpress" =>
 '<a href="http://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-451">E-MTAB-451 in ArrayExpress</a>',
-                    "ENA first public"  => "2014-12-31",
-                    "ENA last update"   => "2016-04-19",
-                    'submitting_centre' => 'University of Liverpool'
-                },
+                        "ENA first public"  => "2014-12-31",
+                        "ENA last update"   => "2016-04-19",
+                        'submitting_centre' => 'University of Liverpool'
+                },},
                 'SRP124650' => {
-                    'ENA first public' => '2017-11-30',
-                    'ENA last update'  => '2017-11-30',
-                    'study'            => 'SRP124650',
-                    'BioProject' => $bioproject_id,
-                    'submitting_centre' => "Pharmacology, UT Southwestern",
+                    properties => {
+                        'ENA first public' => '2017-11-30',
+                        'ENA last update'  => '2017-11-30',
+                        'study'            => 'SRP124650',
+                        'BioProject' => $bioproject_id,
+                        'submitting_centre' => "Pharmacology, UT Southwestern",
+                   }
                 }
             }
         },

@@ -799,11 +799,10 @@ sub run_description {
 # Do we also want to curate these?
 sub study_description {
     my ( $self, $study_id, $study_attributes ) = @_;
-    return (
-             $study_attributes->{"Study description"}
-          or $study_attributes->{study}
-          or $study_id
-          or "$species study"
-    );
+    my $species = $self->{species};
+    $species =~ s/_/ /g;
+    $species = ucfirst($species);
+    my $sd = $study_attributes->{study_title} || "$species study";
+    return $sd, ($study_attributes->{properties}{"Study description"} || $sd);
 }
 1;

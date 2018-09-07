@@ -85,7 +85,7 @@ sub make_hub {
         &create_study_doc( $self->path( $_Species, "doc", "$study_id.html" ),
             $study );
         push @study_tracks,
-          &study_track( $study_id, $study->{study_description} );
+          &study_track( $study_id, $study->{study_description_full} );
         for my $run ( @{ $study->{runs} } ) {
             my $run_id = $run->{run_id};
             &create_run_doc( $self->path( $_Species, "doc", "$run_id.html" ),
@@ -104,15 +104,15 @@ sub make_hub {
     write_file($self->path($_Species, "genomes.txt"), "genome $assembly\ntrackDb trackDb.txt\n");
     &create_hub_file( $self->path($_Species, "hub.txt") , $species);
 }
-
+#Maybe: same format as JBrowse?
 sub study_track {
-    my ( $study_id, $study_description ) = @_;
+    my ( $study_id, $study_description_full ) = @_;
     return (
         "track $study_id
 superTrack on
 group $study_id
 shortLabel $study_id
-longLabel $study_description
+longLabel $study_description_full
 html doc/$study_id
 "
     );

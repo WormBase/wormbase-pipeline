@@ -267,7 +267,8 @@ sub make_tracks {
           my $attributes = {
              %{$study->{attributes}},
              %{$run->{attributes}},
-             track => $run->{run_description_short}
+             track => $run->{run_description_short},
+             study => sprintf("%s: %s", $study_id, $study->{study_description_short}),
           };
 # We don't want both exact and approximate values to show, but we need the approximate values for facets
 # So, delete exact values ( I don't know how to stop JBrowse from displaying some values) 
