@@ -21,18 +21,8 @@ sub read_templates {
 
 my $templates = &read_templates;
 
-my @all_core_dbs = ProductionMysql->staging->core_databases;
-@ARGV = @all_core_dbs unless @ARGV;
-
-my @core_dbs;
-for my $core_db (@all_core_dbs){
-  my $include;
-  for my $pat (@ARGV){
-    $include = 1 if $core_db =~ /$pat/;
-  }
-  push @core_dbs, $core_db if $include;
-}
-die "Usage: $0 <core_dbs_pattern" unless @core_dbs;
+my @all_core_dbs = ProductionMysql->staging->core_databases(@ARGV);
+die "Usage: $0 <core_dbs_pattern>" unless @core_dbs;
 
 print $templates->{ENSEMBL_PARSERS};
 print $templates->{ENSEMBL_FAKE_SOURCES};

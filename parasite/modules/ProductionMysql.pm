@@ -28,11 +28,22 @@ sub staging_writable {
 }
 sub core_databases {
   my $db_cmd= shift -> {db_cmd};
-  my @result;
+  my @patterns = @_;
+  my @all_core_dbs;
   open(my $fh, $db_cmd.' -Ne \'show databases like "%core%" \' |') or Carp::croak "ProductionMysql: $db_cmd not in your PATH\n";
   while(<$fh>) {
    chomp;
-   push @result, $_ if $_;
+   push @all_core_dbs, $_ if $_;
+  }
+  return @all_core_dbs unless @patterns;
+
+  my @result;
+  for my $core_db (@all_core_dbs){
+    my $include;
+    for my $pat (@patterns){
+      $include = 1 if $core_db =~ /$pat/;
+    }
+    push @result, $core_db if $include;
   }
   return @result;
 }
