@@ -24,7 +24,8 @@ my $templates = &read_templates;
 my @all_core_dbs = ProductionMysql->staging->core_databases(@ARGV);
 die "Usage: $0 <core_dbs_pattern>" unless @core_dbs;
 
-print $templates->{ENSEMBL_PARSERS};
+print $templates->{ENSEMBL_INSDC_PARSERS};
+print $templates->{ENSEMBL_OTHER_PARSERS};
 print $templates->{ENSEMBL_FAKE_SOURCES};
 my %core_dbs_per_species;
 for my $core_db (@core_dbs){
@@ -66,10 +67,28 @@ for my $species (keys %core_dbs_per_species){
    die @core_dbs if @other_taxons;
    my $aliases= join ", ", keys %aliases;
 
-   print "[species $species]\n";
-   print "aliases         = $aliases\n";
-   print "taxonomy_id     = $taxon\n";
-   print $templates->{STANDARD_SOURCES};
+   if( $species =~ /elegans/){
+       my $sources = $templates->{STANDARD_SOURCES};
+       $sources =~ s/Uniprot/UniprotAsINSDCDependentXrefs/g;
+       $sources =~ s/RefSeq_peptide/RefSeqProteinEntriesAsINSDCDependentXrefs/g;
+       my $parsers = $templates->{ENSEMBL_INSDC_PARSERS};
+       $parsers =~ s/UniProtParser/UniProtEntriesAsINSDCDependentXrefsParser/g;
+       $parsers =~ s/RefSeqGPFFParser/RefSeqProteinEntriesAsINSDCDependentXrefsParser/g;
+       $parsers =~ s/RefSeq_peptide/RefSeqProteinEntriesAsINSDCDependentXrefs/g;
+       $parsers =~ s/Uniprot/UniprotAsINSDCDependentXrefs/g;
+       $parsers =~ s/dependent_on.*?\n/dependent_on    = WormbaseDirectParser\n/g;
+       
+       print $parsers;
+       print "[species $species]\n";
+       print "aliases         = $aliases\n";
+       print "taxonomy_id     = $taxon\n";
+       print $sources;
+   } else {
+       print "[species $species]\n";
+       print "aliases         = $aliases\n";
+       print "taxonomy_id     = $taxon\n";
+       print $templates->{STANDARD_SOURCES};
+   }
    if (%wormbase_annotation_paths){
        my ($wormbase_annotation_path, @other_wormbase_annotation_paths) = keys %wormbase_annotation_paths;
        die %wormbase_annotation_paths if @other_wormbase_annotation_paths;
@@ -111,7 +130,52 @@ parser          = WormbaseDirectParser
 release_uri     =
 END_WORMBASE_SOURCE_TEMPLATE
 
-BEGIN_ENSEMBL_PARSERS_TEMPLATE
+BEGIN_ENSEMBL_INSDC_PARSERS_TEMPLATE
+
+[source Uniprot/SPTREMBL::MULTI-invertebrate]
+name            = Uniprot/SPTREMBL
+download        = Y
+order           = 20
+priority        = 2 
+prio_descr      = sequence_mapped
+parser          = UniProtParser
+dependent_on    = MIM
+release_uri     = ftp://ftp.ebi.ac.uk/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/reldate.txt
+data_uri        = ftp://ftp.ebi.ac.uk/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/uniprot_trembl_invertebrates.dat.gz
+method = --bestn 1
+query_cutoff = 100
+target_cutoff = 100
+
+[source Uniprot/SWISSPROT::MULTI-invertebrate]
+name            = Uniprot/SWISSPROT
+download        = Y
+order           = 20
+priority        = 2
+prio_descr      = sequence_mapped
+parser          = UniProtParser
+dependent_on    = MIM
+release_uri     = ftp://ftp.ebi.ac.uk/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/reldate.txt
+data_uri        = ftp://ftp.ebi.ac.uk/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/uniprot_sprot_invertebrates.dat.gz
+method = --bestn 1
+query_cutoff = 100
+target_cutoff = 100
+
+[source RefSeq_peptide::MULTI-invertebrate]
+name            = RefSeq_peptide
+download        = Y
+order           = 30
+priority        = 2
+prio_descr      =
+parser          = RefSeqGPFFParser
+release_uri     = ftp://ftp.ncbi.nih.gov/refseq/release/release-notes/RefSeq-release*.txt
+data_uri        = ftp://ftp.ncbi.nih.gov/refseq/release/invertebrate/invertebrate*.protein.gpff.gz
+method = --bestn 1
+query_cutoff = 100
+target_cutoff = 100
+
+END_ENSEMBL_INSDC_PARSERS_TEMPLATE
+
+BEGIN_ENSEMBL_OTHER_PARSERS_TEMPLATE
 
 [source EntrezGene::MULTI]
 name            = EntrezGene
@@ -145,47 +209,6 @@ data_uri        = ftp://ftp.ncbi.nih.gov/refseq/release/invertebrate/invertebrat
 method = --bestn 5
 query_cutoff = 95
 target_cutoff = 70
-
-[source RefSeq_peptide::MULTI-invertebrate]
-name            = RefSeq_peptide
-download        = Y
-order           = 30
-priority        = 2
-prio_descr      =
-parser          = RefSeqGPFFParser
-release_uri     = ftp://ftp.ncbi.nih.gov/refseq/release/release-notes/RefSeq-release*.txt
-data_uri        = ftp://ftp.ncbi.nih.gov/refseq/release/invertebrate/invertebrate*.protein.gpff.gz
-method = --bestn 1
-query_cutoff = 100
-target_cutoff = 100
-
-[source Uniprot/SPTREMBL::MULTI-invertebrate]
-name            = Uniprot/SPTREMBL
-download        = Y
-order           = 20
-priority        = 3
-prio_descr      =
-parser          = UniProtParser
-dependent_on    = MIM
-release_uri     = ftp://ftp.ebi.ac.uk/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/reldate.txt
-data_uri        = ftp://ftp.ebi.ac.uk/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/uniprot_trembl_invertebrates.dat.gz
-method = --bestn 1
-query_cutoff = 100
-target_cutoff = 100
-
-[source Uniprot/SWISSPROT::MULTI-invertebrate]
-name            = Uniprot/SWISSPROT
-download        = Y
-order           = 20
-priority        = 3
-prio_descr      = sequence_mapped
-parser          = UniProtParser
-dependent_on    = MIM
-release_uri     = ftp://ftp.ebi.ac.uk/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/reldate.txt
-data_uri        = ftp://ftp.ebi.ac.uk/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/uniprot_sprot_invertebrates.dat.gz
-method = --bestn 1
-query_cutoff = 100
-target_cutoff = 100
 
 [source UniParc::MULTI]
 name        = UniParc
@@ -231,7 +254,7 @@ release_uri     =
 data_uri = Database
 db = core
 
-END_ENSEMBL_PARSERS_TEMPLATE
+END_ENSEMBL_OTHER_PARSERS_TEMPLATE
 
 BEGIN_WORMBASE_FAKE_SOURCES_TEMPLATE
 [source wormpep_id::wormbase]
