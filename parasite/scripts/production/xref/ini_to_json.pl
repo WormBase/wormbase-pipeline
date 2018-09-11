@@ -10,6 +10,9 @@ die unless $cfg;
 for my $section ( grep /source/, $cfg -> Sections ) { 
  my @uris = $cfg->val( $section , "data_uri") or ();
  for my $uri ( @uris){ 
+   if ($ENV{WORMBASE_VERSION} > 267) { 
+      die "$uri Check this case - I think they were missing from FTP but should be back now" if $section =~ /brenneri/ or $section =~/remanei/;
+   }
    next if $section =~ /brenneri/ or $section =~/remanei/;
    next if $cfg->val($section, "download") eq "N";
    my %ans_here;
