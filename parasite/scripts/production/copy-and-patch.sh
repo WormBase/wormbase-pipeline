@@ -7,14 +7,10 @@ echo "These were the comparator databases: No refresh needed? "
 $PREVIOUS_PARASITE_STAGING_MYSQL -e "show databases like \"%_core_%\"" | grep -v core_${PREVIOUS_PARASITE_VERSION}
 echo "Begin database copying"
 
-if [ $# -gt 0 ] ; then
- databases=("$@")
-else
- databaselist=$($PREVIOUS_PARASITE_STAGING_MYSQL -NB -e 'SHOW DATABASES LIKE "%\_core\_%"')
- databases=( `echo ${databaselist}` )
-fi
-for DB in "${databases[@]}"
-do
+perl -MProductionMysql -e '
+   print join "\n", ProductionMysql->previous_staging->core_databases(@ARGV);
+   print "\n";
+' "$@" | while read -r DB; do
   echo "Copying $DB"
   NEWDB=$(echo $DB | sed "s/core_$PREVIOUS_PARASITE_VERSION\_$PREVIOUS_ENSEMBL_VERSION/core_$PARASITE_VERSION\_$ENSEMBL_VERSION/" | sed "s/_$PREVIOUS_ENSEMBL_VERSION/_$ENSEMBL_VERSION/" | sed "s/_$PREVIOUS_WORMBASE_VERSION$/_$WORMBASE_VERSION/")
   echo "Looking for previous versions of $NEWDB"
