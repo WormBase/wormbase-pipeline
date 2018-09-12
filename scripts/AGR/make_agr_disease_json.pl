@@ -372,6 +372,6 @@ sub write_DAF_line {
          $obj->{geneticSex},
          $obj->{evidence}->{publication}->{pubMedId},
          $date,
-         $obj->{dataProvider});
+         "WB");
 
 }
