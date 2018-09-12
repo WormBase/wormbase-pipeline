@@ -21,7 +21,7 @@ sub read_templates {
 
 my $templates = &read_templates;
 
-my @all_core_dbs = ProductionMysql->staging->core_databases(@ARGV);
+my @core_dbs = ProductionMysql->staging->core_databases(@ARGV);
 die "Usage: $0 <core_dbs_pattern>" unless @core_dbs;
 
 print $templates->{ENSEMBL_INSDC_PARSERS};
