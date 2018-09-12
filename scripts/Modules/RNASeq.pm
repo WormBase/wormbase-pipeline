@@ -94,28 +94,52 @@ sub new {
   $self->{'wormbase'} = shift;    
   $self->{'log'} = shift;
   $self->{'new_genome'} = shift; # true if the libraries should be mapped to the genome in this session (e.g. if the assembly changed)
-  $self->{'check'} = shift;      # true if existing GTF and cufflinks data should be left untouched (for checkpointing and restarting)
+  $self->{'check'} = shift;      # true if existing GTF file and cufflinks data should be left untouched (for checkpointing and restarting)
 
   # set up useful paths etc.
   $self->{'RNASeqBase'}      = "/nfs/nobackup/ensemblgenomes/wormbase/BUILD/RNASeq/" . $self->{wormbase}->{species};
-  $self->{'RNASeqSRADir'}    = $self->RNASeqBase . "/SRA";
-  $self->{'RNASeqGenomeDir'} = $self->RNASeqBase . "/Genome";
+  $self->{'RNASeqSRADir'}    = $self->RNASeqBase . "/SRA"; # holds Experiment data and analysis results
+  $self->{'RNASeqGenomeDir'} = $self->RNASeqBase . "/Genome"; # holds Genome and indexes
+  $self->{'RNASeqTransferDir'} = $self->RNASeqBase . "/Transfer"; # holds symlinks to files to be transferred to the Sanger NGS server
   $self->{'Software'}        = "/nfs/panda/ensemblgenomes/wormbase/software/packages";
 #  $self->{'alignmentDir'}    = "tophat_out"; # use this for tophat
   $self->{'alignmentDir'}    = "star_out"; # use this for STAR
+  $self->{'Use_NGS_file_system'} = 1; # if 0 then store files in /nfs/nobackup; if 1 then store files in NGS file system and access then via http
+#  $self->{'Use_changed_part_of_BAM'} = 0; # if 0 then copy complete BAM file from NGS server; if 1 then work out which genes changed and pull across onto reads aligning near those genes then update the cufflinks ouput from last Build
+
+  # get the name of the directory for this species at the NGS site
+  my %NGS_species_dir = (
+		       'brenneri'       => 'caenorhabditis_brenneri_prjna20035',
+		       'briggsae'       => 'caenorhabditis_briggsae_prjna10731',
+		       'brugia'         => 'brugia_malayi_prjna10729',
+		       'elegans'        => 'caenorhabditis_elegans_prjna13758',
+		       'japonica'       => 'caenorhabditis_japonica_prjna12591',
+		       'ovolvulus'      => 'onchocerca_volvulus_prjeb513',
+		       'pristionchus'   => 'pristionchus_pacificus_prjna12644',
+		       'remanei'        => 'caenorhabditis_remanei_prjna53967',
+		       'sratti'         => 'strongyloides_ratti_prjeb125',
+		       'tmuris'         => 'trichuris_muris_prjeb126',
+		      );
+  $self->{'NGS_species_dir'} = \%NGS_species_dir;
+
+  umask 002;
+
   return $self;
 }
 
 # getter routines for paths etc.
-sub RNASeqBase        { my $self = shift; return $self->{'RNASeqBase'}; }
-sub RNASeqSRADir      { my $self = shift; return $self->{'RNASeqSRADir'}; }
-sub RNASeqGenomeDir   { my $self = shift; return $self->{'RNASeqGenomeDir'}; }
-sub new_genome        { my $self = shift; return $self->{'new_genome'}; }
-sub check             { my $self = shift; return $self->{'check'}; }
+sub RNASeqBase          { my $self = shift; return $self->{'RNASeqBase'}; }
+sub RNASeqSRADir        { my $self = shift; return $self->{'RNASeqSRADir'}; }
+sub RNASeqGenomeDir     { my $self = shift; return $self->{'RNASeqGenomeDir'}; }
+sub RNASeqTransferDir     { my $self = shift; return $self->{'RNASeqTransferDir'}; }
+sub new_genome          { my $self = shift; return $self->{'new_genome'}; }
+sub check               { my $self = shift; return $self->{'check'}; }
+sub Use_NGS_file_system { my $self = shift; return $self->{'Use_NGS_file_system'}; }
 
 
 #####################################################################################################
 # Config file methods
+
 
 =head2 
 
@@ -126,6 +150,7 @@ sub check             { my $self = shift; return $self->{'check'}; }
     Args    :   Accession ID
 
 =cut
+
 
 
 sub read_accession {
@@ -347,33 +372,6 @@ sub get_ArrayExpress_pubmed {
 
   # get the pubmed ID
   my $pubmed = $1 if ($data =~ /<bibliography>\s*<accession>(\d+)<\/accession>/);
-
-  return $pubmed;
-}
-
-=head2 
-
-    Title   :   get_ENA_pubmed
-    Usage   :   $pubmed_id = $self->get_ENA_pubmed($study);
-    Function:   given a Sudy ID, get the PubMed ID from ENA
-    Returns :   Pubmed ID
-    Args    :   
-
-Go to ENA and extract the Pubmed ID from the Study's XML.
-
-=cut
-
-
-sub get_ENA_pubmed {
-  my ($self, $study_accession) = @_;
-
-  my $base = 'https://www.ebi.ac.uk/ena/data/view/';
-  my $url = $base . "${study_accession}&display=xml";
-  
-  my $data = `wget -q -O - "$url"`;
-
-  # get the pubmed ID
-  my $pubmed = $1 if ($data =~ /<DB>pubmed<\/DB>\s+<ID>(\d+)<\/ID>/);
 
   return $pubmed;
 }
@@ -1376,7 +1374,7 @@ sub remove_old_experiment_files  {
 	  $self->{'wormbase'}->run_command("rm -rf Introns", $log);
 	  $self->{'wormbase'}->run_command("rm -rf SRR", $log);
 	}
-	$self->{'wormbase'}->run_command("rm -rf cufflinks", $log); # always remove cufflinks unless -check
+	$self->{'wormbase'}->run_command("rm -rf cufflinks/genes.fpkm_tracking.done", $log); # always remove cufflinks unless -check
       }
     }
   }
@@ -1438,7 +1436,7 @@ sub get_SRA_files {
 
     Title   :   get_SRX_file
     Usage   :   $self->get_SRX_files($experiment_accession);
-    Function:   gets the SRA fastq files for an experiment
+    Function:   gets the SRA fastq files for an experiment from the ENA or NCBI FTP servers
     Returns :   success = 0
     Args    :   experiment accession
 
@@ -1855,7 +1853,7 @@ sub  write_junction_gff_file {
 
     Title   :   run_make_gtf_transcript
     Usage   :   $self->run_make_gtf_transcript($database)
-    Function:   runs make_gtf_transcript
+    Function:   runs make_gtf_transcript (if we are using the NGS filesystem it runs the script to make a new GTF file and compares it to the old GTF file to make a file of changes)
     Returns :   success = 0
     Args    :   path of acedb database to query (e.g. autoace)
 
@@ -1872,23 +1870,139 @@ sub run_make_gtf_transcript {
   my $status;
 
   if ($self->new_genome) {system("rm -f $gtf_file")}
-  if ($self->check && -s $gtf_file) {
-    $log->write_to("GTF file already exists - not making them again\n");
-    $status = 0;
-  } else {
 
-    my $gtf_file = " $RNASeqGenomeDir/transcripts.gtf";
-    my $cmd = "make_GTF_transcript.pl -database $database -out $gtf_file -species $species -noprefix"; # -noprefix to strip the chromosome prefix out
+  if ($self->Use_NGS_file_system) {
+
+    my $version = $self->{wormbase}->get_wormbase_version;
+    my $prev_version = $version - 1;
+    my $gtf_file = "$RNASeqGenomeDir/transcripts.gtf";
+    my $old_gtf_file = "$RNASeqGenomeDir/transcripts.${prev_version}.gtf";
+    my $differences_file = "$RNASeqGenomeDir/transcripts.$version.differences";
+    my $bed_file = "$RNASeqGenomeDir/differences.bed";
     
-    $log->write_to("run $cmd\n");
+    if (-e $gtf_file && !-e $old_gtf_file) {
+      $status = $self->{wormbase}->run_command("mv $gtf_file $old_gtf_file", $log);
+    }
     
-    $status = $self->{wormbase}->run_script($cmd, $log);
-    if ($status != 0) { $log->log_and_die("Didn't run make_GTF_transcript.pl successfully\n"); }
-    sleep(60); # wait a minute to let the NFS system catch up with all the LSF nodes
-    #if (!-e $gtf_file || -z $gtf_file) { $log->log_and_die("Didn't run make_GTF_transcript.pl successfully\n"); }
+    if ($self->new_genome) {
+      system("rm -f $old_gtf_file");
+      system("touch $old_gtf_file");
+    }
+    
+    if ($self->check && -s $gtf_file) {
+      $log->write_to("GTF file already exists - not making them again\n");
+      $status = 0;
+    } else {
+      
+      my $cmd = "make_GTF_transcript.pl -database $database -out $gtf_file -species $species -noprefix"; # -noprefix to strip the chromosome prefix out
+      
+      $log->write_to("run $cmd\n");
+      
+      $status = $self->{wormbase}->run_script($cmd, $log);
+      if ($status != 0) { $log->log_and_die("Didn't run make_GTF_transcript.pl successfully\n"); }
+      sleep(60); # wait a minute to let the NFS system catch up with all the LSF nodes
+      
+      # make the file of differences between this Build and the previous Build for this species
+      my %old_transcripts;
+      my %old_gene;
+      open (OLD, "<$old_gtf_file") || $log->log_and_die("Couldn't open $old_gtf_file\n");
+      while (my $line = <OLD>) {
+	chomp $line;
+	my @f = split /\t/, $line;
+	my ($gene_id, $transcript_id) = ($f[8] =~ /gene_id \"(\S+)\"; transcript_id \"(\S+)\"/);
+	if ($f[2] eq 'transcript') {
+	  $old_gene{$transcript_id} = $gene_id;
+	} else {
+	  my $location = $f[0] . '.' . $f[3] . '.' . $f[4] . '.' . $f[6]; # chr start end sense
+	  $old_transcripts{$transcript_id} .= $location;
+	}
+      }
+      close(OLD);
+      
+      my %new_transcripts;
+      my %new_gene;
+      my %new_chrom;
+      my %new_start;
+      my %new_end;
+      open (NEW, "<$gtf_file") || $log->log_and_die("Couldn't open $gtf_file\n");
+      while (my $line = <NEW>) {
+	chomp $line;
+	my @f = split /\t/, $line;
+	my ($gene_id, $transcript_id) = ($f[8] =~ /gene_id \"(\S+)\"; transcript_id \"(\S+)\"/);
+	if ($f[2] eq 'transcript') {
+	  # get span of genes
+	  $new_gene{$transcript_id} = $gene_id;
+	  if (!exists $new_chrom{$gene_id}) {$new_chrom{$gene_id} = $f[0]}
+	  if (!exists $new_start{$gene_id} || $f[3] <  $new_start{$gene_id}) {$new_start{$gene_id} = $f[3]}
+	  if (!exists $new_end{$gene_id} || $f[4] >  $new_end{$gene_id}) {$new_end{$gene_id} = $f[4]}
+	  
+	} else { # $f[2] eq 'exon'
+	  my $location = $f[0] . '.' . $f[3] . '.' . $f[4] . '.' . $f[6]; # chr start end sense
+	  $new_transcripts{$transcript_id} .= $location;
+	}
+      }
+      close(OLD);
+      
+      # The differences file holds the following, followed by columns taken from the GFF file for: "gene_id $gene_id; transcript_id $transcript_id"
+      # changed_structure
+      # changed_gene_id
+      # new
+      # dead
+      
+      open(BED, ">$bed_file") || $log->log_and_die("Couldn't open $bed_file\n");
+      open (DIFF, ">$differences_file") || $log->log_and_die("Couldn't open $differences_file\n");
+      foreach my $transcript_id (keys %new_transcripts) {
+	my $gene_id = $new_gene{$transcript_id};
+	if (exists $old_transcripts{$transcript_id}) {
+	  if ($old_transcripts{$transcript_id} ne $new_transcripts{$transcript_id}) {
+	    print DIFF "changed_structure\tgene_id $gene_id; transcript_id $transcript_id\n";
+	  }
+	  if ($old_gene{$transcript_id} ne $new_gene{$transcript_id}) {
+	    print DIFF "changed_gene_id\tgene_id $gene_id; transcript_id $transcript_id\n";
+	  }
+	  delete $old_transcripts{$transcript_id};
+	} else {
+	  print DIFF "new\tgene_id $gene_id; transcript_id $transcript_id\n";	
+	}
+	my $bed_start = $new_start{$gene_id} - 10000; # get a region of 10kb before and after the span of the gene that has been altered
+	if ($bed_start < 0) {$bed_start = 0}
+	my $bed_end = $new_end{$gene_id} + 10000;
+	print BED "$new_chrom{$gene_id}\t$bed_start\t$bed_end\n";
+      }
+      
+      foreach my $transcript_id (keys %old_transcripts) {
+	my $gene_id = $old_gene{$transcript_id};
+	print DIFF "dead\tgene_id $gene_id; transcript_id $transcript_id\n";	      
+      }
+      close(DIFF);
+      close(BED);
+      system("sort $bed_file | uniq > ${bed_file}.tmp");
+      system("mv ${bed_file}.tmp $bed_file");
+      
+    }
+
+  } else { # not using NGS file system
+
+    if ($self->check && -s $gtf_file) {
+      $log->write_to("GTF file already exists - not making them again\n");
+      $status = 0;
+    } else {
+      
+      my $gtf_file = " $RNASeqGenomeDir/transcripts.gtf";
+      my $cmd = "make_GTF_transcript.pl -database $database -out $gtf_file -species $species -noprefix"; # -noprefix to strip the chromosome prefix out
+      
+      $log->write_to("run $cmd\n");
+      
+      $status = $self->{wormbase}->run_script($cmd, $log);
+      if ($status != 0) { $log->log_and_die("Didn't run make_GTF_transcript.pl successfully\n"); }
+      sleep(60); # wait a minute to let the NFS system catch up with all the LSF nodes
+      #if (!-e $gtf_file || -z $gtf_file) { $log->log_and_die("Didn't run make_GTF_transcript.pl successfully\n"); }
+    }
+
   }
   return $status;
 }
+
 
 =head2
 
@@ -1900,6 +2014,20 @@ sub run_make_gtf_transcript {
 
 =cut
 
+
+##########################################
+### If this is the first time the Experiment has been seen, then simply run cufflinks on the BAM file
+### Else:
+# Read coverage to FPKM conversion factor for this Experiment from file produced in previous Build
+# find list of transcripts that have changed since last Build (compare MD5 checksums on sequences?)
+# extract start/end positions of changed transcripts and write BED file
+# run samtools to extract the BAM file from the NGS server using: samtools view -bh -M -L bedfile.bed ftp://ngs.sanger.ac.uk/production/parasites/wormbase/RNASeq_alignments/<Species_dir>/<Experiment>.bam 
+# parse transcripts.gtf to get coverage value from the changed transcripts
+# get the ace file of Transcript RNASeq data for this Experiment from the previous Build
+# write command to ace file to remove the old value and write the new value (allowing for disappeared and new transcripts)
+#### At end of calculation section of RNASeq_align.pl, need to calculate FPKM conversion factors if this is the first time the Experiment is seen
+##########################################
+
 sub run_cufflinks {
   my ($self, $experiment_accession, $strandedness, $library_type) = @_;
   
@@ -1910,6 +2038,7 @@ sub run_cufflinks {
   my $Software = $self->{Software};
   my $alignmentDir = $self->{'alignmentDir'};
   my $status;
+  my $transcripts_store = $self->{wormbase}->misc_dynamic . "/SHORT_READS/CUFFLINKS_TRANSCRIPTS/" . $self->{wormbase}->{species} . "/" . $experiment_accession . ".gtf";
 
   $log->write_to("run cufflinks\n");
   chdir "$RNASeqSRADir/$experiment_accession";
@@ -1921,41 +2050,338 @@ sub run_cufflinks {
     $status = 0;
   } else {
 
-    # For strand-specific data, you do not need any extra parameters for
-    # STAR runs, but you need to use --library-type option for
-    # Cufflinks. For example, for the "standard" dUTP protocol you need to
-    # use --library-type fr-firststrand in Cufflinks.
-    my $strand_option='';
-    #my $strand_option='--library-type fr-firststrand';
-    # default is to assume not stranded - this is correct for the Hillier modENCODE data
-    if (defined $strandedness && $strandedness eq 'stranded' && defined $library_type && $library_type eq 'fr') {
-      $strand_option = '--library-type fr-firststrand'
-    }
+    if ($self->Use_NGS_file_system) {
+    
+      # if cufflinks has been run in a previous Build, then the transcripts.gtf file should be available in $transcripts_store
+      if (!-e $transcripts_store || $self->check_NGS_files($experiment_accession)) { # if no previous transcripts.gtf output file or NGS BAM file is available then we should do a complete run of all genes
+	
+	# For strand-specific data, you do not need any extra parameters for
+	# STAR runs, but you need to use --library-type option for
+	# Cufflinks. For example, for the "standard" dUTP protocol you need to
+	# use --library-type fr-firststrand in Cufflinks.
+	my $strand_option='';
+	#my $strand_option='--library-type fr-firststrand';
+	# default is to assume not stranded - this is correct for the Hillier modENCODE data
+	if (defined $strandedness && $strandedness eq 'stranded' && defined $library_type && $library_type eq 'fr') {
+	  $strand_option = '--library-type fr-firststrand'
+	}
+	
+	my $gtf = "--GTF $RNASeqGenomeDir/transcripts.gtf"; # NB there are two 'transcripts.gtf' files - this one is the WormBase GTF of gene locations used as input by cufflinks
+	$status = $self->{wormbase}->run_command("$Software/cufflinks/cufflinks $gtf $strand_option ../$alignmentDir/accepted_hits.bam", $log);
+	if ($status != 0) {  $log->log_and_die("Didn't run cufflinks to get the isoform/gene expression successfully\n"); }
+	if (-s "genes.fpkm_tracking" > 10000 && -s "isoforms.fpkm_tracking" > 10000) {
+	  $self->{wormbase}->run_command("touch $done_file", $log); # set flag to indicate we have finished this
+	} else {
+	  $log->log_and_die("Didn't run cufflinks to get the isoform/gene expression successfully\n");
+	}
+	
+      } else { # we are running cufflinks over only the genes which have changed and then we merge in the updated values
+	
+	print "we are running cufflinks over only the genes which have changed and then we merge in the updated values.\n";
+	
+	# get subset of BAM file from NGS server based on the BED file of changed regions
+	$self->get_subset_of_BAM($experiment_accession);
+	
+	# run cufflinks on the BAM file
+	my $strand_option='';
+	if (defined $strandedness && $strandedness eq 'stranded' && defined $library_type && $library_type eq 'fr') {$strand_option = '--library-type fr-firststrand'}
+	my $gtf = "--GTF $RNASeqGenomeDir/transcripts.gtf"; # NB there are two 'transcripts.gtf' files - this one is the WormBase GTF of gene locations used as input by cufflinks
+	$status = $self->{wormbase}->run_command("$Software/cufflinks/cufflinks $gtf $strand_option $experiment_accession.bam", $log);
+	if ($status != 0) {  $log->log_and_die("Didn't run cufflinks to get the isoform/gene expression successfully\n"); }
+	
+	# update a copy of the old transcripts.gtf file with changed genes and new FPKM values
+	$self->get_fpkm_of_changed_genes($experiment_accession);
+	
+	# tidy up
+	$self->{wormbase}->run_command("rm -f $experiment_accession.bam", $log);
+	
+	# create the genes.fpkm_tracking and isoforms.fpkm_trackingfiles from the transcripts.gtf file
+	$self->convert_transcripts_gtf_to_isoforms_fpkm_tracking();
 
-    my $gtf = "--GTF $RNASeqGenomeDir/transcripts.gtf";
-    $status = $self->{wormbase}->run_command("$Software/cufflinks/cufflinks $gtf $strand_option ../$alignmentDir/accepted_hits.bam", $log);
-    if ($status != 0) {  $log->log_and_die("Didn't run cufflinks to get the isoform/gene expression successfully\n"); }
-    if (-s "genes.fpkm_tracking" > 10000 && -s "isoforms.fpkm_tracking" > 10000) {
-      $self->{wormbase}->run_command("touch $done_file", $log); # set flag to indicate we have finished this
-    } else {
-      $log->log_and_die("Didn't run cufflinks to get the isoform/gene expression successfully\n");
-    }
-  }
+      }
+      
+      $status = $self->{'wormbase'}->run_command("touch $done_file", $log);
+    
+      # copy the cufflinks transcripts.gtf output file to 
+      # /nfs/production/panda/ensemblgenomes/wormbase/BUILD_DATA/MISC_DYNAMIC/SHORT_READS/CUFFLINKS_TRANSCRIPTS/$species/$experiment_accession.gtf
+      if (!-d $self->{wormbase}->misc_dynamic . "/SHORT_READS/CUFFLINKS_TRANSCRIPTS/" . $self->{wormbase}->{species}) {
+	mkdir $self->{wormbase}->misc_dynamic . "/SHORT_READS/CUFFLINKS_TRANSCRIPTS/" . $self->{wormbase}->{species}, 0777;
+      }
+      my $cp_cmd = "cp transcripts.gtf $transcripts_store";
+      $status = $self->{'wormbase'}->run_command($cp_cmd, $log);
 
-  # make the cufflinks assembly file for Michael Paulini to model into operons :-)
-  my $species = $self->{wormbase}->{species};
-  if ($species ne 'elegans' && !-e "assembly/transcripts.gtf") {
-    mkdir "assembly", 0777;
-    chdir "assembly";
-    my $strand_option = "--min-intron-length 25 --max-intron-length 30000";
-    $status = $self->{wormbase}->run_command("$Software/cufflinks/cufflinks $strand_option ../../$alignmentDir/accepted_hits.bam", $log);
-    if ($status != 0) {  $log->log_and_die("Didn't run cufflinks to get the cufflinks gene structures successfully\n"); }    
-  }
+    } else { # not using NGS file system
+
+
+      # For strand-specific data, you do not need any extra parameters for
+      # STAR runs, but you need to use --library-type option for
+      # Cufflinks. For example, for the "standard" dUTP protocol you need to
+      # use --library-type fr-firststrand in Cufflinks.
+      my $strand_option='';
+      #my $strand_option='--library-type fr-firststrand';
+      # default is to assume not stranded - this is correct for the Hillier modENCODE data
+      if (defined $strandedness && $strandedness eq 'stranded' && defined $library_type && $library_type eq 'fr') {
+	$strand_option = '--library-type fr-firststrand'
+      }
+      
+      my $gtf = "--GTF $RNASeqGenomeDir/transcripts.gtf";
+      $status = $self->{wormbase}->run_command("$Software/cufflinks/cufflinks $gtf $strand_option ../$alignmentDir/accepted_hits.bam", $log);
+      if ($status != 0) {  $log->log_and_die("Didn't run cufflinks to get the isoform/gene expression successfully\n"); }
+      if (-s "genes.fpkm_tracking" > 10000 && -s "isoforms.fpkm_tracking" > 10000) {
+	$self->{wormbase}->run_command("touch $done_file", $log); # set flag to indicate we have finished this
+      } else {
+	$log->log_and_die("Didn't run cufflinks to get the isoform/gene expression successfully\n");
+      }
+    }
+    
+#    # make the cufflinks assembly file for Michael Paulini to model into operons :-)
+#    my $species = $self->{wormbase}->{species};
+#    if ($species ne 'elegans' && !-e "assembly/transcripts.gtf") {
+#      mkdir "assembly", 0777;
+#      chdir "assembly";
+#      my $strand_option = "--min-intron-length 25 --max-intron-length 30000";
+#      my $BAMfile = "../../$alignmentDir/accepted_hits.bam";
+#      if (-e $experiment_accession.bam) {$BAMfile = "../../cufflinks/$experiment_accession.bam"}
+#      $status = $self->{wormbase}->run_command("$Software/cufflinks/cufflinks $strand_option $BAMfile", $log);
+#      if ($status != 0) {  $log->log_and_die("Didn't run cufflinks to get the cufflinks gene structures successfully\n"); }    
+#    }
+
+  } 
 
   return $status;
 }
 
 
+##########################################
+# run samtools to extract subset of BAM file from NGS server
+sub get_subset_of_BAM {
+  my ($self, $experiment_accession) = @_;
+  my $version = $self->{wormbase}->get_wormbase_version;
+  my $RNASeqGenomeDir = $self->{RNASeqGenomeDir};
+  my $differences_file = "$RNASeqGenomeDir/transcripts.$version.differences";
+  my $bed_file = "$RNASeqGenomeDir/differences.bed";
+  my $Software = $self->{Software};
+  my $log = $self->{log};
+  
+  my $species = $self->{wormbase}->{species};
+  my %NGS_species_dir = %{$self->{'NGS_species_dir'}};
+  if (!exists  $NGS_species_dir{$species}) {die "In list_NGS_files() speciesdir does not have an entry for $species\n"}
+  my $species_dir = $NGS_species_dir{$species};
+
+
+  my $cmd = "$Software/samtools/samtools view -bh -M -L $bed_file ftp://ngs.sanger.ac.uk/production/parasites/wormbase/RNASeq_alignments/$species_dir/${experiment_accession}.bam > ${experiment_accession}.bam";
+
+  $self->{wormbase}->run_command($cmd, $log); 
+ 
+  if (!-s "${experiment_accession}.bam") {
+    $log->log_and_die("Didn't get BAM file for ${experiment_accession} in get_subset_of_BAM() successfully\n");
+  }
+
+}
+
+##########################################
+# parse transcripts.gtf to get coverage of transcripts that have changed
+# calculate the FPKM values from the coverage
+sub get_fpkm_of_changed_genes {
+  my ($self, $experiment_accession) = @_;
+  my $version = $self->{wormbase}->get_wormbase_version;
+  my $RNASeqGenomeDir = $self->{RNASeqGenomeDir};
+  my $differences_file = "$RNASeqGenomeDir/transcripts.$version.differences";
+  my $bed_file = "$RNASeqGenomeDir/differences.bed";
+  my $transcripts_store = $self->{wormbase}->misc_dynamic . "/SHORT_READS/CUFFLINKS_TRANSCRIPTS/" . $self->{wormbase}->{species} . "/" . $experiment_accession . ".gtf";
+  my $log = $self->{log};
+
+  # get FPKM conversion ratio
+  my $conversion_factor = $self->get_conversion_factor($experiment_accession);
+
+
+  my %remove = $self->get_deleted_genes(); # get all deleted gene IDs
+  my %added = $self->get_added_genes(); # get all changed and added genes IDs
+
+  # get old transcripts.gtf file and remove changed/deleted gene lines
+  # open old transcripts file from the store and remove lines of and genes that have been changed or deleted
+  open (NEW, ">transcripts.new") || $log->log_and_die("Couldn't open transcripts.new\n");
+  open (OLD, "< $transcripts_store") || $log->log_and_die("Couldn't open $transcripts_store\n");
+  while (my $line = <OLD>) {
+    my ($geneid) = $line =~ /gene_id \"(\S+)\"\;/;
+    if (!exists $remove{$geneid}) {
+      print NEW $line;
+    }
+  }
+  close(OLD);
+  close(NEW);
+
+  # go through newly made cufflinks transcripts.gtf file and add it to a new transcripts file, updating the FPKM values of the lines
+  open (CUFF, "transcripts.gtf");
+  open (NEW, ">>transcripts.new") || $log->log_and_die("Couldn't open transcripts.new\n");
+
+  while (my $line = <CUFF>) {
+    my ($chr, $source, $type, $start, $end, $score, $sense, $phase, $gi, $geneid, $ti, $transid, $fp, $fpkm, $fr, $frac, $cl, $conflo, $ch, $confhi, $cv, $cov) = ($line =~ /(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/);
+    my ($geneid_no_quotes) = ($geneid =~ /\"(\S+)\"\;/);
+    if (exists $added{$geneid_no_quotes}) {
+      # calculate revised FPKM on line
+      my ($COV) = ($cov =~ /(\d+\.d+)/);
+      my $FPKM = $COV * $conversion_factor;
+      # write out revised line
+      print NEW "$chr\t$source\t$type\t$start\t$end\t$score\t$sense\t$phase\t$gi $geneid $ti $transid $fp \"$FPKM\"; $fr $frac $cl $conflo $ch $confhi $cv $cov\n";
+    }
+  }
+
+  close(NEW);
+  close(CUFF);
+
+
+  # move transcripts.new to transcripts.gtf
+  system("mv transcripts.new transcripts.gtf");
+
+
+}
+##########################################
+
+# convert the transcripts.gtf file to a isoforms.fpkm_tracking file and a genes.fpkm_tracking file
+sub convert_transcripts_gtf_to_isoforms_fpkm_tracking {
+ my ($self) = @_;
+ my $log = $self->{log};
+
+#I       Cufflinks       transcript      71425   81071   422     +       .       gene_id "WBGene00000812"; transcript_id "Y48G1C.2b.2"; FPKM "9.7947093040"; frac "0.267097"; conf_lo "9.166095"; conf_hi "10.423323"; cov "108.562313";
+
+  my %gene_data;
+
+  open (GTF, "transcripts.gtf");
+  open (TRACK, "isoforms.fpkm_tracking") || $log->log_and_die("Couldn't open isoforms.fpkm_tracking\n");
+
+  print TRACK "tracking_id\tclass_code\tnearest_ref_id\tgene_id\tgene_short_name\ttss_id\tlocus\tlength\tcoverage\tFPKM\tFPKM_conf_lo\tFPKM_conf_hi\tFPKM_status\n";
+
+  while (my $line = <GTF>) {
+    my ($chr, $source, $type, $start, $end, $score, $sense, $phase, $gi, $geneid, $ti, $transid, $fp, $fpkm, $fr, $frac, $cl, $conflo, $ch, $confhi, $cv, $cov) = ($line =~ /(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/);
+    if ($type eq 'transcript') { # we don't want to output data from the 'exon' lines
+      ($transid) = ($transid =~ /\"(\S+)\"\;/);
+      ($geneid) = ($geneid =~ /\"(\S+)\"\;/);
+      my $location = "${chr}:${start}-${end}";
+      my $locus_length = $end - $start + 1;
+      ($fpkm) = ($fpkm =~ /\"(\S+)\"\;/);
+      ($conflo) = ($conflo =~ /\"(\S+)\"\;/);
+      ($confhi) = ($confhi =~ /\"(\S+)\"\;/);
+      $gene_data{$geneid}{locus} = $location; # we don't use this, so it is OK to use just one of the isoform locations as an approximation
+      $gene_data{$geneid}{fpkm} += $fpkm;
+      $gene_data{$geneid}{fpkm_lo} += $conflo; # no attempt has been made to produce correct values for the "lo" confidence values of FPKM because I don't use them.
+      $gene_data{$geneid}{fpkm_hi} += $confhi; # no attempt has been made to produce correct values for the "hi" confidence values of FPKM because I don't use them.
+      # NB no attempt has been made to produce correct values for the "lo" and "high" confidence values of FPKM because I don't use them.
+      # NB we assume that all lines have a status of "OK". There are rare lines that fail, but we ignore this.
+      print TRACK "$transid\t-\t-\t$geneid\t-\t-\t$location\t$locus_length\t$cov\t$fpkm\t$conflo\t$confhi\tOK\n";
+    }
+  }
+
+  close(TRACK);
+  close(GTF);
+
+  open (GENES, "genes.fpkm_tracking") || $log->log_and_die("Couldn't open genes.fpkm_tracking\n");
+  print GENES "tracking_id\tclass_code\tnearest_ref_id\tgene_id\tgene_short_name\ttss_id\tlocus\tlength\tcoverage\tFPKM\tFPKM_conf_lo\tFPKM_conf_hi\tFPKM_status\n";
+  foreach my $geneid (keys %gene_data) {
+    my $location = $gene_data{$geneid}{locus};
+    my $fpkm = $gene_data{$geneid}{fpkm};
+    my $fpkm_lo = $gene_data{$geneid}{fpkm_lo};
+    my $fpkm_hi =  $gene_data{$geneid}{fpkm_hi};
+    print GENES "$geneid\t-\t-\t$geneid\t-\t-\t$location\t-\t-\t$fpkm\t$fpkm_lo\t$fpkm_hi\tOK\n";
+  }
+  close (GENES);
+
+}
+##########################################
+# calculate FPKM conversion factor for this Experiment from the first 500 value in the stored transcripts.gtf file from the previous BUILD
+
+sub get_conversion_factor {
+  my ($self, $experiment_accession) = @_;
+  my $log = $self->{log};
+
+  my $transcripts_store = $self->{wormbase}->misc_dynamic . "/SHORT_READS/CUFFLINKS_TRANSCRIPTS/" . $self->{wormbase}->{species} . "/" . $experiment_accession . ".gtf";
+
+  open (STORE, "<$transcripts_store") || $log->log_and_die("Couldn't open $transcripts_store\n");
+  my @values;
+  my $count=0;
+  while (my $line = <STORE>) {
+    chomp $line;
+    my ($fpkm) = ($line =~ /FPKM\s+\"(\d+\.\d+)\"/);
+    my ($cov) = ($line =~ /cov\s+\"(\d+\.\d+)\"/);
+    if ($cov == 0) {next}
+    push @values, $fpkm/$cov;
+    if ($count++ == 500) {last} # don't bother to look at the whole file - we get a good value for the FPKM/Coverage ratio very quickly
+  }
+  close(STORE);
+
+  my $median_value = $self->median(@values);
+  return $median_value;
+}
+############################################################################
+# return the median value of a list of values
+sub median {
+  my ($self, @values) = @_;
+
+    my @vals = sort {$a <=> $b} @values;
+    my $len = @vals;
+    if($len%2) #odd?
+    {
+        return $vals[int($len/2)];
+    }
+    else #even
+    {
+        return ($vals[int($len/2)-1] + $vals[int($len/2)])/2;
+    }
+}
+
+
+
+##########################################
+# get a hash of geneIDs that have been changed or deleted in this Build
+sub get_deleted_genes {
+  my ($self) = @_;
+  my $RNASeqGenomeDir = $self->{RNASeqGenomeDir};
+  my $version = $self->{wormbase}->get_wormbase_version;
+  my $differences_file = "$RNASeqGenomeDir/transcripts.$version.differences";
+  my $log = $self->{log};
+
+  my %removed;
+  
+  open(DIFF, "<$differences_file") || $log->log_and_die("Couldn't open $differences_file\n");
+  while (my $line = <DIFF>) {
+    chomp $line;
+    my (@cols) = split /\s+/, $line;
+    if ($cols[0] eq 'changed_structure' || $cols[0] eq 'changed_gene_id' || $cols[0] eq 'dead') {
+      my $geneid = $cols[2];
+      $geneid =~ s//\;/;
+      $removed{$geneid} = 1;
+    }
+  }
+  close(DIFF);
+
+  return %removed;
+}
+##########################################
+# get a hash of geneIDs that have been changed or added in this Build
+sub get_added_genes {
+  my ($self) = @_;
+  my $RNASeqGenomeDir = $self->{RNASeqGenomeDir};
+  my $version = $self->{wormbase}->get_wormbase_version;
+  my $differences_file = "$RNASeqGenomeDir/transcripts.$version.differences";
+  my $log = $self->{log};
+
+  my %added;
+
+  open(DIFF, "<$differences_file") || $log->log_and_die("Couldn't open $differences_file\n");
+  while (my $line = <DIFF>) {
+    chomp $line;
+    my (@cols) = split /\s+/, $line;
+    if ($cols[0] eq 'changed_structure' || $cols[0] eq 'changed_gene_id' || $cols[0] eq 'new') {
+      my $geneid = $cols[2];
+      $geneid =~ s//\;/;
+      $added{$geneid} = 1;
+    }
+  }
+  close(DIFF);
+
+  return %added;
+}
+##########################################
   
 
 =head2
@@ -2169,16 +2595,32 @@ sub check_all_done {
   my $alignmentDir = $self->{'alignmentDir'};
   my $intron_done_file    = "$RNASeqSRADir/$experiment_accession/Introns/Intron.ace.done"; 
   my $bam_done_file       = "$RNASeqSRADir/$experiment_accession/".$self->{'alignmentDir'}."/accepted_hits.bam.done";
-  my $hits_file           = "$RNASeqSRADir/$experiment_accession/".$self->{'alignmentDir'}."/hits.tmp";
-  my $stranded_hits_file  = "$RNASeqSRADir/$experiment_accession/".$self->{'alignmentDir'}."/hits.stranded";
+
+  my $coverage_file           = "$RNASeqSRADir/$experiment_accession/".$self->{'alignmentDir'}."/coverage";
+  my $stranded_coverage_file  = "$RNASeqSRADir/$experiment_accession/".$self->{'alignmentDir'}."/stranded_coverage";
+
   my $cufflinks_done_file = "$RNASeqSRADir/$experiment_accession/cufflinks/genes.fpkm_tracking.done";
   my $status=0;
-  if (-e $intron_done_file &&
-      -e $bam_done_file &&
-      -e $hits_file &&
-      -e $stranded_hits_file &&
-      (-e $cufflinks_done_file || $notbuild)) {
-    $status=1;
+
+  if ($self->Use_NGS_file_system) {
+    
+    if (-e $intron_done_file &&
+	-e $bam_done_file &&
+	(-e $coverage_file) &&
+	(-e $stranded_coverage_file) &&
+	(-e $cufflinks_done_file || $notbuild)) {
+      $status=1;
+    }
+    
+  } else {
+    
+    if (-e $intron_done_file &&
+	-e $bam_done_file &&
+	-e $coverage_file &&
+	-e $stranded_coverage_file &&
+	(-e $cufflinks_done_file || $notbuild)) {
+      $status=1;
+    }
   }
 
   return $status;
@@ -2186,43 +2628,43 @@ sub check_all_done {
 
 =head2
 
-    Title   :   make_hits
-    Usage   :   $self->make_hits($experiment_accession);
-    Function:   make the hits file giving the count of hits at each base and the sense of the alignment (NB not the sense of the transcript)
+    Title   :   make_coverage
+    Usage   :   $self->make_coverage($experiment_accession);
+    Function:   make the coverage file giving the count of hits at each base and the sense of the alignment (NB not the sense of the transcript)
     Returns :   
     Args    :   experiment accession
 
 =cut
 
-sub make_hits {
+sub make_coverage {
   my ($self, $experiment_accession) = @_;
   
   my $RNASeqSRADir = $self->{RNASeqSRADir};
   my $alignmentDir = $self->{'alignmentDir'};
   my $exptDir = "$RNASeqSRADir/$experiment_accession/$alignmentDir";
   my $bamfile = "$exptDir/accepted_hits.bam";
-  my $hitsfile = "$exptDir/hits.tmp";
+  my $coveragefile = "$exptDir/coverage";
   my $Software = $self->{Software};
   
   if (-e $bamfile) {
     # get the hits with a count
-    print "writing $hitsfile\n";
-    unlink "$hitsfile";
-    system(qq#/$Software/BEDTools/bin/bamToBed -split -i $bamfile | awk '{OFS=\"\t\"; print \$1,\$2,\$3,\$6 }' | sort -k1,1 -k2,3n | uniq -c > $hitsfile#);
+    print "writing $coveragefile\n";
+    unlink "$coveragefile";
+    system(qq#/$Software/BEDTools/bin/bamToBed -split -i $bamfile | awk '{OFS=\"\t\"; print \$1,\$2,\$3,\$6 }' | sort -k1,1 -k2,3n | uniq -c > $coveragefile#);
   }
 }
 
 =head2
 
-    Title   :   make_stranded_hits
-    Usage   :   $self->make_stranded_hits($experiment_accession);
-    Function:   make the hits file giving the count of hits at each base and the sense of the transcript that they came from
+    Title   :   make_stranded_coverage
+    Usage   :   $self->make_stranded_coverage($experiment_accession);
+    Function:   make the coverage file giving the count of hits at each base and the sense of the transcript that they came from
     Returns :   
     Args    :   experiment hashref
 
 =cut
   
-sub make_stranded_hits {
+sub make_stranded_coverage {
   my ($self, $experiment) = @_;
 
   my $experiment_accession = $experiment->{experiment_accession};
@@ -2235,22 +2677,35 @@ sub make_stranded_hits {
   my $alignmentDir = $self->{'alignmentDir'};
   my $exptDir = "$RNASeqSRADir/$experiment_accession/$alignmentDir";
   my $bamfile = "$exptDir/accepted_hits.bam";
-  my $stranded_hitsfile = "$exptDir/hits.stranded";
+  my $stranded_coveragefile = "$exptDir/stranded_coverage";
   my $Software = $self->{Software};
 
-  $self->{wormbase}->run_command("rm -f $stranded_hitsfile", $log);
+# currently make a file like:
+# $Software/BEDTools/bin/bamToBed -split -i $bamfile 
+# and then adjust the sense depending one whether it is the first mate or second mate of the pair.
+# and then do:
+# sort -k1,1 -k2,3n ${stranded_coveragefile}.tmp | uniq -c > $stranded_coveragefile
+# this is very slow and not really a bedgraph file
+# We could use this to make plus and minus strand BEDGraph file which takes 75 seconds each on the test briggsae BAM file SRX191957. 
+# The -du changes the sense of the second mate to be the same as the first mate:
+# $WORM_PACKAGES/BEDTools/bin/bedtools genomecov -ibam accepted_hits.bam -bg -split -strand + -du >! genomecov-bg-split-sense-plus-du.bg
+# $WORM_PACKAGES/BEDTools/bin/bedtools genomecov -ibam accepted_hits.bam -bg -split -strand - -du >! genomecov-bg-split-sense-minus-du.bg
+# would then need to change the script 'rnaseq.pl'
 
-  # just make an empty hits file if the reads are not stranded
+  
+  $self->{wormbase}->run_command("rm -f $stranded_coveragefile", $log);
+
+  # just make an empty coverage file if the reads are not stranded
   if ($strandedness eq 'unknown' || $strandedness eq 'unstranded') {
-    $self->{wormbase}->run_command("touch $stranded_hitsfile", $log);
+    $self->{wormbase}->run_command("touch $stranded_coveragefile", $log);
   } else {
 
 
     if (-e $bamfile) {
-      print "writing $stranded_hitsfile\n";
+      print "writing $stranded_coveragefile\n";
       my $bamtobed = "$Software/BEDTools/bin/bamToBed -split -i $bamfile";
-      open (HITS, ">${stranded_hitsfile}.tmp") || $log->log_and_die("Can't open ${stranded_hitsfile}.tmp in make_stranded_hits()\n");
-      open (BED, "$bamtobed |") || $log->log_and_die("Can't run $bamtobed in make_stranded_hits()\n");
+      open (COVERAGE, ">${stranded_coveragefile}.tmp") || $log->log_and_die("Can't open ${stranded_coveragefile}.tmp in make_stranded_coverage()\n");
+      open (BED, "$bamtobed |") || $log->log_and_die("Can't run $bamtobed in make_stranded_coverage()\n");
       while (my $line = <BED>) {
 	#      IV      4248069 4248094 SRR548309.19790789/1    255     +
 	#      IV      4247931 4247972 SRR548309.15239765/2    255     -
@@ -2279,26 +2734,331 @@ sub make_stranded_hits {
 	      if ($mate eq 'first') {$bed_sense = ($bed_sense eq '+') ? '-' : '+' }
 	    }
 	  }
-	  print HITS "$bed_chrom\t$bed_start\t$bed_end\t$bed_sense\n";
+	  print COVERAGE "$bed_chrom\t$bed_start\t$bed_end\t$bed_sense\n";
 	  
 	} elsif ($library_layout eq 'SINGLE') {
 	  if ($strandedness eq 'reverse_stranded') { # e.g. if it is ABI SOLID
 	    $bed_sense = ($bed_sense eq '+') ? '-' : '+';
 	  }
-	  print HITS "$bed_chrom\t$bed_start\t$bed_end\t$bed_sense\n";
+	  print COVERAGE "$bed_chrom\t$bed_start\t$bed_end\t$bed_sense\n";
 	}
       }
       close(BED);
-      close(HITS);
+      close(COVERAGE);
       
       # now sort the file
-      $self->{wormbase}->run_command("sort -k1,1 -k2,3n ${stranded_hitsfile}.tmp | uniq -c > $stranded_hitsfile", $log);
-      unlink "${stranded_hitsfile}.tmp";
+      $self->{wormbase}->run_command("sort -k1,1 -k2,3n ${stranded_coveragefile}.tmp | uniq -c > $stranded_coveragefile", $log);
+      unlink "${stranded_coveragefile}.tmp";
     }
   }
 
 
 }
+
+#####################################################################################################
+# bam2bigwig
+sub bam2bigwig {
+  my ($self, $experiment_accession) = @_;
+  
+  my $RNASeqSRADir = $self->{RNASeqSRADir};
+  my $RNASeqGenomeDir = $self->{RNASeqGenomeDir};
+  my $alignmentDir = $self->{'alignmentDir'};
+  my $exptDir = "$RNASeqSRADir/$experiment_accession/$alignmentDir";
+  my $bamfile = "$exptDir/accepted_hits.bam";
+  my $Software = $self->{Software};
+  my $bedGraph_file = "$exptDir/accepted_hits.bedGraph";
+  my $chromosome_size_file = "$RNASeqGenomeDir/STAR/chrNameLength.txt";
+  my $UCSC_Dir = "$Software/ucsc_tools";
+  
+  chdir "$RNASeqSRADir/$experiment_accession/$alignmentDir";
+  
+  # See nice diagrams in: http://quinlanlab.org/tutorials/bedtools/bedtools.html
+  # the -split makes it report no hits within introns
+  system("$Software/BEDTools/bin/bedtools genomecov -bg -split -ibam $bamfile  > $bedGraph_file");
+  
+  system("$ENV{WORM_PACKAGES}/BEDTools/bin/bedtools sort -i $bedGraph_file > ${bedGraph_file}.sort");
+  
+  system("$UCSC_Dir/bedGraphToBigWig ${bedGraph_file}.sort $chromosome_size_file ${experiment_accession}.bw");
+  
+  system("rm $bedGraph_file");
+  
+  system("rm ${bedGraph_file}.sort");
+  
+}
+#####################################################################################################
+# push all files to the NGS server
+# we expect the following files to be available at the /nfs/nobackup filesystem:
+#   accepted_hits.bam
+#   accepted_hits.bam.bai
+#   coverage
+#   stranded_coverage
+#   bigwig
+#   junctions.gff
+# for this to work, there must be a tunnel from the current machine to the Sanger (ssh -f -N -C -X ssh.sanger.ac.uk)
+# and the following Host definition must be in the .ssh/config file.
+# LocalForward 2229 web-bfint.internal.sanger.ac.uk:22
+# the files will appear on the NGS server FTP site within an hour of this transfer
+#
+# See also:
+# https://www.ebi.ac.uk/seqdb/confluence/pages/viewpage.action?spaceKey=WORMBASE&title=Sanger+NGS+server
+# https://www.ebi.ac.uk/seqdb/confluence/display/~jane/RNASeq+processing+for+WormBase+ParaSite
+#
+# To look at the NGS data:
+# ssh to Sanger, then:
+# ssh web-bfint
+# cd /data/production/parasites/wormbase/RNASeq_alignments
+
+
+=head2 
+
+    Title   :   stage_files_for_NGS
+    Usage   :   $self->stage_files_for_NGS($expression)
+    Function:   copies all files produced from a BAM file to the NGS server at the Sanger
+    Returns :   
+    Args    :   experiment_accession - SRA name of the experiment
+
+=cut
+
+sub stage_files_for_NGS {
+  my ($self, $experiment_accession) = @_;
+
+  my $status;
+  my $log = $self->{log};
+  my $RNASeqSRADir = $self->{RNASeqSRADir};
+  my $TransferDir = $self->{RNASeqTransferDir};
+  my $alignmentDir = $self->{'alignmentDir'};
+  my $exptDir = "$RNASeqSRADir/$experiment_accession/$alignmentDir";
+  my $bamfile = "$exptDir/accepted_hits.bam";
+  my $bigwigfile = "$exptDir/$experiment_accession.bw";
+  my $coveragefile = "$exptDir/coverage";
+  my $stranded_coveragefile = "$exptDir/stranded_coverage";
+  my $junctions_gff = "$RNASeqSRADir/$experiment_accession/$alignmentDir/junctions.gff";
+  
+  my $species = $self->{wormbase}->{species};
+  my %NGS_species_dir = %{$self->{'NGS_species_dir'}};
+  if (!exists  $NGS_species_dir{$species}) {die "In stage_files_for_NGS() speciesdir does not have an entry for $species\n"}
+  my $speciesdir = $NGS_species_dir{$species};
+  
+  my $target = "$TransferDir/$experiment_accession";
+
+  $status = $self->{'wormbase'}->run_command("gzip -f $coveragefile", $log);
+  $status = $self->{'wormbase'}->run_command("gzip -f $stranded_coveragefile", $log);
+
+
+  if (-e $bamfile)               {$self->{wormbase}->run_command("ln -s $bamfile ${target}.bam", $log)}
+  if (-e "${bamfile}.bai")       {$self->{wormbase}->run_command("ln -s ${bamfile}.bai ${target}.bam.bai", $log)}
+  if (-e $bigwigfile)            {$self->{wormbase}->run_command("ln -s $bigwigfile ${target}.bw", $log)}
+  if (-e "${coveragefile}.gz")          {$self->{wormbase}->run_command("ln -s ${coveragefile}.gz ${target}.coverage.gz", $log)}
+  if (-e "${stranded_coveragefile}.gz") {$self->{wormbase}->run_command("ln -s ${stranded_coveragefile}.gz ${target}.stranded_coverage.gz", $log)}
+  if (-e $junctions_gff)         {$self->{wormbase}->run_command("ln -s $junctions_gff ${target}.junctions.gff", $log)}
+  
+  
+}
+
+#####################################################################################################
+=head2 
+
+    Title   :   pull_files_from_NGS
+    Usage   :   pull_files_from_NGS($experiment_accession)
+    Function:   get the files (except for the BAM file) from the NGS server 
+    Returns :   
+    Args    :   experiment to download, $all = get all of the files, including .bw and .gff which are normally excluded because they are not used
+
+=cut
+
+sub pull_files_from_NGS {
+  my ($self, $experiment_accession, $all) = @_;
+
+  my $status;
+  my $log = $self->{log};
+  my $RNASeqSRADir = $self->{RNASeqSRADir};
+  my $alignmentDir = $self->{'alignmentDir'};
+  my $exptDir = "$RNASeqSRADir/$experiment_accession/$alignmentDir";
+  my $bamfile = "$exptDir/accepted_hits.bam";
+  my $bigwigfile = "$exptDir/$experiment_accession.bw";
+  my $coveragefile = "$exptDir/coverage";
+  my $stranded_coveragefile = "$exptDir/stranded_coverage";
+  my $junctions_gff = "$RNASeqSRADir/$experiment_accession/$alignmentDir/junctions.gff";
+  
+  my $species = $self->{wormbase}->{species};
+  my %NGS_species_dir = %{$self->{'NGS_species_dir'}};
+  if (!exists  $NGS_species_dir{$species}) {die "In pull_files_from_NGS() speciesdir does not have an entry for $species\n"}
+  my $speciesdir = $NGS_species_dir{$species};
+  
+  my $query = "ftp://ngs.sanger.ac.uk/production/parasites/wormbase/RNASeq_alignments/$speciesdir/$experiment_accession";
+
+  mkdir "$RNASeqSRADir/$experiment_accession", 0777;
+  mkdir $exptDir, 0777;
+  chdir $exptDir;
+
+
+  $status = $self->{'wormbase'}->run_command("rm -f $coveragefile", $log);
+  `wget -O ${coveragefile}.gz ${query}.coverage.gz`;
+  my $gzip_cmd = "gunzip -f ${coveragefile}.gz";
+  $status = $self->{'wormbase'}->run_command($gzip_cmd, $log);
+
+  $status = $self->{'wormbase'}->run_command("rm -f $stranded_coveragefile", $log);
+  `wget -O ${stranded_coveragefile}.gz ${query}.stranded_coverage.gz`;
+  $gzip_cmd = "gunzip -f ${stranded_coveragefile}.gz";
+  $status = $self->{'wormbase'}->run_command($gzip_cmd, $log);
+
+  `wget -O $junctions_gff ${query}.junctions.gff`;
+
+  if (defined $all && $all) { # these are not really used yet
+    `wget -O ${bigwigfile}.gz ${query}.bw`;
+    `wget -O ${junctions_gff}.gz ${query}.junctions.gff`;
+  }
+
+  # construct the introns Intron.ace from the junctions.gff file
+  $self->get_introns($experiment_accession);
+
+
+# set the 'done' files
+  my $coverage_file           = "$RNASeqSRADir/$experiment_accession/".$self->{'alignmentDir'}."/coverage";
+  my $stranded_coverage_file  = "$RNASeqSRADir/$experiment_accession/".$self->{'alignmentDir'}."/stranded_coverage";
+
+  `touch $coverage_file`;
+  `touch $stranded_coverage_file`;
+
+
+}
+
+#####################################################################################################
+# check all files at the NGS server for a given experiment accession
+# we expect the following files to be available at the NGS server and to not be zero-length:
+#   accepted_hits.bam
+#   accepted_hits.bam.bai
+#   coverage
+#   stranded_coverage
+#   bigwig
+#   junctions.gff
+
+
+=head2 
+
+    Title   :   check_NGS_files
+    Usage   :   $self->check_NGS_files($experiment_accession)
+    Function:   pulls out a directory listing of expression files from the NGS server
+    Returns :   0 OK; 1 some problem found
+    Args    :   experiment_accession - SRA name of the experiment
+
+=cut
+
+sub check_NGS_files {
+  my ($self, $experiment_accession) = @_;
+  
+  my $result = $self->list_NGS_files($experiment_accession);
+  if (scalar keys %{$result} != 6) {return 1}
+  foreach my $key (keys %{$result}) {
+    my $value = $result->{$key};
+    if ($key !~ /stranded_coverage/) { # stranded_coverage files are empty if the data is not stranded
+      if ($value < 1000) {return 1}
+    }
+  }
+  return 0;
+  
+}
+#####################################################################################################
+# list all files at the NGS server for a given experiment accession
+
+=head2 
+
+    Title   :   list_NGS_files
+    Usage   :   $self->list_NGS_files($experiment_accession)
+    Function:   pulls out a directory listing of expression files from the NGS server
+    Returns :   hash of sizes of each of the files found: bam, bam.bai, coverage, stranded_coverage, bw, junctions.gff
+    Args    :   experiment_accession - SRA name of the experiment
+
+=cut
+
+sub list_NGS_files {
+  my ($self, $experiment_accession) = @_;
+  my %result;
+  
+  my $species = $self->{wormbase}->{species};
+  my %NGS_species_dir = %{$self->{'NGS_species_dir'}};
+  if (!exists  $NGS_species_dir{$species}) {die "In list_NGS_files() speciesdir does not have an entry for $species\n"}
+  my $speciesdir = $NGS_species_dir{$species};
+  
+  my $query = "ftp://ngs.sanger.ac.uk/production/parasites/wormbase/RNASeq_alignments/$speciesdir/";
+  open (DATA, "curl --silent '$query' |") || die("RNASeq: Can't get information on NGS server entry $experiment_accession in check_NGS_files()\n");
+  while (my $line = <DATA>) {
+    chomp $line;
+    my @f = split /\s+/, $line; 
+    if ($f[8] =~ /^${experiment_accession}\./) {
+      $result{$f[8]} = $f[4];
+    }
+  }
+  return \%result;
+}
+
+#####################################################################################################
+# cleanup from /nfs/nobackup all files that we pushed to the NGS server, plus other crud in the alignment and SRR directories
+# we expect the following files to be available at the /nfs/nobackup filesystem:
+#   accepted_hits.bam
+#   accepted_hits.bam.bai
+#   coverage
+#   stranded_coverage
+#   bigwig
+#   junctions.gff
+
+=head2 
+
+    Title   :   cleanup_NGS_files
+    Usage   :   $self->cleanup_NGS_files($expression)
+    Function:   copies all files produced from a BAM file to the NGS server at the Sanger
+    Returns :   
+    Args    :   experiment_accession - SRA name of the experiment
+
+=cut
+
+sub cleanup_NGS_files {
+  my ($self, $experiment_accession) = @_;
+  
+  my $log = $self->{log};
+  my $RNASeqSRADir = $self->{RNASeqSRADir};
+  my $alignmentDir = $self->{'alignmentDir'};
+  my $exptDir = "$RNASeqSRADir/$experiment_accession/$alignmentDir";
+  my $bamfile = "$exptDir/accepted_hits.bam";
+  my $bigwigfile = "$exptDir/$experiment_accession.bw";
+  my $coveragefile = "$exptDir/coverage";
+  my $stranded_coveragefile = "$exptDir/stranded_coverage";
+  my $junctions_gff = "$exptDir/junctions.gff";
+  my $SRR_Dir = "$RNASeqSRADir/$experiment_accession/SRR/";
+  my $srr_done_file = "$SRR_Dir/fastq.done";
+  
+  
+  if (-e $bamfile)               {$self->{wormbase}->run_command("rm -f $bamfile", $log)}
+  if (-e "${bamfile}.bai")       {$self->{wormbase}->run_command("rm -f ${bamfile}.bai", $log)}
+  if (-e $bigwigfile)            {$self->{wormbase}->run_command("rm -f $bigwigfile", $log)}
+  if (-e $coveragefile)          {$self->{wormbase}->run_command("rm -f $coveragefile", $log)}
+  if (-e $stranded_coveragefile) {$self->{wormbase}->run_command("rm -f $stranded_coveragefile", $log)}
+  if (-e $junctions_gff)         {$self->{wormbase}->run_command("rm -f $junctions_gff", $log)}
+  
+  opendir (my $dh, $exptDir) ||  die "Could not open '$exptDir' for reading '$!'\n";
+  my @things = readdir $dh;
+  foreach my $thing (@things) {
+    if ($thing eq '.' or $thing eq '..') {next}
+    if ($thing ne 'accepted_hits.bam.done') {
+      $self->{wormbase}->run_command("rm -rf $thing", $log);
+    }
+  }
+  closedir $dh;
+  
+  opendir (my $dh2, $SRR_Dir) ||  die "Could not open '$SRR_Dir' for reading '$!'\n";
+  @things = readdir $dh2;
+  foreach my $thing (@things) {
+    if ($thing eq '.' or $thing eq '..') {next}
+    if ($thing ne 'fastq.done') {
+      $self->{wormbase}->run_command("rm -f $thing", $log);
+    }
+  }
+  closedir $dh2;
+  
+  
+  
+}
+
 #####################################################################################################
 # set up a genome for Tophat
 
@@ -2360,7 +3120,7 @@ sub setup_genome_for_star {
       $status = $self->{'wormbase'}->run_command($copy_cmd, $log);
       
     } elsif (-e "${source_file}.gz") {
-      my $gzip_cmd = "gunzip -c ${source_file}.gz > ./$chrom_file";
+      my $gzip_cmd = "gunzip -c ${source_file}.gz >! ./$chrom_file";
       $status = $self->{'wormbase'}->run_command($gzip_cmd, $log);
       
     } else {
@@ -2391,10 +3151,14 @@ sub setup_genome_for_star {
 
 
 
+
+#####################################################################################################
+# called by RNASeq_align_job.pl - does everything to set up, align and analyse an experiment
+
 =head2 
 
     Title   :   align_star
-    Usage   :   self->align_star($experiment_accession)
+    Usage   :   self->align_star($experiment_accession, $threads, $notbuild)
     Function:   gets the SRR fastq files, runs a STAR session to align the an experiment then runs cufflinks
     Returns :   
     Args    :   experiment hashref, number of threads for STAR to use int, not in build int (so don't run cufflinks)
@@ -2404,26 +3168,145 @@ sub setup_genome_for_star {
 sub align_star {
   my ($self, $experiment, $threads, $notbuild) = @_;
 
+  if ($self->Use_NGS_file_system) {
+
+  
+    my $experiment_accession = $experiment->{experiment_accession};
+    
+    # if there are any missing or null files in the NGS server
+    # then we want to do a fresh complete alignment and analysis
+    #   - get the fastq files
+    #   - make a fresh STAR alignment
+    #   - get intron data
+    #   - get coverage data
+    #   - get bigwig file
+    #   - upload data to NGS
+    
+    if ($self->check_NGS_files($experiment_accession)) {
+      $self->fresh_complete_alignment_and_analysis($experiment, $threads);
+    } else {
+      $self->pull_files_from_NGS($experiment_accession);
+    }
+    
+    # run cufflinks to get the FPKM values if we are not doing notbuild then (i.e. we are in a Build))
+    # we want to update the cufflinks data
+    #   - if we have a saved transcripts.gtf file from the previous cufflinks run
+    #     then 
+    #       for each changed or new gene
+    #         - get the bam region around the changed gene
+    #         - get the updated cufflinks value
+    #         - update the saved transcripts.gtf 
+    #       remove deleted genes from the saved transcripts.gtf file
+    #     else we need to run a complete cufflinks run
+    #       - if we do not have a bam file locally download the complete bam file from NGS
+    #       - run cufflinks
+    #       - save transcripts.gtf to the saved version
+    
+    if (! $notbuild) {
+      my $strandedness = $experiment->{strandedness};
+      my $library_type = $experiment->{library_type};
+      $self->run_cufflinks($experiment_accession, $strandedness, $library_type);
+      if (! $self->check_all_done($experiment_accession, $notbuild)) {$self->{log}->log_and_die("Didn't do the alignment successfully for $experiment_accession\n");}
+    }
+
+
+  } else { # not using NGS file system
+
+
+    my $log = $self->{log};
+    my $RNASeqSRADir = $self->{RNASeqSRADir};
+    my $experiment_accession = $experiment->{experiment_accession};
+    my $bam_done_file = "$RNASeqSRADir/$experiment_accession/".$self->{'alignmentDir'}."/accepted_hits.bam.done";
+    my $srr_done_file = "$RNASeqSRADir/$experiment_accession/SRR/fastq.done";
+    my $trimmomatic_done_file = "$RNASeqSRADir/$experiment_accession/SRR/trimmomatic.done";
+    my $solid_done_file = "$RNASeqSRADir/$experiment_accession/SRR/solid.done";
+    my $alignmentDir = $self->{'alignmentDir'};
+    my $exptDir = "$RNASeqSRADir/$experiment_accession/$alignmentDir";
+    my $bam_coverage = "$exptDir/coverage";
+    my $bam_stranded_coverage = "$exptDir/stranded_coverage";
+    my $introns_done_file = "$RNASeqSRADir/$experiment_accession/Introns/Intron.ace.done";
+    
+    if ($self->{new_genome} || !-e $bam_done_file) { 
+      #  if ($self->{new_genome} || !-e $bam_done_file || !-e $srr_done_file || !-e $trimmomatic_done_file) { 
+      
+      if ($self->{new_genome} || !-e $srr_done_file) { 
+	$self->get_SRA_files($experiment_accession);
+      }
+      
+      # convert any ABI_SOLID files to fastq
+      if ($experiment->{instrument_platform} eq 'ABI_SOLID' && !-e $solid_done_file) {
+	chdir "$RNASeqSRADir/$experiment_accession/SRR";
+	my @files = glob("*.fastq");
+	foreach my $file (@files) {
+	  my $cmd = "mv $file $file.solid";
+	  $self->{wormbase}->run_command($cmd, $log);
+	  $cmd = "perl ".$self->{Software}."/SOLID2std/SOLID2std.pl -fastq $file.solid -o $file";
+	  $self->{wormbase}->run_command($cmd, $log);
+	  $cmd = "rm -f $file.solid";
+	  $self->{wormbase}->run_command($cmd, $log);
+	}
+	my $status = $self->{wormbase}->run_command("touch $solid_done_file", $log); # set flag to indicate we have finished this
+      }
+      
+      #    if (!-e $trimmomatic_done_file) {$self->trimmomatic($experiment_accession)}
+      
+      if ($self->{new_genome} || !-e $bam_done_file) {
+	chdir "$RNASeqSRADir/$experiment_accession"; # get into the correct experiment directory
+	$self->{wormbase}->run_command("rm -rf ".$self->{'alignmentDir'}, $log); #delete the old tophat_out or star_out
+	$self->run_star_alignment($experiment, $threads);
+      }
+    }
+    
+    if (!-e $bam_coverage)              {$self->make_coverage($experiment_accession)}
+    if (!-e $bam_stranded_coverage)     {$self->make_stranded_coverage($experiment)}
+    if (!-e $introns_done_file)     {$self->get_introns($experiment_accession)}
+    
+    if (! $notbuild) {
+      my $strandedness = $experiment->{strandedness};
+      my $library_type = $experiment->{library_type};
+      $self->run_cufflinks($experiment_accession, $strandedness, $library_type);
+    }
+  }
+}
+
+#####################################################################################################
+# do a fresh complete alignment and analysis
+#   - get the fastq files
+#   - make a fresh STAR alignment
+#   - get intron data
+#   - get coverage data
+#   - get bigwig file
+#   - upload data to NGS
+
+=head2 
+
+  Title   :   fresh_complete_alignment_and_analysis
+  Usage   :   $self->fresh_complete_alignment_and_analysis($experiment, $threads)
+  Function:   cd to the experiment directory, identify the SRR files to use, runs the STAR alignment command on each SRR file, does all the analyses, uploads data to NGS
+  Returns :   
+  Args    :   experiment hashref, number of threads to use
+
+=cut
+
+
+sub fresh_complete_alignment_and_analysis {
+  my ($self, $experiment, $threads) = @_;
+  
   my $log = $self->{log};
   my $RNASeqSRADir = $self->{RNASeqSRADir};
   my $experiment_accession = $experiment->{experiment_accession};
-  my $bam_done_file = "$RNASeqSRADir/$experiment_accession/".$self->{'alignmentDir'}."/accepted_hits.bam.done";
-  my $srr_done_file = "$RNASeqSRADir/$experiment_accession/SRR/fastq.done";
+
+
   my $trimmomatic_done_file = "$RNASeqSRADir/$experiment_accession/SRR/trimmomatic.done";
   my $solid_done_file = "$RNASeqSRADir/$experiment_accession/SRR/solid.done";
   my $alignmentDir = $self->{'alignmentDir'};
   my $exptDir = "$RNASeqSRADir/$experiment_accession/$alignmentDir";
-  my $bam_hits = "$exptDir/hits.tmp";
-  my $bam_stranded_hits = "$exptDir/hits.stranded";
-  my $introns_done_file = "$RNASeqSRADir/$experiment_accession/Introns/Intron.ace.done";
+  my $bam_done_file = "$RNASeqSRADir/$experiment_accession/".$self->{'alignmentDir'}."/accepted_hits.bam.done";
 
-  if ($self->{new_genome} || !-e $bam_done_file) { 
-#  if ($self->{new_genome} || !-e $bam_done_file || !-e $srr_done_file || !-e $trimmomatic_done_file) { 
 
-    if ($self->{new_genome} || !-e $srr_done_file) { 
-      $self->get_SRA_files($experiment_accession);
-    }
-
+  if (!-e $bam_done_file) {
+    $self->get_SRA_files($experiment_accession);
+  
     # convert any ABI_SOLID files to fastq
     if ($experiment->{instrument_platform} eq 'ABI_SOLID' && !-e $solid_done_file) {
       chdir "$RNASeqSRADir/$experiment_accession/SRR";
@@ -2438,26 +3321,28 @@ sub align_star {
       }
       my $status = $self->{wormbase}->run_command("touch $solid_done_file", $log); # set flag to indicate we have finished this
     }
+    
+    #    if (!-e $trimmomatic_done_file) {$self->trimmomatic($experiment_accession)}
+    
+    chdir "$RNASeqSRADir/$experiment_accession"; # get into the correct experiment directory
+    $self->{wormbase}->run_command("rm -rf ".$self->{'alignmentDir'}, $log); #delete the old tophat_out or star_out
+    $self->run_star_alignment($experiment, $threads);
 
-#    if (!-e $trimmomatic_done_file) {$self->trimmomatic($experiment_accession)}
 
-    if ($self->{new_genome} || !-e $bam_done_file) {
-      chdir "$RNASeqSRADir/$experiment_accession"; # get into the correct experiment directory
-      $self->{wormbase}->run_command("rm -rf ".$self->{'alignmentDir'}, $log); #delete the old tophat_out or star_out
-      $self->run_star_alignment($experiment, $threads);
-    }
   }
 
-  if (!-e $bam_hits)              {$self->make_hits($experiment_accession)}
-  if (!-e $bam_stranded_hits)     {$self->make_stranded_hits($experiment)}
-  if (!-e $introns_done_file)     {$self->get_introns($experiment_accession)}
+  # make associated analysis files
+  $self->make_coverage($experiment_accession);
+  $self->make_stranded_coverage($experiment);
+  $self->get_introns($experiment_accession);
+  $self->bam2bigwig($experiment_accession);
 
-  if (! $notbuild) {
-    my $strandedness = $experiment->{strandedness};
-    my $library_type = $experiment->{library_type};
-    $self->run_cufflinks($experiment_accession, $strandedness, $library_type);
-  }
+
+
 }
+
+
+#####################################################################################################
 
 =head2 
 
