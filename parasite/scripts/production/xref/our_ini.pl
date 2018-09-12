@@ -111,7 +111,7 @@ __DATA__
 
 BEGIN_STANDARD_SOURCES_TEMPLATE
 source          = EntrezGene::MULTI
-source          = RNACentral::MULTI
+source          = RNAcentral::MULTI
 source          = RefSeq_dna::MULTI-invertebrate
 source          = RefSeq_peptide::MULTI-invertebrate
 source          = Uniprot/SPTREMBL::MULTI-invertebrate
@@ -221,8 +221,8 @@ release_uri =
 data_uri    = ftp://ftp.ebi.ac.uk/pub/contrib/uniparc/upidump.lis
 db          = checksum
 
-[source RNACentral::MULTI]
-name        = RNACentral
+[source RNAcentral::MULTI]
+name        = RNAcentral
 download    = Y
 order       = 1
 priority    = 1
