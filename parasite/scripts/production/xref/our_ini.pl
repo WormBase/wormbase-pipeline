@@ -69,13 +69,13 @@ for my $species (keys %core_dbs_per_species){
 
    if( $species =~ /elegans/){
        my $sources = $templates->{STANDARD_SOURCES};
-       $sources =~ s/Uniprot/UniprotAsINSDCDependentXrefs/g;
-       $sources =~ s/RefSeq_peptide/RefSeqProteinEntriesAsINSDCDependentXrefs/g;
+       $sources =~ s/Uniprot/WormbaseCElegansUniprot/g;
+       $sources =~ s/RefSeq_peptide/WormbaseCElegansRefSeq_peptide/g;
        my $parsers = $templates->{ENSEMBL_INSDC_PARSERS};
-       $parsers =~ s/UniProtParser/UniProtEntriesAsINSDCDependentXrefsParser/g;
-       $parsers =~ s/RefSeqGPFFParser/RefSeqProteinEntriesAsINSDCDependentXrefsParser/g;
-       $parsers =~ s/RefSeq_peptide/RefSeqProteinEntriesAsINSDCDependentXrefs/g;
-       $parsers =~ s/Uniprot/UniprotAsINSDCDependentXrefs/g;
+       $parsers =~ s/UniProtParser/WormbaseCElegansUniProtParser/g;
+       $parsers =~ s/RefSeqGPFFParser/WormbaseCElegansRefSeqGPFFParser/g;
+       $parsers =~ s/RefSeq_peptide/WormbaseCElegansRefSeq_peptide/g;
+       $parsers =~ s/Uniprot/WormbaseCElegansUniprot/g;
        $parsers =~ s/dependent_on.*?\n/dependent_on    = WormbaseDirectParser\n/g;
        
        print $parsers;
