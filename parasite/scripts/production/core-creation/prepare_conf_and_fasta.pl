@@ -14,7 +14,7 @@ my $data_dir_name = File::Basename::basename($data_dir_path);
 my $conf_path = File::Spec->catfile($data_dir_path, "$data_dir_name.conf");
 
 my $conf;
-$conf = Load(do {local $/; <STDIN>})->{$data_dir_name} unless -t STDIN;
+$conf = Load(do {local $/; <STDIN>} || "--- {}")->{$data_dir_name} unless -t STDIN;
 $conf //= Load(do {local $/; <DATA>});
 while (true) {
   if ( not -f $conf_path) {
