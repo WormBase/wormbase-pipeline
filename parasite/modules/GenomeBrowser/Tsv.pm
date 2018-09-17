@@ -32,7 +32,7 @@ sub make_all {
     make_path $self->path;
 
     my @genomes;
-    for my $core_db ( ProductionMysql->staging->core_databases ) {
+    for my $core_db ( ProductionMysql->staging->core_databases($opts{core_dbs_pattern}) ) {
         $self->make_tsv( $core_db, %opts );
     }
 }
