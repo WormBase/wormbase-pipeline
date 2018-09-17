@@ -105,7 +105,7 @@ my %Gene_info = %{$Gene_info};
 
 
 # Process separate classes if specified on the command line else process all classes, 
-@classes = ("gene", "laboratory", "evidence", "allele", "strain", "rearrangement", "mapping", "xref", "multipoint", "feature") if (!@classes);
+@classes = ("gene", "laboratory", "evidence", "allele", "strain", "rearrangement", "feature") if (!@classes);
 
 foreach $class (@classes){
   if ($class =~ m/gene/i)          {&process_gene_class}
@@ -1111,8 +1111,8 @@ sub process_strain_class {
 
   my $geneaceWqueryDir=$ENV{CVS_DIR}.'/../wquery/geneace';
 
-  my $get_genotype_in_strain="Table-maker -p \"$geneaceWqueryDir/strain_genotype.def\"\nquit\n";
-  my $allele_to_locus="Table-maker -p \"$geneaceWqueryDir/allele_to_locus.def\"\nquit\n";
+  my $get_genotype_in_strain="Table-maker -p \"$def_dir/strain_genotype.def\"\nquit\n";
+  my $allele_to_locus="Table-maker -p \"$def_dir/allele_to_locus.def\"\nquit\n";
 
   open (FH1, "echo '$get_genotype_in_strain' | $tace $database | ") || warn $!;
   open (FH2, "echo '$allele_to_locus' | $tace $database | ") || warn $!;
