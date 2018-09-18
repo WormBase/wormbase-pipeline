@@ -140,39 +140,39 @@ open (ACE,">$output") or $log->log_and_die("cant write output: $!\n");
 my($livegene,$deadgene,$user);
 my $count=0;
 while (<FILE>) {
-  chomp;
-print "$_\n" if ($debug);
-  unless (/\w/) {
-    &merge_gene;
-  }
-  else { #gather info
-    if (defined $old){
-      if   (/^LIVE:retained\s+geneID\s+for\s+\S+\s+-\s+(WBGene\d{8})/) { $livegene = $1; } 
-      elsif(/^DEAD:\s+killed\s+geneID\s+\S+\s+-\s+(WBGene\d{8})/) { $deadgene = $1; } 
-      elsif(/^USER\s+:\s+\S+\s+-\s+(WBPerson\d+)/) { $user = $1; }
-      elsif(/^GENE MERGE/){} # ignore this line
-      else { $log->error("malformed line : $_\n") }
+    chomp;
+    print "$_\n" if ($debug);
+    unless (/\w/) {
+	&merge_gene;
     }
-    else {
-      if   (/\s+LIVE\s+:\s+retained\s+geneid\s+for\s+\S+\s+-\s+(WBGene\d{8})/) {
-	$livegene = $1;
-      } 
-      elsif(/\s+DEAD\s+:\s+killed\s+geneid\s+for\s+\S+\s+-\s+(WBGene\d{8})/) { 
-	$deadgene = $1; 
-      } 
-      elsif(/\s+USER\s+:\s+\S+\s+-\s+(WBPerson\d+)/) {
-	$user = $1;
-      }
-      elsif(/\s+EMAIL/){} # ignore this line
-      elsif(/\s+NAME/){} # ignore this line
-      elsif(/\s+WARNING/){
-	print "$_ before merging into $livegene \n"
-      }
-      else { 
-	$log->error("malformed line : $_\n")
-      }
+    else { #gather info
+	if (defined $old){
+	    if   (/^LIVE:retained\s+geneID\s+for\s+\S+\s+-\s+(WBGene\d{8})/) { $livegene = $1; } 
+	    elsif ((/^DEAD:\s+killed\s+geneID\s+\S+\s+-\s+(WBGene\d{8})/) || (/^DEAD:\s+killed\s+geneID\s+\s+-\s+(WBGene\d{8})/)) { $deadgene = $1; }
+	    elsif (/^USER\s+:\s+\S+\s+-\s+(WBPerson\d+)/) { $user = $1;}
+	    elsif (/^GENE MERGE/){} # ignore this line
+	    else { $log->error("malformed line : $_\n") }
+	}
+	else {
+	    if   (/\s+LIVE\s+:\s+retained\s+geneid\s+for\s+\S+\s+-\s+(WBGene\d{8})/) {
+		$livegene = $1;
+	    } 
+	    elsif((/\s+DEAD\s+:\s+killed\s+geneid\s+for\s+\S+\s+-\s+(WBGene\d{8})/) || (/\s+DEAD\s+:\s+killed\s+geneid\s+for\s+\s+-\s+(WBGene\d{8})/)){ 
+		$deadgene = $1; 
+	    } 
+	    elsif(/\s+USER\s+:\s+\S+\s+-\s+(WBPerson\d+)/) {
+		$user = $1;
+	    }
+	    elsif(/\s+EMAIL/){} # ignore this line
+	    elsif(/\s+NAME/){} # ignore this line
+	    elsif(/\s+WARNING/){
+		print "$_ before merging into $livegene \n"
+	    }
+	    else { 
+		$log->error("malformed line : $_\n")
+	    }
+	}
     }
-  }
 }
 
 &merge_gene; # remember the last one!
@@ -199,8 +199,8 @@ sub merge_gene {
       my $status = $livegeneObj->Status->name;
       if ($debug) {print "LIVE GENE:$livegeneObj :  ".$livegeneObj->Status->name."\n";}
       if ($status ne 'Live') {
-	$log->error("ERROR: $livegene is not a Live gene\n");
-	$ok = 0;
+	  $log->error("ERROR: $livegene is not a Live gene\n");
+	  $ok = 0;
       }
       # get the last acquires_merge
       my $acquires_merge;
@@ -241,8 +241,8 @@ sub merge_gene {
       unless ($override) {
 	my $status = $deadgeneObj->Status->name;
 	if ($status ne 'Live') {
-	  $log->error("ERROR: $deadgene is not a Live gene\n");
-	  $ok = 0;
+	    $log->error("ERROR: $deadgene is not a Live gene\n");
+	    $ok = 0;
 	}
       }
       # get the last Merged_into tag
