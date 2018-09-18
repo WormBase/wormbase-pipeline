@@ -260,9 +260,9 @@ foreach my $ms_peptide (keys %unique_peptides) {
     print OUT "Peptide \"MSP:$ms_peptide\"\n";
     print OUT "Protein_seq \"MSP:$ms_peptide\"\n";
     foreach my $experiment_id (keys %experiment) {	  
-      print OUT "Petide_is_natural\n" if (exists $experiment{$experiment_id}{natural}); # note spelling mistake
       if (exists $peptide_count{$ms_peptide}{$experiment_id} && $peptide_count{$ms_peptide}{$experiment_id} == 1) {
 	print OUT "Mass_spec_experiments \"$experiment_id\" Matches_database_uniquely\n";
+	print OUT "Petide_is_natural\n" if (exists $experiment{$experiment_id}{natural}); # note spelling mistake
       }
     }
     # and output the Peptide sequence object 
