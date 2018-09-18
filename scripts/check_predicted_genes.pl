@@ -18,7 +18,7 @@ use Getopt::Long;
 use Log_files;
 use Storable;
 
-my ($verbose, $db_path, $basic, $test1, $debug, $store, $test, $build, $species, $incomplete, $nogenome, $clonetest);
+my ($verbose, $db_path, $basic, $test1, $debug, $store, $test, $build, $species, $incomplete, $nogenome, $clonetest, $curation,);
 
 GetOptions ("verbose"    => \$verbose, # prints screen output and checks the CDS class instead of All_genes.
 	    "database=s" => \$db_path, # Path to the database you want to check.
@@ -31,6 +31,7 @@ GetOptions ("verbose"    => \$verbose, # prints screen output and checks the CDS
 	    "species:s"  => \$species,  # used to hold briggsae/brenneri/remanei for some checks.
 	    "incomplete" => \$incomplete, # used to avoid start/end not found warnings
 	    "nogenome"   => \$nogenome, # for testing annotations when you don't have the genome loaded.
+	    "curation" => \$curation, #Ignores the isoformer check for the curation database.
 	   );
 
 my $wormbase;
@@ -330,17 +331,19 @@ if ($build) {
 	$seen{$gg}=1;
       }
 
-      my @isoformer_genes = $db->fetch (-query => "FIND $qclass where \"*iso*\"");
-      foreach my $g (@isoformer_genes) {
-my $gg=$g->name; 
-	if ($ignore{$gg}) {next}
-	if (exists $seen{$gg}) {
-	  $s=' (seen already)';
-	} else {
-	  $s='';
-	}
-	$log->write_to("Error: $qclass $gg should be removed $s\n"); 
-	$seen{$gg}=1;
+      unless ($curation) {
+	  my @isoformer_genes = $db->fetch (-query => "FIND $qclass where \"*iso*\"");
+	  foreach my $g (@isoformer_genes) {
+	      my $gg=$g->name; 
+	      if ($ignore{$gg}) {next}
+	      if (exists $seen{$gg}) {
+		  $s=' (seen already)';
+	      } else {
+		  $s='';
+	      }
+	      $log->write_to("Error: $qclass $gg should be removed $s\n"); 
+	      $seen{$gg}=1;
+	  }
       }
 
 
@@ -841,13 +844,16 @@ sub single_query_tests {
   
   # Check for non-standard methods in CDS class
   my @CDSfilter;
-  if ($species eq 'brugia') {
-    @CDSfilter = $db->fetch (-query => 'FIND CDS; method != Transposon_CDS; method != Transposon_Pseudogene; method != curated; method !=history; method !=Genefinder; method !=twinscan; method !=jigsaw; method !=mGene; method !=RNASEQ.Hillier; method !=RNASEQ.Hillier.Aggregate; method !=cufflinks*; method !=genBlastG; method != *isoformer; method !=ensembl');
-  } else {
-    @CDSfilter = $db->fetch (-query => 'FIND CDS; method != Transposon_CDS; method != Transposon_Pseudogene; method != curated; method !=history; method !=Genefinder; method !=twinscan; method !=jigsaw; method !=mGene; method !=RNASEQ.Hillier; method !=RNASEQ.Hillier.Aggregate; method != *isoformer');
+
+  if ($curation){
+      @CDSfilter = $db->fetch (-query => 'FIND CDS; method != Transposon_CDS; method != Transposon_Pseudogene; method != curated; method !=history; method !=Genefinder; method !=twinscan; method !=jigsaw; method !=mGene; method !=RNASEQ.Hillier; method !=RNASEQ.Hillier.Aggregate; method !=cufflinks*; method !=genBlastG; method != *isoformer; method !=ensembl; method != *isoformer');
   }
+  else {
+      @CDSfilter = $db->fetch (-query => 'FIND CDS; method != Transposon_CDS; method != Transposon_Pseudogene; method != curated; method !=history');
+  }
+  
   foreach my $CDSfilter (@CDSfilter) {
-    push(@error4, "ERROR! CDS:$CDSfilter contains an invalid method please check\n");
+      push(@error4, "ERROR! CDS:$CDSfilter contains an invalid method please check\n");
   }
 }
 
