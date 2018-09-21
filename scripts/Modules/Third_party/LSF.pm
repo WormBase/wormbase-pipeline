@@ -14,8 +14,8 @@ sub BEGIN {
     if($@){
         die "Cannot find LSF executables. \$PATH is $ENV{PATH}\n";
     }else{
-        die "Cannot determine LSF version\n" unless $err =~ /Platform LSF\s+([^,]+)/m;
-        $__PACKAGE__::LSF = $1;
+        die "Cannot determine LSF version\n" unless $err =~ /(IBM Spectrum|Platform) LSF\s+([^,]+)/m;
+        $__PACKAGE__::LSF = $2;
     }
 }
 
