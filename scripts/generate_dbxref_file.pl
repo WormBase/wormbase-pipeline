@@ -533,7 +533,7 @@ sub generate_noncoding_query {
   if ($class eq 'Transcript') {
     $condition = "NOT Method = \"Coding_transcript\" AND NOT Method = \"history_transcript\" AND Species = \"$full_species\"";
   } elsif ($class eq 'Pseudogene') {
-    $condition = "Method = \"Pseudogene\" AND Species = \"$full_species\"";
+    $condition = "(Method = \"Pseudogene\" OR Method = \"rRNA_pseudogene\" OR Method = \"tRNA_pseudogene\") AND Species = \"$full_species\"";
   } else {
     $log->log_and_die("Unrecognised non-coding class: $class\n");
   }
