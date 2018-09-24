@@ -58,6 +58,7 @@ sub config {
 }
 
 @ARGV = @wormbase_core_species if not @ARGV;
+@ARGV = map {split /\s+/, $_} @ARGV;
 my %species; 
 for my $arg (@ARGV){
   for (@wormbase_core_species) {
@@ -67,7 +68,7 @@ for my $arg (@ARGV){
 my $wormbase_version = $ENV{WORMBASE_VERSION};
 my $parasite_version = $ENV{PARASITE_VERSION};
 my $ensembl_version = $ENV{ENSEMBL_VERSION};
-die "Usage: WORMBASE_VERSION=265 PARASITE_VERSION=11 ENSEMBL_VERSION=92 $0 <arg patterns, empty for all species>" 
+die "Usage: WORMBASE_VERSION=$wormbase_version PARASITE_VERSION=$parasite_version ENSEMBL_VERSION=$ensembl_version $0 <arg patterns, empty for all species>"
   unless %species and $wormbase_version and $parasite_version and $ensembl_version;
 for my $species (keys %species) {
   $species{$species} = &config($species, $wormbase_version, $parasite_version, $ensembl_version);
