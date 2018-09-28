@@ -70,11 +70,11 @@ for my $species (keys %core_dbs_per_species){
    if( $species =~ /elegans/){
        my $sources = $templates->{STANDARD_SOURCES};
        $sources =~ s/Uniprot/WormbaseCElegansUniprot/g;
-       $sources =~ s/RefSeq_peptide/WormbaseCElegansRefSeq_peptide/g;
+       $sources =~ s/RefSeq_/WormbaseCElegansRefSeq_/g;
        my $parsers = $templates->{ENSEMBL_INSDC_PARSERS};
        $parsers =~ s/UniProtParser/WormbaseCElegansUniProtParser/g;
        $parsers =~ s/RefSeqGPFFParser/WormbaseCElegansRefSeqGPFFParser/g;
-       $parsers =~ s/RefSeq_peptide/WormbaseCElegansRefSeq_peptide/g;
+       $parsers =~ s/RefSeq_/WormbaseCElegansRefSeq_/g;
        $parsers =~ s/Uniprot/WormbaseCElegansUniprot/g;
        $parsers =~ s/dependent_on.*?\n/dependent_on    = WormbaseDirectParser\n/g;
        
@@ -173,6 +173,19 @@ method = --bestn 1
 query_cutoff = 100
 target_cutoff = 100
 
+[source RefSeq_dna::MULTI-invertebrate]
+name            = RefSeq_dna
+download        = Y
+order           = 20
+priority        = 1
+prio_descr      = refseq
+parser          = RefSeqGPFFParser
+release_uri     = ftp://ftp.ncbi.nih.gov/refseq/release/release-notes/RefSeq-release*.txt
+data_uri        = ftp://ftp.ncbi.nih.gov/refseq/release/invertebrate/invertebrate*.rna.gbff.gz
+method = --bestn 5
+query_cutoff = 95
+target_cutoff = 70
+
 END_ENSEMBL_INSDC_PARSERS_TEMPLATE
 
 BEGIN_ENSEMBL_OTHER_PARSERS_TEMPLATE
@@ -196,19 +209,6 @@ prio_descr      =
 parser          = EntrezGeneParser
 release_uri     =
 data_uri        = comes via EntrezGene
-
-[source RefSeq_dna::MULTI-invertebrate]
-name            = RefSeq_dna
-download        = Y
-order           = 20
-priority        = 1
-prio_descr      = refseq
-parser          = RefSeqGPFFParser
-release_uri     = ftp://ftp.ncbi.nih.gov/refseq/release/release-notes/RefSeq-release*.txt
-data_uri        = ftp://ftp.ncbi.nih.gov/refseq/release/invertebrate/invertebrate*.rna.gbff.gz
-method = --bestn 5
-query_cutoff = 95
-target_cutoff = 70
 
 [source UniParc::MULTI]
 name        = UniParc
@@ -299,6 +299,16 @@ data_uri        =
 
 [source wormbase_transcript::wormbase]
 name            = wormbase_transcript
+download        = N
+order           = 50
+priority        = 1
+prio_descr      =
+parser          = comes from WormbaseDirectParser
+release_uri     =
+data_uri        =
+
+[source wormbase_cds::wormbase]
+name            = wormbase_cds
 download        = N
 order           = 50
 priority        = 1
