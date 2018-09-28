@@ -10,7 +10,7 @@ sub current_staging {
 }
 sub release {
   my ($class, $parasite_version) = @_;
-  return new($class, join( "/", "/nfs/ftp/pub/databases/wormbase/parasite/releases", $parasite_version, "species"), $parasite_version);
+  return new($class, join( "/", "/nfs/ftp/pub/databases/wormbase/parasite/releases", "WBPS$parasite_version", "species"), $parasite_version);
 }
 sub current_release {
   return release(shift, $ENV{PARASITE_VERSION});
