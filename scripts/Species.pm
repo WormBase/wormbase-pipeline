@@ -711,6 +711,21 @@ sub assembly_type {'contig'};
 sub is_canonical { 0 };
 
 #######################################################
+package Remanei_px439;
+use Carp;
+our @ISA = qw(Species);
+
+sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/REM/remanei_ws200_filtered.fas'}
+sub short_name {'C. remanei'}
+sub gspecies_name{'c_remanei'}
+sub long_name{'Caenorhabditis remanei'}
+sub ncbi_tax_id {'31234'};
+sub ncbi_bioproject {'PRJNA248911'};
+sub bioproject_description { 'University of Oregon University C. remanei PX356 genome project' }
+sub assembly_type {'contig'};
+sub is_canonical { 0 };
+
+#######################################################
 
 package Elegans_hawaii;
 use Carp;
@@ -741,5 +756,52 @@ sub ncbi_bioproject {'PRJEB28388'};
 sub bioproject_description { 'Caenorhabditis elegans strain VC2010 genome sequencing project' }
 sub assembly_type {'chromosomes'};
 sub is_canonical { 0 };
+
+#######################################################
+
+package inopinata;
+use Carp;
+our @ISA = qw(Species);
+
+sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/ELE/elegans.lib'}
+sub short_name {'C. inopinata'}
+sub gspecies_name{'c_inopinata'}
+sub long_name{'Caenorhabditis inopinata'}
+sub ncbi_tax_id {'1978547'};
+sub ncbi_bioproject {'PRJDB5687'};
+sub bioproject_description { 'University of Miyazaki' }
+sub assembly_type {'contig'};
+sub is_canonical { 1 };
+
+#######################################################
+
+package latens;
+use Carp;
+our @ISA = qw(Species);
+
+sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/ELE/elegans.lib'}
+sub short_name {'C. latens'}
+sub gspecies_name{'c_latens'}
+sub long_name{'Caenorhabditis latens'}
+sub ncbi_tax_id {'1503980'};
+sub ncbi_bioproject {'PRJNA248912'};
+sub bioproject_description { 'University of Oregon' }
+sub assembly_type {'contig'};
+sub is_canonical { 1 };
+
+#######################################################
+
+package otipulae;
+use Carp;
+our @ISA = qw(Species);
+
+sub short_name {'O. tipulae'}
+sub gspecies_name{'o_tipulae'}
+sub long_name{'Oscheius tipulae'}
+sub ncbi_tax_id {141969};
+sub ncbi_bioproject {'PRJEB15512'};
+sub bioproject_description { 'The genome of Oscheius tipulae' }
+sub assembly_type {'contig'};
+sub is_canonical { 1 };
 
 1;
