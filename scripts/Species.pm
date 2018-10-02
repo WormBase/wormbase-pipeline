@@ -759,7 +759,7 @@ sub is_canonical { 0 };
 
 #######################################################
 
-package inopinata;
+package Cinopinata;
 use Carp;
 our @ISA = qw(Species);
 
@@ -775,7 +775,7 @@ sub is_canonical { 1 };
 
 #######################################################
 
-package latens;
+package Clatens;
 use Carp;
 our @ISA = qw(Species);
 
@@ -791,7 +791,7 @@ sub is_canonical { 1 };
 
 #######################################################
 
-package otipulae;
+package Otipulae;
 use Carp;
 our @ISA = qw(Species);
 
