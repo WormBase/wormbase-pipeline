@@ -37,7 +37,8 @@ my $DETECTION_METHOD_MAPPING =  {
 
 my $SRC_DB_MAPPING = {
   wormbase => 'psi-mi:"MI:0487"(wormbase)',
-  BioGRID  => 'psi-mi:"MI:0463"(biogrid)',
+  # BioGRID commented out for now - until AGR loader ready for multi-source interactions
+ #BioGRID  => 'psi-mi:"MI:0463"(biogrid)',
 };
 
 my $MOL_TYPE_MAPPING = {
