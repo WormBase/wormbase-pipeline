@@ -117,13 +117,13 @@ foreach my $gdb1 (sort { $a->name cmp $b->name } @genome_dbs) {
         $log->log_and_die("Could not find WBGene id for " . $m1->stable_id . "\n") if not exists $cds2wbgene->{$m1->stable_id};
         $gid1 =  $cds2wbgene->{$m1->stable_id};
       } else {
-        $gid1 = sprintf("%s:%s", $all_accessors{$gdb1->name}->ncbi_bioproject, $m1->gene_member->stable_id);
+        $gid1 = sprintf("%s_%s", $all_accessors{$gdb1->name}->ncbi_bioproject, $m1->gene_member->stable_id);
       }
       if (exists $core_accessors{$gdb2->name}) {
         $log->log_and_die("Could not find WBGene id for " . $m2->stable_id . "\n") if not exists $cds2wbgene->{$m2->stable_id};
         $gid2 =  $cds2wbgene->{$m2->stable_id};
       } else {
-        $gid2 = sprintf("%s:%s", $all_accessors{$gdb2->name}->ncbi_bioproject, $m2->gene_member->stable_id);
+        $gid2 = sprintf("%s_%s", $all_accessors{$gdb2->name}->ncbi_bioproject, $m2->gene_member->stable_id);
       }
       
       if ($gdb1->dbID == $gdb2->dbID) {
