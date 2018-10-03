@@ -30,7 +30,7 @@ sub core_databases {
   my $db_cmd= shift -> {db_cmd};
   my @patterns = @_;
   my @all_core_dbs;
-  open(my $fh, $db_cmd.' -Ne \'show databases like "%core%" \' |') or Carp::croak "ProductionMysql: $db_cmd not in your PATH\n";
+  open(my $fh, " { $db_cmd  -Ne 'show databases like \"%core%\" ' 2>&1 1>&3 | grep -v \"can be insecure\" 1>&2; } 3>&1 |") or Carp::croak "ProductionMysql: $db_cmd not in your PATH\n";
   while(<$fh>) {
    chomp;
    push @all_core_dbs, $_ if $_;
@@ -41,11 +41,18 @@ sub core_databases {
   for my $core_db (@all_core_dbs){
     my $include;
     for my $pat (@patterns){
+      chomp $pat;
       $include = 1 if $core_db =~ /$pat/;
     }
     push @result, $core_db if $include;
   }
   return @result;
+}
+sub core_db {
+  my ($core_db, @others) = shift->core_databases(@_);
+  Carp::croak "ProductionMysql: no db for: @_" unless $core_db;
+  Carp::croak "ProductionMysql: multiple dbs for: @_" if @others;
+  return $core_db;
 }
 sub all_species {
    my @result;
@@ -66,7 +73,7 @@ sub meta_value {
    push @result, $_ if $_;
   }
   return @result if wantarray;
-  return @result[0] if @result;
+  return $result[0] if @result;
   return undef;
 }
 
@@ -98,5 +105,4 @@ sub url {
 
   return $url;
 }
-
 1;
