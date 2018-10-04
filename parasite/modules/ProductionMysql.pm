@@ -1,6 +1,7 @@
 use strict;
 use Carp;
 package ProductionMysql;
+use Bio::EnsEMBL::Registry;
 # Ensembl has a nice production environment.
 # The databases we need are all in PATH so we can alias them.
 # To get parameters in command line you can e.g. `$PARASITE_STAGING_MYSQL details host`
@@ -54,6 +55,10 @@ sub core_db {
   Carp::croak "ProductionMysql: multiple dbs for: @_" if @others;
   return $core_db;
 }
+sub species {
+  my ($spe, $cies, $bp ) = split "_", &core_db(@_);
+  return join "_", $spe, $cies, $bp;
+}
 sub all_species {
    my @result;
    for (&core_databases(@_)){
@@ -104,5 +109,12 @@ sub url {
   $url =~ s/\/$//;
 
   return $url;
+}
+
+sub dbc {
+   my ($self, $pattern ) = @_;
+   my $registry = 'Bio::EnsEMBL::Registry';
+   $registry->load_registry_from_url( $self->url );
+   return $registry->get_DBAdaptor($self->species($pattern), 'core')->dbc;
 }
 1;
