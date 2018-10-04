@@ -1239,8 +1239,10 @@ sub get_transcribed_long_experiments {
   my $studies_ini = $self->read_all_studies_config();
   my @studies = $studies_ini->Sections;
   foreach my $study_accession (@studies) {
-    my $experiments_ini = $self->read_experiments_from_study_config($study_accession);
-    $self->convert_ini_to_hashref($experiments_ini, $hashref);
+    if (! $studies_ini->val($study_accession, 'ignore')) {
+      my $experiments_ini = $self->read_experiments_from_study_config($study_accession);
+      $self->convert_ini_to_hashref($experiments_ini, $hashref);
+    }
   }
 
   foreach my $expt (keys %{$hashref}) {
