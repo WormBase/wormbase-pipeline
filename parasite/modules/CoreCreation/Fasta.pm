@@ -108,9 +108,9 @@ sub mito {
        my $id = $top_level->display_id;
        push @mito , $id if $id =~ /mito/i or $id =~ /mtDNA/i;
     } 
-    Carp::croak("Multiple mitochondrial scaffolds?: @mito") if @mito > 1;
-    my $result = pop @mito;
-    Carp::croak("Not actually right- comma at the end? $result") if $result =~ /,$/;
+    Carp::carp("Multiple mitochondrial scaffolds?: @mito") if @mito > 1;
+    my $result = join ",", @mito;
+    Carp::croak("Not actually right- comma at the end? $result") if  grep /,$/ , @mito;
     return $result;
 }
 1;
