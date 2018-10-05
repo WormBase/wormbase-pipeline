@@ -3519,7 +3519,7 @@
                             Mapping_target UNIQUE ?Sequence
                             Source_location UNIQUE Int ^version UNIQUE ?Sequence ^sequence UNIQUE Int ^start UNIQUE Int ^end UNIQUE #Evidence //source data, <WSversion> ?Sequence pos1 pos2 Evidence(Paper/person etc. remarks)
                             CGH_deleted_probes UNIQUE Text UNIQUE Text
-                            CGH_flanking_probes UNIQUE text UNIQUE text
+                            CGH_flanking_probes UNIQUE Text UNIQUE Text
                             Type_of_mutation Substitution UNIQUE Text ^ref UNIQUE Text ^alt #Evidence // wild type and mutant sequence
                                              Insertion UNIQUE Text #Evidence
                                              Deletion UNIQUE Text #Evidence
