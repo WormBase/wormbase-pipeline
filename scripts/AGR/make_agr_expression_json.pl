@@ -44,6 +44,10 @@ my $anatomy_term = {
   $TL_ANATOMY_TERM =>  'C. elegans Cell and Anatomy'
 };
 
+my $go_term = {
+
+};
+
 
 my ($debug, $test, $verbose, $store, $wormbase);
 my ($outfile, $acedbpath, $ws_version, $out_fh, $bgi_json, $wb_to_uberon_file);
@@ -190,6 +194,8 @@ while (my $obj = $it->next) {
     }
 
     foreach my $go ($obj->GO_term) {
+      next if not &record_go_term_name( $go );
+
       $annots{$TL_LIFESTAGE_TERM}->{$TL_ANATOMY_TERM}->{$go->name} = 1;
     }
 
@@ -217,11 +223,11 @@ while (my $obj = $it->next) {
         my @where_expressed;
 
         if (keys %{$annots{$ls}->{$at}}) {
-          foreach my $go_term (sort keys %{$annots{$ls}->{$at}}) {
+          foreach my $gt (sort keys %{$annots{$ls}->{$at}}) {
             push @where_expressed, {
               anatomicalStructureTermId => $at,
-              whereExpressedStatement => $anatomy_term->{$at},
-              cellularComponentTermId => $go_term,
+              cellularComponentTermId => $gt,
+              whereExpressedStatement => ($at eq $TL_ANATOMY_TERM) ? $go_term->{$gt} : $anatomy_term->{$at},
             };
           }
         } else {
@@ -328,4 +334,15 @@ sub record_lifestage_term_name {
   }
 
   return (exists $life_stage_term->{$ls->name}) ? 1 : 0;
+}
+
+###############################################
+sub record_go_term_name {
+  my $go = shift;
+
+  if (not exists $go_term->{$go->name}) {
+    $go_term->{$go->name} = $go->Name->name;
+  }
+
+  return (exists $go_term->{$go->name}) ? 1 : 0;
 }
