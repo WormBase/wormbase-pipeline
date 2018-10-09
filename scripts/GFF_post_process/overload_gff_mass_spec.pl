@@ -186,16 +186,12 @@ sub get_protein_history {
 ##########################################
 sub get_previous_wormpep_ids {
  
-  my ($protein_name, $protein_history_aref) = @_;
+  my ($protein, $protein_history_aref) = @_;
  
   my @protein_history = @{$protein_history_aref};
  
   my @wormpep_ids;
   my @versions;
-
-  my $wormpep_prefix = $wormbase->wormpep_prefix;  # colon prefix to indicate the database e.g. 'WP:' in elegans
-
-  my ($protein) = ($protein_name =~ /${wormpep_prefix}:(\S+)/);
 
   foreach my $line (@protein_history) {
     my ($cds_id, $wormpep_id, $version1, $version2) = @{$line};
