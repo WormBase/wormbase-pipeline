@@ -48,7 +48,7 @@ if (not defined $infile or not defined $outfile) {
 }
 
 
-my ($tran_status, $tran_wormpep, $tran_locus) = &get_data();
+my ($tran_status, $tran_wormpep, $tran_locus, $tran_pid) = &get_data();
 
 open(my $gff_in_fh, $infile) or $log->log_and_die("Could not open $infile for reading\n");
 open(my $gff_out_fh, ">$outfile") or $log->log_and_die("Could not open $outfile for writing\n");  
@@ -79,15 +79,12 @@ while (<$gff_in_fh>) {
       } 
       # Note: in GFF3, CDS features are split across several lines. It is wasteful and unnecessary to 
       # decorate all of the segments, so only do the first
-      if (not exists $already_done_cds{$cds}) {
-        $attr .=  ";Name=CDS:$cds";
-        $attr .=  ";prediction_status=$tran_status->{$cds}" if exists $tran_status->{$cds} and $tran_status->{$cds};
-        $attr .=  ";wormpep=$tran_wormpep->{$cds}"           if exists $tran_wormpep->{$cds} and $tran_wormpep->{$cds};
-        $attr .=  ";locus=$tran_locus->{$cds}"              if exists $tran_locus->{$cds} and $tran_locus->{$cds};
-        
-        $already_done_cds{$cds} = 1;
-        $changed_lines++;
-      }
+      $attr .=  ";Name=CDS:$cds";
+      $attr .=  ";prediction_status=$tran_status->{$cds}" if exists $tran_status->{$cds} and $tran_status->{$cds};
+      $attr .=  ";wormpep=$tran_wormpep->{$cds}"           if exists $tran_wormpep->{$cds} and $tran_wormpep->{$cds};
+      $attr .=  ";protein_id=$tran_pid->{$cds}"           if exists $tran_pid->{$cds} and $tran_pid->{$cds};
+      $attr .=  ";locus=$tran_locus->{$cds}"              if exists $tran_locus->{$cds} and $tran_locus->{$cds};
+      $changed_lines++;
     } else {
       my $tr;
       if (/ID=Transcript:([^;]+);/) {
@@ -154,19 +151,31 @@ sub get_data {
 
   my %rna2cgc = $wormbase->FetchData('rna2cgc');
   my %pseudo2cgc = $wormbase->FetchData('pseudo2cgc');
-
+  my %cds2pid;
 
   $log->write_to("Fetching CDS info\n");
 
   my $query = "find CDS where Corresponding_protein AND Method = \"curated\" AND Species = \"$species_full\"";
   my $cds = $db->fetch_many('-query' => $query);
   while(my $cds = $cds->next) {
+    my $protein_id;
+    if ($cds->Protein_id) {
+      my ($prot_id_root) = $cds->at('DB_info.Protein_id');
+      my $prot_id = $prot_id_root->right;
+      my $prot_ver = $prot_id->right;
+      $protein_id = sprintf("%s.%d", $prot_id->name, $prot_ver->name);
+      $cds2pid{$cds} = $protein_id;
+    }
+
+    my $wormpep = $cds2wormpep{$cds};
+
     my @coding_transcripts = $cds->Corresponding_transcript;
 
     foreach my $ct (@coding_transcripts) {
       if ($ct->name ne $cds->name) {
-        my $wormpep = $cds2wormpep{$cds};
+
         $cds2wormpep{$ct->name} = $wormpep;
+        $cds2pid{$ct->name} = $protein_id;
 
         if (exists $cds2cgc{$cds->name}) {
           $rna2cgc{$ct->name} = $cds2cgc{$cds->name};
@@ -179,7 +188,7 @@ sub get_data {
   $log->write_to("Closed connection to DB\n");
 
 
-  my (%tran_status, %tran_wormpep, %tran_locus);
+  my (%tran_status, %tran_wormpep, %tran_locus, %tran_pid);
 
   # locus
   foreach my $cds (keys %cds2cgc) {
@@ -198,13 +207,15 @@ sub get_data {
   }
 
   # wormpep
-  foreach my $cds (keys %cds2wormpep) {
-    $tran_wormpep{$cds} = $wormbase->wormpep_prefix . ":" . $cds2wormpep{$cds};
+  foreach my $cds_or_tran (keys %cds2wormpep) {
+    $tran_wormpep{$cds_or_tran} = $cds2wormpep{$cds_or_tran};
   }
-  
-  # finally, need to get wormpep info for coding 
 
-  return (\%tran_status, \%tran_wormpep, \%tran_locus);
+  foreach my $cds_or_tran (keys %cds2pid) {
+    $tran_pid{$cds_or_tran} = $cds2pid{$cds_or_tran};
+  }
+
+  return (\%tran_status, \%tran_wormpep, \%tran_locus, \%tran_pid);
 }
 
 
