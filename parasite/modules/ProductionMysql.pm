@@ -55,24 +55,28 @@ sub core_db {
   Carp::croak "ProductionMysql: multiple dbs for: @_" if @others;
   return $core_db;
 }
-sub species {
-  my ($spe, $cies, $bp ) = split "_", &core_db(@_);
+sub species_for_core_db {
+  my ($spe, $cies, $bp ) = split "_", shift;
   return join "_", $spe, $cies, $bp;
 }
-sub all_species {
-   my @result;
-   for (&core_databases(@_)){
-     s/_core.*//;
-     push @result, $_;
-   }
-   return @result;
+sub species {
+  my ($self, @patterns) = @_;
+  if (@patterns) {
+     return species_for_core_db($self->core_db(@patterns));
+  } else {
+     my %h;
+     for ($self->core_databases) {
+        $h{&species_for_core_db($_)}++;
+     }
+     return sort keys %h;
+  }
 }
 sub meta_value {
-  my $db_cmd= shift -> {db_cmd};
-  my $db_name = shift;
-  my $pattern = shift;
+  my ($self, $core_db_pattern, $pattern) = @_;
+  my $db_cmd = $self->{db_cmd};
+  my $core_db = $self->core_db($core_db_pattern);
   my @result;
-  open(my $fh, "$db_cmd $db_name -Ne 'select meta_value from  meta where meta_key like \"$pattern\" ' |") or Carp::croak "ProductionMysql: $db_cmd not in your PATH\n";
+  open(my $fh, "$db_cmd $core_db -Ne 'select meta_value from  meta where meta_key like \"$pattern\" ' |") or Carp::croak "ProductionMysql: $db_cmd not in your PATH\n";
   while(<$fh>) {
    chomp;
    push @result, $_ if $_;
