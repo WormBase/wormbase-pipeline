@@ -17,10 +17,9 @@ base_dir=$PARASITE_SCRATCH/id_mapping/WBPS${PARASITE_VERSION}/$species
 mkdir -pv $base_dir
 if [ ! -s $base_dir/$species.ini ] ; then
   echo "basedir=$base_dir" > $base_dir/$species.ini
-  perl $DIR/mapping_conf.pl $species >> $base_dir/$species.ini
+  perl $DIR/mapping_conf.pl --species $species >> $base_dir/$species.ini
 fi
-echo $base_dir/$species.ini
-[ -t 0 ] && read -p "INSERT COIN TO CONTINUE"
+[ -t 0 ] && ${EDITOR:-vi} $base_dir/$species.ini
 
 pushd $ENSEMBL_CVS_ROOT_DIR/ensembl/misc-scripts/id_mapping
 if [ ! -d $base_dir/cache ]; then

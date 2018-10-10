@@ -1,19 +1,31 @@
 #!/usr/bin/env perl
 use ProductionMysql;
 use feature 'say';
-my $species = shift or die "Usage: $0: species"; 
 
-my $source = ProductionMysql->previous_staging->conn;
+use Getopt::Long;
+use ProductionMysql;
+my $db_command = "$ENV{PARASITE_STAGING_MYSQL}";
+my $previous_db_command = "$ENV{PREVIOUS_PARASITE_STAGING_MYSQL}";
+my $species;
+GetOptions (
+  'species=s' => \$species,
+  'db_command=s'  => \$db_command,
+  'previous_db_command=s' => \$previous_db_command,
+);
+die "Usage: $0: --species <species> --db_command $ENV{PARASITE_STAGING_MYSQL} --previous_db_command $ENV{PREVIOUS_PARASITE_STAGING_MYSQL}"
+  unless $species ; 
+
+my $source = ProductionMysql->new($previous_db_command)->conn;
 say "sourcehost=",$source->{host};
 say "sourceport=",$source->{port};
 say "sourceuser=",$source->{user};
-say "sourcedbname=", ProductionMysql->previous_staging->core_databases($species);
+say "sourcedbname=", ProductionMysql->new($previous_db_command)->core_databases($species);
 
-my $target=ProductionMysql->staging->conn;
+my $target=ProductionMysql->new($db_command)->conn;
 say "targethost=",$target->{host};
 say "targetport=",$target->{port};
 say "targetuser=",$target->{user};
-say "targetdbname=", ProductionMysql->staging->core_databases($species);
+say "targetdbname=", ProductionMysql->new($db_command)->core_databases($species);
 
 say "urlprefix=", "https://parasite.wormbase.org/$species/Gene/Summary?g=";
 
@@ -58,15 +70,15 @@ lsf_opt_run_small           = "-q production-rh7 "
 lsf_opt_run                 = "-q production-rh7 -We 90 -M20000 -R 'select[mem>20000]' -R  'rusage[mem=20000]'"
 lsf_opt_dump_cache          = "-q production-rh7 -We 5 -M8000 -R 'select[mem>8000]'  -R 'rusage[mem=8000]'"
 
-transcript_score_threshold  = 0.25
-gene_score_threshold        = 0.125
+transcript_score_threshold  = 0.2
+gene_score_threshold        = 0.1
 
 ;; Exonerate
-min_exon_length             = 15
+min_exon_length             = 10
 exonerate_path              = /nfs/software/ensembl/RHEL7/linuxbrew/bin/exonerate
 exonerate_bytes_per_job     = 2500000
 exonerate_concurrent_jobs   = 200
-exonerate_threshold         = 0.5
+exonerate_threshold         = 0.15
 exonerate_extra_params      = '--bestn 100'
 lsf_opt_exonerate           = "-q production-rh7 -We 10 -M16000 -R 'select[mem>16000]' -R 'rusage[mem=16000]'"
 

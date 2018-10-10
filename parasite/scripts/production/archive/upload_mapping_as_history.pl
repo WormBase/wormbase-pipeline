@@ -52,6 +52,7 @@ my $mapping_session_id = &start_mapping_session($dbc, %args);
 
 # populate stable_id_event
 &add_link_events_for_mapped_genes($dbc, $mapping_session_id, %args);
+&add_link_events_for_unmapped_genes_matching_ids($dbc, $mapping_session_id, %args);
 &add_kill_events_for_archived_and_not_current_or_mapped_genes($dbc, $mapping_session_id, %args);
 &add_creation_events_for_current_and_not_archived_or_mapped_genes($dbc, $mapping_session_id, %args);
 
@@ -91,7 +92,7 @@ sub add_link_events_for_mapped_genes {
   my ($dbc, $mapping_session_id, %args) = @_;
   my $current_id_present_dbh = $dbc->prepare("select 1 from gene where stable_id=? limit 1");
   my $previous_id_present_dbh = $dbc->prepare("select 1 from gene_archive where gene_stable_id=? limit 1");
-  my $add_gene_rename_dbh = $dbc->prepare("insert into stable_id_event (old_stable_id, old_version, new_stable_id, new_version, mapping_session_id, type, score) values (?, 1 , ?, 1, $mapping_session_id,\"gene\", ?);");
+  my $add_link_event_dbh = $dbc->prepare("insert into stable_id_event (old_stable_id, old_version, new_stable_id, new_version, mapping_session_id, type, score) values (?, 1 , ?, 1, $mapping_session_id,\"gene\", ?);");
   open(my $MAPPING, "<", $args{mapping}) or die $!;
   while(<$MAPPING>){
      chomp;
@@ -101,16 +102,25 @@ sub add_link_events_for_mapped_genes {
      $current_id_present_dbh->execute($current_id);
      warn "Current ID in mapping but not in archive: $current_id" and next unless $current_id_present_dbh->fetchrow_array;
      $score//=1;
-     $add_gene_rename_dbh->execute($previous_id, $current_id, $score);
+     $add_link_event_dbh->execute($previous_id, $current_id, $score);
   }
   close $MAPPING;
 }
+sub add_link_events_for_unmapped_genes_matching_ids {
+  my ($dbc, $mapping_session_id, %args) = @_;
+  my $get_archived_ids_remaining_with_no_events_dbh = $dbc->prepare('select distinct gene_stable_id from gene_archive left join stable_id_event on (gene_archive.gene_stable_id = stable_id_event.old_stable_id) join gene on (gene_archive.gene_stable_id = gene.stable_id) where stable_id_event.old_stable_id is null');
+  my $add_unknown_link_event_dbh = $dbc->prepare("insert into stable_id_event (old_stable_id, old_version, new_stable_id, new_version, mapping_session_id, type, score) values (?, 1, ?, 1, $mapping_session_id, \"gene\", 0);");
+  $get_archived_ids_remaining_with_no_events_dbh->execute;
+  while (my ($archived_id) = $get_archived_ids_remaining_with_no_events_dbh->fetchrow_array) {
+     $add_unknown_link_event_dbh->execute($archived_id,$archived_id);
+  }
+}
 sub add_kill_events_for_archived_and_not_current_or_mapped_genes {
   my ($dbc, $mapping_session_id, %args) = @_;
-  my $get_archived_ids_not_remaining_or_remained_dbh= $dbc->prepare('select gene_stable_id from gene_archive left join stable_id_event on (gene_archive.gene_stable_id = stable_id_event.old_stable_id) left join gene on (gene_archive.gene_stable_id = gene.stable_id) where stable_id_event.old_stable_id is null and gene.stable_id is null');
+  my $get_archived_ids_not_remaining_with_no_events_dbh= $dbc->prepare('select distinct gene_stable_id from gene_archive left join stable_id_event on (gene_archive.gene_stable_id = stable_id_event.old_stable_id) left join gene on (gene_archive.gene_stable_id = gene.stable_id) where stable_id_event.old_stable_id is null and gene.stable_id is null');
   my $add_kill_event_dbh = $dbc->prepare("insert into stable_id_event (old_stable_id, old_version, new_stable_id, new_version, mapping_session_id, type, score) values (?, 1, NULL, 0, $mapping_session_id, \"gene\", 0);");
-  $get_archived_ids_not_remaining_or_remained_dbh->execute;
-  while (my ($archived_id) = $get_archived_ids_not_remaining_or_remained_dbh->fetchrow_array) {
+  $get_archived_ids_not_remaining_with_no_events_dbh->execute;
+  while (my ($archived_id) = $get_archived_ids_not_remaining_with_no_events_dbh->fetchrow_array) {
     $add_kill_event_dbh->execute($archived_id);
   }
 } 
