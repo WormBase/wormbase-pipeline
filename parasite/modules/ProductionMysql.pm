@@ -57,7 +57,8 @@ sub core_db {
 }
 sub species_for_core_db {
   my ($spe, $cies, $bp ) = split "_", shift;
-  return join "_", $spe, $cies, $bp;
+  
+  return join "_", $spe, $cies, ($bp eq 'core' ? () : $bp);
 }
 sub species {
   my ($self, @patterns) = @_;
