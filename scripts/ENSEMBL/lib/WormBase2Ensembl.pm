@@ -236,7 +236,7 @@ sub parse_genes_gff3_fh {
       -stable_id => $sid,
       -source => 'WormBase',
         );
-
+    $gene->version(undef);
     my (%gene_biotypes);
     my $tcount = 1;
     
@@ -393,6 +393,7 @@ sub parse_genes_gff3_fh {
         -stable_id => $tsid,
         -source => 'WormBase',
           );
+      $transcript->version(undef);
 
 
       my ($tr_st_ex, $tr_en_ex, $tr_st_off, $tr_en_off);
@@ -409,7 +410,7 @@ sub parse_genes_gff3_fh {
           -end_phase => $ex->{end_phase},
           -stable_id => sprintf("%s.e%d", $tsid, $e_count++),
             );
-
+        $ens_ex->version(undef);
         $transcript->add_Exon($ens_ex);
 
         if ($ex->{cds_seg}) {
@@ -429,6 +430,7 @@ sub parse_genes_gff3_fh {
         $tr->start($tr_st_off);
         $tr->end($tr_en_off);
         $tr->stable_id($tsid);
+        $tr->version(undef);
 
         $transcript->translation($tr);
         $transcript->biotype('protein_coding');
@@ -1700,6 +1702,7 @@ sub _create_protein_coding_transcripts {
     }
     
     $translation->stable_id($transcript_id);
+    $translation->version(undef);
     $transcript->translation($translation);
     $transcript->stable_id($transcript_id);
     $transcript->biotype('protein_coding');
@@ -1964,6 +1967,7 @@ sub _clone_Exon {
   $newexon->dbID       ($exon->dbID);
   $newexon->slice      ($exon->slice);
   $newexon->stable_id  ($exon->stable_id);
+  $newexon->version    ($exon->version);
 
   return $newexon;
 }
