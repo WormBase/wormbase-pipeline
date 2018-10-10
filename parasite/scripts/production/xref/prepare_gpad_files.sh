@@ -11,13 +11,13 @@ format_taxons_into_filter () {
 }
 
 SRC="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-DIR=$1
-if [ ! -d "$DIR" ] ; then
+if [ ! "$1" ] ; then
   >&2 echo "Usage: $0 <target directory>"
   exit 1
 fi
+DIR=$1
 
-mkdir -p $DIR/.tmp
+mkdir -pv $DIR/.tmp
 rm -vf $DIR/*
 
 test -f "$DIR/.tmp/core_db_and_taxon_list.tsv" || get_core_db_and_taxon_list | pv -ltrbcN "Get taxon list from core databases" > $DIR/.tmp/core_db_and_taxon_list.tsv
