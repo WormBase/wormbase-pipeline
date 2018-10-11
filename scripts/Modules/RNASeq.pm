@@ -3468,6 +3468,8 @@ sub run_star_alignment {
   $self->merge_splice_junction_files(\@SRR_ids, 'junctions.gff');
   $status = $self->{wormbase}->run_command("touch accepted_hits.bam.done", $log); # set flag to indicate we have finished this
   if ($status != 0) {$log->log_and_die("'touch accepted_hits.bam.done' failed for $experiment_accession\n");}
+
+  $self->{wormbase}->run_command("rm -rf $RNASeqSRADir/$experiment_accession/SRR", $log); #delete the SRR directory and fastq files
 }
 
 
