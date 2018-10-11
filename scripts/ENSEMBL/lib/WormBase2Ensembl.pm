@@ -236,7 +236,6 @@ sub parse_genes_gff3_fh {
       -stable_id => $sid,
       -source => 'WormBase',
         );
-    $gene->version(undef);
     my (%gene_biotypes);
     my $tcount = 1;
     
