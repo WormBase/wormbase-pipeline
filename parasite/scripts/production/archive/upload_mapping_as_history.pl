@@ -15,11 +15,11 @@ my $db_command = "$ENV{PARASITE_STAGING_MYSQL}-ensrw";
 my $previous_db_command = "$ENV{PREVIOUS_PARASITE_STAGING_MYSQL}";
 my %args;
 GetOptions (
-  'species=s' => \$args{species}, # can be a pattern
-  'db_command=s'  => \$db_command,
+  'species=s'             => \$args{species}, # can be a pattern
+  'db_command=s'          => \$db_command,
   'previous_db_command=s' => \$previous_db_command,
-  'mapping=s'=>\$args{mapping},
-  'proteins=s'=>\$args{proteins},
+  'mapping=s'             => \$args{mapping},
+  'proteins=s'            => \$args{proteins},
 );
 die "Required --mapping <mapping file>" unless -f $args{mapping};
 die "Required --species <species_pattern>" unless $args{species};
@@ -69,11 +69,10 @@ sub start_mapping_session {
     $get_session_id_dbh->finish;
     return $mapping_session_id;
 }
-
 sub archive_all {
     my ($dbc, $mapping_session_id, %args) = @_;
     my $insert_1_dbh = $dbc->prepare("insert into peptide_archive (md5_checksum, peptide_seq) values (?,?);");
-    my $insert_2_dbh = $dbc->prepare("insert into gene_archive (gene_stable_id, gene_version, transcript_stable_id, transcript_version, translation_stable_id, translation_version, peptide_archive_id, mapping_session_id) values (?, 1, ?, 1, ?, 1, (select max(peptide_archive_id) from peptide_archive), $mapping_session_id);");
+    my $insert_2_dbh = $dbc->prepare("insert into gene_archive (gene_stable_id, gene_version, transcript_stable_id, transcript_version, translation_stable_id, translation_version, peptide_archive_id, mapping_session_id) values (?, 1, ?, NULL, ?, NULL, (select max(peptide_archive_id) from peptide_archive), $mapping_session_id);");
     my $sep = $/;
     $/='>';
     my $z = IO::Uncompress::Gunzip->new($args{proteins});
@@ -118,16 +117,16 @@ sub add_link_events_for_unmapped_genes_matching_ids {
 sub add_kill_events_for_archived_and_not_current_or_mapped_genes {
   my ($dbc, $mapping_session_id, %args) = @_;
   my $get_archived_ids_not_remaining_with_no_events_dbh= $dbc->prepare('select distinct gene_stable_id from gene_archive left join stable_id_event on (gene_archive.gene_stable_id = stable_id_event.old_stable_id) left join gene on (gene_archive.gene_stable_id = gene.stable_id) where stable_id_event.old_stable_id is null and gene.stable_id is null');
-  my $add_kill_event_dbh = $dbc->prepare("insert into stable_id_event (old_stable_id, old_version, new_stable_id, new_version, mapping_session_id, type, score) values (?, 1, NULL, 0, $mapping_session_id, \"gene\", 0);");
+  my $add_kill_event_dbh = $dbc->prepare("insert into stable_id_event (old_stable_id, old_version, new_stable_id, new_version, mapping_session_id, type, score) values (?, 1, NULL, NULL, $mapping_session_id, \"gene\", 0);");
   $get_archived_ids_not_remaining_with_no_events_dbh->execute;
   while (my ($archived_id) = $get_archived_ids_not_remaining_with_no_events_dbh->fetchrow_array) {
     $add_kill_event_dbh->execute($archived_id);
   }
-} 
+}
 sub add_creation_events_for_current_and_not_archived_or_mapped_genes {
   my ($dbc, $mapping_session_id, %args) = @_;
   my $get_stable_ids_with_no_events_dbh = $dbc->prepare("select stable_id from gene left join stable_id_event on ( gene.stable_id = stable_id_event.new_stable_id ) where stable_id_event.new_stable_id is null");
-  my $add_creation_event_dbh = $dbc->prepare("insert into stable_id_event (old_stable_id, old_version, new_stable_id, new_version, mapping_session_id, type, score) values (NULL, 0 , ?, 1, $mapping_session_id, \"gene\", 1);");
+  my $add_creation_event_dbh = $dbc->prepare("insert into stable_id_event (old_stable_id, old_version, new_stable_id, new_version, mapping_session_id, type, score) values (NULL, NULL , ?, 1, $mapping_session_id, \"gene\", 1);");
   $get_stable_ids_with_no_events_dbh->execute;
   while (my ($new_id) = $get_stable_ids_with_no_events_dbh->fetchrow_array){
     $add_creation_event_dbh->execute($new_id);
