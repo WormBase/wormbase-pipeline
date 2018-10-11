@@ -147,7 +147,8 @@ sub get_data {
     if ($gene->Sequence_name) {
       $sequence_name{$gene->name} = $gene->Sequence_name;
     }
-    if ($gene->Corresponding_Transposon or $gene->Transposon_in_origin) {    
+
+    if ($gene->Corresponding_transposon or $gene->Transposon_in_origin(0)) { 
       if ($gene->Corresponding_CDS) {
         $biotype{$gene} = 'transposon_protein_coding';
       } elsif ($gene->Corresponding_pseudogene) {
