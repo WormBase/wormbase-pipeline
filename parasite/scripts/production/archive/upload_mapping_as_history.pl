@@ -39,6 +39,7 @@ $args{proteins} //= SpeciesFtp->release($args{previous_parasite_version})->path_
 die "Usage: --proteins ftp_path.fa.gz. Not a file: $args{proteins}" unless -s $args{proteins};
 
 my $dbc = $mysql->dbc($args{core_db});
+my $transcript_adaptor = $mysql->adaptor($args{core_db}, 'Transcript');
 
 my $mysql_pair = MysqlPair->new($previous_mysql, $mysql);
 # Restore mappings. This is usually a clean wipe, unless processing an update of an update.
@@ -47,8 +48,7 @@ for my $table (qw/mapping_session stable_id_event gene_archive peptide_archive/)
 }
 
 my $mapping_session_id = &start_mapping_session($dbc, %args);
-# it's not what Ensembl does - they will only archive the deprecated IDs 
-&archive_all($dbc, $mapping_session_id, %args);
+&archive_where_seq_changed($dbc, $transcript_adaptor, $mapping_session_id, %args);
 
 # populate stable_id_event
 &add_link_events_for_mapped_genes($dbc, $mapping_session_id, %args);
@@ -69,12 +69,11 @@ sub start_mapping_session {
     $get_session_id_dbh->finish;
     return $mapping_session_id;
 }
-sub archive_all {
-    my ($dbc, $mapping_session_id, %args) = @_;
+sub archive_where_seq_changed {
+    my ($dbc, $transcript_adaptor, $mapping_session_id, %args) = @_;
     my $insert_1_dbh = $dbc->prepare("insert into peptide_archive (md5_checksum, peptide_seq) values (?,?);");
-    my $insert_2_dbh = $dbc->prepare("insert into gene_archive (gene_stable_id, gene_version, transcript_stable_id, transcript_version, translation_stable_id, translation_version, peptide_archive_id, mapping_session_id) values (?, 1, ?, NULL, ?, NULL, (select max(peptide_archive_id) from peptide_archive), $mapping_session_id);");
-    my $sep = $/;
-    $/='>';
+    my $insert_2_dbh = $dbc->prepare("insert into gene_archive (gene_stable_id, gene_version, transcript_stable_id, translation_stable_id, peptide_archive_id, mapping_session_id) values (?, 1, ?, ?, (select max(peptide_archive_id) from peptide_archive), $mapping_session_id);");
+    local $/='>';
     my $z = IO::Uncompress::Gunzip->new($args{proteins});
     while(<$z>){
         chomp;
@@ -82,15 +81,19 @@ sub archive_all {
         next unless @seq;
         my $seq = join "", @seq;
         my ($translation, $transcript, $gene) = $l =~ /(.*) transcript=(.*) gene=(.*)$/;
+        my $transcript_currently = $transcript_adaptor->fetch_by_stable_id($transcript);
+        my $translation_currently = $transcript_currently ? $transcript_currently->translate : undef;
+        my $seq_currently = $translation_currently ? $translation_currently->seq : undef;
+        next if defined $seq_currently and $seq_currently eq $seq;
         $insert_1_dbh->execute(md5_hex($seq), $seq),
         $insert_2_dbh->execute($gene, $transcript, $translation);
     }
-    $/ = $sep;
+    $dbc->do('update gene_archive set transcript_version = null, translation_version = null;');
 }
 sub add_link_events_for_mapped_genes {
   my ($dbc, $mapping_session_id, %args) = @_;
   my $current_id_present_dbh = $dbc->prepare("select 1 from gene where stable_id=? limit 1");
-  my $previous_id_present_dbh = $dbc->prepare("select 1 from gene_archive where gene_stable_id=? limit 1");
+  my $previous_id_present_dbh = $dbc->prepare("select 1 from gene_archive where gene_stable_id=? and mapping_session_id=$mapping_session_id limit 1");
   my $add_link_event_dbh = $dbc->prepare("insert into stable_id_event (old_stable_id, old_version, new_stable_id, new_version, mapping_session_id, type, score) values (?, 1 , ?, 1, $mapping_session_id,\"gene\", ?);");
   open(my $MAPPING, "<", $args{mapping}) or die $!;
   while(<$MAPPING>){
@@ -107,7 +110,7 @@ sub add_link_events_for_mapped_genes {
 }
 sub add_link_events_for_unmapped_genes_matching_ids {
   my ($dbc, $mapping_session_id, %args) = @_;
-  my $get_archived_ids_remaining_with_no_events_dbh = $dbc->prepare('select distinct gene_stable_id from gene_archive left join stable_id_event on (gene_archive.gene_stable_id = stable_id_event.old_stable_id) join gene on (gene_archive.gene_stable_id = gene.stable_id) where stable_id_event.old_stable_id is null');
+  my $get_archived_ids_remaining_with_no_events_dbh = $dbc->prepare("select distinct gene_stable_id from gene_archive left join stable_id_event on (gene_archive.gene_stable_id = stable_id_event.old_stable_id ) join gene on (gene_archive.gene_stable_id = gene.stable_id) where gene_archive.mapping_session_id=$mapping_session_id and stable_id_event.mapping_session_id=$mapping_session_id and stable_id_event.old_stable_id is null");
   my $add_unknown_link_event_dbh = $dbc->prepare("insert into stable_id_event (old_stable_id, old_version, new_stable_id, new_version, mapping_session_id, type, score) values (?, 1, ?, 1, $mapping_session_id, \"gene\", 0);");
   $get_archived_ids_remaining_with_no_events_dbh->execute;
   while (my ($archived_id) = $get_archived_ids_remaining_with_no_events_dbh->fetchrow_array) {
@@ -116,7 +119,7 @@ sub add_link_events_for_unmapped_genes_matching_ids {
 }
 sub add_kill_events_for_archived_and_not_current_or_mapped_genes {
   my ($dbc, $mapping_session_id, %args) = @_;
-  my $get_archived_ids_not_remaining_with_no_events_dbh= $dbc->prepare('select distinct gene_stable_id from gene_archive left join stable_id_event on (gene_archive.gene_stable_id = stable_id_event.old_stable_id) left join gene on (gene_archive.gene_stable_id = gene.stable_id) where stable_id_event.old_stable_id is null and gene.stable_id is null');
+  my $get_archived_ids_not_remaining_with_no_events_dbh= $dbc->prepare("select distinct gene_stable_id from gene_archive left join stable_id_event on (gene_archive.gene_stable_id = stable_id_event.old_stable_id) left join gene on (gene_archive.gene_stable_id = gene.stable_id) where gene_archive.mapping_session_id=$mapping_session_id and stable_id_event.mapping_session_id=$mapping_session_id and stable_id_event.old_stable_id is null and gene.stable_id is null");
   my $add_kill_event_dbh = $dbc->prepare("insert into stable_id_event (old_stable_id, old_version, new_stable_id, new_version, mapping_session_id, type, score) values (?, 1, NULL, NULL, $mapping_session_id, \"gene\", 0);");
   $get_archived_ids_not_remaining_with_no_events_dbh->execute;
   while (my ($archived_id) = $get_archived_ids_not_remaining_with_no_events_dbh->fetchrow_array) {

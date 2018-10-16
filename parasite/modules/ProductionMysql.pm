@@ -115,11 +115,16 @@ sub url {
 
   return $url;
 }
-
-sub dbc {
-   my ($self, $pattern ) = @_;
+sub adaptor {
+   my ($self, $pattern , @adaptor_args) = @_;
    my $registry = 'Bio::EnsEMBL::Registry';
    $registry->load_registry_from_url( $self->url );
-   return $registry->get_DBAdaptor($self->species($pattern), 'core')->dbc;
+   return $registry->get_adaptor($self->species($pattern), 'core', @adaptor_args);
+}
+sub dbc {
+   my ($self, $pattern , @adaptor_args) = @_;
+   my $registry = 'Bio::EnsEMBL::Registry';
+   $registry->load_registry_from_url( $self->url );
+   return $registry->get_DBAdaptor($self->species($pattern), 'core', @adaptor_args)->dbc;
 }
 1;
