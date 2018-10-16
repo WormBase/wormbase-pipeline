@@ -121,6 +121,7 @@ INT: while (my $obj = $it->next) {
     $genes{$gn}->{id} = $gn;
     $genes{$gn}->{public_name} = $gnp;
     $genes{$gn}->{species} = $gsp;
+    $genes{$gn}->{source}->{interactor_overlapping_gene} = 1;
 
     foreach my $tp ($g->right->col()) {
       $genes{$gn}->{roles}->{$tp} = 1;
@@ -152,6 +153,7 @@ INT: while (my $obj = $it->next) {
     $genes{$fg}->{id} = $fg;
     $genes{$fg}->{public_name} = $fgp;
     $genes{$fg}->{species} = $gsp;
+    $genes{$fg}->{source}->{feature_interactor} = 1;
 
     foreach my $tp ($f->right->col()) {
       $genes{$fg}->{roles}->{$tp} = 1;
@@ -233,13 +235,30 @@ INT: while (my $obj = $it->next) {
     #
     if ($int_type eq 'ProteinProtein') {
       $type_a = $type_b = $MOL_TYPE_MAPPING->{Protein};
-    } elsif ($int_type eq 'ProteinDNA' or $int_type eq 'ProteinRNA') {
+    } elsif ($int_type eq 'ProteinRNA') {
       if (exists $obj_a->{roles}->{Bait} and exists $obj_b->{roles}->{Target}) {
-        $type_a = ($int_type eq 'ProteinDNA') ? $MOL_TYPE_MAPPING->{DNA} : $MOL_TYPE_MAPPING->{RNA};
+        $type_a = $MOL_TYPE_MAPPING->{RNA};
         $type_b = $MOL_TYPE_MAPPING->{Protein};
       } elsif (exists $obj_a->{roles}->{Target} and exists $obj_b->{roles}->{Bait}) {
-        $type_b = ($int_type eq 'ProteinDNA') ? $MOL_TYPE_MAPPING->{DNA} : $MOL_TYPE_MAPPING->{RNA};
-        $type_a = $MOL_TYPE_MAPPING->{Protein};;
+        $type_b = $MOL_TYPE_MAPPING->{RNA};
+        $type_a = $MOL_TYPE_MAPPING->{Protein};
+      } else {
+        warn("Skipping $obj - Could not unambiguously determine type (odd roles of gene pair)\n");
+        next;
+      }
+    } elsif ($int_type eq 'ProteinDNA') {
+      if (exists $obj_a->{roles}->{Bait} and exists $obj_b->{roles}->{Target}) {
+        $type_a = $MOL_TYPE_MAPPING->{DNA};
+        $type_b = $MOL_TYPE_MAPPING->{Protein};
+        if (exists $obj_b->{source}->{feature_interactor}) {
+          ($type_a, $type_b) = ($type_b, $type_a); 
+        }
+      } elsif (exists $obj_a->{roles}->{Target} and exists $obj_b->{roles}->{Bait}) {
+        $type_b = $MOL_TYPE_MAPPING->{DNA};
+        $type_a = $MOL_TYPE_MAPPING->{Protein};
+        if (exists $obj_a->{source}->{feature_interactor}) {
+          ($type_a, $type_b) = ($type_b, $type_a); 
+        }
       } else {
         warn("Skipping $obj - Could not unambiguously determine type (odd roles of gene pair)\n");
         next;
