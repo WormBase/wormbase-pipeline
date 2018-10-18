@@ -1537,8 +1537,30 @@ Join_blocks
 Blixem_N
 GFF_feature "expressed_sequence_match"
 GFF_SO "SO:0000102" // expressed_sequence_match
-Remark "This method describes the secondary location of PacBio IsoSeq transcrpts aligned to geneome"
+Remark "This method describes the secondary location of PacBio IsoSeq transcripts aligned to geneome"
 
+Method : "BLAT_Caen_IsoSeq_BEST" 
+Colour PALEBLUE
+Show_up_strand
+Score_by_width
+Score_bounds 50.000000 100.000000
+Join_blocks
+Blixem_N
+GFF_feature "expressed_sequence_match"
+GFF_SO "SO:0000102" // expressed_sequence_match
+Remark "This method describes the best location of PacBio IsoSeq transcripts aligned to geneome"
+
+Method : "BLAT_Caen_IsoSeq_OTHER" 
+Colour BLUE
+Show_up_strand
+Score_by_width
+Score_bounds 50.000000 100.000000
+Overlap
+Join_blocks
+Blixem_N
+GFF_feature "expressed_sequence_match"
+GFF_SO "SO:0000102" // expressed_sequence_match
+Remark "This method describes the secondary location of PacBio IsoSeq transcrpts aligned to geneome"
 
 			//////////
 			// WABA //
