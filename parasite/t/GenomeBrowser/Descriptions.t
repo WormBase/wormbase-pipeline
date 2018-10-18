@@ -63,13 +63,14 @@ factors_rejected(["type"], {"other_type"=> "value"});
 sub assert_study_description {
   my ($study_attributes, $expected, $desc) = @_;
    $desc //= "assert_study_description $study_id -> $expected";
-   is_deeply(GenomeBrowser::Descriptions->new(
-        $species, {})->study_description($study_id, $study_attributes),
+   is_deeply([GenomeBrowser::Descriptions->new(
+        $species, {})->study_description($study_id, $study_attributes)],
      $expected, $desc);
 }
 
-assert_study_description({},$study_id);
-assert_study_description({"Study description" => "Desc", "study" => "Study field"},"Desc");
-assert_study_description({"study" => "Study field"},"Study field");
+assert_study_description({},["Schistosoma mansoni study", "Schistosoma mansoni study"] , "Default value");
+assert_study_description({properties=>{"Study description" => "Desc"}},["Schistosoma mansoni study", "Desc"]);
+assert_study_description({"study_title" => "Study field"},["Study field", "Study field"]);
+assert_study_description({"study_title"=> "Study field", properties=>{"Study description" => "Desc"}},["Study field", "Desc"]);
 
 done_testing();

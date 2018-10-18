@@ -104,7 +104,6 @@ is_deeply(
                     properties => {
                         'ENA first public' => '2017-11-30',
                         'ENA last update'  => '2017-11-30',
-                        'study'            => 'SRP124650',
                         'BioProject' => $bioproject_id,
                         'submitting_centre' => "Pharmacology, UT Southwestern",
                    }

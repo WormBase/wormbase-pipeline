@@ -58,11 +58,11 @@ is_deeply(
 is_deeply(
     $subject->get_formatted_stats('SRR1124914'),
  {
-    'library_size_approx' => '50-75mln',
-    'library_total_amount_of_reads' => '59712662',
-    'mapping_fraction_of_uniquely_mapped_reads' => '0.856',
-    'mapping_quality_approx' => '80-90%'
-  },
+   'fraction_of_reads_mapping_uniquely' => '0.856',
+   'fraction_of_reads_mapping_uniquely_approximate' => '80-90%',
+   'library_size_reads' => '59712662',
+   'library_size_reads_approximate' => '50-75M'
+ },
    "Can format stats" 
 ) or diag explain $subject->get_formatted_stats('SRR1124914');
 done_testing();
