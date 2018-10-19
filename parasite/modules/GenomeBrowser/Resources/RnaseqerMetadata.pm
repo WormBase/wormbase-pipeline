@@ -151,34 +151,4 @@ sub _get_rnaseqer_sample_attributes_per_run_for_study {
     "getSampleAttributesPerRunByStudy", $study
   );
 }
-
-sub _create_from_payload {
-  $payload = shift;
-  return {
-    primary_accession_to_factor_type => &_get_factor_types_from_ae_response($payload),
-    secondary_to_primary_accession => &_get_secondary_to_primary_accession_from_ae_response($payload),
-  };
-}
-
-sub _get_factor_types_from_ae_response{
-  my $payload = shift;
-  my %result;
-  for my $experiment (@{$payload->{experiments}->{experiment}}){
-    my @factor_types = map { $_->{name}} @{ $experiment->{experimentalvariable}};
-    $result{$experiment->{accession}} = \@factor_types;
-  }
-  return \%result;
-}
-
-sub _get_secondary_to_primary_accession_from_ae_response{
-  my $payload = shift;
-  my %result; 
-  for my $experiment (@{$payload->{experiments}->{experiment}}){
-    for my $secondary_accession (@{$experiment->{secondaryaccession}}){
-       $result{$secondary_accession}=$experiment->{accession}
-    }
-  }
-  return \%result;
-}
-
 1;
