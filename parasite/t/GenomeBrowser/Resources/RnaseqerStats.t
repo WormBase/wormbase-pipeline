@@ -2,10 +2,10 @@ use Test::More;
 use Test::MockModule;
 
 use File::Temp qw/tempdir/;
-use GenomeBrowser::RnaseqerMetadata;
-use GenomeBrowser::RnaseqerStats;
+use GenomeBrowser::Resources::RnaseqerMetadata;
+use GenomeBrowser::Resources::RnaseqerStats;
 our $run_id = "SRR1124914";
-my $module = new Test::MockModule('GenomeBrowser::LocallyCachedResource');
+my $module = new Test::MockModule('GenomeBrowser::Resources::LocallyCachedResource');
 our $text = do { local $/; <DATA> };
 $module->mock(
     'get_text',
@@ -38,9 +38,9 @@ my $rnaseqer_metadata = bless {
           "ftp://invalid/SRR112/004/SRR1124914/SRR1124914.nospliced.bw"
     },
   },
-  'GenomeBrowser::RnaseqerMetadata';
+  'GenomeBrowser::Resources::RnaseqerMetadata';
 
-my $subject = GenomeBrowser::RnaseqerStats->new( $root_dir, $species,
+my $subject = GenomeBrowser::Resources::RnaseqerStats->new( $root_dir, $species,
     $rnaseqer_metadata );
 is_deeply(
     $subject,
@@ -51,7 +51,7 @@ is_deeply(
                 'library_size'                   => '59712662'
             }
         },
-        'GenomeBrowser::RnaseqerStats'
+        'GenomeBrowser::Resources::RnaseqerStats'
     ),
     "Get properties from FTP"
 ) or diag explain $subject;

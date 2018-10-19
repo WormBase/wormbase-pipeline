@@ -1,8 +1,8 @@
 
-package GenomeBrowser::Factors;
+package GenomeBrowser::Resources::Factors;
 use List::Util qw(sum all);
 use List::MoreUtils qw(uniq);
-use parent GenomeBrowser::LocallyCachedResource;
+use parent GenomeBrowser::Resources::LocallyCachedResource;
 
 # Factors for species are a union across studies of:
 # - either what ArrayExpress says the factor types are for the study

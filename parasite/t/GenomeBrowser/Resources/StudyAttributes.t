@@ -3,11 +3,11 @@ use Test::MockModule;
 
 use File::Temp qw/tempdir/;
 use XML::Simple;
-use GenomeBrowser::RnaseqerMetadata;
-use GenomeBrowser::StudyAttributes;
+use GenomeBrowser::Resources::RnaseqerMetadata;
+use GenomeBrowser::Resources::StudyAttributes;
 my $study_id = "ERP006623";
 
-my $module = new Test::MockModule('GenomeBrowser::LocallyCachedResource');
+my $module = new Test::MockModule('GenomeBrowser::Resources::LocallyCachedResource');
 my $xml    = XMLin(
     do { local $/; <DATA> }
 );
@@ -77,9 +77,9 @@ my $rnaseqer_metadata = bless {
         }
     }
   },
-  'GenomeBrowser::RnaseqerMetadata';
+  'GenomeBrowser::Resources::RnaseqerMetadata';
 
-my $subject = GenomeBrowser::StudyAttributes->new( $root_dir, $species,
+my $subject = GenomeBrowser::Resources::StudyAttributes->new( $root_dir, $species,
     $rnaseqer_metadata );
 is_deeply(
     $subject,
@@ -110,19 +110,19 @@ is_deeply(
                 }
             }
         },
-        'GenomeBrowser::StudyAttributes'
+        'GenomeBrowser::Resources::StudyAttributes'
     ),
     "Get properties from ENA xml"
 ) or diag explain $subject;
 
 is_deeply(
-    GenomeBrowser::StudyAttributes::_clean_messy_text(
+    GenomeBrowser::Resources::StudyAttributes::_clean_messy_text(
         "Globodera_pallida_transcriptomics"),
     "Globodera pallida transcriptomics",
     "Names get better"
 );
 
-is_deeply( GenomeBrowser::StudyAttributes::_clean_messy_text("MIYAZAKI"),
+is_deeply( GenomeBrowser::Resources::StudyAttributes::_clean_messy_text("MIYAZAKI"),
     "Miyazaki", "Names get better 2" );
 done_testing();
 __DATA__

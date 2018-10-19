@@ -1,7 +1,7 @@
 
-package GenomeBrowser::ArrayExpressMetadata;
+package GenomeBrowser::Resources::ArrayExpressMetadata;
 
-use parent GenomeBrowser::LocallyCachedResource;
+use parent GenomeBrowser::Resources::LocallyCachedResource;
 
 sub factor_types {
    my ($self,$study_accession) = @_;

@@ -1,8 +1,8 @@
 
-package GenomeBrowser::StudyAttributes;
+package GenomeBrowser::Resources::StudyAttributes;
 use List::Util qw(sum);
 use List::MoreUtils qw(uniq);
-use parent GenomeBrowser::LocallyCachedResource;
+use parent GenomeBrowser::Resources::LocallyCachedResource;
 
 sub _fetch {
     my ( $class, $species, $rnaseqer_metadata ) = @_;

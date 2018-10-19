@@ -3,15 +3,15 @@ use Test::MockModule;
 
 use File::Temp qw/tempdir/;
 use JSON;
-use GenomeBrowser::ArrayExpressMetadata;
+use GenomeBrowser::Resources::ArrayExpressMetadata;
 
-my $module = new Test::MockModule('GenomeBrowser::LocallyCachedResource');
+my $module = new Test::MockModule('GenomeBrowser::Resources::LocallyCachedResource');
 $module->mock('get_text', do {local $/; <DATA>});
 
 my $root_dir = tempdir( CLEANUP => 1 );
 my $species = "schistosoma_mansoni";
 
-my $subject = GenomeBrowser::ArrayExpressMetadata->new($root_dir, $species);
+my $subject = GenomeBrowser::Resources::ArrayExpressMetadata->new($root_dir, $species);
 
 my $expected_factor_types = [
   "organism_part",

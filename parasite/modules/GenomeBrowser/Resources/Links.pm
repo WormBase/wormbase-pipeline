@@ -1,7 +1,7 @@
-package GenomeBrowser::Links;
+package GenomeBrowser::Resources::Links;
 use List::Util qw(sum);
 use List::MoreUtils qw(uniq);
-use parent GenomeBrowser::LocallyCachedResource;
+use parent GenomeBrowser::Resources::LocallyCachedResource;
 
 sub _link {
    my ($url, $name) = @_;

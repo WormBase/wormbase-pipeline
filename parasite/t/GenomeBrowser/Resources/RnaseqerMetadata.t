@@ -3,9 +3,9 @@ use Test::MockModule;
 
 use File::Temp qw/tempdir/;
 use JSON;
-use GenomeBrowser::RnaseqerMetadata;
+use GenomeBrowser::Resources::RnaseqerMetadata;
 
-my $module = new Test::MockModule('GenomeBrowser::LocallyCachedResource');
+my $module = new Test::MockModule('GenomeBrowser::Resources::LocallyCachedResource');
 our $json = from_json(do {local $/; <DATA>});
 $module->mock('get_json', sub {
   my ($class, $url) = @_;
@@ -21,7 +21,7 @@ $module->mock('get_json', sub {
 my $root_dir = tempdir( CLEANUP => 1 );
 my $species = "schistosoma_mansoni";
 
-my $subject = GenomeBrowser::RnaseqerMetadata->new($root_dir, $species);
+my $subject = GenomeBrowser::Resources::RnaseqerMetadata->new($root_dir, $species);
 
 is_deeply(
   $subject->{location_per_run_id},
