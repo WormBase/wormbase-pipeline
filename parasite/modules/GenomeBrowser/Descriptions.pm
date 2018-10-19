@@ -724,12 +724,8 @@ my $curated_descriptions_canned = {
 };
 
 sub new {
-    my ( $class, $species, $curated_descriptions ) = @_;
-    return bless {
-        species => $species,
-        curated => $curated_descriptions
-          || $curated_descriptions_canned->{$species},
-    }, $class;
+    my ( $class, $curated_descriptions ) = @_;
+    return bless $curated_descriptions || $curated_descriptions_canned, $class;
 }
 
 sub run_description_from_sample_name {
@@ -775,22 +771,20 @@ sub run_description_from_factors {
 }
 
 sub _get_run_description {
-    my ( $self, $study_id, $run_id, $factors, $attributes ) = @_;
+    my ( $self, $species, $study_id, $run_id, $factors, $attributes ) = @_;
     return (
-        $self->{curated}{$study_id}{$run_id}
-          or run_description_from_sample_name( $self->{species},
-            $attributes->{sample_name} )
+        $self->{$species}{$study_id}{$run_id}
+          or run_description_from_sample_name( $species, $attributes->{sample_name} )
           or run_description_from_factors( $factors, $attributes )
           or ""
     );
 }
 
 sub run_description {
-    my ( $self, $study_id, $run_id, $factors, $attributes ) = @_;
+    my ( $self, $species, $study_id, $run_id, $factors, $attributes ) = @_;
     my $r = _get_run_description(@_);
     return map { "$run_id: $_" } @$r if ref $r eq 'ARRAY';
     return "$run_id: $r", "$run_id: $r", if $r;
-    my $species = $self->{species};
     $species =~ s/_/ /g;
     $species = ucfirst($species);
     return "$run_id", "$run_id: sample from $species";
@@ -798,8 +792,7 @@ sub run_description {
 
 # Do we also want to curate these?
 sub study_description {
-    my ( $self, $study_id, $study_attributes ) = @_;
-    my $species = $self->{species};
+    my ( $self, $species, $study_id, $study_attributes ) = @_;
     $species =~ s/_/ /g;
     $species = ucfirst($species);
     my $sd = $study_attributes->{study_title} || "$species study";
