@@ -36,7 +36,7 @@ sample_name_rejected("sample from S. mansoni");
 
 sub _str {
   my ($factors, $attributes) = @_;
-  return (join "/ ", @$factors, (join ", ", keys $attributes), (join ", ", values $attributes ));
+  return (join "/ ", @$factors, (join ", ", keys %$attributes), (join ", ", values %$attributes ));
 }
 sub factors_ok{
   my ($factors, $attributes, $d_short, $d_full, $desc) = @_;

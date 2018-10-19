@@ -53,7 +53,11 @@ my @blacklist = (
   "wash",
 );
 sub not_in_blacklist {
-  return not(shift ~~ @blacklist);
+  my $arg = shift;
+  for (@blacklist){
+     return if $arg eq $_;
+  }
+  return 1;
 }
 sub _fetch {
   my ( $class, $species, $rnaseqer_metadata, $array_express_metadata ) = @_;
