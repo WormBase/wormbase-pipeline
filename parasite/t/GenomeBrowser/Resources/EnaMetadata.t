@@ -4,7 +4,7 @@ use Test::MockModule;
 use File::Temp qw/tempdir/;
 use XML::Simple;
 use GenomeBrowser::Resources::RnaseqerMetadata;
-use GenomeBrowser::Resources::StudyAttributes;
+use GenomeBrowser::Resources::EnaMetadata;
 my $study_id = "ERP006623";
 
 my $module = new Test::MockModule('GenomeBrowser::Resources::LocallyCachedResource');
@@ -79,7 +79,7 @@ my $rnaseqer_metadata = bless {
   },
   'GenomeBrowser::Resources::RnaseqerMetadata';
 
-my $subject = GenomeBrowser::Resources::StudyAttributes->new( $root_dir, $species,
+my $subject = GenomeBrowser::Resources::EnaMetadata->new( $root_dir, $species,
     $rnaseqer_metadata );
 is_deeply(
     $subject,
@@ -110,19 +110,19 @@ is_deeply(
                 }
             }
         },
-        'GenomeBrowser::Resources::StudyAttributes'
+        'GenomeBrowser::Resources::EnaMetadata'
     ),
     "Get properties from ENA xml"
 ) or diag explain $subject;
 
 is_deeply(
-    GenomeBrowser::Resources::StudyAttributes::_clean_messy_text(
+    GenomeBrowser::Resources::EnaMetadata::_clean_messy_text(
         "Globodera_pallida_transcriptomics"),
     "Globodera pallida transcriptomics",
     "Names get better"
 );
 
-is_deeply( GenomeBrowser::Resources::StudyAttributes::_clean_messy_text("MIYAZAKI"),
+is_deeply( GenomeBrowser::Resources::EnaMetadata::_clean_messy_text("MIYAZAKI"),
     "Miyazaki", "Names get better 2" );
 done_testing();
 __DATA__

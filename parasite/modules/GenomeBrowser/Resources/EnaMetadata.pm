@@ -1,5 +1,5 @@
 
-package GenomeBrowser::Resources::StudyAttributes;
+package GenomeBrowser::Resources::EnaMetadata;
 use List::Util qw(sum);
 use List::MoreUtils qw(uniq);
 use parent GenomeBrowser::Resources::LocallyCachedResource;
