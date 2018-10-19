@@ -83,47 +83,38 @@ my $subject = GenomeBrowser::Resources::EnaMetadata->new( $root_dir, $species,
     $rnaseqer_metadata );
 is_deeply(
     $subject,
-    (
-        bless {
-            $assembly => {
-                $study_id => {
-                    study_title => 
-"Some RNA-seq reads form different developmental stages of the liver fluke Fasciola hepatica",
-                    properties => {
-                        "Study description" =>
-"RNA was prepared from various stages of the liver fluke Fasciola hepatica by John Dalton's group and sequenced by Genome Quebec.",
-                        "PubMed" =>
-'<a href="https://www.ncbi.nlm.nih.gov/pubmed/25887684">25887684</a>',
-                        "ArrayExpress" =>
-'<a href="http://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-451">E-MTAB-451 in ArrayExpress</a>',
-                        "ENA first public"  => "2014-12-31",
-                        "ENA last update"   => "2016-04-19",
-                        'submitting_centre' => 'University of Liverpool'
-                },},
-                'SRP124650' => {
-                    properties => {
-                        'ENA first public' => '2017-11-30',
-                        'ENA last update'  => '2017-11-30',
-                        'BioProject' => $bioproject_id,
-                        'submitting_centre' => "Pharmacology, UT Southwestern",
-                   }
-                }
-            }
+    bless( {
+      'Fasciola_10x_pilon' => {
+        'ERP006623' => {
+          'attributes' => {
+            'ArrayExpress' => '<a href="http://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-451">E-MTAB-451 in ArrayExpress</a>',
+            'ENA first public' => '2014-12-31',
+            'ENA last update' => '2016-04-19',
+            'submitting_centre' => 'University of Liverpool'
+          },
+          'bioproject' => undef,
+          'pubmed' => [
+            '25887684'
+          ],
+          'study_description' => 'RNA was prepared from various stages of the liver fluke Fasciola hepatica by John Dalton\'s group and sequenced by Genome Quebec.',
+          'study_title' => 'Some RNA-seq reads form different developmental stages of the liver fluke Fasciola hepatica'
         },
-        'GenomeBrowser::Resources::EnaMetadata'
-    ),
+        'SRP124650' => {
+          'attributes' => {
+            'ENA first public' => '2017-11-30',
+            'ENA last update' => '2017-11-30',
+            'submitting_centre' => 'Pharmacology, UT Southwestern',
+          },
+          'bioproject' => 'PRJNA417697',
+          'pubmed' => [],
+          'study_description' => undef,
+          'study_title' => undef
+        }
+      }
+    }, 'GenomeBrowser::Resources::EnaMetadata' ),
     "Get properties from ENA xml"
 ) or diag explain $subject;
 
-is_deeply(
-    GenomeBrowser::Resources::EnaMetadata::_clean_messy_text(
-        "Globodera_pallida_transcriptomics"),
-    "Globodera pallida transcriptomics",
-    "Names get better"
-);
-
-is_deeply( GenomeBrowser::Resources::EnaMetadata::_clean_messy_text("MIYAZAKI"),
-    "Miyazaki", "Names get better 2" );
 done_testing();
 __DATA__
 <?xml version="1.0" encoding="UTF-8"?>

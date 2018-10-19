@@ -68,9 +68,35 @@ sub assert_study_description {
      $expected, $desc);
 }
 
-assert_study_description({},["Schistosoma mansoni study", "Schistosoma mansoni study"] , "Default value");
-assert_study_description({properties=>{"Study description" => "Desc"}},["Schistosoma mansoni study", "Desc"]);
-assert_study_description({"study_title" => "Study field"},["Study field", "Study field"]);
-assert_study_description({"study_title"=> "Study field", properties=>{"Study description" => "Desc"}},["Study field", "Desc"]);
+assert_study_description(
+    {},
+    ["Schistosoma mansoni study","Schistosoma mansoni study"],
+    "Default value",
+);
+assert_study_description(
+    {study_description => "Desc"},
+    ["Schistosoma mansoni study","Desc"],
+);
+assert_study_description(
+    {"study_title" => "Study title"},
+    [("Study title") x 2 ],
+);
+assert_study_description(
+    {"study_title"=> "Study title", "study_description" => "Desc",},
+    ["Study title","Desc"],
+);
+sub assert_names_get_better {
+  my ($from, $to) = @_;
+  assert_study_description(
+    {"study_title" => $from },
+    [($to) x 2],
+    "Names get better: $from -> $to",
+  );
+}
+
+assert_names_get_better("Globodera_pallida_transcriptomics", "Globodera pallida transcriptomics");
+assert_names_get_better("MIYAZAKI", "Miyazaki");
+
+
 
 done_testing();

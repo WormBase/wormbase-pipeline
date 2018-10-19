@@ -35,18 +35,18 @@ sub get {
     my @runs;
     for my $run_id (@{$rnaseqer_metadata->access($assembly, $study_id)}){
        my $stats = $rnaseqer_stats->get_formatted_stats($run_id);
-       my $links = $self->{links}->misc_links($study_id,$run_id, $rnaseqer_metadata->data_location($run_id));
+       my $links = $self->{links}->misc_links($study_id,$run_id, $rnaseqer_metadata->data_location($run_id), $ena_metadata->{$assembly}{$study_id}{pubmed});
        my %attributes;
        for my $characteristic_type (@{$rnaseqer_metadata->access($assembly, $study_id, $run_id)}){
          $attributes{$characteristic_type} = $rnaseqer_metadata->access($assembly, $study_id, $run_id, $characteristic_type);
        }
-       my ($run_description_short, $run_description_full) = 
+       my ($run_description_short, $run_description_full) =
           $self->{descriptions}->run_description($species, $study_id, $run_id, $factors, \%attributes);
        push @runs, {
           run_id => $run_id,
           attributes => {%$stats, %$links, %attributes},
           run_description_short => $run_description_short,
-          run_description_full => $run_description_full 
+          run_description_full => $run_description_full,
        };
     }
     my ($study_description_short, $study_description_full) =
@@ -56,7 +56,7 @@ sub get {
       runs => \@runs,
       study_description_short => $study_description_short,
       study_description_full => $study_description_full, 
-      attributes => $ena_metadata->{$assembly}{$study_id}{properties},
+      attributes => $ena_metadata->{$assembly}{$study_id}{attributes},
     };
   }
   return $factors, $rnaseqer_metadata->{location_per_run_id}, @studies;

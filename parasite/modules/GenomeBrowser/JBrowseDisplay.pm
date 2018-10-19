@@ -270,6 +270,7 @@ sub make_tracks {
              track => $run->{run_description_short},
              study => sprintf("%s: %s", $study_id, $study->{study_description_short}),
           };
+          $attributes{study_description} = $study->{study_description_full} if $study->{study_description_full} ne $study->{study_description_short};
 # We don't want both exact and approximate values to show, but we need the approximate values for facets
 # So, delete exact values ( I don't know how to stop JBrowse from displaying some values) 
           delete $attributes->{library_size_reads};

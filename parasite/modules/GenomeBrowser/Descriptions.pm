@@ -789,13 +789,25 @@ sub run_description {
     $species = ucfirst($species);
     return "$run_id", "$run_id: sample from $species";
 }
-
+sub _clean_study_description {
+  my ($study_description) = @_;
+  return "" if length($sd) > 500;
+  return "" if $study_description =~ /This data is part of a pre-publication release/;
+  return $study_description;
+}
+sub _clean_study_title {
+   my $name = shift;
+   $name =~s/_+/ /g if scalar(split " ", $name) == 1;
+   $name = ucfirst(lc($name)) if $name eq uc($name);
+   return $name;
+}
 # Do we also want to curate these?
 sub study_description {
-    my ( $self, $species, $study_id, $study_attributes ) = @_;
+    my ( $self, $species, $study_id, $study_metadata ) = @_;
     $species =~ s/_/ /g;
     $species = ucfirst($species);
-    my $sd = $study_attributes->{study_title} || "$species study";
-    return $sd, ($study_attributes->{properties}{"Study description"} || $sd);
+    my $short_description = _clean_study_title($study_metadata->{study_title}) || "$species study";
+    my $full_description = _clean_study_description($study_metadata->{study_description}) || $short_description;
+    return $short_description, $full_description;
 }
 1;

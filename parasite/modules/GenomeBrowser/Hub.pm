@@ -140,19 +140,12 @@ sub create_trackDb {
     write_file( $path,{binmode => ':utf8'}, join( "\n", @tracks ) );
 }
 
-sub _study_intro {
-    my $study = shift;
-    my $si = $study->{study_id};
-    my $sd = $study->{study_description};
-    return $sd ? "Study $si: $sd\n" : "Study $si\n"; 
-}
-
 #TODO I'm not sure where this gets displayed
 sub create_study_doc {
     my ( $path, $study ) = @_;
-    my $result = &_study_intro($study);
-    write_file( $path, {binmode => ':utf8'}, $result );
+    write_file( $path, {binmode => ':utf8'}, $study->{study_description_full} );
 }
+#TODO move some of this to RnaseqerMetadata?
 my @blacklist = (
  "bioproject_id",
   "species",
