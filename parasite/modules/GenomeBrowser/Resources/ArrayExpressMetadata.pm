@@ -3,14 +3,16 @@ package GenomeBrowser::Resources::ArrayExpressMetadata;
 
 use parent GenomeBrowser::Resources::LocallyCachedResource;
 
-sub factor_types {
-   my ($self,$study_accession) = @_;
-
+sub _val {
+   my ($self, $study_accession, $val) = @_;
    my $key = $self->{secondary_to_primary_accession}->{$study_accession};
    $key //= $study_accession;
-   return $self->{primary_accession_to_factor_type}->{$key};
-
+   return $self->{$val}{$key};
 }
+
+sub factor_types { return &_val(@_, "primary_accession_to_factor_type");}
+sub pubmed { return &_val(@_, "primary_accession_to_pubmed");}
+
 sub _fetch {
   my ($class, $species) = @_;
   return &_create_from_payload(
@@ -27,8 +29,9 @@ sub _url {
 sub _create_from_payload {
   $payload = shift;
   return {
-    primary_accession_to_factor_type => &_get_factor_types_from_ae_response($payload),
-    secondary_to_primary_accession => &_get_secondary_to_primary_accession_from_ae_response($payload),
+    primary_accession_to_pubmed => _get_pubmed_from_payload($payload),
+    primary_accession_to_factor_type => &_get_factor_types_from_payload($payload),
+    secondary_to_primary_accession => &_get_secondary_to_primary_accession_from_payload($payload),
   };
 }
 # We use these values to pick up factors, so make sure they're the same format!
@@ -38,7 +41,7 @@ sub _normalise_characteristic {
   $type =~ s/\W+/_/g;
   return $type;
 }
-sub _get_factor_types_from_ae_response{
+sub _get_factor_types_from_payload{
   my $payload = shift;
   my %result;
   for my $experiment (@{$payload->{experiments}->{experiment}}){
@@ -48,7 +51,7 @@ sub _get_factor_types_from_ae_response{
   return \%result;
 }
 
-sub _get_secondary_to_primary_accession_from_ae_response{
+sub _get_secondary_to_primary_accession_from_payload{
   my $payload = shift;
   my %result; 
   for my $experiment (@{$payload->{experiments}->{experiment}}){
@@ -58,5 +61,9 @@ sub _get_secondary_to_primary_accession_from_ae_response{
   }
   return \%result;
 }
-
+sub _get_pubmed_from_payload {
+  my $payload = shift;
+  my $pubmed = $1 if ( "TODO GARY'S REGEX HERE" =~ /<bibliography>\s*<accession>(\d+)<\/accession>/);
+  return [];
+}
 1;

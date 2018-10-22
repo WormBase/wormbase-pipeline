@@ -6,6 +6,7 @@ use GenomeBrowser::Resources::RnaseqerMetadata;
 use GenomeBrowser::Resources::EnaMetadata;
 use GenomeBrowser::Resources::Factors;
 use GenomeBrowser::Resources::RnaseqerStats;
+use GenomeBrowser::Resources::PubMed;
 use GenomeBrowser::Descriptions;
 use GenomeBrowser::Links;
 sub new {
@@ -25,6 +26,13 @@ sub get {
   my $array_express_metadata = GenomeBrowser::Resources::ArrayExpressMetadata->new($root_dir, $species);
   my $ena_metadata = GenomeBrowser::Resources::EnaMetadata->new($root_dir, $species, $rnaseqer_metadata); 
   my $rnaseqer_stats = GenomeBrowser::Resources::RnaseqerStats->new($root_dir, $species, $rnaseqer_metadata); 
+  my $geo_metadata = GenomeBrowser::Resources::GeoMetadata->new($root_dir, $species, $rnaseqer_metadata); 
+  my $pubmed = GenomeBrowser::Resources::PubMed->new($root_dir, $species, {
+     rnaseqer=>$rnaseqer_metadata,
+     array_express=>$array_express_metadata,
+     ena=>$ena_metadata,
+     geo=>$geo_metadata,
+  });
   my $factors = GenomeBrowser::Resources::Factors->new($root_dir, $species, $rnaseqer_metadata, $array_express_metadata);
   my @studies;
   for my $study_id (@{$rnaseqer_metadata->access($assembly)}){
@@ -35,7 +43,9 @@ sub get {
     my @runs;
     for my $run_id (@{$rnaseqer_metadata->access($assembly, $study_id)}){
        my $stats = $rnaseqer_stats->get_formatted_stats($run_id);
-       my $links = $self->{links}->misc_links($study_id,$run_id, $rnaseqer_metadata->data_location($run_id), $ena_metadata->{$assembly}{$study_id}{pubmed});
+       my $links = $self->{links}->misc_links($study_id,$run_id, $rnaseqer_metadata->data_location($run_id),
+         keys $pubmed->{$assembly}{$study_id}
+       );
        my %attributes;
        for my $characteristic_type (@{$rnaseqer_metadata->access($assembly, $study_id, $run_id)}){
          $attributes{$characteristic_type} = $rnaseqer_metadata->access($assembly, $study_id, $run_id, $characteristic_type);
@@ -57,6 +67,7 @@ sub get {
       study_description_short => $study_description_short,
       study_description_full => $study_description_full, 
       attributes => $ena_metadata->{$assembly}{$study_id}{attributes},
+      pubmed => $pubmed->{$assembly}{$study_id},
     };
   }
   return $factors, $rnaseqer_metadata->{location_per_run_id}, @studies;
