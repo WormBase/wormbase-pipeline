@@ -1,7 +1,7 @@
 
 package GenomeBrowser::Resources::GeoMetadata;
 use parent GenomeBrowser::Resources::LocallyCachedResource;
-
+use Data::Dumper;
 my $EUTILS_URL = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils';
 
 sub _fetch {
@@ -23,13 +23,18 @@ sub _fetch {
 }
 
 sub _session_bits_from_esearch_payload {
-   use Test::More;
-   die explain @_;
-   return "web", "key";
+   my $payload = shift;
+   return if $payload->{WarningList}{OutputMessage} eq 'No items found.';
+
+   my $web = $payload->{WebEnv};
+   my $key = $payload->{QueryKey};
+   
+   die Data::Dumper::Dumper( $payload) unless $web and $key;
+   return $web, $key;
 }
 
 sub _data_from_esummary_payload {
-   use Test::More;
-   die explain @_;
-   return {pubmed => []};
+   my $payload = shift;
+   my @pubmed_ids =  map {$_->{content}||()} map {my $o = $_->{Item}; ref $o eq 'ARRAY' ? @$o : $o} grep ({$_->{Name} eq 'PubMedIds'} @{$payload->{DocSum}{Item}});
+   return @pubmed_ids ? {pubmed => \@pubmed_ids}: {};
 }

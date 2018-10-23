@@ -63,7 +63,11 @@ sub _get_secondary_to_primary_accession_from_payload{
 }
 sub _get_pubmed_from_payload {
   my $payload = shift;
-  my $pubmed = $1 if ( "TODO GARY'S REGEX HERE" =~ /<bibliography>\s*<accession>(\d+)<\/accession>/);
-  return [];
+  my %result;
+  for my $experiment (@{$payload->{experiments}{experiment}}){
+     next unless $experiment->{bibliography};
+     $result{$experiment->{accession}} = [map {$_->{accession} || ()} @{$experiment->{bibliography}}];
+  }
+  return \%result;
 }
 1;

@@ -6,7 +6,7 @@ use JSON;
 use GenomeBrowser::Resources::PubMed;
 
 my $module = new Test::MockModule('GenomeBrowser::Resources::LocallyCachedResource');
-$module->mock('get_text', do {local $/; <DATA>});
+$module->mock('get_xml', do {local $/; <DATA>});
 
 my $species = "schistosoma_mansoni";
 my $pubmed_id = "29069413";

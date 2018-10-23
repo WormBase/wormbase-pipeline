@@ -14,11 +14,13 @@ sub _fetch {
                     "https://www.ebi.ac.uk/ena/data/view/$study_id&display=xml")
             );
             if ($data_for_study->{bioproject}){
-                $data_for_bioproject = &_data_for_bioproject_from_ena_bioproject_xml(
+                my ($pubmed_ids, $submitting_centre) = &_data_for_bioproject_from_ena_bioproject_xml(
                     $class->get_xml(sprintf("https://www.ebi.ac.uk/ena/data/view/%s&display=xml", $data_for_study->{bioproject}))
                 );
-                #TODO more useful stuff: PubMed (uniq sum of both), maybe the descriptions?
-                $data_for_study->{attributes}{submitting_centre} //= $data_for_bioproject->{submitting_centre}; 
+                #TODO more useful stuff: maybe the descriptions?
+                $data_for_study->{bioproject_pubmed} = $pubmed_ids;
+                $data_for_study->{attributes}{submitting_centre} //= $submitting_centre;
+
             }
             $data{$assembly}{$study_id} = $data_for_study;
         }
@@ -35,10 +37,12 @@ sub _url_link {
 }
 sub _data_for_bioproject_from_ena_bioproject_xml {
     my $payload = shift;
-    return {} unless $payload;
-    return {
-       submitting_centre => $payload->{PROJECT}{center_name},
-    };
+    return unless $payload;
+    return [
+         map {$_->{XREF_LINK}{ID}} 
+         grep {$_->{XREF_LINK}{DB} eq "PUBMED" }
+         @{$payload->{PROJECT}{PROJECT_LINKS}{PROJECT_LINK}}
+    ], $payload->{PROJECT}{center_name};
 }
 sub _data_for_study_from_ena_study_xml {
     my $payload = shift;
@@ -53,7 +57,8 @@ sub _data_for_study_from_ena_study_xml {
     };
 
     $attributes->{submitting_centre} = $payload->{STUDY}{center_name} 
-       unless uc($payload->{STUDY}{broker_name}) eq 'NCBI' and length ($payload->{STUDY}{center_name}) < 10;
+       unless uc($payload->{STUDY}{broker_name}) eq 'NCBI' and length ($payload->{STUDY}{center_name}) < 10 
+       or $payload->{STUDY}{center_name} eq "BioProject";
     my @bioprojects;
     my $ids = $payload->{STUDY}{IDENTIFIERS}{EXTERNAL_ID};
     # XML::Simple is being a bit too simple
@@ -80,7 +85,7 @@ sub _data_for_study_from_ena_study_xml {
     return {
       attributes => $attributes,
       bioproject => $bioproject,
-      pubmed => \@pubmed_refs,
+      study_pubmed => \@pubmed_refs,
       study_title => $payload->{STUDY}{DESCRIPTOR}{STUDY_TITLE},
       study_description => $payload->{STUDY}{DESCRIPTOR}{STUDY_DESCRIPTION},
     };

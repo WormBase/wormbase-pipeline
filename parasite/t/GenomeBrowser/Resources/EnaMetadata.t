@@ -93,21 +93,22 @@ is_deeply(
             'submitting_centre' => 'University of Liverpool'
           },
           'bioproject' => undef,
-          'pubmed' => [
+          'study_description' => 'RNA was prepared from various stages of the liver fluke Fasciola hepatica by John Dalton\'s group and sequenced by Genome Quebec.',
+          'study_pubmed' => [
             '25887684'
           ],
-          'study_description' => 'RNA was prepared from various stages of the liver fluke Fasciola hepatica by John Dalton\'s group and sequenced by Genome Quebec.',
           'study_title' => 'Some RNA-seq reads form different developmental stages of the liver fluke Fasciola hepatica'
         },
         'SRP124650' => {
           'attributes' => {
             'ENA first public' => '2017-11-30',
             'ENA last update' => '2017-11-30',
-            'submitting_centre' => 'Pharmacology, UT Southwestern',
+            'submitting_centre' => 'Pharmacology, UT Southwestern'
           },
           'bioproject' => 'PRJNA417697',
-          'pubmed' => [],
+          'bioproject_pubmed' => [],
           'study_description' => undef,
+          'study_pubmed' => [],
           'study_title' => undef
         }
       }

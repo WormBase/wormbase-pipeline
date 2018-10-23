@@ -4,6 +4,7 @@ package GenomeBrowser::Resources;
 use GenomeBrowser::Resources::ArrayExpressMetadata;
 use GenomeBrowser::Resources::RnaseqerMetadata;
 use GenomeBrowser::Resources::EnaMetadata;
+use GenomeBrowser::Resources::GeoMetadata;
 use GenomeBrowser::Resources::Factors;
 use GenomeBrowser::Resources::RnaseqerStats;
 use GenomeBrowser::Resources::PubMed;
@@ -21,7 +22,7 @@ sub get {
   my ($self, $species, $assembly) = @_;
   my $root_dir = $self->{root_dir};
   $species = lc($species);
-  $species ~= s/([a-z]_[a-z]).*/$1/g;
+  $species =~ s/([a-z]*_[a-z]*).*/$1/;
   my $rnaseqer_metadata = GenomeBrowser::Resources::RnaseqerMetadata->new($root_dir, $species);
   my $array_express_metadata = GenomeBrowser::Resources::ArrayExpressMetadata->new($root_dir, $species);
   my $ena_metadata = GenomeBrowser::Resources::EnaMetadata->new($root_dir, $species, $rnaseqer_metadata); 
@@ -44,7 +45,7 @@ sub get {
     for my $run_id (@{$rnaseqer_metadata->access($assembly, $study_id)}){
        my $stats = $rnaseqer_stats->get_formatted_stats($run_id);
        my $links = $self->{links}->misc_links($study_id,$run_id, $rnaseqer_metadata->data_location($run_id),
-         keys $pubmed->{$assembly}{$study_id}
+         [keys ($pubmed->{$assembly}{$study_id} || {})]
        );
        my %attributes;
        for my $characteristic_type (@{$rnaseqer_metadata->access($assembly, $study_id, $run_id)}){
@@ -61,6 +62,7 @@ sub get {
     }
     my ($study_description_short, $study_description_full) =
          $self->{descriptions}->study_description($species, $study_id, $ena_metadata->{$assembly}{$study_id});
+
     push @studies, {
       study_id => $study_id,
       runs => \@runs,
