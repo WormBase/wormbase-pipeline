@@ -134,6 +134,9 @@ if ($gene_xrefs) {
 if ($protein_xrefs) {
   my (%cds_xrefs, %cds_product, %accession2clone, %cds2wormpep, $gcrp_version);
 
+  my $db = Ace->connect('-path' => $wormbase->autoace)
+      or $log->log_and_die("cant open Ace connection to db\n".Ace->error."\n");
+
   $wb->FetchData('accession2clone', \%accession2clone, $common_data_dir);
   $wb->FetchData('cds2wormpep', \%cds2wormpep, $common_data_dir);
 
@@ -161,7 +164,7 @@ if ($protein_xrefs) {
      
     next unless exists $cds2wormpep{$cds}; # if ENA is slightly out of date w.r.t. our latest annotation
     
-    push @{$cds_xrefs{$cds}->{Protein_id}}, [$accession2clone{$cloneacc}, $pid, $version];
+    push @{$cds_xrefs{$cds}->{Protein_id}}, [$accession2clone{$cloneacc}||$db->fetch(CDS => "$cds")->Sequence->name, $pid, $version];
     
     if (defined $uniprot_ac and $uniprot_ac ne '.') {
       $cds_xrefs{$cds}->{dblinks}->{UniProt}->{UniProtAcc}->{$uniprot_ac} = 1;

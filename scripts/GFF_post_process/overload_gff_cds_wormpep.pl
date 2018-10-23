@@ -161,8 +161,9 @@ sub get_data {
     my $protein_id;
     if ($cds->Protein_id) {
       my ($prot_id_root) = $cds->at('DB_info.Protein_id');
-      my $prot_ver = $prot_id_root->right;
-      $protein_id = sprintf("%s.%d", $prot_id_root, $prot_ver);
+      my $prot_id = $prot_id_root->right;
+      my $prot_ver = $prot_id->right;
+      $protein_id = sprintf("%s.%d", $prot_id->name, $prot_ver->name);
       $cds2pid{$cds} = $protein_id;
     }
 
