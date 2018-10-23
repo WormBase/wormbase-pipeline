@@ -134,7 +134,7 @@ if ($gene_xrefs) {
 if ($protein_xrefs) {
   my (%cds_xrefs, %cds_product, %accession2clone, %cds2wormpep, $gcrp_version);
 
-  my $db = Ace->connect('-path' => $wormbase->autoace)
+  my $db = Ace->connect('-path' => $wb->autoace)
       or $log->log_and_die("cant open Ace connection to db\n".Ace->error."\n");
 
   $wb->FetchData('accession2clone', \%accession2clone, $common_data_dir);
