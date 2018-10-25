@@ -3197,7 +3197,6 @@ Remark   "SL1 trans-splice acceptor site"
 Colour   RED
 Show_up_strand  
 Width    2.200000
-Right_priority   1.900000
 Show_text       
 GFF_source       "RNASeq_SL1"
 GFF_feature      "SL1_acceptor_site"
@@ -3219,7 +3218,6 @@ Remark   "SL2 trans-splice acceptor site"
 Colour   YELLOW
 Show_up_strand  
 Width    2.500000
-Right_priority   1.920000
 Show_text       
 GFF_source       "RNASeq_SL2"
 GFF_feature      "SL2_acceptor_site"
@@ -3696,6 +3694,9 @@ Right_priority	 1.100000
 Method : "operon"
 Right_priority 1.7
 
+Method : "dicistronic_mRNA"
+Right_priority 1.7
+
 Method : "Deprecated_operon"
 Right_priority 1.7
 
@@ -3723,7 +3724,13 @@ Right_priority 1.9
 Method : "SL1"
 Right_priority 1.9
 
+Method : "RNASeq_SL1"
+Right_priority 1.9
+
 Method : "SL2"
+Right_priority 1.92
+
+Method : "RNASeq_SL2"
 Right_priority 1.92
 
 Method : "polyA"
