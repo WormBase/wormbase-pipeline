@@ -1981,6 +1981,9 @@
 
 ?Feature Name Public_name UNIQUE ?Text
               Other_name ?Text
+         Status UNIQUE ENUM ^status Live #Evidence
+                                    Suppressed #Evidence
+                                    Dead #Evidence
 //         SMap S_parent UNIQUE Sequence UNIQUE ?Sequence NOXREF Feature_object
          Sequence_details Flanking_sequences UNIQUE Text ^five-prime UNIQUE Text ^three-prime
                           Mapping_target UNIQUE ?Sequence
