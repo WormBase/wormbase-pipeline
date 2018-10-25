@@ -265,7 +265,7 @@ if ($host) { # contig sequences are contenated
 			  lines => ['^##', 
 				    "^\\S+\\s+\\S+\\s+\\S+\\s+\\d+\\s+\\d+\\s+\\S+\\s+[-+\\.]\\s+\\S+"],
 			  gff => 1,
-                          maxsize => 3771054952,
+                          maxsize => 7011497887,
 			 );   
 
   }

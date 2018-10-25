@@ -721,7 +721,7 @@ sub gspecies_name{'c_remanei'}
 sub long_name{'Caenorhabditis remanei'}
 sub ncbi_tax_id {'31234'};
 sub ncbi_bioproject {'PRJNA248911'};
-sub bioproject_description { 'University of Oregon University C. remanei PX356 genome project' }
+sub bioproject_description { 'University of Oregon University C. remanei PX439 genome project' }
 sub assembly_type {'contig'};
 sub is_canonical { 0 };
 

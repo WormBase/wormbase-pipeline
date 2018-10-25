@@ -200,7 +200,7 @@ sub get_previous_wormpep_ids {
     }
   }
  
-  print STDERR "Still can't find the CDS for protein $protein_name\n";
+  print STDERR "Still can't find the CDS for protein $protein\n";
   return "unknown";
 }
  

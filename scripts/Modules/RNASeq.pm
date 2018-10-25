@@ -1450,6 +1450,7 @@ sub get_SRX_file {
   my $RNASeqSRADir = $self->{RNASeqSRADir};
   my $log = $self->{log};
   my $status;
+  my $error=0;
 
   # in the EBI, the set of files available for download from an
   # experiment can be seen by parsing the page resulting from a FTP
@@ -1528,7 +1529,7 @@ sub get_SRX_file {
 	my ($dirbit) = ($run_accession =~ /^(\S\S\S\d\d\d)/);
 	$address = "ftp://ftp-trace.ncbi.nih.gov/sra/sra-instant/reads/ByRun/sra/SRR/$dirbit/${run_accession}/${run_accession}.sra";
 	$status = $self->{wormbase}->run_command("/sw/arch/bin/wget -q $address", $log);
-	if ($status != 0) {$log->log_and_die("FTP fetch of fastq file $file from NCBI failed for ${experiment_accession}:\n/sw/arch/bin/wget -q $address\n");}
+	if ($status != 0) {$error=1; $log->write_to("FTP fetch of fastq file $file from NCBI failed for ${experiment_accession}:\n/sw/arch/bin/wget -q $address\n");}
 	my $cmd = "$ENV{WORM_PACKAGES}/sratoolkit/bin/fastq-dump --origfmt ${run_accession}.sra --outdir .";
 	my $status = $self->{wormbase}->run_command($cmd, $log);
 	if ($status != 0) {$log->log_and_die("unpack of .sra file ${run_accession}.sra from NCBI failed for ${experiment_accession}:\n/sw/arch/bin/wget -q $address\n");}
@@ -1541,11 +1542,16 @@ sub get_SRX_file {
   }
   close(ENTRY);
 
-  if ($count) {
+  if ($count && !$error) {
     $status = $self->{wormbase}->run_command("touch fastq.done", $log); # set flag to indicate we have finished this
     if ($status != 0) {$log->log_and_die("'touch fastq.done' failed for $experiment_accession\n");}
-  } else {
+
+  } elsif (!$count && $error) {
+    $status = $self->{wormbase}->run_command("touch fastq.not_found", $log); # set flag to indicate we have not got any fastq files
     $log->log_and_die("No fastq files were found for $experiment_accession\n");
+
+  } else {
+    $log->log_and_die("Some fastq files were found for $experiment_accession - try again with -check set\n");
   }
 
   return $failed;
@@ -2759,6 +2765,7 @@ sub make_stranded_coverage {
 
 #####################################################################################################
 # bam2bigwig
+# this is not used because the bedGraphToBigWig stage uses a lot of memory and tends to terminate the LSF jobs
 sub bam2bigwig {
   my ($self, $experiment_accession) = @_;
   
@@ -2771,21 +2778,26 @@ sub bam2bigwig {
   my $bedGraph_file = "$exptDir/accepted_hits.bedGraph";
   my $chromosome_size_file = "$RNASeqGenomeDir/STAR/chrNameLength.txt";
   my $UCSC_Dir = "$Software/ucsc_tools";
-  
+  my $log = $self->{log};
+
   chdir "$RNASeqSRADir/$experiment_accession/$alignmentDir";
   
-  # See nice diagrams in: http://quinlanlab.org/tutorials/bedtools/bedtools.html
-  # the -split makes it report no hits within introns
-  system("$Software/BEDTools/bin/bedtools genomecov -bg -split -ibam $bamfile  > $bedGraph_file");
-  
-  system("$ENV{WORM_PACKAGES}/BEDTools/bin/bedtools sort -i $bedGraph_file > ${bedGraph_file}.sort");
-  
-  system("$UCSC_Dir/bedGraphToBigWig ${bedGraph_file}.sort $chromosome_size_file ${experiment_accession}.bw");
-  
-  system("rm $bedGraph_file");
-  
-  system("rm ${bedGraph_file}.sort");
-  
+  if ($self->{check} && -e "${experiment_accession}.bw") {
+    $log->write_to("Bigwig file already exists - not making it again\n");
+    
+  } else {
+    # See nice diagrams in: http://quinlanlab.org/tutorials/bedtools/bedtools.html
+    # the -split makes it report no hits within introns
+    system("$Software/BEDTools/bin/bedtools genomecov -bg -split -ibam $bamfile  > $bedGraph_file");
+    
+    system("$ENV{WORM_PACKAGES}/BEDTools/bin/bedtools sort -i $bedGraph_file > ${bedGraph_file}.sort");
+    
+    system("$UCSC_Dir/bedGraphToBigWig ${bedGraph_file}.sort $chromosome_size_file ${experiment_accession}.bw");
+    
+    system("rm $bedGraph_file");
+    
+    system("rm ${bedGraph_file}.sort");
+  }
 }
 #####################################################################################################
 # push all files to the NGS server
@@ -2794,7 +2806,7 @@ sub bam2bigwig {
 #   accepted_hits.bam.bai
 #   coverage
 #   stranded_coverage
-#   bigwig
+#   ( no longer use bigwig )
 #   junctions.gff
 # for this to work, there must be a tunnel from the current machine to the Sanger (ssh -f -N -C -X ssh.sanger.ac.uk)
 # and the following Host definition must be in the .ssh/config file.
@@ -2849,7 +2861,7 @@ sub stage_files_for_NGS {
 
   if (-e $bamfile)               {$self->{wormbase}->run_command("ln -s $bamfile ${target}.bam", $log)}
   if (-e "${bamfile}.bai")       {$self->{wormbase}->run_command("ln -s ${bamfile}.bai ${target}.bam.bai", $log)}
-  if (-e $bigwigfile)            {$self->{wormbase}->run_command("ln -s $bigwigfile ${target}.bw", $log)}
+#  if (-e $bigwigfile)            {$self->{wormbase}->run_command("ln -s $bigwigfile ${target}.bw", $log)}
   if (-e "${coveragefile}.gz")          {$self->{wormbase}->run_command("ln -s ${coveragefile}.gz ${target}.coverage.gz", $log)}
   if (-e "${stranded_coveragefile}.gz") {$self->{wormbase}->run_command("ln -s ${stranded_coveragefile}.gz ${target}.stranded_coverage.gz", $log)}
   if (-e $junctions_gff)         {$self->{wormbase}->run_command("ln -s $junctions_gff ${target}.junctions.gff", $log)}
@@ -2877,7 +2889,7 @@ sub pull_files_from_NGS {
   my $alignmentDir = $self->{'alignmentDir'};
   my $exptDir = "$RNASeqSRADir/$experiment_accession/$alignmentDir";
   my $bamfile = "$exptDir/accepted_hits.bam";
-  my $bigwigfile = "$exptDir/$experiment_accession.bw";
+#  my $bigwigfile = "$exptDir/$experiment_accession.bw";
   my $coveragefile = "$exptDir/coverage";
   my $stranded_coveragefile = "$exptDir/stranded_coverage";
   my $junctions_gff = "$RNASeqSRADir/$experiment_accession/$alignmentDir/junctions.gff";
@@ -2907,7 +2919,7 @@ sub pull_files_from_NGS {
   `wget -O $junctions_gff ${query}.junctions.gff`;
 
   if (defined $all && $all) { # these are not really used yet
-    `wget -O ${bigwigfile}.gz ${query}.bw`;
+#    `wget -O ${bigwigfile}.gz ${query}.bw`;
     `wget -O ${junctions_gff}.gz ${query}.junctions.gff`;
   }
 
@@ -2932,7 +2944,7 @@ sub pull_files_from_NGS {
 #   accepted_hits.bam.bai
 #   coverage
 #   stranded_coverage
-#   bigwig
+#   (no longer use bigwig )
 #   junctions.gff
 
 
@@ -2950,7 +2962,8 @@ sub check_NGS_files {
   my ($self, $experiment_accession) = @_;
   
   my $result = $self->list_NGS_files($experiment_accession);
-  if (scalar keys %{$result} != 6) {return 1}
+  if (exists $result->{"${experiment_accession}.bw"}) {delete $result->{"${experiment_accession}.bw"}} # ignore the bigwig files - we don't make them any more because they use a lot of memory
+  if (scalar keys %{$result} != 5) {return 1}
   foreach my $key (keys %{$result}) {
     my $value = $result->{$key};
     if ($key !~ /stranded_coverage/) { # stranded_coverage files are empty if the data is not stranded
@@ -2968,7 +2981,7 @@ sub check_NGS_files {
     Title   :   list_NGS_files
     Usage   :   $self->list_NGS_files($experiment_accession)
     Function:   pulls out a directory listing of expression files from the NGS server
-    Returns :   hash of sizes of each of the files found: bam, bam.bai, coverage, stranded_coverage, bw, junctions.gff
+    Returns :   hash of sizes of each of the files found: bam, bam.bai, coverage, stranded_coverage, junctions.gff - (but ignore .bw because we don't use it now)
     Args    :   experiment_accession - SRA name of the experiment
 
 =cut
@@ -3001,7 +3014,7 @@ sub list_NGS_files {
 #   accepted_hits.bam.bai
 #   coverage
 #   stranded_coverage
-#   bigwig
+#   ( no longer user bigwig )
 #   junctions.gff
 
 =head2 
@@ -3181,7 +3194,7 @@ sub align_star {
     #   - make a fresh STAR alignment
     #   - get intron data
     #   - get coverage data
-    #   - get bigwig file
+    #   - (no longer get get bigwig file because it uses a lot of memory to create)
     #   - upload data to NGS
     
     if ($self->check_NGS_files($experiment_accession)) {
@@ -3220,6 +3233,7 @@ sub align_star {
     my $experiment_accession = $experiment->{experiment_accession};
     my $bam_done_file = "$RNASeqSRADir/$experiment_accession/".$self->{'alignmentDir'}."/accepted_hits.bam.done";
     my $srr_done_file = "$RNASeqSRADir/$experiment_accession/SRR/fastq.done";
+    my $srr_error_file = "$RNASeqSRADir/$experiment_accession/SRR/fastq.not_found";
     my $trimmomatic_done_file = "$RNASeqSRADir/$experiment_accession/SRR/trimmomatic.done";
     my $solid_done_file = "$RNASeqSRADir/$experiment_accession/SRR/solid.done";
     my $alignmentDir = $self->{'alignmentDir'};
@@ -3228,6 +3242,7 @@ sub align_star {
     my $bam_stranded_coverage = "$exptDir/stranded_coverage";
     my $introns_done_file = "$RNASeqSRADir/$experiment_accession/Introns/Intron.ace.done";
     
+    if (-e $srr_error_file) {return}
     if ($self->{new_genome} || !-e $bam_done_file) { 
       #  if ($self->{new_genome} || !-e $bam_done_file || !-e $srr_done_file || !-e $trimmomatic_done_file) { 
       
@@ -3277,7 +3292,7 @@ sub align_star {
 #   - make a fresh STAR alignment
 #   - get intron data
 #   - get coverage data
-#   - get bigwig file
+#   - (no longer get bigwig file because it uses a lot of memory to create)
 #   - upload data to NGS
 
 =head2 
@@ -3304,6 +3319,9 @@ sub fresh_complete_alignment_and_analysis {
   my $alignmentDir = $self->{'alignmentDir'};
   my $exptDir = "$RNASeqSRADir/$experiment_accession/$alignmentDir";
   my $bam_done_file = "$RNASeqSRADir/$experiment_accession/".$self->{'alignmentDir'}."/accepted_hits.bam.done";
+  my $bam_coverage = "$exptDir/coverage";
+  my $bam_stranded_coverage = "$exptDir/stranded_coverage";
+  my $introns_done_file = "$RNASeqSRADir/$experiment_accession/Introns/Intron.ace.done";
 
 
   if (!-e $bam_done_file) {
@@ -3334,10 +3352,10 @@ sub fresh_complete_alignment_and_analysis {
   }
 
   # make associated analysis files
-  $self->make_coverage($experiment_accession);
-  $self->make_stranded_coverage($experiment);
-  $self->get_introns($experiment_accession);
-  $self->bam2bigwig($experiment_accession);
+  if (!-e $bam_coverage)              {$self->make_coverage($experiment_accession)}
+  if (!-e $bam_stranded_coverage)     {$self->make_stranded_coverage($experiment)}
+  if (!-e $introns_done_file)         {$self->get_introns($experiment_accession)}
+#  $self->bam2bigwig($experiment_accession); # no longer create bigwig files because they use a lot of memory
 
 
 
@@ -3468,7 +3486,6 @@ sub run_star_alignment {
   $self->merge_splice_junction_files(\@SRR_ids, 'junctions.gff');
   $status = $self->{wormbase}->run_command("touch accepted_hits.bam.done", $log); # set flag to indicate we have finished this
   if ($status != 0) {$log->log_and_die("'touch accepted_hits.bam.done' failed for $experiment_accession\n");}
-
   $self->{wormbase}->run_command("rm -rf $RNASeqSRADir/$experiment_accession/SRR", $log); #delete the SRR directory and fastq files
 }
 
