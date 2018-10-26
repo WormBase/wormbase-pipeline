@@ -624,10 +624,9 @@ sub create_transcript_file {
 		$prefix = $wormbase->chromosome_prefix."${chrom}_";
 	}
         my $trinity = -e "${gffdir}/${prefix}BLAT_Trinity_BEST.gff" ? "${prefix}BLAT_Trinity_BEST.gff" : '';
-	$wormbase->run_command("cd $gffdir; cat ${prefix}BLAT_EST_BEST.gff ${prefix}BLAT_mRNA_BEST.gff $trinity >  ${prefix}BLAT_TRANSCRIPT_BEST.gff", $log);
+	my $isoseq  = -e "${gffdir}/${prefix}BLAT_IsoSeq_BEST.gff"  ? "${prefix}BLAT_IsoSeq_BEST.gff"  : '';
 
-	my $isoseq = -e "${gffdir}/${prefix}BLAT_IsoSeq_BEST.gff" ? "${prefix}BLAT_IsoSeq_BEST.gff" : '';
-	$wormbase->run_command("cd $gffdir; cat ${prefix}BLAT_EST_BEST.gff ${prefix}BLAT_mRNA_BEST.gff $isoseq >  ${prefix}BLAT_TRANSCRIPT_BEST.gff", $log);
+	$wormbase->run_command("cd $gffdir; cat ${prefix}BLAT_EST_BEST.gff ${prefix}BLAT_mRNA_BEST.gff $trinity $isoseq > ${prefix}BLAT_TRANSCRIPT_BEST.gff", $log);
 
 	# only elegans has OSTs and RSTs
 	$wormbase->run_command("cd $gffdir; cat ${prefix}BLAT_OST_BEST.gff ${prefix}BLAT_RST_BEST.gff >>  ${prefix}BLAT_TRANSCRIPT_BEST.gff", $log) if ($wormbase->species eq 'elegans');
