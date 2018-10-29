@@ -107,34 +107,30 @@ sub search_feature_segments {
     @hits = grep { $_->{strand} eq $strand } @hits;
   }
 
-  my @seg_hits;
+  my (%hit_names, @seg_hits);
 
-  if (@hits) {
+  map { $hit_names{$_->{name}} = 1 } @hits;
 
-    foreach my $hit (@hits) {
-      my $match = 0;
+  foreach my $hit_name (sort keys %hit_names) {
+    my $match = 0;
       
-      foreach my $seg (@{$self->_features->{$hit->{name}}}) {
-        next if $seg->{end} < $start;
-        last if $seg->{start} > $end;
-
-        if ($start <= $seg->{end} and $end >= $seg->{start}) {
-          $match += $seg->{end} - $seg->{start} + 1;
-          # if not interested in degree of overlaps, we can bail as soon as any overlap is asserted
-          last if not defined $min_overlap;
-
-          if ($start > $seg->{start}) {
-            $match += ($start - $seg->{start});
-          }
-          if ($end < $seg->{end}) {
-            $match += ($seg->{end} - $end);
-          }
-        }
-      }
+    foreach my $seg (@{$self->_features->{$hit_name}}) {
+      next if $seg->{end} < $start;
+      last if $seg->{start} > $end;
       
-      if ($match and (not defined $min_overlap or $match > $min_overlap)) {
-        push @seg_hits, $hit->{name};
+      if ($start <= $seg->{end} and $end >= $seg->{start}) {
+        my $overlap_st = $start;
+        $overlap_st = $seg->{start} if $seg->{start} > $overlap_st;
+
+        my $overlap_en = $end;
+        $overlap_en = $seg->{end} if $seg->{end} < $overlap_en;
+
+        $match += ($overlap_en - $overlap_st + 1);
       }
+    }
+    
+    if ($match and (not defined $min_overlap or $match > $min_overlap)) {
+      push @seg_hits, $hit_name;
     }
   }
 
