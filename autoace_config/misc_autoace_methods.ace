@@ -259,6 +259,19 @@ GFF_source "Transposon_Pseudogene"
 GFF_feature "transposable_element_pseudogene"
 GFF_SO "SO:0000516" "nc_transcript_ace2so" // pseudogenic_transcript
 
+Method : "Transposon_ncRNA"
+Remark "A ncRNA transcript that appears to belong to a Transposon related gene."
+Colour RED
+Show_up_strand	
+Width 2.0
+Show_text	
+EMBL_threshold 0.000000
+EMBL_qualifier "\/note=\"\%s\"" "note"
+Remark "An RNA transcript that does not encode for a protein rather the RNA molecule is the gene product and has been classified as being part of a transposon."
+GFF_source "Transposon_ncRNA"
+GFF_feature "transposable_element_ncRNA"
+GFF_SO "SO:0000655" "nc_transcript_ace2so" // ncRNA SO_term requested for transposable_element_ncRNA
+
 Method : "ncRNA" 
 Remark "An RNA transcript that does not encode for a protein rather the RNA molecule is the gene product"
 Colour GREEN
@@ -3848,6 +3861,9 @@ Method : "Transcript"
 Right_priority 2.6
 
 Method : "RNA"
+Right_priority 2.6
+
+Method : "Transposon_ncRNA"
 Right_priority 2.6
 
 Method : "ncRNA"
