@@ -72,6 +72,7 @@ init Pseudogene elegans briggsae remanei pristionchus japonica brenneri brugia o
 init Transposon elegans pristionchus japonica brenneri briggsae remanei brugia ovolvulus sratti tmuris
 init Transposon_CDS elegans pristionchus japonica brenneri briggsae remanei brugia ovolvulus sratti tmuris
 init Transposon_Pseudogene elegans pristionchus japonica brenneri briggsae remanei brugia ovolvulus sratti tmuris
+init Transposon_ncRNA elegans pristionchus japonica brenneri briggsae remanei brugia ovolvulus sratti tmuris
 init rRNA_Pseudogene elegans pristionchus japonica brenneri briggsae remanei brugia ovolvulus sratti tmuris
 init tRNA_Pseudogene elegans pristionchus japonica brenneri briggsae remanei brugia ovolvulus sratti tmuris
 init curated  elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti tmuris
