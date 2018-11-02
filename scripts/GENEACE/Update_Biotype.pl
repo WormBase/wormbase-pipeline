@@ -111,7 +111,7 @@ my $giface          = $wormbase->giface;      # GIFACE PATH
 #ncRNA BioType mapping
 
 my %rna2SOlookup = (
-'asRNA'   => 'SO:0001263',  # ncRNA_gene
+'asRNA'   => 'SO:0002182',  # antisense_lncRNA_gene
 'lincRNA' => 'SO:0001641',  # lincRNA_gene
 'miRNA'   => 'SO:0001265',  # miRNA_gene
 'ncRNA'   => 'SO:0001263',  # ncRNA_gene
