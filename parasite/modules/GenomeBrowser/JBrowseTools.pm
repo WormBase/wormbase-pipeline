@@ -44,7 +44,7 @@ sub exec_if_dir_absent {
 sub filter_gff {
   my ($self, $path,$processing_path, $features, %args) =@_;
 
-  if ($args{do_jbrowse} // -f $processing_path){ 
+  if ($args{do_jbrowse} // not -f $processing_path){ 
     print STDERR "Processing path: $processing_path\n" if $ENV{JBROWSE_TOOLS_VERBOSE};
       open ANNOTATION, "$path" or die "Could not open: $path";
       open PROCESSING, ">$processing_path"

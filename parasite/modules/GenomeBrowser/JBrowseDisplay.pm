@@ -35,7 +35,7 @@ sub new {
             out_dir          => "$args{root_dir}/out",
             species_ftp      => $args{ftp_path}
             ? SpeciesFtp->new( $args{ftp_path} )
-            : SpeciesFtp->current_staging,
+            : SpeciesFtp->dot_next,
         ),
         resources =>
           GenomeBrowser::Resources->new("$args{root_dir}/Resources"),
@@ -252,7 +252,7 @@ sub make_tracks {
 
     $self->{jbrowse_tools}->index_names( core_db => $core_db, %opts );
     $self->{jbrowse_tools}->add_static_files( core_db => $core_db, %opts );
-
+    return unless $opts{do_rnaseq} // 1 ;
     my $assembly =
       ProductionMysql->staging->meta_value( $core_db, "assembly.name" );
     my ( $attribute_query_order, $location_per_run_id, @studies ) =
@@ -268,10 +268,10 @@ sub make_tracks {
              %{$study->{attributes}},
              %{$run->{attributes}},
              track => $run->{run_description_short},
-             study => sprintf("%s: %s", $study_id, $study->{study_description_short}),
+             study => sprintf("%s: %s", $study->{study_id}, $study->{study_description_short}),
              pubmed => join(", " , map {$_->[1]} values ($study->{pubmed}|| {})),
           };
-          $attributes{study_description} = $study->{study_description_full} if $study->{study_description_full} ne $study->{study_description_short};
+          $attributes->{study_description} = $study->{study_description_full} if $study->{study_description_full} ne $study->{study_description_short};
 # We don't want both exact and approximate values to show, but we need the approximate values for facets
 # So, delete exact values ( I don't know how to stop JBrowse from displaying some values) 
           delete $attributes->{library_size_reads};
