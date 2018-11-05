@@ -50,9 +50,10 @@ sub core_databases {
   return @result;
 }
 sub core_db {
-  my ($core_db, @others) = shift->core_databases(@_);
-  Carp::croak "ProductionMysql: no db for: @_" unless $core_db;
-  Carp::croak "ProductionMysql: multiple dbs for: @_" if @others;
+  my ($self, @patterns) = @_;
+  my ($core_db, @others) = $self->core_databases(@patterns);
+  Carp::croak "ProductionMysql $self->{db_cmd}: no db for: @patterns" unless $core_db;
+  Carp::croak "ProductionMysql $self->{db_cmd}: multiple dbs for: @patterns" if @others;
   return $core_db;
 }
 sub species_for_core_db {
