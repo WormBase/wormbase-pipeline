@@ -7,7 +7,7 @@ use File::Slurp qw(write_file);
 use JSON;
 use SpeciesFtp;
 use GenomeBrowser::JBrowseTools;
-use GenomeBrowser::Resources;
+use PublicResources::Rnaseq;
 use GenomeBrowser::Deployment;
 use ProductionMysql;
 
@@ -38,7 +38,7 @@ sub new {
             : SpeciesFtp->dot_next,
         ),
         resources =>
-          GenomeBrowser::Resources->new("$args{root_dir}/Resources"),
+          PublicResources::Rnaseq->new("$args{root_dir}/Resources"),
     }, $class;
 }
 my $help_menu_html= <<EOF;

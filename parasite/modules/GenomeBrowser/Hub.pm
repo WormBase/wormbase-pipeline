@@ -14,7 +14,7 @@
 package GenomeBrowser::Hub;
 
 use ProductionMysql;
-use GenomeBrowser::Resources;
+use PublicResources::Rnaseq;
 use GenomeBrowser::Deployment;
 use File::Path qw(make_path);
 use File::Slurp qw(write_file);
@@ -29,7 +29,7 @@ sub new {
       "$ENV{PARASITE_SCRATCH}/jbrowse/WBPS$ENV{PARASITE_VERSION}";
     return bless {
         dir       => "$args{root_dir}/hub",
-        resources => GenomeBrowser::Resources->new("$args{root_dir}/Resources"),
+        resources => PublicResources::Rnaseq->new("$args{root_dir}/Resources"),
     }, $class;
 }
 
