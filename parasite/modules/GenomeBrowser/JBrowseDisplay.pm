@@ -267,7 +267,7 @@ sub make_tracks {
           my $attributes = {
              %{$study->{attributes}},
              %{$run->{attributes}},
-             track => $run->{run_description_short},
+             track => join(": ", grep {$_} $run_id, $run->{run_description_short}),
              study => sprintf("%s: %s", $study->{study_id}, $study->{study_description_short}),
              pubmed => join(", " , map {$_->[1]} values ($study->{pubmed}|| {})),
           };
@@ -280,7 +280,7 @@ sub make_tracks {
             {
               %$TRACK_STANZA,
               urlTemplate => $url,
-              key         => $run->{run_description_full},
+              key         => "$run_id: ".$run->{run_description_full},
               label       => "RNASeq/$run_id",
               metadata    => $attributes,
             };

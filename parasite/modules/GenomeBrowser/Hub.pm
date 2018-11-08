@@ -120,6 +120,8 @@ html doc/$study_id
 
 sub run_track {
     my ( $study_id, $run_id, $run_description_short, $run_description_full, $url ) = @_;
+    my $short_label = join(": ", grep {$_} $run_id, $run_description_short);
+    my $full_label = join(": ", grep {$_} $run_id, $run_description_full);
     return (
         "track $run_id
 parent $study_id
@@ -166,15 +168,12 @@ my @blacklist = (
 sub create_run_doc {
     my ( $path, $study, $run ) = @_;
 
-    my $rd = $run->{run_description_full};
     my $result = "<table><th>$d</th>";
-    $result .= sprintf "<b>Run $rd</b>\n" if $rd; 
-    $result .= "\n";
+    $result .= sprintf("<b>Run %s: %s</b>\n\n", $run->{run_id}, $run->{run_description_full}); 
     for my $k ( sort keys $run->{attributes} ) {
         next if grep {$_ eq $k} @blacklist;
         ( my $property_name = $k ) =~ s/_/ /g;
-        $property_name = ucfirst($property_name)
-          if $property_name eq lc($property_name);
+        $property_name = ucfirst($property_name) if $property_name eq lc($property_name);
         $property_name = "Library size (reads)" if $k eq "library_size_reads";
         my $property_value = $run->{attributes}{$k};
         $result .= sprintf "<tr><td>%s</td><td>%s</td></tr>", $property_name, $property_value;
