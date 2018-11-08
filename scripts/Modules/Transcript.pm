@@ -269,6 +269,7 @@ sub report
     }
     print $fh "Gene \"$gene_name\"\n" if defined $gene_name;
     print $fh "Species \"$species\"\n";
+    print $fh "mRNA\n";
     print $fh "Method Coding_transcript\n";  
 
     foreach (@{$self->{'matching_cdna'}}) {
