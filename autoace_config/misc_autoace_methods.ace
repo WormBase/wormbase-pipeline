@@ -616,6 +616,16 @@ GFF_source "Variation_PCR"
 GFF_feature "PCR_product"
 GFF_SO "SO:0000006" // PCR_product
 
+Method : "Mapped_var_PCR"
+Remark   "PCR products used in Variation objects (These need mapping)."
+Colour   BLUE
+Width    1.000000
+Show_text       
+GFF_source       "Variation_PCR"
+GFF_feature      "PCR_product"
+GFF_SO   "SO:0000006"
+
+
 Method : Million_mutation
 Remark "A collaborative project between the Genome Sciences Department in Seattle (R.H. Waterston, L. Hillier and J. Shendure) and the Moerman Lab. Starting April 1, 2010, a collection of 1,500 to 2,000 mutagenized lines using various mutagens, including EMS, ENU and UV/TMP will be built"
 Colour Orange
@@ -4410,6 +4420,9 @@ Right_priority 5.35
 
 Method : "Variation_PCR"
 Right_priority 5.4
+
+Method : "Mapped_var_PCR"
+Right_priority   5.400000
 
 Method : "Expr_profile"
 Right_priority 5.45
