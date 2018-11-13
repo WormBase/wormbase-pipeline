@@ -633,7 +633,8 @@ sub process_feature_table {
                $mod_dir eq 'rRNA' or
                $mod_dir eq 'misc_RNA' or
                $mod_dir eq 'precursor_RNA' or
-               $mod_dir eq 'prim_transcript') {
+               $mod_dir eq 'prim_transcript' or 
+               $mod_dir eq 'mRNA') {
         # no class
       } else {
         $log->log_and_die("Unexpected feature type " . $feat->{ftype});
@@ -735,7 +736,29 @@ sub process_feature_table {
       #  push @prod_notes, $rem;
       #}
     } elsif ($feat->{ftype} eq 'mRNA') {
-      # unclear what product should be for mRNAs. Defer for now
+      my $cds_isoform_name = $wb_isoform_name; 
+      $cds_isoform_name =~ s/\.\d$//; 
+      if (exists $trans2briefid_h->{$cds_isoform_name}) {
+        $prod_name = $trans2briefid_h->{$cds_isoform_name};
+      } elsif (exists $gene2cgcname->{$wb_geneid}) {
+        my $gclass = $gene2cgcname->{$wb_geneid};
+        $gclass =~ s/-[^-]+$//;
+        if (exists $gclass2desc_h->{$gclass}) {
+          $prod_name = $gclass2desc_h->{$gclass};
+          $prod_name =~ s/\\//g; 
+          if ($feat->{is_pseudo}) {
+            $prod_name .= " pseudogene";
+          }
+          $class_based_name = $gclass;
+        }
+      } 
+      if (defined $prod_name) {
+        if ($class_based_name) {
+          push @prod_notes, "Product from WormBase gene class $class_based_name";
+        }
+      } else {
+        $prod_name = "Uncharacterized protein";
+      }
     } elsif ($feat->{ftype} =~ /RNA/) {      
       # note that prim_transcript will not match this, but this is fine
       # because prim_transcript features are not allowed to have a product
