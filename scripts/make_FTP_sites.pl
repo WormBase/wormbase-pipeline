@@ -266,7 +266,7 @@ sub copy_blastx {
 ##################################################
 sub copy_dna_files{
   my $runtime = $wormbase->runtime;
-  $log->write_to("$runtime: copying dna and agp files\n");
+  $log->write_to("$runtime: copying dna files\n");
 
   my %accessors = ($wormbase->all_species_accessors);
   $accessors{elegans} = $wormbase;
@@ -355,32 +355,7 @@ sub copy_dna_files{
             $wormbase->run_command("cat $dna_file | gzip -n > $target", $log);
           }
         }
-      }
-      
-      my @agp_files = glob("$chromdir/*.agp");
-      
-      if (@agp_files) {
-        my $target_agp_file =  "$dna_dir/${gspecies}.${bioproj}.${WS_version_name}.assembly.agp"; 
-        
-        if (scalar(@agp_files) == 1) {
-          # just the one - assume its for whole genome and copy it across
-          my ($single_file) = @agp_files;
-          $wormbase->run_command("cat $single_file | gzip -n -9 -c > ${target_agp_file}.gz", $log); 
-        } else {
-          # assume per-chromosome
-          unlink $target_agp_file;
-          $wormbase->run_command("touch $target_agp_file", $log);
-          foreach my $chrom ($wb->get_chromosome_names(-mito => 0, -prefix => 1)) {
-            my $agp = "$chromdir/$chrom.agp";
-            if (-e "$chromdir/$chrom.agp") {
-              $wormbase->run_command("cat $agp >> $target_agp_file", $log);
-            } else {
-              $log->error("ERROR: $gspecies : missing file: $chromdir/$chrom.agp\n");
-            }
-          }
-          $wormbase->run_command("gzip -n -9 -f $target_agp_file", $log);
-        }
-      }
+      }      
     }
   }
   $runtime = $wormbase->runtime;
@@ -1395,7 +1370,6 @@ GSPECIES.BIOPROJ.WSREL.xrefs.txt.gz
 GSPECIES.BIOPROJ.WSREL.gene_product_info.gpi.gz
 
 [elegans]species/GSPECIES/BIOPROJ
-GSPECIES.BIOPROJ.WSREL.assembly.agp.gz
 GSPECIES.BIOPROJ.WSREL.wormpep_package.tar.gz
 GSPECIES.BIOPROJ.WSREL.transposon_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.transposons.fa.gz
