@@ -1370,7 +1370,6 @@ GSPECIES.BIOPROJ.WSREL.xrefs.txt.gz
 GSPECIES.BIOPROJ.WSREL.gene_product_info.gpi.gz
 
 [elegans]species/GSPECIES/BIOPROJ
-GSPECIES.BIOPROJ.WSREL.assembly.agp.gz
 GSPECIES.BIOPROJ.WSREL.wormpep_package.tar.gz
 GSPECIES.BIOPROJ.WSREL.transposon_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.transposons.fa.gz
