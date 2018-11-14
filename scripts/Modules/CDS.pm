@@ -244,19 +244,34 @@ sub _sort_transcripts {
 
   my @trans = @{$self->{'transcripts'}};
 
-  # sort by start, then end, then exon fingerprint. This is not perfect, but it will at 
-  # ensure that identical CDSs with unchanged evidence will end up with the transcripts
+  # sort by:
+  # (a) number of attached features;
+  # (b) start 
+  # (c) end (reverse)
+  # (d) exon fingerprint. 
+  # This is not perfect, but it will ensure:
+  #  (a) that transcripts with most confidently defined end (i.e. having features) appear first in list
+  #  (b) identical CDSs with unchanged evidence will end up with the transcripts
   # that have been named the same between builds. Need rigourous transcript mapping 
   # (i.e. comparing new transcripts with those produced in last build) to solve this 
   # problem properly. 
+
   my @fps;
   foreach my $t (@trans) {
+    my $feat_count = 0;
+    $feat_count++ if $t->SL;
+    $feat_count++ if $t->polyA_site;
+    $feat_count++ if $t->polyA_signal; 
+
     my @ex = map { $_->[0], $_->[1] } $t->sorted_exons;
     my $fp = join(":", @ex);
-    push @fps, [$t, $t->start, $t->end, $fp];
+    push @fps, [$t, $t->start, $t->end, $fp, $feat_count];
   }
   
-  @trans = map { $_->[0] } sort { $a->[1] <=> $b->[1] or $a->[2] <=> $b->[2] or $a->[3] cmp $b->[3] } @fps;
+  @trans = map { $_->[0] } sort { $b->[4] <=> $a->[4] or
+                                  $a->[1] <=> $b->[1] or 
+                                  $b->[2] <=> $a->[2] or 
+                                  $a->[3] cmp $b->[3] } @fps;
   
   for( my $cnt = 1; $cnt <= scalar(@trans); $cnt++) {
     my $tran = $trans[$cnt-1];
@@ -344,11 +359,19 @@ sub report
       print $fh "Matching_CDS ",$self->name," Inferred_Automatically \"transcript_builder.pl\"\n";
     }
 
-    foreach ( $self->transcripts ) {
-      $_->report($fh, 
+    my ($first, @others) = $self->transcripts;
+    $first->report( $fh, 
+                    $coords, 
+                    $species, 
+                    (defined $cds2gene and exists $cds2gene->{$self->name}) ? $cds2gene->{$self->name} : undef, 
+                    1);
+
+    foreach my $t ( @others ) {
+      $t->report($fh, 
                  $coords, 
                  $species, 
-                 (defined $cds2gene and exists $cds2gene->{$self->name}) ? $cds2gene->{$self->name} : undef);
+                 (defined $cds2gene and exists $cds2gene->{$self->name}) ? $cds2gene->{$self->name} : undef, 
+                 0);
     }
   }
 

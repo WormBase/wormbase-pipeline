@@ -228,6 +228,7 @@ sub report
     my $coords = shift;
     my $species = shift;
     my $gene_name = shift;
+    my $is_primary = shift;
 
     my $real_start = $self->start;
     my $real_end = $self->end;
@@ -269,7 +270,11 @@ sub report
     }
     print $fh "Gene \"$gene_name\"\n" if defined $gene_name;
     print $fh "Species \"$species\"\n";
-    print $fh "mRNA\n";
+    #
+    # emit the mRNA tag if the transcript has been denoted as primary. This will make it appear as an 
+    # mRNA feature in the EMBL dumps
+    #
+    print $fh "mRNA\n" if $is_primary;
     print $fh "Method Coding_transcript\n";  
 
     foreach (@{$self->{'matching_cdna'}}) {
