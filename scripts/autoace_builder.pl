@@ -377,12 +377,12 @@ sub map_features_to_genome {
  
 
 
-  my $release = $wormbase->get_wormbase_version;
-  my $previous_release = $release - 1;
-
-  my $assembly_mapper = Remap_Sequence_Change->new($previous_release, $release, $wormbase->species, $wormbase->genome_diffs);
-
   if ($wormbase->species eq 'elegans') {    
+    my $release = $wormbase->get_wormbase_version;
+    my $previous_release = $release - 1;
+    
+    my $assembly_mapper = Remap_Sequence_Change->new($previous_release, $release, $wormbase->species, $wormbase->genome_diffs);
+
     #
     # PCR_products - only C. elegans, but must be run before RNAiGenome
     #
