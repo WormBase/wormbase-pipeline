@@ -143,6 +143,8 @@ $wormbase->run_script( "get_ena_submission_xrefs.pl -genexrefs", $log)  if $enag
 
 $wormbase->run_script( "processGFF.pl -$processGFF",                       $log ) if $processGFF;
 
+&make_remap_data()    if $first_dumps;
+
 &do_assembly_stuff() if $assembly;   # dependant on clone_acc for agp
 
 $wormbase->run_script("GetPFAM_motifs.pl", $log) if $load_interpro;
@@ -333,12 +335,16 @@ exit(0);
 #       SUBROUTINES        #
 ############################
 
-sub do_assembly_stuff {
 
+sub make_remap_data {
   if ($wormbase->species eq 'elegans'){
     my $version = $wormbase->get_wormbase_version;
     $wormbase->run_script( "inspect-old-releases.pl -version $version -database1 ".$wormbase->database('current')." -database2 ".$wormbase->autoace, $log );
-    
+  }
+}
+
+sub do_assembly_stuff {
+  if ($wormbase->species eq 'elegans'){
     $wormbase->run_script( "make_agp_file.pl",                       $log );
     $wormbase->run_script( "agp2dna.pl",                             $log ); #dependant on processGFF producing clone_acc files.
   }
