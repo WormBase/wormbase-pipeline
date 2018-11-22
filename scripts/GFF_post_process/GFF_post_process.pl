@@ -228,7 +228,7 @@ if ($overload_transposon or $all) {
 ############################################################
 # Restructures miRNA features into the correct hierarchy
 ############################################################
-if ($restructure_mirna or $all) {
+if ($restructure_mirna) {
     &run_munging_script("GFF_post_process/restructure_mirnas.pl");
 }
 
