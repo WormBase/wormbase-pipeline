@@ -83,7 +83,7 @@ foreach my $method (@methods) {
            or ( $data[1] eq 'rRNA_Pseudogene' )
            or ( $data[1] eq 'Transposon_CDS' ) 
            or ( $data[1] eq 'Transposon_Pseudogene') 
-           or ( $data[1] eq 'Transposon_ncRNA') )` {
+           or ( $data[1] eq 'Transposon_ncRNA') ) {
       next if ( $data[2] eq 'exon'
                 or $data[2] eq 'coding_exon'
                 or $data[2] eq 'intron' );
