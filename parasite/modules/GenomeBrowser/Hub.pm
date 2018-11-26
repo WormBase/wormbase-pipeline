@@ -73,7 +73,7 @@ sub make_hub {
     my $_Species = ucfirst($species);
     my $assembly =
       ProductionMysql->staging->meta_value( $core_db, "assembly.name" );
-    my ( $attribute_query_order, $location_per_run_id, @studies ) =
+    my @studies =
       $self->{resources}->get( $core_db, $assembly );
     return unless @studies;
     make_path( $self->path( $_Species, "doc" ) );
@@ -92,7 +92,7 @@ sub make_hub {
                 $study, $run, );
             my $url = GenomeBrowser::Deployment::sync_ebi_to_sanger(
                 $species, $assembly, $run_id,
-                $location_per_run_id->{$run_id}, %opts );
+                $run->{data_files}{bigwig}, %opts );
             push @run_tracks,
               &run_track( $study_id, $run_id, $run->{run_description_short}, $run->{run_description_full}, $url );
         }

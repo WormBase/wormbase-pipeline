@@ -4,6 +4,8 @@ use strict;
 use Carp;
 use File::Path qw(make_path);
 use File::Slurp qw(write_file);
+use List::Util qw(sum);
+use List::MoreUtils qw(uniq);
 use JSON;
 use SpeciesFtp;
 use GenomeBrowser::JBrowseTools;
@@ -255,15 +257,14 @@ sub make_tracks {
     return unless $opts{do_rnaseq} // 1 ;
     my $assembly =
       ProductionMysql->staging->meta_value( $core_db, "assembly.name" );
-    my ( $attribute_query_order, $location_per_run_id, @studies ) =
-      $self->{resources}->get( $core_db, $assembly );
+    my @studies = $self->{resources}->get( $core_db, $assembly );
     my @rnaseq_track_configs;
     for my $study (@studies) {
         for my $run (@{$study->{runs}}) {
           my $run_id = $run->{run_id};
           my $url    = GenomeBrowser::Deployment::sync_ebi_to_sanger(
               $species, $assembly, $run_id,
-              $location_per_run_id->{$run_id}, %opts );
+              $run->{data_files}{bigwig}, %opts );
           my $attributes = {
              %{$study->{attributes}},
              %{$run->{attributes}},
@@ -289,7 +290,7 @@ sub make_tracks {
 
     my %config = %$CONFIG_STANZA;
     if (@rnaseq_track_configs) {
-        $config{trackSelector} = $self->track_selector(@$attribute_query_order);
+        $config{trackSelector} = track_selector(column_headers_for_studies(@studies));
         $config{defaultTracks} = "DNA,Gene_Models";
     }
     else {
@@ -311,7 +312,8 @@ sub make_tracks {
 }
 
 sub track_selector {
-    my ( $self, @as ) = @_;
+    my ( $as ) = @_;
+    my @as = @{$as};
     my %pretty;
     for my $a (@as) {
         ( my $p = $a ) =~ s/[\W_-]+/ /g;
@@ -338,4 +340,82 @@ sub track_selector {
         }
     };
 }
+
+my @column_header_blacklist = (
+ "synonym",
+ "bioproject_id",
+  "species",
+  "organism",
+  "replicate",
+  "sample_name",
+  "batch",
+  "barcode",
+  "insdc_center_name",
+  "insdc_first_public",
+  "insdc_secondary_accession",
+  "insdc_status",
+  "insdc_last_update",
+  "label",
+  "model",
+  "package",
+  "ncbi_submission_model",
+  "ncbi_submission_package",
+  "sample_comment",
+  "sample_title",
+  "geo_accession",
+  "biological_replicate",
+  "block",
+  "zone", #schmidtea mediterranea
+  "repplicate",
+  "in_house_sample_code",
+  "collected_by",
+  "biomaterial_provider",
+  "description_title",
+  "treatment_sources",
+  "population",
+  "sample_name",
+  "agarosemigrationtemperature",
+  "agarosemigrationttime",
+  "baermanntemperature",
+  "base_calling_software_version",
+  "culturetemperature",
+  "culturetime",
+  "library_id",
+  "library_preparation",
+  "wash",
+);
+sub not_in_blacklist {
+  my $arg = shift;
+  for (@column_header_blacklist){
+     return if $arg eq $_;
+  }
+  return 1;
+}
+sub column_headers_for_studies {
+  my %data;
+  for my $study(@_){
+    my %rnaseqer_characteristics;
+    for my $run (@{$study->{runs}}) {
+      my %h = %{$run->{characteristics}};
+      while (my ($k, $v) = each %h){
+         $rnaseqer_characteristics{$k}{$v}++;
+      }
+    }
+    my @factors;
+    for ( keys %rnaseqer_characteristics ) {
+      my %d      = %{ $rnaseqer_characteristics{$_} };
+      my @values = keys %d;
+      my @counts = values %d;
+      push @factors, $_ if @values > 1 or sum(@counts) == 1;
+    }
+    $data{$study->{study_id}} = \@factors;
+  }
+  my @result = map { @{$_} } ( values %data );
+  @result = grep { not_in_blacklist($_) } @result;
+  @result = uniq @result;
+  @result = sort @result;
+  return \@result;
+}
+
+
 1;
