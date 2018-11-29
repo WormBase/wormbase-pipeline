@@ -414,6 +414,9 @@ sub column_headers_for_studies {
   @result = grep { not_in_blacklist($_) } @result;
   @result = uniq @result;
   @result = sort @result;
+  if (@result > 10 ) {
+     @result = grep {"developmental_stage organism_part" =~ /$_/} @result; 
+  }
   return \@result;
 }
 
