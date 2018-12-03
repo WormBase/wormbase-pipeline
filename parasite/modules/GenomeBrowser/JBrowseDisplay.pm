@@ -214,7 +214,7 @@ my $feature_tracks = [
 ];
 sub make_all {
   my ($self,  %opts ) = @_;
-  for my $core_db (ProductionMysql->staging->core_databases){
+  for my $core_db (reverse ProductionMysql->staging->core_databases){
       next unless $core_db =~ /_core_$ENV{PARASITE_VERSION}/;
       print "Starting: $core_db\n";
       $self->make_tracks($core_db, %opts);
@@ -270,8 +270,8 @@ sub make_tracks {
              %{$run->{attributes}},
              track => join(": ", grep {$_} $run_id, $run->{run_description_short}),
              study => sprintf("%s: %s", $study->{study_id}, $study->{study_description_short}),
-             pubmed => join(", " , map {$_->[1]} values ($study->{pubmed}|| {})),
           };
+          $attributes->{pubmed} = join(", " , map {$_->[1]} values ($study->{pubmed})) if $study->{pubmed};
           $attributes->{study_description} = $study->{study_description_full} if $study->{study_description_full} ne $study->{study_description_short};
 # We don't want both exact and approximate values to show, but we need the approximate values for facets
 # So, delete exact values ( I don't know how to stop JBrowse from displaying some values) 

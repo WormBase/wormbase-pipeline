@@ -161,6 +161,7 @@ geneColor = function(f) {
   if (strand ==  1) {return 'violet';}
   return 'gray'; }
 END_FUNCTIONS_CONF
+    make_path $out;
     write_file("$out/functions.conf", $doc);
 }
 
