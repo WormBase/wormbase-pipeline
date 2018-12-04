@@ -40,3 +40,6 @@ for my $species (keys %result){
 }
 print join ", ", @links;
 print "\n";
+unless (grep {$_ =~ /elegans/} keys %result ){
+   print "\n!!!\nWHERE IS C ELEGANS YO\n";
+}
