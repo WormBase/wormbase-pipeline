@@ -393,12 +393,16 @@ sub not_in_blacklist {
 }
 sub column_headers_for_studies {
   my %data;
+  my $runs_total;
+  my %occurrences_per_type;
   for my $study(@_){
     my %rnaseqer_characteristics;
     for my $run (@{$study->{runs}}) {
+      $runs_total++;
       my %h = %{$run->{characteristics}};
       while (my ($k, $v) = each %h){
          $rnaseqer_characteristics{$k}{$v}++;
+         $occurrences_per_type{$k}++;
       }
     }
     my @factors;
@@ -414,8 +418,8 @@ sub column_headers_for_studies {
   @result = grep { not_in_blacklist($_) } @result;
   @result = uniq @result;
   @result = sort @result;
-  if (@result > 10 ) {
-     @result = grep {"developmental_stage organism_part" =~ /$_/} @result; 
+  if($runs_total > 100) {
+      @result = grep {$occurrences_per_type{$_} * 20 > $runs_total} @result;
   }
   return \@result;
 }
