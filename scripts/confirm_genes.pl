@@ -626,7 +626,7 @@ sub create_transcript_file {
 
 	my $file = "${prefix}BLAT_TRANSCRIPT_BEST.gff";
 
-	return if $file; # don't rebuild the file every single time
+	return if -e $file; # don't rebuild the file every single time
 
         my $trinity = -e "${gffdir}/${prefix}BLAT_Trinity_BEST.gff" ? "${prefix}BLAT_Trinity_BEST.gff" : '';
 	my $isoseq  = -e "${gffdir}/${prefix}BLAT_IsoSeq_BEST.gff"  ? "${prefix}BLAT_IsoSeq_BEST.gff"  : '';
