@@ -54,8 +54,9 @@ if ($balancers) {
 
 foreach my $chrom (sort keys %$chr_lengths) {
 
-  my $fname = $wormbase->gff_splits . "/${chr_prefix}${chrom}_gmap2pmap";
+  my $fname = "${chr_prefix}${chrom}_gmap2pmap.test";
   $fname .= ($gff3) ? ".gff3" : ".gff";
+  print "writing $fname\n";
   open(my $out_fh, ">$fname") or $log->log_and_die("Could not open $fname for writing\n");
 
   if (exists $markers->{$chrom}) {
@@ -251,6 +252,10 @@ foreach my $chrom (sort keys %$chr_lengths) {
               }
             }
           } elsif (not exists $this_br->{start} and not exists $this_br->{end}) {
+	    if (!defined $this_br->{genes}) {
+	      warn "Found an empty gene array for (" . $bal->{name} . "), expecting 2 genes to define the limits. Got 0\n";
+	      next;
+	    }
             my @genes = @{$this_br->{genes}};
             if (scalar(@genes) != 2) {
               warn "When no end-limits are defined (" . $bal->{name} . "), expecting 2 genes to define the limits. Got " . scalar(@genes) . "\n";
