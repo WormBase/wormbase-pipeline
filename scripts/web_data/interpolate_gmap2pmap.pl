@@ -54,7 +54,7 @@ if ($balancers) {
 
 foreach my $chrom (sort keys %$chr_lengths) {
 
-  my $fname = "${chr_prefix}${chrom}_gmap2pmap.test";
+  my $fname = $wormbase->gff_splits . "/${chr_prefix}${chrom}_gmap2pmap";
   $fname .= ($gff3) ? ".gff3" : ".gff";
   print "writing $fname\n";
   open(my $out_fh, ">$fname") or $log->log_and_die("Could not open $fname for writing\n");
