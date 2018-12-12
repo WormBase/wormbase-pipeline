@@ -8,7 +8,7 @@ use JSON;
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
-use AGR;
+use Modules::AGR;
 
 
 my ($debug, $test, $verbose, $store, $wormbase);
@@ -34,7 +34,7 @@ if ( $store ) {
 }
 
 my $tace = $wormbase->tace;
-my $date = &get_rfc_date();
+my $date = AGR::get_rfc_date();
 my $alt_date = join("/", $date =~ /^(\d{4})(\d{2})(\d{2})/);
 my $taxid = $wormbase->ncbi_tax_id;
 my $full_name = $wormbase->full_name;
