@@ -50,7 +50,7 @@ for my $k (keys %{$conf}){
     sprintf( "%s %s", ucfirst($spe), $cies );
   $species_conf->{meta}->{"species.species_taxonomy_id"} //= $taxon_id;
   $species_conf->{meta}->{"species.taxonomy_id"} //= $taxon_id;
-  $species_conf->{meta}->{"species.url"} //= join( "_", $spe, $cies, $bioproject);
+  $species_conf->{meta}->{"species.url"} //= join( "_", ucfirst($spe), $cies, $bioproject);
   $species_conf->{meta}->{"assembly.default"} //= $assembly_version;
   $species_conf->{meta}->{"assembly.name"} //= $assembly_version;
 

@@ -23,8 +23,8 @@ my (
   $host, $compara_host,
   $user, $compara_user, 
   $port, $compara_port,
-  $pass, $compara_pass,
-  $test,
+  $pass,
+  $gene_id,
 );
 
 
@@ -39,15 +39,14 @@ my (
   'compara_user=s'   => \$compara_user,
   'compara_host=s'   => \$compara_host,
   'compara_port=s'   => \$compara_port,
-  'compara_pass=s'   => \$compara_pass,
-  'test'             => \$test,
+  'gene_id=s' => \$gene_id,
 );
 
     
 # get a compara dba
 my $compara_db = Bio::EnsEMBL::Compara::DBSQL::DBAdaptor->new( -url => sprintf( 'mysql://%s:%s@%s:%d/%s',
                                                                                 $compara_user, 
-                                                                                $compara_pass,
+                                                                                "",
                                                                                 $compara_host,
                                                                                 $compara_port,
                                                                                 $compara_dbname),
@@ -58,59 +57,71 @@ my $core_db = Bio::EnsEMBL::DBSQL::DBAdaptor->new( -dbname => $dbname,
                                                    -user => $user, 
                                                    -pass => $pass );
 
-my @all_genes;
+my $gene = $gene_id ? lookup_gene($core_db, $gene_id) : choose_best_gene(get_candidate_genes($core_db, $compara_db));
 
-# longest slice is bound to have multiple genes, right?
-SEQ: for my $slice (sort { $b->length <=> $a->length } @{$core_db->get_SliceAdaptor->fetch_all('toplevel')}) {
+store_gene_sample( $core_db, $gene);
 
-  for my $g (sort { $a->start <=> $b->start } @{$slice->get_all_Genes_by_type('protein_coding')}) {
-    my $stats = { 
-      description     => [],
-      domains         => [],
-      model_orthologs => [],
-    };
+sub lookup_gene {
+  my ($core_db, $gene_id) = @_;
+  return $core_db->get_GeneAdaptor->fetch_by_stable_id($gene_id);
+}
+sub get_candidate_genes {
+  my ($core_db, $compara_db) = @_;
+  my @all_genes;
 
-    push @{$stats->{description}}, $g->description if defined $g->description and $g->description !~ /Uncharacterized/i;
-    push @{$stats->{description}}, "display_xref: ".$g->display_xref->display_id if defined $g->display_xref;
-    
-    my @domains;
-    for my $feature (@{$g->canonical_transcript->translation->get_all_DomainFeatures}){
-      push @domains, $feature->interpro_ac if $feature->interpro_ac;
-    }
-    @domains= uniq(@domains);
-    $stats->{domains} = \@domains;
-    my $gm = $compara_db->get_GeneMemberAdaptor->fetch_by_stable_id($g->stable_id);
-    for my $target_species ('homo_sapiens',
-                                'mus_musculus',
-                                'danio_rerio',
-                                'drosophila_melanogaster',
-                                'saccharomyces_cerevisiae',
-                                'caenorhabditis_elegans_prjna13758') {
-      for my $homology (@{$compara_db->get_HomologyAdaptor->fetch_all_by_Member($gm, -TARGET_SPECIES => $target_species)}) {
-        if ($homology->description() eq 'ortholog_one2one') {
-          push @{$stats->{model_orthologs}}, $target_species;
+  SEQ: for my $slice (sort { $b->length <=> $a->length } @{$core_db->get_SliceAdaptor->fetch_all('toplevel')}) {
+
+    for my $g (sort { $a->start <=> $b->start } @{$slice->get_all_Genes_by_type('protein_coding')}) {
+      my $stats = { 
+        description     => [],
+        domains         => [],
+        model_orthologs => [],
+      };
+
+      push @{$stats->{description}}, $g->description if defined $g->description and $g->description !~ /Uncharacterized/i;
+      push @{$stats->{description}}, "display_xref: ".$g->display_xref->display_id if defined $g->display_xref;
+      
+      my @domains;
+      for my $feature (@{$g->canonical_transcript->translation->get_all_DomainFeatures}){
+        push @domains, $feature->interpro_ac if $feature->interpro_ac;
+      }
+      @domains= uniq(@domains);
+      $stats->{domains} = \@domains;
+      my $gm = $compara_db->get_GeneMemberAdaptor->fetch_by_stable_id($g->stable_id);
+      for my $target_species ('homo_sapiens',
+                                  'mus_musculus',
+                                  'danio_rerio',
+                                  'drosophila_melanogaster',
+                                  'saccharomyces_cerevisiae',
+                                  'caenorhabditis_elegans_prjna13758') {
+        for my $homology (@{$compara_db->get_HomologyAdaptor->fetch_all_by_Member($gm, -TARGET_SPECIES => $target_species)}) {
+          if ($homology->description() eq 'ortholog_one2one') {
+            push @{$stats->{model_orthologs}}, $target_species;
+          }
         }
       }
+      
+      push @all_genes, {
+        gene => $g,
+        stats => $stats,
+        score => &score($stats)
+      };
+      last SEQ if @all_genes  > 1000;
     }
-    
-    push @all_genes, {
-      gene => $g,
-      stats => $stats,
-      score => &score($stats)
-    };
-    last SEQ if @all_genes  > ($test ? 50 : 1000);
   }
+  return @all_genes;
 }
 
-my ($best, $second, $third) = sort {
-  $b->{score} <=> $a->{score}
-} @all_genes;
+sub choose_best_gene {
+  my ($best, $second, $third) = sort {
+    $b->{score} <=> $a->{score}
+  } @_;
 
-print "Third place: " . &choice_to_string($third) if $test;
-print "Second place: " . &choice_to_string($second) if $test;
-print "Chose gene " . &choice_to_string($best);
+  print "Chose gene " . &choice_to_string($best);
+  return $best->{gene};
+}
 
-&store_gene_sample( $core_db, $best->{gene} ) unless ($test);
+
 
 
 #######################################3

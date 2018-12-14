@@ -70,7 +70,7 @@ foreach my $dba (@$all_dbas) {
 # 
 my $outdir = "$gxa_staging_dir/WBPS${rel_num}";
 make_path $outdir;
-
+@entries = sort { $a->{species} cmp $b->{species} or $a->{bioproject} cmp $b->{bioproject} } @entries;
 foreach my $entry (@entries) {
   foreach my $file_name (@{$entry->{to_copy}}) {
     my $f = join ("/", $ftp_source_dir, $entry->{species}, $entry->{bioproject}, $file_name);
@@ -84,7 +84,7 @@ foreach my $entry (@entries) {
 # Write the summary file
 #
 open(my $out_fh, ">$outdir/assembly_names.txt") or die "Could not open the assembly_names.txt file for writing\n";
-foreach my $entry (sort { $a->{species} cmp $b->{species} or $a->{bioproject} cmp $b->{bioproject} } @entries) {
+foreach my $entry (@entries){
   printf $out_fh "%s\t%s\t%d\t%s\n", $entry->{species}, $entry->{bioproject}, $entry->{taxon}, $entry->{assembly};
 }
 close($out_fh);

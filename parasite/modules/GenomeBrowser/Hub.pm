@@ -14,7 +14,7 @@
 package GenomeBrowser::Hub;
 
 use ProductionMysql;
-use GenomeBrowser::Resources;
+use PublicResources::Rnaseq;
 use GenomeBrowser::Deployment;
 use File::Path qw(make_path);
 use File::Slurp qw(write_file);
@@ -29,7 +29,7 @@ sub new {
       "$ENV{PARASITE_SCRATCH}/jbrowse/WBPS$ENV{PARASITE_VERSION}";
     return bless {
         dir       => "$args{root_dir}/hub",
-        resources => GenomeBrowser::Resources->new("$args{root_dir}/Resources"),
+        resources => PublicResources::Rnaseq->new("$args{root_dir}/Resources"),
     }, $class;
 }
 
@@ -73,7 +73,7 @@ sub make_hub {
     my $_Species = ucfirst($species);
     my $assembly =
       ProductionMysql->staging->meta_value( $core_db, "assembly.name" );
-    my ( $attribute_query_order, $location_per_run_id, @studies ) =
+    my @studies =
       $self->{resources}->get( $core_db, $assembly );
     return unless @studies;
     make_path( $self->path( $_Species, "doc" ) );
@@ -85,13 +85,14 @@ sub make_hub {
         &create_study_doc( $self->path( $_Species, "doc", "$study_id.html" ),
             $study );
         push @study_tracks,
-          &study_track( $study_id, $study->{study_description} );
+          &study_track( $study_id, $study->{study_description_full} );
         for my $run ( @{ $study->{runs} } ) {
             my $run_id = $run->{run_id};
             &create_run_doc( $self->path( $_Species, "doc", "$run_id.html" ),
                 $study, $run, );
-            my $url = GenomeBrowser::Deployment::sync_ebi_to_sanger( $run_id,
-                $location_per_run_id->{$run_id}, %opts );
+            my $url = GenomeBrowser::Deployment::sync_ebi_to_sanger(
+                $species, $assembly, $run_id,
+                $run->{data_files}{bigwig}, %opts );
             push @run_tracks,
               &run_track( $study_id, $run_id, $run->{run_description_short}, $run->{run_description_full}, $url );
         }
@@ -103,15 +104,15 @@ sub make_hub {
     write_file($self->path($_Species, "genomes.txt"), "genome $assembly\ntrackDb trackDb.txt\n");
     &create_hub_file( $self->path($_Species, "hub.txt") , $species);
 }
-
+#Maybe: same format as JBrowse?
 sub study_track {
-    my ( $study_id, $study_description ) = @_;
+    my ( $study_id, $study_description_full ) = @_;
     return (
         "track $study_id
 superTrack on
 group $study_id
 shortLabel $study_id
-longLabel $study_description
+longLabel $study_description_full
 html doc/$study_id
 "
     );
@@ -119,6 +120,8 @@ html doc/$study_id
 
 sub run_track {
     my ( $study_id, $run_id, $run_description_short, $run_description_full, $url ) = @_;
+    my $short_label = join(": ", grep {$_} $run_id, $run_description_short);
+    my $full_label = join(": ", grep {$_} $run_id, $run_description_full);
     return (
         "track $run_id
 parent $study_id
@@ -139,19 +142,12 @@ sub create_trackDb {
     write_file( $path,{binmode => ':utf8'}, join( "\n", @tracks ) );
 }
 
-sub _study_intro {
-    my $study = shift;
-    my $si = $study->{study_id};
-    my $sd = $study->{study_description};
-    return $sd ? "Study $si: $sd\n" : "Study $si\n"; 
-}
-
 #TODO I'm not sure where this gets displayed
 sub create_study_doc {
     my ( $path, $study ) = @_;
-    my $result = &_study_intro($study);
-    write_file( $path, {binmode => ':utf8'}, $result );
+    write_file( $path, {binmode => ':utf8'}, $study->{study_description_full} );
 }
+#TODO move some of this to RnaseqerMetadata?
 my @blacklist = (
  "bioproject_id",
   "species",
@@ -172,15 +168,12 @@ my @blacklist = (
 sub create_run_doc {
     my ( $path, $study, $run ) = @_;
 
-    my $rd = $run->{run_description_full};
     my $result = "<table><th>$d</th>";
-    $result .= sprintf "<b>Run $rd</b>\n" if $rd; 
-    $result .= "\n";
+    $result .= sprintf("<b>Run %s: %s</b>\n\n", $run->{run_id}, $run->{run_description_full}); 
     for my $k ( sort keys $run->{attributes} ) {
         next if grep {$_ eq $k} @blacklist;
         ( my $property_name = $k ) =~ s/_/ /g;
-        $property_name = ucfirst($property_name)
-          if $property_name eq lc($property_name);
+        $property_name = ucfirst($property_name) if $property_name eq lc($property_name);
         $property_name = "Library size (reads)" if $k eq "library_size_reads";
         my $property_value = $run->{attributes}{$k};
         $result .= sprintf "<tr><td>%s</td><td>%s</td></tr>", $property_name, $property_value;

@@ -2,20 +2,21 @@
 
 set -e
 
-if [ ! -f "$1" ] ; then echo "Usage: $0 <species/species.fa>" ; exit 1 ; fi 
+if [ ! -f "$1" ] ; then echo "Usage: $0 species/species.fa [roundworm/flatworm]" ; exit 1 ; fi 
  
 module load busco
 if [ ! -d "$BUSCO" ] ; then echo "Importing BUSCO didn't work!" ; exit 1 ; fi
 
 fasta=$1
 species=$(basename $(dirname $fasta) )
-core_db=$($PARASITE_STAGING_MYSQL -e 'show databases' | grep "${species}_core_${PARASITE_VERSION}_${ENSEMBL_VERSION}" | head -n 1)
-if [ ! "core_db" ] ; then echo "Could not find core db for species $species " ; exit 1 ; fi
 
-if [ 1 -eq $($PARASITE_STAGING_MYSQL --column-names=FALSE $core_db -e 'select count(*) from meta where meta_value="Nematoda";' ) ] ; then
+phylum=${2}
+core_db=$($PARASITE_STAGING_MYSQL -e 'show databases' | grep "${species}_core_${PARASITE_VERSION}_${ENSEMBL_VERSION}" | head -n 1)
+
+if [ "$phylum" == roundworm ] || [ 1 -eq "$($PARASITE_STAGING_MYSQL --column-names=FALSE $core_db -e 'select count(*) from meta where meta_value="Nematoda";' )" ] ; then
   species_parameter_for_augustus=caenorhabditis
   busco_library=$BUSCO/nematoda_odb9
-elif [ 1 -eq $($PARASITE_STAGING_MYSQL --column-names=FALSE $core_db -e 'select count(*) from meta where meta_value="Platyhelminthes";') ] ; then
+elif [ "$phylum" == flatworm ] || [ 1 -eq "$($PARASITE_STAGING_MYSQL --column-names=FALSE $core_db -e 'select count(*) from meta where meta_value="Platyhelminthes";')" ] ; then
   species_parameter_for_augustus=schistosoma
   busco_library=$BUSCO/metazoa_odb9
 else
@@ -44,6 +45,7 @@ fi
 result=$BUSCO_TMP/run_$species/short_summary_${species}.txt
 
 if [ ! -f "$result" ] ; then >&2 echo "Could not find the result file $result - did BUSCO succeed? " ; exit 1 ; fi
+if [ ! "$core_db" ] ; then  >&2 echo "No core db - go read $result. Finishing " ; exit; fi  
 
 ${PARASITE_STAGING_MYSQL}-ensrw $core_db -e 'delete from meta where meta_key like "assembly.busco%"'
 

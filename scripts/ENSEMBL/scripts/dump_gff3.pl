@@ -86,7 +86,6 @@ while( my $slice = shift @slices) {
   my $genes = $slice->get_all_Genes();
   while( my $gene=shift @$genes) {
     my $gene_gff_id = 'gene:'.$gene->stable_id();
-    
     my %gene_to_dump = (
       gff_id    => $gene_gff_id,
       seqname   => $slice_name,
@@ -95,8 +94,19 @@ while( my $slice = shift @slices) {
       strand    => $gene->strand(),
       display => $gene->stable_id(), 
       gff_source  => (defined $gene->analysis->gff_source) ? $gene->analysis->gff_source : "WormBase",
-      attribs   => { biotype => $gene->biotype, locus => (defined $gene->display_xref()) ? $gene->display_xref->display_id() : undef },
-        );
+      attribs   => {
+           biotype => $gene->biotype,
+      },
+    );
+    if ($gene->display_xref()){
+      $gene_to_dump{attribs}{locus} = $gene->display_xref->display_id();
+    }
+    if (my ($description, $description_source, $description_source_acc) = ($gene->description // "") =~ /(.*?)\s*\[Source:(.*);Acc:(.*)\]/){
+      $gene_to_dump{attribs}{description} = $description;
+      $gene_to_dump{attribs}{description_source} = $description_source;
+      $gene_to_dump{attribs}{description_source_acc} = $description_source_acc;
+    }
+
 
     my $all_transcripts = $gene->get_all_Transcripts();
     while( my $transcript = shift @{$all_transcripts}) {

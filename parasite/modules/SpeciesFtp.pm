@@ -8,7 +8,17 @@ sub new {
 sub current_staging {
   return new(shift, join( "/", $ENV{PARASITE_SCRATCH},"dumps", "WBPS$ENV{PARASITE_VERSION}", "FTP"), $ENV{PARASITE_VERSION}); 
 }
-
+sub release {
+  my ($class, $parasite_version, $release_folder) = @_;
+  $release_folder //= "WBPS$parasite_version";
+  return new($class, join( "/", "/nfs/ftp/pub/databases/wormbase/parasite/releases", $release_folder, "species"), $parasite_version);
+}
+sub dot_next {
+  return release(shift, $ENV{PARASITE_VERSION}, ".next");
+}
+sub current_release {
+  return release(shift, $ENV{PARASITE_VERSION});
+}
 sub path_to {
   my ($self, $core_db, $extension, $zipped) = @_;
   $core_db = lc ($core_db);
