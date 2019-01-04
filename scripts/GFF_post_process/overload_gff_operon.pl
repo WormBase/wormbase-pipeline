@@ -53,7 +53,7 @@ my ($operon_genes) = &get_operon_data();
 my $prefix_name = $wormbase->pep_prefix; # 'CE' for elegans, 'BM' for brugia
 
 while (<$gff_in_fh>){
-  unless(/operon\s+operon/){
+  unless((/operon\s+operon/) || (/dicistronic_mRNA\s+operon/)){
     print $gff_out_fh $_;
     next;
   }
