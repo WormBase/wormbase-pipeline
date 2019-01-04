@@ -74,6 +74,7 @@ unless($format eq 'record') {
 
 my $i = $dbh->fetch_many(-query=>qq{find Gene Species="${\$wormbase->long_name}"});
 while (my $gene = $i->next) {
+    next if $gene->name =~ /^WBGene/;
     my $name = $gene->Public_name || 'not known';
     my $molecular_name = $gene->Molecular_name || 'not known';
     
