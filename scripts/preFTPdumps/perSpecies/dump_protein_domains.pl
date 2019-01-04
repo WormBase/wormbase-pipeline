@@ -53,7 +53,10 @@ my $cdses = $db->fetch_many(-query => "find CDS Corresponding_protein; Species=\
 while (my $cds = $cdses->next){
   my $protein = $cds->Corresponding_protein;
   my @motifs = grep {/INTERPRO:/} $protein->Motif_homol;
-  print $out join("\t",($cds->Gene,$cds->Gene->Public_name,$protein,
+  my $gene = $cds->Gene;
+  next if $gene->name !~ /^WBGene/;
+
+  print $out join("\t",($gene,$gene->Public_name,$protein,
                       map {"$_". ($_->fetch->Title?' "'.$_->fetch->Title.'"':'')} @motifs)), "\n";
 }
 $db->close();

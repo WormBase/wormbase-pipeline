@@ -45,7 +45,7 @@ my $db = Ace->connect(-path => $database ) or $log->log_and_die("Could not conne
 my $full_name = $wormbase->full_name;
 my $tax_id = $wormbase->ncbi_tax_id;
 
-my $gene_it = $db->fetch_many(-query => "Find Gene; Species=\"${full_name}\"");
+my $gene_it = $db->fetch_many(-query => "Find Gene; Species=\"${full_name}\"; WBGene*");
 while(my $gene=$gene_it->next){
   if ($other_names) {
     print $of join("\t",$gene,$gene->Status,$gene->Sequence_name,$gene->CGC_name,$gene->Other_name),"\n";    

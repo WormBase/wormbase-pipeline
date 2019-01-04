@@ -42,7 +42,7 @@ $log->write_to("writing to $outfile\n");
 
 print $of "#" . join("\t",qw(WormPep CDS UniProtAc status Description)) . "\n";
 
-my $iterator = $db->fetch_many(-query=>"find Protein Species=\"${\$wormbase->long_name}\"; Live",-filltag=>'Database');
+my $iterator = $db->fetch_many(-query=>"find Protein Species=\"${\$wormbase->long_name}\"; Live; History",-filltag=>'Database');
 while (my $p = $iterator->next) {
    my $swissprot_acc  = $p->Database?$p->Database(0)->at('SwissProt.UniProtAcc[1]'):'';
    my $uniprot_acc = $p->Database?$p->Database(0)->at('UniProt.UniProtAcc[1]'):'';
