@@ -4,7 +4,7 @@ use strict;
 use Carp;
 use File::Path qw(make_path);
 use File::Slurp qw(write_file);
-use List::Util qw(sum);
+use List::Util qw(sum pairmap);
 use List::MoreUtils qw(uniq);
 use JSON;
 use SpeciesFtp;
