@@ -59,7 +59,7 @@ $log->write_to("connecting to $database\n");
 my $dbh = Ace->connect(-path => $database ) or $log->log_and_die("Connection failure: ".  Ace->error );
 
 $log->write_to("Querying for genes...\n");
-my @genes = $dbh->fetch(-query=>"find Gene WHERE Ortholog AND WBGene* AND Species=\"$full_name\"");
+my @genes = $dbh->fetch(-query=>"find Gene WHERE Ortholog AND SMap AND WBGene* AND Species=\"$full_name\"");
 foreach my $gene (@genes) {
   my $nm = $gene->Public_name;
   my @orthologs = $gene->Ortholog;
