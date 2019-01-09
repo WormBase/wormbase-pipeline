@@ -48,7 +48,7 @@ GetOptions ("help"       => \$help,
 	    "store:s"    => \$store,
 	    "database:s" => \$database, # database to check
 	    "build"      => \$build,    # Checks specific to a full database containing genes and models and proteins.
-	    "species"    => \$species,
+	    "species:s"  => \$species,
 	    );
 
 
