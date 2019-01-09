@@ -1,0 +1,216 @@
+---
+AnomalousList: {}
+AsmReleaseDate_GenBank: 2018/12/28 00:00
+AsmReleaseDate_RefSeq: 1/01/01 00:00
+AsmUpdateDate: 2018/12/28 00:00
+AssemblyAccession: GCA_900618025.1
+AssemblyClass: haploid
+AssemblyDescription: {}
+AssemblyName: B_timori_Indonesia_v1_0_4_001_upd
+AssemblyStatus: Scaffold
+AssemblyType: haploid
+BioSampleAccn: SAMEA2160788
+BioSampleId: 2370503
+Biosource:
+  InfraspeciesList: {}
+  Isolate: {}
+  Sex: {}
+ChainId: 900618025
+ContigN50: 2306
+Coverage: 136
+EnsemblName: {}
+ExclFromRefSeq: {}
+FromType: {}
+FtpPath_Assembly_rpt: ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/900/618/025/GCA_900618025.1_B_timori_Indonesia_v1_0_4_001_upd/GCA_900618025.1_B_timori_Indonesia_v1_0_4_001_upd_assembly_report.txt
+FtpPath_GenBank: ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/900/618/025/GCA_900618025.1_B_timori_Indonesia_v1_0_4_001_upd
+FtpPath_RefSeq: {}
+FtpPath_Regions_rpt: {}
+FtpPath_Stats_rpt: ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/900/618/025/GCA_900618025.1_B_timori_Indonesia_v1_0_4_001_upd/GCA_900618025.1_B_timori_Indonesia_v1_0_4_001_upd_assembly_stats.txt
+GB_BioProjects:
+  Bioproj:
+    BioprojectAccn: PRJEB4663
+    BioprojectId: 261625
+GB_Projects: {}
+GbUid: 8168828
+LastMajorReleaseAccession: GCA_900618025.1
+LastUpdateDate: 2018/12/28 00:00
+LatestAccession: {}
+Meta: '<Stats> <Stat category="alt_loci_count" sequence_tag="all">0</Stat> <Stat category="chromosome_count" sequence_tag="all">0</Stat> <Stat category="contig_count" sequence_tag="all">38539</Stat> <Stat category="contig_l50" sequence_tag="all">7765</Stat> <Stat category="contig_n50" sequence_tag="all">2306</Stat> <Stat category="non_chromosome_replicon_count" sequence_tag="all">0</Stat> <Stat category="replicon_count" sequence_tag="all">0</Stat> <Stat category="scaffold_count" sequence_tag="all">23963</Stat> <Stat category="scaffold_count" sequence_tag="placed">0</Stat> <Stat category="scaffold_count" sequence_tag="unlocalized">0</Stat> <Stat category="scaffold_count" sequence_tag="unplaced">0</Stat> <Stat category="scaffold_l50" sequence_tag="all">3498</Stat> <Stat category="scaffold_n50" sequence_tag="all">4919</Stat> <Stat category="total_length" sequence_tag="all">64930714</Stat> <Stat category="ungapped_length" sequence_tag="all">64185138</Stat> </Stats> <FtpSites> <FtpPath type="Assembly_rpt">ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/900/618/025/GCA_900618025.1_B_timori_Indonesia_v1_0_4_001_upd/GCA_900618025.1_B_timori_Indonesia_v1_0_4_001_upd_assembly_report.txt</FtpPath> <FtpPath type="GenBank">ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/900/618/025/GCA_900618025.1_B_timori_Indonesia_v1_0_4_001_upd</FtpPath> <FtpPath type="Stats_rpt">ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/900/618/025/GCA_900618025.1_B_timori_Indonesia_v1_0_4_001_upd/GCA_900618025.1_B_timori_Indonesia_v1_0_4_001_upd_assembly_stats.txt</FtpPath> </FtpSites> <assembly-level>8</assembly-level> <assembly-status>Scaffold</assembly-status> <representative-status>representative genome</representative-status> <submitter-organization>WTSI</submitter-organization>'
+Organism: Brugia timori (nematodes)
+PartialGenomeRepresentation: false
+Primary: 8168818
+PropertyList:
+  string:
+    - full-genome-representation
+    - genbank_has_annotation
+    - has_annotation
+    - latest
+    - latest_genbank
+    - representative
+    - wgs
+RS_BioProjects: {}
+RS_Projects: {}
+RefSeq_category: representative genome
+ReleaseLevel: Major
+ReleaseType: Major
+RsUid: {}
+ScaffoldN50: 4919
+SeqReleaseDate: 2018/12/13 00:00
+SortOrder: 2C99006180259899
+SpeciesName: Brugia timori
+SpeciesTaxid: 42155
+SubmissionDate: 2018/12/13 00:00
+SubmitterOrganization: WTSI
+Synonym:
+  Genbank: GCA_900618025.1
+  RefSeq: {}
+  Similarity: {}
+Taxid: 42155
+UCSCName: {}
+WGS: UZAG01
+uid: 2190831
+---
+AnomalousList: {}
+AsmReleaseDate_GenBank: 2018/12/28 00:00
+AsmReleaseDate_RefSeq: 1/01/01 00:00
+AsmUpdateDate: 2018/12/28 00:00
+AssemblyAccession: GCA_900625125.1
+AssemblyClass: haploid
+AssemblyDescription: {}
+AssemblyName: D_medinensis_Ghana_0011_upd
+AssemblyStatus: Scaffold
+AssemblyType: haploid
+BioSampleAccn: SAMEA1034745
+BioSampleId: 773591
+Biosource:
+  InfraspeciesList: {}
+  Isolate: {}
+  Sex: {}
+ChainId: 900625125
+ContigN50: 359924
+Coverage: 507
+EnsemblName: {}
+ExclFromRefSeq: {}
+FromType: {}
+FtpPath_Assembly_rpt: ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/900/625/125/GCA_900625125.1_D_medinensis_Ghana_0011_upd/GCA_900625125.1_D_medinensis_Ghana_0011_upd_assembly_report.txt
+FtpPath_GenBank: ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/900/625/125/GCA_900625125.1_D_medinensis_Ghana_0011_upd
+FtpPath_RefSeq: {}
+FtpPath_Regions_rpt: {}
+FtpPath_Stats_rpt: ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/900/625/125/GCA_900625125.1_D_medinensis_Ghana_0011_upd/GCA_900625125.1_D_medinensis_Ghana_0011_upd_assembly_stats.txt
+GB_BioProjects:
+  Bioproj:
+    BioprojectAccn: PRJEB500
+    BioprojectId: 261576
+GB_Projects: {}
+GbUid: 8168908
+LastMajorReleaseAccession: GCA_900625125.1
+LastUpdateDate: 2018/12/28 00:00
+LatestAccession: {}
+Meta: '<Stats> <Stat category="alt_loci_count" sequence_tag="all">0</Stat> <Stat category="chromosome_count" sequence_tag="all">0</Stat> <Stat category="contig_count" sequence_tag="all">1661</Stat> <Stat category="contig_l50" sequence_tag="all">64</Stat> <Stat category="contig_n50" sequence_tag="all">359924</Stat> <Stat category="non_chromosome_replicon_count" sequence_tag="all">0</Stat> <Stat category="replicon_count" sequence_tag="all">0</Stat> <Stat category="scaffold_count" sequence_tag="all">1347</Stat> <Stat category="scaffold_count" sequence_tag="placed">0</Stat> <Stat category="scaffold_count" sequence_tag="unlocalized">0</Stat> <Stat category="scaffold_count" sequence_tag="unplaced">1347</Stat> <Stat category="scaffold_l50" sequence_tag="all">33</Stat> <Stat category="scaffold_n50" sequence_tag="all">665026</Stat> <Stat category="total_length" sequence_tag="all">103750625</Stat> <Stat category="ungapped_length" sequence_tag="all">103582804</Stat> </Stats> <FtpSites> <FtpPath type="Assembly_rpt">ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/900/625/125/GCA_900625125.1_D_medinensis_Ghana_0011_upd/GCA_900625125.1_D_medinensis_Ghana_0011_upd_assembly_report.txt</FtpPath> <FtpPath type="GenBank">ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/900/625/125/GCA_900625125.1_D_medinensis_Ghana_0011_upd</FtpPath> <FtpPath type="Stats_rpt">ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/900/625/125/GCA_900625125.1_D_medinensis_Ghana_0011_upd/GCA_900625125.1_D_medinensis_Ghana_0011_upd_assembly_stats.txt</FtpPath> </FtpSites> <assembly-level>8</assembly-level> <assembly-status>Scaffold</assembly-status> <representative-status>representative genome</representative-status> <submitter-organization>WTSI</submitter-organization>'
+Organism: Dracunculus medinensis (Guinea worm)
+PartialGenomeRepresentation: false
+Primary: 8168898
+PropertyList:
+  string:
+    - full-genome-representation
+    - genbank_has_annotation
+    - has_annotation
+    - latest
+    - latest_genbank
+    - representative
+    - wgs
+RS_BioProjects: {}
+RS_Projects: {}
+RefSeq_category: representative genome
+ReleaseLevel: Major
+ReleaseType: Major
+RsUid: {}
+ScaffoldN50: 665026
+SeqReleaseDate: 2018/12/13 00:00
+SortOrder: 2C99006251259899
+SpeciesName: Dracunculus medinensis
+SpeciesTaxid: 318479
+SubmissionDate: 2018/12/13 00:00
+SubmitterOrganization: WTSI
+Synonym:
+  Genbank: GCA_900625125.1
+  RefSeq: {}
+  Similarity: {}
+Taxid: 318479
+UCSCName: {}
+WGS: UYYG01
+uid: 2190881
+---
+AnomalousList: {}
+AsmReleaseDate_GenBank: 2018/12/28 00:00
+AsmReleaseDate_RefSeq: 1/01/01 00:00
+AsmUpdateDate: 2018/12/28 00:00
+AssemblyAccession: GCA_900617895.1
+AssemblyClass: haploid
+AssemblyDescription: {}
+AssemblyName: H_placei_MHpl1_0011_upd
+AssemblyStatus: Scaffold
+AssemblyType: haploid
+BioSampleAccn: SAMEA1034759
+BioSampleId: 773589
+Biosource:
+  InfraspeciesList:
+    Infraspecie:
+      Sub_type: strain
+      Sub_value: MHpl1
+  Isolate: {}
+  Sex: {}
+ChainId: 900617895
+ContigN50: 14857
+Coverage: 161
+EnsemblName: {}
+ExclFromRefSeq: {}
+FromType: {}
+FtpPath_Assembly_rpt: ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/900/617/895/GCA_900617895.1_H_placei_MHpl1_0011_upd/GCA_900617895.1_H_placei_MHpl1_0011_upd_assembly_report.txt
+FtpPath_GenBank: ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/900/617/895/GCA_900617895.1_H_placei_MHpl1_0011_upd
+FtpPath_RefSeq: {}
+FtpPath_Regions_rpt: {}
+FtpPath_Stats_rpt: ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/900/617/895/GCA_900617895.1_H_placei_MHpl1_0011_upd/GCA_900617895.1_H_placei_MHpl1_0011_upd_assembly_stats.txt
+GB_BioProjects:
+  Bioproj:
+    BioprojectAccn: PRJEB509
+    BioprojectId: 261583
+GB_Projects: {}
+GbUid: 8168848
+LastMajorReleaseAccession: GCA_900617895.1
+LastUpdateDate: 2018/12/28 00:00
+LatestAccession: {}
+Meta: '<Stats> <Stat category="alt_loci_count" sequence_tag="all">0</Stat> <Stat category="chromosome_count" sequence_tag="all">0</Stat> <Stat category="contig_count" sequence_tag="all">40115</Stat> <Stat category="contig_l50" sequence_tag="all">4600</Stat> <Stat category="contig_n50" sequence_tag="all">14857</Stat> <Stat category="non_chromosome_replicon_count" sequence_tag="all">0</Stat> <Stat category="replicon_count" sequence_tag="all">0</Stat> <Stat category="scaffold_count" sequence_tag="all">24923</Stat> <Stat category="scaffold_count" sequence_tag="placed">0</Stat> <Stat category="scaffold_count" sequence_tag="unlocalized">0</Stat> <Stat category="scaffold_count" sequence_tag="unplaced">0</Stat> <Stat category="scaffold_l50" sequence_tag="all">1979</Stat> <Stat category="scaffold_n50" sequence_tag="all">37625</Stat> <Stat category="total_length" sequence_tag="all">259125910</Stat> <Stat category="ungapped_length" sequence_tag="all">248085069</Stat> </Stats> <FtpSites> <FtpPath type="Assembly_rpt">ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/900/617/895/GCA_900617895.1_H_placei_MHpl1_0011_upd/GCA_900617895.1_H_placei_MHpl1_0011_upd_assembly_report.txt</FtpPath> <FtpPath type="GenBank">ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/900/617/895/GCA_900617895.1_H_placei_MHpl1_0011_upd</FtpPath> <FtpPath type="Stats_rpt">ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/900/617/895/GCA_900617895.1_H_placei_MHpl1_0011_upd/GCA_900617895.1_H_placei_MHpl1_0011_upd_assembly_stats.txt</FtpPath> </FtpSites> <assembly-level>8</assembly-level> <assembly-status>Scaffold</assembly-status> <representative-status>representative genome</representative-status> <submitter-organization>WTSI</submitter-organization>'
+Organism: Haemonchus placei (nematodes)
+PartialGenomeRepresentation: false
+Primary: 8168838
+PropertyList:
+  string:
+    - full-genome-representation
+    - genbank_has_annotation
+    - has_annotation
+    - latest
+    - latest_genbank
+    - representative
+    - wgs
+RS_BioProjects: {}
+RS_Projects: {}
+RefSeq_category: representative genome
+ReleaseLevel: Major
+ReleaseType: Major
+RsUid: {}
+ScaffoldN50: 37625
+SeqReleaseDate: 2018/12/13 00:00
+SortOrder: 2C99006178959899
+SpeciesName: Haemonchus placei
+SpeciesTaxid: 6290
+SubmissionDate: 2018/12/13 00:00
+SubmitterOrganization: WTSI
+Synonym:
+  Genbank: GCA_900617895.1
+  RefSeq: {}
+  Similarity: {}
+Taxid: 6290
+UCSCName: {}
+WGS: UZAF01
+uid: 2190851

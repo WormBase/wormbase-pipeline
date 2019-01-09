@@ -9,8 +9,28 @@ my $production_mysql = ProductionMysql->staging;
 # Get these by BioProject
 # Doesn't work when BioProject changed
 
+my $stdin;
+{
+  local $/;
+  $stdin = <>;
+}
 
-my %assemblies = ( %{get_assemblies_for_taxon (6157)}, %{get_assemblies_for_taxon (6231)}); 
+my %assemblies;
+for my $doc (Load($stdin)){
+
+    my $bioproject = $doc->{GB_BioProjects}{Bioproj}{BioprojectAccn};
+    $bioproject = lc $bioproject;
+
+    my $species = $doc->{SpeciesName};
+    $species =~ tr/ /_/;
+    $species = lc $species;
+
+    push @{$assemblies{$species}{$bioproject}{ncbi}}, {
+      assembly_accession => $doc->{AssemblyAccession},
+      assembly_name => $doc->{AssemblyName},
+      report_url =>  $doc->{FtpPath_Assembly_rpt},
+    };
+}
 
 my %report = (
   PARASITE_ONLY => [],
@@ -35,24 +55,23 @@ for my $core_db ($production_mysql->core_databases ){
          assembly_name => $name,
      };
    } else {
-      push @{$report{PARASITE_ONLY}}, $core_db;
+     print Dump { PARASITE_ONLY => { $species => { $bioproject => $core_db }}};
    }
 }
-
 for my $species (keys %assemblies) {
   BIOPROJECT:
   for my $bioproject (keys %{$assemblies{$species}}){
     my @ncbi_assemblies = @{$assemblies{$species}{$bioproject}{ncbi}};
     my $core_db = $assemblies{$species}{$bioproject}{core_db};
     unless ($core_db) {
-       $report{NCBI_ONLY}{$species}{$bioproject} = \@ncbi_assemblies;
+       print Dump { NCBI_ONLY => { $species => { $bioproject => \@ncbi_assemblies }}}; 
        next BIOPROJECT;
     }
     my ($ncbi_assembly, @others) = grep {same_assembly_names($core_db, $_)} @ncbi_assemblies;
     confess @ncbi_assemblies, $core_db if @others;
     if ($ncbi_assembly) {
        my @other_assemblies = grep {not same_assembly_names($ncbi_assembly, $_ )} @ncbi_assemblies;
-       $report{MATCHING_METADATA}{$species}{$bioproject} = {%{$ncbi_assembly}, core_db => $core_db->{name}, other_assemblies => \@other_assemblies };
+       print Dump { MATCHING_METADATA => { $species => { $bioproject => {%{$ncbi_assembly}, core_db => $core_db->{name}, other_assemblies => \@other_assemblies } }}};
        next BIOPROJECT;
     }
     my $scaffold_lengths_core = get_scaffold_lengths_for_core_db($core_db->{name});
@@ -60,17 +79,16 @@ for my $species (keys %assemblies) {
        my @other_assemblies = grep {not same_assembly_names($ncbi_assembly, $_ )} @ncbi_assemblies;
        my $scaffold_lengths_ncbi = get_scaffold_lengths_from_report_url($ncbi_assembly->{report_url});
        if(Data::Compare::Compare ($scaffold_lengths_ncbi, $scaffold_lengths_core)){
-           $report{MATCHING_SCAFFOLD_NAMES}{$species}{$bioproject} = {%{$ncbi_assembly}, core_db => $core_db->{name}, other_assemblies => \@other_assemblies };
+           print Dump { MATCHING_SCAFFOLD_NAMES => { $species => { $bioproject => {%{$ncbi_assembly}, core_db => $core_db->{name}, other_assemblies => \@other_assemblies } }}};
            next BIOPROJECT;
        } elsif (Data::Compare::Compare([sort values %{$scaffold_lengths_ncbi}], [sort values %{$scaffold_lengths_core}])){
-           $report{MATCHING_SCAFFOLD_LENGTHS}{$species}{$bioproject} = {%{$ncbi_assembly}, core_db => $core_db->{name}, other_assemblies => \@other_assemblies };
+           print Dump { MATCHING_SCAFFOLD_LENGTHS  => { $species => { $bioproject => {%{$ncbi_assembly}, core_db => $core_db->{name}, other_assemblies => \@other_assemblies } }}};
            next BIOPROJECT;
        }
     }
-    $report{MISMATCHED}{$species}{$bioproject} = { %{$core_db}, ncbi => \@ncbi_assemblies};
+    print Dump { MISMATCHED => { $species => { $bioproject => { %{$core_db}, ncbi => \@ncbi_assemblies} }}};
   }
 }
-print Dump \%report;
 sub same_assembly_names {
   my ($o1, $o2) = @_;
   return $o1->{assembly_accession} eq $o2->{assembly_accession} && $o1->{assembly_name} eq $o2->{assembly_name};
@@ -97,27 +115,3 @@ sub get_scaffold_lengths_for_core_db {
   return \%result;
 }
 
-sub get_assemblies_for_taxon {
-  my ($taxon) = @_;
-  my %result;
-  local $/ = "--";
-  open(my $fh, "curl -s 'https://www.ncbi.nlm.nih.gov/assembly/organism/browse-organism/$taxon/all/?p\$l=Ajax&page=1&pageSize=1000&sortCol=4&sortDir=-1' | grep -B 2 href |");
-  while(<$fh>){
-    my ($species) = /<td>(.*?) \(/;
-    $species = lc $species;
-    $species =~ tr/ /_/;
-
-    my ($accession, $name) = /<a href="https:\/\/www.ncbi.nlm.nih.gov\/assembly\/(.*?)\/">(.*?)</;
-    my $doc = `curl -s "https://www.ncbi.nlm.nih.gov/assembly/$accession?report=xml&format=text" `;
-    my ($bioproject) = $doc =~ m{BioprojectAccn.*(PR\w+\d+).*\/BioprojectAccn};
-    $bioproject = lc $bioproject;
-    my ($report_url) = $doc =~ m{(ftp://.*assembly_report.txt)};
-    push @{$result{$species}{$bioproject}{ncbi}}, {
-      assembly_accession => $accession,
-      assembly_name => $name,
-      bioproject => $bioproject,
-      report_url => $report_url,
-    };
-  }
-  return \%result;
-}
