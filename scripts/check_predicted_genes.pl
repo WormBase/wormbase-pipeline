@@ -397,8 +397,9 @@ sub main_gene_checks {
     $sequence_names{$gene_model_name} = $method_name; # save all the names and methods
     $sequence_classes{$gene_model_name} = $gene_model->class;
     
-    # check for duplicated sequence structures
-    if ($method_name eq 'curated' || $method_name eq 'non_coding_transcript' || ($method_name =~ /RNA/ && $method_name !~ /pseudogene/ && $gene_model_name =~ /$cds_regex/)) {
+    # check for duplicated or missing sequence structures
+#    if ($method_name eq 'curated' || $method_name eq 'non_coding_transcript' || ($method_name =~ /RNA/ && $method_name !~ /[Pp]seudogene/ && $gene_model_name =~ /$cds_regex/)) {
+    if ($method_name eq 'curated' || $method_name eq 'non_coding_transcript' || ($method_name =~ /RNA/ && $gene_model_name =~ /$cds_regex/)) {
       my ($gene_name) = ($gene_model_name =~ /($cds_regex_noend)/); # get the sequence name without an isoform letter at the end
       # make a hash key out of the exon starts and ends
       my $hash_key = join(':', @exon_coord1) . ',' . join(':', @exon_coord2);
@@ -417,6 +418,12 @@ sub main_gene_checks {
 	  next;
 	} 
 	@clone_locations = $sequence->Transcript;	    
+      } elsif ($class eq 'Pseudogene') {
+	unless (defined $sequence->Pseudogene) {
+	  push(@error1, "ERROR: $class $gene_model has S_parent issues\n");
+	  next;
+	} 
+	@clone_locations = $sequence->Pseudogene;	    
       }
       my ($target_start, $target_end);
       my $found = 0;
@@ -437,7 +444,7 @@ sub main_gene_checks {
 	push(@error1, "ERROR: $class $gene_model_name was not found in the Sequence object\n");
       }
       $hash_key = $sequence->name . ':' . $target_start . ':' . $target_end . ':' . $hash_key; # NB appending the exons hash_key made above
-      if (exists $sequence_structures{$hash_key}) {
+      if ($found && exists $sequence_structures{$hash_key}) {
 	my $other_isoform = $sequence_structures{$hash_key};
 	my $class = $gene_model->class;
 	unless ($gene_model =~ (/F59A3.6/)) { # F59A3.6e and F59A3.6c are identical duplicated isoforms in different locations in this complex locus.
