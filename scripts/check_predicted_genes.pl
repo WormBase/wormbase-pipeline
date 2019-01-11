@@ -173,9 +173,154 @@ my %sequence_structures;
 			       );
 
 
+my %checked_small_genes = (
+			     'B0035.22' => 1,
+			     'B0041.12' => 1,
+			     'B0250.18b' => 1,
+			     'B0302.4' => 1,
+			     'B0348.2b' => 1,
+			     'B0513.2b' => 1,
+			     'B0513.3b' => 1,
+			     'B0546.4c' => 1,
+			     'BE0003N10.6e' => 1,
+			     'C01B4.7d' => 1,
+			     'C01F6.9b' => 1,
+			     'C01F6.9c' => 1,
+			     'C04G2.1b' => 1,
+			     'C08B6.18' => 1,
+			     'C08H9.18' => 1,
+			     'C09E8.6' => 1,
+			     'C12D8.21b' => 1,
+			     'C13G3.12' => 1,
+			     'C16A11.5e' => 1,
+			     'C18D4.12' => 1,
+			     'C32B5.18' => 1,
+			     'C33A12.19b' => 1,
+			     'C33A12.3b' => 1,
+			     'C33H5.13c' => 1,
+			     'C34E10.12b ' => 1,
+			     'C47A10.16' => 1,
+			     'C48A7.16' => 1,
+			     'C49F5.13' => 1,
+			     'C51E3.10b' => 1,
+			     'D1046.18' => 1,
+			     'D2063.4c' => 1,
+			     'F01E11.20' => 1,
+			     'F08A7.1b' => 1,
+			     'F08B12.11' => 1,
+			     'F08G5.5c' => 1,
+			     'F11A6.15' => 1,
+			     'F13G3.10c' => 1,
+			     'F13H10.8b' => 1,
+			     'F19G12.9' => 1,
+			     'F20C5.2f' => 1,
+			     'F20D12.12' => 1,
+			     'F21C10.17' => 1,
+			     'F22F4.4b' => 1,
+			     'F23B2.13b' => 1,
+			     'F23C8.14b' => 1,
+			     'F27B10.1c' => 1,
+			     'F27D4.4b' => 1,
+			     'F28H7.10b' => 1,
+			     'F32F2.1g' => 1,
+			     'F35C8.9' => 1,
+			     'F36A4.5b' => 1,
+			     'F36H9.4c' => 1,
+			     'F37C4.8b' => 1,
+			     'F37H8.6' => 1,
+			     'F38C2.1d' => 1,
+			     'F40F12.9c' => 1,
+			     'F44D12.16' => 1,
+			     'F47G6.1c' => 1,
+			     'F52E10.4d' => 1,
+			     'F52G3.7' => 1,
+			     'F54D7.6' => 1,
+			     'F54D7.7' => 1,
+			     'F55A4.13' => 1,
+			     'F55H12.7b' => 1,
+			     'F56H9.2b' => 1,
+			     'F59A6.1' => 1,
+			     'H03A11.13 ' => 1,
+			     'H12I19.115' => 1,
+			     'H24K24.4e' => 1,
+			     'H40L08.8' => 1,
+			     'K02E2.11' => 1,
+			     'K07C5.13a' => 1,
+			     'K08D9.10' => 1,
+			     'K08E5.5' => 1,
+			     'K08F8.15' => 1,
+			     'K10C9.8c' => 1,
+			     'K11H12.8d' => 1,
+			     'LLC1.2b' => 1,
+			     'M02E1.3' => 1,
+			     'M142.8b' => 1,
+			     'M176.16' => 1,
+			     'R07B7.12b' => 1,
+			     'R11D1.12b' => 1,
+			     'T03G6.7' => 1,
+			     'T04H1.13' => 1,
+			     'T06A1.7b' => 1,
+			     'T09F5.20a' => 1,
+			     'T11F9.21b' => 1,
+			     'T12G3.11' => 1,
+			     'T13A10.64' => 1,
+			     'T21H3.4c' => 1,
+			     'T23F6.3c' => 1,
+			     'T24A6.1b' => 1,
+			     'T24B8.3c' => 1,
+			     'T24B8.4d' => 1,
+			     'T26H5.11' => 1,
+			     'T28F3.11' => 1,
+			     'W02A2.6c' => 1,
+			     'W02D3.13b' => 1,
+			     'W03F8.6c' => 1,
+			     'W03F8.6d' => 1,
+			     'W08A12.2b' => 1,
+			     'W09G3.8b' => 1,
+			     'W10D9.5b' => 1,
+			     'Y105C5A.1285' => 1,
+			     'Y10G11A.90' => 1,
+			     'Y113G7A.22' => 1,
+			     'Y116A8C.28e' => 1,
+			     'Y17D7B.10' => 1,
+			     'Y19D10A.4d' => 1,
+			     'Y39G8B.13' => 1,
+			     'Y40B1A.1b' => 1,
+			     'Y41D4B.13c' => 1,
+			     'Y41E3.1d' => 1,
+			     'Y46G5A.47' => 1,
+			     'Y47D7A.17' => 1,
+			     'Y50D7A.13b' => 1,
+			     'Y51H4A.938a' => 1,
+			     'Y54F10AM.15' => 1,
+			     'Y54G2A.28c' => 1,
+			     'Y57G11C.1142' => 1,
+			     'Y62E10A.12b' => 1,
+			     'Y62E10A.8b' => 1,
+			     'Y65A5A.24' => 1,
+			     'Y66H1A.8a' => 1,
+			     'Y67H2A.10c' => 1,
+			     'Y69A2AR.24a' => 1,
+			     'Y69A2AR.50' => 1,
+			     'Y69A2AR.51' => 1,
+			     'Y71G12A.5' => 1,
+			     'Y73C8B.9a' => 1,
+			     'Y73C8B.9b' => 1,
+			     'Y77E11A.6b' => 1,
+			     'ZC328.8a' => 1,
+			     'ZK180.8a' => 1,
+			     'ZK377.15' => 1,
+			     'ZK381.62' => 1,
+			     'ZK792.12' => 1,
+			     'ZK863.7b' => 1,
+			     'ZK897.10a' => 1,
+			     'ZK897.1f' => 1,
+			    );
 
 
 
+# get Sequence details
+my %Sequence = &sequence_details();
 
 # check CDS/Transcripts/Pseudogenes
 &quick_tests() if !$build; # tests for the curation databases - we assume that all these problems have been fixed by the time we do the Build
@@ -214,8 +359,48 @@ exit(0);
 #
 ##############################################################
 
+# populat hash of locations of features on seqeunces for fast lookup
+sub sequence_details {
+  my $Sequence;
+  
+  $log->write_to("\nLoad Sequence loci positions\n");
 
+  my %class_name = (
+		    Gene => 'Gene_child',
+		    CDS  => 'CDS_child',
+		    Transcript => 'Transcript',
+		    Pseudogene => 'Pseudogene',
+		    Transposon => 'Transposon',
+		   );
 
+  my @sequences = $db->fetch (-query => "FIND Sequence where Genomic_canonical OR Link"); # clones or chromosomes
+  foreach my $sequence (@sequences) {
+    my $sequence_name = $sequence->name;
+    foreach my $class (keys %class_name) {
+      
+      my $tag = $class_name{$class};
+      if (!defined $sequence->$tag) {next}
+      my @features = $sequence->$tag;
+
+      foreach my $feature (@features) {
+	if (!defined $feature) {$log->write_to("ERROR: Sequence $sequence_name has an undefined $tag entry - very odd!\n"); next}
+	my $name = $feature->name;
+	if (!defined $name) {$log->write_to("ERROR: Sequence $sequence_name has a $tag entry with no name - very odd!\n"); next}
+	if (!defined $feature->right) {$log->write_to("ERROR: Sequence $sequence_name has a $tag entry with no start location!\n"); next}
+	my $start = $feature->right->name;
+	if (!defined $start) {$log->write_to("ERROR: Sequence $sequence_name has a $tag entry $name with no start location!\n"); next}
+	if (!defined $feature->right->right) {$log->write_to("ERROR: Sequence $sequence_name has a $tag entry with no end location!\n"); next}
+	my $end = $feature->right->right->name;
+	if (!defined $end) {$log->write_to("ERROR: Sequence $sequence_name has a $tag entry $name with no end location!\n"); next}
+	@{$Sequence{$sequence_name}{$class}{$name}} = ($start, $end);
+      }
+    }
+  }
+
+  return %Sequence;
+}
+
+##############################################################
 # check on CDS/Transcripts/Pseudogenes
 sub  quick_tests {
 
@@ -350,7 +535,7 @@ sub do_a_quick_test {
 }
 
 ##########################################
-# main gene checks
+# main structure checks
 
 sub main_gene_checks {
 
@@ -360,19 +545,24 @@ sub main_gene_checks {
 			    'R74.3c' => 1, # 23bp intron which switches frame to give an alternate 3' end to the protein.
 			   );
 
+  $log->write_to("\nMain structure checks\n");
 
 
   my @Models = $db->fetch (-query => 'Find All_genes where (Species = "'.$speciesfn.'")'); # CDS, Transcripts, Pseudogenes, etc
+###  my @Models = $db->fetch(CDS  => 'CBG02690');
 
   my $model_count = scalar @Models;
   $log->write_to("\nFound $model_count $speciesfn Gene models to check.\n\n");
 
 
+  my $count=0;
 
  CHECK_GENE:
   
   while (my $gene_model = shift @Models) {
+    if (++$count % 1000 == 0) {print "Done $count gene models\n"}
     my $gene_model_name = $gene_model->name;
+    my $class = $gene_model->class;
 
     unless (defined $gene_model->Method) {
       push(@error1,"ERROR: $gene_model appears to be incomplete - no Method\n");
@@ -380,86 +570,53 @@ sub main_gene_checks {
     }
 
     my $method_name = $gene_model->Method->name;
+    if ($class eq 'CDS' && !($method_name eq 'curated' || $method_name eq 'history' || $method_name eq 'Transposon_CDS')) {next}
 
     unless ($gene_model_name =~ /$cds_regex/) {
       push(@error1,"WARNING: The name of $gene_model_name is invalid\n") if (($method_name !~ /history|tRNA|Transposon|pre_miRNA|miRNA_primary_transcript|non_coding_transcript_isoformer/) && ($gene_model_name !~ /\S+.t\d+/));
     }
-    
-    my @exon_coord1 = sort by_number ($gene_model->get('Source_exons',1));
-    my @exon_coord2 = sort by_number ($gene_model->get('Source_exons',2));
-    
-    # check for duplicated sequence names
-    if (exists $sequence_names{$gene_model_name}) {
-      my $class = $gene_model->class;
-      push(@error1, "ERROR: $class $gene_model is both a $method_name and a $sequence_classes{$gene_model_name} $sequence_names{$gene_model_name}\n");
-    }
-    
-    $sequence_names{$gene_model_name} = $method_name; # save all the names and methods
-    $sequence_classes{$gene_model_name} = $gene_model->class;
-    
-    # check for duplicated or missing sequence structures
-#    if ($method_name eq 'curated' || $method_name eq 'non_coding_transcript' || ($method_name =~ /RNA/ && $method_name !~ /[Pp]seudogene/ && $gene_model_name =~ /$cds_regex/)) {
-    if ($method_name eq 'curated' || $method_name eq 'non_coding_transcript' || ($method_name =~ /RNA/ && $gene_model_name =~ /$cds_regex/)) {
-      my ($gene_name) = ($gene_model_name =~ /($cds_regex_noend)/); # get the sequence name without an isoform letter at the end
-      # make a hash key out of the exon starts and ends
-      my $hash_key = join(':', @exon_coord1) . ',' . join(':', @exon_coord2);
-      my $sequence = $gene_model->Sequence;
-      my $class = $gene_model->class;
-      my @clone_locations;
-      if ($class eq 'CDS') {
-	unless (defined $sequence->CDS_child) {
-	  push(@error1, "ERROR: $class $gene_model has S_parent issues\n");
-	  next;
-	}
-	@clone_locations = $sequence->CDS_child;
-      } elsif ($class eq 'Transcript') {
-	unless (defined $sequence->Transcript) {
-	  push(@error1, "ERROR: $class $gene_model has S_parent issues\n");
-	  next;
-	} 
-	@clone_locations = $sequence->Transcript;	    
-      } elsif ($class eq 'Pseudogene') {
-	unless (defined $sequence->Pseudogene) {
-	  push(@error1, "ERROR: $class $gene_model has S_parent issues\n");
-	  next;
-	} 
-	@clone_locations = $sequence->Pseudogene;	    
-      }
-      my ($target_start, $target_end);
-      my $found = 0;
-      foreach my $target_location ( @clone_locations ) {
-	next unless ($target_location->name eq $gene_model_name);
-	$found = 1;
-	$target_start = $target_location->right->name;
-	if (!defined $target_start) {
-	  push(@error1, "ERROR: $class $gene_model_name has no start position in the Sequence object\n");
-	}
-	$target_end = $target_location->right->right->name;
-	if (!defined $target_end) {
-	  push(@error1, "ERROR: $class $gene_model_name has no end position in the Sequence object\n");
-	}
-	last;
-      }
-      if (!$found) {
-	push(@error1, "ERROR: $class $gene_model_name was not found in the Sequence object\n");
-      }
-      $hash_key = $sequence->name . ':' . $target_start . ':' . $target_end . ':' . $hash_key; # NB appending the exons hash_key made above
-      if ($found && exists $sequence_structures{$hash_key}) {
-	my $other_isoform = $sequence_structures{$hash_key};
-	my $class = $gene_model->class;
-	unless ($gene_model =~ (/F59A3.6/)) { # F59A3.6e and F59A3.6c are identical duplicated isoforms in different locations in this complex locus.
-	  # see if the two similar structures are at the same position on the same clone
-	  push(@error1, "ERROR: $class $gene_model has the same structure as $other_isoform\n");
-	}
-      }
-      $sequence_structures{$hash_key} = $gene_model_name;
-    }
-    
-    #Check that the source_exons and the the span are the same size.
-    
-    
-    
+
+    # Transposons do not have exons
     unless (($method_name eq 'Transposon') || ($method_name eq 'history_transposon')) {
+      
+      my @exon_coord1 = sort by_number ($gene_model->get('Source_exons',1));
+      my @exon_coord2 = sort by_number ($gene_model->get('Source_exons',2));
+      
+      # check for duplicated sequence names
+      if (exists $sequence_names{$gene_model_name}) {
+	push(@error1, "ERROR: $class $gene_model is both a $method_name and a $sequence_classes{$gene_model_name} $sequence_names{$gene_model_name}\n");
+      }
+      
+      $sequence_names{$gene_model_name} = $method_name; # save all the names and methods
+      $sequence_classes{$gene_model_name} = $gene_model->class;
+      
+      # check for duplicated or missing sequence structures
+      #    if ($method_name eq 'curated' || $method_name eq 'non_coding_transcript' || ($method_name =~ /RNA/ && $method_name !~ /[Pp]seudogene/ && $gene_model_name =~ /$cds_regex/)) {
+      if ($method_name eq 'curated' || $method_name eq 'non_coding_transcript' || ($method_name =~ /RNA/ && $gene_model_name =~ /$cds_regex/)) {
+	my ($gene_name) = ($gene_model_name =~ /($cds_regex_noend)/); # get the sequence name without an isoform letter at the end
+	# make a hash key out of the exon starts and ends
+	my $hash_key = join(':', @exon_coord1) . ',' . join(':', @exon_coord2);
+	my $sequence = $gene_model->Sequence;
+	
+	if (!exists $Sequence{$sequence}{$class}{$gene_model_name}) {
+	  push(@error1, "ERROR: $class $gene_model was not found in the Sequence object $sequence\n");
+	  next;
+	}
+	
+	my ($target_start, $target_end) = @{$Sequence{$sequence}{$class}{$gene_model_name}};
+	
+	$hash_key = $sequence->name . ':' . $target_start . ':' . $target_end . ':' . $hash_key; # NB appending the exons hash_key made above
+	if (exists $sequence_structures{$hash_key}) {
+	  my $other_isoform = $sequence_structures{$hash_key};
+	  unless ($gene_model =~ (/F59A3.6/)) { # F59A3.6e and F59A3.6c are identical duplicated isoforms in different locations in this complex locus.
+	    # see if the two similar structures are at the same position on the same clone
+	    push(@error1, "ERROR: $class $gene_model has the same structure as $other_isoform\n");
+	  }
+	}
+	$sequence_structures{$hash_key} = $gene_model_name;
+      }
+      
+      #Check that the source_exons and the the span are the same size.
       if (!defined($exon_coord2[0])) {
 	push(@error1, "ERROR: $gene_model has a problem with its exon co-ordinates\n");
 	next;
@@ -468,37 +625,37 @@ sub main_gene_checks {
 	push(@error1, "ERROR: $gene_model has a problem with its exon co-ordinates\n");
 	next;
       }
-    }
     
-    if (!exists $checked_small_intron{$gene_model_name}) {
-      for (my $i=1; $i<@exon_coord2; $i++) {
-	my $intron_size = ($exon_coord1[$i] - $exon_coord2[$i-1] -1); 
-	if (($intron_size < 25) && ($method_name eq 'curated')) {
-	  my $artificial_intron_Ribosomal_slippage = $gene_model->get('Ribosomal_slippage');
-	  my $artificial_intron_Low_quality_sequence = $gene_model->get('Low_quality_sequence');
-	  if ($intron_size < 5 && !$artificial_intron_Ribosomal_slippage && !$artificial_intron_Low_quality_sequence) {
-	    push(@error4,"ERROR: $gene_model has a very small intron ($intron_size bp) and no Ribosomal_slippage or Low_quality_sequence tag\n");
-	  } elsif (!$artificial_intron_Ribosomal_slippage && !$artificial_intron_Low_quality_sequence) {
-	    push(@error4,"Warning: $gene_model has a small intron ($intron_size bp) and no Artificial_intron tag\n") if ($species eq 'elegans');
+      my $artificial_intron_Ribosomal_slippage = $gene_model->get('Ribosomal_slippage');
+      my $artificial_intron_Low_quality_sequence = $gene_model->get('Low_quality_sequence');
+      if (!exists $checked_small_intron{$gene_model_name}) {
+	for (my $i=1; $i<@exon_coord2; $i++) {
+	  my $intron_size = ($exon_coord1[$i] - $exon_coord2[$i-1] -1); 
+	  if (($intron_size < 25) && ($method_name eq 'curated')) {
+	    if ($intron_size < 5 && !$artificial_intron_Ribosomal_slippage && !$artificial_intron_Low_quality_sequence) {
+	      push(@error4,"ERROR: $gene_model has a very small intron ($intron_size bp) and no Ribosomal_slippage or Low_quality_sequence tag\n");
+	    } elsif (!$artificial_intron_Ribosomal_slippage && !$artificial_intron_Low_quality_sequence) {
+	      push(@error4,"Warning: $gene_model has a small intron ($intron_size bp) and no Artificial_intron tag\n") if ($species eq 'elegans');
+	    }
 	  }
 	}
       }
-    }
-    
-    for (my $i=0; $i<@exon_coord1; $i++) {
-      my $start = $exon_coord1[$i];
-      my $end = $exon_coord2[$i];
-      for (my $j = $i+1; $j<@exon_coord1; $j++) {
-	if (($end > $exon_coord1[$j]) && ($start < $exon_coord2[$j])) {
-	  push(@error1,"ERROR: $gene_model exon inconsistency, exons overlap\n") if ($method_name !~ /history/);
+      
+      for (my $i=0; $i<@exon_coord1; $i++) {
+	my $start = $exon_coord1[$i];
+	my $end = $exon_coord2[$i];
+	for (my $j = $i+1; $j<@exon_coord1; $j++) {
+	  if (($end > $exon_coord1[$j]) && ($start < $exon_coord2[$j])) {
+	    push(@error1,"ERROR: $gene_model exon inconsistency, exons overlap\n") if ($method_name !~ /history/);
+	  }
 	}
       }
+      
+      if ($method_name !~ /history/ && check_sequence_span($class, \@exon_coord1, \@exon_coord2, $gene_model)) { # there are a few history models that don't match the Sequence location span, but nobody cares about this
+	push(@error1,"ERROR: $class $gene_model exon inconsistency, not the same span as the Sequence span\n");      
+      }
     }
-    
-    if ($method_name eq 'curated' && check_sequence_span(\@exon_coord1, \@exon_coord2, $gene_model)) {
-      push(@error1,"ERROR: $gene_model exon inconsistency, not the same span as the Sequence span\n");      
-    }
-    
+
     # check that 'Start_not_found' and 'End_not_found' tags present? (CDS specific.....extended to all genes :) )
     my $start_tag = "";
     my $start_tag_val = "";
@@ -699,9 +856,6 @@ sub protein_checks {
   foreach my $protein (@proteins) {
       push(@error1, "ERROR! Protein:$protein is Live but does not have a Peptide\n");
   }
-  
-
-
 }
 
 
@@ -734,8 +888,8 @@ sub print_results {
     foreach my $error (@{$list}) {
       $count_errors++;
       if ($error =~ /ERROR/i) {$log->error;}
-      if ($count_errors > 500 && ! $verbose) {
-	$log->write_to("More than 500 lines output... listing truncated ...\n");
+      if ($count_errors > 1000 && ! $verbose) {
+	$log->write_to("\n\nMore than 1000 lines output... listing truncated ...\n");
 	last;
       }
       $log->write_to("$count_errors $error");
@@ -756,150 +910,6 @@ sub test_gene_sequence_for_errors {
   my $method_name =shift;
   my $genetic_code=shift;
 
-
-  my %checked_small_genes = (
-			     'B0035.22' => 1,
-			     'B0041.12' => 1,
-			     'B0250.18b' => 1,
-			     'B0302.4' => 1,
-			     'B0348.2b' => 1,
-			     'B0513.2b' => 1,
-			     'B0513.3b' => 1,
-			     'B0546.4c' => 1,
-			     'BE0003N10.6e' => 1,
-			     'C01B4.7d' => 1,
-			     'C01F6.9b' => 1,
-			     'C01F6.9c' => 1,
-			     'C04G2.1b' => 1,
-			     'C08B6.18' => 1,
-			     'C08H9.18' => 1,
-			     'C09E8.6' => 1,
-			     'C12D8.21b' => 1,
-			     'C13G3.12' => 1,
-			     'C16A11.5e' => 1,
-			     'C18D4.12' => 1,
-			     'C32B5.18' => 1,
-			     'C33A12.19b' => 1,
-			     'C33A12.3b' => 1,
-			     'C33H5.13c' => 1,
-			     'C34E10.12b ' => 1,
-			     'C47A10.16' => 1,
-			     'C48A7.16' => 1,
-			     'C49F5.13' => 1,
-			     'C51E3.10b' => 1,
-			     'D1046.18' => 1,
-			     'D2063.4c' => 1,
-			     'F01E11.20' => 1,
-			     'F08A7.1b' => 1,
-			     'F08B12.11' => 1,
-			     'F08G5.5c' => 1,
-			     'F11A6.15' => 1,
-			     'F13G3.10c' => 1,
-			     'F13H10.8b' => 1,
-			     'F19G12.9' => 1,
-			     'F20C5.2f' => 1,
-			     'F20D12.12' => 1,
-			     'F21C10.17' => 1,
-			     'F22F4.4b' => 1,
-			     'F23B2.13b' => 1,
-			     'F23C8.14b' => 1,
-			     'F27B10.1c' => 1,
-			     'F27D4.4b' => 1,
-			     'F28H7.10b' => 1,
-			     'F32F2.1g' => 1,
-			     'F35C8.9' => 1,
-			     'F36A4.5b' => 1,
-			     'F36H9.4c' => 1,
-			     'F37C4.8b' => 1,
-			     'F37H8.6' => 1,
-			     'F38C2.1d' => 1,
-			     'F40F12.9c' => 1,
-			     'F44D12.16' => 1,
-			     'F47G6.1c' => 1,
-			     'F52E10.4d' => 1,
-			     'F52G3.7' => 1,
-			     'F54D7.6' => 1,
-			     'F54D7.7' => 1,
-			     'F55A4.13' => 1,
-			     'F55H12.7b' => 1,
-			     'F56H9.2b' => 1,
-			     'F59A6.1' => 1,
-			     'H03A11.13 ' => 1,
-			     'H12I19.115' => 1,
-			     'H24K24.4e' => 1,
-			     'H40L08.8' => 1,
-			     'K02E2.11' => 1,
-			     'K07C5.13a' => 1,
-			     'K08D9.10' => 1,
-			     'K08E5.5' => 1,
-			     'K08F8.15' => 1,
-			     'K10C9.8c' => 1,
-			     'K11H12.8d' => 1,
-			     'LLC1.2b' => 1,
-			     'M02E1.3' => 1,
-			     'M142.8b' => 1,
-			     'M176.16' => 1,
-			     'R07B7.12b' => 1,
-			     'R11D1.12b' => 1,
-			     'T03G6.7' => 1,
-			     'T04H1.13' => 1,
-			     'T06A1.7b' => 1,
-			     'T09F5.20a' => 1,
-			     'T11F9.21b' => 1,
-			     'T12G3.11' => 1,
-			     'T13A10.64' => 1,
-			     'T21H3.4c' => 1,
-			     'T23F6.3c' => 1,
-			     'T24A6.1b' => 1,
-			     'T24B8.3c' => 1,
-			     'T24B8.4d' => 1,
-			     'T26H5.11' => 1,
-			     'T28F3.11' => 1,
-			     'W02A2.6c' => 1,
-			     'W02D3.13b' => 1,
-			     'W03F8.6c' => 1,
-			     'W03F8.6d' => 1,
-			     'W08A12.2b' => 1,
-			     'W09G3.8b' => 1,
-			     'W10D9.5b' => 1,
-			     'Y105C5A.1285' => 1,
-			     'Y10G11A.90' => 1,
-			     'Y113G7A.22' => 1,
-			     'Y116A8C.28e' => 1,
-			     'Y17D7B.10' => 1,
-			     'Y19D10A.4d' => 1,
-			     'Y39G8B.13' => 1,
-			     'Y40B1A.1b' => 1,
-			     'Y41D4B.13c' => 1,
-			     'Y41E3.1d' => 1,
-			     'Y46G5A.47' => 1,
-			     'Y47D7A.17' => 1,
-			     'Y50D7A.13b' => 1,
-			     'Y51H4A.938a' => 1,
-			     'Y54F10AM.15' => 1,
-			     'Y54G2A.28c' => 1,
-			     'Y57G11C.1142' => 1,
-			     'Y62E10A.12b' => 1,
-			     'Y62E10A.8b' => 1,
-			     'Y65A5A.24' => 1,
-			     'Y66H1A.8a' => 1,
-			     'Y67H2A.10c' => 1,
-			     'Y69A2AR.24a' => 1,
-			     'Y69A2AR.50' => 1,
-			     'Y69A2AR.51' => 1,
-			     'Y71G12A.5' => 1,
-			     'Y73C8B.9a' => 1,
-			     'Y73C8B.9b' => 1,
-			     'Y77E11A.6b' => 1,
-			     'ZC328.8a' => 1,
-			     'ZK180.8a' => 1,
-			     'ZK377.15' => 1,
-			     'ZK381.62' => 1,
-			     'ZK792.12' => 1,
-			     'ZK863.7b' => 1,
-			     'ZK897.10a' => 1,
-			     'ZK897.1f' => 1,
-			    );
 
 
   my $gene_model_name = $gene_model->name;
@@ -928,7 +938,7 @@ sub test_gene_sequence_for_errors {
     
     if (($gene_model->Method eq 'curated') && ($gene_model->Start_not_found)) {
       my $extra = $gene_model->Start_not_found->name;
-      my $length_calc = $gene_model_length + $extra;
+      my $length_calc = $gene_model_length - $extra+1;
       $remainder = $length_calc%3;
     } else {
       $remainder = $gene_model_length%3;
@@ -971,8 +981,8 @@ sub test_gene_sequence_for_errors {
     if (($remainder != 0) && ($method_name eq 'curated')) {
       if (($end_tag ne "present") && ($start_tag ne "present")) {
 	push(@error1,"ERROR: $gene_model length ($gene_model_length bp) not divisible by 3, Start_not_found & End_not_found tags MISSING\n");
-      } elsif (($start_tag ne "present") && (!exists $non_canonical_initiation{$gene_model_name})) {
-	push(@error1,"ERROR: $gene_model length ($gene_model_length bp) not divisible by 3, Start_not_found tag MISSING and not a known non-canonical start codon gene\n");
+#      } elsif (($start_tag ne "present") && (!exists $non_canonical_initiation{$gene_model_name})) {
+#	push(@error1,"ERROR: $gene_model length ($gene_model_length bp) not divisible by 3, Start_not_found tag MISSING and not a known non-canonical start codon gene\n");
       }
     }
     if (defined $gene_model->Sequence) {
@@ -981,8 +991,6 @@ sub test_gene_sequence_for_errors {
 	if (($stop_codon ne 'taa') && ($stop_codon ne 'tga') && ($stop_codon ne 'tag') && ($method_name eq 'curated')) {
 	  if ($end_tag ne "present") {
 	    push(@error1, "ERROR: $gene_model '$stop_codon' is not a valid stop codon. End_not_found tag MISSING\n");
-	  } else {
-	    push(@error2,"ERROR: $gene_model '$stop_codon' is not a valid stop codon. End_not_found tag present\n");
 	  }
 	}
 	# look for incorrect start codons(CDS specific)
@@ -992,8 +1000,6 @@ sub test_gene_sequence_for_errors {
 	if (($start_codon ne 'atg') && ($method_name eq 'curated') && ($start_tag ne "present") && (!exists $non_canonical_initiation{$gene_model_name})) {
 	  if (($start_tag ne "present")) {
 	    push(@error1,"ERROR: $gene_model '$start_codon' is not a valid start codon. Start_not_found tag MISSING\n");
-	  } else {
-	    push(@error2, "ERROR: $gene_model '$start_codon' is not a valid start codon. Start_not_found tag present\n");
 	  } 
 	}
 	
@@ -1042,7 +1048,7 @@ sub test_gene_sequence_for_errors {
 ############################################################################################
 # check that the span of the exons is the same size as the span of the position in the Sequence
 sub check_sequence_span {
-  my ($exon_coord1, $exon_coord2, $gene_model) = @_;
+  my ($class, $exon_coord1, $exon_coord2, $gene_model) = @_;
   
   my $result=0;
   
@@ -1051,31 +1057,25 @@ sub check_sequence_span {
   my $exon_span = $exon_end - $exon_start + 1;
   
   # get the Sequence start-end span 
-  my $target = $gene_model->name;
+  my $gene_model_name = $gene_model->name;
   my $sequence = $gene_model->Sequence;
   if (!defined $sequence) {
-    push(@error1, "ERROR: $gene_model has no SParent Sequence connection.\n");
+    push(@error1, "ERROR: $gene_model_name has no S_parent Sequence connection.\n");
     return $result;
   }
-  my @clone_locations = $sequence->CDS_child;
-  my ($target_start, $target_end);
-  foreach my $target_location ( @clone_locations ) {
-    next unless ($target_location->name eq $target);
-    $target_start = $target_location->right->name;
-    $target_end = $target_location->right->right->name;
-    last;
+
+  if (!exists $Sequence{$sequence}{$class}{$gene_model_name}) {
+    push(@error1, "ERROR: $class $gene_model_name was not found in the Sequence object $sequence\n");
+    return $result;
   }
-  if (defined $target_start && defined $target_end) {
-    my $sequence_span = abs($target_start - $target_end) + 1;
-    if ($exon_span != $sequence_span) {
-      $result = 1;
-      return $result;
-    }
-  } else {
-    push(@error1, "ERROR: $gene_model has a malformed SParent Sequence entry.\n");
-    return $result;    
+
+  my ($target_start, $target_end) = @{$Sequence{$sequence}{$class}{$gene_model_name}};
+
+  my $sequence_span = abs($target_start - $target_end) + 1;
+  if ($exon_span != $sequence_span) {
+    $result = 1;
+    return $result;
   }
-  
 }
 
 
