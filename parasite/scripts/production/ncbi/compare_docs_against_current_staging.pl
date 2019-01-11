@@ -18,18 +18,30 @@ my $stdin;
 my %assemblies;
 for my $doc (Load($stdin)){
 
-    my $bioproject = $doc->{GB_BioProjects}{Bioproj}{BioprojectAccn};
+    my $bioproject = $doc->{GB_BioProjects}{Bioproj}{BioprojectAccn} // "";
+    
     $bioproject = lc $bioproject;
 
     my $species = $doc->{SpeciesName};
+    $species =~ s/sp. //;
     $species =~ tr/ /_/;
     $species = lc $species;
 
     push @{$assemblies{$species}{$bioproject}{ncbi}}, {
       assembly_accession => $doc->{AssemblyAccession},
       assembly_name => $doc->{AssemblyName},
+      assembly_url => "https://www.ncbi.nlm.nih.gov/assembly/".$doc->{AssemblyAccession},
       report_url =>  $doc->{FtpPath_Assembly_rpt},
+      submission_date => $doc->{SubmissionDate},
+      provider_name => $doc->{SubmitterOrganization},
     };
+}
+
+for my $core_db ($production_mysql->core_databases ){
+   my ($spe, $cies, $bioproject) = split "_", $core_db;
+   next if $bioproject eq "core";
+   my $species = "${spe}_${cies}";
+   $assemblies{$species}{$bioproject}{core_db}{name} = $core_db;
 }
 
 my %report = (
@@ -41,54 +53,79 @@ my %report = (
   MISMATCHED => {},
 );
 
-my @core_dbs = $production_mysql->core_databases;
-my @core_dbs_parasite_only;
-for my $core_db ($production_mysql->core_databases ){
-   my ($spe, $cies, $bioproject) = split "_", $core_db;
-   my $species = "${spe}_${cies}";
-   if ($assemblies{$species}{$bioproject}){
-      my $accession = $production_mysql->meta_value($core_db, "assembly.accession") // "";
-      my $name = $production_mysql->meta_value($core_db, "assembly.name") // "";
-      $assemblies{$species}{$bioproject}{core_db} =  {
-         name => $core_db,
-         assembly_accession => $accession,
-         assembly_name => $name,
-     };
-   } else {
-     print Dump { PARASITE_ONLY => { $species => { $bioproject => $core_db }}};
-   }
-}
-for my $species (keys %assemblies) {
+for my $species (sort keys %assemblies) {
   BIOPROJECT:
-  for my $bioproject (keys %{$assemblies{$species}}){
-    my @ncbi_assemblies = @{$assemblies{$species}{$bioproject}{ncbi}};
+  for my $bioproject (sort keys %{$assemblies{$species}}){
+    my @ncbi_assemblies = @{$assemblies{$species}{$bioproject}{ncbi} // [] };
     my $core_db = $assemblies{$species}{$bioproject}{core_db};
     unless ($core_db) {
        print Dump { NCBI_ONLY => { $species => { $bioproject => \@ncbi_assemblies }}}; 
        next BIOPROJECT;
     }
-    my ($ncbi_assembly, @others) = grep {same_assembly_names($core_db, $_)} @ncbi_assemblies;
-    confess @ncbi_assemblies, $core_db if @others;
-    if ($ncbi_assembly) {
-       my @other_assemblies = grep {not same_assembly_names($ncbi_assembly, $_ )} @ncbi_assemblies;
-       print Dump { MATCHING_METADATA => { $species => { $bioproject => {%{$ncbi_assembly}, core_db => $core_db->{name}, other_assemblies => \@other_assemblies } }}};
+    $assemblies{$species}{$bioproject}{core_db}{genebuild_start_date} = $production_mysql->meta_value($core_db->{name}, "genebuild.start_date") // "";
+    $assemblies{$species}{$bioproject}{core_db}{provider_name} = $production_mysql->meta_value($core_db->{name}, "provider.name") // "";
+    unless(@ncbi_assemblies){
+       print Dump { PARASITE_ONLY => $core_db->{name} };
        next BIOPROJECT;
     }
-    my $scaffold_lengths_core = get_scaffold_lengths_for_core_db($core_db->{name});
+    $assemblies{$species}{$bioproject}{core_db}{assembly_accession} = $production_mysql->meta_value($core_db->{name}, "assembly.accession") // "";
+    $assemblies{$species}{$bioproject}{core_db}{assembly_name} = $production_mysql->meta_value($core_db->{name}, "assembly.name") // "";
+
+    my ($ncbi_assembly, @others) = grep {same_assembly_names($core_db, $_)} @ncbi_assemblies;
+    croak @ncbi_assemblies, $core_db if @others;
+    if ($ncbi_assembly) {
+       my @other_assemblies = grep {not same_assembly_names($ncbi_assembly, $_ )} @ncbi_assemblies;
+       delete $ncbi_assembly->{report_url};
+       delete $_->{report_url} for @other_assemblies;
+       print Dump { MATCHING_METADATA => { $species => { $bioproject => {%{$ncbi_assembly}, core_db_name => $core_db->{name}, other_assemblies => \@other_assemblies } }}};
+       next BIOPROJECT;
+    }
+    my $scaffold_lengths_core = @ncbi_assemblies ? get_scaffold_lengths_for_core_db($core_db->{name}): {};
+    my $scaffold_stats_core = scaffold_stats($scaffold_lengths_core);
+    $core_db->{stats} = $scaffold_stats_core;
     for my $ncbi_assembly (@ncbi_assemblies){
        my @other_assemblies = grep {not same_assembly_names($ncbi_assembly, $_ )} @ncbi_assemblies;
        my $scaffold_lengths_ncbi = get_scaffold_lengths_from_report_url($ncbi_assembly->{report_url});
        if(Data::Compare::Compare ($scaffold_lengths_ncbi, $scaffold_lengths_core)){
-           print Dump { MATCHING_SCAFFOLD_NAMES => { $species => { $bioproject => {%{$ncbi_assembly}, core_db => $core_db->{name}, other_assemblies => \@other_assemblies } }}};
+           delete $core_db->{stats};
+           delete $ncbi_assembly->{report_url};
+           delete $_->{report_url} for @other_assemblies;
+           print Dump { MATCHING_SCAFFOLD_NAMES => { $species => { $bioproject => {%{$ncbi_assembly}, core_db => $core_db, other_assemblies => \@other_assemblies } }}};
            next BIOPROJECT;
-       } elsif (Data::Compare::Compare([sort values %{$scaffold_lengths_ncbi}], [sort values %{$scaffold_lengths_core}])){
-           print Dump { MATCHING_SCAFFOLD_LENGTHS  => { $species => { $bioproject => {%{$ncbi_assembly}, core_db => $core_db->{name}, other_assemblies => \@other_assemblies } }}};
+       } 
+       my $scaffold_stats_ncbi = scaffold_stats($scaffold_lengths_ncbi);
+       $ncbi_assembly->{stats} = $scaffold_stats_ncbi;
+       if (Data::Compare::Compare([sort values %{$scaffold_lengths_ncbi}], [sort values %{$scaffold_lengths_core}])){
+           delete $ncbi_assembly->{report_url};
+           delete $_->{report_url} for @other_assemblies;
+           delete $_->{stats} for @other_assemblies;
+           print Dump { MATCHING_SCAFFOLD_LENGTHS  => { $species => { $bioproject => {
+              %{$ncbi_assembly},
+              core_db => $core_db,
+              other_assemblies => \@other_assemblies,
+            } }}};
            next BIOPROJECT;
        }
     }
     print Dump { MISMATCHED => { $species => { $bioproject => { %{$core_db}, ncbi => \@ncbi_assemblies} }}};
   }
 }
+
+sub scaffold_stats {
+   my($h) = @_;
+   my $longest_scaffold = "";
+   my $num_scaffolds = 0;
+   my $longest_scaffold_length = 0;
+   while( my( $k, $v) = each %{$h}){
+      $num_scaffolds++;
+      if ($v > $longest_scaffold_length) {
+         $longest_scaffold_length = $v;
+         $longest_scaffold = $k;
+      }
+   }
+   return {longest_scaffold =>  $longest_scaffold, num_scaffolds => $num_scaffolds, longest_scaffold_length => $longest_scaffold_length };
+}
+
 sub same_assembly_names {
   my ($o1, $o2) = @_;
   return $o1->{assembly_accession} eq $o2->{assembly_accession} && $o1->{assembly_name} eq $o2->{assembly_name};

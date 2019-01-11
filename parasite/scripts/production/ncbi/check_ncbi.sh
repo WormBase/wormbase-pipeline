@@ -9,5 +9,5 @@ $DIR/assemblies_for_taxon.pl 6157 6231 \
   | tee $DIR/tmp/doc_for_assembly.out\
   | $DIR/compare_docs_against_current_staging.pl \
   | tee $DIR/tmp/compare_docs_against_current_staging.out \
-  | perl -MHash::Merge -MYAML -e 'local $/; my @docs = Load(<>); print Dump (Hash::Merge::merge @docs);' \
+  | perl -MHash::Merge -MYAML -e 'local $/; my @docs = Load(<>); my $o = {};$o = Hash::Merge::merge($o, $_) for @docs; print Dump $o;' \
   | tee $DIR/tmp/result.out
