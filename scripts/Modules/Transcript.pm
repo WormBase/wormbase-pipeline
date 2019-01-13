@@ -274,7 +274,7 @@ sub report
     # emit the mRNA tag if the transcript has been denoted as primary. This will make it appear as an 
     # mRNA feature in the EMBL dumps
     #
-    print $fh "mRNA\n" if $is_primary;
+    #print $fh "mRNA\n" if $is_primary;
     print $fh "Method Coding_transcript\n";  
 
     foreach (@{$self->{'matching_cdna'}}) {
