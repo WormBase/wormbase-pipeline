@@ -841,17 +841,17 @@ sub extra_build_checks {
       push(@error1, "ERROR! Gene:$gene is Live but not attached to a current gene model\n\n");
   }
 
-  my @cds = $db->fetch (-query => 'FIND CDS; Method = curated AND NOT Corresponding_CDS');
-  foreach my $cds (@cds) {
-      push(@error1, "ERROR! CDS:$cds is Method=curated but does not have a Corresponding_protein\n");
-  }
-
 }
 
 ##########################################
 # Protein checks
 
 sub protein_checks {
+
+  my @cds = $db->fetch (-query => 'FIND CDS; Method = curated AND NOT Corresponding_CDS');
+  foreach my $cds (@cds) {
+      push(@error1, "ERROR! CDS:$cds is Method=curated but does not have a Corresponding_protein\n");
+  }
 
   my @proteins = $db->fetch (-query => 'Find Protein where Live AND NOT Peptide');
   foreach my $protein (@proteins) {
