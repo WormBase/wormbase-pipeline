@@ -184,7 +184,7 @@ sub copy_check {
 sub mail_maintainer {
   my $self = shift;
   my ( $name, $maintainer, $logfile ) = @_;
-  $maintainer = "pad\@sanger.ac.uk,  gw3\@sanger.ac.uk, mh6\@sanger.ac.uk, klh\@sanger.ac.uk"    if ( $maintainer =~ m/All/i );
+  $maintainer = "pad\@sanger.ac.uk,  gw3\@sanger.ac.uk, mh6\@sanger.ac.uk"    if ( $maintainer =~ m/All/i );
   croak "trying to email a log to a file - this will overwrite the existing file -STOPPING\nAre you passing a file name to Log object? \n"  if ( -e $maintainer );
   open( OUTLOG, "|mailx -s \"$name\" $maintainer " );
   if ($logfile) {
