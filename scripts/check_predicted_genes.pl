@@ -21,7 +21,7 @@ use Ace;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $build, $species, $database);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $build, $protein, $species, $database);
 
 
 my %databases = ( # names of common databases and their species
@@ -48,6 +48,7 @@ GetOptions ("help"       => \$help,
 	    "store:s"    => \$store,
 	    "database:s" => \$database, # database to check
 	    "build"      => \$build,    # Checks specific to a full database containing genes and models and proteins.
+	    "protein"    => \$protein,  # Checks specific for when protein objects have been made in the Build.
 	    "species:s"  => \$species,
 	    );
 
@@ -336,7 +337,7 @@ my %Sequence = &sequence_details();
 &extra_build_checks() if $build;
 
 # protein checks
-&protein_checks() if $build;
+&protein_checks() if $protein;
 
 
 
