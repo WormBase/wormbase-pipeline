@@ -69,8 +69,8 @@ my $seq_obj  = Sequence_extract->invoke($database, undef, $wormbase) if $intron;
 
 my %mol_types = ( 'elegans'          => [qw( EST mRNA ncRNA OST tc1 RST Trinity)],
 		  'briggsae'         => [qw( mRNA EST Trinity)],
-		  'remanei'          => [qw( mRNA EST Trinity)],
-		  'brenneri'         => [qw( mRNA EST Trinity)],
+		  'remanei'          => [qw( mRNA EST)],
+		  'brenneri'         => [qw( mRNA EST)],
 		  'japonica'         => [qw( mRNA EST Trinity)],
 		  'brugia'           => [qw( mRNA EST Trinity)],
 		  'pristionchus'     => [qw( mRNA EST Trinity)],
