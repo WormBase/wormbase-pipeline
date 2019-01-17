@@ -836,7 +836,7 @@ sub single_query_tests {
 
 sub extra_build_checks {
 
-  my @genes = $db->fetch (-query => 'Find Gene where Live AND Species = "$speciesfn" AND Sequence_name AND NOT Corresponding_CDS AND NOT Corresponding_pseudogene AND NOT Corresponding_transcript');
+  my @genes = $db->fetch (-query => 'Find Gene where Live AND Species = '."\"$speciesfn\"".' AND Sequence_name AND NOT Corresponding_CDS AND NOT Corresponding_pseudogene AND NOT Corresponding_transcript');
   foreach my $gene (@genes) {
       push(@error1, "ERROR! Gene:$gene is Live but not attached to a current gene model\n\n");
   }
