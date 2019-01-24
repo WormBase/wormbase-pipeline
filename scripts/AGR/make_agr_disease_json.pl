@@ -23,7 +23,7 @@ GetOptions (
   "outfile:s"   => \$outfile,
   "wsversion=s" => \$ws_version,
   "writedaf"    => \$daf,
-    );
+    )||die("unknown command line option: $@\n");
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
@@ -157,9 +157,12 @@ while( my $obj = $it->next) {
   my ($allele) = $obj->Variation;
   my ($transgene) = $obj->Transgene;
   my ($gene) = $obj->Disease_relevant_gene;
-  my (@inferred_genes) = map { "WB:" . $_->name } $obj->Inferred_gene;
+  my (@inferred_genes) = map { 'WB:' . $_->name } $obj->Inferred_gene;
 
-  my ($obj_id, $obj_name, $obj_type, $assoc_type, @with_list);
+  my ($obj_id, $obj_name, $obj_type, $assoc_type);
+
+  my (@with_list) = map {'WB:'.$_->name} $obj->Interacting_variation;
+
   if (defined $strain) {
     $obj_type = "strain";
     $obj_name = ($strain->Genotype) ? $strain->Genotype->name : "";
@@ -258,7 +261,7 @@ if ($daf) {
 } else {
 
   my $data = {
-    metaData => &get_file_metadata_json( (defined $ws_version) ? $ws_version : $wormbase->get_wormbase_version_name() ), 
+    metaData => AGR::get_file_metadata_json( (defined $ws_version) ? $ws_version : $wormbase->get_wormbase_version_name() ), 
     data => \@annots,
   };
   
@@ -363,7 +366,7 @@ sub write_DAF_line {
          $obj->{objectRelation}->{associationType},
          "",
          $obj->{DOid},
-         (exists $obj->{with}) ? $obj->{with} : "",
+         (exists $obj->{with}) ? join(',',@{$obj->{with}}) : '',
          (exists $obj->{modifier}) ? $obj->{modifier}->{associationType} : "",
          "",
          (exists $obj->{modifier} and exists $obj->{modifier}->{genetic}) ? join(",", @{$obj->{modifier}->{genetic}}) : "",
