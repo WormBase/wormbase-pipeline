@@ -354,10 +354,10 @@ sub write_DAF_line {
     $inferred_gene = "";
   }
 
-  printf($fh "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", 
+  printf($fh "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", 
          $taxid,
          $obj->{objectRelation}->{objectType}, 
-         $obj->{objectId},
+         split(/:/, $obj->{objectId}), 
          $obj->{objectName},
          $inferred_gene,
          "",
