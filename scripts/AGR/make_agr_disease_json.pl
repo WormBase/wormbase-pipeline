@@ -15,14 +15,14 @@ my ($debug, $test, $verbose, $store, $wormbase);
 my ($outfile, $acedbpath, $ws_version, $outfh, $daf);
 
 GetOptions (
-  "debug=s"     => \$debug,
-  "test"        => \$test,
-  "verbose"     => \$verbose,
-  "store:s"     => \$store,
-  "database:s"  => \$acedbpath,
-  "outfile:s"   => \$outfile,
-  "wsversion=s" => \$ws_version,
-  "writedaf"    => \$daf,
+  'debug=s'     => \$debug,
+  'test'        => \$test,
+  'verbose'     => \$verbose,
+  'store:s'     => \$store,
+  'database:s'  => \$acedbpath,
+  'outfile:s'   => \$outfile,
+  'wsversion=s' => \$ws_version,
+  'writedaf'    => \$daf,
     )||die("unknown command line option: $@\n");
 
 if ( $store ) {
@@ -44,13 +44,13 @@ $ws_version = $wormbase->get_wormbase_version_name unless $ws_version;
 
 if (not defined $outfile) {
   if ($daf) {
-    $outfile = $wormbase->ontology."/disease_association.".$wormbase->get_wormbase_version_name.".daf.txt";
+    $outfile = $wormbase->ontology.'/disease_association.'.$wormbase->get_wormbase_version_name.'.daf.txt';
   } else {
     $outfile = "./wormbase.disease_association.${ws_version}.json";
   }
 }
 
-my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or die("Connection failure: ". Ace->error);
+my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or die('Connection failure: '. Ace->error);
 
 my ( $it, @annots);
 
@@ -77,7 +77,7 @@ while (my $obj = $it->next) {
         $evi_date = $evi->right;
         $evi_date->date_style('ace');
         my ($y, $m, $d) = split(/\-/, $evi_date);
-        $evi_date = sprintf("%4d-%02d-%02dT00:00:00+00:00", $y, $m, $d);
+        $evi_date = sprintf('%4d-%02d-%02dT00:00:00+00:00', $y, $m, $d);
       }
     }
     
@@ -89,21 +89,21 @@ while (my $obj = $it->next) {
         dataProvider => [
           { 
             crossReference => {
-              id => "WB",
-              pages => ["homepage"],
+              id => 'WB',
+              pages => ['homepage'],
             },
-            type => "curated",
+            type => 'curated',
           },
         ],
         dateAssigned => defined $evi_date ? $evi_date : $date,
-        geneticSex   => "hermaphrodite",
+        geneticSex   => 'hermaphrodite',
         evidence     => {
-          evidenceCodes => ["IMP"],  # inferred from mutant phenotype; hard-coded for now
+          evidenceCodes => ['IMP'], # inferred from mutant phenotype; hard-coded for now
           publication => $pap,
         },
         objectRelation => {
-          associationType => "is_implicated_in",
-          objectType      => "gene",
+          associationType => 'is_implicated_in',
+          objectType      => 'gene',
         },
       };
     };
@@ -127,7 +127,7 @@ while( my $obj = $it->next) {
   my  $evi_date = $obj->Date_last_updated;
   $evi_date->date_style('ace');
   my ($y, $m, $d) = split(/\-/, $evi_date);
-  $evi_date = sprintf("%4d-%02d-%02dT00:00:00+00:00", $y, $m, $d);
+  $evi_date = sprintf('%4d-%02d-%02dT00:00:00+00:00', $y, $m, $d);
 
   my ($paper) = &get_paper( $obj->Paper_evidence );
   my @evi_codes = map { $_->name } $obj->Evidence_code;
@@ -137,16 +137,16 @@ while( my $obj = $it->next) {
     dataProvider => [
       { 
         crossReference => {
-          id => "WB",
-          pages => ["homepage"],
+          id => 'WB',
+          pages => ['homepage'],
         },
-        type => "curated",
+        type => 'curated',
       },
     ],
     dateAssigned => $evi_date,
-    geneticSex  => ($obj->Genetic_sex) ? $obj->Genetic_sex->name : "hermaphrodite",
+    geneticSex  => ($obj->Genetic_sex) ? $obj->Genetic_sex->name : 'hermaphrodite',
     evidence     => {
-      evidenceCodes => (@evi_codes) ? \@evi_codes : ["IMP"],
+      evidenceCodes => (@evi_codes) ? \@evi_codes : ['IMP'],
       publication => $paper,
     },
   };
@@ -161,13 +161,13 @@ while( my $obj = $it->next) {
 
   my ($obj_id, $obj_name, $obj_type, $assoc_type);
 
-  my (@with_list) = map {'WB:'.$_->name} $obj->Interacting_variation;
+  my (@with_list) = map {'WB:'.$_->name} ($obj->Interacting_variation,$obj->Interacting_gene);
 
   if (defined $strain) {
-    $obj_type = "strain";
-    $obj_name = ($strain->Genotype) ? $strain->Genotype->name : "";
-    $assoc_type = "is_model_of";
-    $obj_id = "WB:" . $strain->name;
+    $obj_type = 'strain';
+    $obj_name = ($strain->Genotype) ? $strain->Genotype->name : '';
+    $assoc_type = 'is_model_of';
+    $obj_id = 'WB:' . $strain->name;
 
     #push @with_list, "WB:" . $gene->name if defined $gene;
     #push @with_list, "WBTransgene:" . $transgene->name if defined $transgene;
@@ -175,23 +175,23 @@ while( my $obj = $it->next) {
   } elsif (defined $allele) {
     $obj_type = "allele";
     $obj_name = $allele->Public_name->name;
-    $assoc_type = "is_implicated_in";
-    $obj_id = "WB:" . $allele->name;
+    $assoc_type = 'is_implicated_in';
+    $obj_id = 'WB:' . $allele->name;
 
     #push @with_list, "WB:" . $gene->name if defined $gene;
     #push @with_list, "WB_Transgene:" . $transgene->name if defined $transgene;
   } elsif (defined $transgene) {
-    $obj_type = "transgene";
+    $obj_type = 'transgene';
     $obj_name = $transgene->Public_name->name;
-    $assoc_type = "is_implicated_in";
-    $obj_id = "WB:" . $transgene->name;
+    $assoc_type = 'is_implicated_in';
+    $obj_id = 'WB:' . $transgene->name;
     
     #push @with_list, "WB:" . $gene->name if defined $gene;
   } elsif (defined $gene) {
-    $obj_type = "gene";
+    $obj_type = 'gene';
     $obj_name = $gene->Public_name->name;
-    $assoc_type = "is_implicated_in";
-    $obj_id = "WB:" . $gene->name;
+    $assoc_type = 'is_implicated_in';
+    $obj_id = 'WB:' . $gene->name;
     @inferred_genes = ();
   } else {
     die "Could not identify a central object for the annotation from Disease_model_annotation $obj->name\n";
@@ -208,16 +208,15 @@ while( my $obj = $it->next) {
   $annot->{objectName} = $obj_name;
   $annot->{with} = \@with_list if @with_list;
   
-  #
   # lastly, modifiers
-  #
+  
   if ($obj->Modifier_association_type) {
     my ($mod_assoc_type) = $obj->Modifier_association_type->name;
 
-    my @mod_strain    = map { "WB:" . $_->name } $obj->Modifier_strain;
-    my @mod_transgene = map { "WB:" . $_->name } $obj->Modifier_transgene;
-    my @mod_var       = map { "WB:" . $_->name } $obj->Modifier_variation;
-    my @mod_gene      = map { "WB:" . $_->name } $obj->Modifier_gene;
+    my @mod_strain    = map { 'WB:' . $_->name } $obj->Modifier_strain;
+    my @mod_transgene = map { 'WB:' . $_->name } $obj->Modifier_transgene;
+    my @mod_var       = map { 'WB:' . $_->name } $obj->Modifier_variation;
+    my @mod_gene      = map { 'WB:' . $_->name } $obj->Modifier_gene;
     my @mod_molecule  = map { $_->name } $obj->Modifier_molecule;
     my @mod_other     = map { $_->name } $obj->Other_modifier;
 
@@ -234,11 +233,11 @@ while( my $obj = $it->next) {
     $mod_annot->{experimentalConditionsText} = \@exp_cond if @exp_cond;
 
     $annot->{modifier} = $mod_annot;
+    $annot->{qualifier} = 'NOT' if $obj->at('Modifier_qualifier_not');
   }
 
   push @annots, $annot;
 }
-
 
 
 $db->close;
@@ -347,12 +346,12 @@ sub write_DAF_line {
   $date =~ s/(\d{4})\-(\d{2})\-(\d{2}).+/${1}${2}${3}/; 
 
   my $inferred_gene;
-  if ($obj->{objectRelation}->{objectType} eq "gene") {
+  if ($obj->{objectRelation}->{objectType} eq 'gene') {
     $inferred_gene = $obj->{objectId};
   } elsif (exists $obj->{objectRelation}->{inferredGeneAssociation}) {
     $inferred_gene =  join(",", @{$obj->{objectRelation}->{inferredGeneAssociation}});
   } else {
-    $inferred_gene = "";
+    $inferred_gene = '';
   }
 
   printf($fh "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", 
@@ -361,20 +360,19 @@ sub write_DAF_line {
          split(/:/, $obj->{objectId}), 
          $obj->{objectName},
          $inferred_gene,
-         "",
-         "",
+         '',
+         '',
          $obj->{objectRelation}->{associationType},
-         "",
+         '',
          $obj->{DOid},
          (exists $obj->{with}) ? join(',',@{$obj->{with}}) : '',
-         (exists $obj->{modifier}) ? $obj->{modifier}->{associationType} : "",
-         "",
-         (exists $obj->{modifier} and exists $obj->{modifier}->{genetic}) ? join(",", @{$obj->{modifier}->{genetic}}) : "",
-         (exists $obj->{modifier} and exists $obj->{modifier}->{experimentalConditionsText}) ? join(",", @{$obj->{modifier}->{experimentalConditionsText}}) : "",
+         (exists $obj->{modifier}) ? $obj->{modifier}->{associationType} : '',
+         ($obj->{qualifier}||''),
+         (exists $obj->{modifier} and exists $obj->{modifier}->{genetic}) ? join(',', @{$obj->{modifier}->{genetic}}) : '',
+         (exists $obj->{modifier} and exists $obj->{modifier}->{experimentalConditionsText}) ? join(',', @{$obj->{modifier}->{experimentalConditionsText}}) : '',
          join(",", @{$obj->{evidence}->{evidenceCodes}}),
          $obj->{geneticSex},
          $obj->{evidence}->{publication}->{pubMedId},
          $date,
-         "WB");
-
+         'WB');
 }
