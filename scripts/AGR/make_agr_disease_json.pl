@@ -208,7 +208,7 @@ while( my $obj = $it->next) {
   $annot->{objectName} = $obj_name;
   $annot->{with} = \@with_list if @with_list;
   
-  # lastly, modifiers
+  # modifiers
   
   if ($obj->Modifier_association_type) {
     my ($mod_assoc_type) = $obj->Modifier_association_type->name;
@@ -219,7 +219,7 @@ while( my $obj = $it->next) {
     my @mod_gene      = map { 'WB:' . $_->name } $obj->Modifier_gene;
     my @mod_molecule  = map { $_->name } $obj->Modifier_molecule;
     my @mod_other     = map { $_->name } $obj->Other_modifier;
-
+ 
     my $mod_annot = {
       associationType => $mod_assoc_type,
     };
@@ -234,6 +234,13 @@ while( my $obj = $it->next) {
 
     $annot->{modifier} = $mod_annot;
     $annot->{qualifier} = 'NOT' if $obj->at('Modifier_qualifier_not');
+  }
+
+  if ($obj->Experimental_condition){
+    my @inducing_c     = map { $_->name } $obj->Inducing_chemical;
+    my @inducing_a     = map { "$_" } $obj->Inducing_agent;
+    my @exp_conditions = map {{textCondition => $_}} (@inducing_c,@inducing_a);
+    $annot->{experimentalConditions} = \@exp_conditions if @exp_conditions;
   }
 
   push @annots, $annot;
@@ -361,7 +368,7 @@ sub write_DAF_line {
          $obj->{objectName},
          $inferred_gene,
          '',
-         '',
+         (exists $obj->{experimentalConditions}) ? join(',',map{'"'.$_->{textCondition}.'"'} @{$obj->{experimentalConditions}}):'',
          $obj->{objectRelation}->{associationType},
          '',
          $obj->{DOid},
