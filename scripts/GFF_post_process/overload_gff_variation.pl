@@ -78,6 +78,7 @@ while (<$gff_in_fh>) {
     my @var_types = $variation->at('Variation_type');
     my @other_names = $variation->at('Name.Other_name');
     my ($public_name) = $variation->at('Name.Public_name');
+    my ($prodmethod) = $variation->at('Origin.Production_method');
     my $natural_variant = 0;
 
     if ($public_name) {
@@ -90,6 +91,9 @@ while (<$gff_in_fh>) {
     if ($variation->Strain) {
       my @strains = $variation->Strain;
       push @new_els, ['Strain', \@strains];
+    }
+    if ($prodmethod) {
+	push @new_els, ['Production_method', $prodmethod];
     }
     
     foreach my $tp (@var_types) {
