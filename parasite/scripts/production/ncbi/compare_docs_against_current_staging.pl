@@ -45,14 +45,33 @@ for my $core_db ($production_mysql->core_databases ){
 }
 
 my %report = (
-  PARASITE_ONLY => [],
+  PARASITE_ONLY => {},
   NCBI_ONLY => {},
   MATCHING_METADATA => {},
   MATCHING_SCAFFOLD_NAMES => {},
   MATCHING_SCAFFOLD_LENGTHS => {},
   MISMATCHED => {},
+  MATCH_NOT_INTENDED => {},
 );
 
+my %match_not_intended = (
+  ancylostoma_caninum_prjna72585 => "WashU 50 helminths",
+  ascaris_suum_prjna80881 => "Gasser lab A. suum Australian isolate",
+  bursaphelenchus_xylophilus_prjea64437 => "Old Sanger genome",
+  caenorhabditis_angaria_prjna51225 => "Caltech old caenorhabditis",
+  caenorhabditis_elegans_prjna13758 => "Follow WormBase on C. elegans, not archives",
+  fasciola_hepatica_prjna179522 => "WashU 50 helminths",
+  haemonchus_contortus_prjna205202 => "Gasser lab alternative Haemonchus",
+  oesophagostomum_dentatum_prjna72579 => "WashU 50 helminths",
+  steinernema_carpocapsae_prjna202318 => "Caltech Steinernema",
+  steinernema_feltiae_prjna204661 => "Caltech Steinernema",
+  steinernema_glaseri_prjna204943 => "Caltech Steinernema",
+  steinernema_monticolum_prjna205067 => "Caltech Steinernema",
+  steinernema_scapterisci_prjna204942 =>  "Caltech Steinernema",
+  taenia_solium_prjna170813 => "Mexico T. solium, an up-tinkered version of what we have",
+  teladorsagia_circumcincta_prjna72569 => "WashU 50 helminths",
+  trichinella_nativa_prjna179527 => "WashU 50 helminths",
+);
 for my $species (sort keys %assemblies) {
   BIOPROJECT:
   for my $bioproject (sort keys %{$assemblies{$species}}){
@@ -65,7 +84,11 @@ for my $species (sort keys %assemblies) {
     $assemblies{$species}{$bioproject}{core_db}{genebuild_start_date} = $production_mysql->meta_value($core_db->{name}, "genebuild.start_date") // "";
     $assemblies{$species}{$bioproject}{core_db}{provider_name} = $production_mysql->meta_value($core_db->{name}, "provider.name") // "";
     unless(@ncbi_assemblies){
-       print Dump { PARASITE_ONLY => $core_db->{name} };
+       print Dump { PARASITE_ONLY => {$core_db->{name} => 1} };
+       next BIOPROJECT;
+    }
+    if ($match_not_intended{"${species}_${bioproject}"}){
+       print Dump { MATCH_NOT_INTENDED => {$core_db->{name} => $match_not_intended{"${species}_${bioproject}"} } };
        next BIOPROJECT;
     }
     $assemblies{$species}{$bioproject}{core_db}{assembly_accession} = $production_mysql->meta_value($core_db->{name}, "assembly.accession") // "";

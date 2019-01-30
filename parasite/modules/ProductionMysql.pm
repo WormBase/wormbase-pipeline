@@ -88,6 +88,24 @@ sub meta_value {
   return undef;
 }
 
+sub set_meta_value {
+  my ($self, $core_db_pattern, $meta_key, $new_value) = @_;
+  my $db_cmd = $self->{db_cmd};
+  my $core_db = $self->core_db($core_db_pattern);
+  open(my $fh_1, " { $db_cmd  $core_db -Ne 'delete from meta where meta_key=\"$meta_key\" ' 2>&1 1>&3 | grep -v \"can be insecure\" 1>&2; } 3>&1 |") or Carp::croak "ProductionMysql: $db_cmd not in your PATH\n";
+  while(<$fh_1>) {
+   chomp;
+   print STDERR "$_\n" if $_;
+  }
+  close $fh_1;
+  open(my $fh_2, " { $db_cmd  $core_db -Ne 'insert into meta(meta_key, meta_value) values (\"$meta_key\", \"$new_value\") ' 2>&1 1>&3 | grep -v \"can be insecure\" 1>&2; } 3>&1 |") or Carp::croak "ProductionMysql: $db_cmd not in your PATH\n"; 
+  while(<$fh_2>) {
+   chomp;
+   print STDERR "$_\n" if $_;
+  }
+  close $fh_2;
+}
+
 sub conn {
   my $db_cmd= shift -> {db_cmd};
   my $db_name = shift;
