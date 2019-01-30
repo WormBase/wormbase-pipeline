@@ -7,21 +7,22 @@ use CoreCreation::Fasta;
 use File::Spec;
 use File::Basename;
 use File::Slurp;
-my $data_dir_path = $ARGV[0];
-die "Usage: $0 <data dir>" unless -d $data_dir_path;
-$data_dir_path =  File::Spec->rel2abs($data_dir_path) unless File::Spec->file_name_is_absolute($data_dir_path);
-my $data_dir_name = File::Basename::basename($data_dir_path); 
+
+my $conf = Load(do {local $/; <>} || "--- {}");
+die "usage: PARASITE_DATA=... $0 < conf" unless $conf;
+
+my ($data_dir_name, @others) = keys %{$conf};
+die "conf format: {species => {...}}" unless $data_dir_name and not @others and $data_dir_name =~ /[a-z]+_[a-z]+_[a-z0-9]+/;
+my $data_dir_path = join ("/", $ENV{PARASITE_DATA}, $data_dir_name);
 my $conf_path = File::Spec->catfile($data_dir_path, "$data_dir_name.conf");
 
-my $conf;
-$conf = Load(do {local $/; <STDIN>} || "--- {}")->{$data_dir_name} unless -t STDIN;
-$conf //= Load(do {local $/; <DATA>});
 while (true) {
   if ( not -f $conf_path) {
 
     $conf->{gff3} //=  File::Spec->catfile($data_dir_path, "$data_dir_name.gff3");
     die "Expected gff at: ".$conf->{gff3} unless -f $conf->{gff3} and File::Spec->file_name_is_absolute($conf->{gff3});
-
+    my $check_sources_column = "grep -c $conf->{gff_sources} $conf->{gff3}";
+    die "Failed: $check_sources_column" unless 0 < `$check_sources_column`;
     my $fasta_path = File::Spec->catfile($data_dir_path,"$data_dir_name.fa");
     die "Expected fasta at: $fasta_path" unless -f $fasta_path;
     $conf->{toplevel} = "scaffold";
@@ -55,18 +56,3 @@ while (true) {
   }  
 }
 print Dump (YAML::LoadFile($conf_path)); 
-
-__DATA__
----
-taxon_id: ?
-# Should have format: GCA_[0-9]+.[0-9]
-assembly_version: ?
-#look through the GFF's source column. worm_lite.pl will ignore things not mentioned here.
-gff_sources: ?
-meta:
- assembly.accession: ?
- provider.name: ?
- provider.url: ? 
- species.biosample: ?
-# Consult WormBook if needed. Remove for Platyhelminthes.
- species.nematode_clade: ?
