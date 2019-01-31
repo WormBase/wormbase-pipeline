@@ -2,6 +2,8 @@
 # Sorts out FASTA split-or-not and conf template
 # Creates the conf in a given directory
 # Alternative conf template can be passed on STDIN
+use strict;
+use warnings;
 use YAML;
 use CoreCreation::Fasta;
 use File::Spec;
@@ -16,12 +18,12 @@ die "conf format: {species => {...}}" unless $data_dir_name and not @others and 
 my $data_dir_path = join ("/", $ENV{PARASITE_DATA}, $data_dir_name);
 my $conf_path = File::Spec->catfile($data_dir_path, "$data_dir_name.conf");
 
-while (true) {
+while (1) {
   if ( not -f $conf_path) {
 
     $conf->{gff3} //=  File::Spec->catfile($data_dir_path, "$data_dir_name.gff3");
     die "Expected gff at: ".$conf->{gff3} unless -f $conf->{gff3} and File::Spec->file_name_is_absolute($conf->{gff3});
-    my $check_sources_column = "grep -c $conf->{gff_sources} $conf->{gff3}";
+    my $check_sources_column = "grep -c $conf->{$data_dir_name}{gff_sources} $conf->{gff3}";
     die "Failed: $check_sources_column" unless 0 < `$check_sources_column`;
     my $fasta_path = File::Spec->catfile($data_dir_path,"$data_dir_name.fa");
     die "Expected fasta at: $fasta_path" unless -f $fasta_path;
@@ -43,14 +45,13 @@ while (true) {
     
     
     open(FH, '>', $conf_path) or die $!;
-    print FH Dump({ $data_dir_name => $conf});
+    print FH Dump($conf);
     close(FH);
   }
   
   my $text = File::Slurp::read_file($conf_path);
   if ($text =~ /\?/) {
-    die "$conf_path: complete the config file and remove all the ?s!" unless -t STDOUT;
-    system("vi $conf_path") and die; #:cq in vim to escape this
+    die "$conf_path: complete the config file and remove all the ?s!";
   } else {
     last;
   }  
