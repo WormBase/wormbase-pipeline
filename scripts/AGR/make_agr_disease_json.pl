@@ -192,7 +192,7 @@ while( my $obj = $it->next) {
     $obj_name = $gene->Public_name->name;
     $assoc_type = 'is_implicated_in';
     $obj_id = 'WB:' . $gene->name;
-    @inferred_genes = ();
+    # @inferred_genes = ();
   } else {
     die "Could not identify a central object for the annotation from Disease_model_annotation $obj->name\n";
   }
