@@ -83,7 +83,7 @@ if ($run_clustal) {
   my %accessors = $wb->species_accessors;
   $accessors{elegans} = $wb;
   
-  my $dbconn = DBI->connect("DBI:mysql:dbname=${rdb_name};host=${rdb_host};port=${rdb_port}" ,$rdb_user,$rdb_pass);
+  my $dbconn = DBI->connect("DBI:mysql:dbname=${rdb_name};host=${rdb_host};port=${rdb_port}" ,$rdb_user,$rdb_pass) or $log->log_and_die($DBI::errstr);
   
   my $lsf = LSF::JobManager->new();
   
@@ -146,20 +146,21 @@ if ($run_clustal) {
           . " -alignerdir $aligner_dir";
       $cmd = $accessors{$species}->build_cmd($cmd);
 
+# it is useful to still make the command files so that if any batch jobs fail, the command files are available to be run by hand
       open(my $cmd_fh, ">$cmd_file") or $log->log_and_die("Could not open $cmd_file for writing\n");
       print $cmd_fh "#!/bin/csh\n";
       print $cmd_fh "$cmd\n";
       close($cmd_fh);
       chmod 0777, $cmd_file;
       
-      my $job_obj = $lsf->submit(@bsub_options, $cmd_file);
+      my $job_obj = $lsf->submit(@bsub_options, $cmd);
       if (defined $job_obj) {
         $job_info{$job_obj->id} = {
           output_file => $cmd_out,
-          command_file => $cmd_file,
+          command_file => $cmd,
         }
       } else {
-        $log->log_and_die("Could not submit job $cmd_file\n");
+        $log->log_and_die("Could not submit job $cmd\n");
       }
     }
   }
@@ -171,9 +172,9 @@ if ($run_clustal) {
     my $job_out =  $job_info{$job->id}->{output_file};
     
     if ($job->history->exit_status == 0) {
-      unlink $job_cmd, $job_out;   
+      unlink $job_out;   
     } else {    
-      $log->error("$job exited non zero: check $job_out and re-run $job_cmd before dumping\n");
+      $log->error("$job exited non zero: check $job_out and re-run '$job_cmd' before dumping\n");
       $run_jobs_failed++;
     }
   }
