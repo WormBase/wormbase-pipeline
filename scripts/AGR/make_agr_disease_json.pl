@@ -352,14 +352,13 @@ sub write_DAF_line {
   my $date = $obj->{dateAssigned};
   $date =~ s/(\d{4})\-(\d{2})\-(\d{2}).+/${1}${2}${3}/; 
 
-  my $inferred_gene;
+  my %inferred_genes;
   if ($obj->{objectRelation}->{objectType} eq 'gene') {
-    $inferred_gene = $obj->{objectId};
-  } elsif (exists $obj->{objectRelation}->{inferredGeneAssociation}) {
-    $inferred_gene =  join(",", @{$obj->{objectRelation}->{inferredGeneAssociation}});
-  } else {
-    $inferred_gene = '';
+    $inferred_genes{$obj->{objectId}}=1;
+  }elsif (exists $obj->{objectRelation}->{inferredGeneAssociation}) {
+    map {$inferred_genes{$_} =1} @{$obj->{objectRelation}->{inferredGeneAssociation}};
   }
+  my $inferred_gene =  join(",", keys %inferred_genes);
 
   printf($fh "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", 
          $taxid,
