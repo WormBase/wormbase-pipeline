@@ -51,7 +51,7 @@ my @script_conf = (
   { script => 'dump_promoters.pl',                       output => 'potential_promotors.fa'         },
   { script => 'dump_swissprot.pl',                       output => 'swissprot.txt'                  },
   { script => 'dump_ko.pl',                              output => 'knockout_consortium_alleles.xml'},
-  { script => 'dump_alaska_ids.pl'                       output => 'alaska_ids.tsv', all => 1       },
+  { script => 'dump_alaska_ids.pl',                      output => 'alaska_ids.tsv', all => 1       },
   { script => 'dump_cdna2orf.pl',                        output => 'cdna2orf.txt'                   },
   { script => 'dump_pcr_list.pl',                        output => 'pcr_product2gene.txt'           },
   { script => 'dump_geneid_list.pl',                     output => 'geneIDs.txt', all => 1          },
