@@ -6,7 +6,7 @@ use Getopt::Long;
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
-use AGR;
+use Modules::AGR;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase, $bgi_json);
 my ($gff_in, $gff_out, $ws_version);

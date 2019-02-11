@@ -8,7 +8,7 @@ use JSON;
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
-use AGR;
+use Modules::AGR;
 #use Log_files;
 
 my %XREF_MAP = (
