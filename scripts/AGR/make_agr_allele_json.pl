@@ -33,7 +33,7 @@ if ( $store ) {
 }
 
 my $tace = $wormbase->tace;
-my $date = &get_rfc_date();
+my $date = AGR::get_rfc_date();
 my $alt_date = join("/", $date =~ /^(\d{4})(\d{2})(\d{2})/);
 my $taxid = $wormbase->ncbi_tax_id;
 my $full_name = $wormbase->full_name;
@@ -50,7 +50,7 @@ if (not defined $outfile) {
 #
 my ($bgi_genes, @alleles, $it, @annots);
 
-$bgi_genes = &get_bgi_genes( $bgi_json ) if defined $bgi_json;
+$bgi_genes = AGR::get_bgi_genes( $bgi_json ) if defined $bgi_json;
 
 my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or die("Connection failure: ". Ace->error);
 
