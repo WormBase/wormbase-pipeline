@@ -34,7 +34,7 @@ die "You must supply an input GFF file\n" if not defined $gff_in or not -e $gff_
 die "You must supply an output file name\n" if not defined $gff_out;
 die "You must supply an BGI JSON file\n" if not defined $bgi_json;
 
-my %bgi_genes = %{&get_bgi_genes($bgi_json)};
+my %bgi_genes = %{AGR::get_bgi_genes($bgi_json)};
 
 my $in_fh = &open_gff_file($gff_in);
 open(my $out_fh, ">$gff_out") or die "Could not open $gff_out for writing\n";

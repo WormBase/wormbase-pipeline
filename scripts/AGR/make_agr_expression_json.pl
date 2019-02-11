@@ -73,7 +73,7 @@ if ( $store ) {
 }
 
 my $tace = $wormbase->tace;
-my $date = &get_rfc_date();
+my $date = AGR::get_rfc_date();
 my $alt_date = join("/", $date =~ /^(\d{4})(\d{2})(\d{2})/);
 my $taxid = $wormbase->ncbi_tax_id;
 my $full_name = $wormbase->full_name;
@@ -107,7 +107,7 @@ while(<$wb2ub_fh>) {
 #
 my ($bgi_genes, @expression_annots);
 
-$bgi_genes = &get_bgi_genes( $bgi_json ) if defined $bgi_json;
+$bgi_genes = AGR::get_bgi_genes( $bgi_json ) if defined $bgi_json;
 
 my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or die("Connection failure: ". Ace->error);
 
@@ -268,7 +268,7 @@ while (my $obj = $it->next) {
 
 
 my $data = {
-  metaData => &get_file_metadata_json( (defined $ws_version) ? $ws_version : $wormbase->get_wormbase_version_name(), $date ), 
+  metaData => AGR::get_file_metadata_json( (defined $ws_version) ? $ws_version : $wormbase->get_wormbase_version_name(), $date ), 
   data     => \@expression_annots,
 };
 

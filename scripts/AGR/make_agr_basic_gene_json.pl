@@ -254,7 +254,7 @@ foreach my $sub_query (
 }
 
 my $data = {
-  metaData => &get_file_metadata_json( (defined $ws_version) ? $ws_version : $wormbase->get_wormbase_version_name() ), 
+  metaData => AGR::get_file_metadata_json( (defined $ws_version) ? $ws_version : $wormbase->get_wormbase_version_name() ), 
   data => \@genes,
 };
 
