@@ -3423,6 +3423,7 @@
                           WormBook #Evidence
                           Other #Evidence
                           Micropublication #Evidence
+                          Method #Evidence
        Refers_to Gene ?Gene INXREF Reference   // #Evidence
                  Allele ?Variation INXREF Reference #Evidence
                  Rearrangement ?Rearrangement INXREF Reference #Evidence

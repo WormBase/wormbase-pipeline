@@ -3397,6 +3397,7 @@
             WormBook #Evidence
             Other #Evidence
             Micropublication #Evidence
+            Method #Evidence
        Refers_to Gene ?Gene XREF Reference #Evidence
                  Allele ?Variation XREF Reference #Evidence
                  Rearrangement ?Rearrangement XREF Reference #Evidence
