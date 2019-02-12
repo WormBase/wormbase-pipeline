@@ -673,7 +673,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 ?Strain  Evidence #Evidence
+         Status UNIQUE ENUM ^status Live #Evidence
+                                    Dead #Evidence
          Genotype UNIQUE Text
+         Public_name UNIQUE ?Text
          Other_name ?Text #Evidence
          Contains Gene   ?Gene INXREF Strain
                   Variation ?Variation INXREF Strain

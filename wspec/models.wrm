@@ -650,7 +650,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 ?Strain  Evidence #Evidence
+         Status UNIQUE Live #Evidence
+                       Dead #Evidence
          Genotype UNIQUE Text
+         Public_name UNIQUE ?Text
          Other_name ?Text #Evidence
          Contains Gene ?Gene XREF Strain
                   Variation ?Variation XREF Strain
