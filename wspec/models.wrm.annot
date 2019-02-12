@@ -246,8 +246,8 @@
                 Variation ?Variation    INXREF Gene_class
                 Genes ?Gene INXREF Gene_class
                 Old_member ?Text //NOXREF Former_member_of   -- tad -- what to do with this?
-                Main_name ?Gene_class OUTXREF Other_name
-                Other_name ?Gene_class INXREF Main_name
+                Other_name ?Gene_class OUTXREF Other_name_for
+                Other_name_for ?Gene_class INXREF Other_name
                 Remark ?Text #Evidence
 
 

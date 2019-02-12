@@ -229,8 +229,8 @@
             Variation ?Variation XREF Gene_class
             Genes ?Gene XREF Gene_class
             Old_member ?Gene_name XREF Former_member_of
-            Main_name ?Gene_class XREF Other_name
-            Other_name ?Gene_class XREF Main_name
+            Other_name ?Gene_class XREF Other_name_for
+            Other_name_for ?Gene_class XREF Other_name
             Remark ?Text #Evidence
 
 
