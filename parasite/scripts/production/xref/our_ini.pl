@@ -87,7 +87,11 @@ for my $species (keys %core_dbs_per_species){
        print "[species $species]\n";
        print "aliases         = $aliases\n";
        print "taxonomy_id     = $taxon\n";
-       print $templates->{STANDARD_SOURCES};
+       my $sources = $templates->{STANDARD_SOURCES};
+       if( $species =~ /schistosoma_mansoni/ or $species =~ /haemonchus_contortus_prjeb506/ ){
+         $sources =~ s{Uniprot/SPTREMBL::MULTI-invertebrate}{Uniprot/SPTREMBL::MULTI-invertebrate-approx};
+       }
+       print $sources;
    }
    if (%wormbase_annotation_paths){
        my ($wormbase_annotation_path, @other_wormbase_annotation_paths) = keys %wormbase_annotation_paths;
@@ -145,6 +149,20 @@ data_uri        = ftp://ftp.ebi.ac.uk/pub/databases/uniprot/current_release/know
 method = --bestn 1
 query_cutoff = 100
 target_cutoff = 100
+
+[source Uniprot/SPTREMBL::MULTI-invertebrate-approx]
+name            = Uniprot/SPTREMBL
+download        = Y
+order           = 20
+priority        = 2 
+prio_descr      = sequence_mapped
+parser          = UniProtParser
+dependent_on    = MIM
+release_uri     = ftp://ftp.ebi.ac.uk/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/reldate.txt
+data_uri        = ftp://ftp.ebi.ac.uk/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/uniprot_trembl_invertebrates.dat.gz
+method = --bestn 1
+query_cutoff = 95
+target_cutoff = 70
 
 [source Uniprot/SWISSPROT::MULTI-invertebrate]
 name            = Uniprot/SWISSPROT
