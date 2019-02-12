@@ -541,43 +541,69 @@ sub translation_fix {
 
 # Sometimes submitters give us partial genes - the models are incomplete because of scaffold gap
 # We can rescue such genes by correcting the phase of the first exon.
+# Also: if an exon of just one phase is wrong, and it gets fixed, that's good
 sub phase_fix {
   my ($self, $g_ref) = @_;
 
   $self->verbose and print STDERR "Fixing phases...\n";
 
   foreach my $g (@$g_ref) {
+    T:
     foreach my $t (@{$g->get_all_Transcripts}) {
-      next if $t->biotype ne 'protein_coding';
+      next T if $t->biotype ne 'protein_coding';
       
-      my $exon_h = $t->get_all_Exons; 
+      my @exons = @{$t->get_all_Exons}; 
       
-      next if $exon_h->[0]->phase < 0;
+      next T if $exons[0]->phase < 0;
 
-      my $seq = $t->translate->seq;
-      my ($stops) = $seq =~ tr/\*/\*/; 
-      
-      next unless $stops;
+      next T if seq_ok($t);
 
-      my $first_exon_original_phase = $exon_h->[0]->phase;
-      my $first_exon_better_phase = $first_exon_original_phase;
+      for my $i (0..$#exons){
+        my $original_phase = $exons[$i]->phase;
 
-      my %stops_by_phase;
-      foreach my $phase (0, 1, 2) {
-        $exon_h->[0]->phase($phase);
+        my %stops_by_phase;
+        for my $phase (grep {$_ ne $original_phase} (0, 1, 2)) {
+          $exons[$i]->phase($phase);
         
-        my $alt_seq = $t->translate->seq;
-        my ($alt_stops) = $alt_seq =~ tr/\*/\*/; 
-        $stops_by_phase{$phase} = $alt_stops;
-        
-        $first_exon_better_phase = $phase if $stops_by_phase{$phase} == 0;
+          if(seq_ok($t)){
+              printf STDERR "Fixed transcript %s: changed phase of the exon %d phase from %d to %d\n", $t->stable_id, $i, $original_phase, $phase
+                if $self->verbose;
+              next T;
+          }
+        }
+        $exons[$i]->phase($original_phase);
+
+        my $original_start = $exons[$i]->start;
+        for my $d (-1, 1, -2, 2){
+          $exons[$i]->start($original_start+$d);
+          if (seq_ok($t)){
+             printf STDERR "Fixed transcript %s: changed start of the exon %d from %d to %d\n", $t->stable_id, $i, $original_start, $original_start+$d
+               if $self->verbose;
+             next T;
+          }
+        }
+        $exons[$i]->start($original_start); 
+
+        my $original_end = $exons[$i]->end;
+        for my $d (-1, 1, -2, 2){
+          $exons[$i]->end($original_end+$d);
+          if (seq_ok($t)){
+             printf STDERR "Fixed transcript %s: changed end of the exon %d from %d to %d\n", $t->stable_id, $i, $original_end, $original_end+$d
+               if $self->verbose;
+             next T;
+          }
+        }
+        $exons[$i]->end($original_end);
+
       }
-
-      printf STDERR "Fixed transcript %s: changed phase of the first exon phase from %d to %d\n", $t->stable_id, $first_exon_original_phase, $first_exon_better_phase
-        if $first_exon_original_phase ne $first_exon_better_phase and $self->verbose;
-      $exon_h->[0]->phase($first_exon_better_phase);
     }
   }
+}
+sub seq_ok {
+  my ($t) = @_;
+  my $seq = $t->translate->seq;
+  my ($stops) = $seq =~ tr/\*/\*/;
+  return not $stops;
 }
 
 sub parse_simplefeature_gff {
