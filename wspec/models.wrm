@@ -2612,18 +2612,18 @@
                      Cell_group ?Cell_group XREF Life_stage
                      Anatomy_term ?Anatomy_term XREF Life_stage
                      Sub_stage ?Life_stage XREF Contained_in
-            Contained_in ?Life_stage XREF Sub_stage            // changed for Wen 010516
+            Contained_in ?Life_stage XREF Sub_stage 
             Preceded_by ?Life_stage XREF Followed_by
             Followed_by ?Life_stage XREF Preceded_by
             Expr_pattern ?Expr_pattern XREF Life_stage
             WBProcess ?WBProcess XREF Life_stage
             Picture ?Picture XREF Life_stage
             Remark ?Text #Evidence
-            Definition ?Text // Wen [020607 krb]
+            Definition UNIQUE ?Text #Evidence
             Public_name UNIQUE ?Text
-            Other_name ?Text // Wen [020607 krb]
+            Other_name ?Text
             Reference ?Paper XREF Life_stage
-            Curated_by UNIQUE Text // Sylvia [010928 krb]
+            Curated_by UNIQUE Text
 
 
 
