@@ -67,28 +67,21 @@ foreach my $gene(@genes){
 
     my ($id, $desc_text, $seqstring);
     
+    my $pep_desc = ($trans->description && $trans->description ne '' && $trans->description ne $trans->stable_id)
+          ? $trans->description : $gene->description // "";
+    $pep_desc =~ s/^(.*).\s\[.*\].*$/$1/;
+    $pep_desc =~ s/\"/\\"/g;
+      
     if ($pep) {
       next unless $trans->biotype eq 'protein_coding';
 
       my $tr = $trans->translation;
       
-      my $pep_desc;
-      if (defined $trans->description && $trans->description ne '' && $trans->description ne $trans->stable_id) {
-        $pep_desc = $trans->description;
-      } elsif (defined $gene) {
-        $pep_desc = $gene->description;
-      }
-      if($pep_desc) {
-        $pep_desc = $1 if $pep_desc =~ /(.*).\s\[.*\]/;
-        $pep_desc =~ s/\"/\\"/g;
-        $pep_desc = sprintf('"%s"', $pep_desc);
-      }
-      
       if (defined $ebi_header_prefix) {
         $id = join(":", $ebi_header_prefix, $species_string, $tr->stable_id);
         $desc_text = sprintf("%s gene:%s transcript:%s species:%s", 
                              $slice_id, $gene_id, $trans_id, $species_string);
-        $desc_text .= " description:$pep_desc" if $pep_desc;
+        $desc_text .= " description:\"$pep_desc\"" if $pep_desc;
       } else {
         $id = $tr->stable_id;
         $desc_text = "transcript=$trans_id gene=$gene_id";
@@ -101,7 +94,7 @@ foreach my $gene(@genes){
         $id = join(":", $ebi_header_prefix, $species_string, $trans_id);
         $desc_text = sprintf("%s gene:%s transcript:%s species:%s", 
                              $slice_id, $gene_id, $trans_id, $species_string);
-        $desc_text .= " description:$pep_desc" if $pep_desc;
+        $desc_text .= " description:\"$pep_desc\"" if $pep_desc;
       } else {
         $id = $trans_id;
         $desc_text = "gene=$gene_id";
@@ -112,7 +105,7 @@ foreach my $gene(@genes){
         $id = join(":", $ebi_header_prefix, $species_string, $trans_id);
         $desc_text = sprintf("%s gene:%s transcript:%s species:%s", 
                              $slice_id, $gene_id, $trans_id, $species_string);
-        $desc_text .= " description:$pep_desc" if $pep_desc;
+        $desc_text .= " description:\"$pep_desc\"" if $pep_desc;
       } else {
         $id = $trans_id;
         $desc_text = "gene=$gene_id";
