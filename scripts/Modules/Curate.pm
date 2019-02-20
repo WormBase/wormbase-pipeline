@@ -659,15 +659,15 @@ sub Find_Next_CDS_ID {
   my ($self, $clone) = @_; # $clone is either the clone name (in elegans) or the toplevel name (in sratti) or undef
 
   my %prefix = (
-		briggsae    => 'CBG',
-		remanei     => 'CRE',
-		brenneri    => 'CBN',
-		japonica    => 'CJA',
-		pristiochus => 'PPA',
-		brugia      => 'Bm',
-		ovolvulus   => 'OVOC',
-		sratti      => 'SRAE_', # followed by a digit or a 'X' then the number ending '00'
-		tmuris      => 'TMUE_', # followed by the linkage group ('0', '1', '2' or a 'M') then the 9-digit unique sequential number
+		briggsae     => 'CBG',
+		remanei      => 'CRE',
+		brenneri     => 'CBN',
+		japonica     => 'CJA',
+		pristionchus => 'PPA',
+		brugia       => 'Bm',
+		ovolvulus    => 'OVOC',
+		sratti       => 'SRAE_', # followed by a digit or a 'X' then the number ending '00'
+		tmuris       => 'TMUE_', # followed by the linkage group ('0', '1', '2' or a 'M') then the 9-digit unique sequential number
 	       );
 
   my %sratti_prefix = (
