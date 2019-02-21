@@ -8,24 +8,20 @@ use Storable;
 use Getopt::Long;
 
 # connect to name server and set domain to 'Gene'
-
 my $DOMAIN  = 'Gene';
-my ($PASS,$USER,$debug, $test, $store, $species, $database);
+my ($PASS,$USER,$debug, $test, $store, $species);
 
 GetOptions (
 	    'debug=s'    => \$debug,
 	    'test'       => \$test,
-	    'store:s'    => \$store,
-	    'species:s'  => \$species,
-	    'database:s' => \$database,
-	    'user:s'	 => \$USER,
-	    'pass:s'	 => \$PASS,
+	    'store=s'    => \$store,
+	    'species=s'  => \$species,
+	    'user=s'	 => \$USER,
+	    'pass=s'	 => \$PASS,
 	   )||die();
-
+$species || die "Species option is mandatory\n";
 
 my $wormbase;
-die "Species option is mandatory\n" unless $species;
-
 if ($store) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
@@ -47,5 +43,4 @@ while (<>) {
 	my $gene_id = $db->new_gene($F[0], 'Sequence', $species);
 	print "$F[0] $gene_id\n";
 }
-
 $log->mail;
