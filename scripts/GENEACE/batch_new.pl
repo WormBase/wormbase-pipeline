@@ -11,7 +11,7 @@ use Wormbase;
 
 =item Options:
 
-  -file	     file containing genes to create <Mandatory>
+  -file	filename   file containing genes to create <Mandatory>
 
     FORMAT:
 
@@ -20,57 +20,47 @@ newgene.pl -seq Bm16921 -who 4055 -load -id WBGene00255483 -bio CDS -species bru
 newgene.pl -seq Bm16922 -who 4055 -load -id WBGene00255484 -bio CDS -species brugia
 newgene.pl -seq Bm16923 -who 4055 -load -id WBGene00255501 -bio CDS -species brugia
 
-  -debug     limits to specified user <Optional>
-  -load      loads the resulting .ace file into geneace.
+  -debug username  limits to specified user <Optional>
+  -load            loads the resulting .ace file into geneace.
+  -user username   creates a user specific output
 
 e.g. perl batch_new.pl -file newgenes.txt
 
-
 =cut
 
-my ($USER, $test, $file, $debug, $load,$species);
+my ($USER,$file,$debug,$load,$species);
 GetOptions(
-	   'user:s'     => \$USER,
-	   'test'       => \$test,
-	   'file:s'     => \$file,
-	   'debug:s'    => \$debug,
+	   'user=s'     => \$USER,
+	   'file=s'     => \$file,
+	   'debug=s'    => \$debug,
 	   'load'       => \$load,
-	  ) or die;
-
+	  )||die();
 
 my $log;
 if (defined $USER) {$log = Log_files->make_log("NAMEDB:$file", $USER);}
 elsif (defined $debug) {$log = Log_files->make_log("NAMEDB:$file", $debug);}
 else {$log = Log_files->make_log("NAMEDB:$file");}
-my $DB;
-my $db;
-my $wormbase = Wormbase->new("-organism" =>$species);
+my ($DB,$db);
+my $wormbase = Wormbase->new('-organism' => $species);
 my $database = "/nfs/wormpub/DATABASES/geneace";
 $log->write_to("Working.........\n-----------------------------------\n\n\n1) creating genes in file [${file}]\n\n");
-$log->write_to("TEST mode is ON!\n\n") if $test;
 
 my $ace = Ace->connect('-path', $database) or $log->log_and_die("cant open $database: $!\n");
 
+my $outdir = "$database/NAMEDB_Files/";
+my $backupsdir = "$outdir/BACKUPS/";
+my $outname = 'batch_new.ace';
+my $outputfile = $outdir.$outname;
 
-my $outdir = $database."/NAMEDB_Files/";
-my $backupsdir = $outdir."BACKUPS/";
-my $outname = "batch_new.ace";
-my $outputfile = "$outdir"."$outname";
-my $output;
-
-
-
-#generate a list of corespecies short::ful names
+# generate a list of core species short::full names
 my %full_name_data;
-
 my %accessors = ($wormbase->species_accessors);
-  foreach my $wb (values %accessors) {
+foreach my $wb (values %accessors) {
     my $gspecies = $wb->full_name;
     $full_name_data{$wb->species} = $wb->full_name;
-  }
+}
 
-#store the IDs being created in the file to see if they have already been used in this batch
-
+# store the IDs being created in the file to see if they have already been used in this batch
 my @genes;
 my @genenames;
 my %bio2so = (
@@ -82,26 +72,26 @@ my %bio2so = (
 
 ##############################
 # warn/notify on use of -load.
-##############################
-if (!defined$load) {$log->write_to("2) You have decided not to automatically load the output of this script\n\n");}
-elsif (defined$load) { $log->write_to("2) Output has been scheduled for auto-loading.\n\n");}
+if (! defined $load) {$log->write_to("2) You have decided not to automatically load the output of this script\n\n");}
+elsif (defined $load) { $log->write_to("2) Output has been scheduled for auto-loading.\n\n");}
 
-#open file and read
+# open file and read
 open (FILE,"<$file") or $log->log_and_die("can't open $file : $!\n");
 open (ACE,">$outputfile") or $log->log_and_die("cant write output: $!\n");
 my($oldgene,$newgene,$newname,$user,$bio);
 my $count=0;
 my $createdcount=0;
+
 while (<FILE>) {
   chomp;
   
-  #newgene.pl -seq Bm16920 -who 4055 -load -id WBGene00255463 -bio CDS -species brugia
+  # newgene.pl -seq Bm16920 -who 4055 -load -id WBGene00255463 -bio CDS -species brugia
   if (/newgene.pl\s+-seq\s+(\w+)\s+-who\s+(\d+)\s+\S+\s+-id\s+(WBGene\d{8})\s+-bio\s+(\S+)\s+-species\s+(\w+)/) { #gather info
-    #Captured string ($1) - Bm16922
-    #Captured string ($2) - 4055
-    #Captured string ($3) - WBGene00255484
-    #Captured string ($4) - CDS
-    #Captured string ($5) - brugia
+    # Captured string ($1) - Bm16922
+    # Captured string ($2) - 4055
+    # Captured string ($3) - WBGene00255484
+    # Captured string ($4) - CDS
+    # Captured string ($5) - brugia
     $createdcount++;
     $newname = $1;
     $user = "WBPerson$2";
@@ -109,11 +99,9 @@ while (<FILE>) {
     $bio = $4;
     $species = $5;
     &create_gene;
-  }
-  elsif (/\w+/) {
+  } elsif (/\w+/) {
     $log->error("ERROR: $_ is a malformed line which appears to not include all of the information required\n");
-  }
-  else {
+  } else {
     next;
   }
 }
@@ -122,27 +110,27 @@ close(ACE);
 $log->write_to("3) $createdcount genes in file to be created\n\n");
 $log->write_to("4) $count genes created\n\n");
 &load_data if ($load);
-$log->write_to("5) Check $outputfile file and load into geneace.\n") unless ($load);
+$log->write_to("5) Check $outputfile file and load into geneace.\n") unless $load;
 $log->mail();
 exit(0);
 
 ###############################################################################################
-
 sub create_gene {
-  my $ok;
+  my $output;
+  my $ok = 0
   if($newgene and $user and $newname) {
     $output = "";
     $ok = 1; # error status
 
-    #Does the new gene already exist?
+    # Does the new gene already exist?
     my $newgeneObj = $ace->fetch('Gene', $newgene);
     if ($newgeneObj) {
       $log->error("ERROR: $newgene already exists\n");
       $ok = 0;
-      }
+    }
     my $newseqObj = $ace->fetch('Gene_name', $newname);
     if ($newseqObj) {
-      my $error_gene = $newseqObj->Sequence_name_for->name; #check this
+      my $error_gene = $newseqObj->Sequence_name_for->name; # check this
       $log->error("ERROR: $newname already exists as sequence name for $error_gene\n");
       $ok = 0;
     }
@@ -157,16 +145,13 @@ sub create_gene {
     }
     
     # process NEW gene
-
     my $SO = $bio2so{$bio};
     unless ($SO) {
       printf ("-bio option $bio is not valid, please use %s\n",join('/',keys %bio2so)) if $debug;
       $log->log("you need to add a biotype to $newgene\n");
     }
 
-
-    my $ver = "1";
-    $output .= "\nGene : $newgene\nVersion $ver\nSequence_name $newname\nPublic_name $newname\nSpecies \"$full_name_data{$species}\"\nHistory Version_change $ver now $user Event Created\nLive\nBiotype \"SO:$SO\"\nMethod Gene\n\n";
+    $output .= "\nGene : $newgene\nVersion $ver\nSequence_name $newname\nPublic_name $newname\nSpecies \"$full_name_data{$species}\"\nHistory Version_change 1 now $user Event Created\nLive\nBiotype \"SO:$SO\"\nMethod Gene\n\n";
     
   } else {
     $log->error("ERROR: Missing information to create $newgene\n");
@@ -175,23 +160,22 @@ sub create_gene {
   
   # we did this one successfully
   if ($ok) {
-    push(@genes,"$newgene");
-    push(@genenames, "$newname");
+    push(@genes,$newgene);
+    push(@genenames, $newname);
     print ACE $output;
     $count++;
   }
   else {
     $log->error("ERROR: Too many isses with the ($newgene/$newname), not processing\n\n");
   }
-  
   undef $newgene ;undef $user; undef $newname;
 }
 
 sub load_data {
-# load information to $database if -load is specified
-$wormbase->load_to_database("$database", "$outputfile", 'batch_new.pl', $log, undef, 1);
-$log->write_to("5) Loaded $outputfile into $database\n\n");
-$wormbase->run_command("mv $outputfile $backupsdir"."$outname". $wormbase->rundate. "\n"); #append date to filename when moving.
-$log->write_to("6) Output file has been cleaned away like a good little fellow\n\n");
-print "Finished!!!!\n";
+  # load information to $database if -load is specified
+  $wormbase->load_to_database("$database", "$outputfile", 'batch_new.pl', $log, undef, 1);
+  $log->write_to("5) Loaded $outputfile into $database\n\n");
+  $wormbase->run_command("mv $outputfile $backupsdir"."$outname". $wormbase->rundate. "\n"); #append date to filename when moving.
+  $log->write_to("6) Output file has been cleaned away like a good little fellow\n\n");
+  print "Finished!!!!\n";
 }
