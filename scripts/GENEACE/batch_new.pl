@@ -15,10 +15,10 @@ use Wormbase;
 
     FORMAT:
 
-newgene.pl -seq Bm16920 -who 4055 -load -id WBGene00255463 -species brugia
-newgene.pl -seq Bm16921 -who 4055 -load -id WBGene00255483 -species brugia
-newgene.pl -seq Bm16922 -who 4055 -load -id WBGene00255484 -species brugia
-newgene.pl -seq Bm16923 -who 4055 -load -id WBGene00255501 -species brugia
+newgene.pl -seq Bm16920 -who 4055 -load -id WBGene00255463 -bio CDS -species brugia
+newgene.pl -seq Bm16921 -who 4055 -load -id WBGene00255483 -bio CDS -species brugia
+newgene.pl -seq Bm16922 -who 4055 -load -id WBGene00255484 -bio CDS -species brugia
+newgene.pl -seq Bm16923 -who 4055 -load -id WBGene00255501 -bio CDS -species brugia
 
   -debug     limits to specified user <Optional>
   -load      loads the resulting .ace file into geneace.
@@ -95,7 +95,7 @@ my $createdcount=0;
 while (<FILE>) {
   chomp;
   
-  #newgene.pl -seq Bm16920 -who 4055 -load -id WBGene00255463 -species brugia
+  #newgene.pl -seq Bm16920 -who 4055 -load -id WBGene00255463 -bio CDS -species brugia
   if (/newgene.pl\s+-seq\s+(\w+)\s+-who\s+(\d+)\s+\S+\s+-id\s+(WBGene\d{8})\s+-bio\s+(\S+)\s+-species\s+(\w+)/) { #gather info
     #Captured string ($1) - Bm16922
     #Captured string ($2) - 4055
