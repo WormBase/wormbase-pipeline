@@ -3743,10 +3743,12 @@
                                Genotype
                                Tissue
                                Treatment
+          Concentration ?Text
           Expression_cluster_RNAseq ?Expression_cluster XREF RNAseq
           Expression_cluster_tiling_array ?Expression_cluster XREF Tiling_array
           Expression_cluster_qPCR ?Expression_cluster XREF qPCR  //added by Wen for qPCR curation
           Gene_cluster ?Gene_cluster XREF Analysis
+          Molecule ?Molecule XREF Analysis
           Species_in_analysis ?Species XREF In_analysis
           Reference ?Paper XREF Describes_analysis
           Conducted_by ?Person XREF Conducted        // not always the same as the author of the paper - eg Erich running OrthoMCL
@@ -3765,6 +3767,8 @@
                       Unknown
            Food Text
            Exposure_time Text
+           Detection_method ?Text #Evidence //NMR, MALDI-MS, HPLC-UV, shotgun lipidomics
+           Extraction_method ?Text #Evidence //MeOH, exometabolome, MeOH/Chloroform, 5% trichloroacetic acid
            Species UNIQUE ?Species
            Strain ?Strain // added for Microarry_result [030127 krb]
            Preparation ?Text // added for Microarray_result [030127 krb]
@@ -3803,6 +3807,7 @@
                  Predicted #Evidence
           Detection_method ?Text #Evidence //NMR, MALDI-MS, HPLC-UV, shotgun lipidomics
           Extraction_method ?Text #Evidence //MeOH, exometabolome, MeOH/Chloroform, 5% trichloroacetic acid
+          Analysis ?Analysis XREF Molecule
           Nonspecies_source ?Text
           Chemical_synthesis #Evidence
           Endogenous_in ?Species #Evidence
