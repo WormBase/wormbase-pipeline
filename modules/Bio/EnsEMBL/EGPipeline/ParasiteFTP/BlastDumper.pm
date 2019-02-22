@@ -56,6 +56,7 @@ sub run {
 #define file name
   make_path($out_dir);
   my $prefix = "$prod_name.$assembly";
+  $prefix =~ s/\s+/_/g;
   my $out_file = "$out_dir/$prefix.$suffix";
 
   
