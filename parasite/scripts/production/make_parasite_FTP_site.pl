@@ -58,9 +58,10 @@ while(<FIND>) {
     s/^$wbps_release_ftp_dir\///;
     push @files, $_;
   }
-
-system("cd $wbps_release_ftp_dir && md5sum @files > $checksum_file") and die "Could not calc checksums\n";
-print localtime . " Completed \n";
+open (my $fh, ">", $checksum_file) or die "$!: $checksum_file";
+print $fh `cd $wbps_release_ftp_dir && md5sum $_` for @files;
+close $fh;
+print localtime . " Completed\n";
 #####################
 
 sub make_symlinks_to_wormbase_species {
