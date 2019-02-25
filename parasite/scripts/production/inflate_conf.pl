@@ -53,9 +53,9 @@ for my $k (keys %{$conf}){
   $species_conf->{meta}->{"species.url"} //= join( "_", ucfirst($spe), $cies, $bioproject);
 
   next unless $assembly_version and $assembly_accession;
-  $species_conf->{meta}->{"assembly.default"} //= $assembly_version;
   $species_conf->{meta}->{"assembly.name"} //= $assembly_version;
-
+  $species_conf->{meta}->{"assembly.default"} //= $assembly_version;
+  $species_conf->{meta}->{"assembly.default"} =~ s/\s+/_/g; # Ensembl convention too
 }
 
 print Dump($conf);
