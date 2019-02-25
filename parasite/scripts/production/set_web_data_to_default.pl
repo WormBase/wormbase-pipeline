@@ -1,7 +1,4 @@
 #!/usr/bin/env perl
-# Copy the tables from previous db to start with a clean slate. Then
-# upload an ID mapping, and add kill and creation events for everything else.
-# We only add events for genes, while Ensembl also tracks individual exons and transcripts.
 use strict;
 use warnings;
 use ProductionMysql;
@@ -27,7 +24,7 @@ while(<$fh>){
 my $insert_web_data_dbh = $mysql->dbc($args{core_db})->prepare("update analysis_description join analysis on (analysis_description.analysis_id = analysis.analysis_id) set web_data=? where logic_name = ?");
 my $transcript_adaptor = $mysql->adaptor($args{core_db}, 'Analysis');
 
-my %no_web_data_ok = map {$_ => 1 } qw/dust goa_import interpro2go interpro2pathway ncoils repeatmask repeatmask_customlib seg sfld tmhmm trf xrefchecksum xrefexoneratedna xrefexonerateprotein/;
+my %no_web_data_ok = map {$_ => 1 } qw/dust goa_import interpro2go interpro2pathway ncoils repeatmask repeatmask_repbase repeatmask_customlib seg sfld tmhmm trf xrefchecksum xrefexoneratedna xrefexonerateprotein/;
 
 for my $analysis (grep { not $_->web_data } @{$transcript_adaptor->fetch_all}){
   my $ln = $analysis->logic_name;
