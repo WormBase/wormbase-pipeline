@@ -214,7 +214,7 @@ my $feature_tracks = [
 ];
 sub make_all {
   my ($self,  %opts ) = @_;
-  for my $core_db (reverse ProductionMysql->staging->core_databases){
+  for my $core_db (ProductionMysql->staging->core_databases){
       next unless $core_db =~ /_core_$ENV{PARASITE_VERSION}/;
       print "Starting: $core_db\n";
       $self->make_tracks($core_db, %opts);

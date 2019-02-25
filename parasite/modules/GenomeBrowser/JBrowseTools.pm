@@ -104,10 +104,11 @@ sub prepare_sequence {
     
     my $out = $self->out_dir($args{core_db});
     my $path = $self->{species_ftp}->path_to($args{core_db}, "genomic.fa") ;
-
+    
     if ( $path =~ /.gz$/ ) {
         my $tmp = $self->tmp_path($args{core_db}, basename $path);
-        gunzip( $path, $tmp ) unless -f $tmp;
+        die "Sequence file missing: $path" unless -s $path;
+        gunzip( $path, $tmp ) unless -s $tmp;
         $path = $tmp;
     }
     my $cmd = $self->tool_cmd("prepare-refseqs.pl");
