@@ -118,7 +118,7 @@ while( my $slice = shift @slices) {
 
 
     my $all_transcripts = $gene->get_all_Transcripts();
-    while( my $transcript = shift @{$all_transcripts}) {
+    while( my $transcript) {
       
       my $transcript_gff_id = 'transcript:'.$transcript->stable_id();
 
@@ -354,7 +354,8 @@ while( my $slice = shift @slices) {
       feature_type => (defined $feature->analysis->gff_feature) ? $feature->analysis->gff_feature : 'repeat_region',
     };
 
-    if ($feature->analysis->logic_name eq 'repeatmask') {
+
+    if ($feature->repeat_consensus->repeat_class and $feature->repeat_consensus->name ne $feature->analysis->logic_name){
       $stripped_feature->{attributes}->{repeat_class} = $feature->repeat_consensus->repeat_class;
       $stripped_feature->{display} = $feature->repeat_consensus->name;
     }
