@@ -2915,7 +2915,9 @@
                 Short_name ?Phenotype_name XREF Short_name_for #Evidence
            Assay UNIQUE ?Text #Evidence
            Remark ?Text #Evidence
-           Related_phenotypes Specialisation_of ?Phenotype XREF Generalisation_of
+           Related_phenotypes Replaced_by ?Phenotype XREF Replaces
+                              Replaces ?Phenotype XREF Replaced_by
+                              Specialisation_of ?Phenotype XREF Generalisation_of
                               Generalisation_of ?Phenotype XREF Specialisation_of
                               Dead Alternate_phenotype ?Phenotype
            Attribute_of RNAi ?RNAi XREF Phenotype
