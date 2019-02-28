@@ -215,14 +215,15 @@ my $feature_tracks = [
 sub make_all {
   my ($self,  %opts ) = @_;
   for my $core_db (ProductionMysql->staging->core_databases){
-      next unless $core_db =~ /_core_$ENV{PARASITE_VERSION}/;
-      print "Starting: $core_db\n";
       $self->make_tracks($core_db, %opts);
   }
 }
 
 sub make_tracks {
     my ( $self, $core_db, %opts ) = @_;
+    die unless $core_db =~ /_core_/;
+    next unless $core_db =~ /_core_$ENV{PARASITE_VERSION}/;
+    print "Starting: $core_db\n";
 
     my ( $spe, $cies, $bioproject ) = split "_", $core_db;
 
