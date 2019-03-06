@@ -221,19 +221,19 @@ if ($merge) {
 	$wormbase->run_command("csh -c \"/nfs/users/nfs_a/acedb/RELEASE.2011_01_13.BUILD/bin.LINUX_64/acediff $path_ref $path_new >! $directory/${class}_diff_${database}.ace\"", $log) && die "acediff Failed for ${path_new}\n";
 	print "running.... reformat_acediff -file $directory/${class}_diff_${database}.ace -fileout $directory/update_${class}_${database}.ace\n";
 	if ($debug) {
-	  $wormbase->run_script("reformat_acediff -debug $debug -test -file $directory/${class}_diff_${database}.ace -fileout $directory/update_${class}_${database}.ace", $log) && die "reformat Failed for ${class}_diff_${database}.ace\n";
+	  $wormbase->run_script("reformat_acediff -debug $debug -test -file $directory/${class}_diff_${database}.ace -fileout $directory/update_${class}_${database}.ace -debug pad", $log) && die "reformat Failed for ${class}_diff_${database}.ace\n";
 	}
 	else {
-	  $wormbase->run_script("reformat_acediff -file $directory/${class}_diff_${database}.ace -fileout $directory/update_${class}_${database}.ace", $log) && die "reformat Failed for ${class}_diff_${database}.ace\n";
+	  $wormbase->run_script("reformat_acediff -file $directory/${class}_diff_${database}.ace -fileout $directory/update_${class}_${database}.ace -debug pad", $log) && die "reformat Failed for ${class}_diff_${database}.ace\n";
 	}
       }
       else {
 	if ($debug) {
 	  print "running.... new code base!!\n\n";	
-	  $wormbase->run_script("acediff.pl -debug $debug -test -reference $path_ref -new $path_new -output $directory/update_${class}_${database}.ace", $log) && die "acediff.pl Failed for ${path_new}\n";
+	  $wormbase->run_script("acediff.pl -debug $debug -test -reference $path_ref -new $path_new -output $directory/update_${class}_${database}.ace -debug pad", $log) && die "acediff.pl Failed for ${path_new}\n";
 	}
 	else {
-	  $wormbase->run_script("acediff.pl -reference $path_ref -new $path_new -output $directory/update_${class}_${database}.ace", $log) && die "acediff.pl Failed for ${path_new}\n";
+	  $wormbase->run_script("acediff.pl -reference $path_ref -new $path_new -output $directory/update_${class}_${database}.ace -debug pad", $log) && die "acediff.pl Failed for ${path_new}\n";
 	}
       }
     }
@@ -424,7 +424,7 @@ sub update_canonical {
 
     $log->write_to ("Checking and updating exon order in $canonical\n");
     print "Checking and updating exon order in $canonical";
-    $wormbase->run_script("reorder_exons.pl -database $canonical -species $species -out ${canonical}/${WS_version}_reordered_exons.ace", $log) && die "Failed to run reorder_exons.pl\n";
+    $wormbase->run_script("reorder_exons.pl -database $canonical -species $species -out ${canonical}/${WS_version}_reordered_exons.ace -debug pad", $log) && die "Failed to run reorder_exons.pl\n";
 
   ## Check Canonical Database for errors one last time. ##
   $log->write_to ("\nChecking $canonical for inconsistencies\n-----------------------------------\n\n");
@@ -437,7 +437,7 @@ sub update_canonical {
     print "camace_nameDB_comm.pl Finished for $canonical, check the build log email for errors.\n\n";
   }
   else {
-    $wormbase->run_script("NAMEDB/camace_nameDB_comm.pl -database $canonical", $log) && die "Failed to run camace_nameDB_comm.pl\n";
+    $wormbase->run_script("NAMEDB/camace_nameDB_comm.pl -database $canonical -debug pad", $log) && die "Failed to run camace_nameDB_comm.pl\n";
   }
     $log->write_to ("camace_nameDB_comm.pl Finished, check the build log email for errors.\n\n");
 
@@ -446,10 +446,10 @@ sub update_canonical {
     $log->write_to ("\nRunning check_predicted_genes.pl\n");
     print "\nRunning check_predicted_genes.pl\n" if ($debug);
     if ($species eq 'elegans') {
-      $wormbase->run_script("check_predicted_genes.pl -basic -species $species -database $canonical -test", $log) && die "Failed to run camcheck.pl\n";
+      $wormbase->run_script("check_predicted_genes.pl -basic -species $species -database $canonical -test -debug pad", $log) && die "Failed to run camcheck.pl\n";
     }
     else {
-      $wormbase->run_script("check_predicted_genes.pl -basic -incomplete -species $species -database $canonical -test", $log) && die "Failed to run camcheck.pl\n";
+      $wormbase->run_script("check_predicted_genes.pl -basic -incomplete -species $species -database $canonical -test -debug pad", $log) && die "Failed to run camcheck.pl\n";
     }
     $log->write_to ("check_predicted_genes.pl Finished, check the build log email for errors.\n");
   }
@@ -498,7 +498,7 @@ sub split_databases {
     $wormbase->run_script("TransferDB.pl -start $canonical -end $orig -split -database -debug $debug -test", $log) && die "Failed to run TransferDB.pl for $orig\n";
   }
   else {
-    $wormbase->run_script("TransferDB.pl -start $canonical -end $orig -split -database", $log) && die "Failed to run TransferDB.pl for $orig\n";
+    $wormbase->run_script("TransferDB.pl -start $canonical -end $orig -split -database -debug pad", $log) && die "Failed to run TransferDB.pl for $orig\n";
   }
   # work on database_orig to get it populated with curation data
   $log->write_to ("Refreshing curation data in $orig\n-------------------------------------\nRemoving old curation data from $orig\n");
@@ -515,10 +515,10 @@ sub split_databases {
     $log->write_to ("Transfering $orig to $wormpub/${root}_${database}\n");
     if ($debug) {
       print "Transfering $orig to $wormpub/${root}_${database}\n";
-      $wormbase->run_script("TransferDB.pl -debug $debug -test -start  $orig -end $wormpub/${root}_${database} -split -database -wspec", $log) && $log->write_to ("Failed to run TransferDB.pl for ${root}_${database}\n");
+      $wormbase->run_script("TransferDB.pl -debug $debug -test -start  $orig -end $wormpub/${root}_${database} -split -database -wspec -debug pad", $log) && $log->write_to ("Failed to run TransferDB.pl for ${root}_${database}\n");
     }
     else {
-      $wormbase->run_script("TransferDB.pl -start  $orig -end $wormpub/${root}_${database} -split -database -wspec", $log) && $log->write_to ("Failed to run TransferDB.pl for ${root}_${database}\n");
+      $wormbase->run_script("TransferDB.pl -start  $orig -end $wormpub/${root}_${database} -split -database -wspec -debug pad", $log) && $log->write_to ("Failed to run TransferDB.pl for ${root}_${database}\n");
     }
   }
   $log->write_to ("@databases SPLIT(S) UPDATED\n");
@@ -621,14 +621,14 @@ sub load_curation_data {
 	    "$wormpub/CURATION_DATA/misc_brugia_cufflinks.ace",
 	    "$wormpub/CURATION_DATA/misc_tigr_transcripts.ace",
 	    "$wormpub/CURATION_DATA/misc_brugia_augustus.ace",
-	    "$acefiles/primaries/geneace/geneace_Operon_data.ace",
+	    "$acefiles/primaries/geneace/brugia_Operon_data.ace",
 	    "$acefiles/operon_coords.ace",
 	   );
     }
     push (@files,
-	  "$wormpub/BUILD_DATA/MISC_DYNAMIC/RNASeq_splice_${species}.ace",
+	  "$acefiles/RNASeq_splice_${species}.ace",
 	  "$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_RNASeq_hits_${species}.ace",
-	  "$wormpub/BUILD_DATA/MISC_DYNAMIC/RNASeq_expression_levels_${species}.ace",
+	  "$acefiles/RNASeq_expression_levels_${species}.ace",
 	  "$wormpub/BUILD_DATA/MISC_DYNAMIC/RNASeq_splice_${species}_high_qual.ace_WS${WS_version}",
 	  "$wormpub/wormbase/autoace_config/misc_autoace_methods.ace",
 	  "$acefiles/misc_DB_remark.ace",
