@@ -204,7 +204,7 @@ sub results {
 
   # make the ace file of RNASeq spanned introns to load into acedb
   print "Running Intron analyses ...\n";
-  my $splice_file = $wormbase->misc_dynamic."/RNASeq_splice_${species}.ace";
+  my $splice_file = $wormbase->acefiles."/RNASeq_splice_${species}.ace";
 
   # get old splice_file size
   my $old_splice_file = $splice_file . '.old';
@@ -302,7 +302,7 @@ sub make_fpkm {
   my %controls_fpkm=(); # holds the values of all control fpkm values for each gene gene (key=gene, key=life_Stage, value=list of fpkm values)
 
   # open a .ace file to hold the FPKM expression levels of genes, transcripts and CDSs
-  my $misc_dynamic = $wormbase->misc_dynamic;
+  my $misc_dynamic = $wormbase->acefiles;
   my $expression_file = "$misc_dynamic/RNASeq_expression_levels_${species}.ace";
   my $controls_file = "$misc_dynamic/RNASeq_controls_FPKM_${species}.dat";
   my $old_expression_file_size = -s $expression_file;
