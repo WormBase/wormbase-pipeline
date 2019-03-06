@@ -33,7 +33,7 @@ ARGF.each_line{|line|
   variation[:end] = cols[4]
   variation[:chromosome] = cols[0]
   variation[:assembly] = 'WBCel235'
-  variation[:sotype]=term2so[cols[2]]
+  variation[:type]=term2so[cols[2]]
   if cols[8]=~/insertion=([^;])/
           variation[:paddedBase] = chromosomes[cols[0]][cols[3].to_i-2]
 	  variation[:genomicReferenceSequence]='N/A'
