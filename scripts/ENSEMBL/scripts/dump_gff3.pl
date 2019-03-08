@@ -118,7 +118,7 @@ while( my $slice = shift @slices) {
 
 
     my $all_transcripts = $gene->get_all_Transcripts();
-    while( my $transcript) {
+    while( my $transcript = shift @{$all_transcripts}) {
       
       my $transcript_gff_id = 'transcript:'.$transcript->stable_id();
 
@@ -355,7 +355,7 @@ while( my $slice = shift @slices) {
     };
 
 
-    if ($feature->repeat_consensus->repeat_class and $feature->repeat_consensus->name ne $feature->analysis->logic_name){
+    if ($feature->repeat_consensus->repeat_class and $feature->repeat_consensus->repeat_class ne 'Unknown' and $feature->repeat_consensus->name ne $feature->analysis->logic_name){
       $stripped_feature->{attributes}->{repeat_class} = $feature->repeat_consensus->repeat_class;
       $stripped_feature->{display} = $feature->repeat_consensus->name;
     }
