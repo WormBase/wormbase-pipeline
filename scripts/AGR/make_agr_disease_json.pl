@@ -151,8 +151,6 @@ while( my $obj = $it->next) {
     },
   };
   
-  # no Experimental_condition data in WB; will need to address this one as data arrives
-  
   my ($strain) = $obj->Strain;
   my ($allele) = $obj->Variation;
   my ($transgene) = $obj->Transgene;
@@ -240,7 +238,7 @@ while( my $obj = $it->next) {
     my @inducing_c     = map { $_->name } $obj->Inducing_chemical;
     my @inducing_a     = map { "$_" } $obj->Inducing_agent;
     my @exp_conditions = map {{textCondition => $_}} (@inducing_c,@inducing_a);
-    #TemporaryChange# $annot->{experimentalConditions} = \@exp_conditions if @exp_conditions;
+    $annot->{experimentalConditions} = \@exp_conditions if @exp_conditions;
   }
 
   push @annots, $annot;
@@ -291,10 +289,8 @@ sub get_paper {
       last;
     }
   }
-  $json_paper->{modPublicationId} = "WB:$wb_paper";
-  if ($pmid) {
-    $json_paper->{pubMedId} = "PMID:$pmid";
-  }
+  $json_paper->{publicationId} = $pmid ? "PMID:$pmid" : "WB:$wb_paper";
+  $json_paper->{crossReference} = {id =>"WB:$wb_paper",pages => ['reference']};
 
   return $json_paper;
 }
