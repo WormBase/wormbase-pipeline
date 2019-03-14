@@ -239,10 +239,10 @@ while (my $obj = $it->next) {
 
         foreach my $whereEx (@where_expressed) {
           if (exists $WB_TO_UBERON->{$at}) {
-            $whereEx->{anatomcialStructureUberonSlimTermIds} = 
+            $whereEx->{anatomicalStructureUberonSlimTermIds} = 
                 [ {uberonTerm => $WB_TO_UBERON->{$at} } ];
           } elsif ($at ne $TL_ANATOMY_TERM) {
-            $whereEx->{anatomcialStructureUberonSlimTermIds} = 
+            $whereEx->{anatomicalStructureUberonSlimTermIds} = 
                 [ {uberonTerm => 'Other' } ];
           }
         
@@ -301,10 +301,8 @@ sub get_paper_json {
       last;
     }
   }
-  $json_paper->{modPublicationId} = "WB:$wb_paper";
-  if ($pmid) {
-    $json_paper->{pubMedId} = "PMID:$pmid";
-  }
+  $json_paper->{publicationId} = $pmid ? "PMID:$pmid" : "WB:$wb_paper";
+  $json_paper->{crossReference} = {id =>"WB:$wb_paper",pages => ['reference']};
   
   return $json_paper;
 }

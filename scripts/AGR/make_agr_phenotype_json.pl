@@ -123,11 +123,9 @@ sub get_paper_json {
       last;
     }
   }
-  $json_paper->{modPublicationId} = "WB:$wb_paper";
-  if ($pmid) {
-    $json_paper->{pubMedId} = "PMID:$pmid";
-  }
-  
+  $json_paper->{publicationId} = $pmid ? "PMID:$pmid" : "WB:$wb_paper";
+  $json_paper->{crossReference} = {id =>"WB:$wb_paper",pages => ['reference']};
+
   return $json_paper;
 }
 
