@@ -263,7 +263,7 @@ while( my $obj = $it->next) {
     my @inducing_c     = map { $_->name } $obj->Inducing_chemical;
     my @inducing_a     = map { "$_" } $obj->Inducing_agent;
     my @exp_conditions = map {{textCondition => $_}} (@inducing_c,@inducing_a);
-    $annot->{experimentalConditions} = \@exp_conditions if @exp_conditions;
+#    $annot->{experimentalConditions} = \@exp_conditions if @exp_conditions; # temporary removed
   }
 
   push @annots, $annot;
