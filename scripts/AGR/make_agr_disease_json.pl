@@ -255,7 +255,7 @@ while( my $obj = $it->next) {
     $mod_annot->{genetic} = \@genetic if @genetic;
     $mod_annot->{experimentalConditionsText} = \@exp_cond if @exp_cond;
 
-    $annot->{modifier} = $mod_annot;
+#    $annot->{modifier} = $mod_annot; # temporary removed
     $annot->{qualifier} = 'not' if $obj->at('Modifier_qualifier_not');
   }
 
