@@ -50,6 +50,31 @@ if (not defined $outfile) {
   }
 }
 
+my %go2eco = (
+	IMP => 'ECO:0000315',
+	IEA => 'ECO:0000265',
+	ISS => 'ECO:0000250',
+	ND  => 'ECO:0000307',
+	IPI => 'ECO:0000021',
+	EXP => 'ECO:0000269',
+	IDA => 'ECO:0000314',
+	IGI => 'ECO:0000316',
+	IEP => 'ECO:0000270',
+	TAS => 'ECO:0000304',
+	NAS => 'ECO:0000303',
+	IC  => 'ECO:0000305',
+	ISO => 'ECO:0000266',
+	ISA => 'ECO:0000247',
+	ISM => 'ECO:0000255',
+	IGC => 'ECO:0000317',
+	IBA => 'ECO:0000318',
+	IBD => 'ECO:0000319',
+	IKR => 'ECO:0000320',
+	IRD => 'ECO:0000321',
+	RCA => 'ECO:0000245',
+	IMR => 'ECO:0000320',
+);
+
 my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or die('Connection failure: '. Ace->error);
 
 my ( $it, @annots);
@@ -96,9 +121,9 @@ while (my $obj = $it->next) {
           },
         ],
         dateAssigned => defined $evi_date ? $evi_date : $date,
-        geneticSex   => 'hermaphrodite',
+#       geneticSex   => 'hermaphrodite',
         evidence     => {
-          evidenceCodes => ['IMP'], # inferred from mutant phenotype; hard-coded for now
+          evidenceCodes => [$go2eco{'IMP'}], # inferred from mutant phenotype; hard-coded for now
           publication => $pap,
         },
         objectRelation => {
@@ -130,7 +155,7 @@ while( my $obj = $it->next) {
   $evi_date = sprintf('%4d-%02d-%02dT00:00:00+00:00', $y, $m, $d);
 
   my ($paper) = &get_paper( $obj->Paper_evidence );
-  my @evi_codes = map { $_->name } $obj->Evidence_code;
+  my @evi_codes = map { $go2eco{$_->name} } $obj->Evidence_code;
 
   my $annot = {
     DOid         => $obj->Disease_term->name,
@@ -144,9 +169,9 @@ while( my $obj = $it->next) {
       },
     ],
     dateAssigned => $evi_date,
-    geneticSex  => ($obj->Genetic_sex) ? $obj->Genetic_sex->name : 'hermaphrodite',
+#   geneticSex  => ($obj->Genetic_sex) ? $obj->Genetic_sex->name : 'hermaphrodite',
     evidence     => {
-      evidenceCodes => (@evi_codes) ? \@evi_codes : ['IMP'],
+      evidenceCodes => (@evi_codes) ? \@evi_codes : [$go2eco{'IMP'}],
       publication => $paper,
     },
   };
@@ -373,7 +398,7 @@ sub write_DAF_line {
          (exists $obj->{modifier} and exists $obj->{modifier}->{genetic}) ? join(',', @{$obj->{modifier}->{genetic}}) : '',
          (exists $obj->{modifier} and exists $obj->{modifier}->{experimentalConditionsText}) ? join(',', @{$obj->{modifier}->{experimentalConditionsText}}) : '',
          join(",", @{$obj->{evidence}->{evidenceCodes}}),
-         $obj->{geneticSex},
+         ($obj->{geneticSex}||''),
          $obj->{evidence}->{publication}->{pubMedId},
          $date,
          'WB');
