@@ -52,6 +52,7 @@ ARGF.each_line{|line|
 
   variation[:alleleId] = cols[8][/variation=(WBVar\d+)/,1]
 
+  next unless cols[1].eql?('Allele')
   next unless filter.has_key?(variation[:alleleId])
 
   variation[:start] = cols[3].to_i
@@ -59,7 +60,8 @@ ARGF.each_line{|line|
   variation[:chromosome] = cols[0]
   variation[:assembly] = 'WBcel235'
   variation[:type]=term2so[cols[2]]
-  if cols[8]=~/insertion=([^;])/
+  if cols[2].eql?('insertion_site')
+	  next unless cols[8]=~/insertion=([^;])/
           variation[:paddedBase] = chromosomes[cols[0]][variation[:start]-2]
 	  variation[:genomicReferenceSequence]='N/A'
 	  s = Bio::Sequence::NA.new($1.to_s)
@@ -79,7 +81,7 @@ ARGF.each_line{|line|
   end
   
   variation[:references] = filter[variation[:alleleId]]["paper"].map{|k,v| # creates the publication part 
-	  v.eql?('n/a')? {:publicationId => "WB:#{k}"}:{:publicationId => "PMID:#{v}",:crossReference => {:id => "WB:#{k}",:pages => ['reference']}}
+	  v.eql?('n/a')? {:publicationId => "WB:#{k}",:crossReference => {:id => "WB:#{k}",:pages => ['reference']}}:{:publicationId => "PMID:#{v}",:crossReference => {:id => "WB:#{k}",:pages => ['reference']}}
   } if filter[variation[:alleleId]]["paper"]
 
   variation[:sequenceOfReferenceAccessionNumber]=chrom2ncbi[variation[:chromosome]]
