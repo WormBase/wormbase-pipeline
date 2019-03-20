@@ -95,7 +95,7 @@ while(<$wb2ub_fh>) {
     my @list = split(/,/, $2);
 
     foreach my $item (@list) {
-      $WB_TO_UBERON->{$item} = $uberon;
+      $WB_TO_UBERON->{$item}->{$uberon} = 1;
     }
   };
 }
@@ -211,6 +211,9 @@ while (my $obj = $it->next) {
           stageName   => $life_stage_term->{$ls},
         };
         if (exists $WB_TO_UBERON->{$ls}) {
+          # for life-stage, we can only put one UBERON term into the JSON. There *should* only be one
+          # anyway. 
+          my ($uterm) = keys %{$WB_TO_UBERON->{$ls}};
           $when_expressed->{stageUberonSlimTerm} = { uberonTerm =>  $WB_TO_UBERON->{$ls} };
         } elsif ($ls ne $TL_LIFESTAGE_TERM) {
           $when_expressed->{stageUberonSlimTerm} = { uberonTerm =>  "post embryonic, pre-adult" };
@@ -239,8 +242,11 @@ while (my $obj = $it->next) {
 
         foreach my $whereEx (@where_expressed) {
           if (exists $WB_TO_UBERON->{$at}) {
-            $whereEx->{anatomicalStructureUberonSlimTermIds} = 
-                [ {uberonTerm => $WB_TO_UBERON->{$at} } ];
+            my @uterms;
+            foreach my $uterm (sort keys %{$WB_TO_UBERON->{$at}}) {
+              push @uterms, {uberonTerm => $uterm};
+            }
+            $whereEx->{anatomicalStructureUberonSlimTermIds} = \@uterms;
           } elsif ($at ne $TL_ANATOMY_TERM) {
             $whereEx->{anatomicalStructureUberonSlimTermIds} = 
                 [ {uberonTerm => 'Other' } ];
