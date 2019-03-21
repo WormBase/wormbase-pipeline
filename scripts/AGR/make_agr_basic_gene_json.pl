@@ -194,7 +194,7 @@ foreach my $sub_query (
       # Only add Ensembl xrefs for genomicly placed genes;
       push @xrefs, { id => "ENSEMBL:" . $obj->name };
     } 
-    
+   
     #
     # Cross references
     #
@@ -213,9 +213,13 @@ foreach my $sub_query (
     #
     # Back-to-mod xrefs
     #
+    
+    my @baseXrefs = qw(gene gene/expression gene/references);
+    push @baseXrefs, 'gene/expression_images' if ($obj->Expr_pattern && grep {$_->Picture} $obj->Expr_pattern);
+
     push @xrefs, {
       id => $primary_id,
-      pages => ["gene", "gene/expression", "gene/references"],
+      pages => \@baseXrefs,
     };
     # for SPELL, we should technically only include the ref if this gene exists in SPELL, 
     # which (as defined by Wen Chen) is: 
