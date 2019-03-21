@@ -32,7 +32,7 @@ my $WB_TO_UBERON = {
   # them out for now, so that they default to Other in the slim
 
  # $TL_ANATOMY_TERM => 'UBERON:0000465',
-  $TL_ANATOMY_TERM => 'Other',
+  $TL_ANATOMY_TERM => {Other => 1},
  # $TL_LIFESTAGE_TERM => 'UBERON:0000105',
 };
 
