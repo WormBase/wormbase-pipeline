@@ -6,6 +6,7 @@ use File::Copy qw(copy);
 use IO::Uncompress::Gunzip qw(gunzip);
 use JSON;
 use File::Slurp;
+use Log::Any qw($log);
 sub new {
     my ( $class, %args ) = @_;
     die @_ unless $args{install_location} and $args{tmp_dir} and $args{out_dir} and $args{species_ftp};
@@ -34,30 +35,30 @@ sub out_dir {
 sub exec_if_dir_absent {
     my ($self, $dir, $cmd, %args) = @_;
     if ($args{do_jbrowse} // not -d $dir ) {
-      print STDERR "Executing: $cmd\n" if $ENV{JBROWSE_TOOLS_VERBOSE};
-      `$cmd`;
-      $? and die "Failed: $cmd\n";
+      $log->info("Executing: $cmd");
+      my $output = `$cmd`;
+      die $log->fatal("Failed : $cmd, output: $output") if $?;
     } else {
-       print STDERR "Skipping: $cmd\n" if $ENV{JBROWSE_TOOLS_VERBOSE};
+      $log->info("Skipping: $cmd");
     }
 }
 sub filter_gff {
   my ($self, $path,$processing_path, $features, %args) =@_;
 
   if ($args{do_jbrowse} // not -f $processing_path){ 
-    print STDERR "Processing path: $processing_path\n" if $ENV{JBROWSE_TOOLS_VERBOSE};
-      open ANNOTATION, "$path" or die "Could not open: $path";
-      open PROCESSING, ">$processing_path"
-        or die "Could not write: $processing_path";
-      while (<ANNOTATION>) {
-          my @gff_elements = split( "\t", $_ );
-          print PROCESSING $_ if ( $gff_elements[1] ~~ $features );
-      }
-      close ANNOTATION;
-      close PROCESSING;
-   } else {
-       print STDERR "Skipping filter_gff:  $processing_path\n" if $ENV{JBROWSE_TOOLS_VERBOSE};
-   }
+    $log->info("filter_gff processing: $processing_path");
+    open ANNOTATION, "$path" or die "Could not open: $path";
+    open PROCESSING, ">$processing_path"
+      or die "Could not write: $processing_path";
+    while (<ANNOTATION>) {
+        my @gff_elements = split( "\t", $_ );
+        print PROCESSING $_ if ( $gff_elements[1] ~~ $features );
+    }
+    close ANNOTATION;
+    close PROCESSING;
+  } else {
+    $log->info("filter_gff skipping: $processing_path");
+  }
 }
 sub track_from_annotation {
     my ( $self, %args ) = @_;
@@ -87,7 +88,7 @@ sub track_from_annotation {
         $cmd .= " --out $out";
         $self->exec_if_dir_absent("$out/tracks/$track_label", $cmd, %args);
     } else {
-       print STDERR "Skipping flatfile-to-json.pl:  $processing_path\n" if $ENV{JBROWSE_TOOLS_VERBOSE};
+       $log->info("Skipping flatfile-to-json.pl:  $processing_path");
     }
 }
 sub track_present {

@@ -19,6 +19,7 @@ use GenomeBrowser::Deployment;
 use File::Path qw(make_path);
 use File::Slurp qw(write_file);
 use File::Basename qw(dirname);
+use Log::Any qw($log);
 
 sub new {
 
@@ -36,7 +37,7 @@ sub new {
 sub path {
     my ( $self, @args ) = @_;
     my $result = join "/", $self->{dir}, @args;
-    print "$result\n" if $ENV{HUB_VERBOSE};
+    $log->info(__PACKAGE__ . ": $result");
     return $result;
 }
 sub make_all {

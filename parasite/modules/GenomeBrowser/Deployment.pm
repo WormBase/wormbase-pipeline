@@ -3,7 +3,8 @@ use warnings;
 package GenomeBrowser::Deployment;
 use LWP;
 use File::Basename;
-use Carp;
+use Log::Any qw($log);
+
 # Be in EBI
 # Have tunnels enabled
 # Then you can do everything
@@ -22,8 +23,8 @@ sub location {
 }
 sub run_in_sanger {
   my $cmd = "ssh $SANGER_HOST ".shift;
-  `$cmd`;
-  die "Failed: $cmd" if $?;
+  my $output = `$cmd`;
+  die $log->fatal("Failed: $cmd, output: $output") if $?;
 }
 sub sync_ebi_to_sanger {
   my ($species, $assembly, $run_id, $source_url, %opts) = @_;
@@ -32,10 +33,11 @@ sub sync_ebi_to_sanger {
   my $target_dir = dirname $target_path;
 
   if ($opts{do_sync} // not LWP::UserAgent->new->head($target_url)->is_success){
+    $log->info("Initiating remote download: $source_url -> $SANGERHOST:$target_path");
     run_in_sanger("mkdir -p $target_dir");
     run_in_sanger("wget --continue --no-verbose -O $target_path $source_url");
   } else {
-    print STDERR "Skipping sync: $run_id\n" if $ENV{DEPLOYMENT_VERBOSE};
+    $log->info("Skipping sync: $source_url -> $target_path");
   }
   return $target_url;
 }
