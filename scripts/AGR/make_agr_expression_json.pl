@@ -214,7 +214,7 @@ while (my $obj = $it->next) {
           # for life-stage, we can only put one UBERON term into the JSON. There *should* only be one
           # anyway. 
           my ($uterm) = keys %{$WB_TO_UBERON->{$ls}};
-          $when_expressed->{stageUberonSlimTerm} = { uberonTerm =>  $WB_TO_UBERON->{$ls} };
+          $when_expressed->{stageUberonSlimTerm} = { uberonTerm =>  $uterm };
         } elsif ($ls ne $TL_LIFESTAGE_TERM) {
           $when_expressed->{stageUberonSlimTerm} = { uberonTerm =>  "post embryonic, pre-adult" };
         }
