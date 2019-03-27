@@ -67,7 +67,7 @@ foreach my $method (@methods) {
            or ( $data[1] eq 'snRNA' )
 	   or ( $data[1] eq 'miRNA_mature' )
            or ( $data[1] eq 'miRNA_primary_transcript' )
-           or ( $data[1] eq 'nc_primary_transcript' )
+           or ( $data[1] eq 'non_coding_transcript' )
 	   or ( $data[1] eq 'pre_miRNA' )
            or ( $data[1] eq 'rRNA' )
            or ( $data[1] eq 'scRNA' )
