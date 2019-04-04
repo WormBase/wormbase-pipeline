@@ -21,7 +21,7 @@
 
 =head1 DESCRIPTION
 
- This object represents a CDS in the transcript building process.  It controls the attaching of matching cDNAs and generation of new transcript objects when required.  Much of how it works in done through passing things on to its child transcript objects ( see Transcript.pm )
+ This object represents a CDS in the transcript building process.  It controls the attaching of matching cDNAs and generation of new transcript objects when required.  Much of how it works is done through passing things on to its child transcript objects ( see Transcript.pm )
 
 Inherits from SequenceObj ( SequenceObj.pm )
 
@@ -56,6 +56,7 @@ our @ISA = qw( SequenceObj );
                 strand as string
                 chromosome as string
                 ref to transformer obj
+                +++ hash ref of Feature data originally from the Isoformer Feature_evidence tag in the CDS acedb object: # [start end, WBsfID type] - done
 
 =cut
 
@@ -67,9 +68,18 @@ sub new
     my $strand = shift;
     my $chromosome = shift;
     my $transformer = shift;
+    my $SLs = shift; #+++ added this to hold the Isoform Feature_evidence data in a CDS object so it can be inherited by its transcripts - done
 
     my $self = SequenceObj->new($name, $exon_data, $strand);
     bless ( $self, $class );
+
+    if ( $SLs ) { #+++ add Isoform Feature_evidence data to the CDS object - it only adds one of each type, but that is sufficient - done
+      foreach my $feat ( @{$SLs} ) {
+	my $type = $feat->[3];
+	if ($type ne 'SL1' && $type ne 'SL2') {next}
+	$self->SL($feat);
+      }
+    }
 
     $self->transform_strand($transformer,"transform") if ( $self->strand eq "-" );
 
@@ -97,8 +107,8 @@ sub new
 
     Title   :   map_introns_cDNA
     Usage   :   $cds->map_introns_cDNA( $cdna )
-    Function:   check if the passed sequence object matches the intron structure if itself.
-    Returns :   1 if match 0 otherwise, stores the matching CDS names and numbers of consequetive introns in the cds object
+    Function:   check if the passed sequence object matches the intron structure of self.
+    Returns :   1 if match 0 otherwise, stores the matching CDS names and numbers of consecutive introns in the cds object
     Args    :   sequence_object
 
 
@@ -122,7 +132,7 @@ sub map_introns_cDNA {
   my $matches_me = 0;
   foreach my $transcript ( $self->transcripts ) {
     # see how many contiguous introns there are in common between the
-    # CDS and the cDNA and store the resilt in the cDNA object
+    # CDS and the cDNA and store the result in the cDNA object
     if ( my $matching_introns = $transcript->map_introns_cDNA( $cdna )) {
       $cdna->probably_matching_cds( $self, $matching_introns ); 
       $matches_me = 1;
@@ -140,7 +150,7 @@ sub map_introns_cDNA {
 
     Title   :   map_cDNA
     Usage   :   $cds->map_cDNA( $cdna )
-    Function:   check if the passed sequence object matches the exon structure if itself.  If it matches the cds but not any existing transcript then a new transcript will be constructed
+    Function:   check if the passed sequence object matches the exon structure of the CDS's transcripts and if so, extends them.  If it matches the cds but not any existing transcript then a new transcript will be constructed
     Returns :   1 if match 0 otherwise
     Args    :   sequence_object
 
@@ -161,14 +171,17 @@ sub map_cDNA
 
     my $matches_me = 0;
     foreach my $transcript ( $self->transcripts ) {
-      if ($transcript->map_cDNA( $cdna ) == 1) { 
+      if ($transcript->map_cDNA( $cdna ) == 1) { # Transcript::map_cDNA() checks for overlap, calls SequenceObj::check_exon_match to get match_codes and then Transcript::add_matching_cDNA() to extend the transcript structure
 	$matches_me = 1;
         print STDERR "CDS::map_cDNA\tExtended existing transcript for " . $self->name . " with " . $cdna->name . "\n" if $SequenceObj::debug;
       }
     }
 
+    # if no transcripts were matched, check against the CDS structure and add a new Transcript and recheck all cDNAs already matched to CDS to see if they match the new Transcript
+    #+++ want to add any CDS Isoform Feature_evidence Features to the new structure
     if( $matches_me == 0 ) {
-      # check against just CDS structure  
+      # check against just CDS structure
+      # see if there is an overlap between CDS and cDNA
       if( $self->start > $cdna->end ) {
 	return 0;
       }
@@ -176,11 +189,11 @@ sub map_cDNA
 	return 0;
       }
       else {
-	return 0 unless ($self->check_features($cdna) == 1);
+	return 0 unless ($self->check_features($cdna) == 1); # SequenceObj::check_features() returns 0 if no pair of matched SL features or cDNA starts before self SL feature
 	#this must overlap - check exon matching
-	if( $self->check_exon_match( $cdna ) ) {
+	if( $self->check_exon_match( $cdna ) ) { #  SequenceObj::check_exon_match writes match_codes into each cDNA exon
 	  # check reciprocal CDS -> cdna
-	  if( $cdna->check_exon_match( $self )) {
+	  if( $cdna->check_exon_match( $self )) { #  SequenceObj::check_exon_match writes match_codes into each transcript exon
             print STDERR "CDS::map_cDNA\tTranscript::map_cDNA: Creating new transcript for " . $self->name . " with " . $cdna->name . "\n" if $SequenceObj::debug;
 	    # if this cdna matches the CDS but not the existing transcripts create a new one
 	    # append .x to indicate multiple transcripts for same CDS.
@@ -231,6 +244,7 @@ sub transcripts
     return @{$self->{'transcripts'}};
   }
 
+
 =head2 _sort_transcripts
 
     Title   :   _sort_transcripts
@@ -238,6 +252,7 @@ sub transcripts
     Function:   Sorts and renames the transcripts, to give a degree of consistency
                 between builds. Called by ->report
 =cut
+
 
 sub _sort_transcripts {
   my ($self) = @_;
@@ -263,7 +278,7 @@ sub _sort_transcripts {
     $feat_count++ if $t->polyA_site;
     $feat_count++ if $t->polyA_signal; 
 
-    my @ex = map { $_->[0], $_->[1] } $t->sorted_exons;
+    my @ex = map { $_->[0], $_->[1] } @{$t->sorted_exons};
     my $fp = join(":", @ex);
     push @fps, [$t, $t->start, $t->end, $fp, $feat_count];
   }
