@@ -13,8 +13,8 @@ sub new
     my $name = shift;
     my $CDS = shift;
     my $transformer = $CDS->transformer;
-
     my $self = SequenceObj->new($name, $CDS->exon_data, $CDS->strand);
+    $self->{'feature'}->{ "SL" } = $CDS->feature('SL') if ($CDS->feature('SL')); # add CDS SL feature to any new transcript
 
     bless ( $self, $class );
 
@@ -61,6 +61,38 @@ sub map_cDNA
       return $match;
     }
   }
+
+
+# check if two transcripts have duplicate structure
+sub duplicate
+  {
+    my $self = shift;
+    my $other = shift;
+
+    if (!defined $self) {return}
+
+    # check for exact match
+    if( $self->start != $other->start ) {
+      return 0;
+    }
+    elsif( $self->end != $other->end ) {
+      return 0;
+    }
+    elsif (scalar @{$self->sorted_exons} != scalar @{$other->sorted_exons}) {
+      return 0;
+    }
+      
+    foreach my $exon_idx (0 .. $#{$self->sorted_exons}) {
+      if ($self->{sorted_exons}->[$exon_idx]->[0] != $other->{sorted_exons}->[$exon_idx]->[0]) {
+	return 0;
+      }
+      if ($self->{sorted_exons}->[$exon_idx]->[1] != $other->{sorted_exons}->[$exon_idx]->[1]) {
+	return 0;
+      }
+    }
+    return 1;
+  }
+
 
 # check whether any of the cDNA introns match the introns in this CDS
 # store the number of consecutive introns in $cDNA with the name of the CDS
@@ -210,8 +242,11 @@ sub add_matching_cDNA
     $self->cds->gene_start( $self->start );
     $self->cds->gene_end  ( $self->end );
 
-    if( my $SL = $cdna->SL){
-      $self->SL( $SL );
+# want to only add SL site if we do not already have an SL site set (e.g. by the curator asserting the Isoform starts at a Feature)
+    if( !defined $self->SL) {
+      if (my $SL = $cdna->SL){
+	$self->SL( $SL );
+      }
     }
     if ( my $polyA_site = $cdna->polyA_site ) {
       $self->polyA_site( $polyA_site )  ;
@@ -229,6 +264,8 @@ sub report
     my $species = shift;
     my $gene_name = shift;
     my $is_primary = shift;
+
+    if (exists $self->{'ignore'}) {return}
 
     my $real_start = $self->start;
     my $real_end = $self->end;
@@ -254,10 +291,9 @@ sub report
     our $end = $self->end + 1;
     my $exon_1 = 1;
     foreach my $exon ( @{$self->sorted_exons} ) {    
-      $exon->[0] = $exon->[0] - $start;
-      $exon->[1] = $exon->[1] - $start;
-
-      print $fh "Source_exons\t$exon->[0]\t$exon->[1]\n";
+      my $exon_start = $exon->[0] - $start;
+      my $exon_end = $exon->[1] - $start;
+      print $fh "Source_exons\t$exon_start\t$exon_end\n";
     }
 
     # . . and Matching_cDNA

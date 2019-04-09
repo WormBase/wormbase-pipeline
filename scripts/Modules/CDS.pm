@@ -56,7 +56,7 @@ our @ISA = qw( SequenceObj );
                 strand as string
                 chromosome as string
                 ref to transformer obj
-                +++ hash ref of Feature data originally from the Isoformer Feature_evidence tag in the CDS acedb object: # [start end, WBsfID type] - done
+                hash ref of Feature data originally from the Isoformer Feature_evidence tag in the CDS acedb object: # [start end, WBsfID type]
 
 =cut
 
@@ -68,12 +68,12 @@ sub new
     my $strand = shift;
     my $chromosome = shift;
     my $transformer = shift;
-    my $SLs = shift; #+++ added this to hold the Isoform Feature_evidence data in a CDS object so it can be inherited by its transcripts - done
+    my $SLs = shift; # added this to hold the Isoform Feature_evidence data in a CDS object so it can be inherited by its transcripts
 
     my $self = SequenceObj->new($name, $exon_data, $strand);
     bless ( $self, $class );
 
-    if ( $SLs ) { #+++ add Isoform Feature_evidence data to the CDS object - it only adds one of each type, but that is sufficient - done
+    if ( $SLs ) { # add Isoform Feature_evidence data to the CDS object - it only adds one of each type, but that is sufficient
       foreach my $feat ( @{$SLs} ) {
 	my $type = $feat->[3];
 	if ($type ne 'SL1' && $type ne 'SL2') {next}
@@ -178,7 +178,7 @@ sub map_cDNA
     }
 
     # if no transcripts were matched, check against the CDS structure and add a new Transcript and recheck all cDNAs already matched to CDS to see if they match the new Transcript
-    #+++ want to add any CDS Isoform Feature_evidence Features to the new structure
+    # want to add any CDS Isoform Feature_evidence Features to the new structure
     if( $matches_me == 0 ) {
       # check against just CDS structure
       # see if there is an overlap between CDS and cDNA

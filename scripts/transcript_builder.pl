@@ -21,6 +21,7 @@ use Modules::Strand_transformer;
 use Modules::Overlap;
 use File::Path;
 use Storable;
+use Ace;
 
 my ($debug, $store, $help, $verbose, $really_verbose, @test_est,
     $database, $test, @chromosomes, $chunk_total, $chunk_id,
@@ -54,6 +55,34 @@ GetOptions ( "debug:s"      => \$debug,
              "detaileddebug"    => \$detailed_debug,
 	   ) ;
 
+#@test_cds = ("F55A4.13", "F55A4.2"); # testing bog-standard single-exon gene with nearby multi-exon gene with overlapping ESTs between them
+#@test_cds = ("W04G3.6a", "W04G3.6b", "W04G3.6c", "W04G3.6d"); # 'a' isoform has multiple transcripts reverted back to the CDS structure
+
+#@test_cds = ("B0025.1c", "B0025.1a"); 
+#@test_cds = ("T03D8.1a", "T03D8.1c"); # different START codons in the same CDS exon specified by publication
+#@test_cds = ("F31D4.1"); # bog-standard CDS with lots of matching ESTs - no TSLs
+#@test_cds = ("F13H10.2b"); # TSL Feature - but the current coding transcript based on EST doesn't get up to the TSL Feature
+#@test_cds = ("ZK593.5c"); # TSL Feature - but the START is in the next exons after an intron after the Features
+#@test_cds = ("B0024.9a", "B0024.9b"); # two isoforms sharing the same Transcript structure
+#@test_cds = ("C14A4.4a", "C14A4.4b"); # two isoforms sharing the same Transcript structure
+#@test_cds = ("ZK970.2a", "ZK970.2b", "ZK970.2d"); # two isoforms (a/d) sharing the same Transcript structure - isoform 'a' has an incorrect Feature so should end up with same Transcript as 'd' (correct this before next Build!)
+#@test_cds = ("C09G5.8a", "C09G5.8b"); # two isoforms 'a' is full-length, 'b' is defined by a SL1 but currently the 'b' coding transcript is extended up by three exons that look bogus.
+#@test_cds = ("R03D7.6a", "R03D7.6b", "R03D7.6c"); # three isoforms 'a' & 'b' are full-length and bogusly short, 'c' is defined by a SL1 but currently the 'c' coding transcript is extended up by two exons that look bogus.
+#@test_cds = ("C08G5.4a", "C08G5.4b", "C08G5.4c"); # bog-standard normal set of isoforms
+
+
+# want to check if a CDS has a TSL asserted as evidence and when cDNAs are added to the structire, truncate the cDNA structure so the transcript is never longer than the TSL site.
+# add asserted Isoform Feature_evidence to the $cds objects as $cds->SL data
+# when new transcript objects are made from the $cds objects, add the  $cds->SL data to the transcript object
+# when a transcript object is extended, check to see if there is a SL feature and only add exons after this - truncate exons overlapping the SL site
+
+
+$debug = "gw3";
+#$detailed_debug = 1;
+$test = 1;
+if (defined $test) {
+  print "WORKING IN TEST_BUILD\n";
+}
 
 
 if ( $store ) {
@@ -68,7 +97,11 @@ if ( $store ) {
 my $db;
 if (not defined $database or $database eq "autoace") {
   $db = $wormbase->autoace;
-}else{$db = $database}
+} else {
+  $db = $database
+}
+my $ace = Ace->connect(-path => $db) || die(Ace->error);
+
 my $tace = $wormbase->tace;
 my %cds2gene = $wormbase->FetchData('cds2wbgene_id');
 $species = $wormbase->species if not defined $species;
@@ -106,6 +139,7 @@ my $coords = Coords_converter->invoke($db, undef, $wormbase);
 # Load in Feature_data : cDNA associations from COMMON_DATA
 my %feature_data;
 &load_features( \%feature_data );
+my %Features; # all TSL/Poly-A Features whether or not they are associated with a cDNA - # (182772,  182773, +, SL1) keyed by Feature_id
 
 # process chromosome at a time
 if (not @chromosomes) {
@@ -133,6 +167,9 @@ $log->write_to("Going to write problems to $prob_file\n") if ($verbose);
 open (my $prob_fh,">$prob_file") or $log->log_and_die("cant open $prob_file\n");
 
 my %ignored_EST_data = &get_ignored_EST_data();
+
+
+my %feature_evidence = get_feature_evidence();
 
 foreach my $chrom ( @chromosomes ) {
 
@@ -174,7 +211,7 @@ foreach my $chrom ( @chromosomes ) {
   # read BLAT data
   my @BLAT_methods = qw( BLAT_EST_BEST BLAT_mRNA_BEST BLAT_OST_BEST BLAT_RST_BEST BLAT_Trinity_BEST BLAT_IsoSeq_BEST);
   foreach my $method (@BLAT_methods) {
-    # need to check that the GFF file for this methos exists; not all species
+    # need to check that the GFF file for this method exists; not all species
     # have all methods
     my ($gff_file) = glob($wormbase->gff_splits . "/*${method}.gff");
     next if not defined $gff_file;
@@ -223,16 +260,12 @@ foreach my $chrom ( @chromosomes ) {
   }
   close $GFF;
   
-  # add feature_data to cDNA
+  # add feature_data to cDNA (and store all Feature data whether or not it is associated with a cDNA)
   # CHROMOSOME_I  SL1  SL1_acceptor_site   182772  182773 .  -  .  Feature "WBsf016344"
-  #
-  # want to add in transcription_start_site and
-  # transcription_end_site, but these are not currently defined by a
-  # cDNA or even a 'bundle of short reads' in the Hillier data
 
   my @feature_types = qw(SL1 SL2 polyA_site polyA_signal_sequence);
   foreach my $Type (@feature_types){
-    # need to check that the GFF file for this methos exists; not all species
+    # need to check that the GFF file for this method exists; not all species
     # have all methods
     my ($gff_file) = glob($wormbase->gff_splits . "/*${Type}.gff");
     next if not defined $gff_file;
@@ -242,12 +275,13 @@ foreach my $chrom ( @chromosomes ) {
       my @data = split;
       if ( $data[9] and $data[9] =~ /(WBsf\d+)/) { # Feature "WBsf003597"
     	my $feat_id = $1;
+	$Features{$feat_id} = [$data[3], $data[4], $data[6], $data[1]]; # 182772  182773 + SL1
     	my $dnas = $feature_data{$feat_id};
     	if ( $dnas ) {
     	  foreach my $dna ( @{$dnas} ) {
     	    # print "$dna\t$data[9]  --- $data[6] ---  ",$cDNA_span{"$dna"}[2],"\n";
     	    next unless ( $cDNA_span{"$dna"}[2] and $data[6] eq $cDNA_span{"$dna"}[2] ); # ensure same strand
-    	    $cDNA_span{"$dna"}[3]{"$data[1]"} = [ $data[3], $data[4], $1 ]; # 182772  182773 WBsf01634
+    	    $cDNA_span{"$dna"}[3]{"$data[1]"} = [ $data[3], $data[4], $1 ]; # 182772  182773 WBsf01634 # add Feature to cDNA
     	  }
     	}
       }
@@ -273,18 +307,37 @@ foreach my $chrom ( @chromosomes ) {
   # &checkData(\$gff,\$%cDNA_span, \%genes_span); # this just checks that there is some BLAT and gene data in the GFF file
   &eradicateSingleBaseDiff(\%cDNA);
 
+  # add SL Feature to $cds if it has an Isoform Feature asserted
   #create transcript obj for each CDS
   # fwd strand cds will be in block first then rev strand
   foreach (sort { $fwd_cds{$a} <=> $fwd_cds{$b} } keys  %fwd_cds ) {
     #next if $genes_span{$_}->[2] eq "-"; #only do fwd strand for now
-    my $cds = CDS->new( $_, $genes_exons{$_}, $genes_span{$_}->[2], $chrom, $transformer );
+    my $SL_ids = $feature_evidence{$_}; # add Feature_evidence to CDS
+    my @SLs;
+    if (defined $SL_ids) {
+      foreach my $SL_id (@{$SL_ids}) {
+	if ($Features{$SL_id}->[3] && $Features{$SL_id}->[3] =~ /^SL/) {
+	  push @SLs, [$Features{$SL_id}->[0], $Features{$SL_id}->[1], $SL_id, $Features{$SL_id}->[3]]; # [start, end, WBsfID, type];
+	}
+      }
+    } 
+    my $cds = CDS->new( $_, $genes_exons{$_}, $genes_span{$_}->[2], $chrom, $transformer, \@SLs );
     push( @cds_objs, $cds);
     $cds->array_index("$index");
     $index++;
   }
   foreach ( sort { $rev_cds{$b} <=> $rev_cds{$a} } keys  %rev_cds ) {
     #next if $genes_span{$_}->[2] eq "-"; #only do fwd strand for now
-    my $cds = CDS->new( $_, $genes_exons{$_}, $genes_span{$_}->[2], $chrom, $transformer );
+    my $SL_ids = $feature_evidence{$_}; # add Feature_evidence to CDS
+    my @SLs;
+    if (defined $SL_ids) {
+      foreach my $SL_id (@{$SL_ids}) {
+	if ($Features{$SL_id}->[3] && $Features{$SL_id}->[3] =~ /^SL/) {
+	  push @SLs, [$Features{$SL_id}->[0], $Features{$SL_id}->[1], $SL_id, $Features{$SL_id}->[3]]; # [start, end, WBsfID, type];
+	}
+      }
+    } 
+    my $cds = CDS->new( $_, $genes_exons{$_}, $genes_span{$_}->[2], $chrom, $transformer, \@SLs );
     push( @cds_objs, $cds);
     $cds->array_index("$index");
     $index++;
@@ -298,7 +351,7 @@ foreach my $chrom ( @chromosomes ) {
 
     if ( $cDNA_span{$cdna_id}->[3] ) {
       foreach my $feat ( keys %{$cDNA_span{$cdna_id}->[3]} ) {
-	$cdna->$feat( $cDNA_span{$cdna_id}->[3]->{"$feat"} );
+	$cdna->$feat( $cDNA_span{$cdna_id}->[3]->{"$feat"} ); # add feature to cDNA <==== this is where it is done! Couldn't see this for an entire age!
       }
     }
     # add paired read info
@@ -323,7 +376,7 @@ foreach my $chrom ( @chromosomes ) {
 
   ######
   # sort the cDNAs such that the ones with features are dealt with first
-  # This is necessaery to ensure deterministic behaviour
+  # This is necessary to ensure deterministic behaviour
   ######
   @cdna_objs = sort {
     my $a_score = 0;
@@ -370,8 +423,8 @@ foreach my $chrom ( @chromosomes ) {
   # remove any cDNA that overlaps two CDSs and which has a score of
   # less than $COVERAGE_THRESHOLD for the alignment coverage score
   #
-  # +++ At present this does a very simple check to see if the EST
-  # overlaps with two or more geens, but it should be improved to
+  # At present this does a very simple check to see if the EST
+  # overlaps with two or more genes, but it should be improved to
   # check whether the EST exons overlap with the CDS exons because at
   # the moment genes in the introns of other genes in the same sense
   # have their weak EST rejected.
@@ -417,10 +470,10 @@ foreach my $chrom ( @chromosomes ) {
   # here we go through all of the cDNAs looking for matches of their
   # introns with the introns of the CDS structures. We store all
   # instances of a match in the cDNA structure so that we can go
-  # through them all later and check first of all whenther there are
+  # through them all later and check first of all whether there are
   # any cDNAs with introns matching two or more genes - these are
   # candidates for merging genes or chimeric ESTs and the cDNA is not
-  # used to build the transcritps as they will almost certainly
+  # used to build the transcripts as they will almost certainly
   # produce erroneous structures. Where the cDNA matches just one
   # gene, the cDNA may match several CDSs equally well. All of the
   # CDSs that match with an equal number of consecutive introns are
@@ -469,7 +522,7 @@ foreach my $chrom ( @chromosomes ) {
     } elsif (scalar(@matching_genes) > 1) { 
       # we want to report those ESTs that have introns that match two or more CDSs as this may indicate required gene mergers.
       if ($verbose) {
-        $log->write_to("TB : $round : cDNa " .
+        $log->write_to("TB : $round : cDNA " .
                        $cdna->name . 
                        " matches introns in two or more genes and will not be used in transcript-building:");
         foreach my $gene (@matching_genes) {
@@ -535,9 +588,11 @@ foreach my $chrom ( @chromosomes ) {
     }
   }
 
-  $round = "Fourth (read pairs) round:";
+
 
   # Fourth round - use read-pair information to extend with cDNAs that do not overlap
+
+  $round = "Fourth (read pairs) round:";
   $log->write_to("TB : $round\n") if ($verbose);
 
  PAIR: foreach my $cdna ( @cdna_objs) {
@@ -611,6 +666,9 @@ foreach my $chrom ( @chromosomes ) {
 #  }
 
 
+  # find duplicate transcripts in a gene and make then non-identical so that the ENA will accept them
+  purge_duplicates(\@cds_objs, \%cds2gene);
+
   foreach my $cds (@cds_objs ) {
     $cds->report($out_fh, $coords, $wormbase->full_name, \%cds2gene);
   }
@@ -637,6 +695,59 @@ exit(0);
 #
 #######################################################################################################
 
+
+# find duplicate transcripts within a gene locus and make them non-identical so that they are accepted by the ENA
+sub purge_duplicates {
+  my ($cds_objs, $cds2gene) = @_;
+
+  my %genes; # hash of array of CDS objects, keyed by geneID
+
+  foreach my $cds (@{$cds_objs}) {
+    my $reverted = 0; # flag for already reverted a transcript in this CDS to the CDS structure
+    my $gene = $cds2gene->{$cds->name};
+    # go through %genes checking every cds and every transcript for duplicates of the transcripts in $cds
+    foreach my $transcript ($cds->transcripts) {
+      foreach my $sibling_cds (@{$genes{$gene}}) { # look at other CDSs in this gene that we have already processed
+	foreach my $sibling_transcript ($sibling_cds->transcripts) {
+	  if (exists $sibling_transcript->{'ignore'}) {next}
+	  if ($transcript->duplicate($sibling_transcript)) {
+	    print $prob_fh " Duplicate Transcript: ",$transcript->name," ",$sibling_transcript->name,"\n";
+	    $log->write_to(" Duplicate Transcript: ".$transcript->name," ".$sibling_transcript->name."\n");
+	    if ($reverted) { # don't want to revert to the CDS structure if we have already done this for another transcript in this CDS
+	      print $prob_fh "WARNING: Two transcripts were reverted to the same CDS structure: ",$reverted," NOT CREATING: ",$transcript->name,"\n";
+	      $log->write_to("WARNING: Two transcripts were reverted to the same CDS structure: ".$reverted." NOT CREATING: ".$transcript->name."\n");
+#	      $log->error;
+	      $transcript->{'ignore'} = 1; # ignore, don't report this.
+	      last;
+	    } else {
+	      # force the structure back to being the original CDS structure
+	      # set start, end, sorted_exons
+	      $transcript->start($cds->start);
+	      $transcript->end($cds->end);
+	      $transcript->{'sorted_exons'} = $cds->sorted_exons;
+	      $reverted = $transcript->name;
+	      # now retest the new structure for duplicates
+	      foreach my $sibling_cds2 (@{$genes{$gene}}) { # look at other CDSs in this gene that we have already processed
+		foreach my $sibling_transcript2 ($sibling_cds2->transcripts) {
+		  if (exists $sibling_transcript2->{'ignore'}) {next}
+		  if ($transcript->duplicate($sibling_transcript2)) {
+		    print $prob_fh "WARNING: Duplicate Transcript found after reversion to CDS structure: ",$sibling_transcript2->name," NOT CREATING: ",$transcript->name,"\n";
+		    $log->write_to("WARNING: Duplicate Transcript found after reversion to CDS structure: ".$sibling_transcript2->name." NOT CREATING: ".$transcript->name."\n");
+#		    $log->error;
+		    $transcript->{'ignore'} = 1; # ignore, don't report this.
+		    last;
+		  }
+		}
+	      }
+	    }
+	  }
+	}
+      }
+    }
+    push @{$genes{$gene}}, $cds;
+  }
+
+}
 
 sub eradicateSingleBaseDiff {
   my $cDNAh = shift;
@@ -824,7 +935,24 @@ sub get_best_CDS_matches {
   return @result;
 }
 
+# get CDS where the Isoform has one or more Properties.Isoform.Feature_evidence supporting evidence tags
+sub get_feature_evidence {
+  my %Feature_evidence;
 
+#my @cds = $ace->fetch( -query => "Find CDS Where Isoform AND Method = \"curated\"");
+
+  my $cdsIt = $ace->fetch_many(-query => "Find CDS Where Isoform AND Method = \"curated\"");
+  
+  while (my $cds = $cdsIt->next()) {
+    # The 'Feature_evidence' values are in an Evidence hash attached to the 'Isoform' tag. You have to creep up on it slowly.
+    if (defined $cds->at('Properties.Isoform.Feature_evidence')) {
+      foreach my $ft ($cds->at('Properties.Isoform.Feature_evidence')->col(1)) {
+	push @{$Feature_evidence{$cds->name}}, $ft->name;
+      }
+    }
+  }
+  return %Feature_evidence;
+}
 
 __END__
 
