@@ -4,8 +4,8 @@ use warnings;
 use SpeciesFtp;
 use File::Basename;
 
-die "Usage: PARASITE_VERSION=... PARASITE_STAGING_MYSQL=... $0" unless $ENV{PARASITE_VERSION} and $ENV{PARASITE_STAGING_MYSQL};
-
+die "Usage: PARASITE_VERSION=... PARASITE_STAGING_MYSQL=... $0 <pattern>" unless $ENV{PARASITE_VERSION} and $ENV{PARASITE_STAGING_MYSQL};
+my ($species_pattern) = @ARGV;
 my $sql_cmd = $ENV{PARASITE_STAGING_MYSQL};
 my $dataset_names_sql = "select name, sql_name from parasite_mart_$ENV{PARASITE_VERSION}.dataset_names where src_db like \\\"%_core_$ENV{PARASITE_VERSION}_%\\\"";
 open (my $dataset_names_fh, "$sql_cmd -Ne \" $dataset_names_sql \" | " ) or die $!;
@@ -61,7 +61,7 @@ SELECT h.stable_id_4016_r2 AS gene_id,
        IFNULL(g.description_1020, "") AS ortholog_description
 FROM parasite_mart_{{PARASITE_VERSION}}_merged.wbps_gene__homolog_{{SPECIES_BIOMART_NAME}}__dm h
 JOIN parasite_mart_{{PARASITE_VERSION}}_merged.wbps_gene__gene__main g ON (h.gene_id_1020_key = g.gene_id_1020_key)
-JOIN parasite_mart_12.dataset_names d ON (g.species_id_1010_key = d.name)
+JOIN parasite_mart_{{PARASITE_VERSION}}.dataset_names d ON (g.species_id_1010_key = d.name)
 WHERE stable_id_4016_r2 IS NOT NULL
 ORDER BY gene_id,
          ortholog_species_name,
@@ -87,18 +87,22 @@ sub dump_sql_to_path {
   system("gzip $path") and die "Could not gzip: $path";
 }
 for my $species (sort keys %species_with_paralogs_biomart_names){
+  next if $species_pattern and $species !~ /$species_pattern/;
   my $species_biomart_name = $species_with_paralogs_biomart_names{$species};
-  print STDERR localtime . " Paralogs: $species\n";
+  my $path = SpeciesFtp->current_staging->path_to($species, "paralogs.tsv", 0);
+  print STDERR localtime . " $species\t$path.gz\n";
   dump_sql_to_path(
     sql($GET_PARALOGS_TEMPLATE, $species_biomart_name),
-    SpeciesFtp->current_staging->path_to($species, "paralogs.tsv", 0),
+    $path,
   );
 }
 for my $species (sort keys %species_with_orthologs_biomart_names){
+  next if $species_pattern and $species !~ /$species_pattern/;
   my $species_biomart_name = $species_with_orthologs_biomart_names{$species};
-  print STDERR localtime . "Orthologs: $species\n";
+  my $path = SpeciesFtp->current_staging->path_to($species, "orthologs.tsv", 0);
+  print STDERR localtime ." $species\t$path.gz\n";
   dump_sql_to_path(
     sql($GET_ORTHOLOGS_TEMPLATE, $species_biomart_name),
-    SpeciesFtp->current_staging->path_to($species, "orthologs.tsv", 0),
+    $path,
   );
 }
