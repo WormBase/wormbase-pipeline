@@ -16,12 +16,14 @@ use WbpsExpression;
 use GenomeBrowser::JBrowseDisplay;
 my @species;
 my $do_sync = 0;
-my $skip_flatfile_to_json = 0;
+my $jbrowse_tools_skip = 0;
+my $jbrowse_tools_nofatal = 0;
 
 GetOptions(
   'species=s@'    => \@species,
   'do_sync' => \$do_sync,
-  'skip_flatfile_to_json' => \$skip_flatfile_to_json,
+  'jbrowse_tools_skip' => \$jbrowse_tools_skip,
+  'jbrowse_tools_nofatal' => \$jbrowse_tools_nofatal,
 ) || exit_with_usage();
 
 
@@ -31,12 +33,13 @@ for my $species (@species){
   GenomeBrowser::JBrowseDisplay->new->make_tracks(
     $species,
     do_sync=>$do_sync,
-    skip_flatfile_to_json => $skip_flatfile_to_json,
+    jbrowse_tools_skip => $jbrowse_tools_skip,
+    jbrowse_tools_nofatal=> $jbrowse_tools_nofatal,
   );
 }
 
 sub exit_with_usage {
-  print STDERR "Usage: $0 <species do_sync do_rnaseq do_jbrowse >";
+  print STDERR "Usage: $0 <params>";
   exit 1;
 }
 

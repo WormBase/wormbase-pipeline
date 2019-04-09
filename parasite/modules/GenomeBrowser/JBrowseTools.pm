@@ -16,15 +16,22 @@ sub tool_cmd {
 }
 
 sub exec_if_dir_absent {
-  my ($dir, $cmd) = @_;
-  return if -d $dir;
+  my ($dir, $cmd, %opts) = @_;
+  return if $opts{jbrowse_tools_skip} || -d $dir;
   $log->info("Executing: $cmd");
   my $output = `$cmd`;
-  die $log->fatal("Failed : $cmd, output: $output") if $?;
+  if($?){
+    my $msg = $log->fatal("Failed : $cmd, output: $output");
+    if($opts{jbrowse_tools_nofatal}){
+       warn $msg;
+    } else {
+       die $msg;
+    }
+  }
 }
 
 sub flatfile_to_json {
-  my ($self, $source_path, $out, $track_label) = @_;
+  my ($self, $source_path, $out, $track_label, %opts) = @_;
   my $cmd = $self->tool_cmd("flatfile-to-json.pl");
   $cmd .= " --gff $source_path";
   $cmd .= " --trackLabel '$track_label'";
@@ -32,29 +39,29 @@ sub flatfile_to_json {
   $cmd .= ' --compress';
   $cmd .= " --out $out";
   exec_if_dir_absent(
-   "$out/tracks/$track_label", $cmd 
+   "$out/tracks/$track_label", $cmd , %opts
   );
   return $cmd;
 }
 
 sub prepare_refseqs {
-  my ($self, $fasta_path, $out) = @_;
+  my ($self, $fasta_path, $out, %opts) = @_;
   my $cmd = $self->tool_cmd("prepare-refseqs.pl");
   $cmd .= " --fasta $fasta_path";
   $cmd .= " --compress";
   $cmd .= " --out $out";
 
-  exec_if_dir_absent( "$out/seq", $cmd);
+  exec_if_dir_absent( "$out/seq", $cmd, %opts);
 }
 
 sub index_names {
-  my ( $self,$out, %args ) = @_;
+  my ( $self,$out, %opts ) = @_;
   my $cmd = $self->tool_cmd("generate-names.pl");
   $cmd .= " --compress";
   $cmd .= " --incremental"; # set experimentally
   $cmd .= " --mem 1024000000";    # 1GB is four times the default, 256 MB
   $cmd .= " --out $out";
-  exec_if_dir_absent( "$out/names", $cmd, %args );
+  exec_if_dir_absent( "$out/names", $cmd, %opts );
 }
 
 sub add_static_files {

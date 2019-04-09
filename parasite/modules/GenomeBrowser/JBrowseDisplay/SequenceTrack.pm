@@ -38,7 +38,7 @@ my $sequence_track_config = {
 };
 
 sub track_for_species {
-  my ($self, $species, $out) = @_;
+  my ($self, $species, $out, %opts) = @_;
   
   my $fasta_path = $self->{species_ftp}->path_to( $species, "genomic.fa" );
   if (-f $fasta_path && $fasta_path =~ /.gz$/){
@@ -47,7 +47,7 @@ sub track_for_species {
       gunzip( $fasta_path, $tmp_path ) unless -f $tmp_path;
       $fasta_path = $tmp_path;
   };
-  $self->{jbrowse_tools}->prepare_refseqs($fasta_path, $out);
+  $self->{jbrowse_tools}->prepare_refseqs($fasta_path, $out, %opts);
 
   return $sequence_track_config;
 }

@@ -35,8 +35,7 @@ sub tracks_for_species {
   }
   my %gff_paths_by_track_label = map {(basename $_) => $_ } grep {$_ !~ /annotations.gff3/ } glob("$tmp_dir/*");
   for my $track_label (sort keys %gff_paths_by_track_label){
-    next if $opts{skip_flatfile_to_json};
-    $self->{jbrowse_tools}->flatfile_to_json($gff_paths_by_track_label{$track_label}, $out, $track_label);
+    $self->{jbrowse_tools}->flatfile_to_json($gff_paths_by_track_label{$track_label}, $out, $track_label, %opts);
   }
   return map {config_for_track_label($_)} keys %gff_paths_by_track_label;
 }
