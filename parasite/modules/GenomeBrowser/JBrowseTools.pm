@@ -1,22 +1,13 @@
 package GenomeBrowser::JBrowseTools;
 use strict;
 use warnings;
-use File::Path qw(make_path);
-use File::Basename;
-use File::Copy qw(copy);
-use IO::Uncompress::Gunzip qw(gunzip);
 use JSON;
-use File::Slurp;
+use File::Slurp qw/write_file/;
 use Log::Any qw($log);
 
 sub new {
-  my ( $class, %args ) = @_;
-  die @_
-    unless $args{install_location}
-    and $args{tmp_dir}
-    and $args{out_dir}
-    and $args{species_ftp};
-  bless \%args, $class;
+  my ( $class, $install_location ) = @_;
+  bless {install_location => $install_location}, $class;
 }
 
 sub tool_cmd {
@@ -24,131 +15,50 @@ sub tool_cmd {
   return "perl " . join "/", $self->{install_location}, "bin", $name;
 }
 
-sub tmp_path {
-  my ( $self, $core_db, $name ) = @_;
-
-  $core_db =~ s/_core.*//;
-  $name =~ s/.gz//;
-  my $dir = join "/", $self->{tmp_dir}, $core_db;
-  make_path $dir;
-  return join "/", $dir, $name;
-}
-
-sub out_dir {
-  my ( $self, $core_db ) = @_;
-  $core_db =~ s/_core.*//;
-  return join "/", $self->{out_dir}, $core_db;
-}
-
 sub exec_if_dir_absent {
-  my ( $self, $dir, $cmd, %args ) = @_;
-  if ( $args{do_jbrowse} // not -d $dir ) {
-    $log->info("Executing: $cmd");
-    my $output = `$cmd`;
-    die $log->fatal("Failed : $cmd, output: $output") if $?;
-  }
-  else {
-    $log->info("Skipping: $cmd");
-  }
+  my ($dir, $cmd) = @_;
+  return if -d $dir;
+  $log->info("Executing: $cmd");
+  my $output = `$cmd`;
+  die $log->fatal("Failed : $cmd, output: $output") if $?;
 }
 
-sub filter_gff {
-  my ( $self, $path, $processing_path, $features, %args ) = @_;
-
-  if ( $args{do_jbrowse} // not -f $processing_path ) {
-    $log->info("filter_gff processing: $processing_path");
-    open ANNOTATION, "$path" or die "Could not open: $path";
-    open PROCESSING, ">$processing_path"
-      or die "Could not write: $processing_path";
-    while (<ANNOTATION>) {
-      my @gff_elements = split( "\t", $_ );
-      print PROCESSING $_ if ( $gff_elements[1] ~~ $features );
-    }
-    close ANNOTATION;
-    close PROCESSING;
-  }
-  else {
-    $log->info("filter_gff skipping: $processing_path");
-  }
+sub flatfile_to_json {
+  my ($self, $source_path, $out, $track_label) = @_;
+  my $cmd = $self->tool_cmd("flatfile-to-json.pl");
+  $cmd .= " --gff $source_path";
+  $cmd .= " --trackLabel '$track_label'";
+  $cmd .= ' --nameAttributes "name,id,alias,locus,target,note"';
+  $cmd .= ' --compress';
+  $cmd .= " --out $out";
+  exec_if_dir_absent(
+   "$out/tracks/$track_label", $cmd 
+  );
+  return $cmd;
 }
 
-sub track_from_annotation {
-  my ( $self, %args ) = @_;
-
-  my $out = $self->out_dir( $args{core_db} );
-  ( my $track_label = $args{'trackLabel'} ) =~ s/\s/_/g;
-  my $path =
-    $self->{species_ftp}->path_to( $args{core_db}, "annotations.gff3" );
-
-  if ( $path =~ /.gz$/ ) {
-    my $tmp = $self->tmp_path( $args{core_db}, basename $path);
-    gunzip( $path, $tmp ) unless -f $tmp;
-    $path = $tmp;
-  }
-  my $processing_path =
-    $self->tmp_path( $args{core_db}, ( join ",", @{ $args{feature} } ) );
-
-  $self->filter_gff( $path, $processing_path, $args{feature}, %args );
-
-  if ( -s $processing_path ) {
-    my $cmd = $self->tool_cmd("flatfile-to-json.pl");
-    $cmd .= " --gff $processing_path";
-    $cmd .= " --type " . join ",", @{ $args{type} };
-    $cmd .= " --key '$args{trackLabel}'";
-    $cmd .= " --trackLabel '$track_label'";
-    $cmd .= " --trackType $args{trackType}";
-    $cmd .= ' --nameAttributes "name,id,alias,locus"';
-    $cmd .= ' --compress';
-    $cmd .= " --out $out";
-    $self->exec_if_dir_absent( "$out/tracks/$track_label", $cmd, %args );
-  }
-  else {
-    $log->info("Skipping flatfile-to-json.pl:  $processing_path");
-  }
-}
-
-sub track_present {
-  my ( $self, %args ) = @_;
-
-  my $out = $self->out_dir( $args{core_db} );
-  ( my $track_label = $args{'trackLabel'} ) =~ s/\s/_/g;
-
-  return -d "$out/tracks/$track_label";
-}
-
-sub prepare_sequence {
-  my ( $self, %args ) = @_;
-
-  my $out = $self->out_dir( $args{core_db} );
-  my $path = $self->{species_ftp}->path_to( $args{core_db}, "genomic.fa" );
-
-  if ( $path =~ /.gz$/ ) {
-    my $tmp = $self->tmp_path( $args{core_db}, basename $path);
-    die "Sequence file missing: $path" unless -s $path;
-    gunzip( $path, $tmp ) unless -s $tmp;
-    $path = $tmp;
-  }
+sub prepare_refseqs {
+  my ($self, $fasta_path, $out) = @_;
   my $cmd = $self->tool_cmd("prepare-refseqs.pl");
-  $cmd .= " --fasta $path";
+  $cmd .= " --fasta $fasta_path";
   $cmd .= " --compress";
   $cmd .= " --out $out";
 
-  $self->exec_if_dir_absent( "$out/seq", $cmd, %args );
+  exec_if_dir_absent( "$out/seq", $cmd);
 }
 
 sub index_names {
-  my ( $self, %args ) = @_;
-  my $out = $self->out_dir( $args{core_db} );
+  my ( $self,$out, %args ) = @_;
   my $cmd = $self->tool_cmd("generate-names.pl");
   $cmd .= " --compress";
+  $cmd .= " --incremental"; # set experimentally
   $cmd .= " --mem 1024000000";    # 1GB is four times the default, 256 MB
   $cmd .= " --out $out";
-  $self->exec_if_dir_absent( "$out/names", $cmd, %args );
+  exec_if_dir_absent( "$out/names", $cmd, %args );
 }
 
 sub add_static_files {
-  my ( $self, %args ) = @_;
-  my $out = $self->out_dir( $args{core_db} );
+  my ( $self, $out) = @_;
   my $doc = <<END_FUNCTIONS_CONF;
 geneLabel = function(f) {
   var type = f.get('type');
@@ -180,8 +90,7 @@ geneColor = function(f) {
   if (strand ==  1) {return 'violet';}
   return 'gray'; }
 END_FUNCTIONS_CONF
-  make_path $out;
-  write_file( "$out/functions.conf", $doc );
+  write_file( join("/", $out, "functions.conf"), $doc );
 }
 
 # JBrowse leaves its own configs in trackList.json.
@@ -189,10 +98,9 @@ END_FUNCTIONS_CONF
 # and add canned copies.
 # You can JSON->new->pretty if you like pretty, but it will make the files bigger.
 sub update_config {
-  my ( $self, %args ) = @_;
-  my $config_path = join "/", $self->out_dir( $args{core_db} ),
-    "trackList.json";
-  my $new_config = $args{new_config};
-  write_file( $config_path, JSON->new->utf8->encode($new_config) );
+  my ( $self, $out, $new_config ) = @_;
+  my $path = join("/", $out, "trackList.json");
+  $log->info("Updating config: $path");
+  write_file( $path, JSON->new->utf8->encode($new_config) );
 }
 1;

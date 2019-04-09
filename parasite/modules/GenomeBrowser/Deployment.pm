@@ -9,12 +9,12 @@ use Log::Any qw($log);
 # Have tunnels enabled
 # Then you can do everything
 
-our $SANGER_HOST="sangerngs"; # Made up ssh alias
+my $SANGER_HOST="sangerngs"; # Made up ssh alias
 
-our $EBI_PATH="/nfs/ftp/pub/databases/arrayexpress/data/atlas/rnaseq";
-our $EBI_URL="ftp://ftp.ebi.ac.uk/pub/databases/arrayexpress/data/atlas/rnaseq";
-our $SANGER_PATH="/data/production/parasites/rnaseqer";
-our $SANGER_URL="https://ngs.sanger.ac.uk/production/parasites/rnaseqer";
+my $EBI_PATH="/nfs/ftp/pub/databases/arrayexpress/data/atlas/rnaseq";
+my $EBI_URL="ftp://ftp.ebi.ac.uk/pub/databases/arrayexpress/data/atlas/rnaseq";
+my $SANGER_PATH="/data/production/parasites/rnaseqer";
+my $SANGER_URL="https://ngs.sanger.ac.uk/production/parasites/rnaseqer";
 
 sub location {
   my ( $root, $species, $assembly, $run_id ) = @_;
@@ -33,12 +33,10 @@ sub sync_ebi_to_sanger {
   my $target_dir = dirname $target_path;
 
   if ($opts{do_sync} // not LWP::UserAgent->new->head($target_url)->is_success){
-    $log->info("Initiating remote download: $source_url -> $SANGERHOST:$target_path");
+    $log->info("Initiating remote download: $source_url -> $SANGER_HOST:$target_path");
     run_in_sanger("mkdir -p $target_dir");
     run_in_sanger("wget --continue --no-verbose -O $target_path $source_url");
-  } else {
-    $log->info("Skipping sync: $source_url -> $target_path");
-  }
+  } 
   return $target_url;
 }
 1;
