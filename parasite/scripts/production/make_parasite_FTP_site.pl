@@ -41,18 +41,8 @@ for my $path_species (glob "$source_dir/*") {
           $putative_wormbase_dir,
           $this_target_dir
         );
-        if (-f "$this_source_dir/$species.paralogs.tsv.gz"){ 
-          my $cp_paralogs_cmd = "rsync -a $this_source_dir/$species.paralogs.tsv.gz $this_target_dir/$species.paralogs.tsv.gz";
-          print localtime . " $species $cp_paralogs_cmd\n ";
-          system($cp_paralogs_cmd) and die("Failed: $cp_paralogs_cmd");
-        }
-        if (-f "$this_source_dir/$species.orthologs.tsv.gz"){ 
-          my $cp_orthologs_cmd = "rsync -a $this_source_dir/$species.orthologs.tsv.gz $this_target_dir/$species.orthologs.tsv.gz";
-          print localtime . " $species $cp_orthologs_cmd\n ";
-          system($cp_orthologs_cmd) and die("Failed: $cp_orthologs_cmd");
-        }
      } else {
-        my $cp_cmd = "rsync -a $this_source_dir/ $this_target_dir/";
+        my $cp_cmd = "rsync -a --include='*.gz' --exclude '*' $this_source_dir/ $this_target_dir/";
         print localtime . " $species $cp_cmd\n";
         system($cp_cmd) and die("Failed: $cp_cmd");
      }
@@ -68,10 +58,9 @@ while(<FIND>) {
     s/^$wbps_release_ftp_dir\///;
     push @files, $_;
   }
-open (my $fh, ">", $checksum_file) or die "$!: $checksum_file";
-print $fh `cd $wbps_release_ftp_dir && md5sum $_` for @files;
-close $fh;
-print localtime . " Completed\n";
+
+system("cd $wbps_release_ftp_dir && md5sum @files > $checksum_file") and die "Could not calc checksums\n";
+print localtime . " Completed \n";
 #####################
 
 sub make_symlinks_to_wormbase_species {
