@@ -77,9 +77,9 @@ GetOptions ( "debug:s"      => \$debug,
 # when a transcript object is extended, check to see if there is a SL feature and only add exons after this - truncate exons overlapping the SL site
 
 
-$debug = "gw3";
-#$detailed_debug = 1;
-$test = 1;
+#$debug = "gw3";
+##$detailed_debug = 1;
+#$test = 1;
 if (defined $test) {
   print "WORKING IN TEST_BUILD\n";
 }
