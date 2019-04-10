@@ -61,17 +61,17 @@ sub species_for_core_db {
   
   return join "_", $spe, $cies, ($bp eq 'core' ? () : $bp);
 }
+sub one_species {
+  my ($self, @patterns) = @_;
+  return species_for_core_db($self->core_db(@patterns));
+}
 sub species {
   my ($self, @patterns) = @_;
-  if (@patterns) {
-     return species_for_core_db($self->core_db(@patterns));
-  } else {
-     my %h;
-     for ($self->core_databases) {
-        $h{&species_for_core_db($_)}++;
-     }
-     return sort keys %h;
+  my %h;
+  for ($self->core_databases(@patterns)) {
+    $h{&species_for_core_db($_)}++;
   }
+  return sort keys %h;
 }
 sub meta_value {
   my ($self, $core_db_pattern, $pattern) = @_;
