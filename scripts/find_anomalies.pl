@@ -5013,15 +5013,15 @@ __END__
 
 
 START_DATA
-UNMATCHED_PROTEIN            elegans remanei briggsae japonica brenneri brugia ovolvulus sratti tmuris
+UNMATCHED_PROTEIN            elegans remanei briggsae japonica brenneri brugia pristionchus ovolvulus sratti tmuris
 UNMATCHED_EST                
-FRAMESHIFTED_PROTEIN         elegans remanei briggsae japonica brenneri brugia ovolvulus sratti tmuris
-MERGE_GENES_BY_PROTEIN               remanei briggsae japonica brenneri brugia ovolvulus sratti tmuris
-SPLIT_GENE_BY_PROTEIN_GROUPS         remanei briggsae japonica brenneri brugia ovolvulus sratti tmuris
+FRAMESHIFTED_PROTEIN         elegans remanei briggsae japonica brenneri brugia pristionchus ovolvulus sratti tmuris
+MERGE_GENES_BY_PROTEIN               remanei briggsae japonica brenneri brugia pristionchus ovolvulus sratti tmuris
+SPLIT_GENE_BY_PROTEIN_GROUPS         remanei briggsae japonica brenneri brugia pristionchus ovolvulus sratti tmuris
 MERGE_GENES_BY_EST
 UNATTACHED_EST
 UNATTACHED_TSL
-UNMATCHED_TSL                elegans ovolvulus brugia sratti tmuris
+UNMATCHED_TSL                elegans ovolvulus brugia pristionchus sratti tmuris
 UNMATCHED_RST5               elegans
 UNMATCHED_TWINSCAN           elegans
 UNMATCHED_GENEFINDER         elegans
@@ -5032,32 +5032,32 @@ MODENCODE_WITH_SIGNALP       elegans
 JIGSAW_WITH_SIGNALP          elegans
 UNMATCHED_SAGE               elegans
 UNMATCHED_WABA               
-OVERLAPPING_EXONS            elegans remanei briggsae japonica brenneri brugia ovolvulus sratti tmuris
-MISMATCHED_EST               elegans remanei briggsae japonica brenneri brugia ovolvulus sratti tmuris
-WEAK_INTRON_SPLICE_SITE      elegans remanei briggsae japonica brenneri brugia ovolvulus sratti
-SHORT_EXON                   elegans remanei briggsae japonica brenneri brugia ovolvulus sratti tmuris
-SHORT_INTRON                 elegans remanei briggsae japonica brenneri brugia ovolvulus sratti tmuris
-REPEAT_OVERLAPS_EXON         elegans remanei briggsae japonica brenneri brugia ovolvulus sratti tmuris
-INTRONS_IN_UTR               elegans remanei briggsae japonica brenneri brugia ovolvulus sratti tmuris
+OVERLAPPING_EXONS            elegans remanei briggsae japonica brenneri brugia pristionchus ovolvulus sratti tmuris
+MISMATCHED_EST               elegans remanei briggsae japonica brenneri brugia pristionchus ovolvulus sratti tmuris
+WEAK_INTRON_SPLICE_SITE      elegans remanei briggsae japonica brenneri brugia pristionchus ovolvulus sratti
+SHORT_EXON                   elegans remanei briggsae japonica brenneri brugia pristionchus ovolvulus sratti tmuris
+SHORT_INTRON                 elegans remanei briggsae japonica brenneri brugia pristionchus ovolvulus sratti tmuris
+REPEAT_OVERLAPS_EXON         elegans remanei briggsae japonica brenneri brugia pristionchus ovolvulus sratti tmuris
+INTRONS_IN_UTR               elegans remanei briggsae japonica brenneri brugia pristionchus ovolvulus sratti tmuris
 SPLIT_GENE_BY_TWINSCAN       
 MERGE_GENES_BY_TWINSCAN      
 MERGE_GENES_BY_RNASEQ        elegans
 CONFIRMED_INTRON             
-UNCONFIRMED_INTRON           elegans remanei briggsae japonica brenneri brugia ovolvulus sratti tmuris
+UNCONFIRMED_INTRON           elegans remanei briggsae japonica brenneri brugia pristionchus ovolvulus sratti tmuris
 UNMATCHED_MASS_SPEC_PEPTIDE  elegans
-EST_OVERLAPS_INTRON          elegans remanei briggsae japonica brenneri brugia ovolvulus sratti tmuris
+EST_OVERLAPS_INTRON          elegans remanei briggsae japonica brenneri brugia pristionchus ovolvulus sratti tmuris
 UNMATCHED_EXPRESSION         elegans
 UNMATCHED_454_CLUSTER        elegans
 UNMATCHED_MGENE              elegans
 NOVEL_MGENE_PREDICTION       elegans
 NOT_PREDICTED_BY_MGENE       elegans
-UNMATCHED_RNASEQ_INTRONS     elegans remanei briggsae japonica brenneri brugia ovolvulus sratti tmuris
-SPURIOUS_INTRONS             elegans remanei briggsae japonica brenneri brugia ovolvulus sratti tmuris
-PREMATURE_STOP               elegans remanei briggsae japonica brenneri brugia ovolvulus sratti tmuris
+UNMATCHED_RNASEQ_INTRONS     elegans remanei briggsae japonica brenneri brugia pristionchus ovolvulus sratti tmuris
+SPURIOUS_INTRONS             elegans remanei briggsae japonica brenneri brugia pristionchus ovolvulus sratti tmuris
+PREMATURE_STOP               elegans remanei briggsae japonica brenneri brugia pristionchus ovolvulus sratti tmuris
 UNCONFIRMED_MASS_SPEC_INTRON elegans
 END_DATA
 
-#INCOMPLETE_PFAM_MOTIF        elegans remanei briggsae japonica brenneri ovolvulus brugia sratti tmuris
+#INCOMPLETE_PFAM_MOTIF        elegans remanei briggsae japonica brenneri ovolvulus brugia pristionchus sratti tmuris
 
 =pod
 
