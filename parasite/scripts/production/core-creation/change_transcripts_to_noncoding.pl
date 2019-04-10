@@ -35,6 +35,7 @@ sub extract_attribute {
    return $1;
 }
 while (<$fh>) {
+    print and next if /^#/;
     my @c = split "\t";
     if ( @c[2] eq "mRNA" ) {
         my $id = &extract_attribute("ID", @c[8]);

@@ -1,3 +1,4 @@
+#!/usr/bin/env perl
 use strict;
 use feature 'say';
 use ProductionMysql;
@@ -6,6 +7,7 @@ my %chosen_bioprojects = (
     'ancylostoma_ceylanicum' => 'prjna231479',
     'ascaris_suum' => 'prjna62057',
     'caenorhabditis_remanei' => 'prjna53967',
+    'clonorchis_sinensis' => 'prjda72781',
     'dictyocaulus_viviparus' => 'prjna72587',
     'echinococcus_granulosus' => 'prjeb121',
     'fasciola_hepatica' => 'prjeb25283',
@@ -14,6 +16,9 @@ my %chosen_bioprojects = (
     'loa_loa' => 'prjna246086',
     'macrostomum_lignano' => 'prjna371498',
     'meloidogyne_arenaria' => 'prjeb8714',
+    'meloidogyne_floridensis' => 'prjeb6016',
+    'meloidogyne_incognita' =>  'prjeb8714',
+    'meloidogyne_javanica' => 'prjeb8714',
     'onchocerca_flexuosa' => 'prjna230512',
     'onchocerca_ochengi' => 'prjeb1204',
     'taenia_asiatica' => 'prjna299871',
@@ -36,7 +41,7 @@ my @species;
 for my $sp (sort keys %species) {
    my @bps = @{$species{$sp}};
    if (@bps > 1 ){
-     die "$sp pick BioProject:". join (", ", @bps) unless grep({$_ eq $chosen_bioprojects{$sp} } @bps);
+     die "pick BioProject:  '$sp' => ". join (", ", map {"'$_'"} @bps) unless grep({$_ eq $chosen_bioprojects{$sp} } @bps);
      die unless "$chosen_bioprojects{$sp}";
      push @species, join("_",$sp, $chosen_bioprojects{$sp});
    } else {
@@ -61,23 +66,26 @@ sub line {
    );
 }
 
-my $inh = *STDIN;
-open ($inh, "<", @ARGV[0]) if @ARGV;
+my ($f, @others) = @ARGV;
+die "Usage: $0 conf" if @others or not -s $f;
+
+open (my $inh, "<", $f) or die "$!: $f";
 my @lines = (<$inh>);
-die unless @lines;
 my $first_index = first_index { $_ =~ /wbps/} @lines;
 my $last_index = last_index { $_ =~ /wbps/} @lines;
-my $outh = *STDOUT;
-open ($outh, ">" , @ARGV[0]) if @ARGV;
+open (my $outh, ">" , $f) or die "$!: $f";
 
 map {print $outh $_} @lines[0 .. $first_index - 1 ];
 
 for my $species (@species){
   my $core_db = ProductionMysql->staging->core_db($species);
+  print $outh "# " if $core_db =~ /plectus_sambesii/; #breaks something in ISL
   say $outh &line(
     core_db => $core_db,
     taxon => ProductionMysql->staging->meta_value($core_db, "species.taxonomy_id"),
-    assembly => ProductionMysql->staging->meta_value($core_db, "assembly.name"),
+    assembly => ProductionMysql->staging->meta_value($core_db, "assembly.default"),
   );
 }
 map {print $outh $_} @lines[$last_index +1 .. @lines - 1 ];
+
+print `git diff $f`;

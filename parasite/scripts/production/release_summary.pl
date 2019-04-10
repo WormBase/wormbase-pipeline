@@ -35,10 +35,10 @@ for my $species (keys %result){
       my $r = $result{$species}{$bioproject};
       my $Species=ucfirst($species);
       $Species =~ s/_/ /g;
-      push @links, sprintf("<a href=\"http://parasite.wormbase.org/${species}_$bioproject\">%s (%s)</a>", $Species, uc($bioproject));
+      push @links, sprintf("$bioproject\t<a href=\"http://parasite.wormbase.org/${species}_$bioproject\">%s (%s)</a>", $Species, uc($bioproject));
    }
 }
-print join ", ", @links;
+print join ", ", map {s/.*\t//; $_} sort @links;
 print "\n";
 unless (grep {$_ =~ /elegans/} keys %result ){
    print "\n!!!\nWHERE IS C ELEGANS YO\n";

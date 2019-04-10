@@ -1,7 +1,7 @@
 
 
 get_core_db_and_taxon_list () { 
-  for db in $(  $PARASITE_STAGING_MYSQL -Ne 'show databases like "%core%"') ; do 
+  for db in $(  $PARASITE_STAGING_MYSQL -Ne "show databases like \"%core_${PARASITE_VERSION}%\"") ; do 
     echo -n "$db" "" 
     $PARASITE_STAGING_MYSQL $db -Ne 'select meta_value from meta where meta_key = "species.taxonomy_id"' 
   done

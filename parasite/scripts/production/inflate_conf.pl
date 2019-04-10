@@ -33,7 +33,7 @@ for my $k (keys %{$conf}){
   my $provider_url = $species_conf->{meta}->{"provider.url"};
   my $biosample = $species_conf->{meta}->{"species.biosample"};
   
-  next unless $taxon_id and $assembly_version and $assembly_accession and $provider_name and $provider_url and $biosample;
+  next unless $taxon_id and $provider_name and $provider_url and $biosample;
   
   $species_conf->{meta}->{"assembly.coverage_depth"} //= "medium";
   $species_conf->{meta}->{"species.db_name"} //= "${species}_${bioproject}";
@@ -51,9 +51,11 @@ for my $k (keys %{$conf}){
   $species_conf->{meta}->{"species.species_taxonomy_id"} //= $taxon_id;
   $species_conf->{meta}->{"species.taxonomy_id"} //= $taxon_id;
   $species_conf->{meta}->{"species.url"} //= join( "_", ucfirst($spe), $cies, $bioproject);
-  $species_conf->{meta}->{"assembly.default"} //= $assembly_version;
-  $species_conf->{meta}->{"assembly.name"} //= $assembly_version;
 
+  next unless $assembly_version and $assembly_accession;
+  $species_conf->{meta}->{"assembly.name"} //= $assembly_version;
+  $species_conf->{meta}->{"assembly.default"} //= $assembly_version;
+  $species_conf->{meta}->{"assembly.default"} =~ s/\s+/_/g; # Ensembl convention too
 }
 
 print Dump($conf);

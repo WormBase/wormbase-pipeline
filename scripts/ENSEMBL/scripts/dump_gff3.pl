@@ -9,6 +9,7 @@ use lib "$Bin/../lib";
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use IO::File;
 use Getopt::Long;
+use List::MoreUtils qw/uniq/;
 
 my ($dbname, $dbuser, $dbpass, $dbport, $dbhost, $debug,
     @dump_slice, $num_jobs, $out_file, $slim, $out_fh);
@@ -39,7 +40,7 @@ my $ensdb = new Bio::EnsEMBL::DBSQL::DBAdaptor(
 
 # Get all toplevel slices
 my $sa = $ensdb->get_SliceAdaptor();
-
+my $archive_adaptor = $ensdb->get_adaptor("ArchiveStableId");
 my @slices;
 @dump_slice = split(/,/,join(',',@dump_slice));
 
@@ -105,6 +106,14 @@ while( my $slice = shift @slices) {
       $gene_to_dump{attribs}{description} = $description;
       $gene_to_dump{attribs}{description_source} = $description_source;
       $gene_to_dump{attribs}{description_source_acc} = $description_source_acc;
+    }
+    my $archive_stable_id = $archive_adaptor->fetch_by_stable_id($gene->stable_id);
+    if ($archive_stable_id) {
+# EnsEMBL code doesn't quite handle non-linear history, e.g.  Smp_120050+Smp_199230->Smp_335780+Smp_315690
+       my @archived_ids =  grep {$_ ne $gene->stable_id} uniq  map {$_->{old_id} ? $_->{old_id}->stable_id : ()}  @{$archive_stable_id->get_history_tree->get_all_StableIdEvents };
+       if (@archived_ids){
+          $gene_to_dump{attribs}{previous_stable_id} = join ",", @archived_ids;
+       }
     }
 
 
@@ -345,7 +354,8 @@ while( my $slice = shift @slices) {
       feature_type => (defined $feature->analysis->gff_feature) ? $feature->analysis->gff_feature : 'repeat_region',
     };
 
-    if ($feature->analysis->logic_name eq 'repeatmask') {
+
+    if ($feature->repeat_consensus->repeat_class and $feature->repeat_consensus->repeat_class ne 'Unknown' and $feature->repeat_consensus->name ne $feature->analysis->logic_name){
       $stripped_feature->{attributes}->{repeat_class} = $feature->repeat_consensus->repeat_class;
       $stripped_feature->{display} = $feature->repeat_consensus->name;
     }

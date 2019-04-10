@@ -8,6 +8,9 @@ sub new {
 sub current_staging {
   return new(shift, join( "/", $ENV{PARASITE_SCRATCH},"dumps", "WBPS$ENV{PARASITE_VERSION}", "FTP"), $ENV{PARASITE_VERSION}); 
 }
+sub previous_staging {
+  return new(shift, join( "/", $ENV{PARASITE_SCRATCH},"dumps", "WBPS$ENV{PREVIOUS_PARASITE_VERSION}", "FTP"), $ENV{PREVIOUS_PARASITE_VERSION}); 
+}
 sub release {
   my ($class, $parasite_version, $release_folder) = @_;
   $release_folder //= "WBPS$parasite_version";

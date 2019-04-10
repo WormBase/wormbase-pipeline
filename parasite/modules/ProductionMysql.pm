@@ -61,17 +61,17 @@ sub species_for_core_db {
   
   return join "_", $spe, $cies, ($bp eq 'core' ? () : $bp);
 }
+sub one_species {
+  my ($self, @patterns) = @_;
+  return species_for_core_db($self->core_db(@patterns));
+}
 sub species {
   my ($self, @patterns) = @_;
-  if (@patterns) {
-     return species_for_core_db($self->core_db(@patterns));
-  } else {
-     my %h;
-     for ($self->core_databases) {
-        $h{&species_for_core_db($_)}++;
-     }
-     return sort keys %h;
+  my %h;
+  for ($self->core_databases(@patterns)) {
+    $h{&species_for_core_db($_)}++;
   }
+  return sort keys %h;
 }
 sub meta_value {
   my ($self, $core_db_pattern, $pattern) = @_;
@@ -86,6 +86,24 @@ sub meta_value {
   return @result if wantarray;
   return $result[0] if @result;
   return undef;
+}
+
+sub set_meta_value {
+  my ($self, $core_db_pattern, $meta_key, $new_value) = @_;
+  my $db_cmd = $self->{db_cmd};
+  my $core_db = $self->core_db($core_db_pattern);
+  open(my $fh_1, " { $db_cmd  $core_db -Ne 'delete from meta where meta_key=\"$meta_key\" ' 2>&1 1>&3 | grep -v \"can be insecure\" 1>&2; } 3>&1 |") or Carp::croak "ProductionMysql: $db_cmd not in your PATH\n";
+  while(<$fh_1>) {
+   chomp;
+   print STDERR "$_\n" if $_;
+  }
+  close $fh_1;
+  open(my $fh_2, " { $db_cmd  $core_db -Ne 'insert into meta(meta_key, meta_value) values (\"$meta_key\", \"$new_value\") ' 2>&1 1>&3 | grep -v \"can be insecure\" 1>&2; } 3>&1 |") or Carp::croak "ProductionMysql: $db_cmd not in your PATH\n"; 
+  while(<$fh_2>) {
+   chomp;
+   print STDERR "$_\n" if $_;
+  }
+  close $fh_2;
 }
 
 sub conn {

@@ -46,7 +46,7 @@ foreach my $dba (@$all_dbas) {
   next if $mc->get_division() ne "EnsemblParasite";
   
 
-  my $assembly   = $mc->single_value_by_key('assembly.name');
+  my $assembly   = $mc->single_value_by_key('assembly.default');
   my $bioproject = $mc->single_value_by_key('species.ftp_genome_id');
   my $taxon      = $mc->single_value_by_key('species.taxonomy_id');
   

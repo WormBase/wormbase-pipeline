@@ -42,7 +42,7 @@ for my $path_species (glob "$source_dir/*") {
           $this_target_dir
         );
      } else {
-        my $cp_cmd = "rsync -a $this_source_dir/ $this_target_dir/";
+        my $cp_cmd = "rsync -a --include='*.gz' --exclude '*' $this_source_dir/ $this_target_dir/";
         print localtime . " $species $cp_cmd\n";
         system($cp_cmd) and die("Failed: $cp_cmd");
      }

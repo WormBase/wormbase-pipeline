@@ -1,17 +1,18 @@
 
 package GenomeBrowser::JBrowseDisplay;
 use strict;
-use Carp;
+use warnings;
 use File::Path qw(make_path);
-use File::Slurp qw(write_file);
-use List::Util qw(sum);
-use List::MoreUtils qw(uniq);
-use JSON;
 use SpeciesFtp;
-use GenomeBrowser::JBrowseTools;
 use PublicResources::Rnaseq;
-use GenomeBrowser::Deployment;
 use ProductionMysql;
+use Log::Any qw/$log/;
+
+use GenomeBrowser::Deployment;
+use GenomeBrowser::JBrowseTools;
+use GenomeBrowser::JBrowseDisplay::AnnotationTracks;
+use GenomeBrowser::JBrowseDisplay::SequenceTrack;
+use GenomeBrowser::JBrowseDisplay::RnaseqTracks;
 
 # This is the data folder for jbrowse consumption
 #
@@ -29,21 +30,85 @@ sub new {
     make_path "$args{root_dir}/out";
     make_path "$args{root_dir}/JBrowseTools";
     make_path "$args{root_dir}/Resources";
+    my $species_ftp = $args{ftp_path} ? SpeciesFtp->new( $args{ftp_path} ) : SpeciesFtp->dot_next;
+    my $jbrowse_tools = GenomeBrowser::JBrowseTools->new( $args{jbrowse_install});
     return bless {
         dir           => "$args{root_dir}/out",
-        jbrowse_tools => GenomeBrowser::JBrowseTools->new(
-            install_location => $args{jbrowse_install},
-            tmp_dir          => "$args{root_dir}/JBrowseTools",
-            out_dir          => "$args{root_dir}/out",
-            species_ftp      => $args{ftp_path}
-            ? SpeciesFtp->new( $args{ftp_path} )
-            : SpeciesFtp->dot_next,
+        jbrowse_tools => $jbrowse_tools,
+        sequence_track =>
+          GenomeBrowser::JBrowseDisplay::SequenceTrack->new(
+           jbrowse_tools => $jbrowse_tools,
+           species_ftp => $species_ftp,
+           tmp_dir => "$args{root_dir}/SequenceTrack",
+          ),
+        annotation_tracks => 
+          GenomeBrowser::JBrowseDisplay::AnnotationTracks->new(
+           jbrowse_tools => $jbrowse_tools,
+           species_ftp => $species_ftp,
+           tmp_dir => "$args{root_dir}/AnnotationTracks",
         ),
-        resources =>
-          PublicResources::Rnaseq->new("$args{root_dir}/Resources"),
+        rnaseq_tracks => 
+          GenomeBrowser::JBrowseDisplay::RnaseqTracks->new("$args{root_dir}/Resources"),
     }, $class;
 }
-my $help_menu_html= <<EOF;
+
+sub make_displays {
+  my ($self, $core_db_pattern,  %opts ) = @_;
+  my @core_dbs = ProductionMysql->staging->core_databases($core_db_pattern);
+  die "No core dbs for: $core_db_pattern" unless @core_dbs;
+  for my $core_db (@core_dbs){
+      $self->make_display_for_core_db($core_db, %opts);
+  }
+}
+
+sub make_display_for_core_db {
+    my ( $self, $core_db, %opts ) = @_;
+    die unless $core_db =~ /_core_/;
+    return unless $core_db =~ /_core_$ENV{PARASITE_VERSION}/;
+    $log->info("make_tracks: $core_db");
+
+    my ( $spe, $cies, $bioproject ) = split "_", $core_db;
+
+    my $species = join "_", $spe, $cies, $bioproject;
+    my $out = join ("/", $self->{dir}, $species);
+    make_path $out;
+    my $sequence_track_config = $self->{sequence_track}->track_for_species(
+       $species, $out, %opts
+    );
+    my @annotation_track_configs = $self->{annotation_tracks}->tracks_for_species(
+       $species, $out, %opts
+    );
+
+    $self->{jbrowse_tools}->index_names( $out, %opts );
+    $self->{jbrowse_tools}->add_static_files( $out, %opts );
+
+    my ($track_selector, @rnaseq_track_configs) = $self->{rnaseq_tracks}->track_selector_and_tracks_for_species_and_assembly(
+      $species, ProductionMysql->staging->meta_value( $core_db, "assembly.name" ), %opts
+    );
+
+    my %config = %{config_stanza()};
+    if (@rnaseq_track_configs) {
+        $config{trackSelector} = $track_selector;
+        $config{defaultTracks} = "DNA,Gene_Models";
+    }
+    else {
+        #Default track selector
+        #All local tracks on
+        $config{defaultTracks} = join ",", "DNA",
+          map { $_->{label} }
+          @annotation_track_configs;
+    }
+
+    $config{tracks} = [
+        $sequence_track_config, @annotation_track_configs, @rnaseq_track_configs
+    ];
+    $config{containerID} =
+      "WBPS$ENV{PARASITE_VERSION}_${species}_" . scalar( @{ $config{tracks} } );
+    return $self->{jbrowse_tools}
+      ->update_config( $out, \%config );
+}
+sub config_stanza {
+  my $help_menu_html= <<EOF;
 <div class="jbrowse help_dialog">
 <div class="main">
 <dl>
@@ -79,8 +144,8 @@ If you have any questions, suggestions, or comments, write to us at <a href="mai
 </div>
 </div>
 EOF
-$help_menu_html =~ s/\n//g;
-my $CONFIG_STANZA = {
+  $help_menu_html =~ s/\n//g;
+  return {
     "names" => {
         "type" => "Hash",
         "url"  => "names/"
@@ -97,332 +162,7 @@ my $CONFIG_STANZA = {
   "quickHelp" => {
      "title"=> "Usage tips", 
      "content" => $help_menu_html
-  }
-};
-
-my $TRACK_STANZA = {
-    storeClass    => "JBrowse/Store/SeqFeature/BigWig",
-    type          => "JBrowse/View/Track/Wiggle/XYPlot",
-    category      => "RNASeq",
-    autoscale     => "local",
-    ScalePosition => "right",
-};
-my $local_tracks_metadata_stanza = {
-           "study"=> "(WormBase track)",
-        "submitting_centre"=> "WormBase",
-        "fraction_of_reads_mapping_uniquely_approximate"=> "(not applicable)",
-        "library_size_reads_approximate"=> "(not applicable)"
-};
-my $sequence_track_config = {
-    'seqType'     => 'dna',
-    'key'         => 'Reference sequence',
-    'chunkSize'   => 80000,
-    'storeClass'  => 'JBrowse/Store/Sequence/StaticChunked',
-    'urlTemplate' => 'seq/{refseq_dirpath}/{refseq}-',
-    'compress'    => 1,
-    'label'       => 'DNA',
-    'type'        => 'SequenceTrack',
-    'metadata'    => {
-      'category' => 'Reference sequence',
-      'track' => 'Reference sequence',
-      %$local_tracks_metadata_stanza
-    }
-};
-my $genes_track_config = {
-    'style' => {
-        'className' => 'feature',
-        'color'     => '{geneColor}',
-        'label'     => '{geneLabel}'
-    },
-    'key'          => 'Gene Models',
-    'storeClass'   => 'JBrowse/Store/SeqFeature/NCList',
-    'trackType'    => 'CanvasFeatures',
-    'urlTemplate'  => 'tracks/Gene_Models/{refseq}/trackData.jsonz',
-    'compress'     => 1,
-    'menuTemplate' => [
-        {
-            'url'    => '/Gene/Summary?g={name}',
-            'action' => 'newWindow',
-            'label'  => 'View gene in WormBase ParaSite'
-        }
-    ],
-    'metadata' => {
-        'category' => 'Genome Annotation',
-        'track' => 'Gene Models',
-        %$local_tracks_metadata_stanza
-    },
-    'type'  => 'CanvasFeatures',
-    'label' => 'Gene_Models'
-};
-
-sub feature_track_config {
-    my $niceLabelForReading = shift;
-    (my $label = $niceLabelForReading ) =~ s/ /_/g;
-
-    return {
-        'style' => {
-            'className' => 'feature'
-        },
-        'key'         => $niceLabelForReading,
-        'storeClass'  => 'JBrowse/Store/SeqFeature/NCList',
-        'trackType'   => 'FeatureTrack',
-        'urlTemplate' => "tracks/$label/{refseq}/trackData.jsonz",
-        'compress'    => 1,
-        'metadata'    => {
-            'category' => 'Repeat Regions',    #All our features are repeats now
-        'track' => $niceLabelForReading,
-        %$local_tracks_metadata_stanza
-        },
-        'type'  => 'FeatureTrack',
-        'label' => $label,
-    };
+   }
+  };
 }
-my $genes_track = {
-    'feature'    => [qw/WormBase WormBase_imported/],
-    'trackLabel' => 'Gene Models',
-    'trackType'  => 'CanvasFeatures',
-    'type'       => [
-        qw/gene mRNA exon CDS five_prime_UTR three_prime_UTR tRNA rRNA pseudogene tRNA_pseudogene antisense_RNA lincRNA miRNA miRNA_primary_transcript mRNA piRNA pre_miRNA pseudogenic_rRNA pseudogenic_transcript pseudogenic_tRNA scRNA snoRNA snRNA ncRNA/
-    ]
-};
-
-my $feature_tracks = [
-    {
-        'feature'    => ['ncrnas_predicted'],
-        'trackLabel' => 'Predicted non-coding RNA (ncRNA)',
-        'trackType'  => 'FeatureTrack',
-        'type'       => ['nucleotide_match']
-    },
-    {
-        'feature'    => ['RepeatMasker'],
-        'trackLabel' => 'Repeat Region',
-        'trackType'  => 'FeatureTrack',
-        'type'       => ['repeat_region']
-    },
-    {
-        'feature'    => ['dust'],
-        'trackLabel' => 'Low Complexity Region (Dust)',
-        'trackType'  => 'FeatureTrack',
-        'type'       => ['low_complexity_region']
-    },
-    {
-        'feature'    => ['tandem'],
-        'trackLabel' => 'Tandem Repeat (TRFs)',
-        'trackType'  => 'FeatureTrack',
-        'type'       => ['tandem_repeat']
-    }
-];
-sub make_all {
-  my ($self,  %opts ) = @_;
-  for my $core_db (reverse ProductionMysql->staging->core_databases){
-      next unless $core_db =~ /_core_$ENV{PARASITE_VERSION}/;
-      print "Starting: $core_db\n";
-      $self->make_tracks($core_db, %opts);
-  }
-}
-
-sub make_tracks {
-    my ( $self, $core_db, %opts ) = @_;
-
-    my ( $spe, $cies, $bioproject ) = split "_", $core_db;
-
-    my $species = join "_", $spe, $cies, $bioproject;
-
-    $self->{jbrowse_tools}->prepare_sequence(
-        core_db => $core_db,
-        %opts
-    );
-    $self->{jbrowse_tools}->track_from_annotation(
-        %$genes_track,
-        core_db => $core_db,
-        %opts
-    );
-
-    my @feature_track_configs;
-    for my $feature_track (@$feature_tracks) {
-        my $args = {
-            %$feature_track,
-            core_db => $core_db,
-            %opts
-        };
-        $self->{jbrowse_tools}->track_from_annotation(%$args);
-
-        push @feature_track_configs,
-          feature_track_config( $feature_track->{trackLabel} )
-          if $self->{jbrowse_tools}->track_present(%$args);
-    }
-
-    $self->{jbrowse_tools}->index_names( core_db => $core_db, %opts );
-    $self->{jbrowse_tools}->add_static_files( core_db => $core_db, %opts );
-    return unless $opts{do_rnaseq} // 1 ;
-    my $assembly =
-      ProductionMysql->staging->meta_value( $core_db, "assembly.name" );
-    my @studies = $self->{resources}->get( $core_db, $assembly );
-    my @rnaseq_track_configs;
-    for my $study (@studies) {
-        for my $run (@{$study->{runs}}) {
-          my $run_id = $run->{run_id};
-          my $url    = GenomeBrowser::Deployment::sync_ebi_to_sanger(
-              $species, $assembly, $run_id,
-              $run->{data_files}{bigwig}, %opts );
-          my $attributes = {
-             %{$study->{attributes}},
-             %{$run->{attributes}},
-             track => join(": ", grep {$_} $run_id, $run->{run_description_short}),
-             study => sprintf("%s: %s", $study->{study_id}, $study->{study_description_short}),
-          };
-          $attributes->{pubmed} = join(", " , pairmap {sprintf('<a href="https://www.ncbi.nlm.nih.gov/pubmed/%s">%s</a>', $a, $b->[1])} %{$study->{pubmed}}) if $study->{pubmed};
-          $attributes->{study_description} = $study->{study_description_full} if $study->{study_description_full} ne $study->{study_description_short};
-# We don't want both exact and approximate values to show, but we need the approximate values for facets
-# So, delete exact values ( I don't know how to stop JBrowse from displaying some values) 
-          delete $attributes->{library_size_reads};
-          delete $attributes->{fraction_of_reads_mapping_uniquely};
-          push @rnaseq_track_configs,
-            {
-              %$TRACK_STANZA,
-              urlTemplate => $url,
-              key         => "$run_id: ".$run->{run_description_full},
-              label       => "RNASeq/$run_id",
-              metadata    => $attributes,
-            };
-        }
-    }
-
-    my %config = %$CONFIG_STANZA;
-    if (@rnaseq_track_configs) {
-        $config{trackSelector} = track_selector(column_headers_for_studies(@studies));
-        $config{defaultTracks} = "DNA,Gene_Models";
-    }
-    else {
-        #Default track selector
-        #All local tracks on
-        $config{defaultTracks} = join ",", "DNA",
-          map { my $m = $_->{'trackLabel'}; $m =~ s/\s/_/g; $m }
-          @$feature_tracks;
-    }
-
-    $config{tracks} = [
-        $sequence_track_config, $genes_track_config,
-        @feature_track_configs, @rnaseq_track_configs
-    ];
-    $config{containerID} =
-      "WBPS$ENV{PARASITE_VERSION}_${species}_" . scalar( @{ $config{tracks} } );
-    return $self->{jbrowse_tools}
-      ->update_config( core_db => $core_db, new_config => \%config );
-}
-
-sub track_selector {
-    my ( $as ) = @_;
-    my @as = @{$as};
-    my %pretty;
-    for my $a (@as) {
-        ( my $p = $a ) =~ s/[\W_-]+/ /g;
-        $pretty{$a} = ucfirst($p);
-    }
-    return {
-        type             => "Faceted",
-        displayColumns   => [ "track", @as ],
-        selectableFacets => [
-            "category","pubmed", "study",
-            "submitting_centre",
-            "library_size_reads_approximate",
-            "fraction_of_reads_mapping_uniquely_approximate",
-            @as
-        ],
-        renameFacets => {
-            pubmed => "PubMed",
-            study                  => "Study",
-            submitting_centre      => "Submitting centre",
-            track  => "Track",
-            library_size_reads_approximate    => "Library size (reads)",
-            fraction_of_reads_mapping_uniquely_approximate  => "Fraction of reads mapping uniquely",
-            %pretty
-        }
-    };
-}
-
-my @column_header_blacklist = (
- "synonym",
- "bioproject_id",
-  "species",
-  "organism",
-  "replicate",
-  "sample_name",
-  "batch",
-  "barcode",
-  "insdc_center_name",
-  "insdc_first_public",
-  "insdc_secondary_accession",
-  "insdc_status",
-  "insdc_last_update",
-  "label",
-  "model",
-  "package",
-  "ncbi_submission_model",
-  "ncbi_submission_package",
-  "sample_comment",
-  "sample_title",
-  "geo_accession",
-  "biological_replicate",
-  "block",
-  "zone", #schmidtea mediterranea
-  "repplicate",
-  "in_house_sample_code",
-  "collected_by",
-  "biomaterial_provider",
-  "description_title",
-  "treatment_sources",
-  "population",
-  "sample_name",
-  "agarosemigrationtemperature",
-  "agarosemigrationttime",
-  "baermanntemperature",
-  "base_calling_software_version",
-  "culturetemperature",
-  "culturetime",
-  "library_id",
-  "library_preparation",
-  "wash",
-);
-sub not_in_blacklist {
-  my $arg = shift;
-  for (@column_header_blacklist){
-     return if $arg eq $_;
-  }
-  return 1;
-}
-sub column_headers_for_studies {
-  my %data;
-  my $runs_total;
-  my %occurrences_per_type;
-  for my $study(@_){
-    my %rnaseqer_characteristics;
-    for my $run (@{$study->{runs}}) {
-      $runs_total++;
-      my %h = %{$run->{characteristics}};
-      while (my ($k, $v) = each %h){
-         $rnaseqer_characteristics{$k}{$v}++;
-         $occurrences_per_type{$k}++;
-      }
-    }
-    my @factors;
-    for ( keys %rnaseqer_characteristics ) {
-      my %d      = %{ $rnaseqer_characteristics{$_} };
-      my @values = keys %d;
-      my @counts = values %d;
-      push @factors, $_ if @values > 1 or sum(@counts) == 1;
-    }
-    $data{$study->{study_id}} = \@factors;
-  }
-  my @result = map { @{$_} } ( values %data );
-  @result = grep { not_in_blacklist($_) } @result;
-  @result = uniq @result;
-  @result = sort @result;
-  if($runs_total > 100) {
-      @result = grep {$occurrences_per_type{$_} * 20 > $runs_total} @result;
-  }
-  return \@result;
-}
-
-
 1;
