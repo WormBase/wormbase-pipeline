@@ -32,7 +32,7 @@ sub sync_ebi_to_sanger {
   my $target_url  = location ($SANGER_URL, $species, $assembly, $run_id);
   my $target_dir = dirname $target_path;
 
-  if ($opts{do_sync} // not LWP::UserAgent->new->head($target_url)->is_success){
+  unless ($opts{sanger_deployment_skip} or LWP::UserAgent->new->head($target_url)->is_success){
     $log->info("Initiating remote download: $source_url -> $SANGER_HOST:$target_path");
     run_in_sanger("mkdir -p $target_dir");
     run_in_sanger("wget --continue --no-verbose -O $target_path $source_url");

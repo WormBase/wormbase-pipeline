@@ -52,16 +52,16 @@ sub new {
     }, $class;
 }
 
-sub make_tracks {
+sub make_displays {
   my ($self, $core_db_pattern,  %opts ) = @_;
   my @core_dbs = ProductionMysql->staging->core_databases($core_db_pattern);
   die "No core dbs for: $core_db_pattern" unless @core_dbs;
   for my $core_db (@core_dbs){
-      $self->make_tracks_for_core_db($core_db, %opts);
+      $self->make_display_for_core_db($core_db, %opts);
   }
 }
 
-sub make_tracks_for_core_db {
+sub make_display_for_core_db {
     my ( $self, $core_db, %opts ) = @_;
     die unless $core_db =~ /_core_/;
     return unless $core_db =~ /_core_$ENV{PARASITE_VERSION}/;

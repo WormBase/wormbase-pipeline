@@ -1,3 +1,5 @@
+use strict;
+use warnings;
 # Creates hub with this structure:
 # hub/genomes.txt
 # hub/hub.txt
@@ -11,7 +13,7 @@
 # SuperTracks for studies
 # BigWig tracks for runs
 # Page with the attributes, for each
-package GenomeBrowser::Hub;
+package GenomeBrowser::RnaseqHub;
 
 use ProductionMysql;
 use PublicResources::Rnaseq;
@@ -40,13 +42,13 @@ sub path {
     $log->info(__PACKAGE__ . ": $result");
     return $result;
 }
-sub make_all {
-    my ( $self, %opts ) = @_;
+sub make_hubs {
+    my ( $self, $core_dbs_pattern, %opts ) = @_;
 
     make_path $self->path;
 
-    for my $core_db ( ProductionMysql->staging->core_databases ) {
-        $self->make_hub($core_db, %opts);
+    for my $core_db ( ProductionMysql->staging->core_databases($core_dbs_pattern) ) {
+        $self->make_hub_for_core_db($core_db, %opts);
     }
 }
 
@@ -65,7 +67,7 @@ email parasite-help\@sanger.ac.uk
     );
 }
 
-sub make_hub {
+sub make_hub_for_core_db {
     my ( $self, $core_db, %opts ) = @_;
 
     my ( $spe, $cies, $bioproject ) = split "_", $core_db;
@@ -121,15 +123,15 @@ html doc/$study_id
 
 sub run_track {
     my ( $study_id, $run_id, $run_description_short, $run_description_full, $url ) = @_;
-    my $short_label = join(": ", grep {$_} $run_id, $run_description_short);
-    my $full_label = join(": ", grep {$_} $run_id, $run_description_full);
+    my $short_label = $run_description_short ? "$run_id: $run_description_short" : $run_id;
+    my $full_label = $run_description_full ? "$run_id: $run_description_full" : $run_id;
     return (
         "track $run_id
 parent $study_id
 type bigWig
 bigDataUrl $url
-shortLabel $run_description_short
-longLabel $run_description_full
+shortLabel $short_label
+longLabel $full_label
 color 0,0,0
 html doc/$run_id
 visibility hide
@@ -146,7 +148,7 @@ sub create_trackDb {
 #TODO I'm not sure where this gets displayed
 sub create_study_doc {
     my ( $path, $study ) = @_;
-    write_file( $path, {binmode => ':utf8'}, $study->{study_description_full} );
+    write_file( $path, {binmode => ':utf8'}, $study->{study_description_full}."\n" );
 }
 #TODO move some of this to RnaseqerMetadata?
 my @blacklist = (
@@ -169,17 +171,17 @@ my @blacklist = (
 sub create_run_doc {
     my ( $path, $study, $run ) = @_;
 
-    my $result = "<table><th>$d</th>";
-    $result .= sprintf("<b>Run %s: %s</b>\n\n", $run->{run_id}, $run->{run_description_full}); 
+    my $result = "<table>\n";
+    $result .= sprintf("<th><b>Run %s: %s</b></th>\n", $run->{run_id}, $run->{run_description_full}); 
     for my $k ( sort keys $run->{attributes} ) {
         next if grep {$_ eq $k} @blacklist;
         ( my $property_name = $k ) =~ s/_/ /g;
         $property_name = ucfirst($property_name) if $property_name eq lc($property_name);
         $property_name = "Library size (reads)" if $k eq "library_size_reads";
         my $property_value = $run->{attributes}{$k};
-        $result .= sprintf "<tr><td>%s</td><td>%s</td></tr>", $property_name, $property_value;
+        $result .= sprintf "<tr>\n  <td>%s</td>\n  <td>%s</td>\n</tr>\n", $property_name, $property_value;
     }
-    $result .= "</table>";
+    $result .= "</table>\n";
     write_file( $path, {binmode => ':utf8'}, $result );
 }
 1;
