@@ -12,13 +12,17 @@ my (
   $wormbase_release_ftp_dir,
   $source_dir,
   $wbps_release_ftp_dir,
-  $wbps_version
+  $wbps_version,
+  $sync_files_skip,
+  $checksums_skip,
    );
 &GetOptions(
  'wormbase_release_ftp_dir=s' => \$wormbase_release_ftp_dir,
  'source_dir=s' => \$source_dir,
  'wbps_release_ftp_dir=s' => \$wbps_release_ftp_dir,
  'wbps_version=i' => \$wbps_version,
+ 'sync_files_skip' => \$sync_files_skip,
+ 'checksums_skip' => \$checksums_skip,
 ) ;
 my $usage = " Usage: $0 --wbps_version=\$PARASITE_VERSION --source_dir=<where folders with individual species are> --wormbase_release_ftp_dir=<release tied to this WBPS version> --wbps_release_ftp_dir=<target directory>";
 die ("--source_dir not a directory: $source_dir . $usage") unless -d $source_dir;
@@ -27,6 +31,7 @@ die ($usage) unless $wbps_release_ftp_dir;
 die ($usage) unless $wbps_version;
 
 for my $path_species (glob "$source_dir/*") {
+  next if $sync_files_skip;
   my $species = basename $path_species;
   my ($spe, $cies) = split(/_/, $species);
   for my $this_source_dir ( glob "$source_dir/$species/*" ) {
@@ -48,18 +53,10 @@ for my $path_species (glob "$source_dir/*") {
      }
   }
 }
-print localtime . " Finished moving species files, remaking checksums file \n" ;
-my $checksum_file = "CHECKSUMS";
-
-my @files;
-open(FIND, "find $wbps_release_ftp_dir/species -name '*.*' | sort |");
-while(<FIND>) {
-  chomp;
-    s/^$wbps_release_ftp_dir\///;
-    push @files, $_;
-  }
-
-system("cd $wbps_release_ftp_dir && md5sum @files > $checksum_file") and die "Could not calc checksums\n";
+unless ($checksums_skip){
+  print localtime . " Remaking checksums file \n" ;
+  system("cd $wbps_release_ftp_dir && find -L species -type f -exec md5sum \"{}\" + > CHECKSUMS") and die "Could not calc checksums\n";
+}
 print localtime . " Completed \n";
 #####################
 
