@@ -1,7 +1,7 @@
 #!/software/bin/perl -w
 #
 # script to extract polyA and TSL information from the aligned
-# EST/mRNA/Trinity Sequence objects and to create Feature objects
+# EST/mRNA/Trinity/Nanopore Sequence objects and to create Feature objects
 # 
 # by Gary Williams
 #
@@ -66,7 +66,7 @@ if (! defined $output) {$output = 'new_TSL_features.ace'}
 
 #################################
 
-my %mol_types = ( 'elegans'          => [qw( EST mRNA ncRNA OST tc1 RST Trinity)],
+my %mol_types = ( 'elegans'          => [qw( EST mRNA ncRNA OST tc1 RST Trinity Nanopore)],
                   'briggsae'         => [qw( mRNA EST Trinity)],
                   'remanei'          => [qw( mRNA EST Trinity)],
                   'brenneri'         => [qw( mRNA EST Trinity)],
@@ -648,7 +648,7 @@ sub process_file {
 
 
 ###############################################################
-# get the Feature_data in all EST/OST/mRNA/RST/Trinity Sequences
+# get the Feature_data in all EST/OST/mRNA/RST/Trinity/Nanopore Sequences
 sub fetch_features {
 
   print "Loading Sequence Feature_data\n";

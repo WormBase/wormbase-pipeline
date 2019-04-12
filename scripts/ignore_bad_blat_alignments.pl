@@ -73,7 +73,7 @@ my $gff_dir         = $wormbase->gff;         # AUTOACE GFF
 my $gff_splits_dir  = $wormbase->gff_splits;  # AUTOACE GFF SPLIT
 
 
-my %mol_types = ( 'elegans'          => [qw( EST mRNA OST RST Trinity)],
+my %mol_types = ( 'elegans'          => [qw( EST mRNA OST RST Trinity Nanopore)],
                   'briggsae'         => [qw( mRNA EST Trinity)],
                   'remanei'          => [qw( mRNA EST)],
                   'brenneri'         => [qw( mRNA EST)],
@@ -109,6 +109,7 @@ foreach my $chromosome (@chromosomes) {
   my @mrn_introns;
   my @tri_introns;
   my @iso_introns;
+  my @nan_introns;
 
   my $est_match;
   my $rst_match;
@@ -116,6 +117,7 @@ foreach my $chromosome (@chromosomes) {
   my $mrn_match;
   my $tri_match;
   my $iso_match;
+  my $nan_match;
 
   if (grep /^EST$/, @{$mol_types{$species}}) {@est_introns = $ovlp->get_intron_from_exons($ovlp->get_EST_BEST($chromosome))};
   if (grep /^RST$/, @{$mol_types{$species}}) {@rst_introns = $ovlp->get_intron_from_exons($ovlp->get_RST_BEST($chromosome))};
@@ -123,6 +125,7 @@ foreach my $chromosome (@chromosomes) {
   if (grep /^mRNA$/, @{$mol_types{$species}}) {@mrn_introns = $ovlp->get_intron_from_exons($ovlp->get_mRNA_BEST($chromosome))};
   if (grep /^Trinity$/, @{$mol_types{$species}}) {@tri_introns = $ovlp->get_intron_from_exons($ovlp->get_Trinity_BEST($chromosome))};
   if (grep /^IsoSeq$/, @{$mol_types{$species}}) {@iso_introns = $ovlp->get_intron_from_exons($ovlp->get_IsoSeq_BEST($chromosome))};
+  if (grep /^Nanopore$/, @{$mol_types{$species}}) {@nan_introns = $ovlp->get_intron_from_exons($ovlp->get_Nanopore_BEST($chromosome))};
  
   my @CDS_introns = $ovlp->get_curated_CDS_introns($chromosome);
 
@@ -132,9 +135,10 @@ foreach my $chromosome (@chromosomes) {
   if (grep /^mRNA$/, @{$mol_types{$species}}) {$mrn_match = $ovlp->compare(\@mrn_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
   if (grep /^Trinity$/, @{$mol_types{$species}}) {$tri_match = $ovlp->compare(\@tri_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
   if (grep /^IsoSeq$/, @{$mol_types{$species}}) {$iso_match = $ovlp->compare(\@iso_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
+  if (grep /^Nanopore$/, @{$mol_types{$species}}) {$nan_match = $ovlp->compare(\@nan_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
 
 
-  my %overlapping_hsps = (); # EST/RST/OST/mRNA/Trinity transcripts that match a CDS, keyed by transcript name, value is array of matching CDSs
+  my %overlapping_hsps = (); # EST/RST/OST/mRNA/Trinity/IsoSeq/Nanopore transcripts that match a CDS, keyed by transcript name, value is array of matching CDSs
 
   foreach my $cds (@CDS_introns) {
 
@@ -169,8 +173,15 @@ foreach my $chromosome (@chromosomes) {
       foreach my $id (@ids) {
 	$overlapping_hsps{$id}{$cds_id} = 1;
       }
+
     } elsif ((grep /^IsoSeq$/, @{$mol_types{$species}}) && $iso_match->match($cds)) {
       my @ids = $iso_match->matching_IDs;
+      foreach my $id (@ids) {
+	$overlapping_hsps{$id}{$cds_id} = 1;
+      }
+
+    } elsif ((grep /^Nanopore$/, @{$mol_types{$species}}) && $nan_match->match($cds)) {
+      my @ids = $nan_match->matching_IDs;
       foreach my $id (@ids) {
 	$overlapping_hsps{$id}{$cds_id} = 1;
       }

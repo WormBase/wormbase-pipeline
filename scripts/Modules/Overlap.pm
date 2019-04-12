@@ -71,6 +71,7 @@ Routines to read GFF files from the database defined in $wormbase
 @list = $ovlp->get_mRNA_BEST($chromosome)
 @list = $ovlp->get_Trinity_BEST($chromosome)
 @list = $ovlp->get_IsoSeq_BEST($chromosome)
+@list = $ovlp->get_Nanopore_BEST($chromosome)
 @list = $ovlp->get_ncRNA_BEST($chromosome)
 @list = $ovlp->get_curated_CDS($chromosome)
 @list = $ovlp->get_curated_CDS_exons($chromosome)
@@ -871,6 +872,34 @@ sub get_IsoSeq_BEST {
    (
      method			=> 'BLAT_IsoSeq_BEST',
      gff_source			=> 'BLAT_IsoSeq_BEST',
+     gff_type			=> 'expressed_sequence_match',
+     ID_after			=> "Target\\s+\"Sequence:",
+     reverse_orientation        => 1,
+     homology                   => 1,
+
+   );
+
+  return $self->read_GFF_file($chromosome, \%GFF_data);
+}
+
+=head2
+
+    Title   :   get_Nanopore_BEST
+    Usage   :   my @gff = $ovlp->get_Nanopore_BEST($chromosome)
+    Function:   reads the GFF data for Nanopore BEST
+    Returns :   list of lists for GFF data
+    Args    :   chromosome number
+
+=cut
+
+sub get_Nanopore_BEST {
+  my $self = shift;
+  my ($chromosome) = @_;
+
+  my %GFF_data = 
+   (
+     method			=> 'BLAT_Nanopore_BEST',
+     gff_source			=> 'BLAT_Nanopore_BEST',
      gff_type			=> 'expressed_sequence_match',
      ID_after			=> "Target\\s+\"Sequence:",
      reverse_orientation        => 1,

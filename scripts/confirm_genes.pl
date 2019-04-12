@@ -630,9 +630,10 @@ sub create_transcript_file {
 
         my $trinity = -e "${gffdir}/${prefix}BLAT_Trinity_BEST.gff" ? "${prefix}BLAT_Trinity_BEST.gff" : '';
 	my $isoseq  = -e "${gffdir}/${prefix}BLAT_IsoSeq_BEST.gff"  ? "${prefix}BLAT_IsoSeq_BEST.gff"  : '';
+	my $nanopore  = -e "${gffdir}/${prefix}BLAT_Nanopore_BEST.gff"  ? "${prefix}BLAT_Nanopore_BEST.gff"  : '';
 	my $more = ($wormbase->species eq 'elegans') ? "${prefix}BLAT_OST_BEST.gff ${prefix}BLAT_RST_BEST.gff" : ''; # only elegans has OSTs and RSTs
 
-	$wormbase->run_command("cd $gffdir; cat ${prefix}BLAT_EST_BEST.gff ${prefix}BLAT_mRNA_BEST.gff $trinity $isoseq $more > $file", $log);
+	$wormbase->run_command("cd $gffdir; cat ${prefix}BLAT_EST_BEST.gff ${prefix}BLAT_mRNA_BEST.gff $trinity $isoseq $nanopore $more > $file", $log);
 }
 ################
 

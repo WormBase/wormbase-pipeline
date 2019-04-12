@@ -67,7 +67,7 @@ my $seq_obj  = Sequence_extract->invoke($database, undef, $wormbase) if $intron;
 #The mol_types available for each species is different
 #defaults lists - can be overridden by -types
 
-my %mol_types = ( 'elegans'          => [qw( EST mRNA ncRNA OST tc1 RST Trinity)],
+my %mol_types = ( 'elegans'          => [qw( EST mRNA ncRNA OST tc1 RST Trinity Nanopore)],
 		  'briggsae'         => [qw( mRNA EST Trinity)],
 		  'remanei'          => [qw( mRNA EST)],
 		  'brenneri'         => [qw( mRNA EST)],
