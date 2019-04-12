@@ -17,7 +17,8 @@ use lib $ENV{CVS_DIR};
 use Wormbase;
 use Log_files;
 
-my $CURRENT_GO_OBO =  "http://www.geneontology.org/ontology/obo_format_1_2/gene_ontology_ext.obo";
+my $CURRENT_GO_OBO =  "http://purl.obolibrary.org/obo/go.obo";
+## Old url http://www.geneontology.org/ontology/obo_format_1_2/gene_ontology_ext.obo";
 
 my ($help, $debug, $test, $store, $acedbpath, $noload, $acefile, $wormbase);
 
