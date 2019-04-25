@@ -604,7 +604,7 @@ sub ontologies {
   $wormbase->run_script( "ONTOLOGY/make_lifestage_GAF.pl", $log);
   $wormbase->run_script( "ONTOLOGY/make_GO_GAF.pl", $log);
   $wormbase->run_script( "ONTOLOGY/get_easy_phenotypes.pl", $log);
-  $wormbase->run_script( "AGR/make_agr_disease_json.pl -writedaf", $log);
+  $wormbase->run_script( "AGR/make_agr_disease_json.pl -writedaf -build", $log);
 }
 
 sub make_extras {
