@@ -11,7 +11,7 @@ use Wormbase;
 use Modules::AGR;
 
 
-my ($debug, $test, $verbose, $store, $wormbase);
+my ($debug, $test, $verbose, $store, $wormbase, $build);
 my ($outfile, $acedbpath, $ws_version, $outfh, $daf);
 
 GetOptions (
@@ -23,7 +23,8 @@ GetOptions (
   'outfile:s'   => \$outfile,
   'wsversion=s' => \$ws_version,
   'writedaf'    => \$daf,
-    )||die("unknown command line option: $@\n");
+  'build'       => \$build, # to enable WB/CalTech build specific changes
+)||die("unknown command line option: $@\n");
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
@@ -192,30 +193,39 @@ while( my $obj = $it->next) {
     $assoc_type = 'is_model_of';
     $obj_id = 'WB:' . $strain->name;
 
-    #push @with_list, "WB:" . $gene->name if defined $gene;
-    #push @with_list, "WBTransgene:" . $transgene->name if defined $transgene;
-    #push @with_list, "WBVar:" . $allele->name if defined $name;
-  } elsif (defined $allele) {
+    # WB/CalTech specific changes to the format
+    push @with_list, "WB:" . $gene->name if (defined $gene && $build);
+    push @with_list, "WBTransgene:" . $transgene->name if (defined $transgene && $build);
+    push @with_list, "WBVar:" . $allele->name if (defined $name && $build);
+    
+  }elsif (defined $allele) {
     $obj_type = "allele";
     $obj_name = $allele->Public_name->name;
     $assoc_type = 'is_implicated_in';
     $obj_id = 'WB:' . $allele->name;
 
-    #push @with_list, "WB:" . $gene->name if defined $gene;
-    #push @with_list, "WB_Transgene:" . $transgene->name if defined $transgene;
+    # WB/CalTech specific changes to the format
+    push @with_list, "WB:" . $gene->name if (defined $gene && $build);
+    push @with_list, "WB_Transgene:" . $transgene->name if (defined $transgene && $build);
+
   } elsif (defined $transgene) {
     $obj_type = 'transgene';
     $obj_name = $transgene->Public_name->name;
     $assoc_type = 'is_implicated_in';
     $obj_id = 'WB:' . $transgene->name;
     
-    #push @with_list, "WB:" . $gene->name if defined $gene;
+    # WB/CalTech specific changes to the format
+    push @with_list, "WB:" . $gene->name if (defined $gene && $build);
+
   } elsif (defined $gene) {
     $obj_type = 'gene';
     $obj_name = $gene->Public_name->name;
     $assoc_type = 'is_implicated_in';
     $obj_id = 'WB:' . $gene->name;
-    # @inferred_genes = ();
+
+    # WB/CalTech specific changes to the format
+    @inferred_genes = () if $build;
+
   } else {
     die "Could not identify a central object for the annotation from Disease_model_annotation $obj->name\n";
   }
@@ -255,15 +265,21 @@ while( my $obj = $it->next) {
     $mod_annot->{genetic} = \@genetic if @genetic;
     $mod_annot->{experimentalConditionsText} = \@exp_cond if @exp_cond;
 
-#    $annot->{modifier} = $mod_annot; # temporary removed
-    $annot->{qualifier} = 'not' if $obj->at('Modifier_qualifier_not');
+
+    # WB/CalTech specific changes
+    $annot->{modifier} = $mod_annot if $build;
+    $annot->{qualifier} = 'not' if ($obj->at('Modifier_qualifier_not') && $build);
+
   }
 
   if ($obj->Experimental_condition){
     my @inducing_c     = map { $_->name } $obj->Inducing_chemical;
     my @inducing_a     = map { "$_" } $obj->Inducing_agent;
     my @exp_conditions = map {{textCondition => $_}} (@inducing_c,@inducing_a);
-#    $annot->{experimentalConditions} = \@exp_conditions if @exp_conditions; # temporary removed
+
+    # WB/CalTech specific changes
+    $annot->{experimentalConditions} = \@exp_conditions if (@exp_conditions && $build);
+    
   }
 
   push @annots, $annot;
@@ -346,7 +362,7 @@ sub write_DAF_column_headers {
     'DB Object Symbol',
     'Inferred gene association',
     'Gene Product Form ID',
-    #'Additional genetic components',
+    # 'Additional genetic components', ???
     'Experimental conditions',
     'Association type',
     'Qualifier',
