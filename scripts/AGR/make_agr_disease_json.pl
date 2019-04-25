@@ -196,7 +196,7 @@ while( my $obj = $it->next) {
     # WB/CalTech specific changes to the format
     push @with_list, "WB:" . $gene->name if (defined $gene && $build);
     push @with_list, "WBTransgene:" . $transgene->name if (defined $transgene && $build);
-    push @with_list, "WBVar:" . $allele->name if (defined $name && $build);
+    push @with_list, "WBVar:" . $allele->name if (defined $allele && $build);
     
   }elsif (defined $allele) {
     $obj_type = "allele";
@@ -223,8 +223,7 @@ while( my $obj = $it->next) {
     $assoc_type = 'is_implicated_in';
     $obj_id = 'WB:' . $gene->name;
 
-    # WB/CalTech specific changes to the format
-    @inferred_genes = () if $build;
+    # @inferred_genes = ();
 
   } else {
     die "Could not identify a central object for the annotation from Disease_model_annotation $obj->name\n";
@@ -395,6 +394,12 @@ sub write_DAF_line {
   }elsif (exists $obj->{objectRelation}->{inferredGeneAssociation}) {
     map {$inferred_genes{$_} =1} @{$obj->{objectRelation}->{inferredGeneAssociation}};
   }
+
+  # another crude -build block
+  if ($build && exists $obj->{objectRelation}->{inferredGeneAssociation}){
+    map {$inferred_genes{$_} =1} @{$obj->{objectRelation}->{inferredGeneAssociation}};
+  }
+
   my $inferred_gene =  join(",", keys %inferred_genes);
 
   printf($fh "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", 
@@ -415,7 +420,7 @@ sub write_DAF_line {
          (exists $obj->{modifier} and exists $obj->{modifier}->{experimentalConditionsText}) ? join(',', @{$obj->{modifier}->{experimentalConditionsText}}) : '',
          join(",", @{$obj->{evidence}->{evidenceCodes}}),
          ($obj->{geneticSex}||''),
-         $obj->{evidence}->{publication}->{pubMedId},
+         $obj->{evidence}->{publication}->{publicationId},
          $date,
          'WB');
 }
