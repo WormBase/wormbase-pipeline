@@ -2,16 +2,11 @@
 ## Script to copy core databases from previous staging site to current
 ## After copy, relevant patches are applied to bring databases up to the relevant Ensembl schema
 ## Before running, load the correct module as this creates the environment variables, e.g. "module load parasite_prod_rel6"
-
-echo "These were the comparator databases: No refresh needed? "
-$PREVIOUS_PARASITE_STAGING_MYSQL -e "show databases like \"%_core_%\"" | grep -v core_${PREVIOUS_PARASITE_VERSION}
-echo "Begin database copying"
-
 perl -MProductionMysql -E '
-   say for ProductionMysql->previous_staging->core_databases(@ARGV);
+   say for ProductionMysql->previous_staging->core_databases(@ARGV or "core_$ENV{PREVIOUS_PARASITE_VERSION}");
 ' "$@" | while read -r DB; do
   echo "Copying $DB"
-  NEWDB=$(echo $DB | sed "s/core_$PREVIOUS_PARASITE_VERSION\_$PREVIOUS_ENSEMBL_VERSION/core_$PARASITE_VERSION\_$ENSEMBL_VERSION/" | sed "s/_$PREVIOUS_ENSEMBL_VERSION/_$ENSEMBL_VERSION/" | sed "s/_$PREVIOUS_WORMBASE_VERSION$/_$WORMBASE_VERSION/")
+  NEWDB=$( sed "s/core_$PREVIOUS_PARASITE_VERSION\_$PREVIOUS_ENSEMBL_VERSION/core_$PARASITE_VERSION\_$ENSEMBL_VERSION/" <<< $DB )
   echo "Looking for previous versions of $NEWDB"
   DB_PAT=$(echo $NEWDB | sed "s/core_.*/core%/")
   ${PARASITE_STAGING_MYSQL} -Ne "show databases like \"$DB_PAT\"" | grep -v "$NEWDB" | while read -r OLD_DB ; do
@@ -29,4 +24,37 @@ perl -MProductionMysql -E '
   perl $ENSEMBL_CVS_ROOT_DIR/ensembl/misc-scripts/schema_patcher.pl $(${PARASITE_STAGING_MYSQL}-ensrw details script) \
      --release $ENSEMBL_VERSION --nointeractive \
      --database "$NEWDB"
+done
+find_host_and_db(){
+  species="$1"
+  for cmd in mysql-ens-sta-1 mysql-ens-sta-2 mysql-ens-sta-3 mysql-ens-sta-4; do
+    db=$( $cmd -Ne "show databases like \"%${species}_core%\"" )
+    if [ "$db" ]; then
+      echo $cmd$'\t'$db
+      return
+    fi
+  done
+}
+
+copy_comparator(){
+  res=$(find_host_and_db "$@" )
+  if [ ! "$res" ]; then
+    echo "Could not find comparator: $@"
+    exit 1
+  fi
+  read host db <<< $res
+  echo "Copying: $host $db"
+  $PARASITE_STAGING_MYSQL-ensrw -e "create database if not exists $db"
+  $host mysqldump $db | $PARASITE_STAGING_MYSQL-ensrw $db
+}
+
+echo "Dropping old comparators and databases that aren't for this WPBS version"
+$PARASITE_STAGING_MYSQL -Ne "show databases like \"%_core_%\"" | grep -v core_${PARASITE_VERSION} | while read -r core_db; do
+  echo "Dropping: $core_db"
+  ${PARASITE_STAGING_MYSQL}-ensrw -e "drop database $core_db"
+done
+
+$PREVIOUS_PARASITE_STAGING_MYSQL -Ne "show databases like \"%_core_%\"" | grep -v core_${PREVIOUS_PARASITE_VERSION} | perl -pe 's/_core.*//' \
+  | sort | while read -r species; do
+  copy_comparator $species
 done
