@@ -2,6 +2,7 @@ use strict;
 use warnings;
 use ProductionMysql;
 use Test::More;
+use LWP::Simple;
 
 subtest "Species regex ok" => sub {
   ok($ProductionMysql::GOLDEN_SPECIES_REGEX_MATCH && $ProductionMysql::GOLDEN_SPECIES_REGEX_REPLACEMENT, "Export the regex strings");
@@ -27,4 +28,12 @@ subtest "Species regex ok" => sub {
   } @too_long_names);
 };
 
+subtest "Taxon tree JS" => sub {
+  my @biomart_names_for_core_dbs = sort map {ProductionMysql::core_db_to_biomart_name($_) } ProductionMysql->staging->core_databases;
+
+  my $taxon_tree_js = get "http://test.parasite.wormbase.org/taxon_tree_data.js";
+  ok ($taxon_tree_js, "Site serving taxon tree");
+  my @biomart_names_tree = sort $taxon_tree_js =~ m{"biomart"\s*:\s*"(\S+)"}g;
+  is_deeply(\@biomart_names_for_core_dbs, \@biomart_names_tree);
+};
 done_testing;
