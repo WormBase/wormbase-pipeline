@@ -41,5 +41,11 @@ for my $species (keys %result){
 print join ", ", map {s/.*\t//; $_} sort @links;
 print "\n";
 unless (grep {$_ =~ /elegans/} keys %result ){
-   print "\n!!!\nWHERE IS C ELEGANS YO\n";
+  $| = 1; #flush buffer after every print
+  while(1){
+    print "\e[33mWHERE IS C ELEGANS YO\e[0m\r";
+    sleep 1;
+    print "\e[31mWHERE IS C ELEGANS YO\e[0m\r";
+    sleep 1;
+  }
 }
