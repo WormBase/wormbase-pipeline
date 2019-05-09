@@ -1,7 +1,8 @@
 #!/usr/bin/bash
-## Script to copy core databases from previous staging site to current
-## After copy, relevant patches are applied to bring databases up to the relevant Ensembl schema
-## Before running, load the correct module as this creates the environment variables, e.g. "module load parasite_prod_rel6"
+# Takes the core databases from previous staging server, and gets the current staging server to the "start of new release" situation
+# - copies core databases from the previous release, upgrading them to the new schema
+# - pinches new comparator DBs from known Ensembl places
+
 perl -MProductionMysql -E '
    say for ProductionMysql->previous_staging->core_databases(@ARGV or "core_$ENV{PREVIOUS_PARASITE_VERSION}");
 ' "$@" | while read -r DB; do
