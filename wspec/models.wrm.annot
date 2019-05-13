@@ -3331,6 +3331,7 @@
       Lab_visitor DateType ^from UNIQUE DateType ^to
       Collaborated DateType ^from UNIQUE DateType ^to
       Research_staff DateType ^from UNIQUE DateType ^to
+      Coauthor DateType ^from UNIQUE DateType ^to
       Unknown DateType ^from UNIQUE DateType ^to
 
 

@@ -3305,6 +3305,7 @@
       Lab_visitor DateType UNIQUE DateType
       Collaborated DateType UNIQUE DateType
       Research_staff DateType UNIQUE DateType
+      Coauthor DateType UNIQUE DateType
       Unknown DateType UNIQUE DateType
 
 
