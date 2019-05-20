@@ -119,6 +119,7 @@ foreach my $species (sort keys %accessors_by_species) {
       appeared_in => 'WS'.$first_ws_rel->name,
       is_canonical => ($is_canonical) ? JSON::true : JSON::false,
       strain => (defined $strain) ? $strain->name : "Unknown strain",
+      short_label => (defined $strain) ? $strain->name : "Unknown strain",
       laboratory => \@labs,
     };
   }
