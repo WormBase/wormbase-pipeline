@@ -4,7 +4,7 @@
 #
 
 # YAML file can be created from a TSV, as example from Table Maker
-# perl -anE 'BEGIN{use YAML}$h{$F[0]}{name}=$F[0];$h{$F[0]}{paper}{$F[1]} = $F[4]||"n/a" if $F[1]; END{say Dump(\%h)}'
+# perl -anE 'BEGIN{use YAML}$h{$F[0]}{name}=$F[0];$h{$F[0]}{paper}{$F[1]} = $F[2]||"n/a" if $F[1]; END{say Dump(\%h)}'
 # looks like:
 # ---
 # WBVar00000001:
@@ -37,7 +37,7 @@ chrom2ncbi = {
 }
 
 variations = Array.new
-chromosomes=Hash.new
+chromosomes= Hash.new
 
 filter = YAML.load_file(ARGV.shift)
 
@@ -67,6 +67,7 @@ ARGF.each_line{|line|
 	  s = Bio::Sequence::NA.new($1.to_s)
 	  s.complement! if cols[6].eql?('-') # as all variations are supposed to be on the forward strand
 	  variation[:genomicVariantSequence] = s.to_s.upcase
+	  variation[:end]+=1 if variation[:end] == variation[:start] # to make it inline with the HGVS coordinates
   elsif cols[2].eql?('deletion')
           variation[:paddedBase] = chromosomes[cols[0]][variation[:start]-2]
 	  variation[:genomicReferenceSequence] = chromosomes[cols[0]].subseq(variation[:start],variation[:end])
