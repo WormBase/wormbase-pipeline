@@ -109,6 +109,23 @@ foreach my $species (sort keys %accessors_by_species) {
     next unless $rel_acc;
     my $is_canonical = $rel_acc->is_canonical;
     my $bioproj_desc = $rel_acc->bioproject_description;
+
+    my $short_label;
+    if ($obj->{full_name} =~ /Caenorhabditis/) {
+      # for Caen, default to the strain name; only use assembly name if strain not defined
+      if (defined $strain) {
+        $short_label = $strain;
+      } elsif (defined $assembly_name) {
+        $short_label = $assembly_name;
+      }
+    } else {
+      if (defined $assembly_name) {
+        $short_label = $assembly_name;
+      } elsif (defined $strain) {
+        $short_label = $strain;
+      }
+    }
+    $short_label = $bioproj if not defined $short_label;
     
     push @{$obj->{assemblies}}, {
       bioproject => $bioproj,
@@ -119,7 +136,7 @@ foreach my $species (sort keys %accessors_by_species) {
       appeared_in => 'WS'.$first_ws_rel->name,
       is_canonical => ($is_canonical) ? JSON::true : JSON::false,
       strain => (defined $strain) ? $strain->name : "Unknown strain",
-      short_label => (defined $strain) ? $strain->name : "Unknown strain",
+      short_label => $short_label,
       laboratory => \@labs,
     };
   }
