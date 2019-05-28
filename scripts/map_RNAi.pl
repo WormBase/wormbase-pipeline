@@ -65,10 +65,12 @@ my $to_search_against = {
 					['asRNA',                    'asRNA',              'exon'],
 					['Coding_transcript',        'Coding_transcript',  'exon'],
 					['lincRNA',                  'lincRNA',            'exon'],
+					['miRNA',                    'miRNA_mature',       'exon'],
 					['miRNA_primary_transcript', 'miRNA_primary_transcript',      'exon'],
 					['ncRNA',                    'ncRNA',              'exon'],
 					['Non_coding_transcript',    'non_coding_transcript',         'exon'],
 					['piRNA',                    'piRNA',              'exon'],
+					['pre_miRNA',                'pre_miRNA',          'exon'],
 					['rRNA',                     'rRNA',               'exon'],
 					['scRNA',                    'scRNA',              'exon'],
 					['snlRNA',                   'snRNA',              'exon'], # in GFF files as 'snRNA' - we do not distingush between snRNA and snlRNA in GFF
