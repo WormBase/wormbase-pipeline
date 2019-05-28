@@ -55,16 +55,29 @@ GetOptions(
 #################################################
 # config - what are we going to compare against?
 #################################################
+#                        Class          GFF_file_prefix              GFF_source            GFF_type    GFF_name_type
 my $to_search_against = {
   
-  Predicted_gene => [ ['curated', 'curated', 'exon', 'CDS'] ],
-
-  Transcript => [ ['Coding_transcript',     'Coding_transcript',     'exon'],
-                  ['Non_coding_transcript', 'Non_coding_transcript', 'exon'],
-                  ['Pseudogene',            'Pseudogene',            'exon'] ],
-  
-  Pseudogene => [ ['Pseudogene', 'Pseudogene', 'exon'] ],
-
+			 Predicted_gene => [ ['curated', 'curated', 'exon', 'CDS'] ],
+			 
+			 Transcript => [ 
+					['7kncRNA',                  '7kncRNA',            'exon'],
+					['asRNA',                    'asRNA',              'exon'],
+					['Coding_transcript',        'Coding_transcript',  'exon'],
+					['lincRNA',                  'lincRNA',            'exon'],
+					['miRNA_primary_transcript', 'miRNA_primary_transcript',      'exon'],
+					['ncRNA',                    'ncRNA',              'exon'],
+					['Non_coding_transcript',    'non_coding_transcript',         'exon'],
+					['piRNA',                    'piRNA',              'exon'],
+					['rRNA',                     'rRNA',               'exon'],
+					['scRNA',                    'scRNA',              'exon'],
+					['snlRNA',                   'snRNA',              'exon'], # in GFF files as 'snRNA' - we do not distingush between snRNA and snlRNA in GFF
+					['snoRNA',                   'snoRNA',             'exon'],
+					['snRNA',                    'snRNA',              'exon'], 
+					['stRNA',                    'stRNA',              'exon'], 
+					['tRNA',                     'tRNA',               'exon'],
+				       ],
+			 
 };
 
 
@@ -129,29 +142,7 @@ foreach my $class (keys %$to_search_against) {
 
     $log->write_to(" Searching features...\n");
 
-    foreach my $rnai_type ('primary', 'secondary') {
-      &get_RNAi_from_gff( \%results, $fm, $class, $rnai_type);
-    }
-  }
-}
-
-#
-# remove secondary associations that are already covered by primary
-#
-foreach my $rnai (keys %results) {
-  if (exists $results{$rnai}->{primary} and exists $results{$rnai}->{secondary}) {
-    my $phash = $results{$rnai}->{primary};
-    my $shash = $results{$rnai}->{secondary};
-    
-    foreach my $class (keys %$to_search_against) {
-      if (exists $phash->{$class} and exists $shash->{$class}) {
-        foreach my $obj (keys %{$phash->{$class}}) {
-          if (exists $shash->{$class}->{$obj}) {
-            delete $shash->{$class}->{$obj};
-          }
-        }
-      }
-    }
+    &get_RNAi_from_gff( \%results, $fm, $class);
   }
 }
 
@@ -227,12 +218,10 @@ exit(0);
 
 #######################################
 sub get_RNAi_from_gff {
-  my ($results, $map, $class, $rnai_type) = @_;
-
-  #my $stype = ( $type eq 'primary' ) ? 'p' : 's';
+  my ($results, $map, $class) = @_;
 
   foreach my $chr ($wormbase->get_chromosome_names(-prefix => 1, -mito => 1)) {
-    my $gff_file = "${gffdir}/${chr}_RNAi_${rnai_type}.gff";
+    my $gff_file = "${gffdir}/${chr}_RNAi_primary.gff";
 
     open(my $rnaifh, $gff_file) or $log->log_and_die("Could not open $gff_file for reading\n");
 
@@ -241,12 +230,12 @@ sub get_RNAi_from_gff {
       chomp;
       my @l = split(/\t+/, $_);
 
-      next unless $l[1] eq "RNAi_${rnai_type}" and $l[2] eq 'RNAi_reagent';
+      next unless $l[1] eq "RNAi_primary" and $l[2] eq 'RNAi_reagent';
 
       my ($name) = $l[8] =~ /\"RNAi:(\S+.+)\"\s+\d+\s+\d+$/;
 
       my @hits = @{$map->search_feature_segments($l[0], $l[3], $l[4], undef, $min_overlap)};
-      map { $results->{$name}->{$rnai_type}->{$class}->{$_} = 1 } @hits;
+      map { $results->{$name}->{'primary'}->{$class}->{$_} = 1 } @hits;
     
     }
   }
