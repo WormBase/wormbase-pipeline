@@ -17,7 +17,7 @@ my $config = {
   CDS => [ ['curated', 'curated', 'exon'] ],
 
   Transcript => [ ['Coding_transcript',     'Coding_transcript',     'exon'],
-                  ['Non_coding_transcript', 'Non_coding_transcript', 'exon'],
+                  ['Non_coding_transcript', 'non_coding_transcript', 'exon'],
                   ['ncRNA',                 'ncRNA',                 'exon'],
                   ['Pseudogene',            'Pseudogene',            'exon'] ],
   
