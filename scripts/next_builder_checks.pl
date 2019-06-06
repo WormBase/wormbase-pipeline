@@ -107,7 +107,7 @@ if($clones) {
   } elsif ($wb->species eq 'brugia') {
     @clones = qw(Bm_024 Bm_013 Bm_007 Bm_008 Bm_014 Bm_v4_Chr4_scaffold_001); # chromosome Y, the wolbachia insertions, the mitochondrial insertions and one chromosome
   } elsif ($wb->species eq 'pristionchus') {
-    @clones = qw(Ppa_Contig0 Ppa_Contig10 Ppa_Contig15 Ppa_Contig30 Ppa_Contig100 Ppa_Contig200);
+    @clones = qw('PPA_ChrI', 'PPA_ChrII', 'PPA_ChrIV', 'PPA_ChrX');
   } elsif ($wb->species eq 'ovolvulus') {
     @clones = qw(OVOC_OO_000001 OVOC_OO_000008 OVOC_OO_000054 OVOC_OO_000132 OVOC_OO_000629 OVOC_OO_000690);
   } elsif ($wb->species eq 'sratti') {
