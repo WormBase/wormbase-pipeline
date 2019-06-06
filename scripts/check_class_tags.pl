@@ -391,7 +391,7 @@ sub get_classes_and_ids_to_check {
 			       Feature_data => 'AA191935:polyA_site',
 			       Gene => 'WBGene00089610', # misses Ortholog Ortholog_other Other_name
 			       Gene_name => 'Ppa-abcf-1',
-			       Sequence => ['Ppa_Contig0', 'Ppa_Contig10', 'Ppa_Contig15', 'Ppa_Contig30', 'Ppa_Contig100', 'Ppa_Contig200'],
+			       Sequence => ['PPA_ChrI', 'PPA_ChrII', 'PPA_ChrIV', 'PPA_ChrX'],
 				   },
 		 'brugia' => {
 			       Ace2SO => 'coding_transcript_ace2so',
