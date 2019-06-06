@@ -24,6 +24,7 @@ term2so = {
 	'insertion_site' => 'SO:0000667', # changed insertion_site to insertion
 	'deletion'       => 'SO:0000159',
 	'point_mutation' => 'SO:1000008',
+	'substitution'   => 'SO:1000008', # to hack our wrong SO-terms in
 }
 
 chrom2ncbi = {
@@ -52,7 +53,7 @@ ARGF.each_line{|line|
 
   variation[:alleleId] = cols[8][/variation=(WBVar\d+)/,1]
 
-  next unless cols[1].eql?('Allele')
+  next unless ['Allele','KO_consortium','NBP_knockout','Million_mutation'].include?(cols[1])
   next unless filter.has_key?(variation[:alleleId])
 
   variation[:start] = cols[3].to_i
@@ -60,20 +61,24 @@ ARGF.each_line{|line|
   variation[:chromosome] = cols[0]
   variation[:assembly] = 'WBcel235'
   variation[:type]=term2so[cols[2]]
+
   if cols[2].eql?('insertion_site')
-	  next unless cols[8]=~/insertion=([^;])/
+	  next unless cols[8]=~/insertion=([^;]+)/
           variation[:paddedBase] = chromosomes[cols[0]][variation[:start]-2]
 	  variation[:genomicReferenceSequence]='N/A'
 	  s = Bio::Sequence::NA.new($1.to_s)
 	  s.complement! if cols[6].eql?('-') # as all variations are supposed to be on the forward strand
 	  variation[:genomicVariantSequence] = s.to_s.upcase
 	  variation[:end]+=1 if variation[:end] == variation[:start] # to make it inline with the HGVS coordinates
+
   elsif cols[2].eql?('deletion')
           variation[:paddedBase] = chromosomes[cols[0]][variation[:start]-2]
 	  variation[:genomicReferenceSequence] = chromosomes[cols[0]].subseq(variation[:start],variation[:end])
           variation[:genomicVariantSequence] = 'N/A'
-  elsif cols[2].eql?('point_mutation')
+
+  elsif ['point_mutation','substitution'].include?(cols[2]) # multi-bp substitutions need to become DELINS in the future
 	  next unless cols[8]=~/substitution=/ # to skip the crispr/cas9 alleles
+	  next unless variation[:start] == variation[:end] # only allow single bp "substitutions"
 	  to = cols[8][/substitution=([^;]+)/,1].split('/')[1]
 	  variation[:genomicReferenceSequence] = chromosomes[cols[0]].subseq(variation[:start],variation[:end])
 	  s = Bio::Sequence::NA.new(to)
