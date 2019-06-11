@@ -1153,7 +1153,7 @@ sub get_Non_coding_transcripts {
   my %GFF_data = 
    (
      method			=> "Non_coding_transcript",
-     gff_source			=> "Non_coding_transcript",
+     gff_source			=> "non_coding_transcript",
      gff_type			=> "nc_primary_transcript",
      ID_after			=> "Transcript\\s+",
 
@@ -1181,7 +1181,7 @@ sub get_Non_coding_transcript_exons {
   my %GFF_data = 
    (
      method			=> "Non_coding_transcript",
-     gff_source			=> "Non_coding_transcript",
+     gff_source			=> "non_coding_transcript",
      gff_type			=> "exon",
      ID_after			=> "Transcript\\s+",
 
@@ -1209,7 +1209,7 @@ sub get_Non_coding_transcript_introns {
   my %GFF_data = 
    (
      method			=> "Non_coding_transcript",
-     gff_source			=> "Non_coding_transcript",
+     gff_source			=> "non_coding_transcript",
      gff_type			=> "intron",
      ID_after			=> "Transcript\\s+",
 
