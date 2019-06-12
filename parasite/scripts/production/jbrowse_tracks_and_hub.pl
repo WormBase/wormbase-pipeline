@@ -16,7 +16,7 @@ use WbpsExpression;
 use GenomeBrowser::JBrowseDisplay;
 use GenomeBrowser::RnaseqHub;
 
-my @species;
+my @species = ("core_$ENV{PARASITE_VERSION}"); # or other pattern
 my $jbrowse_skip = 0;
 my $hub_skip = 0;
 my $sanger_deployment_skip = 0;
