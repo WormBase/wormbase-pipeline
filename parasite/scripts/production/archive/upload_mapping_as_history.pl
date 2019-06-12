@@ -80,7 +80,7 @@ sub archive_where_seq_changed {
         my ($l, @seq) = split "\n";
         next unless @seq;
         my $seq = join "", @seq;
-        my ($translation, $transcript, $gene) = $l =~ /(.*) transcript(_id)?=(.*) gene(_id)?=(.*)$/;
+        my ($translation, $transcript, $gene) = $l =~ /(.*) transcript(?:_id)?=(.*) gene(?:_id)?=(.*)$/;
         my $transcript_currently = $transcript_adaptor->fetch_by_stable_id($transcript);
         my $translation_currently = $transcript_currently ? $transcript_currently->translate : undef;
         my $seq_currently = $translation_currently ? $translation_currently->seq : undef;
