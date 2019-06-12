@@ -7,7 +7,7 @@ use Test::More;
 use ProductionMysql;
 
 test_tracks_for_species("http://test.parasite.wormbase.org", $_)
-  for ProductionMysql->staging->species(@ARGV);
+  for ProductionMysql->staging->species(@ARGV or "_core_$ENV{PARASITE_VERSION}_");
 done_testing;
 
 sub test_tracks_for_species {
