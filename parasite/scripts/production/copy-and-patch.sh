@@ -4,7 +4,7 @@
 # - pinches new comparator DBs from known Ensembl places
 
 perl -MProductionMysql -E '
-   say for ProductionMysql->previous_staging->core_databases(@ARGV or "core_$ENV{PREVIOUS_PARASITE_VERSION}");
+   say for ProductionMysql->previous_staging->core_databases(@ARGV ? @ARGV : "core_$ENV{PREVIOUS_PARASITE_VERSION}");
 ' "$@" | while read -r DB; do
   echo "Copying $DB"
   NEWDB=$( sed "s/core_$PREVIOUS_PARASITE_VERSION\_$PREVIOUS_ENSEMBL_VERSION/core_$PARASITE_VERSION\_$ENSEMBL_VERSION/" <<< $DB )
@@ -26,6 +26,11 @@ perl -MProductionMysql -E '
      --release $ENSEMBL_VERSION --nointeractive \
      --database "$NEWDB"
 done
+
+if [ "$#" ] ; then
+  echo "Ran in partial mode. Will not drop old stuff or copy comparators"
+  exit
+fi
 find_host_and_db(){
   species="$1"
   for cmd in mysql-ens-sta-1 mysql-ens-sta-2 mysql-ens-sta-3 mysql-ens-sta-4; do

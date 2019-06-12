@@ -18,7 +18,7 @@ die "conf format: {species => {...}}" unless $data_dir_name and not @others and 
 my $data_dir_path = join ("/", $ENV{PARASITE_DATA}, $data_dir_name);
 my $conf_path = File::Spec->catfile($data_dir_path, "$data_dir_name.conf");
 
-if ( not -s $conf_path) {
+if ( not -s $conf_path or $ENV{REDO_FASTA}) {
   $conf = $conf->{$data_dir_name};
   $conf->{gff3} //=  File::Spec->catfile($data_dir_path, "$data_dir_name.gff3");
   die "Expected gff at: ".$conf->{gff3} unless -f $conf->{gff3} and File::Spec->file_name_is_absolute($conf->{gff3});

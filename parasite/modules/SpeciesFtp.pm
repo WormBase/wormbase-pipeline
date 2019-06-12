@@ -40,4 +40,8 @@ sub path_to {
     return $dir;
   } 
 }
+sub root_exists {
+  my ($self) = @_;
+  return -d $self->{root};
+}
 1;
