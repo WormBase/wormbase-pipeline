@@ -1,20 +1,4 @@
-
-=pod
-
-=head1 NAME
-Bio::EnsEMBL::EGPipeline::PipeConfig::ParasiteDump_conf
-
-=head1 DESCRIPTION
-
-Configuration for running the ParaSite FTP dumping pipeline. Please see documentation on Confluence https://www.ebi.ac.uk/seqdb/confluence/display/WORMBASE/Parasite+Production+Pipelines
-
-=head1 Author
-
-Myriam Shafie
-
-=cut
-
-package Bio::EnsEMBL::EGPipeline::PipeConfig::ParasiteDump_conf;
+package PipeConfig::DumpCoreDatabases_conf;
 
 use strict;
 use warnings;
@@ -128,7 +112,7 @@ sub pipeline_analyses {
     {
       -logic_name        => 'DumpGenomeBlast',
       -hive_capacity     => $self->o('max_hive_capacity'),
-      -module            => 'Bio::EnsEMBL::EGPipeline::ParasiteFTP::BlastDumper',
+      -module            => 'DumpCoreDatabases::BlastDumper',
       -max_retry_count   => 1,
       -parameters        => {
                               script    => $self->o('dump_genome'),
@@ -141,7 +125,7 @@ sub pipeline_analyses {
     {
       -logic_name        => 'DumpGenomeMaskedBlast',
       -hive_capacity     => $self->o('max_hive_capacity'),
-      -module            => 'Bio::EnsEMBL::EGPipeline::ParasiteFTP::BlastDumper',
+      -module            => 'DumpCoreDatabases::BlastDumper',
       -max_retry_count   => 1,
       -parameters        => {
                               script    => $self->o('dump_genome'),
@@ -154,7 +138,7 @@ sub pipeline_analyses {
     {
       -logic_name        => 'DumpTranscriptsBlast',
       -hive_capacity     => $self->o('max_hive_capacity'),
-      -module            => 'Bio::EnsEMBL::EGPipeline::ParasiteFTP::BlastDumper',
+      -module            => 'DumpCoreDatabases::BlastDumper',
       -max_retry_count   => 1,
       -parameters        => {
                               script    => $self->o('dump_transcript'),
@@ -167,7 +151,7 @@ sub pipeline_analyses {
     {
       -logic_name        => 'DumpProteinsBlast',
       -hive_capacity     => $self->o('max_hive_capacity'),
-      -module            => 'Bio::EnsEMBL::EGPipeline::ParasiteFTP::BlastDumper',
+      -module            => 'DumpCoreDatabases::BlastDumper',
       -max_retry_count   => 1,
       -parameters        => {
                               script     => $self->o('dump_transcript'),
@@ -202,7 +186,7 @@ sub pipeline_analyses {
     {
       -logic_name        => 'DumpGenome',
       -hive_capacity     => $self->o('max_hive_capacity'),
-      -module            => 'Bio::EnsEMBL::EGPipeline::ParasiteFTP::ParasiteDumper',
+      -module            => 'DumpCoreDatabases::FtpDumper',
       -max_retry_count   => 1,
       -parameters        => {
                               script     => $self->o('dump_genome'),
@@ -218,7 +202,7 @@ sub pipeline_analyses {
     {
       -logic_name        => 'DumpGenomeMasked',
       -hive_capacity     => $self->o('max_hive_capacity'),
-      -module            => 'Bio::EnsEMBL::EGPipeline::ParasiteFTP::ParasiteDumper',
+      -module            => 'DumpCoreDatabases::FtpDumper',
       -max_retry_count   => 1,
       -parameters        => {
                               script     => $self->o('dump_genome'),
@@ -235,7 +219,7 @@ sub pipeline_analyses {
     {
       -logic_name        => 'DumpGenomeSoftMasked',
       -hive_capacity     => $self->o('max_hive_capacity'),
-      -module            => 'Bio::EnsEMBL::EGPipeline::ParasiteFTP::ParasiteDumper',
+      -module            => 'DumpCoreDatabases::FtpDumper',
       -max_retry_count   => 1,
       -parameters        => {
                               script     => $self->o('dump_genome'),
@@ -252,7 +236,7 @@ sub pipeline_analyses {
     {
       -logic_name        => 'DumpTranscriptsCDS',
       -hive_capacity     => $self->o('max_hive_capacity'),
-      -module            => 'Bio::EnsEMBL::EGPipeline::ParasiteFTP::ParasiteDumper',
+      -module            => 'DumpCoreDatabases::FtpDumper',
       -max_retry_count   => 1,
       -parameters        => {
                               script     => $self->o('dump_transcript'),
@@ -269,7 +253,7 @@ sub pipeline_analyses {
     {
       -logic_name        => 'DumpTranscriptsmRNA',
       -hive_capacity     => $self->o('max_hive_capacity'),
-      -module            => 'Bio::EnsEMBL::EGPipeline::ParasiteFTP::ParasiteDumper',
+      -module            => 'DumpCoreDatabases::FtpDumper',
       -max_retry_count   => 1,
       -parameters        => {
                               script     => $self->o('dump_transcript'),
@@ -286,7 +270,7 @@ sub pipeline_analyses {
     {
       -logic_name        => 'DumpProteins',
       -hive_capacity     => $self->o('max_hive_capacity'),
-      -module            => 'Bio::EnsEMBL::EGPipeline::ParasiteFTP::ParasiteDumper',
+      -module            => 'DumpCoreDatabases::FtpDumper',
       -max_retry_count   => 1,
       -parameters        => {
                               script     => $self->o('dump_transcript'),
@@ -303,7 +287,7 @@ sub pipeline_analyses {
     {
       -logic_name        => 'DumpGFF3',
       -hive_capacity     => $self->o('max_hive_capacity'),
-      -module            => 'Bio::EnsEMBL::EGPipeline::ParasiteFTP::ParasiteDumper',
+      -module            => 'DumpCoreDatabases::FtpDumper',
       -max_retry_count   => 1,
       -parameters        => {
                               script     => $self->o('dump_gff3'),
@@ -320,7 +304,7 @@ sub pipeline_analyses {
     {
       -logic_name        => 'DumpGTF',
       -hive_capacity     => $self->o('max_hive_capacity'),
-      -module            => 'Bio::EnsEMBL::EGPipeline::ParasiteFTP::ParasiteDumper',
+      -module            => 'DumpCoreDatabases::FtpDumper',
       -max_retry_count   => 1,
       -parameters        => {
                               script     => $self->o('dump_gtf'),
