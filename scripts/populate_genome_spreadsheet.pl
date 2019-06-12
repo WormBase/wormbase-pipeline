@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 
 use strict;
+use warnings;
 use Getopt::Long;
 use Bio::EnsEMBL::Registry;
 
@@ -8,25 +9,19 @@ use lib $ENV{CVS_DIR};
 
 use Wormbase;
 
-my (
-  $reg_conf,
-  %wb_genomes,
-  $mode);
-
+my $reg_conf;
 &GetOptions(
   'reg_conf=s'      => \$reg_conf,
-  'mode=s'          => \$mode,
-    );
+    ) or die "Bad options?";
 
 my $WB_JBROWSE_BASE = 'https://wormbase.org/tools/genome/jbrowse-simple/?data=data%2F[WB_GENOME]';
 my $PARASITE_JBROWSE_BASE = 'http://parasite.wormbase.org/jbrowse/index.html?data=%2Fjbrowse-data%2F[PARASITE_GENOME]%2Fdata';
 
 die "You must supply a valid Registry file\n" if not defined $reg_conf or not -e $reg_conf;
-die "You must supply -mode nematode or -mode flatworm\n" if not defined $mode or ($mode ne 'nematode' and $mode ne 'flatworm');
 
 my $wb = Wormbase->new();
 my %accessors = ($wb->all_species_accessors);
-
+my %wb_genomes;
 foreach my $acc ($wb, values %accessors) {
   my $spec = $acc->long_name;
   $spec =~ s/\s+/_/; 
@@ -38,8 +33,9 @@ Bio::EnsEMBL::Registry->load_all($reg_conf);
 
 my $dbs = Bio::EnsEMBL::Registry->get_all_DBAdaptors( -group => "core" );
 
-my @list;
-foreach my $db (@$dbs) {
+my %list;
+for my $mode (qw/nematode flatworm/){
+ foreach my $db (@$dbs) {
 
   my $div = $db->get_MetaContainer->get_division();
   next if $div !~ /Parasite/;
@@ -89,22 +85,18 @@ foreach my $db (@$dbs) {
   $parasite_jbrowse =~ s/\[PARASITE_GENOME\]/${prod_name}/;
   $parasite_jbrowse = "=HYPERLINK(\"$parasite_jbrowse\", \"Link\")";
 
-  push @list, [$gspecies_field, $class, $tax_field, $bp_field, $strain, $provider_field, $parasite_jbrowse];
-
-  if ($mode eq 'nematode') {
-    if (exists $wb_genomes{$prod_name}) {
+  my $clade =$mode eq 'nematode' && exists $wb_genomes{$prod_name} ?  do {
       my $gname = $wb_genomes{$prod_name};
       my $wb_jbrowse = $WB_JBROWSE_BASE;
       $wb_jbrowse =~ s/\[WB_GENOME\]/$gname/; 
       $wb_jbrowse = "=HYPERLINK(\"$wb_jbrowse\", \"Link\")";
-      push @{$list[-1]}, $wb_jbrowse;
-    } else {
-      push @{$list[-1]}, "";
-    }
-  }
-
+      $wb_jbrowse
+    } : ""; 
+  push @{$list{$mode}}, [$gspecies_field, $class, $tax_field, $bp_field, $strain, $provider_field, $parasite_jbrowse, $clade];
+ }
 }
-
-foreach my $l (sort { $a->[1] cmp $b->[1] or $a->[0] cmp $b->[0] } @list) {
-  print join("\t", @$l), "\n";
+for my $mode (qw/nematode flatworm/){
+  foreach my $l (sort { $a->[1] cmp $b->[1] or $a->[0] cmp $b->[0] } @{$list{$mode}}) {
+    print join("\t", @$l), "\n";
+  }
 }
