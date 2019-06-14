@@ -114,15 +114,15 @@ foreach my $species (sort keys %accessors_by_species) {
     if ($obj->{full_name} =~ /Caenorhabditis/) {
       # for Caen, default to the strain name; only use assembly name if strain not defined
       if (defined $strain) {
-        $short_label = $strain;
+        $short_label = $strain->name;
       } elsif (defined $assembly_name) {
-        $short_label = $assembly_name;
+        $short_label = $assembly_name->name;
       }
     } else {
       if (defined $assembly_name) {
-        $short_label = $assembly_name;
+        $short_label = $assembly_name->name;
       } elsif (defined $strain) {
-        $short_label = $strain;
+        $short_label = $strain->name;
       }
     }
     $short_label = $bioproj if not defined $short_label;
