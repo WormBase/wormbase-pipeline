@@ -231,7 +231,9 @@ if ($keep_old_species_sets) {
   &clean_out_mlss_data( $compara_dbh );
   $compara_dbh->get_SpeciesSetAdaptor->update_collection($collection_name, undef, \@genome_dbs);
 }
-
+unless($compara_dbh->get_SpeciesSetAdaptor->fetch_collection_by_name($collection_name)){
+  die "Could not add collection for $collection_name";
+}
 
 #
 # Finally, add the protein-tree MLSSs
@@ -260,7 +262,7 @@ exit(0);
 
 sub update_dnafrags {
   my ($compara_dba, $genome_db, $species_dba) = @_;
-
+  die "update_dnafrags got deprecated!";
   my $dnafrag_adaptor = $compara_dba->get_adaptor("DnaFrag");
   my $old_dnafrags = $dnafrag_adaptor->fetch_all_by_GenomeDB_region($genome_db);
   my $old_dnafrags_by_id;
