@@ -48,7 +48,7 @@ if ($store) {
 my $log = Log_files->make_build_log($wormbase);
 $database = $wormbase->autoace if not defined $database;
 
-$log->write_to("connecting to ${\$wormbase->autoace}\n");
+$log->write_to("connecting to $database\n");
 my $dbh = Ace->connect(-path => $database) or $log->log_and_die("Could not connect to $database\n");
 
 $outfile = $wormbase->reports . '/functional_descriptions.txt'
