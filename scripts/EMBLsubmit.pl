@@ -82,6 +82,12 @@ my $ftp = Net::FTP->new($ftp_host, Debug => 0)
     or $log->log_and_die("Cannot connect to $ftp_host: $@");
 $ftp->login($ftp_user,$ftp_pass)
     or $log->log_and_die ("Cannot login to $ftp_host using WormBase credentials\n". $ftp->message);
+my @ftp_ls = $ftp->ls() 
+    or $log->log_and_die ("Cannot ls $ftp_host using WormBase credentials\n". $ftp->message);
+if (!grep /$ftp_dir/, @ftp_ls) {
+  $ftp->mkdir($ftp_dir)
+    or $log->log_and_die ("Cannot mkdir the to_ena dir for upload of files\n". $ftp->message);
+}
 $ftp->cwd($ftp_dir) 
     or $log->log_and_die ("Cannot change into to_ena dir for upload of files\n". $ftp->message);
 
