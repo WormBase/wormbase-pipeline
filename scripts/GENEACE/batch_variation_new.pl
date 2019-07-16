@@ -139,8 +139,8 @@ sub new_var {
     my $ok = 1; # error status
 
     # process LIVE gene
-    my $varidObj = $ace->fetch('Variation', $varid);
-    if ($varidObj) {
+    my $varidObj = $ace->fetch('Variation', $varname);
+    if (defined $varidObj) {
 	print "\nVariation already in the database\n";
 	$ok = 1;
     }
