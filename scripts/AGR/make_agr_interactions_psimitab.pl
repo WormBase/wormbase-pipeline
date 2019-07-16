@@ -55,12 +55,13 @@ my $ROLE_MAPPING = {
   Non_directional => 'psi-mi:"MI:0497"(neutral component)'
 }; 
 
-my ($outfile, $acedbpath, $bgi_json);
+my ($outfile, $acedbpath, $bgi_json,$build);
 
 GetOptions(
   "database:s" => \$acedbpath,
   "outfile:s"  => \$outfile,
   "bgijson=s"  => \$bgi_json,
+  "build"      => \$build,
   )or die(@!);
 
 die "You must supply both -database and -outfile\n" if not defined $acedbpath or not defined $outfile;
