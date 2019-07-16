@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 
+# probably from: https://github.com/HUPO-PSI/miTab/blob/master/PSI-MITAB27Format.md
+
 use strict;
 use Storable;	
 use Getopt::Long;
@@ -37,8 +39,8 @@ my $DETECTION_METHOD_MAPPING =  {
 
 my $SRC_DB_MAPPING = {
   wormbase => 'psi-mi:"MI:0487"(wormbase)',
-  # BioGRID commented out for now - until AGR loader ready for multi-source interactions
- #BioGRID  => 'psi-mi:"MI:0463"(biogrid)',
+ # BioGRID commented out for now - until AGR loader ready for multi-source interactions
+ # BioGRID  => 'psi-mi:"MI:0463"(biogrid)',
 };
 
 my $MOL_TYPE_MAPPING = {
@@ -53,38 +55,31 @@ my $ROLE_MAPPING = {
   Non_directional => 'psi-mi:"MI:0497"(neutral component)'
 }; 
 
+my ($outfile, $acedbpath, $bgi_json,$build);
 
-my ($debug, $test, $verbose, $store, $wormbase);
-my ($outfile, $acedbpath, $ws_version, $outfh, $bgi_json, $bgi_genes);
-
-GetOptions (
-  "database:s"  => \$acedbpath,
-  "outfile:s"   => \$outfile,
-  "bgijson=s"   => \$bgi_json,
-    );
-
-
-if (defined $bgi_json) {
-  $bgi_genes = &get_bgi_genes($bgi_json);
-}
+GetOptions(
+  "database:s" => \$acedbpath,
+  "outfile:s"  => \$outfile,
+  "bgijson=s"  => \$bgi_json,
+  "build"      => \$build,
+  )or die(@!);
 
 die "You must supply both -database and -outfile\n" if not defined $acedbpath or not defined $outfile;
 
+my $bgi_genes = &get_bgi_genes($bgi_json) if (defined $bgi_json);
 
 open(my $out_fh, ">$outfile") or die "Could not open $outfile for writing\n";
 
 my $db = Ace->connect(-path => $acedbpath) or die("Connection failure: ". Ace->error);
 
 my $it = $db->fetch_many(-query => 'find Interaction Physical');
-#my $it = $db->fetch_many(-query => 'find Interaction WBInteraction000517417');
 
 INT: while (my $obj = $it->next) {
   next unless $obj->isObject();
 
   my ($int_type) = $obj->at('Interaction_type.Physical');
-  #
+  
   # ignore interactions with unspecified type
-  #
   if (not $int_type) {
     warn("Skipping $obj - unspecified DNA/Protein\n");
     next;
@@ -95,9 +90,7 @@ INT: while (my $obj = $it->next) {
     $methods{$meth->name} = 1;
   }
 
-  #
   # Ignore interactions with only Antibody detection method
-  #
   delete $methods{Antibody} if exists $methods{Antibody};
   if (not keys %methods) {
     warn("Skipping $obj - no non-Antibody detection method\n");
@@ -106,9 +99,9 @@ INT: while (my $obj = $it->next) {
 
 
   foreach my $g ($obj->Interactor_overlapping_gene) {
-    my $gn = $g->name;
-    my $gnp = $g->Public_name->name;
-    my $g_tax = $g->Species->NCBITaxonomyID->name;
+    my $gn      = $g->name;
+    my $gnp     = $g->Public_name->name;
+    my $g_tax   = $g->Species->NCBITaxonomyID->name;
     my $g_sp_nm = $g->Species->name;
 
     if ($g_sp_nm ne 'Caenorhabditis elegans') {
@@ -116,6 +109,7 @@ INT: while (my $obj = $it->next) {
       next INT;
     }
 
+    # taxid:6239(caeel)|taxid:6239(Caenorhabditis elegans)
     my $gsp = sprintf("taxid:%d(%s)|taxid:%d(%s)", $g_tax, "caeel", $g_tax, $g_sp_nm);
 
     $genes{$gn}->{id} = $gn;
@@ -130,9 +124,8 @@ INT: while (my $obj = $it->next) {
 
   foreach my $f ($obj->Feature_interactor) {
     my @fg = $f->Associated_with_gene;
-    #
+    
     # Skip interactions for which the Feature_interactor is not associated with exactly one gene
-    #
     if (scalar(@fg) != 1) {
       warn("Skipping $obj - Feature_interactor is not associated with exactly one gene\n");
       next INT;
@@ -148,6 +141,7 @@ INT: while (my $obj = $it->next) {
       next INT;
     }
 
+    # taxid:6239(caeel)|taxid:6239(Caenorhabditis elegans)
     my $gsp = sprintf("taxid:%d(%s)|taxid:%d(%s)", $fg_tax, "caeel", $fg_tax, $fg_sp_nm);
 
     $genes{$fg}->{id} = $fg;
@@ -157,7 +151,6 @@ INT: while (my $obj = $it->next) {
 
     foreach my $tp ($f->right->col()) {
       $genes{$fg}->{roles}->{$tp} = 1;
-    
     }
   }
 
@@ -217,7 +210,6 @@ INT: while (my $obj = $it->next) {
     }
 
     # role
-    #
     if (exists $obj_a->{roles}->{Bait} and exists $obj_b->{roles}->{Target}) {
       $role_a = $ROLE_MAPPING->{Bait};
       $role_b = $ROLE_MAPPING->{Target};
@@ -232,7 +224,6 @@ INT: while (my $obj = $it->next) {
     }
 
     # type
-    #
     if ($int_type eq 'ProteinProtein') {
       $type_a = $type_b = $MOL_TYPE_MAPPING->{Protein};
     } elsif ($int_type eq 'ProteinRNA') {
@@ -291,11 +282,13 @@ INT: while (my $obj = $it->next) {
 
   $l[0]  = "wormbase:$id_a";
   $l[1]  = "wormbase:$id_b";
+
   $l[4]  = "wormbase:$name_a(public_name)";
   $l[5]  = "wormbase:$name_b(public_name)";
   $l[6]  = join("|", map { $DETECTION_METHOD_MAPPING->{$_} } sort keys %methods);
   $l[7]  = $author_year;
   $l[8]  = "pubmed:$pmid";
+  $l[8] .= '|wormbase:'.$obj->Paper if $build;
   $l[9]  = $sp_a;
   $l[10] = $sp_b;
   $l[11] = 'psi-mi:"MI:0914"(association)';
@@ -324,7 +317,7 @@ sub get_paper_stuff {
   my ($author_year, $pmid);
 
   my $brief_cit = $pap->Brief_citation->name;
-  ($author_year) = $brief_cit =~ /^([^\(]+\(\d+\))/; 
+  ($author_year) = $brief_cit =~ /^([^\(]+\(\d+\))/; # matches: Simske JS et al. (1996)
 
   foreach my $db ($pap->Database) {
     if ($db->name eq 'MEDLINE') {
@@ -332,6 +325,5 @@ sub get_paper_stuff {
       last;
     }
   }
-
   return ($pmid, $author_year);
 }
