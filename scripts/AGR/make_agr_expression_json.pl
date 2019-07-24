@@ -31,45 +31,34 @@ my $WB_TO_UBERON = {
   # these are not allowed in the 1.0.0.6 schema; so comment
   # them out for now, so that they default to Other in the slim
 
- # $TL_ANATOMY_TERM => 'UBERON:0000465',
+  # $TL_ANATOMY_TERM => 'UBERON:0000465',
   $TL_ANATOMY_TERM => {Other => 1},
- # $TL_LIFESTAGE_TERM => 'UBERON:0000105',
+  # $TL_LIFESTAGE_TERM => 'UBERON:0000105',
 };
 
-my $life_stage_term = {
-  $TL_LIFESTAGE_TERM => 'Nematoda Life Stage'
-};
-
-my $anatomy_term = {
-  $TL_ANATOMY_TERM =>  'C. elegans Cell and Anatomy'
-};
-
-my $go_term = {
-
-};
-
+my $life_stage_term = { $TL_LIFESTAGE_TERM => 'Nematoda Life Stage' };
+my $anatomy_term = { $TL_ANATOMY_TERM =>  'C. elegans Cell and Anatomy' };
+my $go_term = { };
 
 my ($debug, $test, $verbose, $store, $wormbase);
 my ($outfile, $acedbpath, $ws_version, $out_fh, $bgi_json, $wb_to_uberon_file);
 
 GetOptions (
-  "debug=s"     => \$debug,
-  "test"        => \$test,
-  "verbose"     => \$verbose,
-  "store:s"     => \$store,
-  "database:s"  => \$acedbpath,
-  "outfile:s"   => \$outfile,
-  "wsversion=s" => \$ws_version,
-  "bgijson=s"   => \$bgi_json,
-  "wb2uberon=s" => \$wb_to_uberon_file,
-    );
+  'debug=s'     => \$debug,
+  'test'        => \$test,
+  'verbose'     => \$verbose,
+  'store:s'     => \$store,
+  'database:s'  => \$acedbpath,
+  'outfile:s'   => \$outfile,
+  'wsversion=s' => \$ws_version,
+  'bgijson=s'   => \$bgi_json,
+  'wb2uberon=s' => \$wb_to_uberon_file,
+)||die(@!);
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
-  $wormbase = Wormbase->new( -debug   => $debug,
-                             -test    => $test,
-      );
+  $wormbase = Wormbase->new( -debug => $debug, -test => $test);
 }
 
 my $tace = $wormbase->tace;
@@ -85,9 +74,7 @@ if (not defined $outfile) {
   $outfile = "./wormbase.agr_expression.${ws_version}.json";
 }
 
-#
 # Read WormBase->Uberon mapping file
-#
 open(my $wb2ub_fh, $wb_to_uberon_file) or die "You must supply a valid wb2uberon mapping file\n";
 while(<$wb2ub_fh>) {
   /^(\S+)\s+(\S+)/ and do {
@@ -100,11 +87,7 @@ while(<$wb2ub_fh>) {
   };
 }
 
-
-
-#
 # restrict to genes in the BGI, if provded
-#
 my ($bgi_genes, @expression_annots);
 
 $bgi_genes = AGR::get_bgi_genes( $bgi_json ) if defined $bgi_json;
@@ -195,17 +178,13 @@ while (my $obj = $it->next) {
 
     foreach my $go ($obj->GO_term) {
       next if not &record_go_term_name( $go );
-
       $annots{$TL_LIFESTAGE_TERM}->{$TL_ANATOMY_TERM}->{$go->name} = 1;
     }
-
 
     foreach my $ls (sort keys %annots) {
       foreach my $at (sort keys %{$annots{$ls}}) {
 
-        #
         # when expressed
-        #
         my $when_expressed = {
           stageTermId => $ls,
           stageName   => $life_stage_term->{$ls},
@@ -219,10 +198,7 @@ while (my $obj = $it->next) {
           $when_expressed->{stageUberonSlimTerm} = { uberonTerm =>  "post embryonic, pre-adult" };
         }
          
-        #
         # where expressed
-        #
-
         my @where_expressed;
 
         if (keys %{$annots{$ls}->{$at}}) {
@@ -272,7 +248,6 @@ while (my $obj = $it->next) {
   }
 }
 
-
 my $data = {
   metaData => AGR::get_file_metadata_json( (defined $ws_version) ? $ws_version : $wormbase->get_wormbase_version_name(), $date ), 
   data     => \@expression_annots,
@@ -284,7 +259,6 @@ if (defined $outfile) {
   $out_fh = \*STDOUT;
 }
 
-
 my $json_obj = JSON->new;
 my $string = $json_obj->allow_nonref->canonical->pretty->encode($data);
 print $out_fh $string;
@@ -293,14 +267,13 @@ $db->close;
 
 exit(0);
 
-
 ##############################################
 sub get_paper_json {
   my ($wb_paper) = @_;
   
   my $json_paper = {};
-  
   my $pmid;
+
   foreach my $db ($wb_paper->Database) {
     if ($db->name eq 'MEDLINE') {
       $pmid = $db->right->right->name;
@@ -337,7 +310,7 @@ sub record_lifestage_term_name {
     $life_stage_term->{$ls->name} = $ls->Public_name->name;
   }
 
-  return (exists $life_stage_term->{$ls->name}) ? 1 : 0;
+  return (exists $life_stage_term->{$ls->name});
 }
 
 ###############################################
@@ -348,5 +321,5 @@ sub record_go_term_name {
     $go_term->{$go->name} = $go->Name->name;
   }
 
-  return (exists $go_term->{$go->name}) ? 1 : 0;
+  return (exists $go_term->{$go->name});
 }

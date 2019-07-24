@@ -9,7 +9,6 @@ use JSON;
 use lib $ENV{CVS_DIR};
 use Wormbase;
 use Modules::AGR;
-#use Log_files;
 
 my %XREF_MAP = (
   "NCBI"       => {
@@ -25,12 +24,9 @@ my %XREF_MAP = (
     URSid => "RNAcentral",
   },
   "Panther" => {
-    #gene   => "PANTHER_SEQ",
     family => "PANTHER",
   }
 );
-
-
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
 my ($outfile, $acedbpath, $ws_version, $gtf_file, $out_fh, $locs);
@@ -49,13 +45,10 @@ GetOptions ("help"        => \$help,
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
-  $wormbase = Wormbase->new( -debug   => $debug,
-                             -test    => $test,
-      );
+  $wormbase = Wormbase->new(-debug => $debug,-test => $test);
 }
 
 my $tace = $wormbase->tace;
-#my $log  = Log_files->make_build_log($wormbase);
 
 my $taxid = $wormbase->ncbi_tax_id;
 my $full_name = $wormbase->full_name;
@@ -82,38 +75,29 @@ foreach my $sub_query (
   " AND NOT Sequence AND Reference"
     ) {
 
-
   my $it = $db->fetch_many(-query=> $base_query . $sub_query);
   my $i = 0;
   
   while (my $obj=$it->next) {
     $i++;
 
-    #last if $i % 10 == 0;
-
-    print STDERR $obj->name, "\n";
+    print STDERR $obj->name,"\n";
     
     next unless $obj->isObject();
     next unless $obj->Species;
     next unless $obj->Species->name eq $full_name;
 
-    #
     # Primary Id
-    #
-    my $primary_id = "WB:" . $obj->name;
+    my $primary_id = 'WB:'.$obj->name;
 
-    #
     # Biotype
-    #
-    my $biotype = "SO:0000704"; # default - gene
+    my $biotype = 'SO:0000704'; # default - gene
 
     if ($obj->Biotype) {
       $biotype = $obj->Biotype->name;
     }
 
-    #
     # Symbol and synonym
-    #
     my ($symbol, %synonyms);
     if ($obj->Sequence_name) {
       my $seq_name = $obj->Sequence_name->name;
@@ -132,9 +116,7 @@ foreach my $sub_query (
 
     map { $synonyms{$_->name} = 1 } $obj->Other_name;
     
-    #
     # Description
-    #
     my $desc = "";
     if ($obj->Concise_description) {
       $desc = $obj->Concise_description->name;
@@ -142,10 +124,7 @@ foreach my $sub_query (
       $desc = $obj->Automated_description->name; 
     }
 
-
-    #
     # Name (from gene class)
-    #
     my ($gene_class_name, $brief_id_name);
     if ($obj->Gene_class and $obj->Gene_class->Description) {
       $gene_class_name = $obj->Gene_class->Description->name;
@@ -160,44 +139,36 @@ foreach my $sub_query (
     } elsif ($brief_id_name) {
       $name = $brief_id_name;
     } else {
-      $name = "";
+      $name = '';
     }
     
-    #
     # Secondary ids
-    #
     my @secondary_ids;
     if ($obj->Acquires_merge) {
       foreach my $g ($obj->Acquires_merge) {
-        push @secondary_ids, "WB:" . $g->name;
+        push @secondary_ids, 'WB:'.$g->name;
       }
     }
     
-    #
     # References
-    #
     my @pmids;
     foreach my $paper ($obj->Reference) {
       foreach my $pref ($paper->Database) {
         if ($pref->name eq 'MEDLINE') {
-          push @pmids, "PMID:" . $pref->right->right->name;
+          push @pmids, 'PMID:'.$pref->right->right->name;
         }
       }
     }
 
-    #
     # location
-    #
     my (@xrefs, $loc);
     if (defined $locs and exists $locs->{$obj->name}) {
       $loc = $locs->{$obj->name};
       # Only add Ensembl xrefs for genomicly placed genes;
-      push @xrefs, { id => "ENSEMBL:" . $obj->name };
+      push @xrefs, { id => 'ENSEMBL:'.$obj->name };
     } 
    
-    #
     # Cross references
-    #
     foreach my $dblink ($obj->Database) {
       if (exists $XREF_MAP{$dblink}) {
         foreach my $field ($dblink->col) {
@@ -210,10 +181,7 @@ foreach my $sub_query (
       }
     }
 
-    #
     # Back-to-mod xrefs
-    #
-    
     my @baseXrefs = qw(gene gene/expression gene/references);
     push @baseXrefs, 'gene/expression_images' if ($obj->Expr_pattern && grep {$_->Picture} $obj->Expr_pattern);
 
@@ -230,29 +198,23 @@ foreach my $sub_query (
       };
     }
 
-
-
-    #
     # Make the JSON object
-    #
     my $json_gene = {
-      primaryId          => "WB:" . $obj->name,
-      symbol             => $symbol,
-      soTermId           => $biotype,
-      taxonId            => "NCBITaxon:" . $taxid,
+      symbol   => $symbol,
+      soTermId => $biotype,
     };
+    $json_gene->{name}         =  $name if $name;
+    $json_gene->{geneSynopsis} =  $desc if $desc;
 
-    $json_gene->{name}              =  $name if $name;
-    $json_gene->{geneSynopsis}      =  $desc if $desc;
-    $json_gene->{synonyms}          =  [sort keys %synonyms] if keys %synonyms;
-    $json_gene->{secondaryIds}      =  \@secondary_ids if @secondary_ids;
-    $json_gene->{crossReferences} =  \@xrefs if @xrefs;
+    $json_gene->{basicGeneticEntity}->{primaryId} = 'WB:'.$obj->name;
+    $json_gene->{basicGeneticEntity}->{taxonId}   = "NCBITaxon:$taxid";
+    $json_gene->{basicGeneticEntity}->{synonyms}  =  [sort keys %synonyms] if keys %synonyms;
+    $json_gene->{basicGeneticEntity}->{secondaryIds} = \@secondary_ids if @secondary_ids;
+    $json_gene->{basicGeneticEntity}->{crossReferences} = \@xrefs if @xrefs;
 
     if (defined $loc) {
-      $json_gene->{genomeLocations} = [$loc];
-
+      $json_gene->{basicGeneticEntity}->{genomeLocations} = [$loc];
     } 
-
     push @genes, $json_gene;
   }
 }
@@ -261,7 +223,6 @@ my $data = {
   metaData => AGR::get_file_metadata_json( (defined $ws_version) ? $ws_version : $wormbase->get_wormbase_version_name() ), 
   data => \@genes,
 };
-
 
 if (defined $outfile) {
   open $out_fh, ">$outfile" or die "Could not open $outfile for writing\n";
@@ -281,10 +242,7 @@ exit(0);
 sub get_location_data {
   my ($acedb, $gtf) = @_;
 
-  #
   # get the assembly name for the canonical bioproject
-  #
-
   my ($assembly_name, $fh, %locs);
   
   my $species_obj = $acedb->fetch(-class => 'Species', -name => $wormbase->full_name);
@@ -313,10 +271,7 @@ sub get_location_data {
     die "Could not find name of current assembly for " . $wormbase->species() . "\n";
   }
 
-  #
   # parse the GTF
-  #
-  
   if ($gtf =~ /\.gz$/) {
     open( $fh, "gunzip -c $gtf |") 
         or die "Could not open gunzip stream GTF file $gtf\n";
