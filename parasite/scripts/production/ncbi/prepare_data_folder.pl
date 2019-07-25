@@ -86,6 +86,7 @@ print Dump({
         "assembly.accession" => $conf->{AssemblyAccession} // "?",
         "provider.name" => $synonyms{$conf->{SubmitterOrganization}//""} // $conf->{SubmitterOrganization} // "?",
         "provider.url" => $urls{$conf->{SubmitterOrganization}} // "?",
+        "species.strain" => $conf->{Biosource}{Isolate} // "?",
         "species.biosample" => $conf->{BioSampleAccn} // "?",
         "species.nematode_clade" => $species =~ /meloidogyne|globodera|heterodera/ ? "IV" : $species =~ /pristionchus|caenorhabditis/ ? "V": "?",
      },
