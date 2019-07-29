@@ -151,7 +151,7 @@ clear\n
 query find Sequence where method = RNASeq_IsoSeq & !Ignore\n
 Write $EST_dir/IsoSeq.ace\n
 clear\n
-query find Sequence where method = RNASeq_Nanopore & !Ignore\n
+query find Sequence where method = Nanopore & !Ignore\n
 Write $EST_dir/Nanopore.ace\n
 clear\n
 query find Sequence TC*\n
@@ -214,7 +214,7 @@ clear\n
 query find Sequence where method = RNASeq_IsoSeq & !Ignore\n
 Dna -mismatch $EST_dir/IsoSeq\n
 clear\n
-query find Sequence where method = RNASeq_Nanopore & !Ignore\n
+query find Sequence where method = Nanopore & !Ignore\n
 Dna -mismatch $EST_dir/Nanopore\n
 clear\n
 query find Sequence TC*\n
