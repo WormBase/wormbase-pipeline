@@ -23,7 +23,7 @@ sub get_bgi_genes {
   my $json = $json_reader->decode($json_string);
   
   foreach my $entry (@{$json->{data}}) {
-    my $id = $entry->{primaryId};
+    my $id = $entry->{basicGeneticEntity}->{primaryId};
     $bgi_genes{$id} = $entry;
   }
 
