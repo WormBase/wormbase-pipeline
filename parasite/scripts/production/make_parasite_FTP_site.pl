@@ -12,13 +12,17 @@ my (
   $wormbase_release_ftp_dir,
   $source_dir,
   $wbps_release_ftp_dir,
-  $wbps_version
+  $wbps_version,
+  $sync_files_skip,
+  $checksums_skip,
    );
 &GetOptions(
  'wormbase_release_ftp_dir=s' => \$wormbase_release_ftp_dir,
  'source_dir=s' => \$source_dir,
  'wbps_release_ftp_dir=s' => \$wbps_release_ftp_dir,
  'wbps_version=i' => \$wbps_version,
+ 'sync_files_skip' => \$sync_files_skip,
+ 'checksums_skip' => \$checksums_skip,
 ) ;
 my $usage = " Usage: $0 --wbps_version=\$PARASITE_VERSION --source_dir=<where folders with individual species are> --wormbase_release_ftp_dir=<release tied to this WBPS version> --wbps_release_ftp_dir=<target directory>";
 die ("--source_dir not a directory: $source_dir . $usage") unless -d $source_dir;
@@ -27,6 +31,7 @@ die ($usage) unless $wbps_release_ftp_dir;
 die ($usage) unless $wbps_version;
 
 for my $path_species (glob "$source_dir/*") {
+  next if $sync_files_skip;
   my $species = basename $path_species;
   my ($spe, $cies) = split(/_/, $species);
   for my $this_source_dir ( glob "$source_dir/$species/*" ) {
@@ -34,13 +39,16 @@ for my $path_species (glob "$source_dir/*") {
      my $this_target_dir = "$wbps_release_ftp_dir/species/$species/$bioproject";
      mkpath $this_target_dir if not -d $this_target_dir;
      my $putative_wormbase_dir = join("/", $wormbase_release_ftp_dir,"species", lc((substr $spe, 0, 1 ) . "_" . $cies) , uc($bioproject));
-     if ( -d $putative_wormbase_dir ) {
+     if ( -d $putative_wormbase_dir and ($wbps_version > 14 || $bioproject ne "PRJNA248909")) { # wait for WormBase to update C. remanei PX356
         print localtime ." ". $species . " making symlinks $putative_wormbase_dir -> $this_target_dir \n";
         &make_symlinks_to_wormbase_species (
           "$species.$bioproject.WBPS$wbps_version",
           $putative_wormbase_dir,
           $this_target_dir
         );
+        my $cp_cmd = "rsync -a --include='*.paralogs.tsv.gz' --include='*.orthologs.tsv.gz' --exclude '*' $this_source_dir/ $this_target_dir/";
+        print localtime . " $species $cp_cmd\n";
+        system($cp_cmd) and die("Failed: $cp_cmd");
      } else {
         my $cp_cmd = "rsync -a --include='*.gz' --exclude '*' $this_source_dir/ $this_target_dir/";
         print localtime . " $species $cp_cmd\n";
@@ -48,18 +56,10 @@ for my $path_species (glob "$source_dir/*") {
      }
   }
 }
-print localtime . " Finished moving species files, remaking checksums file \n" ;
-my $checksum_file = "CHECKSUMS";
-
-my @files;
-open(FIND, "find $wbps_release_ftp_dir/species -name '*.*' | sort |");
-while(<FIND>) {
-  chomp;
-    s/^$wbps_release_ftp_dir\///;
-    push @files, $_;
-  }
-
-system("cd $wbps_release_ftp_dir && md5sum @files > $checksum_file") and die "Could not calc checksums\n";
+unless ($checksums_skip){
+  print localtime . " Remaking checksums file \n" ;
+  system("cd $wbps_release_ftp_dir && find -L species -type f -exec md5sum \"{}\" + | sort -k 2,2 > CHECKSUMS") and die "Could not calc checksums\n";
+}
 print localtime . " Completed \n";
 #####################
 

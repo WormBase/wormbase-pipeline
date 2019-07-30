@@ -13,6 +13,7 @@ sub default_options {
         curr_core_sources_locs => [],
         prev_core_sources_locs => [],
         reuse_member_db => '',
+        reg_conf => "$ENV{PARASITE_CONF}/compara.registry.pm",
     } ;
 }
 1;

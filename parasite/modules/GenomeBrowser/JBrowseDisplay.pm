@@ -4,7 +4,6 @@ use strict;
 use warnings;
 use File::Path qw(make_path);
 use SpeciesFtp;
-use PublicResources::Rnaseq;
 use ProductionMysql;
 use Log::Any qw/$log/;
 
@@ -21,16 +20,15 @@ use GenomeBrowser::JBrowseDisplay::RnaseqTracks;
 #  - corresponding data production location
 sub new {
     my ( $class, %args ) = @_;
-
+    die "$class: need root dir" unless $args{root_dir};
     $args{jbrowse_install} //=
 "/nfs/production/panda/ensemblgenomes/wormbase/software/packages/jbrowse/JBrowse-1.12.5";
-    $args{root_dir} //=
-      "$ENV{PARASITE_SCRATCH}/jbrowse/WBPS$ENV{PARASITE_VERSION}";
 
     make_path "$args{root_dir}/out";
     make_path "$args{root_dir}/JBrowseTools";
     make_path "$args{root_dir}/Resources";
     my $species_ftp = $args{ftp_path} ? SpeciesFtp->new( $args{ftp_path} ) : SpeciesFtp->dot_next;
+    die "No FTP dir at " . $species_ftp->{root} unless $species_ftp->root_exists;
     my $jbrowse_tools = GenomeBrowser::JBrowseTools->new( $args{jbrowse_install});
     return bless {
         dir           => "$args{root_dir}/out",
@@ -48,7 +46,7 @@ sub new {
            tmp_dir => "$args{root_dir}/AnnotationTracks",
         ),
         rnaseq_tracks => 
-          GenomeBrowser::JBrowseDisplay::RnaseqTracks->new("$args{root_dir}/Resources"),
+          GenomeBrowser::JBrowseDisplay::RnaseqTracks->new("$args{root_dir}/WbpsExpression"),
     }, $class;
 }
 
