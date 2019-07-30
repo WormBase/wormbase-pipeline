@@ -47,6 +47,7 @@ foreach my $dba (@$all_dbas) {
   
 
   my $assembly   = $mc->single_value_by_key('assembly.default');
+  die "Jon doesn't like spaces in assembly names: $assembly" if $assembly =~ / /;
   my $bioproject = $mc->single_value_by_key('species.ftp_genome_id');
   my $taxon      = $mc->single_value_by_key('species.taxonomy_id');
   
@@ -92,4 +93,4 @@ close($out_fh);
 #
 # And finally, update the "latest" symlink
 #
-system("cd $gxa_staging_dir && rm latest && ln -sv WBPS${rel_num} latest") and die "Could not update latest symlink\n";
+system("cd $gxa_staging_dir && pwd && rm latest && ln -sv WBPS${rel_num} latest") and die "Could not update latest symlink\n";
