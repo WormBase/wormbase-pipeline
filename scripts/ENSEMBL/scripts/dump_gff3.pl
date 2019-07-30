@@ -112,7 +112,7 @@ while( my $slice = shift @slices) {
 # EnsEMBL code doesn't quite handle non-linear history, e.g.  Smp_120050+Smp_199230->Smp_335780+Smp_315690
        my @archived_ids =  grep {$_ ne $gene->stable_id} uniq  map {$_->{old_id} ? $_->{old_id}->stable_id : ()}  @{$archive_stable_id->get_history_tree->get_all_StableIdEvents };
        if (@archived_ids){
-          $gene_to_dump{attribs}{previous_stable_id} = join ",", @archived_ids;
+          $gene_to_dump{attribs}{previous_stable_id} = \@archived_ids;
        }
     }
 
@@ -514,7 +514,14 @@ sub dump_feature {
 
   if (exists $feature{attributes}) {
     foreach my $k (sort keys %{$feature{attributes}}) {
-      push @group, "$k=" . $feature{attributes}->{$k};
+      my @as = ref $feature{attributes}->{$k} eq 'ARRAY' ? @{$feature{attributes}->{$k}} : ($feature{attributes}->{$k});
+      push @group, "$k=" . join (",", map {
+        s/\&/\%26/g;
+        s/\,/\%2C/g;
+        s/\=/\%3D/g;
+        s/\;/\%3B/g;
+        $_
+      } @as);
     }
   }
 
@@ -692,12 +699,17 @@ sub gff_line {
     push @tags, "Parent=$parent";
   }
   push @tags, "Name=$name" if defined $name;
-  if (defined $attribs) {
-    foreach my $k (sort keys %$attribs) {
-      if ($attribs->{$k}) {
-        push @tags, "$k=" . $attribs->{$k};
-      }
-    }
+  for my $k (sort keys %{$attribs//{}}) {
+    my $v = $attribs->{$k};
+    next unless $v;
+    my @as = ref $v eq 'ARRAY' ? @{$v} : ($v);
+    push @tags, "$k=" . join (",", map {
+      s/\&/\%26/g;
+      s/\,/\%2C/g;
+      s/\=/\%3D/g;
+      s/\;/\%3B/g;
+      $_
+    } @as);
   }
 
   $output .= join(';', @tags);

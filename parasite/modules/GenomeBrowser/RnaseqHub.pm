@@ -16,32 +16,29 @@ use warnings;
 package GenomeBrowser::RnaseqHub;
 
 use ProductionMysql;
-use PublicResources::Rnaseq;
 use GenomeBrowser::Deployment;
+use List::MoreUtils qw/uniq/;
 use File::Path qw(make_path);
-use File::Slurp qw(write_file);
+use File::Slurp qw(write_file read_file);
 use File::Basename qw(dirname);
 use Log::Any qw($log);
+use JSON;
 
 sub new {
-
-    #in: hub directory
-    #params to make RNASeqTracks
-    my ( $class, %args ) = @_;
-    $args{root_dir} //=
-      "$ENV{PARASITE_SCRATCH}/jbrowse/WBPS$ENV{PARASITE_VERSION}";
+    my ( $class, $root_dir) = @_;
     return bless {
-        dir       => "$args{root_dir}/hub",
-        resources => PublicResources::Rnaseq->new("$args{root_dir}/Resources"),
+       out_dir       => "$root_dir/hub",
+       wbps_expression_dir => "$root_dir/WbpsExpression",
     }, $class;
 }
 
 sub path {
     my ( $self, @args ) = @_;
-    my $result = join "/", $self->{dir}, @args;
+    my $result = join "/", $self->{out_dir}, @args;
     $log->info(__PACKAGE__ . ": $result");
     return $result;
 }
+
 sub make_hubs {
     my ( $self, $core_dbs_pattern, %opts ) = @_;
 
@@ -69,35 +66,35 @@ email parasite-help\@sanger.ac.uk
 
 sub make_hub_for_core_db {
     my ( $self, $core_db, %opts ) = @_;
-
     my ( $spe, $cies, $bioproject ) = split "_", $core_db;
-    return if $bioproject eq "core";
     my $species = join "_", $spe, $cies, $bioproject;
     my $_Species = ucfirst($species);
+    my $path = join("/", $self->{wbps_expression_dir}, $species, "${spe}_${cies}.studies.json");
+    return unless -f $path;
+    my @studies = @{from_json(read_file($path, { binmode => ':utf8' }))};
+    return unless @studies;
+
     my $assembly =
       ProductionMysql->staging->meta_value( $core_db, "assembly.name" );
-    my @studies =
-      $self->{resources}->get( $core_db, $assembly );
-    return unless @studies;
     make_path( $self->path( $_Species, "doc" ) );
     my @study_tracks;
     my @run_tracks;
-
-    for my $study (@studies) {
+    my $has_multiple_categories = 1 < uniq map {$_->{study_category}} @studies;
+    for my $study (sort {$a->{study_category} cmp $b->{study_category} || $a->{study_id} cmp $b->{study_id} } @studies) {
         my $study_id = $study->{study_id};
         &create_study_doc( $self->path( $_Species, "doc", "$study_id.html" ),
             $study );
         push @study_tracks,
-          &study_track( $study_id, $study->{study_description_full} );
+          &study_track( $study_id, $study->{study_title},  ($has_multiple_categories ? "$study->{study_category} - $study_id": $study_id));
         for my $run ( @{ $study->{runs} } ) {
             my $run_id = $run->{run_id};
             &create_run_doc( $self->path( $_Species, "doc", "$run_id.html" ),
                 $study, $run, );
             my $url = GenomeBrowser::Deployment::sync_ebi_to_sanger(
                 $species, $assembly, $run_id,
-                $run->{data_files}{bigwig}, %opts );
+                $run->{bigwig}, %opts );
             push @run_tracks,
-              &run_track( $study_id, $run_id, $run->{run_description_short}, $run->{run_description_full}, $url );
+              &run_track( $study_id, $run_id, $run->{condition}, $url );
         }
     }
 
@@ -109,12 +106,12 @@ sub make_hub_for_core_db {
 }
 #Maybe: same format as JBrowse?
 sub study_track {
-    my ( $study_id, $study_description_full ) = @_;
+    my ( $study_id, $study_description_full, $short_label ) = @_;
     return (
         "track $study_id
 superTrack on
 group $study_id
-shortLabel $study_id
+shortLabel $short_label
 longLabel $study_description_full
 html doc/$study_id
 "
@@ -122,16 +119,15 @@ html doc/$study_id
 }
 
 sub run_track {
-    my ( $study_id, $run_id, $run_description_short, $run_description_full, $url ) = @_;
-    my $short_label = $run_description_short ? "$run_id: $run_description_short" : $run_id;
-    my $full_label = $run_description_full ? "$run_id: $run_description_full" : $run_id;
+    my ( $study_id, $run_id, $condition, $url ) = @_;
+    my $track_name = join(": ", grep {$_} $run_id, $condition);
     return (
         "track $run_id
 parent $study_id
 type bigWig
 bigDataUrl $url
-shortLabel $short_label
-longLabel $full_label
+shortLabel $track_name
+longLabel $track_name
 color 0,0,0
 html doc/$run_id
 visibility hide
@@ -148,40 +144,29 @@ sub create_trackDb {
 #TODO I'm not sure where this gets displayed
 sub create_study_doc {
     my ( $path, $study ) = @_;
-    write_file( $path, {binmode => ':utf8'}, $study->{study_description_full}."\n" );
+    my $header = $study->{attributes}{"Study description"} // $study->{study_title};
+    my %attributes = %{$study->{attributes}};
+    delete $attributes{"Study description"};
+    write_file( $path, {binmode => ':utf8'}, attributes_html($header, \%attributes));
 }
-#TODO move some of this to RnaseqerMetadata?
-my @blacklist = (
- "bioproject_id",
-  "species",
-  "organism",
-  "sample_name",
-  "insdc_center_name",
-  "insdc_first_public",
-  "insdc_secondary_accession",
-  "insdc_status",
-  "insdc_last_update",
-  "package",
-  "ncbi_submission_model",
-  "ncbi_submission_package",
-  "geo_accession",
-  "library_size_reads_approximate",
-  "fraction_of_reads_mapping_uniquely_approximate",
-);
-sub create_run_doc {
-    my ( $path, $study, $run ) = @_;
+sub attributes_html {
+  my ($header, $attributes) = @_;  
 
     my $result = "<table>\n";
-    $result .= sprintf("<th><b>Run %s: %s</b></th>\n", $run->{run_id}, $run->{run_description_full}); 
-    for my $k ( sort keys $run->{attributes} ) {
-        next if grep {$_ eq $k} @blacklist;
+    $result .= "<th><b>$header</b></th>\n";
+    for my $k ( sort keys %{$attributes} ) {
         ( my $property_name = $k ) =~ s/_/ /g;
         $property_name = ucfirst($property_name) if $property_name eq lc($property_name);
-        $property_name = "Library size (reads)" if $k eq "library_size_reads";
-        my $property_value = $run->{attributes}{$k};
+        my $property_value = $attributes->{$k};
         $result .= sprintf "<tr>\n  <td>%s</td>\n  <td>%s</td>\n</tr>\n", $property_name, $property_value;
     }
     $result .= "</table>\n";
-    write_file( $path, {binmode => ':utf8'}, $result );
+    return $result;
+}
+sub create_run_doc {
+    my ( $path, $study, $run ) = @_;
+
+    my $track_name = join(": ", grep {$_} $run->{run_id}, $run->{condition});
+    write_file( $path, {binmode => ':utf8'}, attributes_html("Run $track_name", $run->{attributes}) );
 }
 1;

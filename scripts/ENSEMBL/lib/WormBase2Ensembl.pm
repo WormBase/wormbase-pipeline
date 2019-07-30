@@ -125,7 +125,9 @@ sub parse_genes_gff3_fh {
     my @l = split(/\t+/, $_);
 
     next if defined $source_hash and not exists $source_hash->{$l[1]};
-
+    
+    die "pseudogene: should instead be gene + pseudogenic_transcript"
+      if $l[2] eq 'pseudogene';
     next if (
       $l[2] ne 'gene' and 
       $l[2] ne 'rRNA' and 

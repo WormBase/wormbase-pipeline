@@ -146,4 +146,26 @@ sub dbc {
    $registry->load_registry_from_url( $self->url );
    return $registry->get_DBAdaptor($self->species($pattern), 'core', @adaptor_args)->dbc;
 }
+# Needs to map each core db to something unique and within a character limit
+# Not sure exactly what the true limit is - it's a limitation in mysql schema - ceiling is 17 chars
+# capturing groups across alternatives, that are separated by |
+# Stuff in alternative groups should be empty
+# Special case for t. pseudospiralis so that the names don't get too long
+# Joint treatment of cores and comparators
+#  "Up to n letters" with .{1,n}
+# It needs to be executed from Java, and the two implementations are slightly different: https://docs.oracle.com/javase/7/docs/api/java/util/regex/Pattern.html#jcc
+our $GOLDEN_SPECIES_REGEX_MATCH = join ("|",
+  "^trichinella_pseudospiralis_(iss[0-9]+prjna257433)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$", # $1
+  "^(.{1,2}).*?_(.{1,4}).*?_(.*?)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$", # $2, $3, $4
+  "^([a-z])[^_]+_([^_]+)_core_.*\$" # $5, $6
+);
+our $GOLDEN_SPECIES_REGEX_REPLACEMENT = '$1$2$3$4$5$6';
+
+sub core_db_to_biomart_name {
+  my ($core_db) = @_;
+  eval "\$core_db =~ s/$GOLDEN_SPECIES_REGEX_MATCH/$GOLDEN_SPECIES_REGEX_REPLACEMENT/"; 
+  die $@ if $@;
+  return $core_db;
+}
+
 1;

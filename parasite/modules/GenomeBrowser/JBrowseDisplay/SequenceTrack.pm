@@ -6,6 +6,8 @@ use SpeciesFtp;
 use GenomeBrowser::JBrowseTools;
 use IO::Uncompress::Gunzip qw(gunzip);
 use File::Basename;
+use File::Path qw/make_path/;
+use Log::Any qw/$log/;
 
 sub new {
   my ( $class, %args ) = @_;
@@ -42,11 +44,16 @@ sub track_for_species {
   
   my $fasta_path = $self->{species_ftp}->path_to( $species, "genomic.fa" );
   if (-f $fasta_path && $fasta_path =~ /.gz$/){
+      make_path join ("/", $self->{tmp_dir}, $species);
       my $tmp_path = join ("/", $self->{tmp_dir}, $species, basename $fasta_path);
       $tmp_path =~ s/.gz$//;
-      gunzip( $fasta_path, $tmp_path ) unless -f $tmp_path;
+      unless( -f $tmp_path) {
+        $log->info (__PACKAGE__ . " unzipping $fasta_path -> $tmp_path");
+        gunzip( $fasta_path, $tmp_path ); 
+      }
       $fasta_path = $tmp_path;
   };
+  die "Missing: $fasta_path" unless -f $fasta_path;
   $self->{jbrowse_tools}->prepare_refseqs($fasta_path, $out, %opts);
 
   return $sequence_track_config;

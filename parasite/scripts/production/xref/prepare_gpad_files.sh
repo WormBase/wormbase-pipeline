@@ -32,7 +32,11 @@ cat $DIR/.tmp/core_db_and_taxon_list.tsv \
       } ; print Dump(\%h);' \
   > $DIR/.tmp/core_db_per_taxon.yaml
 
-wget -c ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/UNIPROT/goa_uniprot_all.gaf.gz -O $DIR/.tmp/goa_uniprot_all.gaf.gz
+if [ -d "/nfs/ftp" ] ; then
+  cp -v /nfs/ftp/pub/databases/GO/goa/UNIPROT/goa_uniprot_all.gaf.gz $DIR/.tmp/goa_uniprot_all.gaf.gz
+else 
+  wget -c ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/UNIPROT/goa_uniprot_all.gaf.gz -O $DIR/.tmp/goa_uniprot_all.gaf.gz
+fi
 
 pv -cN "Pipe out compressed Uniprot file" $DIR/.tmp/goa_uniprot_all.gaf.gz \
   | zgrep -F -f <( format_taxons_into_filter $DIR/.tmp/core_db_and_taxon_list.tsv ) \

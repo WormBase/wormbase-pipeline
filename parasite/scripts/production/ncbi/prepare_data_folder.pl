@@ -73,6 +73,10 @@ my %urls = (
   "University of Melbourne" => "http://www.gasserlab.org",
   "Oregon State University" => "https://oregonstate.edu",
 );
+my %synonyms = (
+  "WTSI" => "Wellcome Sanger Institute",
+  "ED" => "University of Edinburgh",
+);
 print Dump({
   $species => {
      taxon_id => $conf->{SpeciesTaxid} // "?",
@@ -80,10 +84,11 @@ print Dump({
      gff_sources => "WormBase_imported",
      meta => {
         "assembly.accession" => $conf->{AssemblyAccession} // "?",
-        "provider.name" => $conf->{SubmitterOrganization} // "?",
+        "provider.name" => $synonyms{$conf->{SubmitterOrganization}//""} // $conf->{SubmitterOrganization} // "?",
         "provider.url" => $urls{$conf->{SubmitterOrganization}} // "?",
+        "species.strain" => $conf->{Biosource}{Isolate} // "?",
         "species.biosample" => $conf->{BioSampleAccn} // "?",
-        "species.nematode_clade" => $species =~ /meloidogyne|globodera|heterodera/ ? "IV" : $species =~ /pristionchus/ ? "V": "?",
+        "species.nematode_clade" => $species =~ /meloidogyne|globodera|heterodera/ ? "IV" : $species =~ /pristionchus|caenorhabditis/ ? "V": "?",
      },
   }
 });
