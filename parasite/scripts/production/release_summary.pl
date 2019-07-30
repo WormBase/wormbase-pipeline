@@ -4,6 +4,7 @@ use YAML;
 my %result;
 for my $core_db (ProductionMysql->previous_staging->core_databases) {
   my ($spe,$cies,$bioproject) = split "_", $core_db;
+  next if $bioproject eq "core";
   my $species = "${spe}_${cies}";
   $result{$species}{$bioproject}{previous_core_db} = $core_db;
   $result{$species}{$bioproject}{previous}=join("\t",
@@ -13,6 +14,7 @@ for my $core_db (ProductionMysql->previous_staging->core_databases) {
  }
 for my $core_db (ProductionMysql->staging->core_databases) {
   my ($spe,$cies,$bioproject) = split "_", $core_db;
+  next if $bioproject eq "core";
   my $species = "${spe}_${cies}";
   $result{$species}{$bioproject}{current_core_db} = $core_db;
   $result{$species}{$bioproject}{current}=join("\t",
@@ -24,6 +26,7 @@ for my $species (keys %result){
    for my $bioproject (keys %{$result{$species}}){
       delete $result{$species}{$bioproject} if $result{$species}{$bioproject}{previous} eq $result{$species}{$bioproject}{current};
    }
+   
    delete $result{$species} unless %{$result{$species}};
 }
 print Dump(\%result);
