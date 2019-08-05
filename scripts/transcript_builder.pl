@@ -683,6 +683,10 @@ foreach my $chrom ( @chromosomes ) {
 close($prob_fh);
 close($out_fh);
 
+# cleanup things
+$coords=undef;
+$ace->close;
+
 $log->mail();
 exit(0);
 
