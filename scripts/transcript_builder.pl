@@ -680,6 +680,9 @@ foreach my $chrom ( @chromosomes ) {
 
 }
 
+
+print $out_fh "\n\n// Finished.\n";
+
 close($prob_fh);
 close($out_fh);
 
@@ -707,19 +710,21 @@ sub purge_duplicates {
   my %genes; # hash of array of CDS objects, keyed by geneID
 
   foreach my $cds (@{$cds_objs}) {
-    my $reverted = 0; # flag for already reverted a transcript in this CDS to the CDS structure
     my $gene = $cds2gene->{$cds->name};
+    push @{$genes{$gene}}, $cds; # add the current CDS to the CDSs to check against, because we had an instance of two Transcripts in the same isoform with the same structure! (T24B8.3c.1 and T24B8.3c.2)
+    my $reverted = 0; # flag for already reverted a transcript in this CDS to the CDS structure
     # go through %genes checking every cds and every transcript for duplicates of the transcripts in $cds
     foreach my $transcript ($cds->transcripts) {
       foreach my $sibling_cds (@{$genes{$gene}}) { # look at other CDSs in this gene that we have already processed
 	foreach my $sibling_transcript ($sibling_cds->transcripts) {
+	  if ($sibling_transcript->name eq $transcript->name) {next} # don't check against itself
 	  if (exists $sibling_transcript->{'ignore'}) {next}
 	  if ($transcript->duplicate($sibling_transcript)) {
-	    print $prob_fh " Duplicate Transcript: ",$transcript->name," ",$sibling_transcript->name,"\n";
-	    $log->write_to(" Duplicate Transcript: ".$transcript->name," ".$sibling_transcript->name."\n");
+	    print $prob_fh "\nDuplicate Transcript: ",$transcript->name," ",$sibling_transcript->name,"\n";
+	    $log->write_to("\nDuplicate Transcript: ".$transcript->name," ".$sibling_transcript->name."\n");
 	    if ($reverted) { # don't want to revert to the CDS structure if we have already done this for another transcript in this CDS
-	      print $prob_fh "WARNING: Two transcripts were reverted to the same CDS structure: ",$reverted," NOT CREATING: ",$transcript->name,"\n";
-	      $log->write_to("WARNING: Two transcripts were reverted to the same CDS structure: ".$reverted." NOT CREATING: ".$transcript->name."\n");
+	      print $prob_fh "\nWARNING: Two transcripts were reverted to the same CDS structure: ",$reverted," NOT CREATING: ",$transcript->name,"\n";
+	      $log->write_to("\nWARNING: Two transcripts were reverted to the same CDS structure: ".$reverted." NOT CREATING: ".$transcript->name."\n");
 #	      $log->error;
 	      $transcript->{'ignore'} = 1; # ignore, don't report this.
 	      last;
@@ -735,8 +740,8 @@ sub purge_duplicates {
 		foreach my $sibling_transcript2 ($sibling_cds2->transcripts) {
 		  if (exists $sibling_transcript2->{'ignore'}) {next}
 		  if ($transcript->duplicate($sibling_transcript2)) {
-		    print $prob_fh "WARNING: Duplicate Transcript found after reversion to CDS structure: ",$sibling_transcript2->name," NOT CREATING: ",$transcript->name,"\n";
-		    $log->write_to("WARNING: Duplicate Transcript found after reversion to CDS structure: ".$sibling_transcript2->name." NOT CREATING: ".$transcript->name."\n");
+		    print $prob_fh "\nWARNING: Duplicate Transcript found after reversion to CDS structure: ",$sibling_transcript2->name," NOT CREATING: ",$transcript->name,"\n";
+		    $log->write_to("\nWARNING: Duplicate Transcript found after reversion to CDS structure: ".$sibling_transcript2->name." NOT CREATING: ".$transcript->name."\n");
 #		    $log->error;
 		    $transcript->{'ignore'} = 1; # ignore, don't report this.
 		    last;
@@ -748,7 +753,6 @@ sub purge_duplicates {
 	}
       }
     }
-    push @{$genes{$gene}}, $cds;
   }
 
 }

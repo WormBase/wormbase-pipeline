@@ -366,6 +366,7 @@ sub report
     }
 
     foreach  ( $self->transcripts ) {
+      if (exists $_->{'ignore'}) {next}
       print $fh "Corresponding_transcript \"",$_->name,"\"\n";
     }
 
@@ -374,7 +375,17 @@ sub report
       print $fh "Matching_CDS ",$self->name," Inferred_Automatically \"transcript_builder.pl\"\n";
     }
 
-    my ($first, @others) = $self->transcripts;
+    # we want the first transcript to not be tagged as 'ignore' as it
+    # has the 'mRNA' tag to indicate that it is the transcript to
+    # submit to the ENA
+    my ($first, @others) = $self->transcripts; 
+    while (@others) {
+      if (exists $first->{'ignore'}) {
+	($first, @others) =  @others;
+      } else {
+	last;
+      }
+    }
     $first->report( $fh, 
                     $coords, 
                     $species, 
