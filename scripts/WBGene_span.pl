@@ -52,7 +52,7 @@ my %worm_gene2geneID_name = $wormbase->FetchData('worm_gene2geneID_name');
 
 my (%gene_coords, %gene_span);
 
-my  @methods = qw(Coding_transcript Non_coding_transcript Pseudogene ncRNA 7kncRNA tRNA miRNA pre_miRNA non_coding_transcript miRNA_primary_transcript snRNA snlRNA snoRNA rRNA scRNA stRNA lincRNA asRNA piRNA Transposon_CDS Transposon_Pseudogene rRNA_Pseudogene tRNA_Pseudogene Transposon_ncRNA);
+my  @methods = qw(Coding_transcript Non_coding_transcript Pseudogene ncRNA 7kncRNA tRNA miRNA pre_miRNA miRNA_primary_transcript snRNA snlRNA snoRNA rRNA scRNA stRNA lincRNA asRNA piRNA Transposon_CDS Transposon_Pseudogene rRNA_Pseudogene tRNA_Pseudogene Transposon_ncRNA);
   
 foreach my $method (@methods) {
   print "checking $method \n" if $debug;
@@ -67,7 +67,6 @@ foreach my $method (@methods) {
            or ( $data[1] eq 'snRNA' )
 	   or ( $data[1] eq 'miRNA_mature' )
            or ( $data[1] eq 'miRNA_primary_transcript' )
-           or ( $data[1] eq 'non_coding_transcript' )
 	   or ( $data[1] eq 'pre_miRNA' )
            or ( $data[1] eq 'rRNA' )
            or ( $data[1] eq 'scRNA' )
