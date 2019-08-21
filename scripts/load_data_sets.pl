@@ -89,7 +89,7 @@ sub parse_misc_elegans_files {
                        $wormbase->misc_static.'/homology_groups.ace' 	        => 'homol_groups',
                        $wormbase->misc_static.'/eggNOG.ace' 	                => 'eggNOG_groups',
 		       $wormbase->misc_static.'/TFmodENCODE2014.ace'            => 'TFmodENCODE2014',
-		       $wormbase->misc_static.'/appris_ws269.ace.gz'            => 'APPRIS_xrefs',
+#		       $wormbase->misc_static.'/appris_ws269.ace.gz'            => 'APPRIS_xrefs',
 		      );
 
   $log->write_to("Loading files to ".$wormbase->autoace."\n==================================\n");
