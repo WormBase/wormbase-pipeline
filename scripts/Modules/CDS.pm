@@ -245,19 +245,19 @@ sub transcripts
   }
 
 
-=head2 _sort_transcripts
+=head2 _purge_name_sort_transcripts
 
-    Title   :   _sort_transcripts
-    Usage   :   $cds->_sort_transcripts
+    Title   :   _purge_name_sort_transcripts
+    Usage   :   $cds->_purge_name_sort_transcripts
     Function:   Sorts and renames the transcripts, to give a degree of consistency
                 between builds. Called by ->report
 =cut
 
 
-sub _sort_transcripts {
+sub _purge_name_sort_transcripts {
   my ($self) = @_;
 
-  my @trans = @{$self->{'transcripts'}};
+  my @trans = grep { not $_-{'ignore'} }   @{$self->{'transcripts'}};
 
   # sort by:
   # (a) number of attached features;
@@ -358,7 +358,7 @@ sub report
 
     #$fh = STDOUT unless defined $fh;
 
-    $self->_sort_transcripts();
+    $self->_purge_name_sort_transcripts();
 
     print $fh "\nCDS : \"",$self->name,"\"\n";
     foreach (@{$self->{'matching_cdna'}}) {
@@ -366,7 +366,6 @@ sub report
     }
 
     foreach  ( $self->transcripts ) {
-      if (exists $_->{'ignore'}) {next}
       print $fh "Corresponding_transcript \"",$_->name,"\"\n";
     }
 
@@ -375,17 +374,7 @@ sub report
       print $fh "Matching_CDS ",$self->name," Inferred_Automatically \"transcript_builder.pl\"\n";
     }
 
-    # we want the first transcript to not be tagged as 'ignore' as it
-    # has the 'mRNA' tag to indicate that it is the transcript to
-    # submit to the ENA
-    my ($first, @others) = $self->transcripts; 
-    while (@others) {
-      if (exists $first->{'ignore'}) {
-	($first, @others) =  @others;
-      } else {
-	last;
-      }
-    }
+    my ($first, @others) = $self->transcripts;
     $first->report( $fh, 
                     $coords, 
                     $species, 
