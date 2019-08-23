@@ -57,6 +57,7 @@ my @script_conf = (
   { script => 'dump_geneid_list.pl',                     output => 'geneIDs.txt', all => 1          },
   { script => 'dump_molecules.pl',                       output => 'molecules.ace'                  },
   { script => 'dump_geneid_list.pl',                     output => 'geneOtherIDs.txt', options => '-other', all=>1 },
+  { script => 'uniprotxrefs.pl',                         output => 'uniprot_papers.txt', all=>1     },
 );
 
 
