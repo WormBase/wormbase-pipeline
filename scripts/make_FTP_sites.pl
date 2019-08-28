@@ -878,6 +878,8 @@ sub copy_annotations_files{
                  'protein_domains.csv',
                  'geneIDs.txt',
                  'geneOtherIDs.txt',
+		 'alaska_ids.tsv',
+		 'uniprot_papers.txt'
                  );
     if ($wb->species eq 'elegans') {
       push @files, ('interactions.txt',
