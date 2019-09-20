@@ -47,7 +47,9 @@ my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or $log->log_and_
 
 my ($gene_info, $count, $it);
 
-$gene_info = &get_gene_info( $acedbpath, $wormbase, $full_name );
+foreach my $species('Caenorhabidtis elegans','Caenorhabditis briggsae','Pristionchus pacificus'){
+  $gene_info =  {%$gene_info , %{&get_gene_info( $acedbpath, $wormbase, $species)}};
+}
 
 $log->write_to( "Got name information for " . scalar(keys %$gene_info) . " genes\n");
 
@@ -63,7 +65,7 @@ my %g2v_via_var;
 while (my $obj=$it->next) {
   next unless $obj->isObject();
   next unless $obj->Species;
-  next unless $obj->Species->name eq $full_name;
+# next unless $obj->Species->name eq $full_name;
 
   my (@affected_genes, %pheno);
   
@@ -181,7 +183,7 @@ $count = 0;
 while (my $obj = $it->next) {
   next unless $obj->isObject();
   next unless $obj->Species;
-  next unless $obj->Species->name eq $full_name;
+# next unless $obj->Species->name eq $full_name;
   
   my (@affected_genes, %pheno);
 
