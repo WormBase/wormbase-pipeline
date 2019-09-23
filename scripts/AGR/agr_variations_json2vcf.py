@@ -29,4 +29,5 @@ with open(sys.argv[1], 'r') as read_file:
             else:
                 refSeq = v["paddedBase"]+refSeq
                 varSeq = v["paddedBase"]+varSeq
-        print "\t".join([v["chromosome"],str(v["start"]),v["alleleId"],refSeq,varSeq,'.','PASS','DP=100'])
+                pos = pos-1 # include the padding base in POS
+        print "\t".join([v["chromosome"],str(pos),v["alleleId"],refSeq,varSeq,'.','PASS','DP=100'])
