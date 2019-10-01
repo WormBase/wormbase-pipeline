@@ -75,7 +75,7 @@ my %mol_types = ( 'elegans'          => [qw( EST mRNA ncRNA OST tc1 RST Trinity 
 		  'brugia'           => [qw( mRNA EST Trinity IsoSeq)],
 		  'pristionchus'     => [qw( mRNA EST)],
                   'ovolvulus'        => [qw( mRNA EST Trinity)],
-                  'sratti'           => [qw( mRNA EST Trinity)],
+                  'sratti'           => [qw( mRNA EST)],
 		  'tmuris'           => [qw( mRNA EST Trinity IsoSeq)],
 		  'nematode'         => [qw( EST )],
 		  'nembase'          => [qw( EST )],

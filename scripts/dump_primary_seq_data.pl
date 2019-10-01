@@ -166,10 +166,10 @@ END
   print DB $command;
   close DB;
 
-  # special case for Trinity
-  if (not -e "$EST_dir/Trinity.ace" || not -e "$EST_dir/IsoSeq.ace") {
-    $wormbase->run_command("touch $EST_dir/Trinity.ace", $log);
-  }
+  # special case for empty Trinity & IsoSeq files
+  $wormbase->run_command("touch $EST_dir/IsoSeq.ace", $log)  unless -e "$EST_dir/IsoSeq.ace";
+  $wormbase->run_command("touch $EST_dir/Trinity.ace", $log) unless -e "$EST_dir/Trinity.ace";
+
   $log->write_to("$subspecies Transcripts dumped\n\n");
 }
 
