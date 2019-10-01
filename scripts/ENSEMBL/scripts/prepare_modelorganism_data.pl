@@ -15,6 +15,7 @@ use Bio::EnsEMBL::Registry;
 
 my %SPECIES_INFO = (danio_rerio              => { prefix => 'Dre-' },
                     mus_musculus             => { prefix => 'Mmu-' },
+                    rattus_norvegicus        => { prefix => 'Rno-' },
                     drosophila_melanogaster  => { prefix => 'Dme-' },
                     saccharomyces_cerevisiae => { prefix => 'Sce-' },
                     homo_sapiens             => { prefix => 'Hsa-' });
