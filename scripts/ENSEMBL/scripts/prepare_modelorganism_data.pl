@@ -88,8 +88,8 @@ foreach my $genome (@mod_species) {
 
       print $fh "\nAnalysis : \"$ortholog_analysis\"\n";
       print $fh "Description : \"Model organism orthologs predicted by the Ensembl Compara pipeline\"\n";
-      print $fh "Based_on_WB_Release \"wb_version\"\n";
-      print $fh "Based_on_DB_Release \"db_version\"\n";
+      print $fh "Based_on_WB_Release \"$wb_version\"\n";
+      print $fh "Based_on_DB_Release \"$db_version\"\n";
     }
   }
 }
