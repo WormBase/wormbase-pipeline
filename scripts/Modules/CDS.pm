@@ -257,7 +257,7 @@ sub transcripts
 sub _purge_name_sort_transcripts {
   my ($self) = @_;
 
-  my @trans = grep { not $_-{'ignore'} }   @{$self->{'transcripts'}};
+  my @trans = grep { not $_->{'ignore'} }   @{$self->{'transcripts'}};
 
   # sort by:
   # (a) number of attached features;
