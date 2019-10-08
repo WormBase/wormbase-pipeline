@@ -739,6 +739,7 @@ sub purge_duplicates {
 	      foreach my $sibling_cds2 (@{$genes{$gene}}) { # look at other CDSs in this gene that we have already processed
 		foreach my $sibling_transcript2 ($sibling_cds2->transcripts) {
 		  if (exists $sibling_transcript2->{'ignore'}) {next}
+	          if ($sibling_transcript2->name eq $transcript->name) {next} # don't check against itself
 		  if ($transcript->duplicate($sibling_transcript2)) {
 		    print $prob_fh "\nWARNING: Duplicate Transcript found after reversion to CDS structure: ",$sibling_transcript2->name," NOT CREATING: ",$transcript->name,"\n";
 		    $log->write_to("\nWARNING: Duplicate Transcript found after reversion to CDS structure: ".$sibling_transcript2->name." NOT CREATING: ".$transcript->name."\n");
