@@ -358,9 +358,7 @@ $log->write_to("Wrote $no_sequences sequences\n");
 $log->write_to("gzipping $output\n");
 $wormbase->run_command("gzip -f $output", $log);
 
-$wormbase->check_file("$output.gz", $log,
-		      minsize => 6182319,
-);
+$wormbase->check_file("$output.gz", $log, minsize => 6181386);
 
 $log->write_to("Finished.");
 $log->mail();
