@@ -85,12 +85,11 @@ foreach my $genome (@mod_species) {
   if ($ace_orthologs) {
     foreach my $wb_species (sort keys %wb_accessors) {
       &write_ace_orthologs($genome, $wb_species, $fh);
-
-      print $fh "\nAnalysis : \"$ortholog_analysis\"\n";
-      print $fh "Description : \"Model organism orthologs predicted by the Ensembl Compara pipeline\"\n";
-      print $fh "Based_on_WB_Release \"$wb_version\"\n";
-      print $fh "Based_on_DB_Release \"$db_version\"\n";
     }
+    print $fh "\n\nAnalysis : \"$ortholog_analysis\"\n";
+    print $fh "Description \"Model organism orthologs predicted by the Ensembl Compara pipeline\"\n";
+    print $fh "Based_on_WB_Release \"$wb_version\"\n";
+    print $fh "Based_on_DB_Release \"$db_version\"\n";
   }
 }
 
