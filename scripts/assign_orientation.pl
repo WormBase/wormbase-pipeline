@@ -114,23 +114,27 @@ my $ovlp = Overlap->new($database, $wormbase);
   if ($gff_directory && $gff_file && $gff_source && $gff_type && $ID_after) {
     print "gff_file = $gff_file\n";
     my %GFF_data = (
-		    file=>$gff_directory . "/" . $chromosome . "_" . $gff_file, 
-		    gff_source=>$gff_source, 
-		    gff_type=>$gff_type,
-		    ID_after=>$ID_after, 
-		    reverse_orientation=>1,
-		    homology=>1
-		    );
+		    file => $gff_directory . "/" . $chromosome . "_" . $gff_file, 
+		    gff_source => $gff_source, 
+		    gff_type => $gff_type,
+		    ID_after => $ID_after, 
+		    reverse_orientation => 1,
+		    homology => 1
+		   );
     print "gff_file in hash=" . $GFF_data{file} . "\n";
     @est_hsp = $ovlp->read_GFF_file($chromosome, \%GFF_data);
   } else {
     @est_hsp = $ovlp->get_EST_BEST($chromosome); # get main list of EST entries to search with
     push @est_hsp, $ovlp->get_mRNA_BEST($chromosome); # and the list of mRNAs ...
-    if ($species ne 'sratti' && $species ne 'remanei' && $species ne 'pristionchus') {push @est_hsp, $ovlp->get_Trinity_BEST($chromosome)} else {$log->write_to("$species doesn't have Trinity data, so skipping this data\n")} # and the list of Trinity transcripts ...
+    if ($species ne 'sratti' && $species ne 'remanei' && $species ne 'pristionchus') {
+	    push @est_hsp, $ovlp->get_Trinity_BEST($chromosome)} else {$log->write_to("$species doesn't have Trinity data, so skipping this data\n")
+    } # and the list of Trinity transcripts ...
     if ( $species eq 'tmuris' || $species eq 'brugia') {
 	    push @est_hsp, $ovlp->get_IsoSeq_BEST($chromosome)} else {$log->write_to("$species doesn't have IsoSeq data, so skipping this data\n")
     } # and the list of IsoSeq transcripts ...
-    if ( $species eq 'elegans') {push @est_hsp, $ovlp->get_Nanopore_BEST($chromosome)} else {$log->write_to("$species doesn't have Nanopore data, so skipping this data\n")} # and the list of Nanopore transcripts ...
+    if ( $species eq 'elegans') {
+	    push @est_hsp, $ovlp->get_Nanopore_BEST($chromosome)} else {$log->write_to("$species doesn't have Nanopore data, so skipping this data\n")
+    } # and the list of Nanopore transcripts ...
     push @est_hsp, $ovlp->get_OST_BEST($chromosome) if $species eq 'elegans'; # and add on the list of OSTs ..
     push @est_hsp, $ovlp->get_RST_BEST($chromosome) if $species eq 'elegans'; # and the list of RSTs
   }
@@ -195,10 +199,8 @@ my $ovlp = Overlap->new($database, $wormbase);
   my $prev_id = "";
   my ($id, $start, $end, $sense, $hit_start, $hit_end, $score);
   my ($prev_start, $prev_end, $prev_sense, $prev_hit_start, $prev_hit_end, $prev_score);
-  my $score_5;
-  my $score_3;
-  my $forward;
-  my $reverse;
+  my ($score_5, $score_3, $forward, $reverse);
+
   foreach my $hsp (@sorted_hsp) {
     if ($hsp->[0] ne $prev_id) {	# new ID
       ($id, $start, $end, $sense, $hit_start, $hit_end, $score) = @{$hsp};
@@ -339,20 +341,6 @@ my $ovlp = Overlap->new($database, $wormbase);
 	}
       }
 
-      #my @jigsaw_matches = $jigsaw_obj->match($est);
-      #print "Have ", scalar @jigsaw_matches, " overlaps to jigsaw\n" if ($verbose);
-      #if (@jigsaw_matches) {
-	#my @senses = $jigsaw_obj->matching_sense;
-	#for (my $i=0; $i < @senses; $i++) {
-	#  my ($p1,$p2) = $jigsaw_obj->matching_proportions($jigsaw_matches[$i]);
-	#  if ($senses[$i] == 1) {
-	#    if ($prop_same < $p1) {$prop_same = $p1;}
-	#  } else {
-	#    if ($prop_other < $p1) {$prop_other = $p1;}
-	#  }
-	#}
-      #}
-
       # as a last resort, only if we have no other information, we
       # take note of the transcripts that the EST overlaps
       my $trans_prop_same = 0;
@@ -372,7 +360,6 @@ my $ovlp = Overlap->new($database, $wormbase);
 	  }
 	}
       }
-
 
       # work out the orientation
       # if there is splice evidence for the orientation, then this
@@ -396,7 +383,6 @@ my $ovlp = Overlap->new($database, $wormbase);
 	}
       }
     }
-
   }
  
   # now write the ACE file for this chromosome
@@ -423,7 +409,6 @@ my $ovlp = Overlap->new($database, $wormbase);
     if (!exists $Show_in_reverse_orientation{$id} || $Show_in_reverse_orientation{$id} == 5) {
       print ACE "\nSequence : $id\n";
       print ACE "-D EST_5\n";
-
       print ACE "\nSequence : $id\n";
       print ACE "EST_3\n";
       print ACE "Show_in_reverse_orientation\n";
@@ -431,7 +416,6 @@ my $ovlp = Overlap->new($database, $wormbase);
       print ACE "\nSequence : $id\n";
       print ACE "-D EST_3\n";
       print ACE "-D Show_in_reverse_orientation\n";
-
       print ACE "\nSequence : $id\n";
       print ACE "EST_5\n";
     }
@@ -440,7 +424,6 @@ my $ovlp = Overlap->new($database, $wormbase);
     $count_out++;
   }
   close(ACE);
-
 }
 
 
@@ -458,14 +441,9 @@ if ($wormbase->species ne 'elegans' and not $noload) {
   $wormbase->load_to_database($database, $output, 'assign_orientation.pl', $log, undef, 1);
 }
 
-
 $log->mail();
 print "Finished.\n" if ($verbose);
 exit(0);
-
-
-
-
 
 
 ##############################################################
@@ -493,7 +471,6 @@ sub read_chromosome {
   }
 
   return $seq;
-
 }
 
 ##########################################
@@ -501,7 +478,6 @@ sub read_chromosome {
 
 sub read_file {
   my ($file) = @_;
-
   my $seq;
 
   # try to open a single-chromosome entry file e.g. for elegans, briggsae
@@ -546,7 +522,7 @@ sub read_entry {
 	if (defined $entry) {	# store the previous sequence entry
 	  $dna_entry{$entry} = $seq;
 	}
-	$seq = "";
+	$seq = '';
 	$entry = $1;
       } else {
 	$seq .= $line;
@@ -589,7 +565,6 @@ sub get_Ignore {
   }
   close TACE;
 
-
   return %result;
 }
 
@@ -616,7 +591,6 @@ sub get_NOT_Database {
     }
   }
   close TACE;
-
 
   return %result;
 }
