@@ -13,12 +13,14 @@ sub new {
   
   my ($map, $gmap, %sorted_map);
 
-  if ( defined $yfile and -e $yfile ) { 
+  if ($yfile && -e $yfile) { 
     $self->thaw($yfile);
-  } else {
+  } elsif(grep {-e $_} @files)  {
     my ($pmap, $gmap) = Map_func::build($acedb, @files );    
     $self->gmap($gmap);
     $self->pmap($pmap);    
+  } else{
+    die("ERROR: cannot build mapper from @files\n");
   }
 
   foreach my $key ( keys %{$self->pmap} ) {
