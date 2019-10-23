@@ -198,7 +198,7 @@ while( my $obj = $it->next) {
     push @with_list, "WBTransgene:" . $transgene->name if (defined $transgene && $build);
     push @with_list, "WBVar:" . $allele->name if (defined $allele && $build);
     
-  }elsif (defined $allele) {
+  } elsif (defined $allele) {
     $obj_type = "allele";
     $obj_name = $allele->Public_name->name;
     $assoc_type = 'is_implicated_in';
@@ -223,10 +223,23 @@ while( my $obj = $it->next) {
     $assoc_type = 'is_implicated_in';
     $obj_id = 'WB:' . $gene->name;
 
-    # @inferred_genes = ();
-
+    @inferred_genes = ();
   } else {
     die "Could not identify a central object for the annotation from Disease_model_annotation $obj->name\n";
+  }
+
+  # 1. If an annotation has a gene and an allele— the primary annotation object is the allele
+  # 2. If an annotation has a gene and a strain— the primary annotation object is the strain
+  # 3. If an annotation has a gene and a transgene— the primary annotation object is the transgene
+
+  # add gene / variation / allele as primaryGeneicEntityIDs
+  my $primaryEntity;
+  if (defined $allele){$primaryEntity = $allele->name}
+  elsif (defined $strain){$primaryEntity = $strain->name}
+  elsif (defined $transgene){$primaryEntity = $transgene->name}
+  if (defined $primaryEntity && 'WB:'.$primaryEntity ne $obj_id){
+	   $annot->{primaryGeneticEntityIDs} ||=[];
+	   push @{$annot->{primaryGeneticEntityIDs}},'WB:'.$primaryEntity;
   }
 
   my $assoc_rel = {
@@ -268,7 +281,6 @@ while( my $obj = $it->next) {
     # WB/CalTech specific changes
     $annot->{modifier} = $mod_annot if $build;
     $annot->{qualifier} = 'not' if ($obj->at('Modifier_qualifier_not') && $build);
-
   }
 
   if ($obj->Experimental_condition){
@@ -278,7 +290,6 @@ while( my $obj = $it->next) {
 
     # WB/CalTech specific changes
     $annot->{experimentalConditions} = \@exp_conditions if (@exp_conditions && $build);
-    
   }
 
   push @annots, $annot;
