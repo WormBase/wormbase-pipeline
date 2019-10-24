@@ -15,7 +15,7 @@ use Storable;
 use IO::File;
 use strict;
 
-my ($debug,$test,$store,$database,$outfile,$species);
+my ($debug,$test,$store,$database,$outfile,$species,$wormbase);
 GetOptions (
             'debug=s'    => \$debug,
 	    'test'       => \$test,
