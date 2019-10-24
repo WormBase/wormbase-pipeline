@@ -106,15 +106,17 @@ while(<FILE>){
       undef $tflag;
     }
     else { #gather info
-      if (/(WBGene\d{8}|WBVar\d{8})|WBsf\d+/) { $gene = $1; } 
-      elsif(/(WBPerson\d+)/) { $person = $1; }
-      elsif(/Remark\s+\:\s+\"(.*)\"/){
-	$remark = $1;
-	if (/Transposon_CDS/) {$tflag = "1";}
-      }
-      else { $log->error("malformed line : $_\n") }
+        if (/(WBGene\d{8}|WBVar\d{8}|WBsf\d+|WBStrain\d{8})/) { 
+            $gene = $1; 
+        } 
+        elsif(/(WBPerson\d+)/) { $person = $1; }
+        elsif(/Remark\s+\:\s+\"(.*)\"/){
+            $remark = $1;
+            if (/Transposon_CDS/) {$tflag = "1";}
+        }
+        else { $log->error("malformed line : $_\n") }
     }
-  }
+}
 &kill_gene; # remember the last one!
 $log->write_to("\n3) $count ${domain}s in file to be killed\n\n");
 $log->write_to("4) $count ${domain}s killed\n\n");
