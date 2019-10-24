@@ -89,6 +89,8 @@ while (my($species,$wb)=each %accessors){
       my ($name) = $name_attr =~ /Name=(\S+)/; 
       my ($id) = $id_attr =~ /ID=(\S+)/;
 
+      next unless($name && $id); # both need to be defined to produce a valid ace-file
+
       my $ace_name = sprintf("%s_%s", $wb->ncbi_bioproject, $name);
 
       if ($l[2] eq 'gene') {
