@@ -77,7 +77,7 @@ my %go2eco = (
 	IMR => 'ECO:0000320',
 );
 
-my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or die('Connection failure: '. Ace->error);
+my $db = Ace->connect(-path => $acedbpath, -program => $tace) or die('Connection failure: '. Ace->error);
 
 my ( $it, @annots);
 
@@ -148,7 +148,7 @@ while( my $obj = $it->next) {
 
     # WB/CalTech specific changes to the format
     push @with_list, "WB:" . $gene->name if (defined $gene && $build);
-    push @with_list, "WB_Transgene:" . $transgene->name if (defined $transgene && $build);
+    push @with_list, "WBTransgene:" . $transgene->name if (defined $transgene && $build);
 
   } elsif (defined $transgene) {
     $obj_type = 'transgene';
@@ -169,7 +169,6 @@ while( my $obj = $it->next) {
   } else {
     die "Could not identify a central object for the annotation from Disease_model_annotation $obj->name\n";
   }
-
 
   my $assoc_rel = {
     associationType => $assoc_type,
@@ -220,35 +219,45 @@ while( my $obj = $it->next) {
     $annot->{experimentalConditions} = \@exp_conditions if (@exp_conditions && $build);
   }
 
-  push @annots, $annot;
+  push @annots, $annot unless ($obj_type eq 'transgene' && ! $build);
 
   # here needs to be a bit of logic that adds the secondary annotations
   foreach my $secondary ($strain,$allele,$transgene,$gene){
 	  next unless $secondary;
-	  my $sname = 'WB:'.$secondary->name;
+
+	  my $class = lc $secondary->class;
+	  $class = 'allele' if $class eq 'variation'; # AGR terminology hack
+
+	  my $secondaryPrefix = ($class eq 'transgene' && $build) ? 'WBTransgene:' : 'WB:';
+	  my $sname = $secondaryPrefix.$secondary->name;
+
 	  next if $obj_id eq $sname; # skip the primary
+
 	  my $secondaryAnnotation = dclone($annot);
-   
+ 
+          $secondaryAnnotation->{objectRelation}->{objectType}=$class;
           $secondaryAnnotation->{objectId}  =$sname;
 
           my $public_name = $secondary->Public_name ? $secondary->Public_name->name : $secondary->name;
 	  $secondaryAnnotation->{objectName}=$public_name;
-
-	  my $class = lc $secondary->class;
-	  $class = 'allele' if $class eq 'variation'; # AGR terminology hack
-#         $secondaryAnnotation->{objectRelation}->{objectType}=$class;
           
+          my $secondaryAssociationType = 'is_implicated_in';
+	  $secondaryAssociationType = 'is_model_of' if $class eq 'strain';
+	  $secondaryAnnotation->{objectRelation}->{associationType}=$secondaryAssociationType;
+
 	  # add gene / variation / allele as primaryGeneicEntityIDs
           my $primaryEntity;
-          if (defined $strain){$primaryEntity = $strain->name}
-          elsif (defined $allele){$primaryEntity = $allele->name}
-          elsif (defined $transgene){$primaryEntity = $transgene->name}
-          if (defined $primaryEntity && 'WB:'.$primaryEntity ne $sname){
+          if (defined $strain){$primaryEntity = 'WB:'.$strain->name}
+          elsif (defined $allele){$primaryEntity = 'WB:'.$allele->name}
+          elsif (defined $transgene){
+		  $primaryEntity = ($build ? 'WBTransgene:' : 'WB:').$transgene->name
+	  }
+          if (defined $primaryEntity && $primaryEntity ne $sname){
 	   $secondaryAnnotation->{primaryGeneticEntityIDs} ||=[];
-	   push @{$secondaryAnnotation->{primaryGeneticEntityIDs}},'WB:'.$primaryEntity;
+	   push @{$secondaryAnnotation->{primaryGeneticEntityIDs}},$primaryEntity;
           }
 
-          push @annots, $secondaryAnnotation;
+          push @annots, $secondaryAnnotation unless ($class eq 'transgene' && ! $build);
   }
 }
 
