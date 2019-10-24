@@ -5,6 +5,7 @@ use Storable;
 use Getopt::Long;
 use Ace;
 use JSON;
+use Storable qw(dclone);
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -81,62 +82,6 @@ my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or die('Connectio
 my ( $it, @annots);
 
 #
-# Old model
-#
-$it = $db->fetch_many(-query => 'find Gene Disease_info');
-
-while (my $obj = $it->next) {
-  next unless $obj->isObject();
-  #next unless $obj->Species;
-  #next unless $obj->Species->name eq $full_name;
-
-  my $g = $obj->name;
-
-  foreach my $doterm ($obj->Experimental_model) {
-    my (@json_papers, $evi_date);
-    foreach my $evi ($doterm->right->col) {
-      if ($evi->name eq 'Paper_evidence') {
-        foreach my $wb_paper ($evi->col ) {
-          push @json_papers, &get_paper( $wb_paper );
-        }
-      } elsif ($evi->name eq 'Date_last_updated') {
-        $evi_date = $evi->right;
-        $evi_date->date_style('ace');
-        my ($y, $m, $d) = split(/\-/, $evi_date);
-        $evi_date = sprintf('%4d-%02d-%02dT00:00:00+00:00', $y, $m, $d);
-      }
-    }
-    
-    foreach my $pap (@json_papers) {
-      push @annots, {
-        objectId => "WB:$g",
-        objectName => $obj->Public_name->name,
-        DOid     => $doterm->name,
-        dataProvider => [
-          { 
-            crossReference => {
-              id => 'WB',
-              pages => ['homepage'],
-            },
-            type => 'curated',
-          },
-        ],
-        dateAssigned => defined $evi_date ? $evi_date : $date,
-#       geneticSex   => 'hermaphrodite',
-        evidence     => {
-          evidenceCodes => [$go2eco{'IMP'}], # inferred from mutant phenotype; hard-coded for now
-          publication => $pap,
-        },
-        objectRelation => {
-          associationType => 'is_implicated_in',
-          objectType      => 'gene',
-        },
-      };
-    };
-  }
-}
-
-#
 # New model
 #
 $it = $db->fetch_many(-query => 'Find Disease_model_annotation');
@@ -149,7 +94,7 @@ while( my $obj = $it->next) {
     warn("Bad object $obj - missing key fields - skipping\n");
     next;
   }
-
+  
   my  $evi_date = $obj->Date_last_updated;
   $evi_date->date_style('ace');
   my ($y, $m, $d) = split(/\-/, $evi_date);
@@ -170,7 +115,6 @@ while( my $obj = $it->next) {
       },
     ],
     dateAssigned => $evi_date,
-#   geneticSex  => ($obj->Genetic_sex) ? $obj->Genetic_sex->name : 'hermaphrodite',
     evidence     => {
       evidenceCodes => (@evi_codes) ? \@evi_codes : [$go2eco{'IMP'}],
       publication => $paper,
@@ -181,15 +125,13 @@ while( my $obj = $it->next) {
   my ($allele) = $obj->Variation;
   my ($transgene) = $obj->Transgene;
   my ($gene) = $obj->Disease_relevant_gene;
-  my (@inferred_genes) = map { 'WB:' . $_->name } $obj->Inferred_gene;
-
+  my (@inferred_genes) = map { 'WB:'.$_->name } $obj->Inferred_gene;
   my ($obj_id, $obj_name, $obj_type, $assoc_type);
-
   my (@with_list) = map {'WB:'.$_->name} ($obj->Interacting_variation,$obj->Interacting_gene);
 
   if (defined $strain) {
     $obj_type = 'strain';
-    $obj_name = ($strain->Genotype) ? $strain->Genotype->name : '';
+    $obj_name = $strain->Public_name ? $strain->Public_name->name : $strain->name;
     $assoc_type = 'is_model_of';
     $obj_id = 'WB:' . $strain->name;
 
@@ -228,25 +170,12 @@ while( my $obj = $it->next) {
     die "Could not identify a central object for the annotation from Disease_model_annotation $obj->name\n";
   }
 
-  # 1. If an annotation has a gene and an allele— the primary annotation object is the allele
-  # 2. If an annotation has a gene and a strain— the primary annotation object is the strain
-  # 3. If an annotation has a gene and a transgene— the primary annotation object is the transgene
-
-  # add gene / variation / allele as primaryGeneicEntityIDs
-  my $primaryEntity;
-  if (defined $allele){$primaryEntity = $allele->name}
-  elsif (defined $strain){$primaryEntity = $strain->name}
-  elsif (defined $transgene){$primaryEntity = $transgene->name}
-  if (defined $primaryEntity && 'WB:'.$primaryEntity ne $obj_id){
-	   $annot->{primaryGeneticEntityIDs} ||=[];
-	   push @{$annot->{primaryGeneticEntityIDs}},'WB:'.$primaryEntity;
-  }
 
   my $assoc_rel = {
     associationType => $assoc_type,
     objectType      => $obj_type,
   };
-  $assoc_rel->{inferredGeneAssociation} = \@inferred_genes if @inferred_genes;
+  $assoc_rel->{inferredGeneAssociation} = \@inferred_genes if @inferred_genes && ($daf || $build); # hack for Ranjana
 
   $annot->{objectRelation} = $assoc_rel;
   $annot->{objectId} = $obj_id;
@@ -277,7 +206,6 @@ while( my $obj = $it->next) {
     $mod_annot->{genetic} = \@genetic if @genetic;
     $mod_annot->{experimentalConditionsText} = \@exp_cond if @exp_cond;
 
-
     # WB/CalTech specific changes
     $annot->{modifier} = $mod_annot if $build;
     $annot->{qualifier} = 'not' if ($obj->at('Modifier_qualifier_not') && $build);
@@ -293,6 +221,35 @@ while( my $obj = $it->next) {
   }
 
   push @annots, $annot;
+
+  # here needs to be a bit of logic that adds the secondary annotations
+  foreach my $secondary ($strain,$allele,$transgene,$gene){
+	  next unless $secondary;
+	  my $sname = 'WB:'.$secondary->name;
+	  next if $obj_id eq $sname; # skip the primary
+	  my $secondaryAnnotation = dclone($annot);
+   
+          $secondaryAnnotation->{objectId}  =$sname;
+
+          my $public_name = $secondary->Public_name ? $secondary->Public_name->name : $secondary->name;
+	  $secondaryAnnotation->{objectName}=$public_name;
+
+	  my $class = lc $secondary->class;
+	  $class = 'allele' if $class eq 'variation'; # AGR terminology hack
+#         $secondaryAnnotation->{objectRelation}->{objectType}=$class;
+          
+	  # add gene / variation / allele as primaryGeneicEntityIDs
+          my $primaryEntity;
+          if (defined $strain){$primaryEntity = $strain->name}
+          elsif (defined $allele){$primaryEntity = $allele->name}
+          elsif (defined $transgene){$primaryEntity = $transgene->name}
+          if (defined $primaryEntity && 'WB:'.$primaryEntity ne $sname){
+	   $secondaryAnnotation->{primaryGeneticEntityIDs} ||=[];
+	   push @{$secondaryAnnotation->{primaryGeneticEntityIDs}},'WB:'.$primaryEntity;
+          }
+
+          push @annots, $secondaryAnnotation;
+  }
 }
 
 
