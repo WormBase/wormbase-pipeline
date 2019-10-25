@@ -45,7 +45,8 @@ $outfile = $wormbase->ontology."/phenotype_association.".$wormbase->get_wormbase
 $log->write_to("Connecting to database $acedbpath\n");
 my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or $log->log_and_die("Connection failure: ". Ace->error);
 
-my ($gene_info, $count, $it);
+my ($count, $it);
+my $gene_info = {};
 
 foreach my $species('Caenorhabidtis elegans','Caenorhabditis briggsae','Pristionchus pacificus'){
   $gene_info =  {%$gene_info , %{&get_gene_info( $acedbpath, $wormbase, $species)}};
