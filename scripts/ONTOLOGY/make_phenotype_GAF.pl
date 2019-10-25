@@ -36,7 +36,6 @@ if ( $store ) {
 my $tace = $wormbase->tace;
 my $log  = Log_files->make_build_log($wormbase);
 my $date = &get_GAF_date();
-my $taxid = $wormbase->ncbi_tax_id;
 my $full_name = $wormbase->full_name;
 
 $acedbpath = $wormbase->autoace unless $acedbpath;
@@ -48,9 +47,15 @@ my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or $log->log_and_
 my ($count, $it);
 my $gene_info = {};
 
-foreach my $species('Caenorhabidtis elegans','Caenorhabditis briggsae','Pristionchus pacificus'){
+foreach my $species('Caenorhabditis elegans','Caenorhabditis briggsae','Pristionchus pacificus'){
   $gene_info =  {%$gene_info , %{&get_gene_info( $acedbpath, $wormbase, $species)}};
 }
+
+my %sp2tax = (
+	'Caenorhabditis elegans' => 6239,
+	'Caenorhabditis briggsae' => 6238,
+	'Pristionchus pacificus' => 54126,
+);
 
 $log->write_to( "Got name information for " . scalar(keys %$gene_info) . " genes\n");
 
@@ -66,7 +71,6 @@ my %g2v_via_var;
 while (my $obj=$it->next) {
   next unless $obj->isObject();
   next unless $obj->Species;
-# next unless $obj->Species->name eq $full_name;
 
   my (@affected_genes, %pheno);
   
@@ -127,7 +131,7 @@ foreach my $g (sort keys %g2v_via_var) {
                                    $with_from, 
                                    "P",
                                    $gene_info->{$g}->{sequence_name},
-                                   $taxid, 
+                                   $sp2tax{$gene_info->{$g}->{species}},
                                    $date);
           $count++;
         }
@@ -148,7 +152,7 @@ foreach my $g (sort keys %g2v_via_var) {
                                    $with_from, 
                                    "P",
                                    $gene_info->{$g}->{sequence_name},
-                                   $taxid, 
+                                   $sp2tax{$gene_info->{$g}->{species}},
                                    $date);
           $count++;
         }  
@@ -168,7 +172,7 @@ foreach my $g (sort keys %g2v_via_var) {
                                    "",
                                    "P",
                                    $gene_info->{$g}->{sequence_name},
-                                   $taxid, 
+				   $sp2tax{$gene_info->{$g}->{species}},
                                    $date);
           $count++;
         }
@@ -184,7 +188,6 @@ $count = 0;
 while (my $obj = $it->next) {
   next unless $obj->isObject();
   next unless $obj->Species;
-# next unless $obj->Species->name eq $full_name;
   
   my (@affected_genes, %pheno);
 
@@ -197,12 +200,11 @@ while (my $obj = $it->next) {
     }
   }
 
-  #
   # For RNAi, there should always be at most one paper as the source.
   # If more than one paper is attached, use the first one.
   # If no papers are attached, use the WB RNAi id as the primary source,
   # with the WBPerson id as the WITH/FROM
-  # 
+   
   my ($ref, $with_from);
 
   my (@ref) = $obj->Reference;
@@ -231,7 +233,7 @@ while (my $obj = $it->next) {
                                $with_from,
                                "P",  
                                $gene_info->{$g}->{sequence_name},
-                               $taxid, 
+                               $sp2tax{$gene_info->{$g}->{species}},
                                $date );
       $count++;
     }
@@ -248,7 +250,7 @@ while (my $obj = $it->next) {
                                $with_from,
                                "P",  
                                $gene_info->{$g}->{sequence_name},
-                               $taxid, 
+                               $sp2tax{$gene_info->{$g}->{species}},
                                $date );
       $count++;
     }
