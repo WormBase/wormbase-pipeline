@@ -26,11 +26,13 @@ my %strains;
 
 while (my $id = shift @ids){
 	$id =~s/WB://;
-	my $aceVar = $db->fetch(Variation => $id);
-	my $strain = $aceVar->Strain;
-	next unless $strain; # for the alleles without curated strain data
-        $strains{"$strain"}||=[];
-	push @{$strains{"$strain"}},"$id";
+	my $aceVar  = $db->fetch(Variation => $id);
+	my @strains = $aceVar->Strain;
+	next unless @strains; # for the alleles without curated strain data
+	foreach my $strain(@strains){
+	        $strains{"$strain"}||=[];
+		push @{$strains{"$strain"}},"$id";
+	}
 }
 
 my @annotation;
