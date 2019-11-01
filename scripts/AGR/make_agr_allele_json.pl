@@ -54,7 +54,7 @@ $bgi_genes = AGR::get_bgi_genes( $bgi_json ) if defined $bgi_json;
 
 my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or die("Connection failure: ". Ace->error);
 
-$it = $db->fetch_many(-query => 'find Variation WHERE Live AND COUNT(Gene) == 1 AND (Description OR Interactor OR Disease_info) AND NOT Natural_variant');
+$it = $db->fetch_many(-query => 'find Variation WHERE Live AND COUNT(Gene) == 1 AND (Phenotype OR Disease_info) AND NOT Natural_variant');
 
 while (my $obj = $it->next) {
   next unless $obj->isObject();

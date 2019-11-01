@@ -30,6 +30,8 @@ while (my $id = shift @ids){
 	my @strains = $aceVar->Strain;
 	next unless @strains; # for the alleles without curated strain data
 	foreach my $strain(@strains){
+		# skip the ones without disease annotation
+                next unless $strain->Disease_info;
 	        $strains{"$strain"}||=[];
 		push @{$strains{"$strain"}},"$id";
 	}
