@@ -3263,6 +3263,8 @@
                  Status  Valid
                          Invalid
         Comment Text
+        Community_curation Author_first_pass_curation ?Paper XREF Author_first_pass
+                           Phenotype_curator_for ?Paper XREF Phenotype_curation_by
         Lineage Supervised ?Person XREF Supervised_by #Role
                 Supervised_by ?Person XREF Supervised #Role
                 Worked_with ?Person XREF Worked_with #Role
@@ -3273,6 +3275,7 @@
                                             // curated for Author->Paper->Person
                                             // connection but not yet verified by
                                             // the Person
+       
 
 #Address  Street_address Text           // multiple lines including town, state, zip/postcode, whatever
           Country UNIQUE Text
@@ -3360,6 +3363,8 @@
                Invalid
        Erratum_in ?Paper XREF Erratum_for
        Erratum_for ?Paper XREF Erratum_in
+       Retraction_in ?Paper XREF Retraction_of
+       Retraction_of ?Paper XREF Retraction_in
        Reference Title UNIQUE ?Text
                  Journal UNIQUE ?Text     //we are cleaning up Journal names and considering retiring the class
                  Publisher UNIQUE Text
@@ -3438,6 +3443,8 @@
                  DO_term ?DO_term #Evidence
                  GO_annotation ?GO_annotation XREF Reference
                  GO_term ?GO_term
+       Community_curation Phenotype_curation_by ?Person XREF Phenotype_curator_for
+                          Author_first_pass ?Person XREF Author_first_pass_curation
        Curation_pipeline Phenotype2GO
        Keyword ?Keyword
        Remark ?Text #Evidence

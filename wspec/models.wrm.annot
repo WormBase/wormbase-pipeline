@@ -3289,6 +3289,8 @@
                         Status  Valid
                                 Invalid
         Comment Text
+        Community_curation Author_first_pass_curation ?Paper OUTXREF Author_first_pass
+                           Phenotype_curator_for ?Paper OUTXREF Phenotype_curation_by
         Lineage Supervised ?Person INXREF Supervised_by #Role
                 Supervised_by ?Person OUTXREF Supervised #Role
                 Worked_with ?Person OUTXREF Worked_with #Role
@@ -3386,6 +3388,8 @@
                Invalid
        Erratum_in ?Paper INXREF Erratum_for
        Erratum_for ?Paper OUTXREF Erratum_in
+       Retraction_in ?Paper INXREF Retraction_of
+       Retraction_of ?Paper OUTXREF Retraction_in
        Reference Title UNIQUE ?Text
                  Journal UNIQUE ?Text     //we are cleaning up Journal names and considering retiring the class
                  Publisher UNIQUE Text
@@ -3464,6 +3468,8 @@
 //                 DO_term ?DO_term NOXREF Reference #Evidence
                  GO_annotation ?GO_annotation INXREF Reference
                  GO_term ?GO_term
+       Community_curation Phenotype_curation_by ?Person INXREF Phenotype_curator_for
+                          Author_first_pass ?Person INXREF Author_first_pass_curation
        Curation_pipeline Phenotype2GO
        Keyword ?Text           // tad removed "nameholder"
        Remark ?Text #Evidence
