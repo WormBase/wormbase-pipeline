@@ -482,6 +482,17 @@ GFF_source "piRNA"
 GFF_feature "piRNA"
 GFF_SO "SO:0001035" "nc_transcript_ace2so" // piRNA
 
+Method : "circRNA"
+Remark   "Circular RNAs (circRNAs) in animals are an enigmatic class of RNA with unknown function. (SO:0001035)"
+Colour   ORANGE
+Width    2.000000
+Show_text       
+Show_up_strand  
+EMBL_feature     "circRNA"
+GFF_source       "circRNA"
+GFF_feature      "circRNA"
+GFF_SO   "SO:0001035" "nc_transcript_ace2so"
+
 ////////////////////////////
 // Allele related methods //
 ////////////////////////////
@@ -3952,6 +3963,9 @@ Right_priority 2.6
 
 Method : "piRNA"
 Right_priority 2.6
+
+Method : "circRNA"
+Right_priority   2.6
 
 Method : "miRNA"
 Right_priority 2.6
