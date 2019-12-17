@@ -1090,16 +1090,16 @@ sub get_controls {
   my %controls;
 
   my %default_strain = (
-			'elegans'   => 'N2',
-			'brenneri'  => 'PB2801',
-			'briggsae'  => 'AF16',
-			'brugia'    => 'FR3',
-			'japonica'  => 'DF5081',
-			'ovolvulus' => 'O_volvulus_Cameroon_isolate',
-			'remanei'   => 'SB146',
-			'pristionchus'   => 'PS312',
-			'sratti'    => 'ED321',
-			'tmuris'    => 'Edinburgh',
+			'elegans'      => 'WBStrain00000001', #'N2',
+			'brenneri'     => 'WBStrain00041997', #'PB2801',
+			'briggsae'     => 'WBStrain00040935', #'AF16',
+			'brugia'       => 'WBStrain00041073', #'FR3',
+			'japonica'     => 'WBStrain00041019', #'DF5081',
+			'ovolvulus'    => 'WBStrain00041977', #'O_volvulus_Cameroon_isolate',
+			'remanei'      => 'WBStrain00042077', #'SB146',
+			'pristionchus' => 'WBStrain00042002', #'PS312',
+			'sratti'       => 'WBStrain00041039', #'ED321',
+			'tmuris'       => 'WBStrain00041054', #'Edinburgh',
 		       );
 
   my @Embryo = ('WBls:0000003', 'WBls:0000004', 'WBls:0000005',
