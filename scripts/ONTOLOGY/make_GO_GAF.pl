@@ -94,7 +94,13 @@ foreach my $suf (0..9) {
   
   while (my $obj = $it->next) {
     next unless $obj->isObject();
-    
+    print "$obj\n" if ($debug);
+
+    unless ($obj->Gene) {
+        $log->write_to("Skipping annotation $obj because there is no Gene connection\n");
+        next;
+    }
+
     my $wbgene = $obj->Gene->name;
     if (not exists $gene_info->{$wbgene} or $gene_info->{$wbgene}->{status} eq 'Dead') {
       if (not exists $dead_genes{$wbgene}) {
