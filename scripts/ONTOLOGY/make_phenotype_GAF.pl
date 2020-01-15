@@ -47,15 +47,16 @@ my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or $log->log_and_
 my ($count, $it);
 my $gene_info = {};
 
-foreach my $species('Caenorhabditis elegans','Caenorhabditis briggsae','Pristionchus pacificus'){
-  $gene_info =  {%$gene_info , %{&get_gene_info( $acedbpath, $wormbase, $species)}};
-}
-
 my %sp2tax = (
 	'Caenorhabditis elegans' => 6239,
 	'Caenorhabditis briggsae' => 6238,
 	'Pristionchus pacificus' => 54126,
 );
+
+
+foreach my $species(keys %sp2tax) {
+  $gene_info =  {%$gene_info , %{&get_gene_info( $acedbpath, $wormbase, $species)}};
+}
 
 $log->write_to( "Got name information for " . scalar(keys %$gene_info) . " genes\n");
 
@@ -63,10 +64,9 @@ open(my $out, ">$outfile") or $log->log_and_die("cannot open $outfile : $!\n");
 
 &print_wormbase_GAF_header($out);
 
-$it = $db->fetch_many(-query=>'find Variation (Phenotype OR Phenotype_not_observed)');
+$it = $db->fetch_many(-query=>'find Variation WHERE (Phenotype OR Phenotype_not_observed)');
 
-
-my %g2v_via_var;
+my (%g2v_via_var, %gpvs_with_pub, %gpvs_with_person); 
 
 while (my $obj=$it->next) {
   next unless $obj->isObject();
@@ -89,11 +89,13 @@ while (my $obj=$it->next) {
           my $paper = $thing->right->name;
           foreach my $g (@affected_genes) {
             $g2v_via_var{$g}->{$key}->{$pheno}->{papers}->{$paper}->{$var} = 1;
+            $gpvs_with_pub{$key}->{$g}->{$pheno}->{$var} = 1;
           }
         } elsif ($thing->name eq 'Person_evidence') {
           my $person = $thing->right->name;
           foreach my $g (@affected_genes) {
             $g2v_via_var{$g}->{$key}->{$pheno}->{persons}->{$var}->{$person} = 1;
+            $gpvs_with_person{$key}->{$g}->{$pheno}->{$var} = 1;
           }
         } elsif ($thing->name eq 'Curator_confirmed') {
           my $curator = $thing->right->name;
@@ -135,55 +137,65 @@ foreach my $g (sort keys %g2v_via_var) {
                                    $date);
           $count++;
         }
-      } elsif (exists $href->{persons}) {
-        # only person evidence for this association; we are not allowed to have people as evdience in GAF.
-        # We therefore denote the variation as evidence, and add the person as WITH/FROM (fudge 1)
+      } 
+      if (exists $href->{persons}) {
         foreach my $var (sort keys %{$href->{persons}}) {
-          my @persons = sort keys %{$href->{persons}->{$var}};
-          my $with_from = join("|", map { "WB:$_" } @persons);
-                               
-          &print_wormbase_GAF_line($out, 
-                                   $g, 
-                                   $gene_info->{$g}->{public_name}, 
-                                   $qual, 
-                                   $phen, 
-                                   "WB:" . $var,
-                                   "IMP", 
-                                   $with_from, 
-                                   "P",
-                                   $gene_info->{$g}->{sequence_name},
-                                   $sp2tax{$gene_info->{$g}->{species}},
-                                   $date);
-          $count++;
-        }  
-      } elsif (exists $href->{curators}) {
-        # only Curator_confirmed evidence for this association. These usually come from large-scale projects
-        # like NBP. What we really need here is a project identifier in the evidence field, and to add the list
-        # of variations in the WITH/FROM. However, since we do not have project identifiers, we therefore
-        # again denote the variation as evidence and leave WITH/FROM empty (fudge 2)
+          #
+          # only include person-based evidence for this gene/phennotype/var if there was no paper-based one
+          #
+          if (not exists $gpvs_with_pub{$key}->{$g}->{$phen}->{$var}) {
+            my @persons = sort keys %{$href->{persons}->{$var}};
+            my $with_from = join("|", map { "WB:$_" } @persons);
+            
+            &print_wormbase_GAF_line($out, 
+                                     $g, 
+                                     $gene_info->{$g}->{public_name}, 
+                                     $qual, 
+                                     $phen, 
+                                     "WB:" . $var,
+                                     "IMP", 
+                                     $with_from, 
+                                     "P",
+                                     $gene_info->{$g}->{sequence_name},
+                                     $sp2tax{$gene_info->{$g}->{species}},
+                                     $date);
+            $count++;
+          }  
+        }
+      } 
+      if (exists $href->{curators}) {
+        #
+        # only include curator-based evidence for this gene/pheno/var if not supported by a paper or person
+        #
         foreach my $var (sort keys %{$href->{curators}}) {
-          &print_wormbase_GAF_line($out, 
-                                   $g, 
-                                   $gene_info->{$g}->{public_name}, 
-                                   $qual, 
-                                   $phen, 
-                                   "WB:" . $var,
-                                   "IMP", 
-                                   "",
-                                   "P",
-                                   $gene_info->{$g}->{sequence_name},
-				   $sp2tax{$gene_info->{$g}->{species}},
-                                   $date);
-          $count++;
+          if (not exists $gpvs_with_pub{$key}->{$g}->{$phen}->{$var} and 
+              not exists $gpvs_with_person{$key}->{$g}->{$phen}->{$var}) {
+            
+            &print_wormbase_GAF_line($out, 
+                                     $g, 
+                                     $gene_info->{$g}->{public_name}, 
+                                     $qual, 
+                                     $phen, 
+                                     "WB:" . $var,
+                                     "IMP", 
+                                     "",
+                                     "P",
+                                     $gene_info->{$g}->{sequence_name},
+                                     $sp2tax{$gene_info->{$g}->{species}},
+                                     $date);
+            $count++;
+          }
         }
       }
-    }      
-  }
+    }
+  }      
 }
+
 
 $log->write_to("Printed $count phenotype lines for Variation objects\n");
 
 $it = $db->fetch_many(-query=>'find RNAi (Phenotype OR Phenotype_not_observed)');
+
 $count = 0;
 while (my $obj = $it->next) {
   next unless $obj->isObject();
