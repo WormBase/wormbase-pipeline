@@ -286,9 +286,9 @@ if ( $process ) {
       }
 
       my $job_name = "BLAT_blat2ace_${species}_${qspecies}_${type}";
-      # ask for a memory limit of 4 Gb
-      my @bsub_options = (-M => "4000", 
-			  -R => "\"select[mem>4000] rusage[mem=4000]\"",
+      # ask for a memory limit of 8 Gb
+      my @bsub_options = (-M => "8000", 
+			  -R => "\"select[mem>8000] rusage[mem=8000]\"",
 			  -J => $job_name, 
                           -o => "$lsfdir/$job_name.lsfout");
       $lsf1->submit(@bsub_options, $cmd);
