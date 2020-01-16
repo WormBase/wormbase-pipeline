@@ -12,13 +12,15 @@ use Carp;
 use Getopt::Long;
 use Storable;
 
-my ($help, $debug, $test, $store, $database);
+my ($help, $debug, $test, $store, $database, $dump, $old);
 
-GetOptions (	'help'       => \$help,
-            	'debug=s'    => \$debug,
-	    	'test'       => \$test,
-  		'store:s'    => \$store,
-                'database=s' => \$database,
+GetOptions (	'help'       => \$help,     # help documentation
+            	'debug=s'    => \$debug,    # only email specified user
+	    	'test'       => \$test,     # use the test server credentials
+  		'store:s'    => \$store,    # wormbase storable object
+                'database=s' => \$database, # specify an alternative database to the standard geneace
+                'dumpfile=s' => \$dump,     # file dumped from the datomic Name service check the confluence guide on how to produce this
+                'old'        => \$old,      # option to use the old MySQL nameserver
            );
 
 my $wormbase;
@@ -29,6 +31,8 @@ if ( $store ) {
                              -test    => $test,
 			     );
 }
+
+log->log_and_die("you need to specify -dumpfile and point it to a datomic nameservice dump file\n") unless ($dump);
 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
@@ -51,6 +55,13 @@ while( <$TABLE> ){
 	$ace_genes{"$gene"}->{'sts'} = ($status eq 'Live' ? 1 : 0);
 }
            
+
+
+my %name_types = ( '1' => 'cgc', '3' => 'seq');
+my %server_genes;					 
+
+if ($old) {
+
 #connect to name server and set domain to 'Gene'
 my $DB      = 'nameserver_live;web-wwwdb-core-02;3449';
 my $PASS    = 'wormpub';
@@ -68,15 +79,12 @@ my $query = 'SELECT pi.object_public_id, si.name_type_id, si.object_name
 #| object_public_id | name_type_id | name
 #| WBGene00044331   |            1 | clec-25       |
 #| WBGene00044331   |            3 | T20B3.15      |
-				 
+                                 
 my $sth = $db->dbh->prepare($query);
 $sth->execute();
 
-my %name_types = ( '1' => 'cgc', '3' => 'seq');
-
-my %server_genes;					 
 while (my ( $gene, $name_type, $name ) = $sth->fetchrow_array){
-	$server_genes{$gene}->{ $name_types{$name_type} } = $name;
+        $server_genes{$gene}->{ $name_types{$name_type} } = $name;
 }
 
 #This is to get dead and briggsae genes that dont have names.
@@ -88,9 +96,40 @@ $sth = $db->dbh->prepare($query);
 $sth->execute();
 
 while (my ( $gene, $live ) = $sth->fetchrow_array){
-	$server_genes{$gene}->{'sts'} = $live;
+        $server_genes{$gene}->{'sts'} = $live;
 }
-			 
+
+
+}
+
+# Datomic world section
+    unless ($old) {
+        my ( $gene, $name_type, $name);
+        my ($dump_fh);
+        open($dump_fh, "<$dump") or $log->log_and_die("Can't open $dump\n"); 
+        while ( my $line = <$dump_fh> ) {
+            chomp $line;
+            #    next unless /WBGene/;
+            my @f = split ",", $line;
+            $gene = $f[0];
+            
+            #Store the cgc and seq names
+            if ($f[1] =~ /\W+/) {
+                $server_genes{$gene}->{'cgc'} = $f[1]; 
+            }
+            if ($f[2] =~ /\W+/) {
+                $server_genes{$gene}->{'seq'} = $f[1]; 
+            }
+            #Status 1 or 0
+            if ($f[3] =~ /Live/) {
+                $server_genes{$gene}->{'sts'} = "1";
+            }
+            else {
+                $server_genes{$gene}->{'sts'} = "0";
+            }
+        }		 
+    }
+    
 # loop through the genes in the nameserver and check them
 # delete from the acedb list as it goes as there's no need to check twice
 foreach my $gene (keys %server_genes) {
