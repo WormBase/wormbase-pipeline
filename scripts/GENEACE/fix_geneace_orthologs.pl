@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 #
-# perl $CVS_DIR/GENEACE/fix_geneace_orthologs.pl -database ~/DATABASES/geneace/ -outfile Live_orthocheck.out
+# perl $CVS_DIR/GENEACE
+# fix_geneace_orthologs.pl -database ~/DATABASES/geneace/ -outfile Live_orthocheck.out
 #
 # Script to fix the analysis/evidence meta data that sometimes gets lost when manually moving orthologs/when genes are merged split/manually generated and loaded.
 #
@@ -9,21 +10,22 @@
 
 
 use strict;
+my $scriptdir =  $ENV{'CVS_DIR'};
 use lib $ENV{"CVS_DIR"};
 use Wormbase;
-use Ace;
-use Ace::Object;
 use Carp;
 use Getopt::Long;
-use GENEACE::Geneace;
-use File::Path;
+use Storable;
+#use GENEACE::Geneace;
+use IO::Handle;
+use Socket;
 
 my ($species, $database, $out, $debug, $wormbase);
 GetOptions ("species:s"        => \$species,
 	    "database:s" => \$database,
 	    "outfile:s" => \$out,
 	    "debug:s" => \$debug
-    );
+    ) or die @!;
 
   $wormbase = Wormbase->new( -debug    => $debug,
                              -organism => $species,
@@ -33,8 +35,15 @@ my $full_species_name;
 if ($species){
     $full_species_name = $wormbase->full_name;
 }
+# tace executable path
+my $tace = $wormbase->tace;
 
-my $db = Ace->connect(-path => $database,) || die("Ace::Error");
+#my $db = Ace->connect(-path => $database,) || die("Ace::Error");
+my $db = Ace->connect(-path => "$database",
+			-program => $tace) || do { 
+			  print("Connection failed to $database: ",Ace->error);
+			  die();
+			};
 my $query;
 if ($species) {
     $query = "find Gene Species=\"${full_species_name}\"; Ortholog";
