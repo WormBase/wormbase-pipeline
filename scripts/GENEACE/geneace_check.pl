@@ -361,15 +361,21 @@ sub test_locus_for_errors{
 
   # test for missing Public_name and assign one if so
   if( !defined $gene_id->Public_name && (defined $gene_id->CGC_name || defined $gene_id->Sequence_name || defined $gene_id->Other_name) ){
-    $warnings .= "ERROR(a): $gene_id has no Public_name but has CGC/Sequence/Other_name\n";
-    if ($ace){
-      print ACE "\nGene : \"$gene_id\"\n";
-      print ACE "Public_name \"$Gene_info{$gene_id}{'CGC_name'}\"\n" if exists $Gene_info{$gene_id}{'CGC_name'};
-      print  "Public_name \"$Gene_info{$gene_id}{'CGC_name'}\"=== E6\n" if exists $Gene_info{$gene_id}{'CGC_name'};
-      print ACE "Public_name \"$Gene_info{$gene_id}{'Sequence_name'}\"\n" if !exists $Gene_info{$gene_id}{'CGC_name'} && exists $Gene_info{$gene_id}{'Sequence_name'};
-      if ( !exists $Gene_info{$gene_id}{'CGC_name'} && !exists $Gene_info{$gene_id}{'Sequence_name'} && exists $Gene_info{$gene_id}{'Other_name'} ){
-	print ACE "Public_name \"$Gene_info{$gene_id}{'Other_name'}\"\n"
-      }
+    if ($gene_id->at('Identity.Live')){
+	$warnings .= "ERROR(a): $gene_id has no Public_name but has CGC/Sequence/Other_name\n";
+	
+	if ($ace){
+	    print ACE "\nGene : \"$gene_id\"\n";
+	    print ACE "Public_name \"$Gene_info{$gene_id}{'CGC_name'}\"\n" if exists $Gene_info{$gene_id}{'CGC_name'};
+	    print  "Public_name \"$Gene_info{$gene_id}{'CGC_name'}\"=== E6\n" if exists $Gene_info{$gene_id}{'CGC_name'};
+	    print ACE "Public_name \"$Gene_info{$gene_id}{'Sequence_name'}\"\n" if !exists $Gene_info{$gene_id}{'CGC_name'} && exists $Gene_info{$gene_id}{'Sequence_name'};
+	    if ( !exists $Gene_info{$gene_id}{'CGC_name'} && !exists $Gene_info{$gene_id}{'Sequence_name'} && exists $Gene_info{$gene_id}{'Other_name'} ){
+		print ACE "Public_name \"$Gene_info{$gene_id}{'Other_name'}\"\n"
+	    }
+	}
+    }
+    else {
+	print "Warning: $gene_id has no Public_name but has CGC/Sequence/Other_name but is Dead so probably OK\n";
     }
   }
 
