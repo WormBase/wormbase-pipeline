@@ -118,7 +118,7 @@ if (defined $explain_gene && grep /^$explain_gene$/, @elegans_genes) {$explain_g
 
 # get other species genes
 # Currently the policy is not to transfer names to T. muris, S. ratti and O. volvulus because MB doesn't wish it.
-$log->write_to("Fetch non-elegans non-ovolvulus non-tmuris non-sratti genes\n");
+$log->write_to("Fetch non-elegans non-ovolvulus non-tmuris non-sratti non-vc2010 genes\n");
 my @other_genes = $acedb->fetch (-query => 'FIND Gene WBGene* WHERE Live AND Species != "Caenorhabditis elegans" AND Species != "Onchocerca volvulus" AND Species != "Trichuris muris" AND Species != "Strongyloides ratti"');
 if (defined $explain_gene && grep /^$explain_gene$/, @other_genes) {$explain_gene_output .= "It is a Live non-elegans gene\n"}
 
@@ -237,6 +237,7 @@ sub get_orthologs {
       #    print $orthos[0]->name."\n";
       foreach my $orth (@orthos){
 	my $ortholog_gene_name = $orth->name;
+	unless ($ortholog_gene_name  =~ /^WBGene/) {next;}
 	if (!defined $orth->right) {$log->write_to( "ERROR - no species name in Gene $gene_name Ortholog $ortholog_gene_name\n"); next}
 	my ($species) = $orth->right->name =~ /(\w+)$/;
 	my $number = scalar $orth->right->right->col;
