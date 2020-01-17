@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 #
-# script to dump the interpro domains for each species into a flatfile in REPORTs
+# script to dump the protein domains for each species into a flatfile in REPORTs
+# used to be restricte to InterPRO only
 
 use strict;
 use Getopt::Long;
@@ -52,9 +53,9 @@ my $cdses = $db->fetch_many(-query => "find CDS Corresponding_protein; Species=\
 
 while (my $cds = $cdses->next){
   my $protein = $cds->Corresponding_protein;
-  my @motifs = grep {/INTERPRO:/} $protein->Motif_homol;
+  my @motifs = grep {/\w+:/} $protein->Motif_homol;
   my $gene = $cds->Gene;
-  next if $gene->name !~ /^WBGene/;
+  next if $gene->name !~ /^WBGene\d+/;
 
   print $out join("\t",($gene,$gene->Public_name,$protein,
                       map {"$_". ($_->fetch->Title?' "'.$_->fetch->Title.'"':'')} @motifs)), "\n";
