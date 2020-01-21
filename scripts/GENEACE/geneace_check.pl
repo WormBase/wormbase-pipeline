@@ -21,7 +21,7 @@ use File::Path;
 # command line options                            # 
 ###################################################
 my ($help, $debug, $test, $class, @classes, $database, $ace, $verbose);
-my @skip_methods;
+my (@skip_methods, $excludeprojects);
 
 GetOptions ('help'          => \$help,
             'debug=s'       => \$debug,
@@ -31,6 +31,7 @@ GetOptions ('help'          => \$help,
 	    'verbose'       => \$verbose,
             'test'          => \$test,
             'skipmethod=s@' =>  \@skip_methods,
+	    'excludeprojects' => \$excludeprojects, # don't test the large Allele projects
 	   );
 
 ###################################################
@@ -894,6 +895,8 @@ sub process_allele_class{
 
   my $query = "find Variation Allele";
   #my $query = "find Variation WBVar00088961";
+# WGS_Hobert  WGS_Rose WGS_Jarriault
+  if ($excludeprojects) {@skip_methods = qw(NBP_knockout_allele KO_consortium_allele NemaGENETAG_consortium_allele Million_mutation SNP Mos_insertion Transposon_insertion CGH_allele WGS*)}
   foreach my $meth (@skip_methods) {
     $query .= " AND Method != \"$meth\"";
   }
