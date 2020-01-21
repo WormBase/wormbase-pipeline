@@ -140,11 +140,15 @@ sub add_3_UTR
     $self->add_matching_cDNA($cdna)
   }
 
+# this adjusts the exons boundaries (and makes a new exon if required) based on the match_codes made by SequenceObj::check_exon_match
+# it keeps a note of which cDNAs gave supporting evidence for which exons, so we can later prune transcripts with weak evidence
 sub add_matching_cDNA
   {
     my $self = shift;
     my $cdna = shift;
     push( @{$self->{'matching_cdna'}},$cdna);
+
+    my $name = $cdna->name;
 
 ###### modify current transcript structure to incorporate new cdna #####
 
@@ -162,30 +166,38 @@ sub add_matching_cDNA
 # *11 = 3'UTR exon
 #  12 = downstream of existing transcript
 #  13 = single exon gene extends both ends.
-#  14 = spliced 3' UTR exon passed current model
+#  14 = spliced 3' UTR exon past current model
 
 ########################################################################
 
     
     foreach my $exon ( @{$cdna->sorted_exons} ) {
       my $match_code = $exon->[2];
-      next if  ($match_code == 1 or $match_code == 3 or $match_code == 6 or $match_code == 7);
+      if  ($match_code == 1 or $match_code == 3 or $match_code == 6 or $match_code == 7) {
+	$self->{'evidence'}{"$exon->[0]"}{$name} = 1; # add cDNA name as evidence for this exon
+	next;
+      }
 
-      #extend 3'
+      # extend 3'
       if( $match_code == 2 or $match_code == 9 ) {
 	# cdna overlaps last exon so extend - need to take in to account it may still be spliced past the CDS end.
         if ($self->polyA_site and $exon->[1] > $self->polyA_site->[0]) {
           # do not extend - this looks like a badly clipped cDNA
+
+	  $self->{'evidence'}{"$exon->[0]"}{$name} = 1; # add cDNA name as evidence for this exon
         } else {
           my $last_exon_start = $self->last_exon->[0];
           $self->{'exons'}->{"$last_exon_start"} = $exon->[1];
+
+	  $self->{'evidence'}{"$exon->[0]"}{$name} = 1; # add cDNA name as evidence for this exon
         }
       }
-      #extend 5'
+      # extend 5'
       elsif( $match_code == 4  or $match_code == 5 or $match_code == 8 ) {
 	# 1st exons overlap so extend 5'
 	my $curr_start = $self->start;
 
+	$self->{'evidence'}{"$curr_start"}{$name} = 1; # add cDNA name as evidence for this exon
 	next if( $curr_start < $exon->[0] );
 
 	my $exon_end = $self->sorted_exons->[0]->[1];
@@ -193,16 +205,27 @@ sub add_matching_cDNA
         if ($self->SL and $exon->[0] < $self->SL->[1]) {
           # do not extend - this looks like a badly clipped cDNA
         } else {
+	  # move the cDNA evidence names from the old exon start to the new one
+	  my @names = keys %{$self->{'evidence'}{"$curr_start"}};
+	  foreach my $name (@names) {
+	    $self->{'evidence'}{"$exon->[0]"}{$name} = 1; # add cDNA name as evidence for this exon
+	  }
+	  delete $self->{'evidence'}{"$curr_start"};
+
           delete $self->exon_data->{$curr_start};
           $self->{'exons'}->{"$exon->[0]"} = $exon_end;
         }
       }
       elsif( $match_code == 10  or $match_code == 11 ) {
-	#add exon to UTR
+	# add exon to UTR
 	$self->{'exons'}->{"$exon->[0]"} = $exon->[1];
+
+	$self->{'evidence'}{"$exon->[0]"}{$name} = 1; # add cDNA name as evidence for this exon
       }
-      #extending 3'UTR with non-overlapping cDNAs
+      # extending 3'UTR with non-overlapping cDNAs
       elsif( $match_code == 12) {
+	$self->{'evidence'}{"$exon->[0]"}{$name} = 1; # add cDNA name as evidence for this exon
+
 	if ( $cdna->start == $exon->[0]) { 
 	  #extend existing
 	  my $last_exon_start = $self->last_exon->[0];
@@ -214,10 +237,13 @@ sub add_matching_cDNA
 	}
       }
       elsif( $match_code == 14 ) {
+	$self->{'evidence'}{"$exon->[0]"}{$name} = 1; # add cDNA name as evidence for this exon
+
 	$self->exon_data->{"$exon->[0]"} = $exon->[1];
       }
       # single exon gene extend both ends
       elsif( $match_code == 13 ) {	
+
 	# 5' extension
 	my $curr_start = $self->start;
 	my $exon_end = $self->sorted_exons->[0]->[1];
@@ -225,7 +251,16 @@ sub add_matching_cDNA
         if ($self->SL and $exon->[0] < $self->SL->[1] or
             $self->polyA_site and $exon->[1] > $self->polyA_site->[0]) {
           # do not extend - probably a badly cDNA
-        } else {
+0        } else {
+	  $self->{'evidence'}{"$exon->[0]"}{$name} = 1; # add cDNA name as evidence for this exon
+	  # move the cDNA evidence names from the old exon start to the new one
+	  my @names = keys %{$self->{'evidence'}{"$curr_start"}};
+	  foreach my $name (@names) {
+	    $self->{'evidence'}{"$exon->[0]"}{$name} = 1; # add cDNA name as evidence for this exon
+	  }
+	  delete $self->{'evidence'}{"$curr_start"};
+
+
           delete $self->{'exons'}->{$curr_start};
           $self->{'exons'}->{"$exon->[0]"} = $exon->[1];
 	
@@ -320,6 +355,22 @@ sub report
   }
 
 
+=head2 delete
 
+    Title   :   delete
+    Usage   :   $transcript->delete
+    Function:   deletes the object
+    Returns :   
+    Args    :   none
+
+=cut
+
+sub delete {
+   my $self = shift;
+   foreach my $matching_cdna (@{$self->{'matching_cdna'}}) {
+     $matching_cdna->delete;
+   }
+   undef (%$self);
+}
 
 1;

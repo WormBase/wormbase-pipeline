@@ -218,7 +218,9 @@ sub map_cDNA
 	}
       }
     }
-    $self->add_matching_cDNA($cdna) if $matches_me == 1;
+    if ($matches_me == 1) {
+      $self->add_matching_cDNA($cdna);
+    }
     return $matches_me;
   }
 
@@ -251,8 +253,8 @@ sub transcripts
     Usage   :   $cds->_purge_name_sort_transcripts
     Function:   Sorts and renames the transcripts, to give a degree of consistency
                 between builds. Called by ->report
-=cut
 
+=cut
 
 sub _purge_name_sort_transcripts {
   my ($self) = @_;
@@ -316,6 +318,45 @@ sub add_matching_cDNA
     #print STDERR $cdna->name," matches ",$self->name,"\n";
     push( @{$self->{'matching_cdna'}},$cdna);
   }
+
+=head2 increment_exon_counts($cdna->name)
+
+    Title   :   increment_exon_counts
+    Usage   :   $cds->increment_exon_counts($cdna)
+    Function:   increment the count of supporting cDNA evidence for each transcript exon
+    Returns :   nothing
+    Args    :   cdna object
+
+=cut
+
+sub  increment_exon_counts {
+
+    my $self = shift;
+    my $cdna = shift;
+    my $Read_coverage = shift;
+
+    my $name = $cdna->name;
+    print "In increment_exon_counts adding $name to exon evidence counts\n";
+
+    foreach my $transcript ( $self->transcripts ) {
+      my $lowest_count = 1000000000;
+      foreach my $exon (@{$transcript->evidence}) {
+	if (!exists $exon->[4]) {$exon->[4] = 0}
+	print "exon count was $exon->[4]";
+	if (exists $exon->[3]{$name}) {
+	  if (exists $Read_coverage->{$name}) {
+	    $exon->[4] += $Read_coverage->{$name}; # add the Nanopore Read_coverage to the count of evidence supporting this exon
+	  } else {
+	    $exon->[4]++; # just increment the count of EST/mRNA/trinity transcripts supporting this exon
+	  }
+	}
+	if ($exon->[4] < $lowest_count) {$lowest_count = $exon->[4]}
+	print " and now is $exon->[4] with lowest_count = $lowest_count\n";
+      }
+      $self->{'lowest_exon_count'} = $lowest_count;
+    }
+}
+
 =head2 
 
     Title   :   add_3_UTR
@@ -441,5 +482,23 @@ sub gene_end
     }
     return $self->{'gene_end'};
   }
+
+=head2 delete
+
+    Title   :   delete
+    Usage   :   $cds->delete
+    Function:   deletes the object
+    Returns :   
+    Args    :   none
+
+=cut
+
+sub delete {
+   my $self = shift;
+   foreach my $transcript ($self->transcripts) {
+     $transcript->delete;
+   }
+   undef (%$self);
+}
 
 1;

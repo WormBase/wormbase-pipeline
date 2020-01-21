@@ -280,7 +280,13 @@ sub check_exon_match
     my $self = shift;
     my $cdna = shift;
 
-    #use match_code to record match type eg exact exon match to make using this cdna in later steps easy
+#    print "In SeqObj::check_exon_match self = ".$self->name." cdna = ".$cdna->name."\n"; 
+
+    # use match_code to record match type eg exact exon match to make using this cdna in later steps easy
+
+    # add names of matching cDNA to the hash in transcript exon element [3]
+    # later we will then use matching cDNAs to count the number of matches in each transcript exon
+    # this allows us to filter out transcripts with exons that are only supported by comparatively few cDNA
 
     #check if cDNA exon fits with gene model
     foreach my $exon ( @{$cdna->sorted_exons}) {
@@ -449,6 +455,7 @@ sub check_intron_match {
     }
   }
 
+
   # now do it again looking at all the CDS introns in case we have an
   # extra intron in the middle that doesn't match
   #
@@ -469,6 +476,7 @@ sub check_intron_match {
 	print STDERR "SequenceObj::check_intron_match\tExact Intron Match\n" if $debug;
 	$these_introns++; # count the number of contiguous introns
 	if ($these_introns > $max_cds_contiguous_introns) {$max_cds_contiguous_introns = $these_introns}
+
       } else {
 	$these_introns = 0;
       }
@@ -1150,6 +1158,22 @@ sub check_features {
     return 0;
   }
   return 1;
+}
+
+
+=head2 delete
+
+    Title   :   delete
+    Usage   :   $sequence_obj->delete
+    Function:   deletes the object
+    Returns :   
+    Args    :   none
+
+=cut
+
+sub delete {
+   my $self = shift;
+   undef (%$self);
 }
 
 1;
