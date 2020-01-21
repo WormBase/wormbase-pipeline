@@ -896,7 +896,7 @@ sub process_allele_class{
   my $query = "find Variation Allele";
   #my $query = "find Variation WBVar00088961";
 # WGS_Hobert  WGS_Rose WGS_Jarriault
-  if ($excludeprojects) {@skip_methods = qw(NBP_knockout_allele KO_consortium_allele NemaGENETAG_consortium_allele Million_mutation SNP Mos_insertion Transposon_insertion CGH_allele WGS*)}
+  if ($excludeprojects) {@skip_methods = qw(NBP_knockout_allele KO_consortium_allele NemaGENETAG_consortium_allele Million_mutation SNP Mos_insertion Transposon_insertion CGH_allele WGS_Hobert WGS_Rose WGS_Jarriault WGS_McGrath WGS_Flibotte)}
   foreach my $meth (@skip_methods) {
     $query .= " AND Method != \"$meth\"";
   }
