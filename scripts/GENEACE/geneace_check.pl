@@ -999,7 +999,9 @@ sub process_allele_class{
 	  $expected_method = "Deletion_allele";
 	} elsif ($mut_type[0] eq "Insertion" && !defined $allele->Transposon_insertion ) {
 	  $expected_method = "Insertion_allele";
-	} elsif ($allele->Transposon_insertion && $allele->at('Sequence_details.Type_of_mutation.Insertion')) {
+
+	# It is acceptable to have Method 'NemaGENETAG_consortium_allele' when we have a Transposon and so might expect the Method to be 'Transposon_insertion'
+	} elsif ($allele->Transposon_insertion && $allele->at('Sequence_details.Type_of_mutation.Insertion' && $observed_method ne 'NemaGENETAG_consortium_allele')) {
 	  $expected_method = "Transposon_insertion";
 	} elsif ($allele->Type_of_mutation eq "Substitution" ) {
 	  $expected_method = "Substitution_allele";
