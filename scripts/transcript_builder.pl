@@ -2,7 +2,7 @@
 #
 # transcript_builder.pl
 # 
-# by Anthony Rogers and Gary Williams
+# by Gary Williams
 #
 # Script to make ?Transcript objects
 #
@@ -94,6 +94,7 @@ if ( $store ) {
                            );
 }
 
+print "ACE connect\n" if ($debug);
 my $db;
 if (not defined $database or $database eq "autoace") {
   $db = $wormbase->autoace;
@@ -103,6 +104,7 @@ if (not defined $database or $database eq "autoace") {
 my $ace = Ace->connect(-path => $db) || die(Ace->error);
 
 my $tace = $wormbase->tace;
+
 my %cds2gene = $wormbase->FetchData('cds2wbgene_id');
 $species = $wormbase->species if not defined $species;
 
@@ -131,12 +133,12 @@ if (defined $gff_dir) {
   $wormbase->{gff_splits} = $gff_dir;
 }
 
-
-# write out the transcript objects
 # get coords obj to return clone and coords from chromosomal coords
+print "Coords converter\n" if ($debug);
 my $coords = Coords_converter->invoke($db, undef, $wormbase);
 
 # Load in Feature_data : cDNA associations from COMMON_DATA
+print "Load Feature_data\n" if ($debug);
 my %feature_data;
 &load_features( \%feature_data );
 my %Features; # all TSL/Poly-A Features whether or not they are associated with a cDNA - # (182772,  182773, +, SL1) keyed by Feature_id
@@ -166,12 +168,29 @@ my $prob_file = sprintf("%s/%s", $transcript_dir, $problem_fname);
 $log->write_to("Going to write problems to $prob_file\n") if ($verbose);
 open (my $prob_fh,">$prob_file") or $log->log_and_die("cant open $prob_file\n");
 
+print "Get Read_coverage\n" if ($debug);
+my %Read_coverage;
+#if (! $debug) { # this takes a long time to load, so ignore this stuff during debugging
+  %Read_coverage = get_read_coverage();
+#} else {
+#  print "Not read in because debugging and it takes a long time\n";
+#}
+
+print "Get ignored EST data\n" if ($debug);
 my %ignored_EST_data = &get_ignored_EST_data();
 
+print "Get Feature evidence\n" if ($debug);
+my %feature_evidence;;
+#if (! $debug) { # this takes a long time to load, so ignore this stuff during debugging
+  %feature_evidence = get_feature_evidence();
+#} else {
+#  print "Not read in because debugging and it takes a long time\n";
+#}
 
-my %feature_evidence = get_feature_evidence();
 
 foreach my $chrom ( @chromosomes ) {
+
+  print "Chromosome $chrom\n" if ($debug);
 
   my ($link_start,$link_end);
   my %genes_exons;
@@ -188,6 +207,7 @@ foreach my $chrom ( @chromosomes ) {
   #
   # parse GFF file to get CDS and exon info
   #
+  print "parse GFF file to get CDS and exon info\n" if ($debug);
 
   my $GFF = $wormbase->open_GFF_file($chrom, 'curated',$log);
   while (<$GFF>) {
@@ -209,6 +229,7 @@ foreach my $chrom ( @chromosomes ) {
   close $GFF;
   
   # read BLAT data
+  print "read BLAT data\n" if ($debug);
   my @BLAT_methods = qw( BLAT_EST_BEST BLAT_mRNA_BEST BLAT_OST_BEST BLAT_RST_BEST BLAT_Trinity_BEST BLAT_IsoSeq_BEST BLAT_Nanopore_BEST);
   foreach my $method (@BLAT_methods) {
     # need to check that the GFF file for this method exists; not all species
@@ -246,6 +267,7 @@ foreach my $chrom ( @chromosomes ) {
   }
   
   # Chromomsome info
+  print "read Chromosome data\n" if ($debug);
 
   $GFF = $wormbase->open_GFF_file($chrom, 'Link', $log);
   #create Strand_transformer for '-' strand coord reversal
@@ -263,6 +285,7 @@ foreach my $chrom ( @chromosomes ) {
   # add feature_data to cDNA (and store all Feature data whether or not it is associated with a cDNA)
   # CHROMOSOME_I  SL1  SL1_acceptor_site   182772  182773 .  -  .  Feature "WBsf016344"
 
+  print "add feature_data to cDNA\n" if ($debug);
   my @feature_types = qw(SL1 SL2 polyA_site polyA_signal_sequence);
   foreach my $Type (@feature_types){
     # need to check that the GFF file for this method exists; not all species
@@ -291,6 +314,7 @@ foreach my $chrom ( @chromosomes ) {
 
 
   # need to sort the cds's into ordered arrays + and - strand genes are in distinct coord space so they need to be kept apart
+  print "sort the cds's into ordered arrays\n" if ($debug);
   my %fwd_cds;
   my %rev_cds;
   foreach ( keys %genes_span ) {
@@ -303,6 +327,7 @@ foreach my $chrom ( @chromosomes ) {
 
   close $GFF;
   
+  print "load EST data\n" if ($debug);
   &load_EST_data(\%cDNA_span, $chrom);  
   # &checkData(\$gff,\$%cDNA_span, \%genes_span); # this just checks that there is some BLAT and gene data in the GFF file
   &eradicateSingleBaseDiff(\%cDNA);
@@ -310,8 +335,8 @@ foreach my $chrom ( @chromosomes ) {
   # add SL Feature to $cds if it has an Isoform Feature asserted
   #create transcript obj for each CDS
   # fwd strand cds will be in block first then rev strand
+  print "add SL Feature to cds\n" if ($debug);
   foreach (sort { $fwd_cds{$a} <=> $fwd_cds{$b} } keys  %fwd_cds ) {
-    #next if $genes_span{$_}->[2] eq "-"; #only do fwd strand for now
     my $SL_ids = $feature_evidence{$_}; # add Feature_evidence to CDS
     my @SLs;
     if (defined $SL_ids) {
@@ -327,7 +352,6 @@ foreach my $chrom ( @chromosomes ) {
     $index++;
   }
   foreach ( sort { $rev_cds{$b} <=> $rev_cds{$a} } keys  %rev_cds ) {
-    #next if $genes_span{$_}->[2] eq "-"; #only do fwd strand for now
     my $SL_ids = $feature_evidence{$_}; # add Feature_evidence to CDS
     my @SLs;
     if (defined $SL_ids) {
@@ -344,6 +368,7 @@ foreach my $chrom ( @chromosomes ) {
   }
 
 
+  print "Make EST objects\n" if ($debug);
   my $count0 = 0;
   foreach my $cdna_id ( keys %cDNA ) {
 
@@ -351,7 +376,7 @@ foreach my $chrom ( @chromosomes ) {
 
     if ( $cDNA_span{$cdna_id}->[3] ) {
       foreach my $feat ( keys %{$cDNA_span{$cdna_id}->[3]} ) {
-	$cdna->$feat( $cDNA_span{$cdna_id}->[3]->{"$feat"} ); # add feature to cDNA <==== this is where it is done! Couldn't see this for an entire age!
+	$cdna->$feat( $cDNA_span{$cdna_id}->[3]->{"$feat"} ); # add feature to cDNA 
       }
     }
     # add paired read info
@@ -378,6 +403,7 @@ foreach my $chrom ( @chromosomes ) {
   # sort the cDNAs such that the ones with features are dealt with first
   # This is necessary to ensure deterministic behaviour
   ######
+  print "Sort the ESTs\n" if ($debug);
   @cdna_objs = sort {
     my $a_score = 0;
     $a_score += 2 if defined $a->SL;
@@ -396,6 +422,7 @@ foreach my $chrom ( @chromosomes ) {
   # Index for later rapid retrieval
   ######
 
+  print "Index EST objects\n" if ($debug);
   for(my $i=0; $i < @cdna_objs; $i++) {
     my $cdna_obj = $cdna_objs[$i];
  
@@ -412,7 +439,6 @@ foreach my $chrom ( @chromosomes ) {
   %genes_span= ();
   %cDNA = ();
   %cDNA_span = ();
-
 
   ##########################################################
   # DATA LOADED - START EXTENDING THE TRANSCRIPTS          #
@@ -433,38 +459,74 @@ foreach my $chrom ( @chromosomes ) {
   my $count1 = 0;
 
   $log->write_to("\nTB : $round\n") if ($verbose);
+  print "\nTB: first round\n\n";
 
+  # now get the cDNAs that match introns of CDS structures this allows
+  # us to change the program to iterate over CDSs first, instead of
+  # iterating over all cDNAs and running out of memory. We can then
+  # just add the matched cDNAs to the CDS structures and process one
+  # CDS at a time instead of holding all CDS matches to all cDNAs in
+  # memory at once (> 50 Gb!)
+  print "\nGet CDS introns\n";
+
+  my %CDS_introns; # key = {start}{end} value = [CDS_name]
+  foreach my $cds ( @cds_objs ) {
+    foreach my $intron_start (keys %{$cds->{introns}}) {
+      my $intron_end = $cds->{introns}{$intron_start};
+      push @{$CDS_introns{$intron_start}{$intron_end}}, $cds->name;
+    }
+  }
+
+  print "\nGet matches of cDNA introns to CDS introns\n";
+
+  my %cDNA_CDS; # key = {cDNA_name}{CDS_name} value = no. of times match is observed
+  my %CDS_cDNA; # key = {CDS_name}{cDNA_name} value = no. of times match is observed
+  foreach my $cdna (@cdna_objs) {
+    foreach my $intron_start (keys %{$cdna->{introns}}) {
+      if (exists $CDS_introns{$intron_start}) {
+	my $intron_end = $cdna->{introns}{$intron_start};
+	if (exists $CDS_introns{$intron_start}{$intron_end}) {
+	  foreach my $CDS_name (@{$CDS_introns{$intron_start}{$intron_end}}) {
+	    $cDNA_CDS{$cdna->name}{$CDS_name}++;
+	    $CDS_cDNA{$CDS_name}{$cdna->name}++;
+	  }
+	}
+      }
+    }
+  }
+
+  print "Ignore any cDNA that matches the introns of two or more genes";
   foreach my $cdna ( @cdna_objs) {
     next if ( @test_est and not grep { $cdna->name eq $_ } @test_est); #debug line
 
-    foreach my $cds ( @cds_objs ) {
-      if ($cdna->overlap($cds)) {
-	$cdna->probably_matching_cds($cds, 1);
+    if (exists $cDNA_CDS{$cdna->name}) {
+      my @matches = (keys %{$cDNA_CDS{$cdna->name}});
+      
+      my @matching_genes = ($species eq 'elegans') 
+	? list_of_matched_genes_by_seqname($wormbase->seq_name_regex, \@matches)
+	  : list_of_matched_genes(\%cds2gene, \@matches);
+      
+      if (scalar(@matching_genes) > 1 and $cdna->coverage < $COVERAGE_THRESHOLD) { 
+	if ($verbose) {
+	  $log->write_to("TB: $round : cDNA " . 
+			 $cdna->name . 
+			 " overlaps two or more genes and has an alignment score of less than $COVERAGE_THRESHOLD so it will not be used in transcript-building:");
+	  map { $log->write_to("TB : $round :\t$_") } @matching_genes;
+	  $log->write_to("\n");
+	}
+	
+	print($prob_fh "$round cDNA " .
+	      $cdna->name .
+	      " overlaps two or more genes and has an alignment score of less than $COVERAGE_THRESHOLD so it will not be used in transcript-building: @matching_genes\n");
+	$count1++;
+	$cdna->mapped(1);  # mark the cDNA as used with a dummy CDS reference
       }
     }
-    # now check how many genes the cDNA overlaps - we only want those that overlap one
-    my @matching_genes = ($species eq 'elegans') 
-        ? $cdna->list_of_matched_genes_by_seqname($wormbase->seq_name_regex)
-        : $cdna->list_of_matched_genes(\%cds2gene);
-
-    if (scalar(@matching_genes) > 1 and $cdna->coverage < $COVERAGE_THRESHOLD) { 
-      if ($verbose) {
-        $log->write_to("TB: $round : cDNA " . 
-                       $cdna->name . 
-                       " overlaps two or more genes and has an alignment score of less than $COVERAGE_THRESHOLD so it will not be used in transcript-building:");
-        map { $log->write_to("TB : $round :\t$_") } @matching_genes;
-        $log->write_to("\n");
-      }
-
-      print($prob_fh "$round cDNA " .
-            $cdna->name .
-            " overlaps two or more genes and has an alignment score of less than $COVERAGE_THRESHOLD so it will not be used in transcript-building: @matching_genes\n");
-      $count1++;
-      $cdna->mapped(1);  # mark the cDNA as used with a dummy CDS reference
-    } 
   }
 
 
+
+  ##########################################################
   # Second round.
   #
   # here we go through all of the cDNAs looking for matches of their
@@ -479,207 +541,251 @@ foreach my $chrom ( @chromosomes ) {
   # CDSs that match with an equal number of consecutive introns are
   # then given the option of adding the cDNA to their transcripts.
 
-  $round = "Second (intron) round:";
-  my $count2 = 0;
-
-  $log->write_to("\nTB : $round\n") if ($verbose);
-
-  # want to check if the cDNA has introns that match one and only one gene
-  foreach my $cdna ( @cdna_objs) {
-    next if ( defined($cdna->mapped) );
-    next if ( @test_est and not grep { $cdna->name eq $_ } @test_est); #debug line
+  # changed program to do one CDS at a time, to save memory
+  # sort the CDSs by their names 
+  my $prev_gene_name = "";
+  my @cds_objs_in_gene = ();
+  foreach my $next_cds (sort {$a->name cmp $b->name} @cds_objs) { 
     
-    # want to see which fresh set of CDSs this matches
-    $cdna->reset_probably_matching_cds;
-
-    foreach my $cds ( @cds_objs ) {
-      if ($cds->map_introns_cDNA($cdna) ) { 
+    $round = "Second (intron) round (".$next_cds->name."):";
+    
+    $log->write_to("\nTB : $round\n") if ($verbose);
+    print "\nTB: $round round\n\n";
+    
+    # want to check if the cDNA has introns that match one and only one gene
+    # for each cDNA that has matching introns with the CDS
+    foreach my $cdna_name (keys %{$CDS_cDNA{$next_cds->name}}) {
+      my $cdna = $cdna_objs[$cDNA_index{$cdna_name}];
+      
+      next if ( defined($cdna->mapped) );
+      next if ( @test_est and not grep { $cdna->name eq $_ } @test_est); #debug line
+      
+      # want to see which fresh set of CDSs this matches
+      $cdna->reset_probably_matching_cds;
+      
+      if ($next_cds->map_introns_cDNA($cdna) ) { 
 	# note each CDS and gene that this cDNA matches, together with the number of contiguous CDS introns matched
-	$log->write_to("TB : $round : Registered intron match between " . $cds->name . " and " . $cdna->name ."\n") if ($verbose);
+	$log->write_to("TB : $round : Registered intron match between " . $next_cds->name . " and " . $cdna->name ."\n") if ($verbose);
       } else {
-        $log->write_to("TB : $round : No intron match between " . $cds->name . " and " . $cdna->name . "\n") if $verbose;
+	$log->write_to("TB : $round : No intron match between " . $next_cds->name . " and " . $cdna->name . "\n") if $verbose;
       }
-    }
-
-    # now that this cDNA has information on which CDS's introns it
-    # matches, we can add any cDNA that matches just one gene at the
-    # introns level to the transcripts.  There may be more than one
-    # CDS in a gene that matches the same number of CDS introns with
-    # no mismatches
-
-    my @matching_genes = ($species eq 'elegans') 
+      
+      # now that this cDNA has information on which CDS's introns it
+      # matches, we can add any cDNA that matches just one gene at the
+      # introns level to the transcripts.  There may be more than one
+      # CDS in a gene that matches the same number of CDS introns with
+      # no mismatches
+      
+      my @matching_genes = ($species eq 'elegans') 
         ? $cdna->list_of_matched_genes_by_seqname($wormbase->seq_name_regex)
-        : $cdna->list_of_matched_genes(\%cds2gene);
-
-    if (scalar(@matching_genes) == 1) { 
-      my @best_cds = &get_best_CDS_matches($cdna); # get those CDSs for this cDNA that have the most introns matching
-      foreach my $cds (@best_cds) {
-	if ( $cds->map_cDNA($cdna) ) { # add it to the transcript structure
-	  $cdna->mapped($cds);  # mark the cDNA as used
-	  $log->write_to("TB : $round : Used intron match of " . $cdna->name . " in a transcript of " . $cds->name ."\n") if ($verbose);
+	  : $cdna->list_of_matched_genes(\%cds2gene);
+      
+      if (scalar(@matching_genes) == 1) { 
+	my @best_cds = &get_best_CDS_matches($cdna); # get those CDSs for this cDNA that have the most introns matching
+	foreach my $cds (@best_cds) {
+	  if ( $cds->map_cDNA($cdna) ) { # add it to the transcript structure
+	    $cdna->mapped($cds);  # mark the cDNA as used
+	    $log->write_to("TB : $round : Used intron match of " . $cdna->name . " in a transcript of " . $cds->name ."\n") if ($verbose);
+	  }
 	}
-      }
-    } elsif (scalar(@matching_genes) > 1) { 
-      # we want to report those ESTs that have introns that match two or more CDSs as this may indicate required gene mergers.
-      if ($verbose) {
-        $log->write_to("TB : $round : cDNA " .
-                       $cdna->name . 
-                       " matches introns in two or more genes and will not be used in transcript-building:");
-        foreach my $gene (@matching_genes) {
-          $log->write_to("TB : $round :\t" . $gene);
-        }
-        $log->write_to("\n");
-      }
-      print($prob_fh "$round cDNA " .
-            $cdna->name .
-            " matches introns in two or more genes and will not be used in transcript-building: @matching_genes\n");
-      $count2++;
-      $cdna->mapped(1);  # mark the cDNA as used with a dummy CDS reference
-    }
-  }
-
-  # Here we use the cDNAs that were not used in the intron round
-  
-  $round = "Third (extend transcripts) round:";
-  my $count3 = 0;
-  $log->write_to("\nTB : $round\n") if ($verbose);
-
-
-  foreach my $cdna ( @cdna_objs) {
-    next if ( @test_est and not grep { $cdna->name eq $_ } @test_est); #debug line
-    next if ( defined($cdna->mapped) );
-
-    # want to see which fresh set of CDSs this matches
-    $cdna->reset_probably_matching_cds;
-
-    # here we are now looking for overlapped transcripts and want to
-    # avoid using cDNAs that overlap two genes with no intron evidence
-    # as to which one it should be added to.
-
-    foreach my $cds ( @cds_objs ) {
-      if ($cdna->overlap($cds)) {
-	$cdna->probably_matching_cds($cds, 1);
+      } elsif (scalar(@matching_genes) > 1) { 
+	# we want to report those ESTs that have introns that match two or more CDSs as this may indicate required gene mergers.
+	if ($verbose) {
+	  $log->write_to("TB : $round : cDNA " .
+			 $cdna->name . 
+			 " matches introns in two or more genes and will not be used in transcript-building:");
+	  foreach my $gene (@matching_genes) {
+	    $log->write_to("TB : $round :\t" . $gene);
+	  }
+	  $log->write_to("\n");
+	}
+	print($prob_fh "$round cDNA " .
+	      $cdna->name .
+	      " matches introns in two or more genes and will not be used in transcript-building: @matching_genes\n");
+	$cdna->mapped(1);  # mark the cDNA as used with a dummy CDS reference
       }
     }
-    # now check how many genes the cDNA overlaps - we only want those that overlap one
-    my @matching_genes = ($species eq 'elegans') 
+    
+    # Here we use the cDNAs that were not used in the intron round
+    
+    ##########################################################
+    $round = "Third (extend transcripts) round:";
+    $log->write_to("\nTB : $round\n") if ($verbose);
+    print "\nTB: $round round\n\n";
+    
+    
+    foreach my $cdna_name (keys %{$CDS_cDNA{$next_cds->name}}) {
+      my $cdna = $cdna_objs[$cDNA_index{$cdna_name}];
+      
+      next if ( @test_est and not grep { $cdna->name eq $_ } @test_est); #debug line
+      next if ( defined($cdna->mapped) );
+      
+      # want to see which fresh set of CDSs this matches
+      $cdna->reset_probably_matching_cds;
+      
+      # here we are now looking for overlapped transcripts and want to
+      # avoid using cDNAs that overlap two genes with no intron evidence
+      # as to which one it should be added to.
+      
+      if ($cdna->overlap($next_cds)) {
+	$cdna->probably_matching_cds($next_cds, 1);
+      }
+      
+      # now check how many genes the cDNA overlaps - we only want those that overlap one
+      my @matching_genes = ($species eq 'elegans') 
         ? $cdna->list_of_matched_genes_by_seqname($wormbase->seq_name_regex)
-        : $cdna->list_of_matched_genes(\%cds2gene);
-
-    if (scalar(@matching_genes) == 1) { # just one matching gene
-      foreach my $cds_match (@{$cdna->probably_matching_cds}) {
-	my $cds = $cds_match->[0];
-	if ( $cds->map_cDNA($cdna) ) { # add it to the transcript structure
-	  $cdna->mapped($cds );  # mark the cDNA as used
-	  $log->write_to("TB : $round : Have used first round addition of " . $cdna->name . " in the transcript " . $cds->name ."\n") if ($verbose);
+	  : $cdna->list_of_matched_genes(\%cds2gene);
+      
+      if (scalar(@matching_genes) == 1) { # just one matching gene
+	foreach my $cds_match (@{$cdna->probably_matching_cds}) {
+	  my $cds = $cds_match->[0];
+	  if ( $cds->map_cDNA($cdna) ) { # add it to the transcript structure
+	    $cdna->mapped($cds );  # mark the cDNA as used
+	    $log->write_to("TB : $round : Have used first round addition of " . $cdna->name . " in the transcript " . $cds->name ."\n") if ($verbose);
+	  }
 	}
-      }
-    } elsif (scalar(@matching_genes) > 1) { 
-      $log->write_to("TB : $round : cDNA ",$cdna->name," overlaps two or more genes and will not be used in transcript-building:") if ($verbose);
-      foreach my $gene (@matching_genes) {
+      } elsif (scalar(@matching_genes) > 1) { 
+	$log->write_to("TB : $round : cDNA ",$cdna->name," overlaps two or more genes and will not be used in transcript-building:") if ($verbose);
+	foreach my $gene (@matching_genes) {
           $log->write_to("TB : $round :\t" . $gene) if ($verbose);
+	}
+	$log->write_to("\n") if ($verbose);
+	print($prob_fh "$round cDNA " .
+	      $cdna->name .
+	      " overlaps two or more genes and will not be used in transcript-building: @matching_genes\n");
+	$cdna->mapped(1);  # mark the cDNA as used with a dummy CDS reference
       }
-      $log->write_to("\n") if ($verbose);
-      print($prob_fh "$round cDNA " .
-            $cdna->name .
-            " overlaps two or more genes and will not be used in transcript-building: @matching_genes\n");
-      $count3++;
-      $cdna->mapped(1);  # mark the cDNA as used with a dummy CDS reference
     }
-  }
-
-
-
-  # Fourth round - use read-pair information to extend with cDNAs that do not overlap
-
-  $round = "Fourth (read pairs) round:";
-  $log->write_to("TB : $round\n") if ($verbose);
-
- PAIR: foreach my $cdna ( @cdna_objs) {
-    next if ( @test_est and not grep { $cdna->name eq $_ } @test_est); #debug line
-    next if $cdna->mapped;
-
-    # get name of paired read
-    next unless (my $mapped_pair_name = $cdna->paired_read );
-
-    # retrieve object from array
-    next unless ($cDNA_index{$mapped_pair_name} and (my $partner = $cdna_objs[ $cDNA_index{$mapped_pair_name} ] ) );
-
-    # get cds that paired read maps to 
-    if (my $cds = $partner->mapped) {
-      if ($cds != 1) { # don't want to start using the dummy 'cds = 1' flags we used earlier to mark cDNAs we don't wish to use in a transcript
-	my $index = $cds->array_index;
-
-	# find next downstream CDS - must be on same strand
-	my $downstream_CDS;
-      DOWN: while (! defined $downstream_CDS ) {
-	  $index++;
-	  if ( $downstream_CDS = $cds_objs[ $index ] ) {
-	    
-	    unless ( $downstream_CDS ) {
-	      last;
-	      $log->write_to("TB : $round : last gene in array\n") if ($verbose);
+    
+    
+    ##########################################################
+    # Fourth round - use read-pair information to extend with cDNAs that do not overlap
+    
+    $round = "Fourth (read pairs) round:";
+    $log->write_to("TB : $round\n") if ($verbose);
+    print "\nTB: $round round\n\n";
+    
+  PAIR:   foreach my $cdna_name (keys %{$CDS_cDNA{$next_cds->name}}) {
+      my $cdna = $cdna_objs[$cDNA_index{$cdna_name}];
+      
+      next if ( @test_est and not grep { $cdna->name eq $_ } @test_est); #debug line
+      next if $cdna->mapped;
+      
+      # get name of paired read
+      next unless (my $mapped_pair_name = $cdna->paired_read );
+      
+      # retrieve object from array
+      next unless ($cDNA_index{$mapped_pair_name} and (my $partner = $cdna_objs[ $cDNA_index{$mapped_pair_name} ] ) );
+      
+      # get cds that paired read maps to 
+      if (my $cds = $partner->mapped) {
+	if ($cds != 1) { # don't want to start using the dummy 'cds = 1' flags we used earlier to mark cDNAs we don't wish to use in a transcript
+	  my $index = $cds->array_index;
+	  
+	  # find next downstream CDS - must be on same strand
+	  my $downstream_CDS;
+	DOWN: while (! defined $downstream_CDS ) {
+	    $index++;
+	    if ( $downstream_CDS = $cds_objs[ $index ] ) {
+	      
+	      unless ( $downstream_CDS ) {
+		last;
+		$log->write_to("TB : $round : last gene in array\n") if ($verbose);
+	      }
+	      # dont count isoforms
+	      my $down_name = $downstream_CDS->name;
+	      my $name = $cds->name;
+	      $name =~ s/[a-z]//;
+	      $down_name =~ s/[a-z]//;
+	      if ( $name eq $down_name ) {
+		undef $downstream_CDS;
+		next;
+	      }
+	      # @cds_objs is structured so that + strand genes are in a block at start, then - strand
+	      last DOWN if( $downstream_CDS->strand ne $cds->strand );
+	      
+	      # check unmapped cdna ( $cdna ) lies within 1kb of CDS that paired read maps to ( $cds ) and before $downstream_CDS
+	      
+	      #print "$round trying ",$cds->name, " downstream is ", $downstream_CDS->name," with ",$cdna->name,"\n" if ($verbose);
+	      if ( ($cdna->start > $cds->gene_end) and ($cdna->start - $cds->gene_end < 1000) and ($cdna->end < $downstream_CDS->gene_start) ) {
+		$log->write_to("TB : $round : adding 3' cDNA " . $cdna->name . " to " . $cds->name . "\n") if ($verbose);
+		$cds->add_3_UTR($cdna);
+		$cdna->mapped($cds);
+		last;
+	      }
+	    } else {
+	      last DOWN;
 	    }
-	    # dont count isoforms
-	    my $down_name = $downstream_CDS->name;
-	    my $name = $cds->name;
-	    $name =~ s/[a-z]//;
-	    $down_name =~ s/[a-z]//;
-	    if ( $name eq $down_name ) {
-	      undef $downstream_CDS;
-	      next;
-	    }
-	    # @cds_objs is structured so that + strand genes are in a block at start, then - strand
-	    last DOWN if( $downstream_CDS->strand ne $cds->strand );
-	    
-	    # check unmapped cdna ( $cdna ) lies within 1kb of CDS that paired read maps to ( $cds ) and before $downstream_CDS
-	    
-	    #print "$round trying ",$cds->name, " downstream is ", $downstream_CDS->name," with ",$cdna->name,"\n" if ($verbose);
-	    if ( ($cdna->start > $cds->gene_end) and ($cdna->start - $cds->gene_end < 1000) and ($cdna->end < $downstream_CDS->gene_start) ) {
-	      $log->write_to("TB : $round : adding 3' cDNA " . $cdna->name . " to " . $cds->name . "\n") if ($verbose);
-	      $cds->add_3_UTR($cdna);
-	      $cdna->mapped($cds);
-	      last;
-	    }
-	  } else {
-	    last DOWN;
 	  }
 	}
       }
     }
-  }
+    
+    ##########################################################=
+    #  $round = "Fifth (extend transcripts again) round:";
+    #  $log->write_to("$round\n") if ($verbose);
+    #
+    #  foreach my $CDNA ( @cdna_objs) {
+    #    next if ( defined $est and $CDNA->name ne "$est"); #debug line
+    #    next if ( defined($CDNA->mapped) );
+    #    #sanity check features on cDNA ie SLs are at start
+    #    next if ( &sanity_check_features( $CDNA ) == 0 );
+    #    foreach my $cds ( @cds_objs ) {
+    #      if ( $cds->map_cDNA($CDNA) ) {
+    #	$CDNA->mapped($cds);
+    #	print "$round ",$CDNA->name," overlaps ",$cds->name,"\n" if ($verbose);
+    #      }
+    #    }
+    #  }
+    
+    
+    my $seq_name_regexp = $wormbase->seq_name_regex;
+    my ($gene_name) = ($next_cds->name =~ /($seq_name_regexp)/);
+    if ($prev_gene_name eq $gene_name) {
+      push @cds_objs_in_gene, $next_cds;
+    } else {
+      
+      # find transcript isoforms which have weak evidence compared to their siblings and remove them
+      purge_weakly_supported_transcript_structures(\@cds_objs_in_gene, \%Read_coverage);
+      
+      # find duplicate transcripts in a gene and make then non-identical so that the ENA will accept them
+      purge_duplicates(\@cds_objs_in_gene, \%cds2gene);
+      
+      # output
+      foreach my $cds (@cds_objs_in_gene) {
+	$cds->report($out_fh, $coords, $wormbase->full_name, \%cds2gene);
+      }
 
-#  $round = "Fifth (extend transcripts again) round:";
-#  $log->write_to("$round\n") if ($verbose);
-#
-#  foreach my $CDNA ( @cdna_objs) {
-#    next if ( defined $est and $CDNA->name ne "$est"); #debug line
-#    next if ( defined($CDNA->mapped) );
-#    #sanity check features on cDNA ie SLs are at start
-#    next if ( &sanity_check_features( $CDNA ) == 0 );
-#    foreach my $cds ( @cds_objs ) {
-#      if ( $cds->map_cDNA($CDNA) ) {
-#	$CDNA->mapped($cds);
-#	print "$round ",$CDNA->name," overlaps ",$cds->name,"\n" if ($verbose);
-#      }
-#    }
-#  }
-
-
+      # delete objects
+      foreach my $cds (@cds_objs_in_gene) {
+	$cds->delete;
+      }
+      
+      @cds_objs_in_gene = ($next_cds);
+      $prev_gene_name = $gene_name;
+    }
+    
+    
+  } # foreach $cds (@cds_objs)
+  
+  # find transcript isoforms which have weak evidence compared to their siblings and remove them
+  purge_weakly_supported_transcript_structures(\@cds_objs_in_gene, \%Read_coverage);
+  
+  # process last gene
   # find duplicate transcripts in a gene and make then non-identical so that the ENA will accept them
-  purge_duplicates(\@cds_objs, \%cds2gene);
-
-  foreach my $cds (@cds_objs ) {
+  purge_duplicates(\@cds_objs_in_gene, \%cds2gene);
+  
+  # output
+  foreach my $cds (@cds_objs_in_gene) {
     $cds->report($out_fh, $coords, $wormbase->full_name, \%cds2gene);
   }
-
+  
   $log->write_to("$count0 cDNAs rejected in round 0 (inconsistent attached features)\n");
   $log->write_to("$count1 cDNAs rejected in round 1 (low quality and overlaps two or more genes)\n");
-  $log->write_to("$count2 cDNAs rejected in round 2 (introns matched in two or more genes)\n");
-  $log->write_to("$count3 cDNAs rejected in round 3 (overlaps two or more genes)\n");
+  #  $log->write_to("$count2 cDNAs rejected in round 2 (introns matched in two or more genes)\n");
+  #  $log->write_to("$count3 cDNAs rejected in round 3 (overlaps two or more genes)\n");
 
-}
-
+} # foreach (@chromosomes)
 
 print $out_fh "\n\n// Finished.\n";
 
@@ -757,6 +863,87 @@ sub purge_duplicates {
   }
 
 }
+
+
+# find transcript isoforms which have weak evidence compared to their siblings and remove them
+# 'lowest_exon_count' is the lowest count (weakest evidence for an exon) of supporting cDNAs of all exons in the transcript
+# as calculated by CDS::increment_exon_counts()
+sub  purge_weakly_supported_transcript_structures {
+  my ($cds_objs, $Read_coverage) = @_;
+
+  foreach my $cds (@{$cds_objs}) {
+    my $best_weak_count = 0;
+
+    print "In purge_weakly_supported_transcript_structures\n" if ($debug);
+    print "\n\tCDS: ".$cds->name."\n" if ($debug);
+    # get the strongest evidence count of all the lowest evidence counts of all transcripts
+    foreach my $transcript ($cds->transcripts) {
+      print "\n\tTranscript: ".$transcript->name."\n" if ($debug);
+      if (exists $transcript->{'ignore'}) {
+	print "\tTranscript ".$transcript->name." has an Ignore set already\n" if ($debug);
+	next}
+      if (!exists $transcript->{'evidence'}) {
+	print "\tTranscript ".$transcript->name." has no exon evidence values\n" if ($debug);
+	next} # this happens if the structure has been reverted back to the CDS structure
+      
+      foreach my $cdna (@{$transcript->{'matching_cdna'}}) {  # debug info - not needed for the code to work
+	my $name = $cdna->name;
+	print "\tDebug: adding $name to exon evidence counts\n";
+      }
+
+      my $lowest_count = 1000000;
+      foreach my $exon (@{$transcript->sorted_exons}) {
+	my $exon_count = 0;
+	foreach my $exon_start (keys %{$transcript->{'evidence'}}) {
+	  my $cdna_name = $transcript->{'evidence'}{$exon_start};
+	  if (exists $Read_coverage->{$cdna_name}) {
+	    $exon_count += $Read_coverage->{$cdna_name}; # add the Nanopore Read_coverage to the count of evidence supporting this exon
+	  } else {
+	    $exon_count++; # just increment the count of EST/mRNA/trinity transcripts supporting this exon
+	  }
+	}
+	if ($exon_count < $lowest_count) {$lowest_count = $exon_count}
+	print " and now lowest_count = $lowest_count\n";
+      }
+      $transcript->{'lowest_exon_count'} = $lowest_count;
+      if ($transcript->{'lowest_exon_count'} > $best_weak_count) {$best_weak_count = $transcript->{'lowest_exon_count'}}
+    }
+    print "\tbest_weak_count=$best_weak_count\n" if ($debug);
+    my $best_weak_count_30_percent = $best_weak_count / 3;
+    my $count = 0;
+    foreach my $transcript (sort {$b->{'lowest_exon_count'} <=> $a->{'lowest_exon_count'}} $cds->transcripts) { # sort by reverse lowest_exon_count
+      if (exists $transcript->{'ignore'}) {next}
+      if (!exists $transcript->{'lowest_exon_count'}) {next} # this happens if the structure has been reverted back to the CDS structure
+# C15H9.6a has lots of isoforms from the introns in the 3' UTR, but also has single good isoforms from 5' whispy bits we want to keep
+# try removing the ' $transcript->{'lowest_exon_count'} == 1 && $best_weak_count > 1' to see what effect this has
+# what happens in the cases of?: daf-16, C24A3.2a, C25H3.9a, C34F11.6, Y65B4A.6a/b, K08E7.2, F21H12.5
+      print "\tChecking transcript ".$transcript->name."\n" if ($debug);
+      print "\tTranscript lowest_exon_count = $transcript->{'lowest_exon_count'}\n" if ($debug);
+      if ($transcript->{'lowest_exon_count'} < $best_weak_count_30_percent) {
+	print $prob_fh "\nWeak evidence for Transcript: ",$transcript->name," ",$transcript->{'lowest_exon_count'}," / $best_weak_count\n";
+	$log->write_to("\nWeak evidence for Transcript: ".$transcript->name." ".$transcript->{'lowest_exon_count'}." / $best_weak_count\n");
+	$transcript->{'ignore'} = 1; # ignore, don't report this.
+	print "\t*** Ignore this transcript because its evidence is too weak ".$transcript->name." (< $best_weak_count / 3) *********\n" if ($debug);
+      } elsif ($transcript->{'lowest_exon_count'} == 1 && $best_weak_count > 1) {
+	print $prob_fh "\nSingle EST evidence for Transcript: ",$transcript->name," ",$transcript->{'lowest_exon_count'}," / $best_weak_count\n";
+	$log->write_to("\nSingle EST evidence for Transcript: ".$transcript->name." ".$transcript->{'lowest_exon_count'}." / $best_weak_count\n");
+	$transcript->{'ignore'} = 1; # ignore, don't report this.
+	print "\t*** Single EST evidence for Transcript: ".$transcript->name." *********\n" if ($debug);
+      } else {
+	$count++; # only want the two best ones
+	if ($count > 2) {
+	  print $prob_fh "\nOnly want the two best Transcripts, so ignore: ",$transcript->name,"\n";
+	  $log->write_to("\nOnly want the two best Transcripts, so ignore: ".$transcript->name."\n");
+	  $transcript->{'ignore'} = 1; # ignore, don't report this.
+	  print "\t*** Only want the two best Transcripts, so ignore: ".$transcript->name."\n" if ($debug);
+	}
+      }
+    }
+  }
+}
+
+
+
 
 sub eradicateSingleBaseDiff {
   my $cDNAh = shift;
@@ -962,6 +1149,77 @@ sub get_feature_evidence {
   }
   return %Feature_evidence;
 }
+
+
+# where the Nanopore transcripts are equal in sequence, they have been collapsed to one Sequence with a Read_coverage holding the count
+# get the Read_coverage value from each of the Nanopore transcripts
+sub get_read_coverage {
+  my %Read_coverage;
+  my $NanoIt = $ace->fetch_many(-query => "Find Sequence Where Method = \"Nanopore\" AND Read_coverage > 1");
+  
+  while (my $nano = $NanoIt->next()) {
+    # The 'Read_coverage' values should all be populated, but check just in case
+    if (defined $nano->at('Origin.Read_coverage')) {
+      my $coverage = $nano->Read_coverage->name;
+      if ($coverage > 1) {
+	$Read_coverage{$nano->name} = $coverage;
+      }
+    }
+  }
+  return %Read_coverage;
+}
+
+
+
+=head2 list_of_matched_genes
+
+    Title   :   list_of_matched_genes
+    Usage   :   intron_matched_genes(\%cds2gene, \@matching_cds_names)
+    Function:   returns the list of genes derived from the names of the CDSs in $cdna->probably_matching_cds
+    Returns :   list of gene names
+    Args    :   
+               
+
+=cut
+
+sub list_of_matched_genes {
+  my ($cds2gene, $matches) = @_;
+
+  my %genes;
+  #print "Checking probably_matching_cds for ",$self->name,"\n";
+  if (! @{$matches}) {return ()}
+  foreach my $cds_name (@{$matches} ) {
+
+    if (exists $cds2gene->{$cds_name}) {
+      $genes{$cds2gene->{$cds_name}} = 1;
+    }
+  }
+
+  return keys %genes;
+}
+
+
+
+sub list_of_matched_genes_by_seqname {
+  my ($seq_name_regexp, $matches) = @_;
+
+  my %genes;
+
+  return () if not @{$matches};
+
+  foreach my $cds_name (@{$matches}) {
+    my ($gene) = ($cds_name =~ /($seq_name_regexp)/);
+  
+    if (defined $gene) {
+      $genes{$gene} = 1;
+    }
+  }
+
+  return keys %genes;
+}
+
+
+
 
 __END__
 
