@@ -2,6 +2,7 @@
 use strict;
 use lib $ENV{'CVS_DIR'};
 use lib "$ENV{'CVS_DIR'}/NAMEDB/lib";
+#use lib '/nfs/users/nfs_g/gw3/Nameserver-API';
 
 use NameDB_handler;
 use Getopt::Long;

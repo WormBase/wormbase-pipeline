@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 #
 # script to merge variations in the form:
-#   batch_variation_merge.pl -user mt3 -file FILE.TXT [-server test_wbgene_id;utlt-db;3307'] [-debug mt3] [-test]
+#   batch_variation_merge.pl -user mt3 -file FILE.TXT [-debug mt3]
 #
 #   the File is of format:
 #   WBVar1	WBVar2	WBVar3
@@ -13,38 +13,36 @@ use IO::File;
 
 use lib $ENV{CVS_DIR};
 use lib "$ENV{CVS_DIR}/NAMEDB/lib";
+#use lib '/nfs/users/nfs_g/gw3/Nameserver-API';
+
 use NameDB_handler;
 use Log_files;
-
+use Wormbase;
 use strict;
 
-my ($user,$pass,$test,$file,$server,$debug);
+my ($help, $debug, $verbose, $store, $wormbase, $species);
+my ($file, $debug);
 GetOptions(
-           'user:s'     => \$user,
-           'password:s' => \$pass,
-           'test'       => \$test,
            'file:s'     => \$file,
-           'server'     => \$server,
            'debug:s'    => \$debug,
+	   "store:s"    => \$store,
+	   "species:s"  => \$species,
 )||die(@!);
 
-my $log;
-if ($user) {$log = Log_files->make_log("NAMEDB:$file", $user);}
-elsif (defined $debug) {$log = Log_files->make_log("NAMEDB:$file", $debug);}
-else {$log = Log_files->make_log("NAMEDB:$file");}
-
-my ($DB,$db);
-
-if ($server){
-    $DB = $server;
-}elsif ($test) {
-    $DB = 'test_wbgene_id;utlt-db;3307';
-}else {
-    $DB = 'nameserver_live;web-wwwdb-core-02;3449';
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -organism => $species
+                             );
 }
 
-$log->write_to("Contacting NameServer $DB.....\n");
-$db = VariationDB_handler->new($DB,$user,$pass);
+my $log;
+if (defined $debug) {$log = Log_files->make_log("NAMEDB:$file", $debug);}
+else {$log = Log_files->make_log("NAMEDB:$file");}
+
+$log->write_to("Contacting NameServer .....\n");
+my $db = NameDB_handler->new($wormbase);
 
 my (@merges, %all_ids);
 
@@ -75,7 +73,7 @@ while (<$inf>){
     if ($var !~ /^WBVar/) {
       $db->dienice("VALIDATION FAILED: You have a non-WBVar id in your list ($var)");
     }
-    $db->validate_id($var);
+    if (scalar @{$db->find_variations($var)} == 0) {$db->dienice("VALIDATION FAILED: $var not found in Nameserver")};
   }
 
   push @merges, [$target, @to_merge];
@@ -87,46 +85,14 @@ while (<$inf>){
 #
 foreach my $merge_arr (@merges) {
   my ($target, @to_merge) = @$merge_arr;
-  
-  foreach my $v(@to_merge){
-    if (my $ids = $db->merge_variations($target, $v)){
-      $log->write_to("Merge complete, $v is DEAD and has been merged into variation $target\n");
-    } else {
-      $log->write_to("ERROR: Sorry, the variation merge of $v into $target failed\n");
-    }
-  }
+
+  # we have decided that merging variations is done so rarely that we
+  # are not even going to make a REST entry-point for it and so we
+  # simply deleted the variations that are to be merged into the
+  # target
+  my $ids = $db->kill_variations(\@to_merge);
+
 }
 
 $log->mail;
 
-# to not trample all over the NameDB_handler
-package VariationDB_handler;
-use parent 'NameDB_handler';
-
-# trimmed down constructor for variations
-sub new{
-    my ($class,$dsn,$name,$password) = @_;
-
-    my $db = NameDB->connect($dsn,$name,$password);
-
-    bless ($db, $class);
-
-    # prevent it being used with anything but variations
-    $db->setDomain('Variation');
-
-    return $db;
-}
-
-
-sub merge_variations {
-  my ($db, $variation, $merge_variation) = @_;
-  
-  $db->remove_all_names($merge_variation);
-
-  if ($db->idMerge($merge_variation,$variation)) {
-    return ([$variation,$merge_variation]);
-  } else {
-    $db->dienice("FAILED : merge failed");
-    return undef;
-  }
-}
