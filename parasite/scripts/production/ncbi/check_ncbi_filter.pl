@@ -13,7 +13,7 @@ line argument.
 
 =head1 SYNOPSIS
 
-  check_ncbi_filter.pl [-ncbi_only] [-parasite_only] [-match_not_intended] [-matching_metadata] [-matching_scaffold_names] [-matching_scaffold_lengths] [-mismatched] [<file>]
+  check_ncbi_filter.pl [options] [<file>]
 
 =head2 OPTIONS
 
@@ -41,6 +41,12 @@ line argument.
 -v, --invert-match
    invert matching, i.e. display entries I<not> under the specified headings
 
+-csv
+   print CSV instead of YAML dump
+
+-tsv
+   print TSV instead of YAML dump
+
 =cut
 
 use strict;
@@ -49,7 +55,11 @@ use Getopt::Long;
 use Pod::Usage;
 use YAML;
 
-my ($ncbi_only, $parasite_only, $match_not_intended, $matching_metadata, $matching_scaffold_names, $matching_scaffold_lengths, $mismatched, $invert, $help);
+use constant ASSEMBLY_KEYS => [qw(assembly_accession provider_name report_url submission_date assembly_url assembly_name)];
+
+my (  $ncbi_only, $parasite_only, $match_not_intended, $matching_metadata, $matching_scaffold_names, $matching_scaffold_lengths, $mismatched,
+      $invert, $csv, $tsv,
+      $help);
 GetOptions( 'ncbi_only'                   => \$ncbi_only,
             'parasite_only'               => \$parasite_only,
             'match_not_intended'          => \$match_not_intended,
@@ -65,6 +75,8 @@ GetOptions( 'ncbi_only'                   => \$ncbi_only,
             'mismatched'                  => \$mismatched,
             'v'                           => \$invert,
             'invert-match'                => \$invert,
+            'csv'                         => \$csv,
+            'tsv'                         => \$tsv,
             'help'                        => \$help
             )
             || pod2usage({-exitval=>1});
@@ -80,18 +92,43 @@ my %wanted = ( 'NCBI_ONLY'                   => $ncbi_only,
                'MISMATCHED'                  => $mismatched
                );
 
-my $tag_patterns  = '('.join(')|(',keys %wanted).')';
-my $tag_regex     = qr/^($tag_patterns)\s*:\s*$/;
 
-# $tag_regex = qr/^($tag_patterns)/;
+my $data = YAML::Load(join('',<>));
 
-my $output_on;
-while(my $line = <>) {
-   my($tag) = $line =~ $tag_regex;
-   if(defined $tag) {
-      # this line is a tag, so turn output on/off according to flag in %wanted
-      $output_on = (defined $invert && $invert) ? !$wanted{$tag} : $wanted{$tag};
-   }
-   $output_on && print $line;
+# remove unwanted headings
+for my $this_heading (keys %{$data}) {
+   delete $data->{$this_heading} unless ( $invert ? ! $wanted{$this_heading} : $wanted{$this_heading} );
 }
 
+if($csv || $tsv) {
+   for my $this_heading (sort keys %{$data}) {
+      foreach my $this_species (sort keys %{$data->{$this_heading}}) {
+         foreach my $this_bioproject (sort keys %{$data->{$this_heading}->{$this_species}}) {
+            my $this_assemblies_array = $data->{$this_heading}->{$this_species}->{$this_bioproject};
+            unless( ref([]) eq ref($this_assemblies_array) ) {
+               require Data::Dumper;
+               print STDERR "$this_species $this_bioproject doesn't contain an array (of assemblies)\n";
+               print STDERR Dumper $this_assemblies_array;
+               die "baled";
+            }
+            foreach my $this_assembly ( @{$this_assemblies_array} ) {
+               unless( ref({}) eq ref($this_assembly) ) {
+                  require Data::Dumper;
+                  print STDERR "$this_species $this_bioproject has an asssemly which isn't a hash\n";
+                  print STDERR Dumper $this_assembly;
+                  die "baled";
+               }
+               print join( ($tsv ? "\t" : ','),
+                           $this_heading,
+                           $this_species,
+                           $this_bioproject,
+                           map((defined $this_assembly->{$_} ? $this_assembly->{$_} : ''), @{+ASSEMBLY_KEYS})
+                           ),
+                     "\n";
+            }
+         }
+      }
+   }
+} else {
+   print YAML::Dump( $data );
+}
