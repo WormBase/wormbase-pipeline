@@ -21,7 +21,7 @@ use File::Path;
 # command line options                            # 
 ###################################################
 my ($help, $debug, $test, $class, @classes, $database, $ace, $verbose);
-my (@skip_methods, $excludeprojects);
+my (@skip_methods, $excludeprojects, $one_variation);
 
 GetOptions ('help'          => \$help,
             'debug=s'       => \$debug,
@@ -32,6 +32,7 @@ GetOptions ('help'          => \$help,
             'test'          => \$test,
             'skipmethod=s@' =>  \@skip_methods,
 	    'excludeprojects' => \$excludeprojects, # don't test the large Allele projects
+	    'variation=s'   => \$one_variation, # specify one test variation
 	   );
 
 ###################################################
@@ -895,15 +896,18 @@ sub process_allele_class{
 
   my $query = "find Variation Allele";
   #my $query = "find Variation WBVar00088961";
-# WGS_Hobert  WGS_Rose WGS_Jarriault
+
   if ($excludeprojects) {@skip_methods = qw(NBP_knockout_allele KO_consortium_allele NemaGENETAG_consortium_allele Million_mutation SNP Mos_insertion Transposon_insertion CGH_allele WGS_Hobert WGS_Rose WGS_Jarriault WGS_McGrath WGS_Flibotte)}
   foreach my $meth (@skip_methods) {
     $query .= " AND Method != \"$meth\"";
   }
+  if (defined $one_variation) {
+    $query = "find Variation $one_variation";
+  }
+
   my $alleles_it = $db->fetch_many(-query => "$query");
 
   # now loop through all alleles looking for problems
-#  foreach my $allele (@alleles) {
   while( my $allele = $alleles_it->next){
     print "$allele\n" if ($verbose);
 
@@ -939,22 +943,6 @@ sub process_allele_class{
 	}
       }
     }
-
-
-    # check for Missense tag but no value
-    if (!defined $allele->Missense) {
-      my $missense = $allele->at('Description.Missense');
-      if (defined($missense)) {
-	print LOG "ERROR: $allele has a missense tag but does not have an associated value\n";
-      }
-    }
-    # now check for structure of Missense field
- #   else {
- #     my $missense = $allele->Missense;
- #     if ($missense !~ m/^[A-Z]\(\d+\) to [A-Z]$/) {
-#	print LOG "ERROR: $allele has an incorrect Missense value ($missense)\n";
- #     }
- #   }
 
     # Check for Public_name tag missing
     if (!defined($allele->Public_name)) {
