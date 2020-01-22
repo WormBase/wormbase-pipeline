@@ -986,22 +986,33 @@ sub process_allele_class{
 
       my @mut_type = $allele->Type_of_mutation;
       if ( scalar @mut_type == 1 ) {
+
+	if (defined $allele->Method) {
+	  $observed_method = $allele->Method;
+	} else {
+	  $observed_method = '';
+	}
+ 
 	if ($mut_type[0] eq "Deletion" ) {
 	  $expected_method = "Deletion_allele";
-	} elsif ($mut_type[0] eq "Insertion" && !defined $allele->Transposon_insertion ) {
-	  $expected_method = "Insertion_allele";
 
 	# It is acceptable to have Method 'NemaGENETAG_consortium_allele' when we have a Transposon and so might expect the Method to be 'Transposon_insertion'
-	} elsif ($allele->Transposon_insertion && $allele->at('Sequence_details.Type_of_mutation.Insertion') && (!defined $observed_method || $observed_method ne 'NemaGENETAG_consortium_allele')) {
+	} elsif ($mut_type[0] eq "Insertion" && defined $allele->Transposon_insertion && $observed_method eq 'NemaGENETAG_consortium_allele') {
+	  $expected_method = 'NemaGENETAG_consortium_allele';
+
+	} elsif ($mut_type[0] eq "Insertion" && !defined $allele->Transposon_insertion) {
+	  $expected_method = "Insertion_allele";
+
+	} elsif ($allele->Transposon_insertion && $allele->at('Sequence_details.Type_of_mutation.Insertion')) {
 	  $expected_method = "Transposon_insertion";
+
 	} elsif ($allele->Type_of_mutation eq "Substitution" ) {
 	  $expected_method = "Substitution_allele";
+
 	} elsif ( grep(/Deletion/, @mut_type) and grep(/Insertion/, @mut_type) ) {
 	  $expected_method = "Deletion_and_insertion_allele";
 	}
 
-	($observed_method = $allele->Method) if (defined $allele->Method);
- 
 	# does $observed method tag agree with expected method tag (based on Type_of_mutation tag)?
 	if ($expected_method ne $observed_method) {
 	  if ($ace) {
