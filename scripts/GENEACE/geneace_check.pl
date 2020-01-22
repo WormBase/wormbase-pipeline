@@ -984,46 +984,56 @@ sub process_allele_class{
       my $observed_method;
 
 
+      if (defined $allele->Method) {
+	$observed_method = $allele->Method;
+      } else {
+	$observed_method = '';
+      }
+
+
       my @mut_type = $allele->Type_of_mutation;
       if ( scalar @mut_type == 1 ) {
 
-	if (defined $allele->Method) {
-	  $observed_method = $allele->Method;
-	} else {
-	  $observed_method = '';
-	}
- 
-	if ($mut_type[0] eq "Deletion" ) {
-	  $expected_method = "Deletion_allele";
-
 	# It is acceptable to have Method 'NemaGENETAG_consortium_allele' when we have a Transposon and so might expect the Method to be 'Transposon_insertion'
-	} elsif ($mut_type[0] eq "Insertion" && defined $allele->Transposon_insertion && $observed_method eq 'NemaGENETAG_consortium_allele') {
+	if ($mut_type[0] eq "Insertion" && defined $allele->Transposon_insertion && $observed_method eq 'NemaGENETAG_consortium_allele') {
 	  $expected_method = 'NemaGENETAG_consortium_allele';
+
+	} elsif (defined $allele->Production_method && $allele->Production_method eq 'CRISPR_Cas9') {
+	  $expected_method = 'Engineered_allele';
+
+	} elsif ($mut_type[0] eq "Deletion" ) {
+	  $expected_method = "Deletion_allele";
 
 	} elsif ($mut_type[0] eq "Insertion" && !defined $allele->Transposon_insertion) {
 	  $expected_method = "Insertion_allele";
 
-	} elsif ($allele->Transposon_insertion && $allele->at('Sequence_details.Type_of_mutation.Insertion')) {
+	} elsif (defined $allele->Transposon_insertion && $allele->Transposon_insertion && $allele->at('Sequence_details.Type_of_mutation.Insertion')) {
 	  $expected_method = "Transposon_insertion";
 
-	} elsif ($allele->Type_of_mutation eq "Substitution" ) {
+	} elsif (defined $allele->Type_of_mutation && $allele->Type_of_mutation eq "Substitution" ) {
 	  $expected_method = "Substitution_allele";
-
-	} elsif ( grep(/Deletion/, @mut_type) and grep(/Insertion/, @mut_type) ) {
-	  $expected_method = "Deletion_and_insertion_allele";
 	}
 
-	# does $observed method tag agree with expected method tag (based on Type_of_mutation tag)?
-	if ($expected_method ne $observed_method) {
-	  if ($ace) {
-	    print LOG "ERROR(a): $allele has wrong method ($observed_method): change to $expected_method\n";
-	    print ACE "\nAllele : \"$allele\"\n";
-	    print ACE "-D Method\n";
-	    print ACE "\nAllele : \"$allele\"\n";
-	    print ACE "Method \"$expected_method\"\n";
-	  } else {
-	    print LOG "ERROR: $allele has method $observed_method which might need to be $expected_method\n";
-	  }
+      } elsif (scalar @mut_type > 1) {
+	
+	if ( grep(/Deletion/, @mut_type) and grep(/Insertion/, @mut_type) ) {
+	  $expected_method = "Deletion_and_insertion_allele";
+	} else {
+	  print LOG "ERROR: $allele has multiple Type_of_mutation @mut_type with method $observed_method. Unsure how to check this!\n";
+	}
+	
+      }
+
+      # does $observed method tag agree with expected method tag (based on Type_of_mutation tag)?
+      if ($expected_method ne $observed_method) {
+	if ($ace) {
+	  print LOG "ERROR(a): $allele has wrong method ($observed_method): change to $expected_method\n";
+	  print ACE "\nAllele : \"$allele\"\n";
+	  print ACE "-D Method\n";
+	  print ACE "\nAllele : \"$allele\"\n";
+	  print ACE "Method \"$expected_method\"\n";
+	} else {
+	  print LOG "ERROR: $allele has method $observed_method which might need to be $expected_method\n";
 	}
       }
 
