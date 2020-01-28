@@ -139,12 +139,15 @@ while (my $int = $it->next) {
   next unless values %papPmid;
 
   if ($rnai){
-    foreach my $g ($int->Interactor_overlapping_gene){
-	    foreach my $r ($int->Interaction_RNAi){
-	      my @rnaiGenes = $r->Gene;
-	      next if scalar @rnaiGenes > 2;
-	      map {$intValidGiRnai{"$int"}{"$g"}{"$r"}++ if "$_" eq "$g"} $r->Gene;
-            }
+    my %interaction_genes = map {$_->name => 1} $int->Interactor_overlapping_gene;
+    foreach my $r ($int->Interaction_RNAi){
+          map {
+		  if ($interaction_genes{"$_"}){
+			  $intValidGiRnai{"$int"}{"$_"}{"$r"}++
+		  }else{
+			  $intSuppress{$int}++
+		  }
+	  } $r->Gene;
     }
   }
   if ($int->Variation_interactor){
