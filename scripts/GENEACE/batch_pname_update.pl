@@ -9,6 +9,8 @@
 # Last edited on: $Date: 2015-03-31 10:16:20 $
 #
 
+
+
 use lib $ENV{'CVS_DIR'};
 use lib "$ENV{'CVS_DIR'}/NAMEDB/lib";
 
@@ -44,7 +46,7 @@ use Getopt::Long;
   -public    this only tries to add the name as a Public_name - used to update missing Public_names
   -sequence    this only tries to add the name as a Sequence_name - used to update missing Sequence_names
   -newonly   modifies what is necessary in the input file
-
+  -seqforce 
 e.g. perl pname_update.pl -user blah -pass blah -species elegans -test -file variation_name_data
 
 =cut
@@ -56,7 +58,7 @@ e.g. perl pname_update.pl -user blah -pass blah -species elegans -test -file var
 my $PASS;
 my $USER;
 my $DOMAIN;
-my ($debug, $test, $store, $species, $file, $cgc, $public, $sequence, $newonly);
+my ($debug, $test, $store, $species, $file, $cgc, $public, $sequence, $newonly, $seqforce);
 
 GetOptions (
 	    "file=s"     => \$file,
@@ -71,6 +73,7 @@ GetOptions (
 	    "public"     => \$public,
 	    "sequence"   => \$sequence,
             "newonly"    => \$newonly,
+            "seqforce"   => \$seqforce,
 	   );
 
 
@@ -118,6 +121,11 @@ while (<DATA>) {
 	  $log->write_to ("\nProcessing $_\n");
 	  if (&check_name_exists($2)) {
 	    $log->write_to ("\nERROR: $_ CGC name already exists\n");
+            if ($seqforce) {
+                    print "\nOnly adding Sequence name data\n";
+                &addname($1, $2, $cgc, $public, $sequence)
+            }
+            
 	  } else {
 	    &addname($1, $2, $cgc, $public, $sequence)
 	  }
