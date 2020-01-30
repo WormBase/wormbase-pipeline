@@ -30,8 +30,25 @@ use NameDB_handler;
 =item Parameters
 
 
-    -name genename
+    -gene genename 
+     show information about a gene
      genename can be the WBGene ID, the sequence name or the CGC name
+
+    -variation varname
+     show information about a variation
+     varname can be WBVarID or variation name
+
+    -seqfeature featurename
+     show information about a sequence feature
+     featurename is WBsfID
+
+    -variation strainname
+     show information about a strain
+     strainname can be WBStrainID or strain name
+
+    -entity
+     lists all entities in the nameserver
+
 
     -all
      Prints all of the change events, not just the first and last
@@ -45,7 +62,7 @@ use NameDB_handler;
 ######################################
 
 my ($help, $debug, $verbose, $store, $wormbase);
-my ($species, $gene, $all);
+my ($species, $gene, $variation, $seqfeature, $strain, $entity, $all);
 my $BATCH_SIZE = 500; # maximum entries to put into any one batch API call
 
 GetOptions ("help"       => \$help,
@@ -54,6 +71,10 @@ GetOptions ("help"       => \$help,
 	    "store:s"    => \$store,
 	    "species:s"  => \$species,
 	    "gene:s"     => \$gene,
+	    "variation:s"=> \$variation,
+	    "sequencefeature:s" => \$seqfeature,
+	    "strain:s"   => \$strain,
+	    "entity"     => \$entity,
 	    "all"        => \$all,
 	    );
 
@@ -68,8 +89,6 @@ if ( $store ) {
 # Display help if required
 &usage("Help") if ($help);
 
-if (!defined $gene) {die "Please specify the gene name with: -gene name\n";}
-
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
@@ -77,8 +96,29 @@ my $log = Log_files->make_build_log($wormbase);
 my $db = NameDB_handler->new($wormbase);
 
 
-find_gene($gene, $all);
+if (defined $gene) {
+  
+  find_gene($gene, $all);
 
+} elsif (defined $variation) {
+  
+  find_variation($variation);
+
+} elsif (defined $seqfeature) {
+  
+  find_seqfeature($seqfeature);
+
+} elsif (defined $strain) {
+  
+  find_strain($strain);
+
+} elsif ($entity) {
+  
+  find_entity();
+  
+} else {
+  die "Please specify the gene name with: -gene name\n";
+}
 
 $db->close;
 
@@ -128,8 +168,9 @@ sub find_gene {
   my $species = $info->{'species'};
   my $status = $info->{'status'};
   my $biotype = $info->{'biotype'};
-  print "Gene $id\nSequence-name $seqname\nCGC name $cgcname\n";
-  print "Species $species\nStatus $status\nBiotype $biotype\n";
+  if (!defined $biotype) {$biotype = '.'}
+  print "Gene: $id\nSequence-name $seqname\nCGC name $cgcname\n";
+  print "Species: $species\nStatus $status\nBiotype $biotype\n";
   # order the history events by time, so element [0] is the creation and element [-1] is the last event
   my $no_changes = scalar @{$info->{'history'}};
   my @events = sort {$a->{'t'} cmp $b->{'t'}} @{$info->{'history'}};
@@ -183,6 +224,69 @@ sub find_gene {
 
 }
 
+##########################################
+sub find_variation {
+
+  my ($variation) = @_;
+
+  my $info = $db->{'db'}->curl('GET', "entity/variation/$variation");
+
+  if (exists $info->{'message'} && $info->{'message'} eq 'Entity lookup failed') {
+    print "$variation Not found\n";
+  } else {
+    print "ID: ".$info->{'id'}."\n";
+    print "Name: ".$info->{'name'}."\n";
+    print "Status: ".$info->{'status'}."\n";
+  }
+}
+##########################################
+sub find_seqfeature {
+
+  my ($seqfeature) = @_;
+
+  my $info = $db->{'db'}->curl('GET', "entity/sequence-feature/$seqfeature", undef, 1);
+  if (exists $info->{'message'} && $info->{'message'} eq 'Entity lookup failed') {
+    print "$seqfeature Not found\n";
+  } else {
+    print "ID: ".$info->{'id'}."\n";
+    print "Name: ".$info->{'name'}."\n";
+    print "Status: ".$info->{'status'}."\n";
+  }
+}
+##########################################
+sub find_strain {
+
+  my ($strain) = @_;
+
+  my $info = $db->{'db'}->curl('GET', "entity/strain/$strain", undef, 1);
+
+  if (exists $info->{'message'} && $info->{'message'} eq 'Entity lookup failed') {
+    print "$strain Not found\n";
+  } else {
+    print "ID: ".$info->{'id'}."\n";
+    print "Name: ".$info->{'name'}."\n";
+    print "Status: ".$info->{'status'}."\n";
+  }
+}
+##########################################
+sub find_entity {
+
+  my $info = $db->{'db'}->curl('GET', 'entity', undef, 1);
+  foreach my $entity (@{$info->{'entity-types'}}) {
+    my $name = $entity->{'entity-type'};
+    print "$name\n";
+  }
+
+}
+##########################################
+##########################################
+##########################################
+##########################################
+##########################################
+##########################################
+##########################################
+##########################################
+##########################################
 ##########################################
 ##########################################
 
