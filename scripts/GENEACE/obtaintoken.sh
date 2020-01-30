@@ -21,19 +21,15 @@ fi
 redirect_uri="urn:ietf:wg:oauth:2.0:oob"
 scope="email%20profile%20openid"
 $OPEN "https://accounts.google.com/o/oauth2/auth?client_id=${client_id}&redirect_uri=$redirect_uri&scope=$scope&response_type=code" \
-      > /dev/null
+      2> /dev/null 3> /dev/null
 
 read -sp "Paste Google one-time-code:" code
+RESP=$(curl --silent \
+	    -d "code=$code" \
+	    -d "client_id=$client_id" \
+	    -d "client_secret=$client_secret" \
+	    -d "redirect_uri=$redirect_uri" \
+	    -d "grant_type=authorization_code" \
+	    https://accounts.google.com/o/oauth2/token)
 
-echo "cODE: $code"
-
-curl -X POST \
-        -d "code=$code" \
-        -d "client_id=$client_id" \
-        -d "client_secret=$client_secret" \
-        -d "redirect_uri=$redirect_uri" \
-        -d "grant_type=authorization_code" \
-        https://accounts.google.com/o/oauth2/token -v
-
-#echo $RESP
-# | jq .id_token | tr -d '"'
+echo $RESP | jq .id_token | tr -d '"'
