@@ -22,7 +22,7 @@ GetOptions (
   "outfile:s"   => \$outfile,
   "wsversion=s" => \$ws_version,
   "bgijson=s"   => \$bgi_json,
-    );
+  )||die();
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
@@ -38,65 +38,73 @@ my $alt_date = join("/", $date =~ /^(\d{4})(\d{2})(\d{2})/);
 my $taxid = $wormbase->ncbi_tax_id;
 my $full_name = $wormbase->full_name;
 
-$acedbpath = $wormbase->autoace unless $acedbpath;
-$ws_version = $wormbase->get_wormbase_version_name unless $ws_version;
+$acedbpath  ||= $wormbase->autoace;
+$ws_version ||= $wormbase->get_wormbase_version_name;
+$outfile    ||= "./wormbase.agr_allele.${ws_version}.json";
 
-if (not defined $outfile) {
-  $outfile = "./wormbase.agr_allele.${ws_version}.json";
-}
+my (@alleles, @annots);
 
-#
-# restrict to genes in the BGI, if provded
-#
-my ($bgi_genes, @alleles, $it, @annots);
+my $bgi_genes = AGR::get_bgi_genes( $bgi_json ) if $bgi_json;
 
-$bgi_genes = AGR::get_bgi_genes( $bgi_json ) if defined $bgi_json;
+my $db = Ace->connect(-path => $acedbpath, -program => $tace) or die("Connection failure: ". Ace->error);
 
-my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or die("Connection failure: ". Ace->error);
+my $it = $db->fetch_many(-query => 'find Variation WHERE Live AND COUNT(Gene) == 1 AND (Phenotype OR Disease_info) AND NOT Natural_variant');
+process($it);
 
-$it = $db->fetch_many(-query => 'find Variation WHERE Live AND COUNT(Gene) == 1 AND (Phenotype OR Disease_info) AND NOT Natural_variant');
+$it = $db->fetch_many(-query => 'find Variation WHERE Live AND Corresponding_transgene');
+process($it);
 
-while (my $obj = $it->next) {
-  next unless $obj->isObject();
-  #next unless $obj->Species;
-  #next unless $obj->Species->name eq $full_name;
+sub process{
+  my ($it) = @_;
 
-  my ($has_disease, $has_interaction, $has_phenotype) = (0,0,0);
+  while (my $obj = $it->next) {
+    next unless $obj->isObject();
 
-  $has_disease = 1 if $obj->Disease_info;
-  $has_phenotype = 1 if $obj->Description;
-  if ($obj->Interactor) {
-    foreach my $item ($obj->Interactor->col) {
-      $has_interaction = 1 if $item eq 'Regulatory';
+    my $has_interaction;
+    my $has_disease = 1 if $obj->Disease_info;
+    my $has_phenotype = 1 if $obj->Description;
+    if ($obj->Interactor) {
+      foreach my $item ($obj->Interactor->col) {
+        $has_interaction = 1 if $item eq 'Regulatory';
+      }
     }
-  }
   
-  next unless $has_disease or $has_phenotype or $has_interaction;
+    next unless $has_disease or $has_phenotype or $has_interaction or $obj->Corresponding_transgene;
 
-  my ($gene) = $obj->Gene->name;
-  next if defined $bgi_genes and not exists $bgi_genes->{"WB:$gene"};
+    my ($gene) = $obj->Gene->name if $obj->Gene;
+    $gene ||= $obj->Corresponding_transgene->Construct->Gene if $obj->Corresponding_transgene && $obj->Corresponding_transgene->Construct;
 
-  my $symbol = $obj->Public_name->name;
-  my %synonyms;
-  foreach my $on ($obj->Other_name) {
-    $synonyms{$on->name} = 1;
+    next if defined $bgi_genes and not exists $bgi_genes->{"WB:$gene"};
+
+    my $symbol = $obj->Public_name->name;
+    my %synonyms = map {$_->name => 1}$obj->Other_name;
+
+    my $json_obj = {
+      primaryId     => "WB:$obj", 
+      symbol        => $symbol,
+      symbolText    => $symbol,
+      synonyms      => [keys \%synonyms],
+      secondaryIds => [],
+      taxonId       => "NCBITaxon:" . $taxid,
+      gene          => "WB:$gene",
+      crossReferences => [ { id => "WB:$obj", pages => ["allele"] }],
+    };
+
+    if ($obj->Corresponding_transgene){
+	    my $transgene = $obj->Corresponding_transgene;
+	    my $construct = $transgene->Construct;
+	    next unless $construct;
+	    $$json_obj{construct}="WB:$construct";
+            if($transgene->Genetic_information eq 'Integrated'){
+	        $$json_obj{constructInsertionType}='Transgenic Insertion'
+            }else{
+                $$json_obj{constructInsertionType}='Extrachromosomal Array'
+	    }
+    }
+
+    push @alleles, $json_obj;
   }
-
-  my $json_obj = {
-    primaryId     => "WB:$obj", 
-    symbol        => $symbol,
-    symbolText    => $symbol,
-    synonyms      => [keys \%synonyms],
-    secondaryIds => [],
-    taxonId       => "NCBITaxon:" . $taxid,
-    gene          => "WB:$gene",
-    crossReferences => [ { id => "WB:$obj", pages => ["allele"] }],
-  };
-
-
-  push @alleles, $json_obj;
 }
-
 
 my $data = {
   metaData => AGR::get_file_metadata_json( (defined $ws_version) ? $ws_version : $wormbase->get_wormbase_version_name() ),
@@ -109,11 +117,8 @@ if (defined $outfile) {
   $out_fh = \*STDOUT;
 }
 
-
 my $json_obj = JSON->new;
 my $string = $json_obj->allow_nonref->canonical->pretty->encode($data);
 print $out_fh $string;
 
 $db->close;
-
-exit(0);
