@@ -30,14 +30,14 @@ my %headers; # do not print redundant headers
 
 while(<$in_fh>) {
   if (/^\#/){
-    print $out_fh $_ unless $headers{$_};
+    next if $headers{$_};
+    print $out_fh $_;
     $headers{$_}=1;
     if (/gff-version 3/){
-	    print $outfh<<HERE;
-#!date-prodiced $date
-#!data-source WormBase
-#!assembly WBcel235
-HERE
+	    print $out_fh 
+	"#!date-produced $date\n".
+	"#!data-source WormBase\n".
+	"#!assembly WBcel235\n";
     }
     next;
   }
@@ -65,13 +65,13 @@ HERE
     $l[8] = join(";", map { $_ . "=" . $attr{$_} } keys %attr);
     print $out_fh join("\t", @l), "\n";
 
-  } elsif(/^\S+\sWormBase\smRNA/){
+  } elsif(/^\S+\s+WormBase\s+mRNA/){
   	  change_transcript($_,$out_fh,'SO:0000234')
-  } elsif(/^\S+\sWormBase\spseudogenic_transcript/)){
+  } elsif(/^\S+\s+WormBase\s+pseudogenic_transcript/){
   	  change_transcript($_,$out_fh,'SO:0000516')
-  } elsif(/^\S+\sWormBase\sncRNA/)){
+  } elsif(/^\S+\s+WormBase\s+ncRNA/){
           change_transcript($_,$out_fh,'SO:0000655')
-  } elsif (/^\S+\s+WormBase\s+/) {
+  } elsif (/^\S+\s+WormBase\s+/){
     print $out_fh $_;
   }
 }
@@ -82,11 +82,9 @@ exit(0);
 sub change_transcript{
   my($line,$outf,$soID)=@_;
   my @l = split(/\t/, $line);
-  $line=~/Name=([^;]+)/;
-  my $transcriptID="$1";
-  $line=~/(WBGene\d+)/;
-  my $geneID="$1";
-  $line=~s/;Parent/curie=WB:$transcriptID;curie=WB:$geneID;Ontology_term=$soID;Parent/;
+  my $transcriptID="$1" if $line =~ /Name=([^;\n]+)/;
+  my $geneID="$1" if $line =~/(WBGene\d+)/;
+  $line=~s/;Parent/;curie=WB:$transcriptID;curie=WB:$geneID;Ontology_term=$soID;Parent/;
   print $outf $line;
 }
 
