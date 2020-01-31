@@ -66,15 +66,11 @@ HERE
     print $out_fh join("\t", @l), "\n";
 
   } elsif(/^\S+\sWormBase\smRNA/){
-          my @l = split(/\t/, $_);
-	  my $ontologyID = 'SO:0000234';
-	  /Name=([^;]+)/;
-	  my $transcriptID="$1";
-	  /(WBGene\d+)/;
-          my $geneID="$1";
-	  s/;Parent/curie=WB:$transcriptID;curie=WB:$geneID;Ontology_term=$ontologyID;Parent/;
-	  print $out_fh $_;
-
+  	  change_transcript($_,$out_fh,'SO:0000234')
+  } elsif(/^\S+\sWormBase\spseudogenic_transcript/)){
+  	  change_transcript($_,$out_fh,'SO:0000516')
+  } elsif(/^\S+\sWormBase\sncRNA/)){
+          change_transcript($_,$out_fh,'SO:0000655')
   } elsif (/^\S+\s+WormBase\s+/) {
     print $out_fh $_;
   }
@@ -82,6 +78,17 @@ HERE
 close($out_fh) or die "Could not close $gff_out after writing (probably file system full)\n";
 
 exit(0);
+
+sub change_transcript{
+  my($line,$outf,$soID)=@_;
+  my @l = split(/\t/, $line);
+  $line=~/Name=([^;]+)/;
+  my $transcriptID="$1";
+  $line=~/(WBGene\d+)/;
+  my $geneID="$1";
+  $line=~s/;Parent/curie=WB:$transcriptID;curie=WB:$geneID;Ontology_term=$soID;Parent/;
+  print $outf $line;
+}
 
 sub open_gff_file {
   my ($file) = @_;
