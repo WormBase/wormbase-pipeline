@@ -95,13 +95,12 @@ sub process{
 	    my $construct = $transgene->Construct;
 	    next unless $construct;
 	    $$json_obj{construct}="WB:$construct";
-            if($transgene->Genetic_information eq 'Integrated'){
+            if(grep {$_ eq 'Integrated'} $transgene->Genetic_information->col){
 	        $$json_obj{constructInsertionType}='Transgenic Insertion'
             }else{
                 $$json_obj{constructInsertionType}='Extrachromosomal Array'
 	    }
     }
-
     push @alleles, $json_obj;
   }
 }

@@ -51,37 +51,49 @@ $bgi_genes = AGR::get_bgi_genes( $bgi_json ) if defined $bgi_json;
 my $db = Ace->connect(-path => $acedbpath, -program => $tace) or die('Connection failure: '. Ace->error);
 
 my $it = $db->fetch_many(-query => 'find Variation WHERE Live AND COUNT(Gene) == 1 AND Phenotype AND NOT Natural_variant');
+process($it);
 
-while (my $obj = $it->next) {
-  next unless $obj->isObject();
+my $it = $db->fetch_many(-query => 'find Variation WHERE Live AND Corresponding_transgene');
+process($it);
 
-  my ($gene) = $obj->Gene->name;
-  next if defined $bgi_json and not exists $bgi_genes->{"WB:$gene"};
+sub process {
+	my ($it)=@_;
+        while (my $obj = $it->next) {
+	next unless $obj->isObject();
+
+	my ($gene) = $obj->Gene->name;
+	$gene ||= $obj->Corresponding_transgene->Construct->Gene if $obj->Corresponding_transgene && $obj->Corresponding_transgene->Construct;
+        next if defined $bgi_json and not exists $bgi_genes->{"WB:$gene"};
+
+	my @phenotypes = $obj->Phenotype;
+	unless($phenotypes[0]){
+		@phenotypes = $obj->Corresponding_transgene->Phenotype;
+	}
   
-  foreach my $pt ($obj->Phenotype) {
-    my $phen_id   = $pt->name;
-    my $phen_desc = $pt->Primary_name->name;
-    my @paper;
+        foreach my $pt (@phenotypes){
+          my $phen_id   = $pt->name;
+          my $phen_desc = $pt->Primary_name->name;
+          my @paper;
     
-    foreach my $evi ($pt->col()) {
-      if ($evi->name eq 'Paper_evidence') {
-        foreach my $wb_paper ($evi->col ) {
-          push @paper, &get_paper_json($wb_paper);
-        }
-      }
-    }
+         foreach my $evi ($pt->col()) {
+           if ($evi->name eq 'Paper_evidence') {
+             foreach my $wb_paper ($evi->col ) {
+               push @paper, &get_paper_json($wb_paper);
+             }
+           }
+         }
     
-    foreach my $pap (@paper) {
-      my $json_obj = {
-        objectId                 => "WB:$obj",
-        primaryGeneticEntityIDs  => ["WB:$obj"],
-        phenotypeTermIdentifiers => [ { termId => $phen_id, termOrder => 1 } ],
-        phenotypeStatement       => $phen_desc,
-        dateAssigned             => $date,
-        evidence                 => $pap,
-      };
-      
-      push @pheno_annots, $json_obj;
+        foreach my $pap (@paper) {
+          my $json_obj = {
+            objectId                 => "WB:$obj",
+            primaryGeneticEntityIDs  => ["WB:$obj"],
+            phenotypeTermIdentifiers => [ { termId => $phen_id, termOrder => 1 } ],
+            phenotypeStatement       => $phen_desc,
+            dateAssigned             => $date,
+            evidence                 => $pap,
+         };   
+         push @pheno_annots, $json_obj;
+       }
     }
   }
 }
