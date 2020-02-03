@@ -99,10 +99,11 @@ my $db = NameDB_handler->new($wormbase);
 # we wish to pull out recent activity on the *web* interface in order to read it into geneace in the correct order of events.
 my $gene_data = $db->recent_gene($from, $until, 'web');
 my $variation_data = $db->recent_variation($from, $until, 'web');
+my $strain_data = $db->recent_strain($from, $until, 'web');
 
 process_gene_data($gene_data);
 process_variation_data($variation_data);
-#process_strain_data($strain_data);
+process_strain_data($strain_data);
 
 close(OUT);
 $db->close;
@@ -298,6 +299,47 @@ sub process_variation_data {
       update_variation($id, \%data, $when, $why, $who);
     } elsif ($what eq 'resurrect-variation') { # was 'event/resurrect-variation'
       resurrect_variation($id, \%data, $when, $why, $who);
+    }    
+    
+  }
+  
+}
+
+##########################################
+sub process_strain_data {
+  my ($strain_data) = @_;
+  
+  my $from = $strain_data->{'from'};
+  my $until = $strain_data->{'until'};
+  foreach my $activity (@{$strain_data->{activities}}) {
+    my $who = $activity->{'who'}{'id'}; # was {'provenance/who'}{'person/id'}
+    my $when = $activity->{'when'}; # was {'provenance/when'}
+    my $why = $activity->{'why'}; # was {'provenance/why'}
+    if (!defined $why) {$why = ''}
+    $why =~ s/\"//g; # remove quote marks
+    $why =~ s/\n/ /g; # remove newlines
+    my $what = $activity->{'what'}; # was {'provenance/what'}
+    my $id = $activity->{'id'}; # was {'strain/id'}
+    my %data;
+    foreach my $thing (@{$activity->{'changes'}}) {
+      my $attr = $thing->{'attr'};
+      my $value = $thing->{value};
+      # in events like an update both the new name and the old name
+      # are provided with the same key - the first one in the array we
+      # are iterating over appears to always be the new value
+      if (!exists $data{$attr}) { 
+	$data{$attr} = $value;
+      }
+    }
+    #print "strain what = $what ",%data,"\n";
+    if ($what eq 'new-strain') { # was 'event/new-strain'
+      new_strain($id, \%data, $when, $why, $who);
+    } elsif ($what eq 'kill-strain') { # was  'event/kill-strain'
+      kill_strain($id, \%data, $when, $why, $who);
+    } elsif ($what eq 'update-strain') { # was 'event/update-strain'
+      update_strain($id, \%data, $when, $why, $who);
+    } elsif ($what eq 'resurrect-strain') { # was 'event/resurrect-strain'
+      resurrect_strain($id, \%data, $when, $why, $who);
     }    
     
   }
@@ -755,6 +797,64 @@ sub resurrect_variation {
   print OUT "Public_name $name\n";
   print OUT "Live\n";
   print OUT "Remark \"[$when $who] Ressurect Variation: $why\" Curator_confirmed $who\n";
+  print OUT "\n";
+}
+
+##########################################
+
+sub new_strain {
+  my ($id, $data, $when, $why, $who) = @_;
+  if ($debug) {print "New Strain: ID: $id\n";}
+
+  print OUT "\n";
+  print OUT "// new_strain\n";
+  print OUT "Strain : $id\n";
+  print OUT "Public_name $data->{'name'}\n"; # was 'strain/name'
+  print OUT "Remark \"[$when $who] New Strain: $why\" Curator_confirmed $who\n";
+  print OUT "\n";
+}
+
+sub kill_strain {
+  my ($id, $data, $when, $why, $who) = @_;
+  if ($debug) {print "Kill Strain: ID: $id\n";}
+
+  print OUT "\n";
+  print OUT "// kill_strain\n";
+  print OUT "Strain : $id\n";
+  print OUT "Dead\n";
+  print OUT "Remark \"[$when $who] Kill Strain: $why\" Curator_confirmed $who\n";
+  print OUT "\n";
+}
+
+sub update_strain {
+  my ($id, $data, $when, $why, $who) = @_;
+  if ($debug) {print "Update Strain: ID: $id\n";}
+
+  print OUT "\n";
+  print OUT "// update_strain\n";
+  print OUT "Strain : $id\n";
+  print OUT "Public_name $data->{'name'}\n"; # was 'strain/name'
+  print OUT "Remark \"[$when $who] Update Strain: $why\" Curator_confirmed $who\n";
+  print OUT "\n";
+}
+
+sub resurrect_strain {
+  my ($id, $data, $when, $why, $who) = @_;
+  if ($debug) {print "Resurrect Strain: ID: $id\n";}
+
+  print OUT "\n";
+  print OUT "// ressurect_strain\n";
+  print OUT "Strain : $id\n";
+  my $name;
+  my $matches = $db->find_strains($id);
+  foreach my $match (@{$matches}) {
+    if ($match->{'id'} eq $id) { # was 'strain/id'
+      $name = $match->{'name'} # was 'strain/name'
+    }
+  }
+  print OUT "Public_name $name\n";
+  print OUT "Live\n";
+  print OUT "Remark \"[$when $who] Ressurect Strain: $why\" Curator_confirmed $who\n";
   print OUT "\n";
 }
 

@@ -119,7 +119,7 @@ $db->test();
 sub test {
   my ($self) = @_;
 
-# %data - hash keyed by type of entity to be tested, one of: 'gene', 'variation', 'feature', 'person', 'species', 'stats'
+# %data - hash keyed by type of entity to be tested, one of: 'gene', 'variation', 'strain', 'feature', 'person', 'species', 'stats'
 # $data{$entity} - hash keyed by priority - low number priority is simple stuff that should work
 #                                - high numbered stuff relies on lots of simple stuff
 # $data{$entity}{$priority} - hash keyed by name of test
@@ -1956,7 +1956,65 @@ sub resurrect_features {
 #############################################################################
 
 #############################################################################
-# Recent
+
+#======================================================================
+# STRAINS
+#======================================================================
+
+#############################################################################
+# new_strains($number)
+# creates new Feature IDs
+#
+# Args:
+# $number - number of Strains to create
+#
+# Returns an array-ref of new Feature IDs with the batch ID
+
+sub new_strains {
+  my ($self, $number) = @_;
+  my %new_ids;
+
+  my $info = $self->{'db'}->new_strains($number);
+  my @ids = @{$info->{'ids'}};
+  
+  return (\@ids, $info->{'id'});
+
+}
+#############################################################################
+# kill a set of feature names
+#
+# Args:
+# $names - an array-ref of feature IDs to kill
+# $why is optional remark text.
+
+
+sub kill_strains {
+  my ($self, $names, $why) = @_;
+
+  my $info = $self->{'db'}->kill_strains($names, $why);
+  return $info;
+
+}
+
+#############################################################################
+#Resurrect a batch of dead strains.
+#
+# Args:
+# $ids - an array-ref of feature IDs to resurrect
+
+
+sub resurrect_strains {
+  my ($self, $ids) = @_;
+
+  my $info = $self->{'db'}->resurrect_strains($ids);
+  return $info;
+
+}
+
+#############################################################################
+
+#############################################################################
+# RECENT CHANGES
 #############################################################################
 
 # The date is in ISO format UTC zone
@@ -1979,6 +2037,19 @@ sub recent_variation {
   my ($self, $from_date, $until_date, $agent) = @_;
 
   my $info = $self->{'db'}->recent_variation($from_date, $until_date, $agent);
+  return $info;
+
+}
+
+#############################################################################
+
+# The date is in ISO format UTC zone
+# date --utc +%Y-%m-%dT%H:%M:%SZ`; # '2019-06-07T15:04:15Z'
+
+sub recent_strain {
+  my ($self, $from_date, $until_date, $agent) = @_;
+
+  my $info = $self->{'db'}->recent_strain($from_date, $until_date, $agent);
   return $info;
 
 }

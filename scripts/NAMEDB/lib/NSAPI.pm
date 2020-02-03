@@ -550,6 +550,40 @@ sub recent_variation {
 
 
 
+#======================================================================
+# recent_strain(from, until, agent)
+# get all details of any strain changes between two dates, inclusive
+
+# The dates are in ISO date format "YYYY-MM-DDThh:mm:ssZ" and times are in the UTC time-zone e.g. `date --utc +%Y-%m-%dT%H:%M:%SZ`
+# The agent is one of "agent/web" or "agent/console" (the "Agent" type that made the request). This defaults to both agent types.
+
+# If a call to recent/gene/$agent is made twice, then the second call
+# will return a '304' error number to indicate that nothing has
+# changed.
+
+
+sub recent_strain {
+  my ($self, $from_date, $until_date, $agent) = @_;
+
+  if ($agent ne 'web' && $agent ne 'console') {die "Invalid agent specified: $agent\n";}
+
+  my $encoded_from_date = CGI::escape($from_date);
+  my $encoded_until_date = CGI::escape($until_date);
+  my $encoded_agent = CGI::escape($agent);
+
+  my $type = "recent/strain/$agent?";
+  if (defined $from_date) {$type .= "from=$encoded_from_date"}
+  if (defined $until_date) {$type .= "\&until=$encoded_until_date"}
+
+  my $content = $self->curl("GET", $type);
+
+  if ($self->noise()) {print Dumper $content}
+  return $content
+
+}
+
+
+
 
 
 
