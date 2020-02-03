@@ -6,6 +6,7 @@
 
 use strict;
 use Ace;
+use Modules::AGR;
 use JSON;
 use Getopt::Long;
 use Wormbase;
@@ -29,20 +30,23 @@ if ($store) {
 }
 
 $acedbpath||=$wormbase->autoace;
+my $date = AGR::get_rfc_date();
 
-my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or die("Connection failure: ". Ace->error);
+my $db = Ace->connect(-path => $acedbpath) or die("Connection failure: ". Ace->error);
 my $it = $db->fetch_many(-query => 'find Construct WHERE (Public_name OR Summary OR Driven_by_gene OR Gene)');
 
 my @constructs;
 while (my $obj = $it->next) {
      my %json_obj;
+
      $json_obj{primaryID} = "WB:$obj";
-     $json_obj{symbol} = $obj->Public_name if $obj->Public_name;
-     $json_obj{synonyms} = [$obj->Summary] if $obj->Summary;
+     $json_obj{symbol} = "${\$obj->Public_name}" if $obj->Public_name;
+     $json_obj{synonyms} = ["${\$obj->Summary}"] if $obj->Summary;
 
      # the two below are actually lists in the database, so it needs changing the JSON schema
-     $json_obj{regulatoryComponent} = { primaryId => "WB:${\$obj->Driven_by_gene}", name => "${\$obj_Driven_by_gene-}"} if $obj->Driven_by_gene;
-     $json_obj{expressedComponent}  = { primaryId => "WB:${\$obj->Gene}",name => "${\$obj->Gene-}"} if $obj->Gene;
+     $json_obj{constructComponents}=[];
+     push @{$json_obj{constructComponents}},{ componentRelation => 'is_regulated_by',componentID => "WB:${\$obj->Driven_by_gene}", componentSymbol => "${\$obj->Driven_by_gene->Public_name}"} if $obj->Driven_by_gene;
+     push @{$json_obj{constructComponents}},{ componentRelation => 'expresses',componentID => "WB:${\$obj->Gene}", componentSymbol => "${\$obj->Gene->Public_name}"} if $obj->Gene;
 
      push @constructs, \%json_obj;
 }
@@ -52,6 +56,7 @@ my $data = {
   data     => \@constructs,
 };
 
+my $out_fh;
 if ($outfile) {
   open $out_fh, ">$outfile" or die "Could not open $outfile for writing\n";
 } else {
