@@ -229,7 +229,7 @@ sub process_gene_data {
 	$data{$attr} = $value;
       }
     }
-    #print "gene what = $what ",%data,"\n";
+    print "gene what = $what ",%data,"\n";
     if ($what eq 'new-gene') { # was  'event/new-gene'
       new_gene($id, $when, $why, $who, \%data);
     } elsif ($what eq 'new-unnamed-gene') { # was 'event/new-unnamed-gene'
@@ -626,7 +626,7 @@ sub split_gene {
     print OUT "\n";
     print OUT "// split_gene\n";
     print OUT "Gene : $oldgene\n";
-    update_event($id, $when, $who, "Split_into $newgene");
+    update_event($oldgene, $when, $who, "Split_into $newgene");
     print OUT "Split_into $newgene\n";
     print OUT "Remark \"[$when] Gene Split creating $sequence_name $newgene: $why\" Curator_confirmed $who\n";
     print OUT "\n";
@@ -637,7 +637,7 @@ sub split_gene {
     print OUT "Sequence_name $sequence_name\n";
     print OUT "Public_name $sequence_name\n";
     print OUT "Species \"$species\"\n";
-    update_event($id, $when, $who, "Split_from $oldgene");
+    update_event($newgene, $when, $who, "Split_from $oldgene");
     print OUT "Split_from $oldgene\n";
     print OUT "Live\n";
     print OUT "Method Gene\n";
@@ -768,10 +768,15 @@ sub update_event {
   $when =~ s/\.\d+$//;
   my $version;
   my $gene_obj = $geneace->fetch(Gene => $id);
-  if (exists $versions{$id}) {
-    $version = $versions{$id};
+  if (defined $gene_obj) {
+    if (exists $versions{$id}) {
+      $version = $versions{$id};
+    } else {
+      $version = $gene_obj->Version->name;
+    }
   } else {
-    $version = $gene_obj->Version->name;
+    # no gene yet, so create the first Event tag entry
+    $version = 0;
   }
 
   $version++;
