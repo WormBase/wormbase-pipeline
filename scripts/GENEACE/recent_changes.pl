@@ -285,13 +285,13 @@ sub process_variation_data {
     }
     #print "variation what = $what ",%data,"\n";
     if ($what eq 'new-variation') { # was 'event/new-variation'
-      new_variation($id, \%data);
+      new_variation($id, \%data, $when, $why, $who);
     } elsif ($what eq 'kill-variation') { # was  'event/kill-variation'
-      kill_variation($id, \%data);
+      kill_variation($id, \%data, $when, $why, $who);
     } elsif ($what eq 'update-variation') { # was 'event/update-variation'
-      update_variation($id, \%data);
+      update_variation($id, \%data, $when, $why, $who);
     } elsif ($what eq 'resurrect-variation') { # was 'event/resurrect-variation'
-      resurrect_variation($id, \%data);
+      resurrect_variation($id, \%data, $when, $why, $who);
     }    
     
   }
@@ -307,7 +307,7 @@ sub new_gene {
   print OUT "\n";
   print OUT "// new_gene\n";
   print OUT "Gene : $id\n";
-  print OUT "Remark \"[$when] Gene Created: $why\" Curator_confirmed $who\n";
+  print OUT "Remark \"[$when $who] Gene Created: $why\" Curator_confirmed $who\n";
   print OUT "CGC_name $data->{'cgc-name'}\n" if (exists $data->{'cgc-name'}); # was 'gene/cgc-name'
   print OUT "Sequence_name $data->{'sequence-name'}\n" if (exists $data->{'sequence-name'}); # was 'gene/sequence-name'
   print OUT "Public_name $data->{'cgc-name'}\n" if (exists $data->{'cgc-name'}); # was 'gene/cgc-name'
@@ -331,7 +331,7 @@ sub new_unnamed_gene { # I think this event type is not used - both cloned and u
   print OUT "\n";
   print OUT "// new_unnamed_gene\n";
   print OUT "Gene : $id\n";
-  print OUT "Remark \"[$when] Gene Created: $why\" Curator_confirmed $who\n";
+  print OUT "Remark \"[$when $who] Gene Created: $why\" Curator_confirmed $who\n";
   print OUT "Public_name $data->{'name'}\n"; # was 'gene/name'
   print OUT "\n";
 }
@@ -343,7 +343,7 @@ sub kill_gene { # We want to suppress Transposon and Pseudogene genes, not kill 
   print OUT "\n";
   print OUT "// kill_gene\n";
   print OUT "Gene : $id\n";
-  print OUT "Remark \"[$when] Gene Killed: $why\" Curator_confirmed $who\n";
+  print OUT "Remark \"[$when $who] Gene Killed: $why\" Curator_confirmed $who\n";
   print OUT "Dead\n";
   update_event($id, $when, $who, 'Killed');
   print OUT "\n";
@@ -372,7 +372,7 @@ sub update_gene {
     print OUT "// The nameserver records a change of Biotype in this gene, but we explicitly ignore the biotype change information in this script.\n";
   }
   print OUT "Gene : $id\n";
-  print OUT "Remark \"[$when] Gene Updated: $why\" Curator_confirmed $who\n";
+  print OUT "Remark \"[$when $who] Gene Updated: $why\" Curator_confirmed $who\n";
   if (exists $data->{'cgc-name'}) { # was 'gene/cgc-name'
     print OUT "CGC_name $data->{'cgc-name'}\n"; # was 'gene/cgc-name'
     print OUT "Public_name $data->{'cgc-name'}\n"; # was 'gene/cgc-name'
@@ -399,7 +399,7 @@ sub resurrect_gene {
   print OUT "\n";
   print OUT "// resurrect_gene\n";
   print OUT "Gene : $id\n";
-  print OUT "Remark \"[$when] Gene Resurrected: $why\" Curator_confirmed $who\n";
+  print OUT "Remark \"[$when $who] Gene Resurrected: $why\" Curator_confirmed $who\n";
   print OUT "Live\n";
   my $name;
   my $matches = $db->find_genes($id);
@@ -478,14 +478,14 @@ sub merge_genes {
   print OUT "\n";
   print OUT "// merge_genes\n";
   print OUT "Gene : $id\n";
-  print OUT "Remark \"[$when] Gene Merged: $why\" Curator_confirmed $who\n";
+  print OUT "Remark \"[$when $who] Gene Merged: $why\" Curator_confirmed $who\n";
   update_event($id, $when, $who, "Acquires_merge $deadgene");
   print OUT "Acquires_merge $deadgene\n";
   print OUT "\n";
 
   print OUT "\n";
   print OUT "Gene : $deadgene\n";
-  print OUT "Remark \"[$when] Gene Merged into $id: $why\" Curator_confirmed $who\n";
+  print OUT "Remark \"[$when $who] Gene Merged into $id: $why\" Curator_confirmed $who\n";
   update_event($deadgene, $when, $who, "Merged_into $id");
   print OUT "Merged_into $id\n";
   print OUT "Dead\n";
@@ -628,7 +628,7 @@ sub split_gene {
     print OUT "Gene : $oldgene\n";
     update_event($oldgene, $when, $who, "Split_into $newgene");
     print OUT "Split_into $newgene\n";
-    print OUT "Remark \"[$when] Gene Split creating $sequence_name $newgene: $why\" Curator_confirmed $who\n";
+    print OUT "Remark \"[$when $who] Gene Split creating $sequence_name $newgene: $why\" Curator_confirmed $who\n";
     print OUT "\n";
 
     # process NEW gene
@@ -641,7 +641,7 @@ sub split_gene {
     print OUT "Split_from $oldgene\n";
     print OUT "Live\n";
     print OUT "Method Gene\n";
-    print OUT "Remark \"[$when] Gene Split from $oldgene: $why\" Curator_confirmed $who\n";
+    print OUT "Remark \"[$when $who] Gene Split from $oldgene: $why\" Curator_confirmed $who\n";
     print OUT "\n";
   } else {
     $log->log_and_die("ERROR split-gene: $oldgene is not a known gene in geneace\n");
@@ -667,7 +667,7 @@ sub suppress_gene {
   print OUT "\n";
   print OUT "// suppress_gene\n";
   print OUT "Gene : $id\n";
-  print OUT "Remark \"[$when] Gene Suppressed: $why\" Curator_confirmed $who\n";
+  print OUT "Remark \"[$when $who] Gene Suppressed: $why\" Curator_confirmed $who\n";
   update_event($id, $when, $who, "Suppressed");
   print OUT "Suppressed\n";
   print OUT "\n";
@@ -689,7 +689,7 @@ sub remove_cgc_names {
   print OUT "\n";
   print OUT "Gene : $id\n";
   print OUT "Public_name \"$sequence_name\"\n" if (defined $sequence_name);
-  print OUT "Remark \"[$when] Gene CGC Name Removed: $why\" Curator_confirmed $who\n";
+  print OUT "Remark \"[$when $who] Gene CGC Name Removed: $why\" Curator_confirmed $who\n";
   name_change($id, $when, $who, 'CGC_name', ''); # blank CGC name to show it has been removed.
   print OUT "\n";
 }
@@ -697,39 +697,43 @@ sub remove_cgc_names {
 ##########################################
 
 sub new_variation {
-  my ($id, $data) = @_;
+  my ($id, $data, $when, $why, $who) = @_;
   if ($debug) {print "New Variation: ID: $id\n";}
 
   print OUT "\n";
   print OUT "// new_variation\n";
   print OUT "Variation : $id\n";
   print OUT "Public_name $data->{'name'}\n"; # was 'variation/name'
+  print OUT "Remark \"[$when $who] New Variation: $why\" Curator_confirmed $who\n";
   print OUT "\n";
 }
 
 sub kill_variation {
-  my ($id, $data) = @_;
+  my ($id, $data, $when, $why, $who) = @_;
   if ($debug) {print "Kill Variation: ID: $id\n";}
 
   print OUT "\n";
   print OUT "// kill_variation\n";
-  print OUT "-D Variation : $id\n";
+  print OUT "Variation : $id\n";
+  print OUT "Dead\n";
+  print OUT "Remark \"[$when $who] Kill Variation: $why\" Curator_confirmed $who\n";
   print OUT "\n";
 }
 
 sub update_variation {
-  my ($id, $data) = @_;
+  my ($id, $data, $when, $why, $who) = @_;
   if ($debug) {print "Update Variation: ID: $id\n";}
 
   print OUT "\n";
   print OUT "// update_variation\n";
   print OUT "Variation : $id\n";
   print OUT "Public_name $data->{'name'}\n"; # was 'variation/name'
+  print OUT "Remark \"[$when $who] Update Variation: $why\" Curator_confirmed $who\n";
   print OUT "\n";
 }
 
 sub resurrect_variation {
-  my ($id, $data) = @_;
+  my ($id, $data, $when, $why, $who) = @_;
   if ($debug) {print "Resurrect Variation: ID: $id\n";}
 
   print OUT "\n";
@@ -743,6 +747,8 @@ sub resurrect_variation {
     }
   }
   print OUT "Public_name $name\n";
+  print OUT "Live\n";
+  print OUT "Remark \"[$when $who] Ressurect Variation: $why\" Curator_confirmed $who\n";
   print OUT "\n";
 }
 
