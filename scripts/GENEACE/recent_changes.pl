@@ -92,7 +92,7 @@ if (!defined $outfile) {$outfile = "recent_changes_${from}_to_${until}.ace";}
 $geneace = Ace->connect('-path' => $wormbase->database('geneace')) or $log->log_and_die("Failed to connect to geneace\n");
 
 open (OUT, ">$outfile") || $log->log_and_die("Can't open file $outfile");
-print OUT "\n\n// Nameserver Recent changes\nFrom: $from\nUntil: $until\n\n\n";
+print OUT "\n\n// Nameserver Recent changes\n// From: $from\n// Until: $until\n\n\n";
 
 my $db = NameDB_handler->new($wormbase);
 
