@@ -787,14 +787,6 @@ sub resurrect_variation {
   print OUT "\n";
   print OUT "// ressurect_variation\n";
   print OUT "Variation : $id\n";
-  my $name;
-  my $matches = $db->find_variations($id);
-  foreach my $match (@{$matches}) {
-    if ($match->{'id'} eq $id) { # was 'variation/id'
-      $name = $match->{'name'} # was 'variation/name'
-    }
-  }
-  print OUT "Public_name $name\n";
   print OUT "Live\n";
   print OUT "Remark \"[$when $who] Ressurect Variation: $why\" Curator_confirmed $who\n";
   print OUT "\n";
@@ -845,14 +837,6 @@ sub resurrect_strain {
   print OUT "\n";
   print OUT "// ressurect_strain\n";
   print OUT "Strain : $id\n";
-  my $name;
-  my $matches = $db->find_strains($id);
-  foreach my $match (@{$matches}) {
-    if ($match->{'id'} eq $id) { # was 'strain/id'
-      $name = $match->{'name'} # was 'strain/name'
-    }
-  }
-  print OUT "Public_name $name\n";
   print OUT "Live\n";
   print OUT "Remark \"[$when $who] Ressurect Strain: $why\" Curator_confirmed $who\n";
   print OUT "\n";
