@@ -92,6 +92,7 @@ if (!defined $outfile) {$outfile = "recent_changes_${from}_to_${until}.ace";}
 $geneace = Ace->connect('-path' => $wormbase->database('geneace')) or $log->log_and_die("Failed to connect to geneace\n");
 
 open (OUT, ">$outfile") || $log->log_and_die("Can't open file $outfile");
+print OUT "\n\n// Nameserver Recent changes\nFrom: $from\nUntil: $until\n\n\n";
 
 my $db = NameDB_handler->new($wormbase);
 
@@ -101,6 +102,7 @@ my $variation_data = $db->recent_variation($from, $until, 'web');
 
 process_gene_data($gene_data);
 process_variation_data($variation_data);
+#process_strain_data($strain_data);
 
 close(OUT);
 $db->close;
@@ -216,6 +218,8 @@ sub process_gene_data {
     my $when = $activity->{'when'}; # was {'provenance/when'}
     my $why = $activity->{'why'}; # was {'provenance/why'}
     if (!defined $why) {$why = ''}
+    $why =~ s/\"//g; # remove quote marks
+    $why =~ s/\n/ /g; # remove newlines
     my $what = $activity->{'what'}; # was {'provenance/what'}
     my $id = $activity->{'id'}; # was {'gene/id'}
     my %data;
@@ -270,6 +274,8 @@ sub process_variation_data {
     my $when = $activity->{'when'}; # was {'provenance/when'}
     my $why = $activity->{'why'}; # was {'provenance/why'}
     if (!defined $why) {$why = ''}
+    $why =~ s/\"//g; # remove quote marks
+    $why =~ s/\n/ /g; # remove newlines
     my $what = $activity->{'what'}; # was {'provenance/what'}
     my $id = $activity->{'id'}; # was {'variation/id'}
     my %data;
