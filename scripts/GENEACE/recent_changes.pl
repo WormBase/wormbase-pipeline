@@ -380,6 +380,8 @@ sub new_unnamed_gene { # I think this event type is not used - both cloned and u
   print OUT "// new_unnamed_gene\n";
   print OUT "Gene : $id\n";
   print OUT "Remark \"[$when $who] Gene Created: $why\" Curator_confirmed $who\n";
+  print OUT "Live\n";
+  print OUT "Method Gene\n";
   print OUT "Public_name $data->{'name'}\n"; # was 'gene/name'
   print OUT "\n";
 }
@@ -752,6 +754,7 @@ sub new_variation {
   print OUT "// new_variation\n";
   print OUT "Variation : $id\n";
   print OUT "Public_name $data->{'name'}\n"; # was 'variation/name'
+  print OUT "Live\n";
   print OUT "Remark \"[$when $who] New Variation: $why\" Curator_confirmed $who\n";
   print OUT "\n";
 }
@@ -802,6 +805,7 @@ sub new_strain {
   print OUT "// new_strain\n";
   print OUT "Strain : $id\n";
   print OUT "Public_name $data->{'name'}\n"; # was 'strain/name'
+  print OUT "Live\n";
   print OUT "Remark \"[$when $who] New Strain: $why\" Curator_confirmed $who\n";
   print OUT "\n";
 }
