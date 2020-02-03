@@ -39,9 +39,11 @@ my @constructs;
 while (my $obj = $it->next) {
      my %json_obj;
 
-     $json_obj{primaryID} = "WB:$obj";
-     $json_obj{symbol} = "${\$obj->Public_name}" if $obj->Public_name;
+     $json_obj{primaryId} = "WB:$obj"; # required
+     $json_obj{name} = $obj->Public_name ? "${\$obj->Public_name}" : "$obj"; # required
      $json_obj{synonyms} = ["${\$obj->Summary}"] if $obj->Summary;
+
+     $json_obj{crossReferences} = [{id => "WB:$obj",pages => ['construct']}];
 
      # the two below are actually lists in the database, so it needs changing the JSON schema
      $json_obj{constructComponents}=[];

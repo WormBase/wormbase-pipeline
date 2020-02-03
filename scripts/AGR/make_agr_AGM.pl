@@ -31,7 +31,7 @@ while (my $id = shift @ids){
 	next unless @strains; # for the alleles without curated strain data
 	foreach my $strain(@strains){
 		# skip the ones without disease annotation
-                next unless $strain->Disease_info;
+                # next unless $strain->Disease_info;
 	        $strains{"$strain"}||=[];
 		push @{$strains{"$strain"}},"$id";
 	}
@@ -39,14 +39,15 @@ while (my $id = shift @ids){
 
 my @annotation;
 while (my($k,$v)= each %strains){
-	my $var={
+	my $s = $db->fetch(Strain => $k);
+	my $strain={
 		primaryID => "WB:$k",
-		name      => $k,
+		name      => ($s->Public_name ?"${\$s->Public_name}" :$k),
 		taxonId   => 'NCBITaxon:6239',
 		crossReference => {id => "WB:$k", pages => ['strain']},
 		affectedGenomicModelComponents => [map {{alleleID => "WB:$_",zygosity => 'GENO:0000137'}} @$v],
 	};
-	push @annotation,$var;
+	push @annotation,$strain;
 	# last;
 }
 
