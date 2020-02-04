@@ -26,8 +26,15 @@ my %strains;
 
 while (my $id = shift @ids){
 	$id =~s/WB://;
-	my $aceVar  = $db->fetch(Variation => $id);
-	my @strains = $aceVar->Strain;
+	my $aceVar;
+	my @strains;
+	if ($id=~/WBVar/){
+      	    $aceVar = $db->fetch(Variation => $id);
+	}elsif($id=~/WBTransgene/){
+      	    $aceVar = $db->fetch(Transgene => $id);
+	}
+        @strains = $aceVar->Strain;
+
 	next unless @strains; # for the alleles without curated strain data
 	foreach my $strain(@strains){
 		# skip the ones without disease annotation

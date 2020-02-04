@@ -53,7 +53,7 @@ my $db = Ace->connect(-path => $acedbpath, -program => $tace) or die('Connection
 my $it = $db->fetch_many(-query => 'find Variation WHERE Live AND COUNT(Gene) == 1 AND Phenotype AND NOT Natural_variant');
 process($it);
 
-my $it = $db->fetch_many(-query => 'find Variation WHERE Live AND Corresponding_transgene');
+$it = $db->fetch_many(-query => 'find Transgene WHERE Phenotype');
 process($it);
 
 sub process {
@@ -61,14 +61,12 @@ sub process {
         while (my $obj = $it->next) {
 	next unless $obj->isObject();
 
-	my ($gene) = $obj->Gene->name;
-	$gene ||= $obj->Corresponding_transgene->Construct->Gene if $obj->Corresponding_transgene && $obj->Corresponding_transgene->Construct;
-        next if defined $bgi_json and not exists $bgi_genes->{"WB:$gene"};
+        if ($obj->name=~/WBVar/){
+		my $gene = $obj->Gene->name;
+                next unless $bgi_genes->{"WB:$gene"};
+	}
 
 	my @phenotypes = $obj->Phenotype;
-	unless($phenotypes[0]){
-		@phenotypes = $obj->Corresponding_transgene->Phenotype;
-	}
   
         foreach my $pt (@phenotypes){
           my $phen_id   = $pt->name;
