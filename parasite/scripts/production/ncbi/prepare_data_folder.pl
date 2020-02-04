@@ -4,14 +4,36 @@
 
 =head1 SYNOPSIS
 
-  prepare_data_folder [yaml_file]
+  prepare_data_folder [options] [yaml_file]
 
-=head1 DECRIPTION
+=head1 DESCRIPTION
 
-Given a config in the from-NCBI format, create directory structure
+Creates local directory into which an assembly will be downloaded from NCBI. 
+Local files for the ParaSite import are created in the same directory.  The 
+directory name is based on species and bioproject names according to the 
+ParaSite convention; it is created under the data root directory defined by 
+PARASITE_DATA in the user environment. 
 
-Reads YAML from standard input or named file.  YAML must be in the format produced by doc_for_assembly.pl,
-which is a scratch XML-to-YAML conversion based on NCBI reports for an assembly.
+Input data are provided as YAML.  This is in the format produced by 
+doc_for_assembly.pl, which is a scratch XML-to-YAML conversion based on NCBI 
+reports for an assembly.
+
+=head1 OPTIONS AND ARGUMENTS
+
+Reads assembly metadta as YAML from standard input or named file.
+
+=over
+
+=item force
+
+force downloading of assembly from NCBI and creation of local files, even
+if they already exist
+
+=item help
+
+print this message and exit
+
+=back
 
 =head1 TO DO
 
@@ -19,7 +41,8 @@ which is a scratch XML-to-YAML conversion based on NCBI reports for an assembly.
 
 =item * Validation of input
 
-=item * Create package to eliminate duplicated code (e.g. species name filters)
+=item * Create package to eliminate code (e.g. species name filters) duplicated
+        between ParaSite scripts used for NCBI checking & import etc.
 
 =back
 
@@ -28,18 +51,25 @@ which is a scratch XML-to-YAML conversion based on NCBI reports for an assembly.
 
 use strict;
 use warnings;
-use YAML;
-use File::Path;
+
+use Carp;
 use File::Basename;
+use File::Path;
+use Getopt::Long;
+use IO::Uncompress::Gunzip;
 use Net::FTP;
 use Pod::Usage;
 use Try::Tiny;
-use Carp;
-use IO::Uncompress::Gunzip;
+use YAML;
 
 use constant NCBI_FTP_SERVER => 'ftp.ncbi.nlm.nih.gov';
 
-pod2usage(-exitval=>0, -verbose=>2) if $ARGV[0] && $ARGV[0] =~ m/^\-\-?h/;
+my($force, $help);
+GetOptions( 'force'  => \$force,
+            'help'   => \$help
+            )
+            || pod2usage({-exitval=>1});
+$help && pod2usage({-verbose=>2, -exitval=>0});
 
 my $conf;
 # read STDIN or from a named file, in the standard Perl fashion,
@@ -91,7 +121,7 @@ if( $ENV{PARASITE_DATA} ) {
 
    my ($assembly_path) = glob("$parasite_data_dir/*genomic.fna");
    
-   if ($assembly_path && -s $assembly_path){
+   if( !$force and $assembly_path and -s $assembly_path ) {
       warn "$assembly_path already exists: no new download\n";
    } else {
       my $ftp = Net::FTP->new(NCBI_FTP_SERVER)
@@ -122,13 +152,14 @@ if( $ENV{PARASITE_DATA} ) {
       my $gunzipped = $assembly_path;
       $gunzipped =~ s/\.gz$//;
       IO::Uncompress::Gunzip::gunzip($assembly_path => $gunzipped) or die "failed to gunzip $assembly_path: $IO::Uncompress::Gunzip::GunzipError";
+      unlink $assembly_path || warn "couldn't remove gzipped source file $assembly_path";
       $assembly_path = $gunzipped;
    }
    die "Failed to write local copy of assembly to $assembly_path" unless -s $assembly_path;
 
    my $assembly_destination_path = join("/", $parasite_data_dir, "$species.fa");
    my $seq_region_synonyms_path  = join("/", $parasite_data_dir, "$species.seq_region_synonyms.tsv");
-   if(-s $assembly_destination_path and -s $seq_region_synonyms_path) {
+   if( !$force and -s $assembly_destination_path and -s $seq_region_synonyms_path ) {
       warn "$assembly_destination_path and $seq_region_synonyms_path already exist: will not be recreated\n";
    } else {
    # if( not -s $assembly_destination_path or not -s $seq_region_synonyms_path){
