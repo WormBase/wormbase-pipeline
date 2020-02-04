@@ -130,7 +130,7 @@ sub process_transgenes{
 
     next if defined $bgi_genes and not exists $bgi_genes->{"WB:$gene"};
 
-    my $symbol = $obj->Public_name ? $obj->Public_name->name : $obj->Summary->name;
+    my $symbol = $obj->Public_name ? $obj->Public_name->name : "$obj";
     my %synonyms = map {$_->name => 1} $obj->Synonym;
 
     my $json_obj = {
