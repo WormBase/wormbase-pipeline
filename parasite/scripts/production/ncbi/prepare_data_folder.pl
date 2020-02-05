@@ -12,15 +12,18 @@ Creates local directory into which an assembly will be downloaded from NCBI.
 Local files for the ParaSite import are created in the same directory.  The 
 directory name is based on species and bioproject names according to the 
 ParaSite convention; it is created under the data root directory defined by 
-PARASITE_DATA in the user environment. 
+PARASITE_DATA in the user environment.
 
 Input data are provided as YAML.  This is in the format produced by 
 doc_for_assembly.pl, which is a scratch XML-to-YAML conversion based on NCBI 
 reports for an assembly.
 
+Writes YAML to standard output that provides input data for
+prepare_conf_and_fasta.pl.
+
 =head1 OPTIONS AND ARGUMENTS
 
-Reads assembly metadta as YAML from standard input or named file.
+Reads assembly metadata as YAML from standard input or named file.
 
 =over
 
@@ -43,7 +46,9 @@ print this message and exit
 
 =item * Create package to eliminate code (e.g. species name filters) duplicated
         between ParaSite scripts used for NCBI checking & import etc.
-
+        
+=item * More SubmitterOrganization -> URL mappings?
+  
 =back
 
 =cut
@@ -62,7 +67,8 @@ use Pod::Usage;
 use Try::Tiny;
 use YAML;
 
-use constant NCBI_FTP_SERVER => 'ftp.ncbi.nlm.nih.gov';
+use constant NCBI_FTP_SERVER     => 'ftp.ncbi.nlm.nih.gov';
+use constant GENOME_NAME_FILTER  => qr/^[a-z\d]+_[a-z\d]+_[a-z]+\d+$/;
 
 my($force, $help);
 GetOptions( 'force'  => \$force,
@@ -108,14 +114,14 @@ my $species = lc(join("_", $spe, $cies, $bp));
 # tweaked validation, as \w would include capitals and '_', and I think neither should occur at those locations in the identifier?
 # also more useful error message
 # die "$species" unless $species =~ /^\w+_\w+_\w+\d+$/;
-die "Failed to create valid species identifier: $species" unless $species =~ /^[a-z\d]+_[a-z\d]+_[a-z]+\d+$/;
+croak "Failed to create valid species identifier: $species" unless $species =~ GENOME_NAME_FILTER;
 
 # goto considered harmful
 # goto PRINT unless $ENV{PARASITE_DATA};
 if( $ENV{PARASITE_DATA} ) {
    
-   -d $ENV{PARASITE_DATA} || die "environment variable PARASITE_DATA has been set to a non-existent directory: $ENV{PARASITE_DATA}";
-   -w $ENV{PARASITE_DATA} || die "environment variable PARASITE_DATA set to $ENV{PARASITE_DATA}: you cannot write to that directory";
+   -d $ENV{PARASITE_DATA} || croak "environment variable PARASITE_DATA has been set to a non-existent directory: $ENV{PARASITE_DATA}";
+   -w $ENV{PARASITE_DATA} || croak "environment variable PARASITE_DATA set to $ENV{PARASITE_DATA}: you cannot write to that directory";
    my $parasite_data_dir = join("/", $ENV{PARASITE_DATA}, $species);
    File::Path::make_path($parasite_data_dir);
 
@@ -125,10 +131,10 @@ if( $ENV{PARASITE_DATA} ) {
       warn "$assembly_path already exists: no new download\n";
    } else {
       my $ftp = Net::FTP->new(NCBI_FTP_SERVER)
-         or die "$@";
+         or croak "$@";
        
       my $ftp_uri = $conf->{FtpPath_GenBank};
-      $ftp_uri =~ m~^ftp://${\NCBI_FTP_SERVER}~ or die "URI doesn't match the expected host name ${\NCBI_FTP_SERVER}: $ftp_uri";
+      $ftp_uri =~ m~^ftp://${\NCBI_FTP_SERVER}~ or croak "URI doesn't match the expected host name ${\NCBI_FTP_SERVER}: $ftp_uri";
       try{
          # oh my days
          # (my $uri = $conf->{FtpPath_GenBank}) =~ s{ftp://ftp.ncbi.nlm.nih.gov}{};
@@ -151,11 +157,11 @@ if( $ENV{PARASITE_DATA} ) {
       #system("gunzip $assembly_path") and die "Failed: gunzip $assembly_path";  
       my $gunzipped = $assembly_path;
       $gunzipped =~ s/\.gz$//;
-      IO::Uncompress::Gunzip::gunzip($assembly_path => $gunzipped) or die "failed to gunzip $assembly_path: $IO::Uncompress::Gunzip::GunzipError";
+      IO::Uncompress::Gunzip::gunzip($assembly_path => $gunzipped) or croak "failed to gunzip $assembly_path: $IO::Uncompress::Gunzip::GunzipError";
       unlink $assembly_path || warn "couldn't remove gzipped source file $assembly_path";
       $assembly_path = $gunzipped;
    }
-   die "Failed to write local copy of assembly to $assembly_path" unless -s $assembly_path;
+   croak "Failed to write local copy of assembly to $assembly_path" unless -s $assembly_path;
 
    my $assembly_destination_path = join("/", $parasite_data_dir, "$species.fa");
    my $seq_region_synonyms_path  = join("/", $parasite_data_dir, "$species.seq_region_synonyms.tsv");
@@ -163,9 +169,9 @@ if( $ENV{PARASITE_DATA} ) {
       warn "$assembly_destination_path and $seq_region_synonyms_path already exist: will not be recreated\n";
    } else {
    # if( not -s $assembly_destination_path or not -s $seq_region_synonyms_path){
-      open(my $assembly_in_fh, "<", $assembly_path) or die "cannot read $assembly_path: $!";
-      open(my $assembly_out_fh, ">", $assembly_destination_path) or die "cannot write to $assembly_destination_path: $!";
-      open(my $seq_region_synonyms_fh, ">", $seq_region_synonyms_path) or die "cannot write to $seq_region_synonyms_path: $!";
+      open(my $assembly_in_fh, "<", $assembly_path) or croak "cannot read $assembly_path: $!";
+      open(my $assembly_out_fh, ">", $assembly_destination_path) or croak "cannot write to $assembly_destination_path: $!";
+      open(my $seq_region_synonyms_fh, ">", $seq_region_synonyms_path) or croak "cannot write to $seq_region_synonyms_path: $!";
       ASSEMBLY_IN: while(my $line = <$assembly_in_fh>){
          unless($line =~ m/^>/){
             print $assembly_out_fh $line;
@@ -181,8 +187,8 @@ if( $ENV{PARASITE_DATA} ) {
          # behaviour of this original line wasn't very clear $isolate could be undefined
          # and the die output didn't state what the problem was
          #die "$scaffold_name_local | $_" if grep {$scaffold_name_local =~ /$_/i} ("$spe.$cies", $isolate);
-         die "Found species name $spe $cies in local scaffold name $scaffold_name_local: baled" if $scaffold_name_local =~ /$spe.$cies/i;
-         die "Found isolate name $isolate in local scaffold name $scaffold_name_local: baled" if $isolate && $scaffold_name_local =~ /$isolate/i;
+         croak "Found species name $spe $cies in local scaffold name $scaffold_name_local: baled" if $scaffold_name_local =~ /$spe.$cies/i;
+         croak "Found isolate name $isolate in local scaffold name $scaffold_name_local: baled" if $isolate && $scaffold_name_local =~ /$isolate/i;
          print $assembly_out_fh ">$scaffold_name_local\n";
          print $seq_region_synonyms_fh join("\t", "toplevel", $scaffold_name_local, $scaffold_name_ncbi, "INSDC")."\n"; 
       }
