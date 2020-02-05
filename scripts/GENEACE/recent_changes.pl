@@ -90,6 +90,10 @@ print "Extracting data from dates from $from until $until, inclusive\n";
 if (!defined $outfile) {$outfile = "recent_changes_${from}_to_${until}.ace";}
 
 $geneace = Ace->connect('-path' => $wormbase->database('geneace')) or $log->log_and_die("Failed to connect to geneace\n");
+my $currentdb = $wormbase->database('current');
+my %cgc2gene = $wormbase->FetchData("cgc_name2gene", undef, "$currentdb/COMMON_DATA");         # 'abu-1' => 'WBGene00000024',
+
+
 
 open (OUT, ">$outfile") || $log->log_and_die("Can't open file $outfile");
 print OUT "\n\n// Nameserver Recent changes\n// From: $from\n// Until: $until\n\n\n";
@@ -750,14 +754,38 @@ sub new_variation {
   my ($id, $data, $when, $why, $who) = @_;
   if ($debug) {print "New Variation: ID: $id\n";}
 
+  # see if any data is mentioned in the Remark
+  my @genes = ($why =~ /WBGene\d+/g);
+  my @vars = ($why =~ /WBVar\d+/g);
+  my @papers = ($why =~ /WBPaper\d+/g);
+  my @cgcs = ($why =~ /[a-z]{3,4}\-\d{1,4}/g);
+
+
   print OUT "\n";
   print OUT "// new_variation\n";
   print OUT "Variation : $id\n";
   print OUT "Public_name $data->{'name'}\n"; # was 'variation/name'
   print OUT "Live\n";
   print OUT "Remark \"[$when $who] New Variation: $why\" Curator_confirmed $who\n";
+  foreach my $paper (@papers) {print OUT "Reference $paper\n"}
+  foreach my $gene (@genes) {
+    print OUT "Possibly_affects $gene";
+    if (scalar @papers == 1) {print OUT " Paper_evidence $papers[0]"}
+    print OUT "\n";
+  }
+  foreach my $var (@vars) {print OUT "Linked_to $var\n"}
+  foreach my $cgc (@cgcs) {
+    if (exists $cgc2gene{$cgc}) {
+      my $gene = $cgc2gene{$cgc};
+      if (scalar @papers == 1) {
+	print OUT "Possibly_affects $gene Paper_evidence $papers[0]\n"
+      }
+      print OUT "Possibly_affects $gene Remark \"CGC_name $cgc\"\n";
+    }
+  }
   print OUT "\n";
 }
+
 
 sub kill_variation {
   my ($id, $data, $when, $why, $who) = @_;
