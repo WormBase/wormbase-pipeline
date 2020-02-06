@@ -433,6 +433,7 @@ This checks whether the input sequence_name conforms to the accepted format.
 Args:
       name - name to test
       type - one of 'CGC' or 'Sequence' or 'Biotype'
+      binomial species name - e.g. 'Caenorhabditis elegans'
 
 =item Synopsis
 
@@ -449,7 +450,7 @@ sub validate_name {
 
   if (exists $self->{'full_name'}{$long_species}) {$long_species = $self->{'full_name'}{$long_species}}
 
-  #is this a valid name tpye?
+  #is this a valid name type?
   my @types = $self->getNameTypes;
   if ( grep {$_ eq $type} @types) {    		
 
@@ -1605,7 +1606,7 @@ Args:
  $data - array-ref of hashes
          the hashes contain the keys ('species', 'gcg-name', 'biotype', 'sequence-name')
  $why - string, optional reason for creating the genes
-
+ $force - optional, if set then the normal checking for a correct CGC name format is turned off, any format is allowed.
 
  e.g.
  $data = [{"id" => 'WBGene00304791', "cgc-name" => "abc-31", "biotype" => 'CDS'}, { ... }];
@@ -1618,7 +1619,7 @@ Returns:
 
 sub update_genes {
   
-  my ($self, $data, $why) = @_;
+  my ($self, $data, $why, $force) = @_;
 
   # convert short species names to binomial names
   foreach my $hash (@{$data}) {
@@ -1626,6 +1627,9 @@ sub update_genes {
       if (exists $self->{'full_name'}{$hash->{'species'}}) {
 	$hash->{'species'} = $self->{'full_name'}{$hash->{'species'}};
       }
+    }
+    if (defined $force) {
+      $hash->{'force'} = $force;
     }
   }
 

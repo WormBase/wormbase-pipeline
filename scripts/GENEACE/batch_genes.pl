@@ -44,6 +44,9 @@ use NameDB_handler;
     
 
     for action "update":
+    It should be noted that when updating CGC names, the command-line option -species is not used. The species of each of the given Gene IDs is checked against the new CGC name to ensure that the prefix is correct.
+    If the format of a new CGC name is incorrect, it will be reported as an error, unless the command-line option -force is given.
+
     column 1 - WBGene ID to update
     column 2 - thing to update. One of 'CGC', 'Sequence', 'Biotype', 'Species'
     column 3 - new name to give to this WBGene ID e.g. 'bat-1' or 'AC3.24' or 'Pseudogene' or 'elegans'
@@ -148,7 +151,7 @@ e.g. perl batch_genes.pl -species elegans -action new -file gene_name_data -outp
 ######################################
 
 my ($help, $debug, $verbose, $store, $wormbase);
-my ($species, $file, $output, $action, $why);
+my ($species, $file, $output, $action, $why, $force);
 my $BATCH_SIZE = 500; # maximum entries to put into any one batch API call
 
 GetOptions ("help"       => \$help,
@@ -160,6 +163,7 @@ GetOptions ("help"       => \$help,
 	    "output:s"   => \$output,
 	    "action:s"   => \$action,
 	    "why:s"      => \$why,
+	    "force"      => \$force, # if set, then accept any CGC name even it it does not conform to our format conventions 
 	    );
 
 
@@ -351,15 +355,24 @@ sub update_gene {
     my ($id, $type, $name) = split /[\t,]/, $line;
     $type = lc $type;
     
-    $names{$id}{'id'} = $id; 
-    if ($type eq 'cgc') {
-      $names{$id}{"cgc-name"} = $name;
-    } elsif ($type eq 'sequence') {
-      $names{$id}{"sequence-name"} = $name;
-    } elsif ($type eq 'biotype') {
-      $names{$id}{"biotype"} = $name;
-    } elsif ($type eq 'species') {
-      $names{$id}{"species"} = $name;
+    # -force on the command-line makes any CGC name acceptable
+    # otherwise check that the CGC name is valid
+    if (!$force && $type eq 'cgc' && !defined &check_cgc($id, $name)) {
+      $log->write_to("ERROR, Invalid CGC name - not changed - use -force to force a change : $line\n");
+      $log->error;
+
+    } else {
+
+      $names{$id}{'id'} = $id; 
+      if ($type eq 'cgc') {
+	$names{$id}{"cgc-name"} = $name;
+      } elsif ($type eq 'sequence') {
+	$names{$id}{"sequence-name"} = $name;
+      } elsif ($type eq 'biotype') {
+	$names{$id}{"biotype"} = $name;
+      } elsif ($type eq 'species') {
+	$names{$id}{"species"} = $name;
+      }
     }
   }
 
@@ -374,7 +387,7 @@ sub update_gene {
 
 
     if ($count == $BATCH_SIZE) {
-      my $batch = $db->update_genes(\@names, $why);
+	my $batch = $db->update_genes(\@names, $why, $force);
       $count = 0;
       @names = ();
       print OUT "// batch '$batch' updated\n";
@@ -382,13 +395,22 @@ sub update_gene {
   }
 
   if ($count) {
-    my $batch = $db->update_genes(\@names, $why);
+    my $batch = $db->update_genes(\@names, $why, $force);
     print OUT "// batch '$batch' updated\n";
   }
 
 
 }
+##########################################
+# returns undef if the CGC name is not valid for the species of the $id gene
+sub check_cgc {
+  my ($id, $name) = @_;
 
+  my $info = $db->info_gene($id);
+  my $species = $info->{'species'};
+  return $db->validate_name($name, 'CGC', $species);
+
+}
 ##########################################
 
 sub kill_gene {
