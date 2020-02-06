@@ -42,6 +42,8 @@ print this message and exit
 
 =over
 
+=item * Stop using deprecated YAML package (or at least use it as YAML::Old)
+
 =item * Validation of input
 
 =item * Create package to eliminate code (e.g. species name filters) duplicated
@@ -75,7 +77,8 @@ GetOptions( 'force'  => \$force,
             'help'   => \$help
             )
             || pod2usage({-exitval=>1});
-$help && pod2usage({-verbose=>2, -exitval=>0});
+$help && pod2usage({-verbose=>2, -exitval=>0});$new_conf->{$root}->{taxon_id} = [qw(one two three)];
+
 
 my $conf;
 # read STDIN or from a named file, in the standard Perl fashion,
@@ -202,14 +205,17 @@ if( $ENV{PARASITE_DATA} ) {
 # PRINT:
 
 my %urls = (
-  "University of Hull" => "https://www.hull.ac.uk",
-  "WTSI" => "http://www.sanger.ac.uk",
-  "University of Melbourne" => "http://www.gasserlab.org",
-  "Oregon State University" => "https://oregonstate.edu",
+  "University of Hull"        => "https://www.hull.ac.uk",
+  "WTSI"                      => "http://www.sanger.ac.uk",
+  "University of Melbourne"   => "http://www.gasserlab.org",
+  "Oregon State University"   => "https://oregonstate.edu",
+  'University College London' => 'https://www.ucl.ac.uk',
 );
 my %synonyms = (
-  "WTSI" => "Wellcome Sanger Institute",
-  "ED" => "University of Edinburgh",
+  "WTSI"                      => "Wellcome Sanger Institute",
+  "ED"                        => "University of Edinburgh",
+  'UCL'                       => 'University College London',
+  'UNIVERSITY COLLEGE LONDON' => 'University College London',
 );
 print Dump({
   $species => {
@@ -219,7 +225,7 @@ print Dump({
      meta => {
         "assembly.accession" => $conf->{AssemblyAccession} // "?",
         "provider.name" => $synonyms{$conf->{SubmitterOrganization}//""} // $conf->{SubmitterOrganization} // "?",
-        "provider.url" => $urls{$conf->{SubmitterOrganization}} // "?",
+        "provider.url" => $urls{$conf->{SubmitterOrganization}} // $urls{$synonyms{$conf->{SubmitterOrganization}//""}} // "?",
         "species.strain" => $conf->{Biosource}{Isolate} // "?",
         "species.biosample" => $conf->{BioSampleAccn} // "?",
         "species.nematode_clade" => $species =~ /meloidogyne|globodera|heterodera/ ? "IV" : $species =~ /pristionchus|caenorhabditis/ ? "V": "?",

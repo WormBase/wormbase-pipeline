@@ -78,6 +78,10 @@ print this message and exit
 
 =item *
 
+Stop using deprecated YAML package (or at least use it as YAML::Old)
+
+=item *
+
 Validation of input
 
 =item *
@@ -191,10 +195,66 @@ if( $force or not -s $conf_path or $ENV{REDO_FASTA} ) {
   close(FH) or croak "Error whilst writing $conf_path: $!";
 }
 
-my $text = File::Slurp::read_file($conf_path);
-if ($text =~ /\?/) {
-  die "$conf_path: complete the config file and remove all the ?s!";
-} 
-# not sure why this rewrites the file, and if that's required then why
-# $text isn't just written to the file rather than using YAML package..?
-print YAML::Dump (YAML::LoadFile($conf_path)); 
+# this check for missing values is a wee bit fragile (any occurence of a '?' char anywhere in the text)
+# is isn't extensible for additional validation/verification
+# the slurping as text and a separated YAML::Load->YAML::Dump is a bit odd too; is this
+# meant to check it is valid YAML?
+# my $text = File::Slurp::read_file($conf_path);
+# if ($text =~ /\?/) {
+#   die "$conf_path: complete the config file and remove all the ?s!";
+# } 
+# print YAML::Dump (YAML::LoadFile($conf_path)); 
+
+my $new_conf = YAML::LoadFile($conf_path) or croak "YAML parser barfed on $conf_path";
+
+# check configuration for missing values
+my $missing = 0;
+my $flat = flatten_hash(Storable::dclone $new_conf->{$data_dir_name});
+while (my ($conf_key, $conf_value) = each %{$flat}) {
+   if( '?' eq $conf_value ) {
+      ++$missing;
+      print "ERROR: configuration has a missing value for ".`tput bold`."$conf_key".`tput sgr0`."\n";
+   }
+}
+die "To proceed further, provide the missing value".($missing>1?'s':'')." run again. Tip: you can rerun ".basename($0)." using \$PARASITE_DATA/$data_dir_name/".basename($conf_path)." as input.\n"
+   if $missing;
+
+# configuration checked: print
+print YAML::Dump $new_conf;
+
+# quick & direct function to flatten a hash
+# pass reference to a hash
+# flattens any nested hashes or arrays by creating a top level key based
+# on joining the sequence of hash keys/array indexes, with '/' as separator
+# any references found that aren't hashes or arrays are just converted into string representation
+# returns reference to the (now flattend) hash
+sub flatten_hash {
+   my $hash_ref = shift();
+   
+   # do..while iterates through all top level hash values until no references are found
+   my $nested_ref;
+   my $max_levels = 100;
+   do {
+      $nested_ref = 0;
+      --$max_levels < 0 && croak "insane number of nested levels in hash";
+      foreach my $this_key (keys %{$hash_ref}) {
+         my $this_value = $hash_ref->{$this_key};
+         if( ref({}) eq ref($this_value) ) {
+            map {$hash_ref->{join('/',$this_key,$_)} = $this_value->{$_}} (keys %{$this_value});
+            delete $hash_ref->{$this_key};
+            ++$nested_ref;
+         } elsif (ref([]) eq ref($this_value) ) {
+            my $i=0;
+            map {$hash_ref->{join('/',$this_key,$i++)} = $_} (@{$this_value});
+            delete $hash_ref->{$this_key};
+            ++$nested_ref;
+         } elsif ( ref($this_value) ) {
+            # some other reference
+            $hash_ref->{$this_key} = "$this_value";
+            ++$nested_ref;
+         }
+      }
+   } while ($nested_ref);
+   
+   return($hash_ref);
+}
