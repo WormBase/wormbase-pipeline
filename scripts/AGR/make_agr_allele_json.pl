@@ -48,7 +48,7 @@ my $bgi_genes = AGR::get_bgi_genes( $bgi_json ) if $bgi_json;
 
 my $db = Ace->connect(-path => $acedbpath, -program => $tace) or die("Connection failure: ". Ace->error);
 
-my $it = $db->fetch_many(-query => 'find Variation WHERE Live AND COUNT(Gene) == 1 AND (Phenotype OR Disease_info) AND NOT Natural_variant');
+my $it = $db->fetch_many(-query => 'find Variation WHERE Live AND COUNT(Gene) == 1 AND (Phenotype OR Disease_info OR Interactor) AND NOT Natural_variant');
 process($it);
 
 # $it = $db->fetch_many(-query => 'find Variation WHERE Live AND Corresponding_transgene');
