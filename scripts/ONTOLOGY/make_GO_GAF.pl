@@ -244,11 +244,13 @@ foreach my $suf (0..9) {
     #
     # Contributed_by
     #
-    my $cb = "WB";
+    my $cb = 'WB';
     if ($obj->Contributed_by) {
       $cb = $obj->Contributed_by->name;
-      $cb = "WB" if $cb eq 'WormBase';
-      $cb = "UniProt" if $cb =~ /UniProt/;
+      if ($cb eq 'WormBase'){$cb = 'WB'}
+      elsif($cb=~/UniProt/){$cb = 'UniProt'}
+    }else{
+	    $cb = 'InterPro' if $obj->Motif && $obj->Motif->name=~/INTERPRO/;
     }
     $gaf_line->{contributor} = $cb;
     
@@ -382,7 +384,7 @@ sub get_gaf_line {
                      $gaf->{object_type},
                      join("|", map { "taxon:$_" } @{$gaf->{taxon}}),
                      $gaf->{date},
-                     $gaf->{contributor},
+                     $gaf->{contributor},   # was renamed to "Assigned By"
                      join("|", @{$gaf->{annotation_extension}}),
                      $gaf->{isoform});
   
