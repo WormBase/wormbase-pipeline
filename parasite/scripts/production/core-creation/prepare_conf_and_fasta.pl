@@ -113,6 +113,7 @@ use Try::Tiny;
 use YAML;
 
 use constant GENOME_NAME_FILTER  => qr/^[a-z\d]+_[a-z\d]+_[a-z]+\d+$/;
+use constant GFF3_VALIDATION_CMD => 'gt gff3validator';
 
 my($force, $split_fasta, $help);
 $split_fasta = 1; # negatable option
@@ -151,9 +152,29 @@ if( $force or not -s $conf_path or $ENV{REDO_FASTA} ) {
    $this_assembly->{gff3} //=  File::Spec->catfile($data_dir_path, "$data_dir_name.gff3");
    croak "Didn't find expected GFF3 file at ".$this_assembly->{gff3} unless -f $this_assembly->{gff3} and File::Spec->file_name_is_absolute($this_assembly->{gff3});
 
+   # validate GFF3
+   # Bio::EnsEMBL::Utils::IO::GFFParser doesn't validate; use genometools
+   my @validation_errors;
+   try {
+      open(GT, GFF3_VALIDATION_CMD." $this_assembly->{gff3} 2>&1 |") || die "can't execute ".GFF3_VALIDATION_CMD.": $!";
+      @validation_errors = <GT>;
+      # exit status is false on validation error *or* command error
+      my $success = close(GT);
+      # $! defined on command error
+      my $msg = $!;
+      if($success) {
+         @validation_errors = ();
+      } else {
+         $msg && die "error running ".GFF3_VALIDATION_CMD.": $msg";
+      }
+   } catch {
+      # error in running the validation, not an indication of invalid GFF3
+      croak "Unable to validate GFF3:\n".$_;
+   };
+   # exit on GFF3 validation error
+   $validation_errors[0] && croak "$this_assembly->{gff3} is not valid GFF3:\n".termcap_bold(@validation_errors);
+   
    # WIP: verify GFF3 data 
-   # note Bio::EnsEMBL::Utils::IO::GFFParser doesn't validate, but if the file is
-   # badly mangled this will throw some sort of error
    # my $check_sources_column = "grep -c $this_assembly->{gff_sources} $this_assembly->{gff3}";
    # die "Failed: $check_sources_column" unless 0 < `$check_sources_column`;
    try {
@@ -162,12 +183,12 @@ if( $force or not -s $conf_path or $ENV{REDO_FASTA} ) {
                         || die "failed to create Bio::EnsEMBL::Utils::IO::GFFParser";
       $gff3_parser->parse_header(); # discard headers
       while( my $feature = $gff3_parser->parse_next_feature() ) {
-         die qq~$feature->{seqid} has incorrect GFF source "$feature->{source}" (expected "$this_assembly->{gff_sources}")\n ~
+         die qq~$feature->{seqid} has incorrect GFF source "$feature->{source}" (expected "$this_assembly->{gff_sources}") at $this_assembly->{gff3} line $.\n~
             if $feature->{source} ne $this_assembly->{gff_sources};
       }
       close(GFF3) || die "error whilst reading file: $!";
    } catch {
-      croak "Error whilst parsing GFF3 file $this_assembly->{gff3}:\n".$_;
+      croak "Error whilst parsing GFF3 file $this_assembly->{gff3}:\n".termcap_bold($_);
    };
 
    # check existence of FASTA file in specified location
@@ -213,7 +234,7 @@ my $flat = flatten_hash(Storable::dclone $new_conf->{$data_dir_name});
 while (my ($conf_key, $conf_value) = each %{$flat}) {
    if( '?' eq $conf_value ) {
       ++$missing;
-      print "ERROR: configuration has a missing value for ".`tput bold`."$conf_key".`tput sgr0`."\n";
+      print "ERROR: configuration has a missing value for ".termcap_bold($conf_key)."\n";
    }
 }
 die "To proceed further, provide the missing value".($missing>1?'s':'')." run again. Tip: you can rerun ".basename($0)." using \$PARASITE_DATA/$data_dir_name/".basename($conf_path)." as input.\n"
@@ -257,4 +278,10 @@ sub flatten_hash {
    } while ($nested_ref);
    
    return($hash_ref);
+}
+
+sub termcap_bold {
+   my @input = @_;
+   my @bold = ( `tput bold`,@input,`tput sgr0` );
+   return wantarray ? @bold : "@bold";
 }
