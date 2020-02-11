@@ -174,8 +174,11 @@ foreach my $sub_query (
         foreach my $field ($dblink->col) {
           if (exists $XREF_MAP{$dblink}->{$field}) {
             my $prefix = $XREF_MAP{$dblink}->{$field};
-            my $suffix = $field->right->name; 
-            push @xrefs, { id => "$prefix:$suffix" };
+	    my @ids = $field->col;
+	    foreach my $id(@ids){
+	            my $suffix = $id->name; 
+        	    push @xrefs, { id => "$prefix:$suffix" };
+	    }
           }
         }
       }
