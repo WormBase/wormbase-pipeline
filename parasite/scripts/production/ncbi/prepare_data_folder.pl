@@ -60,6 +60,7 @@ use strict;
 use warnings;
 
 use Carp;
+use CoreCreation::Config::Utils;
 use File::Basename;
 use File::Path;
 use Getopt::Long;
@@ -70,15 +71,13 @@ use Try::Tiny;
 use YAML;
 
 use constant NCBI_FTP_SERVER     => 'ftp.ncbi.nlm.nih.gov';
-use constant GENOME_NAME_FILTER  => qr/^[a-z\d]+_[a-z\d]+_[a-z]+\d+$/;
 
 my($force, $help);
 GetOptions( 'force'  => \$force,
             'help'   => \$help
             )
             || pod2usage({-exitval=>1});
-$help && pod2usage({-verbose=>2, -exitval=>0});$new_conf->{$root}->{taxon_id} = [qw(one two three)];
-
+$help && pod2usage({-verbose=>2, -exitval=>0});
 
 my $conf;
 # read STDIN or from a named file, in the standard Perl fashion,
@@ -91,17 +90,8 @@ try{
 };
 pod2usage(255) unless $conf;
 
-my $bp = $conf->{GB_BioProjects}{Bioproj}{BioprojectAccn};
-# apply same filter to species names as used in compare_docs_against_current_staging.pl
-# my ($spe, $cies) = split (/\s+/, $conf->{SpeciesName});
-my ($spe, $cies);
-{
-   my $speciesNameFromConf = $conf->{SpeciesName};
-   $speciesNameFromConf    =~ s/sp. //;
-   $speciesNameFromConf    =~ tr/ /_/;
-   $speciesNameFromConf    = lc $speciesNameFromConf;
-   ($spe, $cies)           = split (/_/, $speciesNameFromConf);
-}
+my ($species,$spe,$cies) = CoreCreation::Config::Utils::parasite_data_id($conf->{SpeciesName}, $conf->{GB_BioProjects}{Bioproj}{BioprojectAccn});
+
 # this variable is treated as a string, but can be read as a HASH
 # (on incidences I have seen are empty hashes, but I suspect this is just an artefact of
 # they way the YAML is created running YAML::Load on a structure created by feeding
@@ -112,12 +102,6 @@ my ($spe, $cies);
 # Tim S. 2020-01-04
 my $isolate = $conf->{Biosource}{Isolate};
 $isolate = undef if ref($isolate) && ref({}) eq ref($isolate);
-
-my $species = lc(join("_", $spe, $cies, $bp));
-# tweaked validation, as \w would include capitals and '_', and I think neither should occur at those locations in the identifier?
-# also more useful error message
-# die "$species" unless $species =~ /^\w+_\w+_\w+\d+$/;
-croak "Failed to create valid species identifier: $species" unless $species =~ GENOME_NAME_FILTER;
 
 # goto considered harmful
 # goto PRINT unless $ENV{PARASITE_DATA};
