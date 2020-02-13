@@ -84,7 +84,8 @@ sub change_transcript{
   my @l = split(/\t/, $line);
   my $transcriptID="$1" if $line =~ /Name=([^;\n]+)/;
   my $geneID="$1" if $line =~/(WBGene\d+)/;
-  $line=~s/;Parent/;curie=WB:$transcriptID;curie=WB:$geneID;Ontology_term=$soID;Parent/;
+  # $line=~s/;Parent/;curie=WB:$transcriptID;curie=WB:$geneID;Ontology_term=$soID;Parent/;
+  $line=~s/;Parent/;curie=WB:$transcriptID;Ontology_term=$soID;Parent/;
   print $outf $line;
 }
 
