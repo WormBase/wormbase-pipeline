@@ -2,6 +2,7 @@
 
 use strict;
 use Getopt::Long;
+use URI::Escape;
 
 use lib $ENV{CVS_DIR};
 use Modules::AGR;
@@ -58,7 +59,7 @@ while(<$in_fh>) {
       $attr{long_name} = $bgi_genes{$gid}->{name};
     }
     if (exists $bgi_genes{$gid}->{geneSynopsis}) {
-      $attr{description} = $bgi_genes{$gid}->{geneSynopsis};
+      $attr{description} = uri_escape($bgi_genes{$gid}->{geneSynopsis},"\t=%;,&");
     }
     $attr{Ontology_term}='SO:0000704';
 
