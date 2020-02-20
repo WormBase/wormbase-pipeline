@@ -29,11 +29,21 @@ Miscellaneous functions for handling GFF3 during the ParaSite core database crea
 
 =item Genometools (gt) excuteable in your $PATH
 
+=item CPAN packages:
+
+=over
+
+=item File::Slurp
+
+=item Storable
+
 =item Sub::Identify
 
 =item Try::Tiny
 
 =item URI::Escape
+
+=back
 
 =back
 
@@ -43,6 +53,8 @@ Miscellaneous functions for handling GFF3 during the ParaSite core database crea
 
 use strict;
 
+use File::Slurp;
+use Storable;
 use Sub::Identify;
 use Try::Tiny;
 use URI::Escape;
@@ -119,9 +131,33 @@ deleted prior to any further processing.
 Flag. If true, if a FASTA directive (##FASTA) is found then that line and
 all remaining lines are deleted.
 
+=item -strip_seqid
+
+List.  Delete all features with a seqid in the list.  Alternatively pass
+a file name; the file will be read to provide the list
+
 =item -set_source
 
 String.  The source (field 2) of each feature is set to this value.
+
+=item -change_type
+
+Hash of params.  If defined, changes a feature type.
+Params:
+
+=over
+
+=item -from
+
+Current feature type
+
+=item -to
+
+New feature type
+
+=back
+
+Can also past a list of hashes to change more than one feature type.
 
 =item -name_gene_from_id
 
@@ -136,7 +172,7 @@ List of types for which new Names are to be created.  Defaults to all types.
 
 =item -prefix, -suffix
 
-Prefix and/or suffix that will be added to the ID.
+Prefix and/or suffix that will be added to the ID.strip_seqid
 If neither of theseare passed, the Name will be a copy of the ID.
 
 =item -separator
@@ -173,10 +209,32 @@ sub munge_line_by_line {
    my $gff3_file           = $params{-file} || die "$this must be passed a GFF3 file name (-file)";
    my $strip_comments      = $params{-strip_comments};
    my $strip_fasta         = $params{-strip_fasta};
-   my $name_gene_from_id   = $params{-name_gene_from_id};
+   my $strip_seqid         = $params{-strip_seqid};
    my $set_source          = $params{-set_source};
+   my $change_type         = $params{-change_type};
+   my $name_gene_from_id   = $params{-name_gene_from_id};
    my $copy_CDS_to_exon    = $params{-copy_CDS_to_exon};
    my $handler             = $params{-handler};
+   
+   if($strip_seqid) {
+      if(ref([]) ne ref($strip_seqid)) {
+         die "$this parameter -strip_seqid must be a list reference, or a file name"
+            unless -e $strip_seqid;
+         $strip_seqid = [ File::Slurp::read_file($strip_seqid, chomp=>1) ];
+      }
+      # convert to hash for fast lookup
+      my %hash;
+      @hash{@{$strip_seqid}} = (1) x @{$strip_seqid};
+      $strip_seqid = \%hash;
+   }
+   
+   if($change_type) {
+      die "$this parameter -change_type must be a hash reference, or list of hashes"
+         if (ref({}) ne ref($change_type) && ref([]) ne ref($change_type))
+         || (ref([]) eq ref($change_type) && grep(ref({}) ne ref($_), @{$change_type}));
+      die "$this parameter -change_type hash(es) must include '-from' and '-to'"
+         if grep(!exists $_->{-from} || !exists $_->{-to}, (ref([]) eq ref($change_type) ? @{$change_type} : $change_type));
+   }
    
    die "$this parameter -name_gene_from_id must be a hash reference"
       if $name_gene_from_id && ref({}) ne ref($name_gene_from_id);
@@ -209,11 +267,22 @@ sub munge_line_by_line {
          # $line is a comment
          push(@new_gff3,$line) unless $strip_comments;
          ++$num_comments;
+      } elsif($strip_seqid && exists $strip_seqid->{ (split(/\t/,$line,2))[0] }) {
+         # line has a seqid indicating it should be skipped
+         ++$num_features;
       } else {
          # $line is a feature
          my @fields = split(/\t/,$line);
          GFF3_LAST_FIELD == $#fields || die "$gff3_file line $. should be a GFF3 feature but it doesn't have 9 fields:\n$line";
          
+         if($set_source) {
+            $fields[GFF3_SOURCE_FIELD] = $set_source;
+         }
+         if($change_type) {
+            foreach my $change ( ref([]) eq ref($change_type) ? @{$change_type} : $change_type ) {
+               $fields[GFF3_TYPE_FIELD] = $change->{-to} if $fields[GFF3_TYPE_FIELD] eq $change->{-from};
+            }
+         }
          if($name_gene_from_id) {
             if( !exists $name_gene_from_id->{-types} || grep($_ eq $fields[GFF3_TYPE_FIELD], @{$name_gene_from_id->{-types}}) ) {
                my $attr = _deserialize_attributes($fields[GFF3_ATTR_FIELD]);
@@ -223,9 +292,6 @@ sub munge_line_by_line {
                $attr->{Name} .= $sep.$name_gene_from_id->{-suffix} if exists $name_gene_from_id->{-suffix};
                $fields[GFF3_ATTR_FIELD] = _serialize_attributes($attr);
             }
-         }
-         if($set_source) {
-            $fields[GFF3_SOURCE_FIELD] = $set_source;
          }
          if($handler) {
             # convert attributes to hash when passing to handler
@@ -335,21 +401,33 @@ sub _deserialize_attributes {
 # returns attributes as a string (usable for 9th field of a feature line)
 sub _serialize_attributes {
    my $this = (caller(0))[3];
-   my $attr = shift();
-   die "$this must be passed attributes hash" unless $attr && ref({}) eq ref($attr);
+   my $hashref = shift();
+   die "$this must be passed attributes hash" unless $hashref && ref({}) eq ref($hashref);
+   # want to be able to modify a local copy
+   my $attr = Storable::dclone($hashref);
    
    my $attr_string = '';
+   # Name, ID and Parent are added to the string in order
+   foreach my $k (grep(exists $attr->{$_}, qw(Name ID Parent))) {
+      (ref([]) eq ref($attr->{$k})) && die "multiple values have been created for non-repeating attribute $k";
+      _append_attr(\$attr_string,$k,$attr->{$k});
+      delete $attr->{$k};
+   }
    foreach my $k (sort keys %{$attr}) {
       if(ref([]) eq ref($attr->{$k})) {
-         # attributes that are lists are rensdered as repeating KEV pairs
+         # attributes that are lists are rendered as repeating KEV pairs
          foreach my $v (@{$attr->{$k}}) {
-            $attr_string .= ';' if $attr_string;
-            $attr_string .= join('=',$k,URI::Escape::uri_escape($v));
+            _append_attr(\$attr_string,$k,$v);
          }
       } else {
-         $attr_string .= ';' if $attr_string;
-         $attr_string .= join('=',$k,URI::Escape::uri_escape($attr->{$k}));
+         _append_attr(\$attr_string,$k,$attr->{$k});
       }
+   }
+   
+   sub _append_attr {
+      my($stringref,$key,$value) = @_;
+      $$stringref .= ';' if $$stringref;
+      $$stringref .= join('=',$key,URI::Escape::uri_escape($value));
    }
    
    return($attr_string);
