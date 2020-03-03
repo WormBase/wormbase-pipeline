@@ -66,6 +66,27 @@ Splits FASTA and creates AGP I<when required>. Default B<true>, negatable with
 C<-nosplit_fasta>; can also be negated by setting SKIP_SPLIT_FASTA in the 
 environment
 
+=item meta
+
+Set a metadata value in the configuration.  Can be repeated to set multiple
+values.  For example:
+
+   -meta "species.nematode_clade=IV" -meta "provider.url=https://foo.bar"
+
+(Note that if a configuration file already exists, you need to use
+C<-force> to have your new value(s) written to the file).
+
+=item delete_meta
+
+Deletes a metadata item from the configuration.  Can be repeated to set multiple 
+items. It is not an error if the item doesn't exist.
+For example:
+
+   -delete_meta "species.strain"
+
+(Note that if a configuration file already exists, you need to use
+C<-force> to have your new value(s) written to the file).
+
 =item help
 
 print this message and exit
@@ -114,11 +135,13 @@ use Storable;
 use Try::Tiny;
 use YAML;
 
-my($force, $split_fasta, $help);
+my($force, $split_fasta, @user_supplied_metadata, @metadata_to_delete, $help);
 $split_fasta = 1; # negatable option
-GetOptions( 'force'        => \$force,
-            'split_fasta!' => \$split_fasta,
-            'help'         => \$help
+GetOptions( 'force'           => \$force,
+            'split_fasta!'    => \$split_fasta,
+            'meta=s'          => \@user_supplied_metadata,
+            'delete_meta=s'   => \@metadata_to_delete,
+            'help'            => \$help
             )
             || pod2usage({-exitval=>1});
 $help && pod2usage({-verbose=>2, -exitval=>0});
@@ -141,6 +164,16 @@ croak "Input must contain exactly one data directory name, but all these were fo
    unless $data_dir_name and not @others and CoreCreation::Config::Utils::parasite_data_id_is_valid($data_dir_name);
 my $data_dir_path = join ("/", $ENV{PARASITE_DATA}, $data_dir_name);
 my $conf_path = File::Spec->catfile($data_dir_path, "$data_dir_name.conf");
+
+foreach my $d (@metadata_to_delete) {
+   exists $conf->{$data_dir_name}->{meta}->{$d} && delete $conf->{$data_dir_name}->{meta}->{$d};
+}
+
+foreach my $m (@user_supplied_metadata) {
+   my($k,$v) = split(/=/, $m, 2);
+   croak "Badly formed -meta argument: \"$m\"" unless $k && defined $v;
+   $conf->{$data_dir_name}->{meta}->{$k} = $v;
+}
 
 if( $force or not -s $conf_path or $ENV{REDO_FASTA} ) {
    # less confusing (?) to give this reference a new name rather than reassigning $conf
@@ -178,7 +211,9 @@ if( $force or not -s $conf_path or $ENV{REDO_FASTA} ) {
          if( 'gene' eq $feature->{type} ) {
             die qq~gene ID is not unique at $this_assembly->{gff3} line $.\n~ if exists $genes{ $feature->{attribute}->{ID} };
             $genes{ $feature->{attribute}->{ID} } = { mRNA=>[] };
-         } elsif( 'mRNA' eq $feature->{type} || 'transcript' eq $feature->{type} ) {
+         } elsif( 'mRNA' eq $feature->{type} || 'transcript' eq $feature->{type} 
+|| $feature->{type} =~ m/^..?RNA$/
+                  ) {
             die qq~mRNA ID is not unique at $this_assembly->{gff3} line $.\n~ if exists $mRNAs{ $feature->{attribute}->{ID} };
             die "mRNA $feature->{attribute}->{ID} references a non-existent parent in $this_assembly->{gff3}" unless exists $genes{ $feature->{attribute}->{Parent} };
             my $hash = {ID=>$feature->{attribute}->{ID}, Parent=>$feature->{attribute}->{Parent}, CDS=>[], exon=>[] };
@@ -200,7 +235,7 @@ if( $force or not -s $conf_path or $ENV{REDO_FASTA} ) {
       die "gene $gene_ID has no mRNA in $this_assembly->{gff3}" unless $genes{$gene_ID}->{mRNA}->[0];
       foreach my $this_mRNA (@{$genes{$gene_ID}->{mRNA}}) {
          my $mRNA_ID = $this_mRNA->{ID};
-         die "mRNA $mRNA_ID has no CDS or exon in $this_assembly->{gff3}" unless $mRNAs{$mRNA_ID}->{CDS}->[0] || $mRNAs{$mRNA_ID}->{exons}->[0];
+         die "mRNA $mRNA_ID has no CDS or exon in $this_assembly->{gff3}" unless $mRNAs{$mRNA_ID}->{CDS}->[0] || $mRNAs{$mRNA_ID}->{exon}->[0];
       }
    }
 
