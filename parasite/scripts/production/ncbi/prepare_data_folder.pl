@@ -32,6 +32,10 @@ Reads assembly metadata as YAML from standard input or named file.
 force downloading of assembly from NCBI and creation of local files, even
 if they already exist
 
+=item gff3_download
+
+attempt to download GFF3 (as well as FASTA) from NCBI
+
 =item help
 
 print this message and exit
@@ -72,9 +76,10 @@ use YAML;
 
 use constant NCBI_FTP_SERVER     => 'ftp.ncbi.nlm.nih.gov';
 
-my($force, $help);
-GetOptions( 'force'  => \$force,
-            'help'   => \$help
+my($force, $gff3_download, $help);
+GetOptions( 'force'           => \$force,
+            'gff3_download'   => \$gff3_download,
+            'help'            => \$help
             )
             || pod2usage({-exitval=>1});
 $help && pod2usage({-verbose=>2, -exitval=>0});
@@ -136,6 +141,21 @@ if( $ENV{PARASITE_DATA} ) {
          $assembly_path = "$parasite_data_dir/$remote";
          $ftp->binary() or die "Cannot select binary file transfer: ".$ftp->message;
          $ftp->get($remote, $assembly_path) or die "Cannot download file $remote: ".$ftp->message;
+         if($gff3_download) {
+            # note that GFF3 files at NCBI are named .gff, but are stored locally as .gff3
+            my $gff3_remote   = $remote;
+            my $gff3_path     = $assembly_path;
+            $gff3_remote   =~ s/\.fna\.gz\s*$/\.gff\.gz/;
+            $gff3_path     =~ s/\.fna\.gz\s*$/\.gff3\.gz/;
+            if( $ftp->get($gff3_remote, $gff3_path) ) {
+               my $gunzipped = $gff3_path;
+               $gunzipped =~ s/\.gz\s*$//;
+               warn "NCBI annotation file $gff3_remote will be stored locally as ".basename($gunzipped)."\n";
+               IO::Uncompress::Gunzip::gunzip($gff3_path => $gunzipped) or croak "failed to gunzip $gff3_path: $IO::Uncompress::Gunzip::GunzipError";
+            } else {
+               warn "Cannot download file $gff3_remote: ".$ftp->message;
+            }
+         }
       } catch {
          croak "Error retrieving assembly from $ftp_uri: $_";
       };
@@ -201,6 +221,12 @@ my %synonyms = (
   'UCL'                       => 'University College London',
   'UNIVERSITY COLLEGE LONDON' => 'University College London',
 );
+my $this_url = exists $urls{$conf->{SubmitterOrganization}}
+             ? $urls{$conf->{SubmitterOrganization}}
+             : (  exists $synonyms{$conf->{SubmitterOrganization}} && exists $urls{$synonyms{$conf->{SubmitterOrganization}}}
+                  ?  $urls{$synonyms{$conf->{SubmitterOrganization}}}
+                  :  '?'
+                  );
 print Dump({
   $species => {
      taxon_id => $conf->{SpeciesTaxid} // "?",
@@ -209,7 +235,7 @@ print Dump({
      meta => {
         "assembly.accession" => $conf->{AssemblyAccession} // "?",
         "provider.name" => $synonyms{$conf->{SubmitterOrganization}//""} // $conf->{SubmitterOrganization} // "?",
-        "provider.url" => $urls{$conf->{SubmitterOrganization}} // $urls{$synonyms{$conf->{SubmitterOrganization}//""}} // "?",
+        "provider.url" =>  $this_url // "?",
         "species.strain" => $conf->{Biosource}{Isolate} // "?",
         "species.biosample" => $conf->{BioSampleAccn} // "?",
         "species.nematode_clade" => $species =~ /meloidogyne|globodera|heterodera/ ? "IV" : $species =~ /pristionchus|caenorhabditis/ ? "V": "?",
