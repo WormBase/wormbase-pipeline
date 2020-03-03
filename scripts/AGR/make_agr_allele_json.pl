@@ -127,9 +127,8 @@ sub process_transgenes{
   
     next unless $disease or $phenotype or $interaction;
 
-    my ($gene) = $obj->Construct->Gene->name if $obj->Construct && $obj->Construct->Gene;
-
-    next if defined $bgi_genes and not exists $bgi_genes->{"WB:$gene"};
+#   my ($gene) = $obj->Construct->Gene->name if $obj->Construct && $obj->Construct->Gene;
+#   next if defined $bgi_genes and not exists $bgi_genes->{"WB:$gene"};
 
     my $symbol = $obj->Public_name ? $obj->Public_name->name : "$obj";
     my %synonyms = map {$_->name => 1} $obj->Synonym;
@@ -141,7 +140,7 @@ sub process_transgenes{
       synonyms      => [keys \%synonyms],
       secondaryIds => [],
       taxonId       => "NCBITaxon:" . $taxid,
-      gene          => "WB:$gene",
+#     gene          => "WB:$gene",
       crossReferences => [ { id => "WB:$obj", pages => ['transgene'] }],
     };
     $json_obj->{description} = "$\{$obj->summary}" if $obj->summary;
