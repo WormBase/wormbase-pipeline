@@ -62,12 +62,16 @@ use URI::Escape;
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(validate substitute);
 
+use constant GFF3_SEQID_FIELD    => 0;
 use constant GFF3_SOURCE_FIELD   => 1;
 use constant GFF3_TYPE_FIELD     => 2;
 use constant GFF3_ATTR_FIELD     => 8;
 use constant GFF3_LAST_FIELD     => 8;
 
 use constant GFF3_VALIDATION_CMD => 'gt gff3validator';
+
+use constant ARRAY_REF_TYPE      => ref([]);
+use constant HASH_REF_TYPE       => ref({});
 
 =head2 validate
 
@@ -104,7 +108,6 @@ sub validate {
    return($success, @validation_errors);
 }
 
-
 =head2 munge_line_by_line
 
 Iterates through GFF3 file, line by line, and makes changes defined by
@@ -123,7 +126,7 @@ Name of the GFF3 file
 
 =item -strip_comments
 
-Flag. If true, all comments lines are removed from the GFF3. These lines are
+Flag. If true, all comment lines are removed from the GFF3. These lines are
 deleted prior to any further processing.
 
 =item -strip_fasta
@@ -135,6 +138,14 @@ all remaining lines are deleted.
 
 List.  Delete all features with a seqid in the list.  Alternatively pass
 a file name; the file will be read to provide the list
+
+=item -seqid_ncbi_to_submitter
+
+String.  This should be a tab-separated file with submitter's
+seqid values in field 2 and NCBI seqid in field 3. (This is envisaged to
+be the C<.seq_region_synonyms.tsv> file created by C<prepare_data_folder.pl>).
+If the seqid matches the NCBI value, it will be changed to the
+submitter value.
 
 =item -set_source
 
@@ -182,20 +193,33 @@ Separator used after prefix/before suffix; defaults to '.'
 =back
 
 =item -copy_CDS_to_exon
-
+1
 Flag.  If true, CDS features are duplicated as additional exon features with
 the ID tweaked accordingly.
 
 =item -handler
 
 Reference to a handler function. This is called for every feature line. 
-The handler is passed a list of 9 fields; it should return a list of 9
-fields, which will be turned into a string andsubstituted in place of
-the original line.
+The handler is passed a list of 9 fields; the first 8 fields are strings, the
+9th deserializes attributes as a hash.  Attribute values are unescaped (%09
+converted to a space, etc.), and multiple values are represented as a list.
+
+The handler should return a list of 9 fields in the same form, which will be
+turned into a string and substituted in place of the original line.  Note
+attribute values should I<not> be escaped, and multiple values should be
+in the form on a list (i.e. I<not> as a single string of comma-separated
+values).
 
 =back
 
-Name of GFF3 file, code reference.
+The arguments cause GFF3 features to be modified are applied in the following order:
+
+   -seqid_ncbi_to_submitter
+   -set_source
+   -change_type
+   -name_gene_from_id
+   -handler
+   -copy_CDS_to_exon
 
 =head3 Return values.
 
@@ -204,20 +228,22 @@ A reference to a list of new GFF3 lines.
 =cut
 sub munge_line_by_line {
    my $this = (caller(0))[3];
-   my %params = ref({}) eq ref(@_[0]) ? %{@_[0]} : @_;
+   my %params = HASH_REF_TYPE eq ref(@_[0]) ? %{@_[0]} : @_;
    
    my $gff3_file           = $params{-file} || die "$this must be passed a GFF3 file name (-file)";
    my $strip_comments      = $params{-strip_comments};
    my $strip_fasta         = $params{-strip_fasta};
    my $strip_seqid         = $params{-strip_seqid};
+   my $seqid_ncbi_to_submitter = $params{-seqid_ncbi_to_submitter};
    my $set_source          = $params{-set_source};
    my $change_type         = $params{-change_type};
    my $name_gene_from_id   = $params{-name_gene_from_id};
    my $copy_CDS_to_exon    = $params{-copy_CDS_to_exon};
    my $handler             = $params{-handler};
-   
+
+   # if removing seqids, build hash for lookup of seqids to be removed
    if($strip_seqid) {
-      if(ref([]) ne ref($strip_seqid)) {
+      if(ARRAY_REF_TYPE ne ref($strip_seqid)) {
          die "$this parameter -strip_seqid must be a list reference, or a file name"
             unless -e $strip_seqid;
          $strip_seqid = [ File::Slurp::read_file($strip_seqid, chomp=>1) ];
@@ -228,16 +254,28 @@ sub munge_line_by_line {
       $strip_seqid = \%hash;
    }
    
+   # if changing NCBI seqid to submitter's values, build lookup
+   my %ncbi_to_submitter_seqid = ();
+   if($seqid_ncbi_to_submitter) {
+      foreach my $line ( File::Slurp::read_file($seqid_ncbi_to_submitter, chomp=>1) ) {
+         my @f = split(/\t/, $line, 4);
+         my $sub  = $f[1] || die "seq region synonyms file has blank/missing submitter seqid value";
+         my $ncbi = $f[2] || die "seq region synonyms file has blank/missing submitter NCBI value";
+         $ncbi_to_submitter_seqid{$ncbi} = $sub;
+      }
+   }
+   
+   # validate -change-type parameters
    if($change_type) {
       die "$this parameter -change_type must be a hash reference, or list of hashes"
-         if (ref({}) ne ref($change_type) && ref([]) ne ref($change_type))
-         || (ref([]) eq ref($change_type) && grep(ref({}) ne ref($_), @{$change_type}));
+         if (HASH_REF_TYPE ne ref($change_type) && ARRAY_REF_TYPE ne ref($change_type))
+         || (ARRAY_REF_TYPE eq ref($change_type) && grep(HASH_REF_TYPE ne ref($_), @{$change_type}));
       die "$this parameter -change_type hash(es) must include '-from' and '-to'"
-         if grep(!exists $_->{-from} || !exists $_->{-to}, (ref([]) eq ref($change_type) ? @{$change_type} : $change_type));
+         if grep(!exists $_->{-from} || !exists $_->{-to}, (ARRAY_REF_TYPE eq ref($change_type) ? @{$change_type} : $change_type));
    }
    
    die "$this parameter -name_gene_from_id must be a hash reference"
-      if $name_gene_from_id && ref({}) ne ref($name_gene_from_id);
+      if $name_gene_from_id && HASH_REF_TYPE ne ref($name_gene_from_id);
 
    die "$this parameter -handler must be a code reference"
       if $handler && ref(sub{}) ne ref($handler);
@@ -275,11 +313,17 @@ sub munge_line_by_line {
          my @fields = split(/\t/,$line);
          GFF3_LAST_FIELD == $#fields || die "$gff3_file line $. should be a GFF3 feature but it doesn't have 9 fields:\n$line";
          
+         
+         if($seqid_ncbi_to_submitter) {
+            if( exists $ncbi_to_submitter_seqid{$fields[GFF3_SEQID_FIELD]} ) {
+               $fields[GFF3_SEQID_FIELD] = $ncbi_to_submitter_seqid{$fields[GFF3_SEQID_FIELD]};
+            }
+         }
          if($set_source) {
             $fields[GFF3_SOURCE_FIELD] = $set_source;
          }
          if($change_type) {
-            foreach my $change ( ref([]) eq ref($change_type) ? @{$change_type} : $change_type ) {
+            foreach my $change ( ARRAY_REF_TYPE eq ref($change_type) ? @{$change_type} : $change_type ) {
                $fields[GFF3_TYPE_FIELD] = $change->{-to} if $fields[GFF3_TYPE_FIELD] eq $change->{-from};
             }
          }
@@ -294,7 +338,7 @@ sub munge_line_by_line {
             }
          }
          if($handler) {
-            # convert attributes to hash when passing to handler
+            # pass first 8 fields to handler as strings, and the attributes (field 9) as a hash
             my @new_fields = $handler->(@fields[0..(GFF3_ATTR_FIELD-1)],_deserialize_attributes($fields[GFF3_ATTR_FIELD]));
             GFF3_LAST_FIELD == $#new_fields || die "handler function ".(Sub::Identify::sub_name($handler))." did not return 9 fields";
             # serialize attributes
@@ -380,17 +424,14 @@ sub _deserialize_attributes {
    foreach my $attr_kev (split(/;/, $attr_string)) {
       # attributes are KEV (key/encoded value) pairs
       my($k,$ev) = split(/=/,$attr_kev,2);
-      my $v = URI::Escape::uri_unescape($ev);
-      if( exists $attr->{$k} ) {
-         # repeating attribute: add as a list
-         unless( ref([]) eq ref($attr->{$k}) ) {
-            # currently a scalar, so make into a list containing existing value
-            $attr->{$k} = [$attr->{$k}];
-         }
-         # push new value onto the list
-         push( @{$attr->{$k}}, $v );
+      exists $attr->{$k} && die "multiple instances of attribute $k";
+      # encoded value is actually comma-separated list (commas inside of values must be escaped)
+      # => split on commas, and then decode
+      my @v = map(URI::Escape::uri_unescape($_), split(/,/,$ev));
+      if( defined $v[1] ) {
+         $attr->{$k} = \@v;
       } else {
-         $attr->{$k} = $v;
+         $attr->{$k} = $v[0];
       }
    }
    
@@ -402,35 +443,27 @@ sub _deserialize_attributes {
 sub _serialize_attributes {
    my $this = (caller(0))[3];
    my $hashref = shift();
-   die "$this must be passed attributes hash" unless $hashref && ref({}) eq ref($hashref);
+   die "$this must be passed attributes hash" unless $hashref && HASH_REF_TYPE eq ref($hashref);
    # want to be able to modify a local copy
    my $attr = Storable::dclone($hashref);
    
-   my $attr_string = '';
+   my @attributes = ();
    # Name, ID and Parent are added to the string in order
    foreach my $k (grep(exists $attr->{$_}, qw(Name ID Parent))) {
-      (ref([]) eq ref($attr->{$k})) && die "multiple values have been created for non-repeating attribute $k";
-      _append_attr(\$attr_string,$k,$attr->{$k});
+      (ARRAY_REF_TYPE eq ref($attr->{$k})) && die "multiple values have been created for non-repeating attribute $k";
+      push(@attributes, join('=',$k,URI::Escape::uri_escape($attr->{$k})));
       delete $attr->{$k};
    }
    foreach my $k (sort keys %{$attr}) {
-      if(ref([]) eq ref($attr->{$k})) {
-         # attributes that are lists are rendered as repeating KEV pairs
-         foreach my $v (@{$attr->{$k}}) {
-            _append_attr(\$attr_string,$k,$v);
-         }
-      } else {
-         _append_attr(\$attr_string,$k,$attr->{$k});
-      }
+      # if the value is a list, it should be rendered as a sting of encoded values
+      # separated by *unencoded* commas
+      my $ev   = (ARRAY_REF_TYPE eq ref($attr->{$k}))
+               ? join(',', map(URI::Escape::uri_escape($_), @{$attr->{$k}}))
+               : URI::Escape::uri_escape($attr->{$k});
+      push(@attributes, join('=',$k,$ev));
    }
    
-   sub _append_attr {
-      my($stringref,$key,$value) = @_;
-      $$stringref .= ';' if $$stringref;
-      $$stringref .= join('=',$key,URI::Escape::uri_escape($value));
-   }
-   
-   return($attr_string);
+   return( join(';',@attributes) );
 }
 
 

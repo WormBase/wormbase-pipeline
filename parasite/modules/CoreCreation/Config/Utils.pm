@@ -21,6 +21,9 @@ our @EXPORT_OK = qw(parasite_data_id parasite_data_id_is_valid flatten_hash);
 use constant PARASITE_DATA_FILTER   => qr/^[a-z\d]+_[a-z\d]+_[a-z]+\d+$/;
 use constant BIOPROJECT_FILTER      => qr/^[a-z]+\d+$/;
 
+use constant ARRAY_REF_TYPE      => ref([]);
+use constant HASH_REF_TYPE       => ref({});
+
 =head2 parasite_data_id
 
 Creates conventional ParaSite identifier for data of the form C<genus_species_bioproject>
@@ -106,11 +109,11 @@ sub flatten_hash {
       --$max_levels < 0 && die "insane number of nested levels in hash";
       foreach my $this_key (keys %{$hash_ref}) {
          my $this_value = $hash_ref->{$this_key};
-         if( ref({}) eq ref($this_value) ) {
+         if( HASH_REF_TYPE eq ref($this_value) ) {
             map {$hash_ref->{join('/',$this_key,$_)} = $this_value->{$_}} (keys %{$this_value});
             delete $hash_ref->{$this_key};
             ++$nested_ref;
-         } elsif (ref([]) eq ref($this_value) ) {
+         } elsif (ARRAY_REF_TYPE eq ref($this_value) ) {
             my $i=0;
             map {$hash_ref->{join('/',$this_key,$i++)} = $_} (@{$this_value});
             delete $hash_ref->{$this_key};
