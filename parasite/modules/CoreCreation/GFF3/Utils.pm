@@ -72,6 +72,7 @@ use constant GFF3_VALIDATION_CMD => 'gt gff3validator';
 
 use constant ARRAY_REF_TYPE      => ref([]);
 use constant HASH_REF_TYPE       => ref({});
+use constant CODE_REF_TYPE       => ref(sub{});
 
 =head2 validate
 
@@ -210,6 +211,9 @@ attribute values should I<not> be escaped, and multiple values should be
 in the form on a list (i.e. I<not> as a single string of comma-separated
 values).
 
+Alternatively, the handler can return undef to indicate that the feature should
+be deleted.
+
 =back
 
 The arguments cause GFF3 features to be modified are applied in the following order:
@@ -278,7 +282,7 @@ sub munge_line_by_line {
       if $name_gene_from_id && HASH_REF_TYPE ne ref($name_gene_from_id);
 
    die "$this parameter -handler must be a code reference"
-      if $handler && ref(sub{}) ne ref($handler);
+      if $handler && CODE_REF_TYPE ne ref($handler);
    
    my $status = '';
    my $num_lines = 0;
@@ -340,14 +344,22 @@ sub munge_line_by_line {
          if($handler) {
             # pass first 8 fields to handler as strings, and the attributes (field 9) as a hash
             my @new_fields = $handler->(@fields[0..(GFF3_ATTR_FIELD-1)],_deserialize_attributes($fields[GFF3_ATTR_FIELD]));
-            GFF3_LAST_FIELD == $#new_fields || die "handler function ".(Sub::Identify::sub_name($handler))." did not return 9 fields";
-            # serialize attributes
-            $new_fields[GFF3_ATTR_FIELD] = _serialize_attributes($new_fields[GFF3_ATTR_FIELD]);
-            @fields = @new_fields;
+            # handler can return undef to indicate the feature should be deleted; otherwise should be 9 fields
+            if(defined $new_fields[0]) {
+               GFF3_LAST_FIELD == $#new_fields || die "handler function ".(Sub::Identify::sub_name($handler))." did not return 9 fields";
+               # serialize attributes
+               $new_fields[GFF3_ATTR_FIELD] = _serialize_attributes($new_fields[GFF3_ATTR_FIELD]);
+               @fields = @new_fields;
+            } else {
+               @fields = (undef);
+            }
          }
          
          # finished modifying
-         push(@new_gff3,join("\t",@fields));
+         # undef indicates that the feature should be deleted
+         if( defined $fields[0] ) {
+            push(@new_gff3,join("\t",@fields));
+         }
          
          # extra feature(s) to add?
          if('CDS' eq $fields[GFF3_TYPE_FIELD] && $copy_CDS_to_exon) {
