@@ -288,7 +288,7 @@ sub do_chromosome {
 sub readhits {
   my ($experiment_accession, $chromosome) = @_;
 
-  my $hitsfile = "$experiment_accession/".$RNASeq->{'alignmentDir'}."/hits.tmp";
+  my $hitsfile = "$experiment_accession/".$RNASeq->{'alignmentDir'}."/coverage";
   
   if (! -f $hitsfile) {return 0}
   
@@ -344,7 +344,7 @@ sub readhits {
 sub read_stranded_hits {
   my ($experiment_accession, $chromosome) = @_;
 
-  my $hitsfile = "$experiment_accession/".$RNASeq->{'alignmentDir'}."/hits.stranded";
+  my $hitsfile = "$experiment_accession/".$RNASeq->{'alignmentDir'}."/stranded_coverage";
   
   if (! -f $hitsfile) {return 0}
   
