@@ -152,6 +152,7 @@ if( $ENV{PARASITE_DATA} ) {
                $gunzipped =~ s/\.gz\s*$//;
                warn "NCBI annotation file $gff3_remote will be stored locally as ".basename($gunzipped)."\n";
                IO::Uncompress::Gunzip::gunzip($gff3_path => $gunzipped) or croak "failed to gunzip $gff3_path: $IO::Uncompress::Gunzip::GunzipError";
+               unlink $gff3_path || warn "couldn't remove gzipped source file $gff3_path";
             } else {
                warn "Cannot download file $gff3_remote: ".$ftp->message;
             }

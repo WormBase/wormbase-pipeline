@@ -195,47 +195,114 @@ if( $force or not -s $conf_path or $ENV{REDO_FASTA} ) {
    };
    # exit on GFF3 validation error
    $valid_gff3 || croak "$this_assembly->{gff3} is not valid GFF3:\n".termcap_bold(join("\n",@validation_errors))."\n  ";
-
-   # limited verification of GFF3 data (most verification during database load)
+   
    # my $check_sources_column = "grep -c $this_assembly->{gff_sources} $this_assembly->{gff3}";
    # die "Failed: $check_sources_column" unless 0 < `$check_sources_column`;
-   my(%genes, %mRNAs);
-   try {
-      open(GFF3,$this_assembly->{gff3}) || die "can't read file: $!";
-      my $gff3_parser =  Bio::EnsEMBL::Utils::IO::GFFParser->new(\*GFF3)
-                        || die "failed to create Bio::EnsEMBL::Utils::IO::GFFParser";
-      $gff3_parser->parse_header(); # discard headers
-      while( my $feature = $gff3_parser->parse_next_feature() ) {
+   
+   # limited verification of GFF3 data to provide early warnings of major problems
+   # (most verification during database load)
+   {
+      # load features
+      my @features;
+      try {
+         open(GFF3,$this_assembly->{gff3}) || die "can't read file: $!";
+         my $gff3_parser =  Bio::EnsEMBL::Utils::IO::GFFParser->new(\*GFF3)
+                           || die "failed to create Bio::EnsEMBL::Utils::IO::GFFParser";
+         $gff3_parser->parse_header(); # discard headers
+         while( my $f = $gff3_parser->parse_next_feature() ) {
+            push(@features, $f);
+         }
+         close(GFF3) || die "error whilst reading file: $!";
+      } catch {
+         croak "Error whilst parsing GFF3 file $this_assembly->{gff3}:\n".termcap_bold($_);
+      };
+
+      # sources: verify they match the config
+      foreach my $feature (@features){
          die qq~incorrect GFF source "$feature->{source}" (expected "$this_assembly->{gff_sources}") at $this_assembly->{gff3} line $.\n~
             if $feature->{source} ne $this_assembly->{gff_sources};
+      }
+
+      my %gff = (gene=>[], pseudogene=>[]);
+      
+      # genes and pseudogenes: verify uniqueness
+      my %genes = ();
+      my %pseudogenes = ();
+      foreach my $feature (@features){
          if( 'gene' eq $feature->{type} ) {
-            die qq~gene ID is not unique at $this_assembly->{gff3} line $.\n~ if exists $genes{ $feature->{attribute}->{ID} };
-            $genes{ $feature->{attribute}->{ID} } = { mRNA=>[] };
-         } elsif( 'mRNA' eq $feature->{type} || 'transcript' eq $feature->{type} 
-|| $feature->{type} =~ m/^..?RNA$/
-                  ) {
-            die qq~mRNA ID is not unique at $this_assembly->{gff3} line $.\n~ if exists $mRNAs{ $feature->{attribute}->{ID} };
-            die "mRNA $feature->{attribute}->{ID} references a non-existent parent in $this_assembly->{gff3}" unless exists $genes{ $feature->{attribute}->{Parent} };
-            my $hash = {ID=>$feature->{attribute}->{ID}, Parent=>$feature->{attribute}->{Parent}, CDS=>[], exon=>[] };
-            push( @{$genes{ $feature->{attribute}->{Parent} }->{mRNA}},
-                  $hash);
-            $mRNAs{ $feature->{attribute}->{ID} } = $hash;
-         } elsif( 'CDS' eq $feature->{type} || 'exon' eq $feature->{type} ) {
-            die "$feature->{type} $feature->{attribute}->{ID} references a non-existent parent in $this_assembly->{gff3}" unless exists $mRNAs{ $feature->{attribute}->{Parent} };
-            push( @{$mRNAs{ $feature->{attribute}->{Parent} }->{ $feature->{type} }},
-                  $feature->{attribute}->{ID});
+            my $hash = { ID=>$feature->{attribute}->{ID}, RNA=>[] };
+            die qq~gene ID $feature->{attribute}->{ID} is not unique at $this_assembly->{gff3} line $.\n~ if exists $genes{ $feature->{attribute}->{ID} };
+            push( @{$gff{gene}}, $hash);
+            $genes{ $feature->{attribute}->{ID} } = $hash;
+         } elsif( 'pseudogene' eq $feature->{type} ) {
+            my $hash = { ID=>$feature->{attribute}->{ID}, pseudogenic_transcript=>[] };
+            die qq~pseudogene ID is not unique at $this_assembly->{gff3} line $.\n~ if exists $pseudogenes{ $feature->{attribute}->{ID} };
+            push( @{$gff{pseudogene}}, $hash);
+            $pseudogenes{ $feature->{attribute}->{ID} } = $hash;
          }
       }
-      close(GFF3) || die "error whilst reading file: $!";
-   } catch {
-      croak "Error whilst parsing GFF3 file $this_assembly->{gff3}:\n".termcap_bold($_);
-   };
-   # check gene => mRNA => (exon|CDS) structure
-   foreach my $gene_ID (keys %genes) {
-      die "gene $gene_ID has no mRNA in $this_assembly->{gff3}" unless $genes{$gene_ID}->{mRNA}->[0];
-      foreach my $this_mRNA (@{$genes{$gene_ID}->{mRNA}}) {
-         my $mRNA_ID = $this_mRNA->{ID};
-         die "mRNA $mRNA_ID has no CDS or exon in $this_assembly->{gff3}" unless $mRNAs{$mRNA_ID}->{CDS}->[0] || $mRNAs{$mRNA_ID}->{exon}->[0];
+      # RNAs: verify uniqueness and gene parentage, link to parent
+      # pseudogenic_transcripts: verify uniqueness and pseudogene parentage, link to parent
+      my %RNAs = ();
+      my %pseudogenic_transcripts = ();
+      foreach my $feature (@features){
+         my $hash = {ID=>$feature->{attribute}->{ID}, type=>$feature->{type}, Parent=>$feature->{attribute}->{Parent}, CDS=>[], exon=>[] };
+         if( 'mRNA' eq $feature->{type} || 'transcript' eq $feature->{type} || $feature->{type} =~ m/^..?RNA$/ ) {
+            die "$feature->{type} ID $feature->{attribute}->{ID} is not unique at $this_assembly->{gff3} line $.\n"
+               if exists $RNAs{ $feature->{attribute}->{ID} };
+            # parent must exists *and* must be a gene
+            die "RNA $feature->{attribute}->{ID} parent doesn't exist or is not a gene in $this_assembly->{gff3}"
+               unless exists $genes{ $feature->{attribute}->{Parent} };
+            push( @{$genes{ $feature->{attribute}->{Parent} }->{RNA}}, $hash);
+            $RNAs{ $feature->{attribute}->{ID} } = $hash;
+         }
+         if( 'pseudogenic_transcript' eq $feature->{type} ) {
+            die "pseudogenic_transcript ID $feature->{attribute}->{ID} is not unique at $this_assembly->{gff3} line $.\n"
+               if exists $pseudogenic_transcripts{ $feature->{attribute}->{ID} };
+            # parent must exists *and* must be a pseudogene
+            die "pseudogenic_transcript $feature->{attribute}->{ID} parent doesn't exist or is not a pseudogene in $this_assembly->{gff3}"
+               unless exists $pseudogenes{ $feature->{attribute}->{Parent} };
+            push( @{$pseudogenes{ $feature->{attribute}->{Parent} }->{pseudogenic_transcript}}, $hash);
+            $pseudogenic_transcripts{ $feature->{attribute}->{ID} } = $hash;
+         }
+      }
+      # CDS: verify RNA parentage, link to parent
+      # exon: verify RNA *or* pseudogenic transcript parentage, link to whichever is the parent
+      foreach my $feature (@features){
+         if( 'CDS' eq $feature->{type} ) {
+            die "CDS $feature->{attribute}->{ID} references a non-existent parent in $this_assembly->{gff3}"
+               unless exists $RNAs{ $feature->{attribute}->{Parent} };
+            push( @{$RNAs{ $feature->{attribute}->{Parent} }->{ $feature->{type} }},
+                  $feature->{attribute}->{ID});
+         } elsif( 'exon' eq $feature->{type} ) {
+            if( exists $RNAs{ $feature->{attribute}->{Parent} } ) {
+               push( @{$RNAs{ $feature->{attribute}->{Parent} }->{ $feature->{type} }},
+                     $feature->{attribute}->{ID});
+            } elsif( exists $pseudogenic_transcripts{ $feature->{attribute}->{Parent} } ) {
+               push( @{$pseudogenic_transcripts{ $feature->{attribute}->{Parent} }->{ $feature->{type} }},
+                     $feature->{attribute}->{ID});
+            } else {
+               die "exon $feature->{attribute}->{ID} references a non-existent parent in $this_assembly->{gff3}"
+            }
+         }
+      }
+      # at this point the gene -> RNA -> CDS/exon structure should be complete
+      # *and* it's each child's parent has been verified
+      # => next check that each gene has child(ren)
+      foreach my $gene_ID (keys %genes) {
+         die "gene $gene_ID has no RNA in $this_assembly->{gff3}" unless $genes{$gene_ID}->{RNA}->[0];
+         foreach my $this_RNA (@{$genes{$gene_ID}->{RNA}}) {
+            my $RNA_ID = $this_RNA->{ID};
+            die "RNA $RNA_ID has no CDS or exon in $this_assembly->{gff3}" unless $RNAs{$RNA_ID}->{CDS}->[0] || $RNAs{$RNA_ID}->{exon}->[0];
+         }
+      }
+      foreach my $pseudogene_ID (keys %pseudogenes) {
+         die "pseudogene $pseudogene_ID has no pseudogenic_transcript in $this_assembly->{gff3}" unless $pseudogenes{$pseudogene_ID}->{pseudogenic_transcript}->[0];
+         foreach my $this_pseudogenic_transcript (@{$pseudogenes{$pseudogene_ID}->{pseudogenic_transcript}}) {
+            my $pseudogenic_transcript_ID = $this_pseudogenic_transcript->{ID};
+            die "pseudogenic transcript $pseudogenic_transcript_ID has a CDS $this_assembly->{gff3}" if $pseudogenic_transcripts{$pseudogenic_transcript_ID}->{CDS}->[0];
+            die "pseudogenic transcript $pseudogenic_transcript_ID has no exon $this_assembly->{gff3}" unless $pseudogenic_transcripts{$pseudogenic_transcript_ID}->{exon}->[0];
+         }
       }
    }
 
@@ -285,7 +352,7 @@ while (my ($conf_key, $conf_value) = each %{$flat}) {
       print "ERROR: configuration has a missing value for ".termcap_bold($conf_key)."\n";
    }
 }
-die "To proceed further, provide the missing value".($missing>1?'s':'')." run again. Tip: you can rerun ".basename($0)." using \$PARASITE_DATA/$data_dir_name/".basename($conf_path)." as input.\n"
+die "To proceed further, provide the missing value".($missing>1?'s':'')." run again. Tip: you can rerun ".basename($0)." using \$PARASITE_DATA/$data_dir_name/".basename($conf_path)." as input (use --force is providing metadata values with --meta).\n"
    if $missing;
 
 # configuration checked: print
