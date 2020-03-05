@@ -219,7 +219,7 @@ while( my $obj = $it->next) {
     $annot->{experimentalConditions} = \@exp_conditions if (@exp_conditions && $build);
   }
 
-  push @annots, $annot unless ($obj_type eq 'transgene' && ! $build);
+  push @annots, $annot;# unless ($obj_type eq 'transgene' && ! $build);
 
   # here needs to be a bit of logic that adds the secondary annotations
   foreach my $secondary ($strain,$allele,$transgene,$gene){
@@ -257,7 +257,7 @@ while( my $obj = $it->next) {
 	   push @{$secondaryAnnotation->{primaryGeneticEntityIDs}},$primaryEntity;
           }
 
-          push @annots, $secondaryAnnotation unless ($class eq 'transgene' && ! $build);
+          push @annots, $secondaryAnnotation;# unless ($class eq 'transgene' && ! $build);
   }
 }
 
