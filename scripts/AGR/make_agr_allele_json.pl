@@ -143,7 +143,7 @@ sub process_transgenes{
 #     gene          => "WB:$gene",
       crossReferences => [ { id => "WB:$obj", pages => ['transgene','transgene/references'] }],
     };
-    $json_obj->{description} = "$\{$obj->Summary}" if $obj->Summary;
+    $json_obj->{description} = "${\$obj->Summary}" if $obj->Summary;
     map { push @{$json_obj->{crossReferences}}, {id => "WB:$_", pages => ['reference']} }$obj->Reference;
 
     my $construct = $obj->Construct;
