@@ -121,13 +121,32 @@ while( my $obj = $it->next) {
     },
   };
   
+
+  # [200310 mh6]
+  # based on a list of annotations to skip for AGR from 
+  # https://wiki.wormbase.org/index.php/Specifications_for_data_submission_to_the_Alliance
+  unless ($build) {
+	  next if ($obj->Interacting_variation
+	         ||$obj->Interacting_transgene
+	         ||$obj->Interacting_gene
+	         ||$obj->RNAi_experiment
+	         ||$obj->Qualifier_not
+	         ||$obj->Inducing_chemical
+	         ||$obj->Modifier_transgene
+	         ||$obj->Modifier_variation
+	         ||$obj->Modifier_gene
+		 ||$obj->Modifier_molecule
+		 ||$obj->Other_modifier
+	  );
+  }
+
   my ($strain) = $obj->Strain;
   my ($allele) = $obj->Variation;
   my ($transgene) = $obj->Transgene;
   my ($gene) = $obj->Disease_relevant_gene;
   my (@inferred_genes) = map { 'WB:'.$_->name } $obj->Inferred_gene;
   my ($obj_id, $obj_name, $obj_type, $assoc_type);
-  my (@with_list) = map {'WB:'.$_->name} ($obj->Interacting_variation,$obj->Interacting_gene);
+  my (@with_list) = map {'WB:'.$_->name} ($obj->Interacting_variation,$obj->Interacting_gene,$obj->Interacting_transgene);
 
   if (defined $strain) {
     $obj_type = 'strain';
@@ -231,12 +250,12 @@ while( my $obj = $it->next) {
 	  my $secondaryPrefix = ($class eq 'transgene' && $build) ? 'WBTransgene:' : 'WB:';
 	  my $sname = $secondaryPrefix.$secondary->name;
 
-	  next if $obj_id eq $sname; # skip the primary
+	  next if $obj_id eq $sname; # skip the primary annotation
 
 	  my $secondaryAnnotation = dclone($annot);
  
-          $secondaryAnnotation->{objectRelation}->{objectType}=$class;
-          $secondaryAnnotation->{objectId}  =$sname;
+          $secondaryAnnotation->{objectRelation}->{objectType} = $class;
+          $secondaryAnnotation->{objectId} = $sname;
 
           my $public_name = $secondary->Public_name ? $secondary->Public_name->name : $secondary->name;
 	  $secondaryAnnotation->{objectName}=$public_name;
@@ -257,10 +276,9 @@ while( my $obj = $it->next) {
 	   push @{$secondaryAnnotation->{primaryGeneticEntityIDs}},$primaryEntity;
           }
 
-          push @annots, $secondaryAnnotation;# unless ($class eq 'transgene' && ! $build);
+          push @annots, $secondaryAnnotation; # unless ($class eq 'transgene' && ! $build);
   }
 }
-
 
 $db->close;
 
