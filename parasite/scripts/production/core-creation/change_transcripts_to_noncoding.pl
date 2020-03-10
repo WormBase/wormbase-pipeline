@@ -1,6 +1,6 @@
 #! /usr/bin/perl 
 # change mRNAs to pseudogenic_transcript
-# remove everything these had as a parent
+# remove CDSs these had as a parent
 # what we're claiming biologically when we do this:
 # - these transcripts belong to genes that have no function
 # - they look like protein-coding genes but are not (because they have stops)
@@ -44,7 +44,7 @@ while (<$fh>) {
         @c[2] = "pseudogenic_transcript" if $ts{$id};
         warn "@c[8] pseudogene with multiple transcripts? " if $ts{$id} and ++$gs{$parent} > 1 ;
     } else {
-        @c = qw// if $ts{&extract_attribute("Parent", @c[8])};
+        @c = qw// if $ts{&extract_attribute("Parent", @c[8])} && @c[2] eq "CDS" ;
     }
     print join "\t", @c;
 }
