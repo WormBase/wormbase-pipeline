@@ -90,7 +90,7 @@ sub process{
       secondaryIds => [],
       taxonId       => "NCBITaxon:" . $taxid,
       gene          => "WB:$gene",
-      crossReferences => [ { id => "WB:$obj", pages => ['allele'] }],
+      crossReferences => [ { id => "WB:$obj", pages => ['allele','allele/references']}],
     };
     map { push @{$json_obj->{crossReferences}}, {id => "WB:$_", pages => ['reference']} } $obj->Reference;
 
@@ -141,9 +141,9 @@ sub process_transgenes{
       secondaryIds => [],
       taxonId       => "NCBITaxon:" . $taxid,
 #     gene          => "WB:$gene",
-      crossReferences => [ { id => "WB:$obj", pages => ['transgene'] }],
+      crossReferences => [ { id => "WB:$obj", pages => ['transgene','transgene/references'] }],
     };
-    $json_obj->{description} = "$\{$obj->Summary}" if $obj->Summary;
+    $json_obj->{description} = "${\$obj->Summary}" if $obj->Summary;
     map { push @{$json_obj->{crossReferences}}, {id => "WB:$_", pages => ['reference']} }$obj->Reference;
 
     my $construct = $obj->Construct;
