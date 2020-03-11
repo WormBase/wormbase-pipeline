@@ -300,6 +300,7 @@
                   Legacy_information Text #Evidence
                   Complementation_data Text
                   Strain ?Strain XREF Gene
+                  Component_of_genotype ?Genotype XREF Gene
                   In_cluster ?Gene_cluster XREF Contains_gene // linking to Clusters in locus class
                   RNASeq_FPKM ?Life_stage Float #Evidence
                   GO_term ?GO_term XREF Gene ?GO_code #Evidence
@@ -611,6 +612,7 @@
                Marked By_variation ?Variation XREF Marked_rearrangement
                       By_transgene ?Transgene XREF Marked_rearrangement
                       By_other ?Text
+               Component_of_genotype ?Genotype XREF Rearrangement
 //    possibility to refer to other Intervals to describe a complex rearrangement
 //    for the worm this is not too necessary, but important for fly and mouse
 //    or perhaps there should be another class Complex_Rear that refers to
@@ -709,6 +711,30 @@
 #Position_confidence UNIQUE Exact
                             Approximate UNIQUE Float
                             Inferred_from_GPS
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// ?Genotype class
+//
+////////////////////////////////////////////////////////////////////////////////
+
+?Genotype Genotype_name UNIQUE ?Text //  e.g. “unc-1(e103);unc-2(e234)”; eventually to be automatically generated
+          Genotype_synonym ?Text // To capture literal representations in the literature
+          Genotype_component Gene ?Gene XREF Component_of_genotype #Evidence
+                             Variation ?Variation XREF Component_of_genotype
+                             Rearrangement ?Rearrangement XREF Component_of_genotype
+                             Transgene ?Transgene XREF Component_of_genotype
+                             Other_component UNIQUE ?Text  // Free text components including RNAi
+          Disease_info Models_disease ?DO_term XREF Disease_model_genotype
+                       Modifies_disease ?DO_term XREF Disease_modifier_genotype
+          Disease_model_annotation Model_genotype ?Disease_model_annotation XREF Genotype
+                                   Modifier_genotype ?Disease_model_annotation XREF Modifier_genotype
+          Specis UNIQUE ?Species
+          Remark ?Text 
+          Reference ?Paper XREF Genotype
+
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -1056,6 +1082,7 @@
                                      Variation UNIQUE ?Variation XREF Disease_model_annotation ?Text         // genetic entity that models the disease
                                      Transgene UNIQUE ?Transgene XREF Disease_model_annotation ?Text        // genetic entity that models the disease
                                      Disease_relevant_gene UNIQUE ?Gene XREF Disease_model_annotation ?Text  //when the genetic entity is a gene
+                                     Genotype UNIQUE ?Genotype XREF Model_genotype //to associate genotypes
                                      Modeled_by_remark UNIQUE ?Text
                           Annotation_made_with Interacting_variation ?Variation //Addition for WS261
                                                Interacting_transgene ?Transgene
@@ -1077,6 +1104,7 @@
                                         Modifier_strain ?Strain       //(same as above)
                                         Modifier_gene ?Gene           //to indicate the gene in the modifying Transgene, Variation, Strain.
                                         Modifier_molecule ?Molecule XREF Disease_model_modifier  // to indicate chemical modifiers of the disease
+                                        Modifier_genotype ?Genotype XREF Modifier_genotype //to annotate genotype modifiers of disease
                                         Other_modifier ?Text          //to indicate other modifiers of the disease eg. diet,radiation, surgery etc
                           Modifier_association_type UNIQUE condition_ameliorated_by  //to indicate the association type between modifiers and disease
                                                            condition_exacerbated_by
@@ -1257,6 +1285,8 @@
                       Disease_model_variation ?Variation XREF Models_disease   //To associate Variations to a disease
                       Disease_model_strain ?Strain XREF Models_disease         //To associate Strains to a disease
                       Disease_model_transgene ?Transgene XREF Models_disease   //To associate Transgenes to disease
+                      Disease_model_genotype ?Genotype XREF Models_disease
+                      Disease_modifier_genotype ?Genotype XREF Modifies_disease
                       Chemical_inducer ?Molecule XREF Induces_disease          //To associate inducing chemicals to a disease
                       Molecule_modifier ?Molecule XREF Modifies_disease        //To associate modifying chemicals to a disease
          Reagent_info Associated_antibody ?Antibody XREF Antibody_for_disease
@@ -1820,6 +1850,8 @@
 
 
 ?Transposon Evidence #Evidence
+            Name Public_name UNIQUE ?Text
+                 Other_name ?Text
             SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Transposon
             Structure S_child CDS_child ?CDS XREF Transposon UNIQUE Int UNIQUE Int #SMap_info // Transposon_CDSs will now link to parent Transposons ar2 02-DEC-05
                               Pseudogene_child ?Pseudogene XREF Transposon UNIQUE Int UNIQUE Int #SMap_info
@@ -2717,6 +2749,7 @@
                     Interactor ?Interaction
            Associated_with Marked_rearrangement ?Rearrangement XREF By_transgene
                            Strain ?Strain XREF Transgene
+                           Component_of_genotype ?Genotype XREF Transgene
                            Transgene_for_disease ?DO_term XREF Associated_transgene #Evidence
            Disease_info Models_disease ?DO_term XREF Disease_model_transgene
                         Disease_model_annotation ?Disease_model_annotation XREF Transgene
@@ -3417,6 +3450,7 @@
                  Transcript ?Transcript XREF Reference #Evidence
                  Species ?Species #Evidence
                  Strain ?Strain XREF Reference #Evidence
+                 Genotype ?Genotype XREF Reference
                  Clone ?Clone XREF Reference #Evidence
                  Expr_pattern ?Expr_pattern XREF Reference #Evidence
                  Expr_profile ?Expr_profile XREF Reference #Evidence
@@ -3531,6 +3565,7 @@
                           Natural_variant
            Origin Species UNIQUE ?Species
                   Strain     ?Strain XREF Variation #Evidence
+                  Component_of_genotype ?Genotype XREF Variation
                   Laboratory ?Laboratory
                   Author ?Author // use Person when known, else use Author
                   Person ?Person //

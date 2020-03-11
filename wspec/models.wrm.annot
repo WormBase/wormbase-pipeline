@@ -38,6 +38,8 @@
 //
 // For more details, see https://github.com/WormBase/db-prototypes/wiki/Augmented-model-file
 //
+// For the datomic conversion INXREF is dropped in favor of the OUTXREF so use OUT where you 
+// want the data displayed by default.
 
 ////////////////////////
 // Basic map classes  //
@@ -321,6 +323,7 @@
                   Legacy_information Text #Evidence
                   Complementation_data Text
                   Strain ?Strain OUTXREF Gene
+                  Component_of_genotype ?Genotype INXREF Gene
                   In_cluster ?Gene_cluster INXREF Contains_gene // linking to Clusters in locus class
                   RNASeq_FPKM ^rnaseq ?Life_stage ^stage Float ^fpkm #Evidence
                   GO_term ?GO_term OUTXREF Gene ?GO_code #Evidence
@@ -634,6 +637,7 @@
                 Marked By_variation ^marked-by-variation ?Variation OUTXREF Marked_rearrangement
                        By_transgene ^marked-by-transgene ?Transgene OUTXREF Marked_rearrangement
                        By_other ^marked-by-other ?Text
+                Component_of_genotype ?Genotype INXREF Rearrangement
 //      possibility to refer to other Intervals to describe a complex rearrangement
 //      for the worm this is not too necessary, but important for fly and mouse
 //      or perhaps there should be another class Complex_Rear that refers to
@@ -732,6 +736,27 @@
 #Position_confidence UNIQUE Exact
                             Approximate UNIQUE Float
                             Inferred_from_GPS
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// ?Genotype class
+//
+////////////////////////////////////////////////////////////////////////////////
+
+?Genotype Genotype_name UNIQUE ?Text //  e.g. “unc-1(e103);unc-2(e234)”; eventually to be automatically generated
+          Genotype_synonym ?Text // To capture literal representations in the literature
+          Genotype_component Gene ?Gene OUTXREF Component_of_genotype #Evidence
+                             Variation ?Variation OUTXREF Component_of_genotype
+                             Rearrangement ?Rearrangement OUTXREF Component_of_genotype
+                             Transgene ?Transgene OUTXREF Component_of_genotype
+                             Other_component UNIQUE ?Text  // Free text components including RNAi
+          Disease_info Models_disease ?DO_term OUTXREF Disease_model_genotype
+                       Modifies_disease ?DO_term OUTXREF Disease_modifier_genotype
+          Disease_model_annotation Model_genotype ?Disease_model_annotation OUTXREF Genotype
+                                   Modifier_genotype ?Disease_model_annotation OUTXREF Modifier_genotype
+          Specis UNIQUE ?Species
+          Remark ?Text 
+          Reference ?Paper OUTXREF Genotype
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -1078,6 +1103,7 @@
                                      Variation ^modeled-by-variation UNIQUE ?Variation OUTXREF Disease_model_annotation ?Text
                                      Transgene ^modeled-by-transgene UNIQUE ?Transgene OUTXREF Disease_model_annotation ?Text
                                      Disease_relevant_gene ^modeled-by-disease-relevant-gene UNIQUE ?Gene OUTXREF Disease_model_annotation ?Text
+                                     Genotype  ^modeled-by-genotype UNIQUE ?Genotype INXREF Model_genotype //to associate genotypes
                                      Modeled_by_remark UNIQUE ?Text
                           Annotation_made_with Interacting_variation ?Variation //Addition for WS261
                                                Interacting_transgene ?Transgene
@@ -1099,6 +1125,7 @@
                                         Modifier_strain ?Strain
                                         Modifier_gene ?Gene
                                         Modifier_molecule ?Molecule OUTXREF Disease_model_modifier
+                                        Modifier_genotype ?Genotype INXREF Modifier_genotype //to annotate genotype modifiers of disease
                                         Other_modifier ?Text
                           Modifier_association_type UNIQUE condition_ameliorated_by
                                                            condition_exacerbated_by
@@ -1273,6 +1300,8 @@
                       Disease_model_variation ?Variation INXREF Models_disease
                       Disease_model_strain ?Strain INXREF Models_disease
                       Disease_model_transgene ?Transgene INXREF Models_disease
+                      Disease_model_genotype ?Genotype INXREF Models_disease
+                      Disease_modifier_genotype ?Genotype INXREF Modifies_disease
                       Chemical_inducer ?Molecule INXREF Induces_disease
                       Molecule_modifier ?Molecule INXREF Modifies_disease
          Reagent_info Associated_antibody ?Antibody INXREF Antibody_for_disease
@@ -1838,6 +1867,8 @@
 
 
 ?Transposon Evidence #Evidence
+            Name Public_name UNIQUE ?Text
+                 Other_name ?Text
 //            SMap S_parent UNIQUE Sequence UNIQUE ?Sequence NOXREF Transposon
 //            Structure     S_child CDS_child ?CDS OUTXREF Transposon UNIQUE Int ^start UNIQUE Int ^end #SMap_info // Transposon_CDSs will now link to parent Transposons ar2 02-DEC-05
 //                                  Pseudogene_child ?Pseudogene OUTXREF Transposon UNIQUE Int ^start UNIQUE Int ^end #SMap_info
@@ -2744,6 +2775,7 @@
                          Interactor ?Interaction INXREF Transgene
                 Associated_with Marked_rearrangement ?Rearrangement INXREF By_transgene
                                 Strain ?Strain OUTXREF Transgene
+                                Component_of_genotype ?Genotype INXREF Transgene
                                 Transgene_for_disease ?DO_term OUTXREF Associated_transgene #Evidence
                 Disease_info Models_disease ?DO_term INXREF Disease_model_transgene
                              Disease_model_annotation ?Disease_model_annotation INXREF Transgene
@@ -3442,6 +3474,7 @@
                  Transcript ?Transcript INXREF Reference #Evidence
                  Species ?Species #Evidence
                  Strain ?Strain INXREF Reference #Evidence
+                 Genotype ?Genotype INXREF Reference
                  Clone ?Clone INXREF Reference #Evidence
                  Expr_pattern ?Expr_pattern INXREF Reference #Evidence
                  Expr_profile ?Expr_profile INXREF Reference #Evidence
@@ -3556,6 +3589,7 @@
                           Natural_variant
            Origin Species UNIQUE ?Species
                   Strain         ?Strain OUTXREF Variation #Evidence
+                  Component_of_genotype ?Genotype INXREF Variation
                   Laboratory ?Laboratory
                   Author ?Author // use Person when known, else use Author
                   Person ?Person //
