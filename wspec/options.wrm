@@ -94,7 +94,8 @@ _VMultiMap	   -H -D DtMULTIMAP
 _VManyMap          -H -D GMAP
 _VContig           -H -D PMAP
 _VClone            -V -D PMAP
-_VStrain           -V 
+_VStrain           -V
+_VGenotype         -V
 _VLaboratory       -V
 _V2_point_data     -H 
 _VMulti_pt_data    -H
