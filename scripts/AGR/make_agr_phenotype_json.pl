@@ -56,6 +56,66 @@ process($it);
 $it = $db->fetch_many(-query => 'find Transgene WHERE Phenotype');
 process($it);
 
+# create implicit mappings for BGI genes from linked RNAi and Variations
+my @genes = keys %$bgi_genes;
+map {s/WB://} @genes;
+
+foreach my $g (@genes){
+	my $gene = $db->fetch(Gene => $g);
+	next unless $gene;
+        my @objects;
+#	push @objects, $gene->RNAi_result if $gene->RNAi_result;
+	push @objects, $gene->Allele if $gene->Allele;
+	process_genes_phenotype($g,@objects) if $objects[0];
+}
+
+# bit to process linked phenotypes
+sub process_genes_phenotype{
+	my $gen = shift @_;
+	my @secondaries = @_;
+
+        foreach my $obj(@secondaries){
+		next unless $obj->Phenotype;
+		my @phenotypes = $obj->Phenotype;
+  
+	        foreach my $pt (@phenotypes){
+        	  my $phen_id   = $pt->name;
+	          my $phen_desc = $pt->Primary_name->name;
+        	  my @paper;
+    
+	          foreach my $evi ($pt->col()) {
+        	   if ($evi->name eq 'Paper_evidence') {
+	             foreach my $wb_paper ($evi->col ) {
+        	       push @paper, &get_paper_json($wb_paper);
+	             }
+        	   }
+	          }
+   
+		  # if ($obj->class eq 'RNAi' && $obj->Reference){
+		  #  foreach my $wb_paper ($obj->Reference) {
+		  #     push @paper, &get_paper_json($wb_paper);
+		  #  }
+		 }
+
+        	 foreach my $pap (@paper) {
+	          my $json_obj = {
+        	    objectId                 => "WB:$gen",
+	            primaryGeneticEntityIDs  => ["WB:$obj"],
+        	    phenotypeTermIdentifiers => [ { termId => $phen_id, termOrder => 1 } ],
+	            phenotypeStatement       => $phen_desc,
+        	    dateAssigned             => $date,
+	            evidence                 => $pap,
+        	  }; 
+	          push @pheno_annots, $json_obj;
+        	}
+	    }
+     }
+}
+
+
+
+
+# bit to process transgenes and variations
 sub process {
 	my ($it)=@_;
         while (my $obj = $it->next) {
@@ -72,16 +132,21 @@ sub process {
           my $phen_id   = $pt->name;
           my $phen_desc = $pt->Primary_name->name;
           my @paper;
+	  my @caused_by_genes;
     
-         foreach my $evi ($pt->col()) {
+          foreach my $evi ($pt->col()) {
            if ($evi->name eq 'Paper_evidence') {
              foreach my $wb_paper ($evi->col ) {
                push @paper, &get_paper_json($wb_paper);
              }
-           }
-         }
+           } elsif($evi->name eq 'Caused_by_gene' && $obj->name =~ /WBTransgene/){
+		   foreach my $g ($evi->col){
+			   push @caused_by_genes, "$g";
+		   }
+	   }
+          }
     
-        foreach my $pap (@paper) {
+         foreach my $pap (@paper) {
           my $json_obj = {
             objectId                 => "WB:$obj",
             primaryGeneticEntityIDs  => ["WB:$obj"],
@@ -89,11 +154,24 @@ sub process {
             phenotypeStatement       => $phen_desc,
             dateAssigned             => $date,
             evidence                 => $pap,
-         };   
-         push @pheno_annots, $json_obj;
-       }
-    }
-  }
+          }; 
+          push @pheno_annots, $json_obj;
+        
+	  foreach my $g (@caused_by_genes) {
+            my $json_obj = {
+              objectId                 => "WB:$g",
+              primaryGeneticEntityIDs  => ["WB:$obj"],
+              phenotypeTermIdentifiers => [ { termId => $phen_id, termOrder => 1 } ],
+              phenotypeStatement       => $phen_desc,
+              dateAssigned             => $date,
+              evidence                 => $pap,
+            };
+            push @pheno_annots, $json_obj;
+          }
+
+        }
+     }
+   }
 }
 
 my $data = {
