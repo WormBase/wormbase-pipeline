@@ -170,7 +170,7 @@ while( my $obj = $it->next) {
     push @with_list, "WBTransgene:" . $transgene->name if (defined $transgene && $build);
 
   } elsif (defined $transgene) {
-    $obj_type = $build ? 'Transgene' : 'Allele';# as quick fix for 3.0
+    $obj_type = $build ? 'transgene' : 'allele';# as quick fix for 3.0
     $obj_name = $transgene->Public_name->name;
     $assoc_type = 'is_implicated_in';
     $obj_id = 'WB:' . $transgene->name;
