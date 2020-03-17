@@ -194,27 +194,45 @@ Separator used after prefix/before suffix; defaults to '.'
 =back
 
 =item -copy_CDS_to_exon
-1
+
 Flag.  If true, CDS features are duplicated as additional exon features with
 the ID tweaked accordingly.
 
 =item -handler
 
-Reference to a handler function. This is called for every feature line. 
+Reference to a function. This is called for every feature line. 
 The handler is passed a list of 9 fields; the first 8 fields are strings, the
 9th deserializes attributes as a hash.  Attribute values are unescaped (%09
 converted to a space, etc.), and multiple values are represented as a list.
 
-The handler should return a list of 9 fields in the same form, which will be
+The handler must return one of three things:
+
+1- undef to indicate that the feature should
+be deleted
+
+2 - list of 9 fields in the same form, which will be
 turned into a string and substituted in place of the original line.  Note
 attribute values should I<not> be escaped, and multiple values should be
 in the form on a list (i.e. I<not> as a single string of comma-separated
 values).
 
-Alternatively, the handler can return undef to indicate that the feature should
-be deleted.
+3 - a list reference; each item in this list should be a list of 9 fields
+as describe in option 2.   This allows the handler to create new features to
+be added to the GFF.
+
+=item -reader
+
+Reference to a function.  This is like a read-only version of C<-handler>;
+features are passed just the same waym, but nothing is returned, so no changes
+can be made to the GFF.  Use this if you want to read the data for a "look ahead".
+
+The reader function is called before any changes are made to features, but if
+you want to look at all the features prior to making chaanges, you'll be
+making a separate call to munge_line_by_line() anyway.
 
 =back
+
+=head3 Order of the operations
 
 The arguments cause GFF3 features to be modified are applied in the following order:
 
@@ -225,6 +243,11 @@ The arguments cause GFF3 features to be modified are applied in the following or
    -handler
    -copy_CDS_to_exon
 
+Currently there is no way to change this order.  The workaround is to call
+munge_line_by_line() repeatedly, though you need to write the GFF3 file after
+each call.   At the moment this seems acceptable as the requirement for
+changing the order is likely to be an edge case.
+   
 =head3 Return values.
 
 A reference to a list of new GFF3 lines.
@@ -243,6 +266,7 @@ sub munge_line_by_line {
    my $change_type         = $params{-change_type};
    my $name_gene_from_id   = $params{-name_gene_from_id};
    my $copy_CDS_to_exon    = $params{-copy_CDS_to_exon};
+   my $reader              = $params{-reader};
    my $handler             = $params{-handler};
 
    # if removing seqids, build hash for lookup of seqids to be removed
@@ -281,6 +305,9 @@ sub munge_line_by_line {
    die "$this parameter -name_gene_from_id must be a hash reference"
       if $name_gene_from_id && HASH_REF_TYPE ne ref($name_gene_from_id);
 
+   die "$this parameter -reader must be a code reference"
+      if $reader && CODE_REF_TYPE ne ref($reader);
+
    die "$this parameter -handler must be a code reference"
       if $handler && CODE_REF_TYPE ne ref($handler);
    
@@ -317,7 +344,11 @@ sub munge_line_by_line {
          my @fields = split(/\t/,$line);
          GFF3_LAST_FIELD == $#fields || die "$gff3_file line $. should be a GFF3 feature but it doesn't have 9 fields:\n$line";
          
-         
+         if($reader) {
+            # pass first 8 fields to handler as strings, and the attributes (field 9) as a hash
+            $reader->(@fields[0..(GFF3_ATTR_FIELD-1)],_deserialize_attributes($fields[GFF3_ATTR_FIELD]));
+         }
+
          if($seqid_ncbi_to_submitter) {
             if( exists $ncbi_to_submitter_seqid{$fields[GFF3_SEQID_FIELD]} ) {
                $fields[GFF3_SEQID_FIELD] = $ncbi_to_submitter_seqid{$fields[GFF3_SEQID_FIELD]};
@@ -341,24 +372,40 @@ sub munge_line_by_line {
                $fields[GFF3_ATTR_FIELD] = _serialize_attributes($attr);
             }
          }
+         
          if($handler) {
             # pass first 8 fields to handler as strings, and the attributes (field 9) as a hash
-            my @new_fields = $handler->(@fields[0..(GFF3_ATTR_FIELD-1)],_deserialize_attributes($fields[GFF3_ATTR_FIELD]));
-            # handler can return undef to indicate the feature should be deleted; otherwise should be 9 fields
-            if(defined $new_fields[0]) {
-               GFF3_LAST_FIELD == $#new_fields || die "handler function ".(Sub::Identify::sub_name($handler))." did not return 9 fields";
-               # serialize attributes
-               $new_fields[GFF3_ATTR_FIELD] = _serialize_attributes($new_fields[GFF3_ATTR_FIELD]);
-               @fields = @new_fields;
-            } else {
-               @fields = (undef);
+            my @r = $handler->(@fields[0..(GFF3_ATTR_FIELD-1)],_deserialize_attributes($fields[GFF3_ATTR_FIELD]));
+            if( defined $r[0] ){
+               my $new_features; # list of lists
+               if( ARRAY_REF_TYPE eq ref($r[0]) ) {
+                  # if $r[0] references a list, everything in that list should be a list ref
+                  foreach my $thing ( @{$r[0]} ) {
+                     ARRAY_REF_TYPE eq ref($thing) || die "handler function ".(Sub::Identify::sub_name($handler))." should have returned a list of lists, but it returned a list containing $thing";
+                  }
+                  $new_features = $r[0];
+               } 
+               # handler retuned a simple list of 9 fields; convert to list-of-lists structure
+               else {
+                  $new_features = [\@r];
+               }
+               foreach my $new_feature ( @{$new_features} ) {
+                  my @new_fields = @{$new_feature};
+                  # every feature should be a list of 9 fields
+                  GFF3_LAST_FIELD == $#new_fields || die "handler function ".(Sub::Identify::sub_name($handler))." did not return 9 fields @new_fields";
+                  # serialize attributes
+                  $new_fields[GFF3_ATTR_FIELD] = _serialize_attributes($new_fields[GFF3_ATTR_FIELD]);
+                  push(@new_gff3,join("\t",@new_fields));
+               }
+               
             }
          }
-         
-         # finished modifying
-         # undef indicates that the feature should be deleted
-         if( defined $fields[0] ) {
-            push(@new_gff3,join("\t",@fields));
+         # no handler is defined => push fields onto new GFF
+         else {
+            # undef indicates that the feature should be deleted
+            if( defined $fields[0] ) {
+               push(@new_gff3,join("\t",@fields));
+            }
          }
          
          # extra feature(s) to add?
