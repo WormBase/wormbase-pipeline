@@ -186,12 +186,26 @@ if( $ENV{PARASITE_DATA} ) {
             next ASSEMBLY_IN;
          }
          chomp $line;
-         $line =~ s/^>//;
-         
-         my ($scaffold_name_ncbi) = $line =~ /(.*?) /;
-         $line =~ s/^$scaffold_name_ncbi//;
-         $line =~ s/, whole genome shotgun sequence$//;
-         my ($scaffold_name_local) = $line =~ m/.*? (\S+)$/;
+         # this old code worked, but I don't really like the way $line is incrementally modified
+         # as we then lose the original FASTA header as a reference
+         # $line =~ s/^>//;
+         # my ($scaffold_name_ncbi) = $line =~ /(.*?) /;
+         # $line =~ s/^$scaffold_name_ncbi//;
+         # $line =~ s/, whole genome shotgun sequence$//;
+         # my ($scaffold_name_local) = $line =~ m/.*? (\S+)$/;
+         my ($scaffold_name_ncbi) = $line =~ /^>(.*?)\s/;
+         my $scaffold_name_local = $line;
+         $scaffold_name_local =~ s/^$scaffold_name_ncbi//;
+         $scaffold_name_local =~ s/, whole genome shotgun sequence$//;
+         $scaffold_name_local =~ s/.*\s//;
+
+         # $scaffold_name_local is just a best guess, and may fail to find a scaffold name/ID
+         # genuine names typically have  both letters and digits so that may be a useful sanity check?
+         warn "*WARNING* Guessed at local scaffold name \"$scaffold_name_local\" but that doesn't look too good.\n"
+            . "(FASTA header was \"$line\")\n"
+            . "If it is wrong, you will need to manually change it in $species.fa  $species.seq_region_synonyms.tsv\n"
+            unless $scaffold_name_local =~ m/[a-zA-Z]/ && $scaffold_name_local =~ m/[0-9]/;
+
          # behaviour of this original line wasn't very clear $isolate could be undefined
          # and the die output didn't state what the problem was
          #die "$scaffold_name_local | $_" if grep {$scaffold_name_local =~ /$_/i} ("$spe.$cies", $isolate);

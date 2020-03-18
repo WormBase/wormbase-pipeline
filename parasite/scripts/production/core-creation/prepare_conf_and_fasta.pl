@@ -66,6 +66,18 @@ Splits FASTA and creates AGP I<when required>. Default B<true>, negatable with
 C<-nosplit_fasta>; can also be negated by setting SKIP_SPLIT_FASTA in the 
 environment
 
+=item set
+
+Set a value in the configuration.  Can be repeated to set multiple
+values.  For example:
+
+   -set "mitochondrial=mt_seq_id" -set "taxon_id=1234"
+
+(Note that if a configuration file already exists, you need to use
+C<-force> to have your new value(s) written to the file).
+
+To set metadata values, see C<-meta>.
+
 =item meta
 
 Set a metadata value in the configuration.  Can be repeated to set multiple
@@ -111,8 +123,7 @@ More thorough verification of data files
 
 =item *
 
-Create package to eliminate code (e.g. species name filters) duplicated
-between ParaSite scripts used for NCBI checking & import etc.
+Rationalise -set, -meta and -delete_meta options
 
 =back
 
@@ -135,10 +146,11 @@ use Storable;
 use Try::Tiny;
 use YAML;
 
-my($force, $split_fasta, @user_supplied_metadata, @metadata_to_delete, $help);
+my($force, $split_fasta, @user_supplied, @user_supplied_metadata, @metadata_to_delete, $help);
 $split_fasta = 1; # negatable option
 GetOptions( 'force'           => \$force,
             'split_fasta!'    => \$split_fasta,
+            'set=s'           => \@user_supplied,
             'meta=s'          => \@user_supplied_metadata,
             'delete_meta=s'   => \@metadata_to_delete,
             'help'            => \$help
@@ -164,6 +176,12 @@ croak "Input must contain exactly one data directory name, but all these were fo
    unless $data_dir_name and not @others and CoreCreation::Config::Utils::parasite_data_id_is_valid($data_dir_name);
 my $data_dir_path = join ("/", $ENV{PARASITE_DATA}, $data_dir_name);
 my $conf_path = File::Spec->catfile($data_dir_path, "$data_dir_name.conf");
+
+foreach my $u (@user_supplied) {
+   my($k,$v) = split(/=/, $u, 2);
+   croak "Badly formed -set argument: \"$u\"" unless $k && defined $v;
+   $conf->{$data_dir_name}->{$k} = $v;
+}
 
 foreach my $d (@metadata_to_delete) {
    exists $conf->{$data_dir_name}->{meta}->{$d} && delete $conf->{$data_dir_name}->{meta}->{$d};
