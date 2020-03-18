@@ -11,18 +11,19 @@ use Wormbase;
 use Modules::AGR;
 
 my ($debug, $test, $verbose, $store, $wormbase);
-my ($outfile, $acedbpath, $ws_version, $out_fh, $bgi_json);
+my ($outfile, $acedbpath, $ws_version, $out_fh, $bgi_json,$disease_file);
 
 GetOptions (
-  "debug=s"     => \$debug,
-  "test"        => \$test,
-  "verbose"     => \$verbose,
-  "store:s"     => \$store,
-  "database:s"  => \$acedbpath,
-  "outfile:s"   => \$outfile,
-  "wsversion=s" => \$ws_version,
-  "bgijson=s"   => \$bgi_json,
-  )||die();
+  'debug=s'       => \$debug,
+  'test'          => \$test,
+  'verbose'       => \$verbose,
+  'store:s'       => \$store,
+  'database:s'    => \$acedbpath,
+  'outfile:s'     => \$outfile,
+  'wsversion=s'   => \$ws_version,
+  'bgijson=s'     => \$bgi_json,
+  'diseasefile=s' => \$disease_file,
+)||die();
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
@@ -43,7 +44,7 @@ $ws_version ||= $wormbase->get_wormbase_version_name;
 $outfile    ||= "./wormbase.agr_allele.${ws_version}.json";
 
 my (@alleles, @annots);
-
+my %objectsIds;
 my $bgi_genes = AGR::get_bgi_genes( $bgi_json ) if $bgi_json;
 
 my $db = Ace->connect(-path => $acedbpath, -program => $tace) or die("Connection failure: ". Ace->error);
@@ -51,17 +52,44 @@ my $db = Ace->connect(-path => $acedbpath, -program => $tace) or die("Connection
 my $it = $db->fetch_many(-query => 'find Variation WHERE Live AND COUNT(Gene) == 1 AND (Phenotype OR Disease_info OR Interactor) AND NOT Natural_variant');
 process($it);
 
+
 # $it = $db->fetch_many(-query => 'find Variation WHERE Live AND Corresponding_transgene');
 # process($it);
 
 $it = $db->fetch_many(-query => 'find Transgene');
 process_transgenes($it);
 
+process_disease_variations(grab_disease_variations($disease_file)) if $disease_file;
+
+sub process_disease_variations{
+	my @vars = @_;
+	foreach my $v(@vars){
+	        $it = $db->fetch_many(Variation => $v);
+		process($it);
+}
+
+sub grab_disease_variations{
+	my ($file) = @_;
+	my @variations;
+
+	my $in = IO::File->new($file,'r');
+	while(<$in>){
+		push(@variations,"$1") if /(WBVariation\d+)/
+	}
+	return @variations;
+}
+
 sub process{
   my ($it) = @_;
 
   while (my $obj = $it->next) {
     next unless $obj->isObject();
+    
+    if ($objectsIds{"$obj"}){
+	    next
+    }else{
+	    $objectsIds{"$obj"}=1;
+    }
 
     my $has_interaction;
     my $has_disease = 1 if $obj->Disease_info;

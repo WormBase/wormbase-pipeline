@@ -79,7 +79,7 @@ sub process_genes_phenotype{
 		my @phenotypes = $obj->Phenotype;
   
 	        foreach my $pt (@phenotypes){
-        	  my $phen_id   = $pt->name;
+        	  my $phen_id   = 'WB:'.$pt->name;
 	          my $phen_desc = $pt->Primary_name->name;
         	  my @paper;
     
@@ -129,7 +129,7 @@ sub process {
 	my @phenotypes = $obj->Phenotype;
   
         foreach my $pt (@phenotypes){
-          my $phen_id   = $pt->name;
+          my $phen_id   = 'WB:'.$pt->name;
           my $phen_desc = $pt->Primary_name->name;
           my @paper;
 	  my @caused_by_genes;
