@@ -74,7 +74,7 @@ use Pod::Usage;
 use Try::Tiny;
 use YAML;
 
-use constant NCBI_FTP_SERVER     => 'ftp.ncbi.nlm.nih.gov';
+use constant NCBI_FTP_SERVER  => 'ftp.ncbi.nlm.nih.gov';
 
 my($force, $gff3_download, $help);
 GetOptions( 'force'           => \$force,
@@ -240,20 +240,29 @@ my $this_url = exists $urls{$conf->{SubmitterOrganization}}
              ? $urls{$conf->{SubmitterOrganization}}
              : (  exists $synonyms{$conf->{SubmitterOrganization}} && exists $urls{$synonyms{$conf->{SubmitterOrganization}}}
                   ?  $urls{$synonyms{$conf->{SubmitterOrganization}}}
-                  :  '?'
+                  :  CoreCreation::Config::Utils::MISSING_METADATA_PATTERN
                   );
-print Dump({
-  $species => {
-     taxon_id => $conf->{SpeciesTaxid} // "?",
-     assembly_version => $conf->{AssemblyName} // "?",
-     gff_sources => "WormBase_imported",
-     meta => {
-        "assembly.accession" => $conf->{AssemblyAccession} // "?",
-        "provider.name" => $synonyms{$conf->{SubmitterOrganization}//""} // $conf->{SubmitterOrganization} // "?",
-        "provider.url" =>  $this_url // "?",
-        "species.strain" => $conf->{Biosource}{Isolate} // "?",
-        "species.biosample" => $conf->{BioSampleAccn} // "?",
-        "species.nematode_clade" => $species =~ /meloidogyne|globodera|heterodera/ ? "IV" : $species =~ /pristionchus|caenorhabditis/ ? "V": "?",
-     },
-  }
-});
+
+my $output_conf = {  taxon_id          => $conf->{SpeciesTaxid} // CoreCreation::Config::Utils::MISSING_METADATA_PATTERN,
+                     assembly_version  => $conf->{AssemblyName} // CoreCreation::Config::Utils::MISSING_METADATA_PATTERN,
+                     gff_sources       => "WormBase_imported",
+                     meta              => {  "assembly.accession"       => $conf->{AssemblyAccession} // CoreCreation::Config::Utils::MISSING_METADATA_PATTERN,
+                                             "provider.name"            => $synonyms{$conf->{SubmitterOrganization}//""} // $conf->{SubmitterOrganization} // CoreCreation::Config::Utils::MISSING_METADATA_PATTERN,
+                                             "provider.url"             => $this_url // CoreCreation::Config::Utils::MISSING_METADATA_PATTERN,
+                                             "species.strain"           => $conf->{Biosource}{Isolate} // CoreCreation::Config::Utils::MISSING_METADATA_PATTERN,
+                                             "species.biosample"        => $conf->{BioSampleAccn} // CoreCreation::Config::Utils::MISSING_METADATA_PATTERN,
+                                             "species.nematode_clade"   => $species =~ /meloidogyne|globodera|heterodera/ ? "IV" : $species =~ /pristionchus|caenorhabditis/ ? "V": CoreCreation::Config::Utils::MISSING_METADATA_PATTERN,
+                                             }
+                     };
+# if the source config indicated there mitochondrial DNA in this assembly, flag it by inserting a null value
+# (this /could/ get populated with a real value in the following steps, but at least it tells the user that
+# there's a mtDNA sequence in here somewhere that needs to be idnetified)
+# required end value for this is a comma-separate list of all sequences that are mtDNA
+if( grep( $_ eq 'has-mitochondrion', @{$conf->{PropertyList}->{string} || []}) ) {
+   $output_conf->{mitochondrial} = CoreCreation::Config::Utils::MISSING_METADATA_PATTERN;
+   warn  "*WARNING* there is at least one mitochondrial DNA sequence in this assembly.  These may be\n"
+      .  "automatically identified, but if not then the 'mitochondrial' config value must manually be\n"
+      .  "set, with a comma-separated list of the mtDNA sequence identifiers\n";
+}
+                  
+print Dump( { $species => $output_conf } );

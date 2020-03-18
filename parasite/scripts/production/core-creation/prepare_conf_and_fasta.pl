@@ -357,7 +357,9 @@ if( $force or not -s $conf_path or $ENV{REDO_FASTA} ) {
   close(FH) or croak "Error whilst writing $conf_path: $!";
 }
 
-# this check for missing values is a wee bit fragile (any occurence of a '?' char anywhere in the text)
+# this check for missing values is a wee bit fragile (any occurence of a
+# CoreCreation::Config::Utils::MISSING_METADATA_PATTERN (used to be hardcoded
+# as '?')anywhere in the text)
 # is isn't extensible for additional validation/verification
 # the slurping as text and a separated YAML::Load->YAML::Dump is a bit odd too; is this
 # meant to check it is valid YAML?
@@ -373,7 +375,7 @@ my $new_conf = YAML::LoadFile($conf_path) or croak "YAML parser barfed on $conf_
 my $missing = 0;
 my $flat = CoreCreation::Config::Utils::flatten_hash(Storable::dclone $new_conf->{$data_dir_name});
 while (my ($conf_key, $conf_value) = each %{$flat}) {
-   if( '?' eq $conf_value ) {
+   if( CoreCreation::Config::Utils::MISSING_METADATA_PATTERN eq $conf_value ) {
       ++$missing;
       print "ERROR: configuration has a missing value for ".termcap_bold($conf_key)."\n";
    }
