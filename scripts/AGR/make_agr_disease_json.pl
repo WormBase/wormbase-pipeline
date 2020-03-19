@@ -13,7 +13,7 @@ use Modules::AGR;
 
 
 my ($debug, $test, $verbose, $store, $wormbase, $build);
-my ($outfile, $acedbpath, $ws_version, $outfh, $daf);
+my ($outfile, $acedbpath, $ws_version, $outfh, $daf,$white);
 
 GetOptions (
   'debug=s'     => \$debug,
@@ -25,6 +25,7 @@ GetOptions (
   'wsversion=s' => \$ws_version,
   'writedaf'    => \$daf,
   'build'       => \$build, # to enable WB/CalTech build specific changes
+  'AGRwhitelist'=> \$white,
 )||die("unknown command line option: $@\n");
 
 if ( $store ) {
@@ -80,8 +81,8 @@ my %go2eco = (
 my $db = Ace->connect(-path => $acedbpath, -program => $tace) or die('Connection failure: '. Ace->error);
 
 my ( $it, @annots);
+my $wl = get_whitelist() if $white;
 
-#
 # New model
 #
 $it = $db->fetch_many(-query => 'Find Disease_model_annotation');
@@ -147,6 +148,10 @@ while( my $obj = $it->next) {
   my (@inferred_genes) = map { 'WB:'.$_->name } $obj->Inferred_gene;
   my ($obj_id, $obj_name, $obj_type, $assoc_type);
   my (@with_list) = map {'WB:'.$_->name} ($obj->Interacting_variation,$obj->Interacting_gene,$obj->Interacting_transgene);
+
+  if ($white && $allele){ # remove annotations unless they are in the AGR allele variations
+	  next unless $wl->{"$allele"}
+  }
 
   if (defined $strain) {
     $obj_type = 'strain';
@@ -418,4 +423,13 @@ sub write_DAF_line {
          $obj->{evidence}->{publication}->{publicationId},
          $date,
          'WB');
+}
+
+sub get_whitelist{
+	my $it = $db->fetch_many(-query =>'find Variation WHERE Live AND COUNT(Gene) == 1 AND (Phenotype OR Disease_info OR Interactor) AND NOT Natural_variant');
+	my %whitelist;
+	while (my $v = $it->next){
+		$whitelist{"$v"}=1;
+	}
+	return \%whitelist;
 }
