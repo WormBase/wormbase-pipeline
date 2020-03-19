@@ -474,6 +474,12 @@ sub merge_genes {
   my ($id, $when, $why, $who, $data) = @_;
   if ($debug) {print "Merge Gene: ID: $id, When: $when, Who: $who\n";}
   
+  # the recent_gene data is returned from the Nameserver for both the gene that is to live and the gene that is to die. Therefore as all processing is done for the gene that is to live, we can ignore the gene that is to die. The gene that is to die has attr=>status, value=>dead in its changes array.
+  if (exists $data->{'status'}) {
+    if ($debug) {print "This is the merged gene that is to die, so ignore this\n"}
+    return;
+  }
+
   my $deadgene =  $data->{'merges'}; # was 'gene/merges'
   my $deadgene_obj = $geneace->fetch(Gene => $deadgene);
   my $livegene_obj = $geneace->fetch(Gene => $id);
