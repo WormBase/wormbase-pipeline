@@ -76,6 +76,8 @@ sub process_genes_phenotype{
 
         foreach my $obj(@secondaries){
 		next unless $obj->Phenotype;
+		my @linked_genes = $obj->Gene;
+		next if scalar(@linked_genes)>1; # to remove variants with more than one gene connection
 		my @phenotypes = $obj->Phenotype;
   
 	        foreach my $pt (@phenotypes){
