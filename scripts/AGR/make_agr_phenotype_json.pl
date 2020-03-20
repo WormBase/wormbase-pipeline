@@ -97,7 +97,6 @@ sub process_genes_phenotype{
 		  #  foreach my $wb_paper ($obj->Reference) {
 		  #     push @paper, &get_paper_json($wb_paper);
 		  #  }
-		 }
 
         	 foreach my $pap (@paper) {
 	          my $json_obj = {
@@ -111,7 +110,7 @@ sub process_genes_phenotype{
 	          push @pheno_annots, $json_obj;
         	}
 	    }
-     }
+	}
 }
 
 
