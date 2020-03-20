@@ -10,6 +10,8 @@ use Log_files;
 use Storable;
 
 use lib "$ENV{'CVS_DIR'}/NAMEDB/lib";
+#use lib '/nfs/users/nfs_g/gw3/Nameserver-API';
+
 use NameDB_handler;
 
 
@@ -757,15 +759,7 @@ sub date {
 sub sanity_check {
   my (@genes) = @_;
   
-  my $PASS = $user;
-  my $USER = $user;
-  my $DOMAIN = 'Gene';
-  
-  my $DB = 'nameserver_live;web-wwwdb-core-02:3449';
-  my $db = NameDB_handler->new($DB,$USER,$PASS);
-  $db->setDomain($DOMAIN);
-
-
+  my $db = NameDB_handler->new($wormbase);
 
   foreach my $gene (@genes) {
     my $gene_name = $gene->name;
@@ -792,7 +786,7 @@ sub sanity_check {
     # check against Nameserver
     my $public = $gene->Public_name;
     if (defined $public) {
-      my $ID = $db->idGetByTypedName('Public_name'=>$public)->[0];
+      my $ID = $db->idGetByTypedName('Public_name'=>$public);
       if (defined $ID) {
 	if ($gene_name ne $ID) {
 	  $log->write_to("ERROR - $gene_name has a Public_name $public but this is the name of $ID in the Nameserver\n");

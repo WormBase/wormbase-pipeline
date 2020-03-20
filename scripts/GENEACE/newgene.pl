@@ -9,6 +9,7 @@
 use strict;
 use lib $ENV{'CVS_DIR'};
 use lib "$ENV{'CVS_DIR'}/NAMEDB/lib";
+#use lib '/nfs/users/nfs_g/gw3/Nameserver-API';
 
 use Log_files;
 use Wormbase;
@@ -20,7 +21,8 @@ use Storable;
 # command line options                            # 
 ###################################################
 
-my ($input,$seq,$cgc,$who,$id,$load,$verbose,$test,$update_nameDB,$debug,$USER,$PASS,$sneak,$outdir,$bio);
+my ($input, $seq, $cgc, $who, $id, $load, $update_nameDB, $sneak, $outdir, $bio);
+my ($help, $debug, $verbose, $store, $wormbase, $species);
 my $species = 'elegans';
 GetOptions ('input=s'     => \$input, # when loading from input file
             'seq=s'       => \$seq,   # sequence name for new/existing gene
@@ -29,18 +31,15 @@ GetOptions ('input=s'     => \$input, # when loading from input file
 	    'id=s'        => \$id,    # force creation of gene using set ID
 	    'load'        => \$load,  # load results to geneace (default is to just write an ace file)
 	    'verbose'     => \$verbose, # toggle extra (helpful?) output to screen
-	    'test'        => \$test,  # this switches between the live and test nameserver and test geneace
-	    'namedb'      => \$update_nameDB, # allows for update od various IDs as well as new ID requests from commandline.
+	    'namedb'      => \$update_nameDB, # allows for update of various IDs as well as new ID requests from commandline.
 	    'species=s'   => \$species, # defaults to elegans if not specified
 	    'debug=s'     => \$debug, # redirect log mails to a single person
-	    'user:s'      => \$USER,  # namedb username
-	    'password:s'  => \$PASS,  # namedb password
 	    'pseudoace:s' => \$sneak, # option to store the ID::Gene data in a pseudo .ace format.
 	    'out:s'       => \$outdir,# specify your own output directory for the files to load.
 	    'bio:s'       => \$bio,   # Mandatory biotype (CDS, PSeudogene, etc.)
 	    )||die($@);
 
-my $wormbase = Wormbase->new(-debug => $debug, -test => $test, -organism => $species);
+my $wormbase = Wormbase->new(-debug => $debug, -organism => $species);
 
 my $log = Log_files->make_build_log($wormbase);
 
@@ -60,7 +59,6 @@ my %valid_species = (
   ovolvulus => 1,
   sratti    => 1,
   tmuris    => 1,
-pristionchus =>1,
 );
 my $list = join(',',keys %valid_species);
 
@@ -95,8 +93,7 @@ my $person;
 
 if($who){
   $person = $who=~/WBPerson\d+/ ? $who : "WBPerson$who";
-}
-else {
+} else {
   print "\nERROR: please specify a numeric user ID - e.g. 1983\n\n[INPUT]:";
   my $tmp = <STDIN>;
   chomp $tmp;
@@ -107,28 +104,8 @@ else {
   $person = "WBPerson$tmp";
 }
 
-my $namedb;
-if( $update_nameDB ) {
-  ######################################
-  # setup NameDB connection
-  ######################################
-  my $DB;
-  if ($test) { # test
-    $DB = 'test_wbgene_id;utlt-db:3307';
-    print "Using the TEST server $DB\n";
-  }
-  else { # or live
-    $DB = 'nameserver_live;web-wwwdb-core-02;3449';
-    print "Using the LIVE server $DB\n";
-  }
-  unless (defined($USER) && defined($PASS)) {
-    print "You must specify both a username and password when using the nameDB option!\n\n" if $verbose;
-    $log->log_and_die("You must specify both a username and password when using the nameDB option!\n\n");
-  }
-  #verify if valid name
-  $namedb = NameDB_handler->new($DB,$USER,$PASS);
-  $namedb->setDomain('Gene');
-}
+my $namedb = NameDB_handler->new($wormbase);
+
 
 ############################################################
 # set database path, open connection and open output file
@@ -165,8 +142,6 @@ if ($sneak){
   open(SN,  ">>$sneak") || $log->log_and_die("Can't write to $sneak file\n");
 }
 
-# find out highest gene number in case new genes need to be created
-my $gene_max = $db->fetch(-query=>'Find Gene');
 my $override;
 
 
@@ -321,37 +296,35 @@ sub process_gene{
 
   if ($update_nameDB && !defined $override)  {
     undef $gene_id;
-    if ( $seq and $cgc ) {
+    if ( $seq and $cgc ) { # cloned gene with CGC name
       # make CGC name based gene
       my $name = $cgc;
       my $type = 'CGC';
-      $namedb->validate_name($name, $type);
+      $namedb->validate_name($name, $type, $species);
       $namedb->check_pre_exists($name, $type);
       $namedb->make_new_obj($name, $type);
-      $$gene_id = $namedb->idGetByTypedName('CGC',$cgc);
+      $gene_id = $namedb->idGetByTypedName('CGC', $cgc);
 
       # add the sequence name
       $name = $seq;
-      $type = 'CDS';
-      $namedb->validate_name($name, $type);
+      $type = 'Sequence';
+      $namedb->validate_name($name, $type, $species);
       $namedb->check_pre_exists($name, $type);
-      $namedb->isoform_exists($name, $type);
-      $namedb->addName($id,'CDS',$seq);
-    } elsif ($seq) {
+      $namedb->addName($gene_id, 'Sequence', $seq);
+    } elsif ($seq) { # cloned gene
       my $name = $seq;
-      my $type = 'CDS';
-      $namedb->validate_name($name, $type);
+      my $type = 'Sequence';
+      $namedb->validate_name($name, $type, $species);
       $namedb->check_pre_exists($name, $type);
-      $namedb->isoform_exists($name, $type);
-      $namedb->make_new_obj($name, $type);
-    } elsif ($cgc) {
+      $namedb->make_new_obj($name, 'CDS');
+    } elsif ($cgc) { # uncloned gene
       #make CGC name based gene
       my $name = $cgc;
       my $type = 'CGC';
-      $namedb->validate_name($name, $type);
+      $namedb->validate_name($name, $type, $species);
       $namedb->check_pre_exists($name, $type);
       $namedb->make_new_obj($name, $type);
-      $$gene_id = $namedb->idGetByTypedName('CGC',$cgc);
+      $gene_id = $namedb->idGetByTypedName('CGC', $cgc);
     }
   }
 }
@@ -476,5 +449,5 @@ will attempt to load the acefile into geneace (need to have write access!)
 =head1 AUTHOR Keith Bradnam (krb@sanger.ac.uk)
                                                                                            
 =back
-                                                                                           
+
 =cut
