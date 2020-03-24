@@ -253,6 +253,7 @@ changing the order is likely to be an edge case.
 A reference to a list of new GFF3 lines.
 
 =cut
+
 sub munge_line_by_line {
    my $this = (caller(0))[3];
    my %params = HASH_REF_TYPE eq ref(@_[0]) ? %{@_[0]} : @_;
@@ -292,7 +293,7 @@ sub munge_line_by_line {
          $ncbi_to_submitter_seqid{$ncbi} = $sub;
       }
    }
-   
+      
    # validate -change-type parameters
    if($change_type) {
       die "$this parameter -change_type must be a hash reference, or list of hashes"
@@ -319,7 +320,7 @@ sub munge_line_by_line {
    my $num_lines_fasta = 0;
    my $reading_fasta = 0;
    my @new_gff3 = ();
-   open(GFF3, $gff3_file) || die die "can't read $gff3_file: $!";
+   open(GFF3, $gff3_file) || die "can't read $gff3_file: $!";
    while(my $line = <GFF3>) {
       chomp($line);
       
@@ -422,8 +423,136 @@ sub munge_line_by_line {
       
       ++$num_lines;
       print STDERR "\b" x length($status);
-      $status = "$num_headers headers $num_comments comments $num_features features $num_lines_fasta lines of FASTA";
+      $status = "$num_headers headers;  $num_comments comments;  $num_features features;  $num_lines_fasta lines of FASTA";
       print STDERR $status;
+   }
+   print STDERR "\n";
+   close(GFF3) || die "error whilst reading $gff3_file: $!";
+
+   return(\@new_gff3);
+}
+
+
+=head2 change_transcripts_to_noncoding
+
+Finds designated transcripts in a GFF3 file, changes them to C<pseudogenic_transcript>,
+and removes their child features.
+
+What we're claiming biologically when we do this:
+
+=over
+
+=item * 
+these transcripts belong to genes that have no function
+
+=item *
+they look like protein-coding genes but are not (because they have stops)
+
+=item *
+they are probably pseudogenes arising from retrotansposition, i.e. copying an re-integration
+back into somewhere else in the genome, followed by degradation
+
+=back
+
+The (presumably modified) GFF3 lines are returned as a list.  Note that lines returned
+have been chomp'ed.
+
+=head3 Arguments
+
+This function requies named parameters.
+
+=over
+
+=item -file [mandatory]
+
+Name of the GFF3 file
+
+=item -transcripts
+
+Name of a file containing a list (one per line) of transcript IDs that are
+to be changed.
+
+=item -types
+
+Optional list of types of transcripts.  Defaults to 'mRNA'.
+
+=item -new_type
+
+New type for the transcripts.  Defaults to 'pseudogenic_transcript'.
+
+=head3 Note...
+
+This was shamelessly ripped off from C<change_transcripts_to_noncoding.pl>.  Like that
+script, this function will be used after a healthcheck has reported stop codons within
+transcripts.  The (arguably flawed?) I<rationale> for adding it to this package
+is to try and get the entire GFF3 munge process into the C<to_our_gff.pl> scripts
+so it is repeatable and documented.
+
+Within this package, is a separate function rather than a c<munge_line_by_line> option
+because it removes features; it's cleaner to do this as a separate pass.  It's slower but
+that's not significant.
+
+=cut
+
+sub change_transcripts_to_noncoding {
+   my $this = (caller(0))[3];
+   my %params = HASH_REF_TYPE eq ref(@_[0]) ? %{@_[0]} : @_;
+   
+   my $gff3_file           = $params{-file}        || die "$this must be passed a GFF3 file name (-file)";
+   my $transcripts_file    = $params{-transcripts} || die "$this must be passed a transcripts file name (-transcripts)";
+   my $transcript_types    = $params{-types}       || ['mRNA'];
+   my $new_transcript_type = $params{-new_type}    || 'pseudogenic_transcript';
+   
+   ARRAY_REF_TYPE eq ref($transcript_types) || die "When -types is passed to $this it must be an ARRAY ref ";
+
+   # grab the list of "target" transcript IDs from the file provided
+   my %transcripts_to_noncoding = ();
+   my $num_id = 0;
+   foreach my $id (File::Slurp::read_file($transcripts_file, chomp=>1)) {
+      ++$num_id unless exists $transcripts_to_noncoding{$id};
+      $transcripts_to_noncoding{$id}++;
+   }
+   die "$transcripts_file contained no transcript IDs" unless $num_id;
+
+   my @new_gff3 = ();
+   my $num_lines     = 0;
+   my $num_noncoding = 0;
+   my $num_removed   = 0;
+   my $status        = '';
+   open(GFF3, $gff3_file) || die "can't read $gff3_file: $!";
+   while(my $line = <GFF3>) {
+      chomp($line);
+      ++$num_lines;
+      if($line =~ m/^##\s*FASTA\s*$/i) {
+         # $line is a FASTA directive
+         my @fasta_lines = map {chomp; $_} <GFF3>;
+         push(@new_gff3,$line,@fasta_lines);
+      } elsif($line =~ m/^#/) {
+         # $line is a header or comment
+         push(@new_gff3,$line);
+      } else {
+         my @fields = split(/\t/,$line);
+         GFF3_LAST_FIELD == $#fields || die "$gff3_file line $. should be a GFF3 feature but it doesn't have 9 fields:\n$line";
+         my $attr = _deserialize_attributes($fields[GFF3_ATTR_FIELD]);
+         # targetted transcripts changed into pseudogenic_transcript
+         if( grep($_ eq $fields[GFF3_TYPE_FIELD], @{$transcript_types}) && exists $transcripts_to_noncoding{$attr->{ID}} ) {
+            ++$num_noncoding;
+            $fields[GFF3_TYPE_FIELD] = $new_transcript_type;
+            push(@new_gff3,join("\t",@fields));
+         }
+         # children of targetted transcripts removed
+         elsif( exists $transcripts_to_noncoding{$attr->{Parent}} ) {
+            ++$num_removed;
+         }
+         # everything else unchanged
+         else {
+            push(@new_gff3,join("\t",@fields));
+         }
+         
+         print STDERR "\b" x length($status);
+         $status = "$num_lines lines;  $num_noncoding/$num_id ".join('/',@{$transcript_types})." features changed to $new_transcript_type;  $num_removed child features removed";
+         print STDERR $status;
+      }
    }
    print STDERR "\n";
    close(GFF3) || die "error whilst reading $gff3_file: $!";
