@@ -203,7 +203,7 @@ while( my $obj = $it->next) {
   $annot->{objectRelation} = $assoc_rel;
   $annot->{objectId} = $obj_id;
   $annot->{objectName} = $obj_name;
-  $annot->{with} = \@with_list if @with_list;
+  $annot->{with} = \@with_list if (@with_list && $build);
   
   # modifiers
   
