@@ -13,7 +13,7 @@ use Carp;
 use Getopt::Long;
 use Storable;
 
-my ($help, $debug, $test, $store, $database, $def);
+my ($help, $debug, $test, $store, $database, $def, $dump,$old,);
 
 my $ndb = 'nameserver_live';
 my $nhost = 'web-wwwdb-core-02';
@@ -32,6 +32,8 @@ GetOptions (	"help"       => \$help,
                 "nport:s"    => \$nport,
                 "nuser:s"    => \$nuser,
                 "npass:s"    => \$npass,
+                "old" => \$old,
+                'dumpfile=s' => \$dump,     # file dumped from the datomic Name service check the confluence guide on how to produce this
 		);
 
 my $wormbase;
@@ -46,6 +48,8 @@ if ( $store ) {
 my (%ace_genes, %server_genes, %all_gene_ids);
 
 my %exceptions = ('C05G5.6'=>1, 'T22C1.13'=>1, 'F22D3.9'=>1, 'C54G10.6'=>1, 'C11H1.12'=>1, 'T01B6.12'=>1, 'C40A11.10'=>1);
+
+log->log_and_die("you need to specify -dumpfile and point it to a datomic nameservice dump file\n") unless ($dump);
 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
@@ -85,7 +89,32 @@ while( <$TABLE> ){
     $ace_genes{$gene}->{status} = ($cds or $transcript or $pseudo) ?  1 : 0; #live if it has one these nametypes
   }
 }
+
+#Retrieve the data from the NS dump.
+unless ($old) {my ($dump_fh);
+               open($dump_fh, "<$dump") or $log->log_and_die("Can't open $dump\n");
+               my $gene;
+               my $name;
+               while ( my $line = <$dump_fh> ) {
+                   chomp $line;
+                   my @f = split ",", $line;
+                   unless ($f[0] =~ /WBGene/) {next;}
+                   $gene = $f[0];  
+                   if ($f[2] =~ /\S+/) {
+                       $name = $f[2];
+                       $server_genes{$gene}->{name} = $name;
+                   }
+                   if ($f[3] =~ /live/) {
+                       $server_genes{$gene}->{'status'} = "1";
+                   }
+                   else {
+                       $server_genes{$gene}->{'status'} = "0";
+                   }    
+               }
+}
+
 #connect to name server and set domain to 'Gene'
+if ($old) {
 my $db;
 eval {
   $db = NameDB_handler->new("$ndb;$nhost;$nport",
@@ -124,6 +153,7 @@ $sth->execute()|| $log->log_and_die($sth->errstr);;
 while (my ( $gene, $live, $name ) = $sth->fetchrow_array){
   $server_genes{$gene}->{name} = $name;
   $server_genes{$gene}->{status} = $live;
+}
 }
 
 #How much work is to be done
