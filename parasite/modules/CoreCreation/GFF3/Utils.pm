@@ -121,14 +121,25 @@ This function requies named parameters.
 
 =over
 
-=item -file [mandatory]
+=item -gff3_input [mandatory]
 
-Name of the GFF3 file
+Name of the GFF3 file I<or> GFF3 as a list.   List should be one GFF3 line
+in each element, no newline char(s) -- i.e. the same format as the modified GFF3
+returned by this function.
+
+=item -file I<Deprecated>
+
+Synonym for C<gff3_input>
 
 =item -strip_comments
 
 Flag. If true, all comment lines are removed from the GFF3. These lines are
 deleted prior to any further processing.
+
+=item -strip_headers
+
+Flag. If true, all header lines (I<except> the C<##gff-version>) are removed
+from the GFF3. These lines are deleted prior to any further processing.
 
 =item -strip_fasta
 
@@ -195,8 +206,46 @@ Separator used after prefix/before suffix; defaults to '.'
 
 =item -copy_CDS_to_exon
 
+I<Deprecated>:  use C<-copy_feature_to_new_type(-from=>'CDS' -to=>'exon')
+instead
+
 Flag.  If true, CDS features are duplicated as additional exon features with
 the ID tweaked accordingly.
+
+=item -copy_feature_to_new_type
+
+Hash of params.  If defined, creates a copies feature to new feature
+with a different type
+
+Params:
+
+=over
+
+=item -from
+
+Current feature type (mandatory)
+
+=item -to
+
+New feature type (mandatory)
+
+=item -sources
+
+List of sources.  Only features from one of these sources will be copied
+(optional)
+
+=item -matches
+
+List of attribute values.  Only features with the relevant attribute (C<ID>
+by default; can be set with C<-match_attr>) value in this list are copied
+(optional).
+
+=item -match_attr
+
+The attribute that is matched against the values in C<-matches>; defaults to
+C<ID>.
+
+=back
 
 =item -handler
 
@@ -241,7 +290,8 @@ The arguments cause GFF3 features to be modified are applied in the following or
    -change_type
    -name_gene_from_id
    -handler
-   -copy_CDS_to_exon
+   -copy_CDS_to_exon (deprecated)
+   -copy_feature_to_new_type
 
 Currently there is no way to change this order.  The workaround is to call
 munge_line_by_line() repeatedly, though you need to write the GFF3 file after
@@ -258,7 +308,10 @@ sub munge_line_by_line {
    my $this = (caller(0))[3];
    my %params = HASH_REF_TYPE eq ref(@_[0]) ? %{@_[0]} : @_;
    
-   my $gff3_file           = $params{-file} || die "$this must be passed a GFF3 file name (-file)";
+   my $gff3_input          = $params{-gff3_input}
+                             || $params{-file} # DEPRECATED
+                             || die "$this must be passed GFF3 (-gff3_input)";
+   my $strip_headers       = $params{-strip_headers};
    my $strip_comments      = $params{-strip_comments};
    my $strip_fasta         = $params{-strip_fasta};
    my $strip_seqid         = $params{-strip_seqid};
@@ -266,7 +319,8 @@ sub munge_line_by_line {
    my $set_source          = $params{-set_source};
    my $change_type         = $params{-change_type};
    my $name_gene_from_id   = $params{-name_gene_from_id};
-   my $copy_CDS_to_exon    = $params{-copy_CDS_to_exon};
+   my $copy_CDS_to_exon    = $params{-copy_CDS_to_exon}; # DEPRECATED
+   my $copy_feature_to_new_type = $params{-copy_feature_to_new_type};
    my $reader              = $params{-reader};
    my $handler             = $params{-handler};
 
@@ -305,7 +359,18 @@ sub munge_line_by_line {
    
    die "$this parameter -name_gene_from_id must be a hash reference"
       if $name_gene_from_id && HASH_REF_TYPE ne ref($name_gene_from_id);
-
+      
+   if( $copy_feature_to_new_type ) {
+      die "$this parameter -copy_feature_to_new_type must be a hash reference"
+         if HASH_REF_TYPE ne ref($copy_feature_to_new_type);
+      die "$this parameter -copy_feature_to_new_type must pass a hash with keys '-from' and '-to'"
+         if !exists $copy_feature_to_new_type->{-from} || !exists $copy_feature_to_new_type->{-to};
+      die "$this parameter -matches must ne an ARRAY reference"
+         if exists $copy_feature_to_new_type->{-matches} && ARRAY_REF_TYPE ne ref($copy_feature_to_new_type->{-matches});
+      die "$this parameter -sources must ne an ARRAY reference"
+         if exists $copy_feature_to_new_type->{-sources} && ARRAY_REF_TYPE ne ref($copy_feature_to_new_type->{-sources});
+   }
+   
    die "$this parameter -reader must be a code reference"
       if $reader && CODE_REF_TYPE ne ref($reader);
 
@@ -320,9 +385,15 @@ sub munge_line_by_line {
    my $num_lines_fasta = 0;
    my $reading_fasta = 0;
    my @new_gff3 = ();
-   open(GFF3, $gff3_file) || die "can't read $gff3_file: $!";
-   while(my $line = <GFF3>) {
-      chomp($line);
+   
+   my @input; # array of GFF lines (no newline char(s))
+   if( ref($gff3_input) && ARRAY_REF_TYPE eq ref($gff3_input) ) {
+      @input = @{ $gff3_input };
+   } else {
+      @input = File::Slurp::read_file($gff3_input, chomp=>1);
+   }
+   
+   foreach my $line (@input) {
       
       if($line =~ m/^##\s*FASTA\s*$/i) {
          # $line is a FASTA directive
@@ -331,7 +402,7 @@ sub munge_line_by_line {
          $num_lines_fasta += 1 + scalar(@fasta_lines);
       } elsif($line =~ m/^##[^#]/) {
          # $line is a header
-         push(@new_gff3,$line);
+         push(@new_gff3,$line) unless $strip_headers && $line !~ m/^##gff\-version/;
          ++$num_headers;
       } elsif($line =~ m/^#/) {
          # $line is a comment
@@ -343,7 +414,7 @@ sub munge_line_by_line {
       } else {
          # $line is a feature
          my @fields = split(/\t/,$line);
-         GFF3_LAST_FIELD == $#fields || die "$gff3_file line $. should be a GFF3 feature but it doesn't have 9 fields:\n$line";
+         GFF3_LAST_FIELD == $#fields || die "input GFF3 line $. should be a GFF3 feature but it doesn't have 9 fields:\n$line";
          
          if($reader) {
             # pass first 8 fields to handler as strings, and the attributes (field 9) as a hash
@@ -410,12 +481,53 @@ sub munge_line_by_line {
          }
          
          # extra feature(s) to add?
+
+         # DEPRECATED
          if('CDS' eq $fields[GFF3_TYPE_FIELD] && $copy_CDS_to_exon) {
             try {
                push(@new_gff3,join("\t",_change_feature_type(@fields,'CDS','exon')));
             } catch {
-               die "error at $gff3_file line $. whilst creating exon feature from CDS feature: $_";
+               die "error at input GFF3 line $. whilst creating exon feature from CDS feature: $_";
             };
+         }
+         if( $copy_feature_to_new_type && $copy_feature_to_new_type->{-from} eq $fields[GFF3_TYPE_FIELD] ) {
+            my $copy_this_feature = 1;
+            
+            # if a source match is required, is this one of the matching sources?
+            if( exists $copy_feature_to_new_type->{-sources} ) {
+               # now conditional on source match
+               $copy_this_feature = 0;
+               if( grep( $_ eq @fields[GFF3_SOURCE_FIELD], @{$copy_feature_to_new_type->{-sources}} ) ) {
+                  $copy_this_feature = 1;
+               }
+            }
+            
+            # if OK so far, and if an attribute match is required, is does this have a matching attribute??
+            if( $copy_this_feature && exists $copy_feature_to_new_type->{-matches} ) {
+               # now also conditional on attribute match
+               $copy_this_feature = 0;
+               my $attr_to_match = $copy_feature_to_new_type->{-match_attr} || 'ID';
+               my $id = _deserialize_attributes($fields[GFF3_ATTR_FIELD])->{$attr_to_match} || die "feature has no ID attribute";
+               if( grep( $_ eq $id, @{$copy_feature_to_new_type->{-matches}} ) ) {
+                  $copy_this_feature = 1;
+               }
+            }
+            
+            # all OK: this feature is to be copied
+            if( $copy_this_feature ) {
+               try {
+                  push( @new_gff3,
+                        join( "\t",
+                              _change_feature_type(@fields,
+                                                   $copy_feature_to_new_type->{-from},
+                                                   $copy_feature_to_new_type->{-to}
+                                                   )
+                              )
+                        );
+               } catch {
+                  die "error at input GFF3 line $. whilst creating exon feature from CDS feature: $_";
+               };
+            }
          }
          
          ++$num_features;
@@ -427,7 +539,6 @@ sub munge_line_by_line {
       print STDERR $status;
    }
    print STDERR "\n";
-   close(GFF3) || die "error whilst reading $gff3_file: $!";
 
    return(\@new_gff3);
 }
@@ -463,9 +574,15 @@ This function requies named parameters.
 
 =over
 
-=item -file [mandatory]
+=item -gff3_input [mandatory]
 
-Name of the GFF3 file
+Name of the GFF3 file I<or> GFF3 as a list.   List should be one GFF3 line
+in each element, no newline char(s) -- i.e. the same format as the modified GFF3
+returned by this function.
+
+=item -file I<Deprecated>
+
+Synonym for C<gff3_input>
 
 =item -transcripts
 
@@ -498,7 +615,9 @@ sub change_transcripts_to_noncoding {
    my $this = (caller(0))[3];
    my %params = HASH_REF_TYPE eq ref(@_[0]) ? %{@_[0]} : @_;
    
-   my $gff3_file           = $params{-file}        || die "$this must be passed a GFF3 file name (-file)";
+   my $gff3_input          = $params{-gff3_input}
+                             || $params{-file}  # DEPRECATED
+                             || die "$this must be passed GFF3 (-gff3_input)";
    my $transcripts_file    = $params{-transcripts} || die "$this must be passed a transcripts file name (-transcripts)";
    my $transcript_types    = $params{-types}       || ['mRNA'];
    my $new_transcript_type = $params{-new_type}    || 'pseudogenic_transcript';
@@ -519,9 +638,15 @@ sub change_transcripts_to_noncoding {
    my $num_noncoding = 0;
    my $num_removed   = 0;
    my $status        = '';
-   open(GFF3, $gff3_file) || die "can't read $gff3_file: $!";
-   while(my $line = <GFF3>) {
-      chomp($line);
+   
+   my @input; # array of GFF lines (no newline char(s))
+   if( ref($gff3_input) && ARRAY_REF_TYPE eq ref($gff3_input) ) {
+      @input = @{ $gff3_input };
+   } else {
+      @input = File::Slurp::read_file($gff3_input, chomp=>1);
+   }
+   
+   foreach my $line (@input) {
       ++$num_lines;
       if($line =~ m/^##\s*FASTA\s*$/i) {
          # $line is a FASTA directive
@@ -532,7 +657,7 @@ sub change_transcripts_to_noncoding {
          push(@new_gff3,$line);
       } else {
          my @fields = split(/\t/,$line);
-         GFF3_LAST_FIELD == $#fields || die "$gff3_file line $. should be a GFF3 feature but it doesn't have 9 fields:\n$line";
+         GFF3_LAST_FIELD == $#fields || die "input GFF3 line $. should be a GFF3 feature but it doesn't have 9 fields:\n$line";
          my $attr = _deserialize_attributes($fields[GFF3_ATTR_FIELD]);
          # targetted transcripts changed into pseudogenic_transcript
          if( grep($_ eq $fields[GFF3_TYPE_FIELD], @{$transcript_types}) && exists $transcripts_to_noncoding{$attr->{ID}} ) {
@@ -550,18 +675,17 @@ sub change_transcripts_to_noncoding {
          }
          
          print STDERR "\b" x length($status);
-         $status = "$num_lines lines;  $num_noncoding/$num_id ".join('/',@{$transcript_types})." features changed to $new_transcript_type;  $num_removed child features removed";
+         $status = "$num_lines lines;  $num_noncoding ".join('/',@{$transcript_types})." features changed to $new_transcript_type;  $num_removed child features removed";
          print STDERR $status;
       }
    }
    print STDERR "\n";
-   close(GFF3) || die "error whilst reading $gff3_file: $!";
 
    return(\@new_gff3);
 }
 
 # pass list of fields from a feature line, the old type, the new type, and optionally a new parent ID
-# changes the type to the new type; changes the ID accordingly; and changes the parent ID (of provided)
+# changes the type to the new type; changes the ID accordingly; and changes the parent ID (if provided)
 sub _change_feature_type {
    my $this = (caller(0))[3];
    my @fields;
@@ -583,10 +707,9 @@ sub _change_feature_type {
       exists $attr->{Parent} || die "$this was asked to change the Parent attribute of a feature which has no parent";
       $attr->{Parent} = $new_parent_id;
    }
-   
    # change ID attribute; requires some  guesswork
    # first look for type within the ID, and change that
-   unless( $attr->{ID} =~ s/$old_type/$new_type/i ) {
+   unless( $attr->{ID} =~ s/\b$old_type\b/$new_type/i ) {
       # if that didn't work, take parent ID (if there is one) and add suffix based on new type
       if(exists $attr->{Parent}) {
          $attr->{ID} = join('.',$attr->{Parent},lc($new_type));
@@ -598,7 +721,7 @@ sub _change_feature_type {
    }
    
    $fields[GFF3_ATTR_FIELD] = _serialize_attributes($attr);
-   
+
    return(@fields);
 }
 
