@@ -66,6 +66,7 @@ sub process_disease_variations{
 	foreach my $v(@vars){
 	        $it = $db->fetch_many(Variation => $v);
 		process($it);
+	}
 }
 
 sub grab_disease_variations{
