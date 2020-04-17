@@ -286,11 +286,15 @@ if ( $process ) {
       }
 
       my $job_name = "BLAT_blat2ace_${species}_${qspecies}_${type}";
-      # ask for a memory limit of 16 Gb
-      my @bsub_options = (-M => "16000", 
-			  -R => "\"select[mem>16000] rusage[mem=16000]\"",
+      my @bsub_options = (-M => "8000",
+			  -R => "\"select[mem>8000] rusage[mem=8000]\"",
 			  -J => $job_name, 
                           -o => "$lsfdir/$job_name.lsfout");
+      # ask for a memory limit of 24 Gb if Nanopore
+      @bsub_options = (-M => "24000",
+		       -R => "\"select[mem>24000] rusage[mem=24000]\"",
+		       -J => $job_name, 
+                       -o => "$lsfdir/$job_name.lsfout") if (($type eq 'Nanopore') && ($qspecies ne $species));
       $lsf1->submit(@bsub_options, $cmd);
       
     }
