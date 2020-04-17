@@ -290,11 +290,16 @@ if ( $process ) {
 			  -R => "\"select[mem>8000] rusage[mem=8000]\"",
 			  -J => $job_name, 
                           -o => "$lsfdir/$job_name.lsfout");
-      # ask for a memory limit of 24 Gb if Nanopore
-      @bsub_options = (-M => "24000",
+      # ask for a memory limit of 24 Gb if Nanopore 
+      # force a 90% coverage unless specified otherwise
+      if (($type eq 'Nanopore') && ($qspecies ne $species)){
+          @bsub_options = (-M => "24000",
 		       -R => "\"select[mem>24000] rusage[mem=24000]\"",
 		       -J => $job_name, 
-                       -o => "$lsfdir/$job_name.lsfout") if (($type eq 'Nanopore') && ($qspecies ne $species));
+                       -o => "$lsfdir/$job_name.lsfout");
+	  $cmd .= ' -mincoverage 90' unless $min_coverage;
+
+      }
       $lsf1->submit(@bsub_options, $cmd);
       
     }

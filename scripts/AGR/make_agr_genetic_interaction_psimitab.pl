@@ -112,7 +112,7 @@ my $db = Ace->connect(-path => $dbpath)||die(Ace->Error);
 my %intValidGiNoOther;
 
 
-my $it = $test? $db->fetch_many(Interaction => $test) : $db->fetch_many(-query => 'find Interaction; Interaction_type="Genetic" AND COUNT(Interactor_overlapping_gene)=2 AND !Other_interactor AND !Molecule_interactor AND !Rearrangement AND Paper');
+my $it = $test ? $db->fetch_many(Interaction => $test) : $db->fetch_many(-query => 'find Interaction; Interaction_type="Genetic" AND COUNT(Interactor_overlapping_gene)=2 AND !Other_interactor AND !Molecule_interactor AND !Rearrangement AND Paper');
 
 while (my $int = $it->next) {
 
@@ -296,6 +296,7 @@ while (my $int = $it->next) {
       my $varGene = $varGene{$var};
       print STDERR "$var doesn't have an attached gene\n" unless $varGene;
       $skipBecauseVar++ if $varGene eq 'skip';
+      next unless $varGene;
       push @tab25, "wormbase:$var" if $varGene eq $gene1;
       push @tab26, "wormbase:$var" if $varGene eq $gene2;
    }
