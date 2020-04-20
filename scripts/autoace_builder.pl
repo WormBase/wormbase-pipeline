@@ -165,7 +165,7 @@ $wormbase->run_script("check_class.pl -stage finish_blat -classes Homol_data", $
 #//--------------------------- batch job submission -------------------------//
 # $build_dumpGFF.pl; (blat) is run chronologically here but previous call will operate
 
-$wormbase->run_script( 'batch_transcript_build.pl -mem 6000', $log) if $transcripts;
+$wormbase->run_script( 'batch_transcript_build.pl -mem 12000', $log) if $transcripts;
 $wormbase->run_script("check_class.pl -stage transcripts -classes Transcript", $log) if $transcripts;
 #requires GFF dump of transcripts (done within script if all goes well)
 
