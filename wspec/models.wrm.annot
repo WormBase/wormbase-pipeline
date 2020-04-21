@@ -752,9 +752,9 @@
                              Other_component UNIQUE ?Text  // Free text components including RNAi
           Disease_info Models_disease ?DO_term OUTXREF Disease_model_genotype
                        Modifies_disease ?DO_term OUTXREF Disease_modifier_genotype
-          Disease_model_annotation Model_genotype ?Disease_model_annotation OUTXREF Genotype
-                                   Modifier_genotype ?Disease_model_annotation OUTXREF Modifier_genotype
-          Specis UNIQUE ?Species
+                       Models_disease_in_annotation ?Disease_model_annotation OUTXREF Genotype
+                       Modifies_disease_in_annotation ?Disease_model_annotation OUTXREF Modifier_genotype
+          Species UNIQUE ?Species
           Remark ?Text 
           Reference ?Paper OUTXREF Genotype
 
@@ -1103,7 +1103,7 @@
                                      Variation ^modeled-by-variation UNIQUE ?Variation OUTXREF Disease_model_annotation ?Text
                                      Transgene ^modeled-by-transgene UNIQUE ?Transgene OUTXREF Disease_model_annotation ?Text
                                      Disease_relevant_gene ^modeled-by-disease-relevant-gene UNIQUE ?Gene OUTXREF Disease_model_annotation ?Text
-                                     Genotype  ^modeled-by-genotype UNIQUE ?Genotype INXREF Model_genotype //to associate genotypes
+                                     Genotype  ^modeled-by-genotype UNIQUE ?Genotype INXREF Models_disease_in_annotation //to associate genotypes
                                      Modeled_by_remark UNIQUE ?Text
                           Annotation_made_with Interacting_variation ?Variation //Addition for WS261
                                                Interacting_transgene ?Transgene
@@ -1125,7 +1125,7 @@
                                         Modifier_strain ?Strain
                                         Modifier_gene ?Gene
                                         Modifier_molecule ?Molecule OUTXREF Disease_model_modifier
-                                        Modifier_genotype ?Genotype INXREF Modifier_genotype //to annotate genotype modifiers of disease
+                                        Modifier_genotype ?Genotype INXREF Modifies_disease_in_annotation //to annotate genotype modifiers of disease
                                         Other_modifier ?Text
                           Modifier_association_type UNIQUE condition_ameliorated_by
                                                            condition_exacerbated_by
