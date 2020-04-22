@@ -136,8 +136,8 @@ sub get_cds_history {
   my %cds_history;
 
   foreach my $protein (keys %{$protein_history}) {
-    foreach my $release (keys $protein_history->{$protein}) {
-      foreach my $end (keys $protein_history->{$protein}{$release}) { # $end is: $in = 1, $out = 0
+    foreach my $release (keys %{$protein_history->{$protein}}) {
+      foreach my $end (keys %{$protein_history->{$protein}{$release}}) { # $end is: $in = 1, $out = 0
 	my @cds = @{$protein_history->{$protein}{$release}{$end}};
 	foreach my $cds (@cds) {
 	  $cds_history{$cds}{$release}{$end} = $protein;
@@ -173,8 +173,8 @@ sub process_proteins {
     &output_Species_Wormpep($protein);
     
     # foreach sort by $release, end
-    foreach my $release (sort {$a <=> $b} keys $protein_history->{$protein}) {
-      foreach my $end (sort {$a <=> $b} keys $protein_history->{$protein}{$release}) { # end is: $out is 0, $in is 1 so when they are sorted, we see 'remove' events in a release before we see 'add' events
+    foreach my $release (sort {$a <=> $b} keys %{$protein_history->{$protein}}) {
+      foreach my $end (sort {$a <=> $b} keys %{$protein_history->{$protein}{$release}}) { # end is: $out is 0, $in is 1 so when they are sorted, we see 'remove' events in a release before we see 'add' events
 	my @cds = @{$protein_history->{$protein}{$release}{$end}};
 	foreach my $cds (@cds) {
 	  
