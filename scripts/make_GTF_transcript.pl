@@ -102,6 +102,7 @@ my @file_types = qw(
 	snRNA
 	stRNA
 	tRNA
+        circRNA
 );
 
 
