@@ -27,8 +27,6 @@ GetOptions (
     "test"      => \$test,    # run against the test database on utlt-db
     "store:s"   => \$store,   # if you want to pass a Storable instead of recreating it
     "species:s" => \$species, # elegans/briggsae/whateva .. needed for logging
-    "user:s"	=> \$USER,    # mysql username
-    "pass:s"	=> \$PASS,    # mysql password
     'nocheck'   => \$nocheck, # don't check public_names
     'input:s'   => \$input,   # File containing new public_names for new Variations
     "output:s"  => \$output,  # File to capture the new WBVar and name associations
@@ -52,10 +50,7 @@ if ( $store ) {
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
-$DB = $wormbase->test ? 'test_wbgene_id;utlt-db:3307' : 'nameserver_live;web-wwwdb-core-02:3449';
-
-my $db = NameDB_handler->new($DB,$USER,$PASS,$wormbase->wormpub . '/DATABASES/NameDB');
-$db->setDomain($DOMAIN);
+$db = NameDB_handler->new($wormbase);
 
 # there should be *only* one public_name per line in the input_file
 # like:
@@ -104,26 +99,17 @@ while (<IN>) {
 }
 
       foreach my $entry (@entries) {
-          my ($public_name, $other_name);
-          if ($public) {
-              ($public_name, $other_name) = @$entry;
-          }
-          else {
-              ($other_name, $public_name) = @$entry;
-          }
-          if (not $nocheck and defined $public_name and not defined &_check_name($public_name)) {
+          my ($public_name) = $entry;
+          if (defined $public_name and not defined &_check_name($public_name)) {
               next;
-          }
-          
-          my $id = $db->idCreate;
-          
-          $public_name = $id if not defined $public_name;
-          
-          $db->addName($id,'Public_name'=>$public_name);
-          
+          }  
+
+          my ($ids, $batch_id) = $db->new_strains([$public_name]);
+          my ($id) = keys %{$ids};
+                    
           print OUT "\n$DOMAIN : \"$id\"\n";
           print OUT "Public_name \"$public_name\"\n";
-          print OUT "Other_name \"$other_name\"\n" if (defined $other_name);
+#          print OUT "Other_name \"$other_name\"\n" if (defined $other_name);
           print OUT "Live\nRemark \"Batch $DOMAIN object requested via get_NS_ids.pl\"\n";              
           if (defined $ace_file_template) {
               print OUT "$ace_file_template\n";
@@ -134,7 +120,11 @@ $log->mail;
 # small function to check the variation public_name for sanity
 sub _check_name {
   my $name = shift;
-  my $var = $db->idGetByTypedName('Public_name'=>$name)->[0];
+  my $var;
+  my $var_ref = $db->find_variations($name);
+  foreach my $hash (@{$var_ref}) {
+    if ($hash->{'variation/name'} eq '$id') {$var = $hash->{'variation/id'}}
+  }
   if($var) {  
     print STDERR "ERROR: $name already exists as $var\n";
     return undef;
