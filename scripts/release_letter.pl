@@ -174,6 +174,7 @@ printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.transposon_transcripts.fa.gz   
 printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.transposons.fa.gz              - DNA sequence of curated and predicted Transposons\n";
 printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.intergenic_sequences.fa.gz     - DNA sequence between pairs of adjacent genes\n";
 printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.annotations.gff[2|3].gz        - Sequence features in either GFF2 or GFF3 format\n";
+printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.protein_annotation.gff3.gz     - Sequence features in proteins in GFF3 format\n";
 printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.canonical_geneset.gtf.gz       - Genes, transcripts and CDSs in GTF (GFF2) format\n";
 printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.ests.fa.gz                     - ESTs and mRNA sequences extracted from the public databases\n";
 printf $rlfh "     - G_SPECIES.BIOPROJECT.WS$ver.best_blastp_hits.txt.gz        - Best blastp matches to human, fly, yeast, and non-WormBase Uniprot proteins\n";

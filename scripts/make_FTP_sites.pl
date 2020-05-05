@@ -384,6 +384,7 @@ sub copy_gff_files{
     my $source_gff2_file = $wb->processed_GFF_file();
     my $source_gff3_file = $wb->processed_GFF_file(1);
     my $source_gtf_file = "${sequencesdir}/${species}.gtf";
+    my $source_prot_file = "${sequencesdir}/${species}.protein_annotation.gff3";
     
     my $gff_dir = "$targetdir/species/$gspecies/$bioproj";
     mkpath($gff_dir,1,0775);
@@ -392,10 +393,13 @@ sub copy_gff_files{
     my $target_gff2_file = "$gff_dir/${fname_prefix}.annotations.gff2.gz";
     my $target_gff3_file = "$gff_dir/${fname_prefix}.annotations.gff3.gz";
     my $target_gtf_file = "$gff_dir/${fname_prefix}.canonical_geneset.gtf.gz";
+    my $target_prot_file = "$gff_dir/${fname_prefix}.protein_annotation.gff3";
 
     foreach my $fname_pair ([$source_gff2_file,  $target_gff2_file],
                             [$source_gff3_file,  $target_gff3_file],
-                            [$source_gtf_file,   $target_gtf_file]) {
+                            [$source_gtf_file,   $target_gtf_file], 
+                            [$source_prot_file,  $target_prot_file], 
+        ) {
       my ($source, $target) = @$fname_pair;
       unlink $target if -e $target;
 
@@ -1388,6 +1392,7 @@ GSPECIES.BIOPROJ.WSREL.geneOtherIDs.txt.gz
 [CORE]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.best_blastp_hits.txt.gz
 GSPECIES.BIOPROJ.WSREL.annotations.gff2.gz
+GSPECIES.BIOPROJ.WSREL.protein_annotation.gff3.gz
 GSPECIES.BIOPROJ.WSREL.ncRNA_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.pseudogenic_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.intergenic_sequences.fa.gz

@@ -239,6 +239,7 @@ if ($prepare_gff_munge) {
   }
   $wormbase->run_script( 'web_data/map_translated_features_to_genome.pl', $log);
   $wormbase->run_script( 'web_data/map_translated_features_to_genome.pl -gff3', $log);
+  $wormbase->run_script( 'web_data/dump_protein_features_gff.pl', $log);
 }
 
 #several GFF manipulation steps
