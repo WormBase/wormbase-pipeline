@@ -10,10 +10,14 @@ die unless $cfg;
 for my $section ( grep /source/, $cfg -> Sections ) { 
  my @uris = $cfg->val( $section , "data_uri") or ();
  for my $uri ( @uris){ 
-   if ($ENV{WORMBASE_VERSION} > 271) { 
-      die "$uri Check this case - I think they were missing from FTP but should be back now" if $section =~/remanei/;
-   }
-   next if $section =~/remanei/;
+   # this FTP site is available now
+   # Tim S. 2020-05-06
+   # if ($ENV{WORMBASE_VERSION} > 271) { 
+   #   die "$uri Check this case - I think they were missing from FTP but should be back now" if $section =~/remanei/;
+   # }
+   # I believe this next line also needs to be removed now -- otherwise the line above doesn't make sense
+   # Tim S. 2020-05-06
+   # next if $section =~/remanei/;
    next if $cfg->val($section, "download") eq "N";
    my %ans_here;
    for my $param ($cfg->Parameters($section)){
