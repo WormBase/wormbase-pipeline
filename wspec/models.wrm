@@ -322,7 +322,9 @@
         Disease_info Experimental_model ?DO_term XREF Gene_by_biology ?Species #Evidence
                      Potential_model ?DO_term XREF Gene_by_orthology ?Species #Evidence
                      Disease_relevance ?Text ?Species #Evidence
-        Disease_model_annotation ?Disease_model_annotation XREF Disease_relevant_gene //New class to capture the richness of disease data
+        Modifies_disease ?DO_term XREF Disease_modifier_gene //New tag WS278
+        Models_disease_in_annotation ?Disease_model_annotation XREF Disease_relevant_gene //New tag WS278
+        Modifies_disease_in_annotation ?Disease_model_annotation XREF Modifier_gene //New tag WS278
         Molecular_info Corresponding_CDS ?CDS XREF Gene #Evidence             // to link to live CDSs
                        Corresponding_CDS_history ?CDS XREF Gene_history       // to link to history CDSs
                        Corresponding_transcript ?Transcript XREF Gene #Evidence
@@ -663,7 +665,9 @@
                   Clone ?Clone XREF In_strain
                   Transgene ?Transgene XREF Strain
          Disease_info Models_disease ?DO_term XREF Disease_model_strain
-                      Disease_model_annotation ?Disease_model_annotation XREF Strain
+                      Modifies_disease ?DO_term XREF Disease_modifier_strain //New tag
+                      Models_disease_in_annotation ?Disease_model_annotation XREF Strain //New tag
+                      Modifies_disease_in_annotation ?Disease_model_annotation XREF Modifier_strain //New tag
          Database ?Database ?Database_field ?Text
          Properties Inbreeding_state UNIQUE Selfed Text
                                             Isofemale Text
@@ -1283,11 +1287,15 @@
                       WBProcess ?WBProcess XREF DO_term
                       Reference ?Paper XREF DO_term
                       Disease_model_variation ?Variation XREF Models_disease   //To associate Variations to a disease
+                      Disease_modifier_variation ?Variation XREF Modifies_disease //New tag
                       Disease_model_strain ?Strain XREF Models_disease         //To associate Strains to a disease
+                      Disease_modifier_strain ?Strain XREF Modifies_disease       //New tag
                       Disease_model_transgene ?Transgene XREF Models_disease   //To associate Transgenes to disease
+                      Disease_modifier_transgene ?Transgene XREF Modifies_disease //New tag
                       Disease_model_genotype ?Genotype XREF Models_disease
                       Disease_modifier_genotype ?Genotype XREF Modifies_disease
                       Chemical_inducer ?Molecule XREF Induces_disease          //To associate inducing chemicals to a disease
+                      Other_inducer ?Text                                      //New tag
                       Molecule_modifier ?Molecule XREF Modifies_disease        //To associate modifying chemicals to a disease
          Reagent_info Associated_antibody ?Antibody XREF Antibody_for_disease
                       Associated_construct ?Construct XREF Construct_for_disease
@@ -2738,7 +2746,7 @@
            Construction_summary ?Text
            Genetic_information Extrachromosomal
                                Integrated
-                               Map ?Map #Map_position  //needed for transgenes with no granular mapping, e.g., just mapped to a LG
+                               Map ?Map #Map_position //needed for transgenes with no granular mapping, e.g., just mapped to a LG
                                Map_evidence #Evidence
                                Mapping_data Multi_point ?Multi_pt_data
                                Phenotype ?Phenotype XREF Transgene #Phenotype_info
@@ -2752,7 +2760,9 @@
                            Component_of_genotype ?Genotype XREF Transgene
                            Transgene_for_disease ?DO_term XREF Associated_transgene #Evidence
            Disease_info Models_disease ?DO_term XREF Disease_model_transgene
-                        Disease_model_annotation ?Disease_model_annotation XREF Transgene
+                        Modifies_disease ?DO_term XREF Disease_modifier_transgene //New tag
+                        Models_disease_in_annotation ?Disease_model_annotation XREF Transgene //New tag
+                        Modifies_disease_in_annotation ?Disease_model_annotation XREF Modifier_transgene //New tag
            Reference ?Paper XREF Transgene
            Species UNIQUE ?Species
            Remark ?Text #Evidence
@@ -3635,7 +3645,9 @@
                        Phenotype_remark ?Text #Evidence
                        Phenotype_not_observed ?Phenotype XREF Not_in_Variation #Phenotype_info  //added by Wen to separate Not phenotype from real phenotypes
            Disease_info Models_disease ?DO_term XREF Disease_model_variation
-                        Disease_model_annotation ?Disease_model_annotation XREF Variation
+                        Modifies_disease ?DO_term  XREF  Disease_modifier_variation //New tag
+                        Models_disease_in_annotation  ?Disease_model_annotation  XREF  Variation //New tag
+                        Modifies_disease_in_annotation  ?Disease_model_annotation  XREF  Modifier_variation//New tag
            Reference ?Paper XREF Allele
            Remark ?Text #Evidence
            Method UNIQUE ?Method
