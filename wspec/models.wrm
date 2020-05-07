@@ -1080,10 +1080,10 @@
 //////////////////////////////////////////
 ?Disease_model_annotation Disease_term UNIQUE ?DO_term XREF Disease_model_annotation
                           Disease_of_species ?Species
-                          Modeled_by Strain UNIQUE ?Strain XREF Models_disease_in_annotation               // WS268 XREF tag modified
-                                     Variation UNIQUE ?Variation XREF Models_disease_in_annotation         // WS268 XREF tag modified
-                                     Transgene UNIQUE ?Transgene XREF Models_disease_in_annotation         // WS268 XREF tag modified
-                                     Disease_relevant_gene UNIQUE ?Gene XREF Models_disease_in_annotation  // WS268 XREF tag modified
+                          Modeled_by Strain UNIQUE ?Strain XREF Models_disease_in_annotation ?Text               // WS268 XREF tag modified
+                                     Variation UNIQUE ?Variation XREF Models_disease_in_annotation ?Text         // WS268 XREF tag modified
+                                     Transgene UNIQUE ?Transgene XREF Models_disease_in_annotation ?Text         // WS268 XREF tag modified
+                                     Disease_relevant_gene UNIQUE ?Gene XREF Models_disease_in_annotation ?Text  // WS268 XREF tag modified
                                      Genotype UNIQUE ?Genotype XREF Models_disease_in_annotation //to associate genotypes
                                      Modeled_by_remark UNIQUE ?Text
                           Annotation_made_with Interacting_variation ?Variation //Addition for WS261
