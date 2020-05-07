@@ -104,6 +104,10 @@ while( my $obj = $it->next) {
   my ($paper) = &get_paper( $obj->Paper_evidence );
   my @evi_codes = map { $go2eco{$_->name} } $obj->Evidence_code;
 
+  # [200507 mh6]
+  # the crossReference should be annotation specific, but as the id changes every release the 
+  # linking is not possible due to the lag
+
   my $annot = {
     DOid         => $obj->Disease_term->name,
     dataProvider => [
@@ -231,7 +235,7 @@ while( my $obj = $it->next) {
 
     # WB/CalTech specific changes
     $annot->{modifier} = $mod_annot if $build;
-    $annot->{qualifier} = 'not' if ($obj->at('Modifier_qualifier_not') && $build);
+    $annot->{negation} = 'not' if $obj->at('Modifier_qualifier_not');
   }
 
   if ($obj->Experimental_condition){
@@ -415,7 +419,7 @@ sub write_DAF_line {
          $obj->{DOid},
          (exists $obj->{with}) ? join(',',@{$obj->{with}}) : '',
          (exists $obj->{modifier}) ? $obj->{modifier}->{associationType} : '',
-         ($obj->{qualifier}||''),
+         ($obj->{negation}||''),
          (exists $obj->{modifier} and exists $obj->{modifier}->{genetic}) ? join(',', @{$obj->{modifier}->{genetic}}) : '',
          (exists $obj->{modifier} and exists $obj->{modifier}->{experimentalConditionsText}) ? join(',', @{$obj->{modifier}->{experimentalConditionsText}}) : '',
          join(",", @{$obj->{evidence}->{evidenceCodes}}),

@@ -127,13 +127,8 @@ sub process{
 	    my $transgene = $obj->Corresponding_transgene;
 	    my $construct = $transgene->Construct;
 	    next unless $construct;
-	    $$json_obj{construct}="WB:$construct";
-	    next unless $transgene->Genetic_information; # skip the transgenes where the type hasn't been curated
-            if(grep {$_ eq 'Integrated'} $transgene->Genetic_information){
-	        $$json_obj{constructInsertionType}='Transgenic Insertion'
-	    }elsif(grep {$_ eq 'Extrachromosomal'} $transgene->Genetic_information){
-                $$json_obj{constructInsertionType}='Extrachromosomal Array'
-	    }else{next}
+
+	    $$json_obj{alleleObjectRelations}=[{associationType => 'contains',construct => "WB:$construct"}];
     }
     push @alleles, $json_obj;
   }
