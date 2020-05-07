@@ -128,7 +128,7 @@ sub process{
 	    my $construct = $transgene->Construct;
 	    next unless $construct;
 
-	    $$json_obj{alleleObjectRelations}=[{associationType => 'contains',construct => "WB:$construct"}];
+	    $$json_obj{alleleObjectRelations}=[{objectRelation => {associationType => 'contains',construct => "WB:$construct"}}];
     }
     push @alleles, $json_obj;
   }
