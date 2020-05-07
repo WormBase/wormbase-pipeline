@@ -1078,14 +1078,12 @@
 // ?Disease_model_annotation class WS260
 //
 //////////////////////////////////////////
-
-
 ?Disease_model_annotation Disease_term UNIQUE ?DO_term XREF Disease_model_annotation
                           Disease_of_species ?Species
-                          Modeled_by Strain UNIQUE ?Strain XREF Disease_model_annotation ?Text               // genetic entity that models the disease
-                                     Variation UNIQUE ?Variation XREF Disease_model_annotation ?Text         // genetic entity that models the disease
-                                     Transgene UNIQUE ?Transgene XREF Disease_model_annotation ?Text        // genetic entity that models the disease
-                                     Disease_relevant_gene UNIQUE ?Gene XREF Disease_model_annotation ?Text  //when the genetic entity is a gene
+                          Modeled_by Strain UNIQUE ?Strain XREF Models_disease_in_annotation               // WS268 XREF tag modified
+                                     Variation UNIQUE ?Variation XREF Models_disease_in_annotation         // WS268 XREF tag modified
+                                     Transgene UNIQUE ?Transgene XREF Models_disease_in_annotation         // WS268 XREF tag modified
+                                     Disease_relevant_gene UNIQUE ?Gene XREF Models_disease_in_annotation  // WS268 XREF tag modified
                                      Genotype UNIQUE ?Genotype XREF Models_disease_in_annotation //to associate genotypes
                                      Modeled_by_remark UNIQUE ?Text
                           Annotation_made_with Interacting_variation ?Variation //Addition for WS261
@@ -1099,7 +1097,8 @@
                                                   causes_condition
                                                   contributes_to_condition
                                                   is_marker_for
-                          Evidence_code ?GO_code // will use ECO later on
+                          Evidence_code GO_code ?GO_code // will use ECO later on
+                                        ECO_term ?ECO_term XREF Disease_model_annotation
                           Qualifier_not          // to indicate that a disease is NOT modeled by X change tag WS262
                           Experimental_condition Inducing_chemical ?Molecule XREF Disease_model_inducer //to indicate the disease-inducing agent
                                                  Inducing_agent ?Text     //e.g. diet, radiation,etc not in Molecule class
@@ -1136,6 +1135,7 @@
 
 
 ?GO_annotation Gene UNIQUE ?Gene XREF GO_annotation
+               ECO_term UNIQUE ?ECO_term XREF GO_annotation
                GO_term UNIQUE ?GO_term XREF GO_annotation
                GO_code UNIQUE ?GO_code
                Annotation_relation UNIQUE ?RO_term XREF GO_annotation
@@ -1213,6 +1213,27 @@
 
 ///////////////////////////////////////////////////////////////
 //
+// ?ECO_term class - kimberly WS278
+//                
+////////////////////////////////////////////////////////////////
+
+?ECO_term Name UNIQUE ?Text
+          Status UNIQUE Valid
+                        Obsolete
+          Alt_id ?Text
+          Definition UNIQUE ?Text
+          Synonym Broad ?Text
+                  Exact ?Text
+                  Narrow ?Text
+                  Related ?Text
+          Child ?ECO_term XREF Parent
+          Parent ?ECO_term XREF Child
+          Attribute_of GO_annotation ?GO_annotation XREF ECO_term
+                       Disease_model_annotation ?Disease_model_annotation XREF ECO_term
+          Version UNIQUE Text
+
+///////////////////////////////////////////////////////////////
+//
 // ?SO_term class - krb 30062004
 //                - klh 2011-04
 ////////////////////////////////////////////////////////////////
@@ -1286,6 +1307,7 @@
                       Phenotype ?Phenotype XREF DO_term
                       WBProcess ?WBProcess XREF DO_term
                       Reference ?Paper XREF DO_term
+                      Disease_modifier_gene ?Gene XREF Modifies_disease // Tag missing from original proposal WS268
                       Disease_model_variation ?Variation XREF Models_disease   //To associate Variations to a disease
                       Disease_modifier_variation ?Variation XREF Modifies_disease //New tag
                       Disease_model_strain ?Strain XREF Models_disease         //To associate Strains to a disease
@@ -2975,7 +2997,8 @@
                         Not_in_Strain ?Strain XREF Phenotype_not_observed       //added by Wen for Not observed phenotypes
                         Not_in_Transgene ?Transgene XREF Phenotype_not_observed //added by Wen for Not observed phenotypes
                         Not_in_Rearrangement ?Rearrangement XREF Phenotype_not_observed //added by Wen for Not observed phenotypes
-           Associated_with GO_term ?GO_term XREF Phenotype ?GO_code #Evidence    // Tag Associated_with changed by Carol
+           Associated_with GO_term ?GO_term
+                           ECO_term ?ECO_term    // Tag changes from GO to ECO for WS278
                            WBProcess ?WBProcess XREF Phenotype
                            DO_term ?DO_term #Evidence
 
