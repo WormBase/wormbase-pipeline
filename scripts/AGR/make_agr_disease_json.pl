@@ -113,8 +113,8 @@ while( my $obj = $it->next) {
     dataProvider => [
       { 
         crossReference => {
-          id => 'WB',
-          pages => ['homepage'],
+          id => $obj->Disease_term->name,
+          pages => ['disease'],
         },
         type => 'curated',
       },
