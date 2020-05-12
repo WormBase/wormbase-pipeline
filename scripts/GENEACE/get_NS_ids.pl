@@ -50,7 +50,7 @@ if ( $store ) {
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
-$db = NameDB_handler->new($wormbase);
+my $db = NameDB_handler->new($wormbase);
 
 # there should be *only* one public_name per line in the input_file
 # like:
@@ -85,28 +85,45 @@ while (<IN>) {
 #        print "File appears to contain multiple name attributes, assuming that is intended";
 #    }
 
-    unless ($public){      
-        @names = split(/\s+/, $_);
-    }
-    else {
-        @names = $_;
-    }
-    if (scalar(@names) == 2 or scalar(@names) == 1) {
-        push @entries, \@names,
-    } else {
-        $log->log_and_die("Bad line:$_\n");
-    }
-}
+#    unless ($public){      
+#        @names = split(/\s+/, $_);
+#    }
+#    else {
 
-      foreach my $entry (@entries) {
-          my ($public_name) = $entry;
-          if (defined $public_name and not defined &_check_name($public_name)) {
-              next;
-          }  
+    @names = $_;
+#    }
+#    if (scalar(@names) == 2 or scalar(@names) == 1) {
+#        my @entries, \@names,
+#    } else {
+#        $log->log_and_die("Bad line:$_\n");
+#    }
 
-          my ($ids, $batch_id) = $db->new_strains([$public_name]);
-          my ($id) = keys %{$ids};
-                    
+    my $id;
+    foreach my $entry (@names) {
+        my ($public_name) = $entry;
+        if ($DOMAIN =~ /Strain/){
+            if (defined $public_name and not defined &_check_strain($public_name)) {
+                next;
+            }
+            my ($ids, $batch_id) = $db->new_strains([$public_name]);
+            ($id) = keys %{$ids};
+        }
+        
+        if ($DOMAIN =~ /Variation/){
+             next unless (defined &_check_var($public_name));
+             my ($ids, $batch_id) = $db->new_variations([$public_name]);
+             ($id) = keys %{$ids};
+        }
+        
+        
+        elsif ($DOMAIN =~ /Gene/){
+            if (defined $public_name and not defined &_check_gene($public_name)) {
+                next;
+            }  
+            my ($ids, $batch_id) = $db->new_genes([$public_name]);
+            ($id) = keys %{$ids};
+        }
+        
           print OUT "\n$DOMAIN : \"$id\"\n";
           print OUT "Public_name \"$public_name\"\n";
 #          print OUT "Other_name \"$other_name\"\n" if (defined $other_name);
@@ -114,16 +131,31 @@ while (<IN>) {
           if (defined $ace_file_template) {
               print OUT "$ace_file_template\n";
           }
-      }
+    }
+}
 $log->mail;
+# small function to check the strain public_name for sanity
+sub _check_strain {
+  my $name = shift;
+  my $strain;
+  my $strain_ref = $db->find_strains($name);
+  foreach my $hash (@{$strain_ref}) {
+    if ($hash->{'strain/name'} eq '$id') {$strain = $hash->{'strain/id'}}
+  }
+  if($strain) {  
+    print STDERR "ERROR: $name already exists as $strain\n";
+    return undef;
+  }
+  return 1;
+}
 
 # small function to check the variation public_name for sanity
-sub _check_name {
+sub _check_var {
   my $name = shift;
   my $var;
   my $var_ref = $db->find_variations($name);
   foreach my $hash (@{$var_ref}) {
-    if ($hash->{'variation/name'} eq '$id') {$var = $hash->{'variation/id'}}
+    if ($hash->{'name'} eq $name) {$var = $hash->{'id'}}
   }
   if($var) {  
     print STDERR "ERROR: $name already exists as $var\n";
@@ -131,6 +163,22 @@ sub _check_name {
   }
   return 1;
 }
+
+# small function to check the gene public_name for sanity
+sub _check_gene {
+  my $name = shift;
+  my $gene;
+  my $gene_ref = $db->find_genes($name);
+  foreach my $hash (@{$gene_ref}) {
+    if ($hash->{'name'} eq $name) {$gene = $hash->{'id'}}
+  }
+  if($gene) {  
+    print STDERR "ERROR: $name already exists as $gene\n";
+    return undef;
+  }
+  return 1;
+}
+
 
 __END__
 

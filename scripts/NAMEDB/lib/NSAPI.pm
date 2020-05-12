@@ -991,6 +991,61 @@ sub batch_split_genes {
 
 #======================================================================
 #======================================================================
+# BATCH STRAIN operations
+#======================================================================
+# new_strain($names, $why)
+
+# Assign identifiers and associate names, creating new strains
+
+# $names should be text string corresponding to the Public_name of a strain,
+# $why is optional.
+
+# Args:
+# $names - an array-ref of names to create Strain IDs for.
+# $why is optional remark text.
+
+# Returns a sequence of primary variation identifiers in the same order as the input names,
+# and a unique batch code (for undo).
+
+sub new_strains {
+  my ($self, $names, $why) = @_;
+
+  if (!defined $why) {$why = ''}
+
+  my $payload = '{"data": [';
+  $payload .= join(',', map { "{ \"name\": \"$_\" }" } @{$names});
+  $payload .= '], "prov": {';
+  $payload .= '"why": "'.$why.'"' if ($why ne '');
+  $payload .= '}}';
+  if ($self->noise()) {print $payload,"\n"}
+
+  return $self->batch('POST', 'entity/strain', $payload);
+
+}
+# find_strain($pattern)
+# returns a hash ref of any strain whose name matches the input pattern.
+# pattern can be any of a regular expression or part of the name of a WBStrainID, or name
+# patterns are case-sensitive
+# the pattern is contrained to match at the start of the name, use '.*' at the start of the pattern to match anywhere in the name
+# example patterns:
+# .*int
+
+# Args:
+# $pattern - string
+
+sub find_strains {
+  my ($self, $pattern) = @_;
+
+  my $encoded = CGI::escape($pattern);
+  
+  my $content = $self->curl("GET", "entity/strain/?pattern=$encoded");
+  if ($self->noise()) {print Dumper $content}
+  return $content
+}
+
+
+#======================================================================
+#======================================================================
 # BATCH VARIATIONS operations
 #======================================================================
 # new_variations($names, $why)
