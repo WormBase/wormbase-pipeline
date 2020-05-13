@@ -1102,10 +1102,10 @@
                           Qualifier_not          // to indicate that a disease is NOT modeled by X change tag WS262
                           Experimental_condition Inducing_chemical ?Molecule XREF Disease_model_inducer //to indicate the disease-inducing agent
                                                  Inducing_agent ?Text     //e.g. diet, radiation,etc not in Molecule class
-                          Modifier_info Modifier_transgene ?Transgene //genetic entity that modifies the disease
-                                        Modifier_variation ?Variation //(same as above)
-                                        Modifier_strain ?Strain       //(same as above)
-                                        Modifier_gene ?Gene           //to indicate the gene in the modifying Transgene, Variation, Strain.
+                          Modifier_info Modifier_transgene ?Transgene XREF Modifies_disease_in_annotation
+                                        Modifier_variation ?Variation XREF Modifies_disease_in_annotation
+                                        Modifier_strain ?Strain XREF Modifies_disease_in_annotation
+                                        Modifier_gene ?Gene XREF Modifies_disease_in_annotation
                                         Modifier_molecule ?Molecule XREF Disease_model_modifier  // to indicate chemical modifiers of the disease
                                         Modifier_genotype ?Genotype XREF Modifies_disease_in_annotation //to annotate genotype modifiers of disease
                                         Other_modifier ?Text          //to indicate other modifiers of the disease eg. diet,radiation, surgery etc
@@ -3668,9 +3668,9 @@
                        Phenotype_remark ?Text #Evidence
                        Phenotype_not_observed ?Phenotype XREF Not_in_Variation #Phenotype_info  //added by Wen to separate Not phenotype from real phenotypes
            Disease_info Models_disease ?DO_term XREF Disease_model_variation
-                        Modifies_disease ?DO_term  XREF  Disease_modifier_variation //New tag
-                        Models_disease_in_annotation  ?Disease_model_annotation  XREF  Variation //New tag
-                        Modifies_disease_in_annotation  ?Disease_model_annotation  XREF  Modifier_variation//New tag
+                        Modifies_disease ?DO_term XREF Disease_modifier_variation //New tag
+                        Models_disease_in_annotation ?Disease_model_annotation XREF Variation //New tag
+                        Modifies_disease_in_annotation ?Disease_model_annotation XREF Modifier_variation //New tag
            Reference ?Paper XREF Allele
            Remark ?Text #Evidence
            Method UNIQUE ?Method
