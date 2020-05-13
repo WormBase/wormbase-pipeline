@@ -1999,6 +1999,30 @@ sub kill_strains {
   return $info;
 
 }
+#############################################################################
+# find_variations($pattern)
+# returns an array-ref of hash-ref of any variations whose name matches the input pattern.
+# pattern can be any of a regular expression or part of the name of a WBVarID, or name
+# patterns are case-sensitive
+# the pattern is contrained to match at the start of the name, use '.*' at the start of the pattern to match anywhere in the name
+# example patterns:
+# .*int
+
+# Args:
+# $pattern - string
+#
+# Returns an array-ref of hash of 
+#      'id' => 'WBVar01000645'
+#      'name' => 'gk427998'
+#
+# If nothing is found, an empty array-ref is returned.
+
+sub find_strains {
+  my ($self, $pattern) = @_;
+
+  my $info = $self->{'db'}->find_strains($pattern);
+  return $info->{'matches'};
+}
 
 #############################################################################
 #Resurrect a batch of dead strains.
