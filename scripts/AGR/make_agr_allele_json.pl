@@ -118,18 +118,20 @@ sub process{
       synonyms      => [keys \%synonyms],
       secondaryIds => [],
       taxonId       => "NCBITaxon:" . $taxid,
-      gene          => "WB:$gene",
+#     gene          => "WB:$gene",
       crossReferences => [ { id => "WB:$obj", pages => ['allele','allele/references']}],
     };
     map { push @{$json_obj->{crossReferences}}, {id => "WB:$_", pages => ['reference']} } $obj->Reference;
+    $$json_obj{alleleObjectRelations}=[{objectRelation => {associationType => 'alleleOf', gene => "WB:$gene"}}];
 
     if ($obj->Corresponding_transgene){
 	    my $transgene = $obj->Corresponding_transgene;
 	    my $construct = $transgene->Construct;
 	    next unless $construct;
 
-	    $$json_obj{alleleObjectRelations}=[{objectRelation => {associationType => 'contains',construct => "WB:$construct"}}];
+	    push @$json_obj{alleleObjectRelations} , {objectRelation => {associationType => 'contains',construct => "WB:$construct"}};
     }
+
     push @alleles, $json_obj;
   }
 }
