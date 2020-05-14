@@ -74,7 +74,7 @@ my $query = "FIND Transcript WHERE Method != Coding_transcript"
     . " AND Species = \"".$wormbase->full_name."\"";
 
 $log->write_to("Fetching transcripts from db...\n") if $debug;
-my @transcripts = $db->fetch (-query => $query);
+my $transcripts = $db->fetch_many (-query => $query);
 
 
 ###########################################################################
@@ -85,7 +85,7 @@ my $outio = Bio::SeqIO->new(-format => 'fasta',
 
 $log->write_to("Writing transcript sequence...\n") if $debug;
 my %skipped;
-while( my $obj = shift @transcripts) {    
+while( my $obj = $transcripts->next) {    
   
   my $gene = $obj->Gene;
   my $method = $obj->Method;
@@ -113,22 +113,28 @@ while( my $obj = shift @transcripts) {
   $dna =~ s/^>\S+\s+//; 
   $dna =~ s/\s//g; 
   $dna =~ tr/a-z/A-Z/;
-
-  $seqs{$obj->name} = {
-    seq => $dna,
+  
+  #  $seqs{$obj->name} = {
+  #  md5  => md5_hex($dna),
+  #  gene => $gene->name,
+  #};
+  $seqs{md5_hex($dna)} = {
     gene => $gene->name,
+    transcript => $obj->name,
   };
+
 
   $dna =~ tr/T/U/; 
   my $desc .= "biotype=$brief_id gene=$gene";
-  $desc .= " locus=$cgc_name" if defined $cgc_name;
+  $desc    .= " locus=$cgc_name" if defined $cgc_name;
 
   my $seq = Bio::PrimarySeq->new(-seq => $dna,
                                  -id  => $obj,
                                  -desc => $desc);
 
   $outio->write_seq($seq);
-}   
+}
+
 $db->close;
 $wormbase->check_files($log);
 
@@ -148,39 +154,48 @@ sub add_rnacentral_xrefs {
   $log->write_to("Adding RNAcentral xrefs...\n") if $debug;
 
   my $lfile = "/tmp/rnacentral_md5s.wormbase.$$.gz";
-  $wormbase->run_command("wget -O $lfile $rnacentral_md5s");
+  unlink $lfile if -e $lfile;
+
+  $wormbase->run_command("wget -O $lfile $rnacentral_md5s",$log);
 
   my %ids_by_md5;
+  my %genes;
+  my %transcripts;
+  my $acefile = $wormbase->acefiles . "/rnacentral_xrefs.ace";
 
-  open(my $fh, "gunzip -c $lfile |") or $log->log_and_die("Could not open stream to $lfile\n");
+  open(my $fh, "zcat $lfile |") or $log->log_and_die("Could not open stream to $lfile\n");
   while(<$fh>) {
     /^(\S+)\s+(\S+)/ and do {
-      $ids_by_md5{$2}->{$1} = 1;
-    };
-  }
-  unlink $lfile;
+      my ($id,$md5)=("$1","$2");
 
-  my $acefile = $wormbase->acefiles . "/rnacentral_xrefs.ace";
-  open(my $outfh, ">$acefile") or $log->log_and_die("Could not open $acefile for writing\n");
-  
-  foreach my $rna (sort keys %seqs) {
-    my $md5 = md5_hex($seqs{$rna}->{seq});
-
-    if (exists $ids_by_md5{$md5}) {
-      my @rnac = sort keys %{$ids_by_md5{$md5}};
-
-      foreach my $entity (sprintf("Transcript : \"%s\"", $rna), 
-                          sprintf("Gene : \"%s\"", $seqs{$rna}->{gene})) {
-        print $outfh "\n$entity\n";
-        foreach my $acc (@rnac) {
-          print $outfh "Database \"RNAcentral\" \"URSid\" \"$acc\"\n";
+      if ($seqs{$md5}){
+         $genes{$seqs{$md5}->{gene}}||=[];
+         push @{$genes{$seqs{$md5}->{gene}}},$id;
+         $transcripts{$seqs{$md5}->{transcript}}||=[];
+         push @{$transcripts{$seqs{$md5}->{transcript}}},$id;
         }
       }
-    }
   }
+
+  unlink $lfile;
+
+  open(my $outfh, ">$acefile") or $log->log_and_die("Could not open $acefile for writing\n");
+
+  while (my($k,$v)=each (%genes)){
+	print $outfh "Gene : $k\n";
+        map {print $outfh "Database \"RNAcentral\" \"URSid\" \"$_\"\n"} @$v;
+	print $outfh "\n";
+  }
+
+  while (my($k,$v)=each (%transcripts)){
+	print $outfh "Transcript : $k\n";
+        map {print $outfh "Database \"RNAcentral\" \"URSid\" \"$_\"\n"} @$v;
+	print $outfh "\n";
+  }
+
+
   close($outfh) or $log->log_and_die("Could not close $acefile after writing\n");
 
-  #
   # To do: load to database
   # 
   if (not $noload) {
