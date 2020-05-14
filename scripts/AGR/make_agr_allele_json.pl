@@ -122,7 +122,7 @@ sub process{
       crossReferences => [ { id => "WB:$obj", pages => ['allele','allele/references']}],
     };
     map { push @{$json_obj->{crossReferences}}, {id => "WB:$_", pages => ['reference']} } $obj->Reference;
-    $$json_obj{alleleObjectRelations}=[{objectRelation => {associationType => 'alleleOf', gene => "WB:$gene"}}];
+    $$json_obj{alleleObjectRelations}=[{objectRelation => {associationType => 'allele_of', gene => "WB:$gene"}}];
 
     if ($obj->Corresponding_transgene){
 	    my $transgene = $obj->Corresponding_transgene;
