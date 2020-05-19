@@ -345,10 +345,16 @@ sub copy_dna_files{
       map { $copied_files{$_} = 1 } ($dna_file, $masked_file, $soft_file);
       
       # copy over outstanding dna files
-      foreach my $dna_file (glob("$seqdir/*.dna.gz"), glob("$seqdir/*.dna")) {
+      foreach my $dna_file (glob("$seqdir/*.dna.gz"), glob("$seqdir/*.dna"), glob("$seqdir/*.pep")) {
         if (not exists $copied_files{$dna_file}) {
-          my ($prefix) = $dna_file =~ /$seqdir\/(\S+)\.dna/;
-          my $target = "$dna_dir/${gspecies}.${bioproj}.${WS_version_name}.$prefix.fa.gz";
+          my ($prefix) = $dna_file =~ /$seqdir\/(\S+)\./;
+          my $target;
+          if ($dna_file =~ /pep/) {
+              $target = "$dna_dir/${gspecies}.${bioproj}.${WS_version_name}.$prefix.pep.gz";
+          }
+          else {
+              $target = "$dna_dir/${gspecies}.${bioproj}.${WS_version_name}.$prefix.fa.gz";
+          }
           if ($dna_file =~ /\.gz$/) {
             $wormbase->run_command("cp -f $dna_file $target", $log);
           } else {
@@ -1379,6 +1385,7 @@ GSPECIES.BIOPROJ.WSREL.gene_product_info.gpi.gz
 GSPECIES.BIOPROJ.WSREL.wormpep_package.tar.gz
 GSPECIES.BIOPROJ.WSREL.transposon_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.transposons.fa.gz
+GSPECIES.BIOPROJ.WSREL.transposon_cds.pep.gz
 
 [CORE]species/GSPECIES/BIOPROJ/annotation
 GSPECIES.BIOPROJ.WSREL.functional_descriptions.txt.gz

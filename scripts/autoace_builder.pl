@@ -181,6 +181,7 @@ if ($cdna_files) {
     my @options = "-classmethod CDS:Transposon_CDS:Transposon-mRNA -classmethod Pseudogene:Transposon_Pseudogene:Transposon-pseudogenic_transcript -classmethod Transcript:Transposon_ncRNA:Transposon-non-coding_transcript";
     $wormbase->run_script( "fasta_dumper.pl @options -output $seqdir/transposon_transcripts.dna", $log);
     $wormbase->run_script( "fasta_dumper.pl -classmethod Transposon:Transposon -output $seqdir/transposons.dna", $log);
+    $wormbase->run_script( "fasta_dumper.pl -classmethod CDS:Transposon_cds -pep -output $seqdir/transposon_cds.pep", $log);
   }
 }
 

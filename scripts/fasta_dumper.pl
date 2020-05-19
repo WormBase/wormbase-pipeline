@@ -19,7 +19,7 @@ use Bio::PrimarySeq;
 use Bio::SeqIO;
 
 my ($debug, $store, $verbose, $database, $test, $wormbase, $species, 
-    @classmethodlabel, $out, @seqs);
+    @classmethodlabel, $out, @seqs, $pep);
 
 GetOptions ( "debug:s"               => \$debug, 
 	     "verbose"               => \$verbose,           #verbose quces a little more info to screen
@@ -29,6 +29,7 @@ GetOptions ( "debug:s"               => \$debug,
 	     "test"                  => \$test,       #invoke test env
 	     "store:s"               => \$store,      #supply a storable
 	     "species:s"             => \$species,    #needed to work out what species is being processed
+             "pep"                   => \$pep         #peptide dump 
 	   ) ;
 
 
@@ -68,7 +69,13 @@ foreach my $classmethodlabel (@classmethodlabel) {
 
   my $object_it = $connection->fetch_many(-query => $query);
   while(my $object = $object_it->next){
-    my $dna = $object->asDNA();
+      my $dna;
+      if ($pep) {
+          $dna = $object->asPeptide();
+      }
+      else {
+          $dna = $object->asDNA();
+      }
     my @dna = split(/\n/, $dna);
     shift @dna;
     $dna = join("", @dna);
