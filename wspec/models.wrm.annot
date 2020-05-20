@@ -345,7 +345,9 @@
         Disease_info Experimental_model ^disease-experimental-model ?DO_term OUTXREF Gene_by_biology ?Species #Evidence
                      Potential_model ^disease-potential-model ?DO_term OUTXREF Gene_by_orthology ?Species #Evidence
                      Disease_relevance ?Text ^note ?Species #Evidence
-        Disease_model_annotation ?Disease_model_annotation INXREF Disease_relevant_gene
+        Modifies_disease ?DO_term INXREF Disease_modifier_gene //New tag WS278
+        Models_disease_in_annotation ?Disease_model_annotation INXREF Disease_relevant_gene //New tag WS278
+        Modifies_disease_in_annotation ?Disease_model_annotation INXREF Modifier_gene //New tag WS278
         Molecular_info Corresponding_CDS ?CDS OUTXREF Gene #Evidence             // to link to live CDSs
                        Corresponding_CDS_history ?CDS OUTXREF Gene_history       // to link to history CDSs
                        Corresponding_transcript ?Transcript OUTXREF Gene #Evidence
@@ -688,7 +690,9 @@
                   Clone ?Clone INXREF In_strain
                   Transgene ?Transgene INXREF Strain
          Disease_info Models_disease ?DO_term INXREF Disease_model_strain
-                      Disease_model_annotation ?Disease_model_annotation INXREF Strain
+                      Modifies_disease ?DO_term INXREF Disease_modifier_strain //New tag
+                      Models_disease_in_annotation ?Disease_model_annotation INXREF Strain //New tag
+                      Modifies_disease_in_annotation ?Disease_model_annotation INXREF Modifier_strain //New tag         
          Database ?Database ^database ?Database_field ^field ?Text ^accession
          Properties Inbreeding_state UNIQUE Selfed // Text
                                             Isofemale // Text
@@ -1099,11 +1103,11 @@
 
 ?Disease_model_annotation Disease_term UNIQUE ?DO_term OUTXREF Disease_model_annotation
                           Disease_of_species ?Species
-                          Modeled_by Strain ^modeled-by-strain UNIQUE ?Strain OUTXREF Disease_model_annotation ?Text
-                                     Variation ^modeled-by-variation UNIQUE ?Variation OUTXREF Disease_model_annotation ?Text
-                                     Transgene ^modeled-by-transgene UNIQUE ?Transgene OUTXREF Disease_model_annotation ?Text
-                                     Disease_relevant_gene ^modeled-by-disease-relevant-gene UNIQUE ?Gene OUTXREF Disease_model_annotation ?Text
-                                     Genotype  ^modeled-by-genotype UNIQUE ?Genotype INXREF Models_disease_in_annotation //to associate genotypes
+                          Modeled_by Strain ^modeled-by-strain UNIQUE ?Strain OUTXREF Models_disease_in_annotation ?Text
+                                     Variation ^modeled-by-variation UNIQUE ?Variation OUTXREF Models_disease_in_annotation ?Text
+                                     Transgene ^modeled-by-transgene UNIQUE ?Transgene OUTXREF Models_disease_in_annotation ?Text
+                                     Disease_relevant_gene ^modeled-by-disease-relevant-gene UNIQUE ?Gene OUTXREF Models_disease_in_annotation ?Text
+                                     Genotype ^modeled-by-genotype UNIQUE ?Genotype OUTXREF Models_disease_in_annotation //to associate genotypes
                                      Modeled_by_remark UNIQUE ?Text
                           Annotation_made_with Interacting_variation ?Variation //Addition for WS261
                                                Interacting_transgene ?Transgene
@@ -1116,15 +1120,16 @@
                                                   causes_condition
                                                   contributes_to_condition
                                                   is_marker_for
-                          Evidence_code ?GO_code
+                          Evidence_code GO_code ?GO_code
+                                        ECO_term ?ECO_term
                           Qualifier_not
                           Experimental_condition Inducing_chemical ?Molecule OUTXREF Disease_model_inducer
                                                  Inducing_agent ?Text
-                          Modifier_info Modifier_transgene ?Transgene
-                                        Modifier_variation ?Variation
-                                        Modifier_strain ?Strain
-                                        Modifier_gene ?Gene
-                                        Modifier_molecule ?Molecule OUTXREF Disease_model_modifier
+                          Modifier_info Modifier_transgene ?Transgene OUTXREF Modifies_disease_in_annotation
+                                        Modifier_variation ?Variation OUTXREF Modifies_disease_in_annotation
+                                        Modifier_strain ?Strain OUTXREF Modifies_disease_in_annotation
+                                        Modifier_gene ?Gene OUTXREF Modifies_disease_in_annotation
+                                        Modifier_molecule ?Molecule OUTXREF Disease_model_modifier  // to indicate chemical modifiers of the disease
                                         Modifier_genotype ?Genotype INXREF Modifies_disease_in_annotation //to annotate genotype modifiers of disease
                                         Other_modifier ?Text
                           Modifier_association_type UNIQUE condition_ameliorated_by
@@ -1152,6 +1157,7 @@
 
 
 ?GO_annotation  Gene UNIQUE ?Gene OUTXREF GO_annotation
+                ECO_term UNIQUE ?ECO_term
                 GO_term UNIQUE ?GO_term OUTXREF GO_annotation
                 GO_code UNIQUE ?GO_code
                 Annotation_relation UNIQUE ?RO_term XREF GO_annotation
@@ -1222,6 +1228,24 @@
 ?GO_code Description ?Text
          Remark ?Text #Evidence
 
+///////////////////////////////////////////////////////////////
+//
+// ?ECO_term class - kimberly WS278
+//                
+////////////////////////////////////////////////////////////////
+
+?ECO_term Name UNIQUE ?Text
+          Status UNIQUE Valid
+                        Obsolete
+          Alt_id ?Text
+          Definition UNIQUE ?Text
+          Synonym Broad ?Text
+                  Exact ?Text
+                  Narrow ?Text
+                  Related ?Text
+          Child ?ECO_term OUTXREF Parent
+          Parent ?ECO_term INXREF Child
+          Version UNIQUE Text
 
 ///////////////////////////////////////////////////////////////
 //
@@ -1297,12 +1321,17 @@
                       Phenotype ?Phenotype INXREF DO_term
                       WBProcess ?WBProcess INXREF DO_term
 //                      Reference ?Paper OUTXREF DO_term
+                      Disease_modifier_gene ?Gene OUTXREF Modifies_disease // Tag missing from original proposal WS268
                       Disease_model_variation ?Variation INXREF Models_disease
+                      Disease_modifier_variation ?Variation OUTXREF Modifies_disease //New tag
                       Disease_model_strain ?Strain INXREF Models_disease
+                      Disease_modifier_strain ?Strain OUTXREF Modifies_disease       //New tag
                       Disease_model_transgene ?Transgene INXREF Models_disease
+                      Disease_modifier_transgene ?Transgene OUTXREF Modifies_disease //New tag
                       Disease_model_genotype ?Genotype INXREF Models_disease
                       Disease_modifier_genotype ?Genotype INXREF Modifies_disease
                       Chemical_inducer ?Molecule INXREF Induces_disease
+                      Other_inducer ?Text                                      //New tag
                       Molecule_modifier ?Molecule INXREF Modifies_disease
          Reagent_info Associated_antibody ?Antibody INXREF Antibody_for_disease
                       Associated_construct ?Construct INXREF Construct_for_disease
@@ -2778,7 +2807,9 @@
                                 Component_of_genotype ?Genotype INXREF Transgene
                                 Transgene_for_disease ?DO_term OUTXREF Associated_transgene #Evidence
                 Disease_info Models_disease ?DO_term INXREF Disease_model_transgene
-                             Disease_model_annotation ?Disease_model_annotation INXREF Transgene
+                             Modifies_disease ?DO_term INXREF Disease_modifier_transgene //New tag
+                             Models_disease_in_annotation ?Disease_model_annotation INXREF Transgene //New tag
+                             Modifies_disease_in_annotation ?Disease_model_annotation INXREF Modifier_transgene //New tag
                 Reference ?Paper OUTXREF Transgene
                 Species UNIQUE ?Species
                 Remark ?Text #Evidence
@@ -2990,7 +3021,8 @@
                         Not_in_Strain ?Strain INXREF Phenotype_not_observed //added by Wen for Not observed phenotypes
                         Not_in_Transgene ?Transgene INXREF Phenotype_not_observed //added by Wen for Not observed phenotypes
                         Not_in_Rearrangement ?Rearrangement INXREF Phenotype_not_observed //added by Wen for Not observed phenotypes
-           Associated_with GO_term ?GO_term OUTXREF Phenotype ?GO_code #Evidence   // Tag Associated_with changed by Carol
+           Associated_with GO_term ?GO_term
+                           ECO_term ?ECO_term    // Tag changes from GO to ECO for WS278
                            WBProcess ?WBProcess INXREF Phenotype
                            DO_term ?DO_term OUTXREF Phenotype #Evidence
 
@@ -3659,7 +3691,9 @@
                        Phenotype_remark ?Text #Evidence
                        Phenotype_not_observed ?Phenotype OUTXREF Not_in_Variation #Phenotype_info  //added by Wen to separate Not phenotype from real phenotypes
            Disease_info Models_disease ?DO_term INXREF Disease_model_variation
-                        Disease_model_annotation ?Disease_model_annotation INXREF Variation
+                        Modifies_disease ?DO_term INXREF Disease_modifier_variation //New tag
+                        Models_disease_in_annotation ?Disease_model_annotation INXREF Variation //New tag
+                        Modifies_disease_in_annotation ?Disease_model_annotation INXREF Modifier_variation //New tag
            Reference ?Paper OUTXREF Allele
            Remark ?Text #Evidence
 //           Method UNIQUE ?Method       // Becomes :locatable/method
@@ -3953,7 +3987,7 @@
 
 
 // CVS tagging lines
-// Add a line for the WS release the models file is going to be CVS tagged for
-// This give you a final shot at creating a nicely formatted CVS commit message
+// Add a line for the WS release the models file is going to be GIT tagged for
+// This give you a final shot at creating a nicely formatted GIT commit message
 //
-// WS272
+// WS278

@@ -1080,10 +1080,10 @@
 //////////////////////////////////////////
 ?Disease_model_annotation Disease_term UNIQUE ?DO_term XREF Disease_model_annotation
                           Disease_of_species ?Species
-                          Modeled_by Strain UNIQUE ?Strain XREF Models_disease_in_annotation ?Text               // WS268 XREF tag modified
-                                     Variation UNIQUE ?Variation XREF Models_disease_in_annotation ?Text         // WS268 XREF tag modified
-                                     Transgene UNIQUE ?Transgene XREF Models_disease_in_annotation ?Text         // WS268 XREF tag modified
-                                     Disease_relevant_gene UNIQUE ?Gene XREF Models_disease_in_annotation ?Text  // WS268 XREF tag modified
+                          Modeled_by Strain UNIQUE ?Strain XREF Models_disease_in_annotation ?Text               // WS278 XREF tag modified
+                                     Variation UNIQUE ?Variation XREF Models_disease_in_annotation ?Text         // WS278 XREF tag modified
+                                     Transgene UNIQUE ?Transgene XREF Models_disease_in_annotation ?Text         // WS278 XREF tag modified
+                                     Disease_relevant_gene UNIQUE ?Gene XREF Models_disease_in_annotation ?Text  // WS278 XREF tag modified
                                      Genotype UNIQUE ?Genotype XREF Models_disease_in_annotation //to associate genotypes
                                      Modeled_by_remark UNIQUE ?Text
                           Annotation_made_with Interacting_variation ?Variation //Addition for WS261
@@ -1098,7 +1098,7 @@
                                                   contributes_to_condition
                                                   is_marker_for
                           Evidence_code GO_code ?GO_code // will use ECO later on
-                                        ECO_term ?ECO_term XREF Disease_model_annotation
+                                        ECO_term ?ECO_term 
                           Qualifier_not          // to indicate that a disease is NOT modeled by X change tag WS262
                           Experimental_condition Inducing_chemical ?Molecule XREF Disease_model_inducer //to indicate the disease-inducing agent
                                                  Inducing_agent ?Text     //e.g. diet, radiation,etc not in Molecule class
@@ -1135,7 +1135,7 @@
 
 
 ?GO_annotation Gene UNIQUE ?Gene XREF GO_annotation
-               ECO_term UNIQUE ?ECO_term XREF GO_annotation
+               ECO_term UNIQUE ?ECO_term
                GO_term UNIQUE ?GO_term XREF GO_annotation
                GO_code UNIQUE ?GO_code
                Annotation_relation UNIQUE ?RO_term XREF GO_annotation
@@ -1228,8 +1228,6 @@
                   Related ?Text
           Child ?ECO_term XREF Parent
           Parent ?ECO_term XREF Child
-          Attribute_of GO_annotation ?GO_annotation XREF ECO_term
-                       Disease_model_annotation ?Disease_model_annotation XREF ECO_term
           Version UNIQUE Text
 
 ///////////////////////////////////////////////////////////////
@@ -3967,4 +3965,4 @@
 // Add a line for the WS release the models file is going to be CVS tagged for
 // This give you a final shot at creating a nicely formatted CVS commit message
 //
-// WS274
+// WS278
