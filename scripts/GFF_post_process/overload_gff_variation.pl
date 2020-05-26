@@ -143,7 +143,7 @@ while (<$gff_in_fh>) {
           $new_term = "substitution";
           
           if ($current_els[3] == $current_els[4] and 
-              scalar(@subs) == 2 and
+              scalar(@subs) >= 2 and
               length($subs[0]) == 1 and 
               length($subs[1]) == 1) {
             # single nucleotide
