@@ -61,5 +61,5 @@ echo \
                         -source           'Manual'
 done
 
-echo -n "Done at"
+echo -n "Done at "
 date
