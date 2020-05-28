@@ -130,12 +130,12 @@ while( my $obj = $it->next) {
   # [200310 mh6]
   # based on a list of annotations to skip for AGR from 
   # https://wiki.wormbase.org/index.php/Specifications_for_data_submission_to_the_Alliance
+  # * had Qualifier_not as not to be submitted, but that changed with 3.1.0
   unless ($build) {
 	  next if ($obj->Interacting_variation
 	         ||$obj->Interacting_transgene
 	         ||$obj->Interacting_gene
 	         ||$obj->RNAi_experiment
-	         ||$obj->Qualifier_not
 	         ||$obj->Inducing_chemical
 	         ||$obj->Modifier_transgene
 	         ||$obj->Modifier_variation
@@ -208,7 +208,7 @@ while( my $obj = $it->next) {
   $annot->{objectId} = $obj_id;
   $annot->{objectName} = $obj_name;
   $annot->{with} = \@with_list if (@with_list && $build);
-  
+
   # modifiers
   
   if ($obj->Modifier_association_type) {
