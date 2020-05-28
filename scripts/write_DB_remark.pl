@@ -155,7 +155,7 @@ if ($do_cds) {
     
     $gene = $cds->Gene;
     unless( defined $gene) {
-      $log->write_to("ERROR :".$cds->name." has no Gene\n");
+      $log->write_to("ERROR: ".$cds->name." has no Gene\n");
       next;
     }
     
