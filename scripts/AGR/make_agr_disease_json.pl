@@ -208,6 +208,7 @@ while( my $obj = $it->next) {
   $annot->{objectId} = $obj_id;
   $annot->{objectName} = $obj_name;
   $annot->{with} = \@with_list if (@with_list && $build);
+  $annot->{negation} = 'not' if $obj->at('Qualifier_not');
 
   # modifiers
   
