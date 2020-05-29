@@ -94,6 +94,7 @@ init miRNA_primary_transcript elegans briggsae pristionchus japonica brenneri re
 init asRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti tmuris
 init lincRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti tmuris
 init piRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti tmuris
+init circRNA elegans briggsae pristionchus japonica brenneri remanei brugia ovolvulus sratti tmuris
 init 7kncRNA elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti tmuris
 blat BLAT_EST_BEST elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti tmuris
 blat BLAT_EST_OTHER elegans briggsae remanei pristionchus japonica brenneri brugia ovolvulus sratti tmuris

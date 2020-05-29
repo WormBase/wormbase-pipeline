@@ -66,6 +66,7 @@ sub process_disease_variations{
 	foreach my $v(@vars){
 	        $it = $db->fetch_many(Variation => $v);
 		process($it);
+	}
 }
 
 sub grab_disease_variations{
@@ -117,23 +118,20 @@ sub process{
       synonyms      => [keys \%synonyms],
       secondaryIds => [],
       taxonId       => "NCBITaxon:" . $taxid,
-      gene          => "WB:$gene",
+#     gene          => "WB:$gene",
       crossReferences => [ { id => "WB:$obj", pages => ['allele','allele/references']}],
     };
     map { push @{$json_obj->{crossReferences}}, {id => "WB:$_", pages => ['reference']} } $obj->Reference;
+    $$json_obj{alleleObjectRelations}=[{objectRelation => {associationType => 'allele_of', gene => "WB:$gene"}}];
 
     if ($obj->Corresponding_transgene){
 	    my $transgene = $obj->Corresponding_transgene;
 	    my $construct = $transgene->Construct;
 	    next unless $construct;
-	    $$json_obj{construct}="WB:$construct";
-	    next unless $transgene->Genetic_information; # skip the transgenes where the type hasn't been curated
-            if(grep {$_ eq 'Integrated'} $transgene->Genetic_information){
-	        $$json_obj{constructInsertionType}='Transgenic Insertion'
-	    }elsif(grep {$_ eq 'Extrachromosomal'} $transgene->Genetic_information){
-                $$json_obj{constructInsertionType}='Extrachromosomal Array'
-	    }else{next}
+
+	    push @$json_obj{alleleObjectRelations} , {objectRelation => {associationType => 'contains',construct => "WB:$construct"}};
     }
+
     push @alleles, $json_obj;
   }
 }

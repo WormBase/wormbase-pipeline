@@ -69,6 +69,27 @@ foreach my $g (@genes){
 	process_genes_phenotype($g,@objects) if $objects[0];
 }
 
+my $data = {
+  metaData => AGR::get_file_metadata_json( (defined $ws_version) ? $ws_version : $wormbase->get_wormbase_version_name(), $date ),
+  data     => \@pheno_annots,
+};
+
+if (defined $outfile) {
+  open $out_fh, ">$outfile" or die "Could not open $outfile for writing\n";
+} else {
+  $out_fh = \*STDOUT;
+}
+
+my $json_obj = JSON->new;
+my $string   = $json_obj->allow_nonref->canonical->pretty->encode($data);
+print $out_fh $string;
+
+$db->close;
+
+exit(0);
+
+##############################################
+
 # bit to process linked phenotypes
 sub process_genes_phenotype{
 	my $gen = shift @_;
@@ -76,6 +97,8 @@ sub process_genes_phenotype{
 
         foreach my $obj(@secondaries){
 		next unless $obj->Phenotype;
+		my @linked_genes = $obj->Gene;
+		next if scalar(@linked_genes)>1; # to remove variants with more than one gene connection
 		my @phenotypes = $obj->Phenotype;
   
 	        foreach my $pt (@phenotypes){
@@ -95,7 +118,6 @@ sub process_genes_phenotype{
 		  #  foreach my $wb_paper ($obj->Reference) {
 		  #     push @paper, &get_paper_json($wb_paper);
 		  #  }
-		 }
 
         	 foreach my $pap (@paper) {
 	          my $json_obj = {
@@ -109,7 +131,7 @@ sub process_genes_phenotype{
 	          push @pheno_annots, $json_obj;
         	}
 	    }
-     }
+	}
 }
 
 
@@ -174,26 +196,6 @@ sub process {
    }
 }
 
-my $data = {
-  metaData => AGR::get_file_metadata_json( (defined $ws_version) ? $ws_version : $wormbase->get_wormbase_version_name(), $date ),
-  data     => \@pheno_annots,
-};
-
-if (defined $outfile) {
-  open $out_fh, ">$outfile" or die "Could not open $outfile for writing\n";
-} else {
-  $out_fh = \*STDOUT;
-}
-
-my $json_obj = JSON->new;
-my $string   = $json_obj->allow_nonref->canonical->pretty->encode($data);
-print $out_fh $string;
-
-$db->close;
-
-exit(0);
-
-##############################################
 sub get_paper_json {
   my ($wb_paper) = @_;
   my $json_paper = {};

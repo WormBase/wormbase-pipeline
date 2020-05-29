@@ -2,43 +2,45 @@
 # create consecutive new features in the name server based on a number requested
 
 use lib "$ENV{'CVS_DIR'}/NAMEDB/lib";
+
 use lib $ENV{'CVS_DIR'};
 
 use strict;
 use NameDB_handler;
 use Getopt::Long;
+use Wormbase;
 
-my($test,$request,$USER);
+my($test,$request);
+my ($help, $debug, $verbose, $store, $wormbase);
 
-GetOptions (	"test"       => \$test,
+GetOptions (	"help"       => \$help,
+		"debug=s"    => \$debug,
+		"verbose"    => \$verbose,
+		"store:s"    => \$store,
 		"request:i"  => \$request, # how many features to create
-		"user:s"     => \$USER
            );
+
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             );
+}
+
 
 die "give me a number of features that you want\n"  unless ($request =~ /^\d+$/);
 
 my $first_id = undef;
 my $last_id;
 
-#connect to name server and set domain to 'Feature'
-my $DB = 'nameserver_live;web-wwwdb-core-02;3449';
-$DB    = 'test_wbgene_id;utlt-db:3307' if $test;
-my $DOMAIN  = 'Feature';
-my $db = NameDB_handler->new($DB,$USER,$USER);
-$db->setDomain('Feature');
+my $db = NameDB_handler->new($wormbase);
 
-my $c = 0;
-while( $c < $request ){
-    my $id = $db->idCreate;
-    print "$id\n";
-    if (!defined $first_id) {$first_id = $id}
-    $last_id = $id;
-    $c++;
-}
+my ($new_ids, $batch) = $db->new_features($request);
 
 print "Made $request new feature IDs\n";
-print "First ID assigned:  $first_id\n";
-print "Last ID assigned:   $last_id\n";
+print "First ID assigned:  ".$new_ids->[0]."\n";
+print "Last ID assigned:   ".$new_ids->[-1]."\n";
+print "Nameserver batch ID: $batch\n";
 
 exit;
 
@@ -48,6 +50,6 @@ Adds batches of feature ids to the nameserver
 
 =over 4
 
-batch_newfeature.pl -user ar2 -request 10
+batch_newfeature.pl -request 10
 
 =end

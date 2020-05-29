@@ -28,25 +28,25 @@ my ($database, $confirmed_introns, $qtype, $qspecies, $map_to_clone);
 my ($acefile, $pslfile, $virtualobjsfile, $confirmedfile, $bestm, $otherm, $group_align_segs, $min_coverage, %query_seen, $batch_by_query);
 
 GetOptions (
-  "help"          => \$help,
-  "debug=s"       => \$debug,
-  "test"          => \$test,
-  "verbose"       => \$verbose,
-  "store:s"       => \$store,
-  "species:s"     => \$species,
-  "database:s"    => \$database,
-  "intron"        => \$confirmed_introns,
-  "cifile:s"      => \$confirmedfile,
-  "clone"         => \$map_to_clone,
-  "vfile:s"       => \$virtualobjsfile,
-  "type:s"        => \$qtype,
-  "qspecies:s"    => \$qspecies, #query species
-  "ace:s"         => \$acefile,
-  "psl:s"         => \$pslfile,
-  "groupaligns"   => \$group_align_segs,
-  "mincoverage=s" => \$min_coverage,
-  "batchbyquery"  => \$batch_by_query,
-    );
+  'help'          => \$help,
+  'debug=s'       => \$debug,
+  'test'          => \$test,
+  'verbose'       => \$verbose,
+  'store:s'       => \$store,
+  'species:s'     => \$species,
+  'database:s'    => \$database,
+  'intron'        => \$confirmed_introns,
+  'cifile:s'      => \$confirmedfile,
+  'clone'         => \$map_to_clone,
+  'vfile:s'       => \$virtualobjsfile,
+  'type:s'        => \$qtype,
+  'qspecies:s'    => \$qspecies, #query species
+  'ace:s'         => \$acefile,
+  'psl:s'         => \$pslfile,
+  'groupaligns'   => \$group_align_segs,
+  'mincoverage=s' => \$min_coverage,
+  'batchbyquery'  => \$batch_by_query,
+)||die(@!);
 
 
 if ( $store ) {
@@ -103,23 +103,23 @@ if (defined $accessor) {
 $log->write_to($wormbase->runtime.": Start mapping $qspecies $qtype\n\n");
 
 # open input and output filehandles
-$acefile = sprintf("%s/%s.blat.%s_%s.ace", $blat_dir, $wormbase->species, $qspecies, $qtype)
+$acefile = sprintf('%s/%s.blat.%s_%s.ace', $blat_dir, $wormbase->species, $qspecies, $qtype)
     unless $acefile;
-$pslfile = sprintf("%s/%s_%s_out.psl", $blat_dir, $qspecies, $qtype) 
+$pslfile = sprintf('%s/%s_%s_out.psl', $blat_dir, $qspecies, $qtype) 
     unless $pslfile;
-$virtualobjsfile = sprintf("%s/virtual_objects.%s.blat.%s.%s.ace", $blat_dir, $wormbase->species, $qtype, $qspecies) 
+$virtualobjsfile = sprintf('%s/virtual_objects.%s.blat.%s.%s.ace', $blat_dir, $wormbase->species, $qtype, $qspecies) 
     unless defined $virtualobjsfile;
 
   
 if (grep(/$qspecies/, @nematodes)) {
-  $bestm = $otherm = "BLAT_".uc($qspecies);
+  $bestm = $otherm = 'BLAT_'.uc($qspecies);
   
 } else {
   my $mpre = $qspecies eq $wormbase->species 
       ? "BLAT_${qtype}" 
       : "BLAT_Caen_${qtype}";
-  $bestm = $mpre . "_BEST";
-  $otherm = $mpre . "_OTHER";
+  $bestm = $mpre . '_BEST';
+  $otherm = $mpre . '_OTHER';
 }
 
 
@@ -183,7 +183,7 @@ open($out_fh, ">$acefile") or $log->log_and_die("Could not open $acefile for wri
 
 if ($confirmed_introns) {
   if (not defined $confirmedfile) {
-    $confirmedfile = sprintf("%s/%s.ci.%s_%s.ace", $blat_dir, $wormbase->species, $qspecies, $qtype);
+    $confirmedfile = sprintf('%s/%s.ci.%s_%s.ace', $blat_dir, $wormbase->species, $qspecies, $qtype);
   }
   open $confirmed_fh, ">$confirmedfile" or $log->log_and_die("Could not open $confirmedfile for writing\n");
 }
@@ -194,7 +194,7 @@ foreach my $seq_group (@sequence_groups) {
 
   map { $batch{$_} = 1 } @$seq_group;
 
-  $log->write_to($wormbase->runtime.":  Doing batch with " . scalar(@$seq_group) . " targets...\n");
+  $log->write_to($wormbase->runtime.':  Doing batch with '. scalar(@$seq_group) .' targets...\n');
 
   open(BLAT, "<$pslfile") or $log->log_and_die("Could open $pslfile $!\n");
 
@@ -279,7 +279,7 @@ foreach my $seq_group (@sequence_groups) {
     # we want to flip the strands such that the query is always forward (easier that way)
     if ($qstrand eq '-') {
       $qstrand = '+';
-      $tstrand = ($tstrand eq '+') ? "-" : "+";
+      $tstrand = ($tstrand eq '+') ? '-' : '+';
     }
     
     my $hit =  {
@@ -328,7 +328,6 @@ foreach my $seq_group (@sequence_groups) {
               }
             }
           }
-          
         }
       }
 
@@ -336,7 +335,7 @@ foreach my $seq_group (@sequence_groups) {
         push @nr_hits, $hit;
       } else {
         # disregarding this hit
-        if (sprintf("%.1f", $hit->{coverage}) eq sprintf("%.1f",  $best_coverage{$qname})) {
+        if (sprintf('%.1f', $hit->{coverage}) eq sprintf('%.1f',  $best_coverage{$qname})) {
           $best_coverage{$qname}->{count}--;
         }
       }
@@ -452,10 +451,10 @@ sub write_ace_top_level {
     
 
       $hit->{bin} = $bin;
-      my $parent = sprintf("BLAT_%s:%s%s", 
+      my $parent = sprintf('BLAT_%s:%s%s', 
                            $type,
                            $tname,
-                           ($bin) ? "_$bin" : "");
+                           ($bin) ? "_$bin" : '');
       
       if (not exists $virtuals{$tname}->{$parent}) {
         $virtuals{$tname}->{$parent} = [$bin_start, $bin_end];
@@ -494,7 +493,7 @@ sub write_ace_bottom_level {
 
         if ($seq_end < $seq_start) {
           # flip strand
-          $hit->{tstrand} = ($hit->{tstrand} eq "+") ? "-" : "+";
+          $hit->{tstrand} = ($hit->{tstrand} eq '+') ? '-' : '+';
         }
 
         foreach my $seg (@{$hit->{segments}}) {
@@ -507,7 +506,7 @@ sub write_ace_bottom_level {
 
       push @{$mapped_down_hits{$hit->{tname}}}, $hit;
 
-      my $parent = sprintf("BLAT_%s:%s", 
+      my $parent = sprintf('BLAT_%s:%s', 
                            $type,
                            $hit->{tname});
 
@@ -539,7 +538,7 @@ sub write_ace {
                "\nHomol_data : \"BLAT_%s:%s%s\"\n", 
                $type,
                $tname,
-               $hit->{bin} ? "_" . $hit->{bin} : "");
+               $hit->{bin} ? '_'. $hit->{bin} : '');
         $prev_bin = $hit->{bin};
       }
       
@@ -549,11 +548,11 @@ sub write_ace {
         printf($outfh "DNA_homol\t\"%s\"\t%s\t%.1f\t%d\t%d\t%d\t%d%s\n", 
                $hit->{qname},
                ($hit->{isbest}) ? $best_m : $other_m,
-               $hit->{coverage},
-               $hit->{tstrand} eq "+" ? $seg->{tstart} : $seg->{tend},
-               $hit->{tstrand} eq "+" ? $seg->{tend}   : $seg->{tstart},
-               $seg->{qstart},
-               $seg->{qend}, 
+                $hit->{coverage},
+                $hit->{tstrand} eq "+" ? $seg->{tstart} : $seg->{tend},
+                $hit->{tstrand} eq "+" ? $seg->{tend}   : $seg->{tstart},
+                $seg->{qstart},
+                $seg->{qend}, 
                ($group_align_segs) ? "\tAlign_id " . $query_seen{$hit->{qname}} : "",
                );
         
@@ -644,4 +643,3 @@ sub confirm_introns {
 }
 
 __END__
-

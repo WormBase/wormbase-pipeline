@@ -109,19 +109,18 @@ while (my ( $gene, $live ) = $sth->fetchrow_array){
         open($dump_fh, "<$dump") or $log->log_and_die("Can't open $dump\n"); 
         while ( my $line = <$dump_fh> ) {
             chomp $line;
-            #    next unless /WBGene/;
             my @f = split ",", $line;
-            $gene = $f[0];
-            
+            unless ($f[0] =~ /WBGene/) {next;}
+            $gene = $f[0];            
             #Store the cgc and seq names
-            if ($f[1] =~ /\W+/) {
+            if ($f[1] =~ /\S+/) {
                 $server_genes{$gene}->{'cgc'} = $f[1]; 
             }
-            if ($f[2] =~ /\W+/) {
-                $server_genes{$gene}->{'seq'} = $f[1]; 
+            if ($f[2] =~ /\S+/) {
+                $server_genes{$gene}->{'seq'} = $f[2]; 
             }
             #Status 1 or 0
-            if ($f[3] =~ /Live/) {
+            if ($f[3] =~ /live/) {
                 $server_genes{$gene}->{'sts'} = "1";
             }
             else {
@@ -159,7 +158,7 @@ sub check_gene {
 	  if( $server_genes{"$gene"} ){
 	      # check Live 
 	      if ($ace_genes{"$gene"}->{'sts'} != $server_genes{"$gene"}->{'sts'}){
-		$log->error("ERROR: $gene live or dead ? ns".$ace_genes{"$gene"}->{'sts'}." g".$server_genes{"$gene"}->{'sts'}."\n");
+		$log->error("ERROR: $gene live or dead ? ns".$server_genes{"$gene"}->{'sts'}." g".$ace_genes{"$gene"}->{'sts'}."\n");
 		$errorcount++;
 		return;
 	      }

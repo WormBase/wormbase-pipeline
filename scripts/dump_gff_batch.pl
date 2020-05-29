@@ -340,7 +340,7 @@ exit(0);
 
 
 sub start_giface_server {
-  $wormbase->run_command("($giface_server $database $port 1200:6000000:1000:600000000>/dev/null)>&/dev/null &",$log);
+  $wormbase->run_command("$giface_server $database $port 1200:6000000:1000:600000000 >/dev/null 2>&1 &",$log);
   sleep 20;
 }
 

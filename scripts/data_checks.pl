@@ -241,6 +241,11 @@ sub read_GFF_queries {
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes stRNA';
 
     $i++;
+    $queries[$i]{'DESC'}  = "circRNAs";
+    $queries[$i]{'GFF'}   = "circRNA\tcircRNA";
+    $queries[$i]{'QUERY'} = 'find elegans_RNA_genes ncRNA AND method = "circRNA"';
+
+    $i++;
     $queries[$i]{'DESC'}  = "Deletion and insertion alleles";
     $queries[$i]{'GFF'}   = "complex_substitution";
     $queries[$i]{'QUERY'} = 'find Variation flanking_sequences AND method = "Deletion_and_insertion_allele"';

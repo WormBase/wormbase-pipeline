@@ -192,7 +192,7 @@ foreach my $chromosome (@chromosomes) {
   
   # now look for transcripts that matched more than one CDS
   foreach my $trans (keys %overlapping_hsps) {
-    my @cds = keys $overlapping_hsps{$trans};
+    my @cds = keys %{$overlapping_hsps{$trans}};
     if (scalar @cds > 1) {
       $log->write_to("$trans matches @cds\n");
       print ACE "\n\n";

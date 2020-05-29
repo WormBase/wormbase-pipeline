@@ -109,8 +109,8 @@ if ((-e $tmuris) && ($species eq 'tmuris')) {push(@xaceinstances,"$tmuris");}
 # example of running another script
 
 foreach $xaceinstances (@xaceinstances) {
-  print "running camace_nameDB_comm.pl -database $xaceinstances\n";
-  $wormbase->run_script("NAMEDB/camace_nameDB_comm.pl -database $xaceinstances", $log);
+#  print "running camace_nameDB_comm.pl -database $xaceinstances\n";
+#  $wormbase->run_script("NAMEDB/camace_nameDB_comm.pl -database $xaceinstances", $log);
   
   # Run additional checks for camace
   if ($xaceinstances eq "/nfs/wormpub/BUILD/PRIMARIES/camace"){

@@ -2,11 +2,12 @@
 #
 # a script to batch request variation ids based on lists of public_names
 # Last change by $Author: mh6 $ on $Date: 2015-03-31 10:16:20 $
-# usage: perl get_variation_ids.pl -species elegans -user me -pass me < file containing varId_pubId_per_line
+# usage: perl get_variation_ids.pl -species elegans  -input file_containing_varId_pubId_per_line
 
 
 use lib $ENV{CVS_DIR};
 use lib "$ENV{CVS_DIR}/NAMEDB/lib";
+#use lib '/nfs/users/nfs_g/gw3/Nameserver-API';
 
 use NameDB_handler;
 use Wormbase;
@@ -16,24 +17,16 @@ use IO::File;
 use strict;
 
 
-my ($PASS,$USER, $DB); # mysql ones
-my $DOMAIN  = 'Variation'; # hardcoded to variation
-
 my ($wormbase, $debug, $test, $store, $species,$infile,$outfile,$nocheck, 
     $ace_file_template, $input_is_public_names, $input_is_other_names, $input, $output,$public);
 
 GetOptions (
     "debug=s"   => \$debug,   # send log emails only to one user
-    "test"      => \$test,    # run against the test database on utlt-db
     "store:s"   => \$store,   # if you want to pass a Storable instead of recreating it
     "species:s" => \$species, # elegans/briggsae/whateva .. needed for logging
-    "user:s"	=> \$USER,    # mysql username
-    "pass:s"	=> \$PASS,    # mysql password
-    'nocheck'   => \$nocheck, # don't check public_names
     'input:s'     => \$input,   # File containing new public_names for new Variations
     "output:s"    => \$output,  # File to capture the new WBVar and name associations
     'acetemplate=s' => \$ace_file_template, #unknown template file that is also printed along with the IDs retrieved by the script
-    'public'    => \$public   # The file only contains public_names so these should be used.
     )||die(@!);
     
 die "Species option is mandatory\n" unless $species; # need that for NameDB to fetch the correct regexps
@@ -42,7 +35,6 @@ if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
   $wormbase = Wormbase->new( -debug    => $debug,
-                             -test     => $test,
                              -organism => $species
       );
 }
@@ -50,10 +42,8 @@ if ( $store ) {
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
-$DB = $wormbase->test ? 'test_wbgene_id;utlt-db:3307' : 'nameserver_live;web-wwwdb-core-02:3449';
+my $db = NameDB_handler->new($wormbase);
 
-my $db = NameDB_handler->new($DB,$USER,$PASS,$wormbase->wormpub . '/DATABASES/NameDB');
-$db->setDomain($DOMAIN);
 
 # there should be *only* one public_name per line in the input_file
 # like:
@@ -87,26 +77,18 @@ while (<IN>) {
 }
 
 foreach my $entry (@entries) {
-    my ($public_name, $other_name);
-    if ($public) {
-	($public_name, $other_name) = @$entry;
-    }
-    else {
-	($other_name, $public_name) = @$entry;
-    }
-    if (not $nocheck and defined $public_name and not defined &_check_name($public_name)) {
-	next;
-    }
+  my ($public_name) = @$entry;
 
-  my $id = $db->idCreate;
-  
-  $public_name = $id if not defined $public_name;
+  if (not $nocheck and defined $public_name and not defined &_check_name($public_name)) {
+    next;
+  }
 
-  $db->addName($id,'Public_name'=>$public_name);
+  my ($ids, $batch_id) = $db->new_variations([$public_name]);
+  my ($id) = keys %{$ids};
+
 
   print OUT "\nVariation : \"$id\"\n";
   print OUT "Public_name $public_name\n";
-  print OUT "Other_name $other_name\n" if (defined $other_name);
   if (defined $ace_file_template) {
       print OUT "$ace_file_template\n";
   }
@@ -117,13 +99,18 @@ $log->mail;
 # small function to check the variation public_name for sanity
 sub _check_name {
   my $name = shift;
-  my $var = $db->idGetByTypedName('Public_name'=>$name)->[0];
+  my $var;
+  my $var_ref = $db->find_variations($name);
+  foreach my $hash (@{$var_ref}) {
+    if ($hash->{'variation/name'} eq '$id') {$var = $hash->{'variation/id'}}
+  }
   if($var) {  
     print STDERR "ERROR: $name already exists as $var\n";
     return undef;
   }
   return 1;
 }
+
 
 __END__
 
@@ -149,8 +136,7 @@ The default output is a 3-column table of
 
 WBVarid<tab>Public name<tab>Submitter-supplied name
 
-However, if the -acetemplate  option is used, Ace format can be generated (see -acetemplate below). With Ace format, 
-the submitter-supplied name is used to populate the Other_name tag. 
+However, if the -acetemplate  option is used, Ace format can be generated (see -acetemplate below).
 
 
 =head1 USAGE EXAMPLES
@@ -162,10 +148,6 @@ get_variation_ids.pl -species elegans -user me -pass me -acetemplate wild_templa
 =head1 OPTIONS
 
 -species      WormBase species name, required for logging (defaults to elegans)
-
--user         MySQL NameDB account user name
-
--pass         MySQL NameDB account password
 
 -acetemplate  Takes the file name of a file containing Ace template format which will be printed to the end of the results to create a fuller entry.
  
