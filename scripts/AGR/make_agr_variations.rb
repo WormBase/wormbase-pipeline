@@ -24,7 +24,7 @@ term2so = {
 	'insertion_site' => 'SO:0000667', # changed insertion_site to insertion
 	'deletion'       => 'SO:0000159',
 	'point_mutation' => 'SO:1000008',
-	'substitution'   => 'SO:1000008', # to hack our wrong SO-terms in
+	'substitution'   => 'SO:1000032', # to hack our wrong SO-terms in => DELIN
 }
 
 chrom2ncbi = {

@@ -13,6 +13,7 @@
 use strict;
 use lib $ENV{'CVS_DIR'};
 use lib "$ENV{'CVS_DIR'}/NAMEDB/lib";
+#use lib '/nfs/users/nfs_g/gw3/Nameserver-API';
 
 use lib '/software/worm/lib/perl';
 
@@ -29,10 +30,11 @@ use Getopt::Long;
 # check user is wormpub
 #######################
 
-my ($help, $debug, $test, $verbose, $load,$ndbUser,$ndbPass, $path, $input_file,$pg);
+my ($help, $debug, $verbose, $store, $wormbase, $species);
+my ($verbose, $load,$ndbUser,$ndbPass, $path, $input_file,$pg);
+
 GetOptions ('help'              => \$help,
             'debug=s'           => \$debug,
-            'test'              => \$test,
             'verbose'           => \$verbose,
             'load'              => \$load,
             'ndbuser=s'         => \$ndbUser,
@@ -45,11 +47,18 @@ GetOptions ('help'              => \$help,
 
 &usage if ($help);
 my $user = `whoami`; chomp $user;
-if (!$test and $user ne "wormpub"){
+if ($user ne "wormpub"){
   die("You have to be wormpub to run this script!\n");
 }
 
-my $wormbase = Wormbase->new();
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -organism => $species
+                             );
+}
+
 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
@@ -113,10 +122,8 @@ my $strain_count = `grep Strain: $input_file | wc -l`;
 open(INPUT, $input_file) || die "Can't open inputfile!"; 
 
 # setup the nameserver
-my $DB = $test ? 'test_wbgene_id;utlt-db:3307' : 'nameserver_live;web-wwwdb-core-02:3449';
-my $db = NameDB_handler->new($DB,$ndbUser,$ndbPass);
+my $db = NameDB_handler->new($wormbase);
 my $geneAceDB = Ace->connect(-path => $geneace_dir) or die Ace->error;
-$db->setDomain('Variation');
 
 while(<INPUT>){
   # drop out of loop before you reach last line of file
@@ -394,31 +401,29 @@ sub _getVariation_byOtherName {
 }
 
 ###########################
-# function to find/get a variation id from the variation name server
-#   depends on the user/password from main, as well as the $test
 #
 sub _get_variationId {
     my ($id)=@_;
 
-
-    my $var = $db->idGetByTypedName('Public_name'=>$id)->[0];
-  
-    $var ||= _getVariation_byOtherName($id);
+    my $var;
+    my $var_ref = $db->find_variations($id);
+    foreach my $hash (@{$var}) {
+      if ($hash->{'variation/name'} eq '$id') {$var = $hash->{'variation/id'}}
+    }
 
     print STDERR "found: $id -> $var\n" if ($var && $verbose);
 
     return $var if $var;
 
-        my $newId = $db->idCreate;
-        $db->addName($newId,'Public_name'=>$id);
+    my ($new_ids, $batch_id) = $db->new_variations([$id]);
+    my ($new_id) = keys %{$new_ids};
+    print STDERR "found: $id -> $new_id\n" if $verbose;
 
-        print STDERR "found: $id -> $newId\n" if $verbose;
-
-        return $newId;
+    return $new_id;
 }
 
 ######################################################################
-# funtion to find a WBPerson by searching through a collection of tags
+# function to find a WBPerson by searching through a collection of tags
 
 sub find_author {
     my ($searchterm)=@_;

@@ -113,20 +113,25 @@ while (<$gff_in_fh>) {
     }
     
     my @types = $variation->at('Sequence_details.Type_of_mutation');
+    my @subs = ();
     foreach my $type (@types) {
       if ($type eq 'Substitution' and defined $variation->Substitution) {
-        my @substitution = $variation->Substitution->row;
+        @subs = $variation->Substitution->row;
         #print NEW " ; Substitution \"$substitution[0]/$substitution[1]\"";
-        push @new_els, ['Substitution', join("/", uc($substitution[0]), uc($substitution[1]))];
+        push @new_els, ['Substitution', join("/", uc($subs[0]), uc($subs[1]))];
       } elsif ($type eq 'Insertion' and defined $variation->Insertion) {
         my ($insert) = $variation->Insertion->row;
         push @new_els, ['Insertion', uc($insert)];
       }
     }
 
-    if ($current_els[2] eq 'sequence_alteration') {
-      # general term used when set contains a mixture of substitutions and indels.
-      # Try to make it more specific here
+    if ($current_els[2] eq 'sequence_alteration' or $current_els[2] eq 'substitution') {
+      # attempt to assign a more specific term here. 
+      # "sequence_alteration" is used in the raw dumps for vars from a single project (e.g. MMP) 
+      # which can be one of several different types; 
+      # "substition" is used specfifically for substitution alleles, but we want to use 
+      # the more specfic "point_mutation" or "SNP" where appropriate
+
       my $new_term = "sequence_alteration";
       if (scalar(@types) == 1) {
         my ($tp) = @types;
@@ -135,15 +140,18 @@ while (<$gff_in_fh>) {
           $new_term = lc($tp);
           $new_term .= "_site" if $new_term eq 'insertion';
         } elsif ($tp eq 'Substitution') {
-          if ($current_els[3] == $current_els[4]) {
+          $new_term = "substitution";
+          
+          if ($current_els[3] == $current_els[4] and 
+              scalar(@subs) >= 2 and
+              length($subs[0]) == 1 and 
+              length($subs[1]) == 1) {
             # single nucleotide
             if ($natural_variant) {
               $new_term = 'SNP';
             } else {
               $new_term = 'point_mutation';
             }
-          } else {
-            $new_term = 'substitution';
           }
         } elsif ($tp eq 'Tandem_duplication') {
           $new_term = 'tandem_duplication';

@@ -13,7 +13,7 @@ use Modules::AGR;
 
 
 my ($debug, $test, $verbose, $store, $wormbase, $build);
-my ($outfile, $acedbpath, $ws_version, $outfh, $daf);
+my ($outfile, $acedbpath, $ws_version, $outfh, $daf,$white);
 
 GetOptions (
   'debug=s'     => \$debug,
@@ -25,6 +25,7 @@ GetOptions (
   'wsversion=s' => \$ws_version,
   'writedaf'    => \$daf,
   'build'       => \$build, # to enable WB/CalTech build specific changes
+  'AGRwhitelist'=> \$white,
 )||die("unknown command line option: $@\n");
 
 if ( $store ) {
@@ -80,8 +81,8 @@ my %go2eco = (
 my $db = Ace->connect(-path => $acedbpath, -program => $tace) or die('Connection failure: '. Ace->error);
 
 my ( $it, @annots);
+my $wl = get_whitelist() if $white;
 
-#
 # New model
 #
 $it = $db->fetch_many(-query => 'Find Disease_model_annotation');
@@ -103,13 +104,17 @@ while( my $obj = $it->next) {
   my ($paper) = &get_paper( $obj->Paper_evidence );
   my @evi_codes = map { $go2eco{$_->name} } $obj->Evidence_code;
 
+  # [200507 mh6]
+  # the crossReference should be annotation specific, but as the id changes every release the 
+  # linking is not possible due to the lag
+
   my $annot = {
     DOid         => $obj->Disease_term->name,
     dataProvider => [
       { 
         crossReference => {
-          id => 'WB',
-          pages => ['homepage'],
+          id => $obj->Disease_term->name,
+          pages => ['disease'],
         },
         type => 'curated',
       },
@@ -125,12 +130,12 @@ while( my $obj = $it->next) {
   # [200310 mh6]
   # based on a list of annotations to skip for AGR from 
   # https://wiki.wormbase.org/index.php/Specifications_for_data_submission_to_the_Alliance
+  # * had Qualifier_not as not to be submitted, but that changed with 3.1.0
   unless ($build) {
 	  next if ($obj->Interacting_variation
 	         ||$obj->Interacting_transgene
 	         ||$obj->Interacting_gene
 	         ||$obj->RNAi_experiment
-	         ||$obj->Qualifier_not
 	         ||$obj->Inducing_chemical
 	         ||$obj->Modifier_transgene
 	         ||$obj->Modifier_variation
@@ -147,6 +152,10 @@ while( my $obj = $it->next) {
   my (@inferred_genes) = map { 'WB:'.$_->name } $obj->Inferred_gene;
   my ($obj_id, $obj_name, $obj_type, $assoc_type);
   my (@with_list) = map {'WB:'.$_->name} ($obj->Interacting_variation,$obj->Interacting_gene,$obj->Interacting_transgene);
+
+  if ($white && $allele){ # remove annotations unless they are in the AGR allele variations
+	  next unless $wl->{"$allele"}
+  }
 
   if (defined $strain) {
     $obj_type = 'strain';
@@ -198,8 +207,9 @@ while( my $obj = $it->next) {
   $annot->{objectRelation} = $assoc_rel;
   $annot->{objectId} = $obj_id;
   $annot->{objectName} = $obj_name;
-  $annot->{with} = \@with_list if @with_list;
-  
+  $annot->{with} = \@with_list if (@with_list && $build);
+  $annot->{negation} = 'not' if $obj->at('Qualifier_not');
+
   # modifiers
   
   if ($obj->Modifier_association_type) {
@@ -226,7 +236,7 @@ while( my $obj = $it->next) {
 
     # WB/CalTech specific changes
     $annot->{modifier} = $mod_annot if $build;
-    $annot->{qualifier} = 'not' if ($obj->at('Modifier_qualifier_not') && $build);
+    $annot->{negation} = 'not' if $obj->at('Modifier_qualifier_not');
   }
 
   if ($obj->Experimental_condition){
@@ -410,7 +420,7 @@ sub write_DAF_line {
          $obj->{DOid},
          (exists $obj->{with}) ? join(',',@{$obj->{with}}) : '',
          (exists $obj->{modifier}) ? $obj->{modifier}->{associationType} : '',
-         ($obj->{qualifier}||''),
+         ($obj->{negation}||''),
          (exists $obj->{modifier} and exists $obj->{modifier}->{genetic}) ? join(',', @{$obj->{modifier}->{genetic}}) : '',
          (exists $obj->{modifier} and exists $obj->{modifier}->{experimentalConditionsText}) ? join(',', @{$obj->{modifier}->{experimentalConditionsText}}) : '',
          join(",", @{$obj->{evidence}->{evidenceCodes}}),
@@ -418,4 +428,13 @@ sub write_DAF_line {
          $obj->{evidence}->{publication}->{publicationId},
          $date,
          'WB');
+}
+
+sub get_whitelist{
+	my $it = $db->fetch_many(-query =>'find Variation WHERE Live AND COUNT(Gene) == 1 AND (Phenotype OR Disease_info OR Interactor) AND NOT Natural_variant');
+	my %whitelist;
+	while (my $v = $it->next){
+		$whitelist{"$v"}=1;
+	}
+	return \%whitelist;
 }

@@ -75,6 +75,9 @@
 # piRNA genes
 #	w/locus { "C. elegans piwi-associated RNA $locus"; }
 #	w/o locus { "C. elegans predicted piwi-associated RNA"; }
+# circRNA genes
+#	w/locus { "C. elegans circular RNA $locus"; }
+#	w/o locus { "C. elegans predicted circular RNA"; }
 
 
     
@@ -152,7 +155,7 @@ if ($do_cds) {
     
     $gene = $cds->Gene;
     unless( defined $gene) {
-      $log->write_to("ERROR :".$cds->name." has no Gene\n");
+      $log->write_to("ERROR: ".$cds->name." has no Gene\n");
       next;
     }
     
@@ -477,7 +480,14 @@ if ($do_transcript) {
       } else {
         $full_string = "predicted piwi-associated RNA";
       }
+    }elsif ($type eq 'circRNA') { # circRNA genes
+      if ($cgc_name) {
+        $full_string = "circular RNA $cgc_name";
+      } else {
+        $full_string = "predicted circular RNA";
+      }
     }
+    
     
     $object_count++;
     

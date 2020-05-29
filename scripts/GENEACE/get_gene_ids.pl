@@ -1,6 +1,7 @@
 #!/software/bin/perl -w
 use lib $ENV{'CVS_DIR'};
 use lib "$ENV{'CVS_DIR'}/NAMEDB/lib";
+#use lib '/nfs/users/nfs_g/gw3/Nameserver-API';
 
 use lib '/software/worm/lib/perl';
 
@@ -9,17 +10,12 @@ use Wormbase;
 use Storable;
 use Getopt::Long;
 
-# connect to name server and set domain to 'Gene'
-my $DOMAIN  = 'Gene';
-my ($PASS,$USER,$debug, $test, $store, $species);
+my ($help, $debug, $verbose, $store, $wormbase, $species);
 
 GetOptions (
 	    'debug=s'    => \$debug,
-	    'test'       => \$test,
 	    'store=s'    => \$store,
 	    'species=s'  => \$species,
-	    'user=s'	 => \$USER,
-	    'pass=s'	 => \$PASS,
 	   )||die();
 $species || die "Species option is mandatory\n";
 
@@ -28,21 +24,13 @@ if ($store) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
   $wormbase = Wormbase->new( -debug    => $debug,
-                             -test     => $test,
                              -organism => $species
-			     );
+			   );
 }
 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
-my $DB = $wormbase->test ? 'test_wbgene_id;utlt-db:3307' : 'nameserver_live;web-wwwdb-core-02:3449';
-my $db = NameDB_handler->new($DB,$USER,$PASS);
-$db->setDomain($DOMAIN);
 
-while (<>) {
-	chomp;
-	my @F=split;
-	my $gene_id = $db->new_gene($F[0], 'Sequence', $species);
-	print "$F[0] $gene_id\n";
-}
+print "The new nameserver REST API will not allow you to simply make a new Gene ID without a CGC name or a sequence name.\nTry using 'batch_gene -action new' instead.\n\n";
+
 $log->mail;
