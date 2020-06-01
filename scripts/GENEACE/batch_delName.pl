@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 use lib $ENV{'CVS_DIR'};
 use lib "$ENV{'CVS_DIR'}/NAMEDB/lib";
+#use lib '/nfs/users/nfs_g/gw3/Nameserver-API';
 
 use Wormbase;
 use NameDB_handler;
@@ -16,42 +17,39 @@ use strict;
 
 =item Options:
 
-  -user      username
-  -password  password
-  -file      file containing list of GeneIDs and CGC/Sequence names eg WBGene00008040 ttr-5
-  -test      use the test nameserver
+  -file      file containing list of GeneIDs and CGC names eg WBGene00008040 ttr-5
 
-e.g. perl batch_delName.pl -u fred -p secret -file genenames.txt
+e.g. perl batch_delName.pl -file genenames.txt
 
 =cut
 
-my ($USER,$PASS, $test, $file, $type,);
+my ($help, $debug, $verbose, $store, $wormbase, $species);
+my ($file);
 GetOptions(
-	   'user:s'     => \$USER,
-	   'password:s' => \$PASS,
-	   'test'       => \$test,
+           "help"       => \$help,
+           "debug=s"    => \$debug,
+           "verbose"    => \$verbose,
+           "store:s"    => \$store,
+           'species:s'  => \$species,
 	   'file:s'     => \$file,
-	   'type:s'     => \$type,
 	  ) or die;
 
-my $log = Log_files->make_log("NAMEDB:$0:$file", $USER);
-my $DB;
-if ($test) {
-    $DB = 'test_wbgene_id;utlt-db;3307';
-  } else {
-    $DB = 'nameserver_live;web-wwwdb-core-02;3449';
+
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( 
+                            -debug    => $debug,
+                            -organism => $species,
+                           );
 }
 
-$log->write_to("loading $file to $DB\n\n");
-$log->write_to("TEST mode is ON!\n\n") if $test;
+my $log = Log_files->make_log("NAMEDB:$0:$file", $ENV{'USER'});
 
-unless (($type eq  'CGC') || ($type eq 'Sequence')) {
-  $log->log_and_die ("$type is not CGC or Sequence\n");
-}
 
-my $db = NameDB_handler->new($DB,$USER,$PASS);
+$log->write_to("loading $file to Nameserver\n\n");
 
-$db->setDomain('Gene');
+my $db = NameDB_handler->new($wormbase);
 
 # open file and read
 # file needs to be in such a format:
@@ -62,15 +60,11 @@ $db->setDomain('Gene');
 open (FILE,"<$file") or die "can't open $file : $!\n";
 my $count=0;
 while(<FILE>) {
-    my($id,$name,$cds) = split;
-    eval{
-	my $success = $db->delName($id,$type => $name);
-	my $msg = defined $success ? 'deleted' : 'FAILED to delete';
-	$log->write_to("$msg $type name $name for $id\n");
-        $success = $db->_update_public_name($id);
-        $msg = defined $success ? 'updated' : 'FAILED to update';
-	$log->write_to("$msg public name to $success for $id\n");
-    };
+    my($id,$name) = split;
+    my $success = $db->delName($name);
+    my $msg = defined $success ? 'deleted' : 'FAILED to delete';
+    $log->write_to("$msg CGC name $name for $id\n");
+
     $count++;
 }
 

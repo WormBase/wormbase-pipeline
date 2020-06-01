@@ -2,12 +2,14 @@
 use strict;
 use lib $ENV{'CVS_DIR'};
 use lib "$ENV{'CVS_DIR'}/NAMEDB/lib";
+#use lib '/nfs/users/nfs_g/gw3/Nameserver-API';
 
 use NameDB_handler;
 use Getopt::Long;
 use Log_files;
 use Ace;
 use Wormbase;
+
 =pod
 
 =head batch_split.pl
@@ -31,55 +33,47 @@ splitgene.pl -old WBGene00240141 -new OVOC13437 -who 2062 -id WBGene00255449 -lo
   -debug     limits to specified user <Optional>
   -load      loads the resulting .ace file into geneace.
   -ns        update the nameserver (the content of the secnd WBGeneID column will be ignored)
-  -user      namedb user name
-  -pass      namedb password
-  -test      use the namedb test server
 
 e.g. perl batch_split.pl -file genesplits.txt
 
 
 =cut
 
-my ($USER, $test, $file, $debug, $load,$ns,$pass);
+my ($test, $file, $load, $ns);
+my ($help, $debug, $verbose, $store, $wormbase, $species);
+
 GetOptions(
-	   'user:s'     => \$USER,
-           'password:s' => \$pass,
-	   'test'       => \$test,
+	   "store:s"    => \$store,
+	   "species:s"  => \$species,
 	   'file:s'     => \$file,
 	   'debug:s'    => \$debug,
 	   'load'       => \$load,
            'ns'         => \$ns,
 	  ) or die;
 
-my $species;
 my $log;
 
-if (defined $USER) {$log = Log_files->make_log("NAMEDB:$file", $USER);}
-elsif (defined $debug) {$log = Log_files->make_log("NAMEDB:$file", $debug);}
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -organism => $species
+                             );
+}
+
+
+if (defined $debug) {$log = Log_files->make_log("NAMEDB:$file", $debug);}
 else {$log = Log_files->make_log("NAMEDB:$file");}
 
-my ($DB,$db);
 
-if ($test) {
-  $log->write_to("TEST mode is ON!\n\n");
-  $DB = 'test_wbgene_id;utlt-db;3307';
-} else {
-  $DB = 'nameserver_live;web-wwwdb-core-02;3449';
-}
-
+my $db;
 if ($ns) {
-  unless ($USER && $pass) {
-    $log->log_and_die("OPTIONS ERROR: You need to supply both a username and password for the MySQL database with -user <username> -pass <password>.\n");
-  }
-  $log->write_to("Contacting NameServer ($DB).....\n");
-  $db = NameDB_handler->new($DB,$USER,$pass);
-  $db->setDomain('Gene');
+  $log->write_to("Contacting NameServer .....\n");
+  $db = NameDB_handler->new($wormbase);
 }
 
-my $wormbase = Wormbase->new("-organism" =>$species);
 my $database = "/nfs/wormpub/DATABASES/geneace";
 $log->write_to("Working.........\n-----------------------------------\n\n\n1) splitting genes in file [${file}]\n\n");
-$log->write_to("TEST mode is ON!\n\n") if $test;
 
 my $ace = Ace->connect('-path', $database) or $log->log_and_die("cant open $database: $!\n");
 
@@ -93,14 +87,14 @@ my %gene_versions; # remember the latest version used in all genes altered in ca
 ##############################
 # warn/notify on use of -load.
 ##############################
-if (!defined $load) {$log->write_to("2) You have decided not to automatically load the output of this script\n\n");}
-elsif (defined $load) { $log->write_to("2) Output has been scheduled for auto-loading.\n\n");}
+if (!defined $load) {$log->write_to("You have decided not to automatically load the output of this script\n\n");}
+elsif (defined $load) { $log->write_to("Output has been scheduled for auto-loading.\n\n");}
 
 # open file and read
 open (FILE,"<$file") or $log->log_and_die("can't open $file : $!\n");
 open (ACE,">$outputfile") or $log->log_and_die("cant write output: $!\n");
 
-my($oldgene,$newgene,$newname,$user);
+my($oldgene,$newgene,$newname, $user);
 
 my $malformedcount=0;
 my $actualcount=0;
@@ -114,7 +108,7 @@ while (<FILE>) {
     # Captured string ($1) - WBGene00243151
     # Captured string ($2) - OVOC13459
     # Captured string ($3) - 2062
-    # Captured string ($4) - WBGene00255474
+    # Captured string ($4) - WBGene00255474 - this is a dummy field, it is not used if '-ns' is given on the command line
     # Captured string ($5) - ovolvulus
     
     $oldgene = $1;
@@ -141,10 +135,10 @@ while (<FILE>) {
 
 close(ACE);
 
-$log->write_to("3) $actualcount gene pairs in file to be split\n\n");
-$log->write_to("4) $count gene pairs split ($malformedcount malformed_lines)\n\n");
+$log->write_to("$actualcount gene pairs in file to be split\n\n");
+$log->write_to("$count gene pairs split ($malformedcount malformed_lines)\n\n");
 &load_data if $load;
-$log->write_to("5) Check $outputfile file and load into geneace.\n") unless $load;
+$log->write_to("Check $outputfile file and load into geneace.\n") unless $load;
 $log->mail();
 
 exit(0);
@@ -159,7 +153,8 @@ sub split_gene {
     $ok = 1; # error status
 
     if ($ns) {
-       $newgene = $db->split_gene($newname,'Sequence',$oldgene,$species);      
+      # we assume that the new gene biotype is 'CDS'
+      $newgene = $db->split_gene($oldgene, $newname, 'CDS', $species);      
     }
 
     # does the split_into gene already exist?
@@ -167,7 +162,7 @@ sub split_gene {
     if ($newgeneObj) {
       $log->error("ERROR: $newgene already exists\n");
       $ok = 0;
-      }
+    }
 
     # process LIVE gene
     my $oldgeneObj = $ace->fetch('Gene', $oldgene);
@@ -226,7 +221,7 @@ sub split_gene {
     $count++;
   }
   else {
-    $log->error("ERROR: Too many isses with the $oldgene :: $newgene split, not processing\n");
+    $log->error("ERROR: Too many issues with the $oldgene :: $newgene split, not processing\n");
   }
   
   undef $oldgene; undef $newgene ;undef $user; undef $newname;
@@ -235,8 +230,8 @@ sub split_gene {
 sub load_data {
   # load information to $database if -load is specified
   $wormbase->load_to_database("$database", "$outputfile", 'batch_split.pl', $log, undef, 1);
-  $log->write_to("5) Loaded $outputfile into $database\n\n");
+  $log->write_to("Loaded $outputfile into $database\n\n");
   $wormbase->run_command("mv $outputfile $backupsdir"."$outname". $wormbase->rundate. "\n"); #append date to filename when moving.
-  $log->write_to("6) Output file has been cleaned away like a good little fellow\n\n");
-  print "Finished!!!!\n";
+  $log->write_to("Output file has been cleaned away like a good little fellow\n\n");
+  print "Finished!\n";
 }

@@ -586,8 +586,8 @@ Synonym for C<gff3_input>
 
 =item -transcripts
 
-Name of a file containing a list (one per line) of transcript IDs that are
-to be changed.
+Transcript IDs that are to be changed.  I<Either> the name of a file containing
+a list (one per line) I<or> an array of transcript IDs
 
 =item -types
 
@@ -618,27 +618,34 @@ sub change_transcripts_to_noncoding {
    my $gff3_input          = $params{-gff3_input}
                              || $params{-file}  # DEPRECATED
                              || die "$this must be passed GFF3 (-gff3_input)";
-   my $transcripts_file    = $params{-transcripts} || die "$this must be passed a transcripts file name (-transcripts)";
+   my $transcript_IDs      = $params{-transcripts} || die "$this must be passed a list of transcript IDs (file name or list) (-transcripts)";
    my $transcript_types    = $params{-types}       || ['mRNA'];
    my $new_transcript_type = $params{-new_type}    || 'pseudogenic_transcript';
    
    ARRAY_REF_TYPE eq ref($transcript_types) || die "When -types is passed to $this it must be an ARRAY ref ";
 
-   # grab the list of "target" transcript IDs from the file provided
+   # grab the list of "target" transcript IDs from the list/file provided
    my %transcripts_to_noncoding = ();
-   my $num_id = 0;
-   foreach my $id (File::Slurp::read_file($transcripts_file, chomp=>1)) {
-      ++$num_id unless exists $transcripts_to_noncoding{$id};
-      $transcripts_to_noncoding{$id}++;
+   {
+      my $num_id = 0;
+      my @tmp = ();
+      if( ARRAY_REF_TYPE eq ref($transcript_IDs) ) {
+         @tmp = @{$transcript_IDs};
+      } else {
+         @tmp = File::Slurp::read_file($transcript_IDs, chomp=>1);
+      }
+      foreach my $id (@tmp) {
+         ++$num_id unless exists $transcripts_to_noncoding{$id};
+         $transcripts_to_noncoding{$id}++;
+      }
+      die "$transcript_IDs contained no transcript IDs" unless $num_id;
    }
-   die "$transcripts_file contained no transcript IDs" unless $num_id;
-
-   my @new_gff3 = ();
+   my @new_gff3      = ();
    my $num_lines     = 0;
    my $num_noncoding = 0;
    my $num_removed   = 0;
    my $status        = '';
-   
+
    my @input; # array of GFF lines (no newline char(s))
    if( ref($gff3_input) && ARRAY_REF_TYPE eq ref($gff3_input) ) {
       @input = @{ $gff3_input };

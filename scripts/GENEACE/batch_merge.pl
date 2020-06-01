@@ -2,6 +2,7 @@
 use strict;
 use lib $ENV{'CVS_DIR'};
 use lib "$ENV{'CVS_DIR'}/NAMEDB/lib";
+#use lib '/nfs/users/nfs_g/gw3/Nameserver-API';
 
 use NameDB_handler;
 use Getopt::Long;
@@ -26,7 +27,7 @@ use Wormbase;
              names involved as it's some what easier to resolve issues post merge instead of 
              overlooking when merges have failed because of this.
 
-  -ns        Causes the merge to be done in the NS should be used in conjunction with -user and -pass.
+  -ns        Causes the merge to be done in the NS.
 
     FORMAT:
 
@@ -67,11 +68,9 @@ e.g. perl batch_merge.pl -file merger.txt
 
 =cut
 
-my ($USER, $test, $file, $debug, $load, $old, $ns, $PASS,$out,$force,$override);
+my ($help, $verbose, $store, $wormbase);
+my ($file, $debug, $load, $old, $ns, $out, $force, $override);
 GetOptions(
-	   'user:s'     => \$USER,
-	   'pass:s'     => \$PASS,
-	   'test'       => \$test,
 	   'file:s'     => \$file,
 	   'debug:s'    => \$debug,
 	   'load'       => \$load,
@@ -85,38 +84,31 @@ GetOptions(
 
 my $species = 'elegans';
 my $log;
-if (defined $USER) {$log = Log_files->make_log("NAMEDB:$file", $USER);}
-elsif (defined $debug) {$log = Log_files->make_log("NAMEDB:$file", $debug);}
+if (defined $debug) {$log = Log_files->make_log("NAMEDB:$file", $debug);}
 else {$log = Log_files->make_log("NAMEDB:$file");}
+
+$wormbase = Wormbase->new(
+                             -organism => $species, 
+                             -debug => $debug, 
+                            );
+
 
 $log->write_to(sprintf("%s started at: %s\n",join( ' ',$0,@ARGV) ,`date +%H:%M:%S`));
 
-my $DB;
 my $db;
 my $ecount;
 
 if ($load && $override) {
-   $log->log_and_die("OPTIONS ERROR: You cannot use the -load and -override option at the same time!!!!!!!\n");
+   $log->log_and_die("OPTIONS ERROR: You cannot use the -load and -override option at the same time!\n");
 }
 
-if ($test) {
-  $log->write_to("TEST mode is ON!\n\n");
-  $DB = 'test_wbgene_id;utlt-db;3307';
-} else {
-  $DB = 'nameserver_live;web-wwwdb-core-02;3449';
-}
-my $wormbase = Wormbase->new("-organism" =>$species);
 my $database = "/nfs/wormpub/DATABASES/geneace";
 $log->write_to("Working.........\n-----------------------------------\n\n\n1) killing genes in file [${file}]\n\n");
 
 
 if ($ns) {
-  unless ($USER && $PASS) {
-    $log->log_and_die("OPTIONS ERROR: You need to supply both a username and password for the MySQL database with -user <username> -pass <password>.\n");
-  }
   $log->write_to("Contacting NameServer.....\n");
-  $db = NameDB_handler->new($DB,$USER,$PASS);
-  $db->setDomain('Gene');
+  $db = NameDB_handler->new($wormbase);
 }
 
 my $ace = Ace->connect('-path', $database) or $log->log_and_die("cant open $database: $!\n");
@@ -131,13 +123,13 @@ my %gene_versions; # remember the latest version used in all genes altered in ca
 ##############################
 # warn/notify on use of -load.
 ##############################
-if (!defined$load) {$log->write_to("2) You have decided not to automatically load the output of this script\n\n");}
-elsif (defined$load) { $log->write_to("2) Output has been scheduled for auto-loading.\n\n");}
+if (!defined $load) {$log->write_to("You have decided not to automatically load the output of this script\n\n");}
+elsif (defined $load) { $log->write_to("Output has been scheduled for auto-loading.\n\n");}
 
 #open file and read
 open (FILE,"<$file") or $log->log_and_die("can't open $file : $!\n");
 open (ACE,">$output") or $log->log_and_die("cant write output: $!\n");
-my($livegene,$deadgene,$user);
+my($livegene, $deadgene, $user);
 my $count=0;
 while (<FILE>) {
     chomp;
@@ -177,10 +169,10 @@ while (<FILE>) {
 
 &merge_gene; # remember the last one!
 close(ACE);
-$log->write_to("3) $count genes in file to be merged\n\n");
-$log->write_to("4) $count genes merged\n\n");
+$log->write_to("$count genes in file to be merged\n\n");
+$log->write_to("$count genes merged\n\n");
 &load_data if ($load);
-$log->write_to("5) Check $output file and load into geneace.\n") unless ($load);
+$log->write_to("Check $output file and load into geneace.\n") unless ($load);
 $log->mail();
 exit(0);
 
@@ -365,8 +357,8 @@ sub merge_gene {
 sub load_data {
 # load information to $database if -load is specified
 $wormbase->load_to_database("$database", "$output", 'batch_merge.pl', $log, undef, 1);
-$log->write_to("5) Loaded $output into $database\n\n");
+$log->write_to("Loaded $output into $database\n\n");
 $wormbase->run_command("mv $output $backupsdir".$out. $wormbase->rundate. "\n"); #append date to filename when moving.
-$log->write_to("6) Output file has been cleaned away like a good little fellow\n\n");
+$log->write_to("Output file has been cleaned away like a good little fellow\n\n");
 print "Finished!!!!\n";
 }

@@ -165,7 +165,7 @@ $wormbase->run_script("check_class.pl -stage finish_blat -classes Homol_data", $
 #//--------------------------- batch job submission -------------------------//
 # $build_dumpGFF.pl; (blat) is run chronologically here but previous call will operate
 
-$wormbase->run_script( 'batch_transcript_build.pl -mem 6000', $log) if $transcripts;
+$wormbase->run_script( 'batch_transcript_build.pl -mem 12000', $log) if $transcripts;
 $wormbase->run_script("check_class.pl -stage transcripts -classes Transcript", $log) if $transcripts;
 #requires GFF dump of transcripts (done within script if all goes well)
 
@@ -181,6 +181,7 @@ if ($cdna_files) {
     my @options = "-classmethod CDS:Transposon_CDS:Transposon-mRNA -classmethod Pseudogene:Transposon_Pseudogene:Transposon-pseudogenic_transcript -classmethod Transcript:Transposon_ncRNA:Transposon-non-coding_transcript";
     $wormbase->run_script( "fasta_dumper.pl @options -output $seqdir/transposon_transcripts.dna", $log);
     $wormbase->run_script( "fasta_dumper.pl -classmethod Transposon:Transposon -output $seqdir/transposons.dna", $log);
+    $wormbase->run_script( "fasta_dumper.pl -classmethod CDS:Transposon_cds -pep -output $seqdir/transposon_cds.pep", $log);
   }
 }
 
@@ -239,6 +240,7 @@ if ($prepare_gff_munge) {
   }
   $wormbase->run_script( 'web_data/map_translated_features_to_genome.pl', $log);
   $wormbase->run_script( 'web_data/map_translated_features_to_genome.pl -gff3', $log);
+  $wormbase->run_script( 'web_data/dump_protein_features_gff.pl', $log);
 }
 
 #several GFF manipulation steps

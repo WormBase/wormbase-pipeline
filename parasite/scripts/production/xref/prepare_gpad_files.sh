@@ -49,6 +49,14 @@ num_files=$(ls -1 $DIR | wc -l)
 num_core_dbs=$( wc -l < $DIR/.tmp/core_db_and_taxon_list.tsv)
 >&2 echo "Finished! Created files: $num_files for $num_core_dbs core databases" 
 
+# if this warning appears, use the species name (used for the file name reported by diff)
+# from find the taxon id in $DIR/.tmp/core_db_and_taxon_list.tsv; then check that it is
+# indeed absent from the Uniprot GAF data (cached in $DIR/.tmp/goa_uniprot_all.gaf.gz)
+# 
+# e.g. if diff lists plectus_sambesii_prjna390260...
+#    grep plectus_sambesii_prjna390260 $DIR/.tmp/core_db_and_taxon_list.tsv # tells you taxon id is 2011161
+#    grep -P '\b2011161\b' $DIR/.tmp/goa_uniprot_all.gaf.gz
+#    
 if [ "$num_files" -ne "$num_core_dbs" ] ; then
   >&2 echo "The two numbers are not the same. Blimey! "
   >&2 echo "Diff directory content vs core dbs: "

@@ -1346,11 +1346,15 @@ sub establish_paths {
   $self->{'blat'}        = $self->orgdb . "/BLAT";
   $self->{'checks'}      = $self->autoace . "/CHECKS";
   $self->{'ontology'}    = $self->autoace . "/ONTOLOGY";
-  $self->{'tace'}   = '/software/worm/acedb/4.9.60/bin/tace';
-  $self->{'giface'} = '/software/worm/acedb/4.9.60/bin/giface';
-  $self->{'giface_server'} = '/software/worm/acedb/4.9.60/bin/sgifaceserver';
-  $self->{'giface_client'} = '/software/worm/acedb/4.9.60/bin/saceclient';
-  
+# $self->{'tace'}   = '/software/worm/acedb/4.9.60/bin/tace';
+# $self->{'giface'} = '/software/worm/acedb/4.9.60/bin/giface';
+# $self->{'giface_server'} = '/software/worm/acedb/4.9.60/bin/sgifaceserver';
+# $self->{'giface_client'} = '/software/worm/acedb/4.9.60/bin/saceclient';
+  $self->{'tace'}   = '/software/worm/acedb/gen3/acedb/bin.LINUX_64/tace';
+  $self->{'giface'} = '/software/worm/acedb/gen3/acedb/bin.LINUX_64/giface';
+  $self->{'giface_server'} = '/software/worm/acedb/gen3/acedb/bin.LINUX_64/sgifaceserver';
+  $self->{'giface_client'} = '/software/worm/acedb/gen3/acedb/bin.LINUX_64/saceclient';
+ 
   $self->{'databases'}->{'geneace'} = $self->wormpub . "/DATABASES/geneace";
   $self->{'databases'}->{'camace'}  = $self->wormpub . "/DATABASES/camace";
   $self->{'databases'}->{'current'} = $self->wormpub . "/DATABASES/current_DB";
