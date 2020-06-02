@@ -236,7 +236,7 @@ while( my $obj = $it->next) {
 
     # WB/CalTech specific changes
     $annot->{modifier} = $mod_annot if $build;
-    $annot->{negation} = 'not' if $obj->at('Modifier_qualifier_not');
+    # $annot->{negation} = 'not' if $obj->at('Modifier_qualifier_not'); # according to Ranjana, it should not be included
   }
 
   if ($obj->Experimental_condition){
