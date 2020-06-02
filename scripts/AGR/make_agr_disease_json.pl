@@ -114,7 +114,7 @@ while( my $obj = $it->next) {
       { 
         crossReference => {
           id => $obj->Disease_term->name,
-          pages => ['disease'],
+          pages => ['disease/wb'],
         },
         type => 'curated',
       },
