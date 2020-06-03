@@ -146,6 +146,9 @@ $log->mail();
 ###########################
 sub get_pmid{
 	my ($wbpaperId)=@_;
+	unless ($db->ping){ # gen3 workaround, but it shouldn't disconnect in the first place
+		$db = Ace->connect(-path => $dbpath)||die(Ace->error); # $db->reconnect doesn't work
+	}
 	my $paper = $db->fetch(Paper => $wbpaperId);
 	my $pmid = 'nopmid';
 	foreach my $pref ($paper->Database) {
