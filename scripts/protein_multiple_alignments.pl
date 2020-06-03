@@ -62,8 +62,8 @@ if (not $run_clustal and not $dump_clustal) {
 }
 
 $rdb_name = "worm_clw";
-$rdb_host = "farmdb1" if not defined $rdb_host;
-$rdb_port = "3306" if not defined $rdb_port;
+$rdb_host = "ebiworm-db" if not defined $rdb_host;
+$rdb_port = "3478" if not defined $rdb_port;
 $rdb_user = "wormadmin" if not defined $rdb_user;
 $rdb_pass = "worms" if not defined $rdb_pass;
 $ace_database = $wb->autoace if not defined $ace_database;
