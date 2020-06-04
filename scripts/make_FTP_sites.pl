@@ -347,8 +347,9 @@ sub copy_dna_files{
       # copy over outstanding dna files
       foreach my $dna_file (glob("$seqdir/*.dna.gz"), glob("$seqdir/*.dna"), glob("$seqdir/*.pep")) {
         if (not exists $copied_files{$dna_file}) {
-          my ($prefix) = $dna_file =~ /$seqdir\/(\S+)\./;
           my $target;
+          my ($prefix) = $dna_file =~ /$seqdir\/(\S+)\.(pep|dna)/;
+
           if ($dna_file =~ /pep/) {
               $target = "$dna_dir/${gspecies}.${bioproj}.${WS_version_name}.$prefix.pep.gz";
           }
