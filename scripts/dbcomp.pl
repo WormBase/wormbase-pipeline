@@ -1,4 +1,4 @@
-#!/software/bin/perl -w
+#!/usr/bin/env perl
 #
 # dbcomp.pl
 #
@@ -52,16 +52,9 @@ if ( $store ) {
 			     );
 }
 
-# Display help if required
+
 &usage("Help") if ($help);
 
-# in test mode?
-if ($test) {
-  print "In test mode\n" if ($verbose);
-
-}
-
-# establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
 
@@ -71,7 +64,7 @@ my $log = Log_files->make_build_log($wormbase);
 
 my $WS_current  = $wormbase->get_wormbase_version;
 my $WS_previous = $WS_current - 1;
-my $exec        = $wormbase->tace;
+my $exe        = $wormbase->tace;
 my $basedir         = $wormbase->basedir;
 
 #################################################################
@@ -133,10 +126,11 @@ print OUT  " +------------------------+---------+---------+---------+---------+-
 # Check numbers of of classes
 #########################################################################
 
-#&classes("Sanger Sequence Data", &sanger_seq_data);
-&classes("Sanger", &sanger);
-&classes("CalTech", &caltech);
-&classes("OICR", &csh);
+my @all_classes;
+push @all_classes, &hinxton();
+push @all_classes, &caltech();
+
+&class_summary( sort @all_classes );
 
 #########################################################################
 # Get numbers of genes curated
@@ -173,16 +167,6 @@ print "Finished.\n" if ($verbose);
 exit (0);
 
 
-
-
-##############################################################
-#
-# Subroutines
-#
-##############################################################
-
-
-
 ##########################################
 
 sub usage {
@@ -197,13 +181,9 @@ sub usage {
 
 ##########################################
 
-sub classes {
+sub class_summary {
 
-  my ($name, @classes) = @_;
-
-  print OUT  " +------------------------+\n";
-  printf OUT  " | %20s   |\n", $name;
-  print OUT  " |------------------------|---------+---------+---------+---------+---------+\n";
+  my (@classes) = @_;
 
   my $counter = 1; # for indexing each class to be counted
 
@@ -283,7 +263,7 @@ sub count_class{
     open (COUNT, ">$out") || die "Couldn't write to tmp file: $out\n";
     
     # open tace connection and count how many objects in that class
-    open (TACE, "echo '$command' | $exec $db_1 | ");
+    open (TACE, "echo '$command' | $exe $db_1 | ");
     while (<TACE>) {
 	($class_count1 = $1) if (/^\/\/ (\d+) Active Objects/);
 	(print COUNT "$_")   if (/\:/); # Add list of object to temp file
@@ -300,7 +280,7 @@ sub count_class{
     open (COUNT, ">$out") || die "Couldn't write to tmp file: $out\n";
     
     # open tace connection and count how many objects in that class
-    open (TACE, "echo '$command' | $exec $db_2 | ");
+    open (TACE, "echo '$command' | $exe $db_2 | ");
     while (<TACE>) {
 	($class_count2 = $1) if (/^\/\/ (\d+) Active Objects/);
 	(print COUNT "$_")   if (/\:/); # Add list of object to temp file
@@ -354,117 +334,112 @@ sub diff {
 
 ###############################################
 
-sub sanger {
+sub hinxton {
   my @classes = (
-		 "Sequence",
-		 "CDS",
-		 "Transposon",
-		 "Transcript",
-		 "Pseudogene",
-		 "PCR_product",
-		 "Transposon_CDS",
-		 "cDNA_sequence",
-		 "elegans_CDS",
-		 "elegans_pseudogenes",
-		 "elegans_RNA_genes",
-		 "Class",
-		 "Model",
-		 "Method",
-		 "Clone",
-		 "Coding_transcripts",
-		 "Variation",
-		 "Motif",
-		 "Feature",
-		 "Feature_data",
-		 "Laboratory",
-		 "Locus",
-		 "Gene",
-		 "Gene_class",
-		 "Gene_name",
-		 "Gene_regulation",
-		 "Genome_Sequence",
-		 "Map",
-		 "Multi_pt_data",
-		 "Picture",
-		 "Pos_neg_data",
-		 "Rearrangement",
-		 "2_point_data",
-		 "Strain",
-		 "Operon",
-		 "Analysis",
-		 "Condition",
-		 "GO_code",
-		 "Peptide",
-		 "Protein",
-		 "Species",
-		 "Transposon_family",
-		 "Comment",
-		 "Contig",
-		 "Database",
-		 "Display",
-		 "DNA",
-		 "Homol_data",
-		 "NDB_Sequence",
-		 "nematode_ESTs",
-		 "SO_term",
-		 "Table",
-		 "Mass_spec_data",
-		 "Mass_spec_experiment",
-		 "Mass_spec_peptide",
-		 );
+    "Sequence",
+    "CDS",
+    "Transposon",
+    "Transcript",
+    "Pseudogene",
+    "PCR_product",
+    "Transposon_CDS",
+    "cDNA_sequence",
+    "elegans_CDS",
+    "elegans_pseudogenes",
+    "elegans_RNA_genes",
+    "Class",
+    "Model",
+    "Method",
+    "Clone",
+    "Coding_transcripts",
+    "Variation",
+    "Motif",
+    "Feature",
+    "Feature_data",
+    "Laboratory",
+    "Locus",
+    "Gene",
+    "Gene_class",
+    "Gene_name",
+    "Gene_regulation",
+    "Genome_Sequence",
+    "Map",
+    "Multi_pt_data",
+    "Picture",
+    "Pos_neg_data",
+    "Rearrangement",
+    "2_point_data",
+    "Strain",
+    "Operon",
+    "Analysis",
+    "Condition",
+    "GO_code",
+    "Peptide",
+    "Protein",
+    "Species",
+    "Transposon_family",
+    "Comment",
+    "Contig",
+    "Database",
+    "Display",
+    "DNA",
+    "Homol_data",
+    "NDB_Sequence",
+    "nematode_ESTs",
+    "SO_term",
+    "Table",
+    "Mass_spec_data",
+    "Mass_spec_experiment",
+    "Mass_spec_peptide",
+    "Structure_data",
+    "LongText"
+      );
+
+  return @classes;
 }
 
 sub caltech {
   my @classes = (
-		 "Transgene",
-		 "Expr_pattern",
-		 "Expr_profile",
-		 "Life_stage",
-		 "Lineage",
-		 "Cell",
-		 "Cell_group",
-		 "Paper",
-		 "Paper_name",
-		 "Author",
-		 "Person",
-		 "Person_name",
-		 "LongText",
-		 "Keyword",
-		 "Oligo",
-		 "Oligo_set",
-		 "Phenotype",
-		 "Phenotype_name",
-		 "SK_map",
-		 "Tree",
-		 "TreeNode",
-		 "Microarray",
-		 "Microarray_results",
-		 "Microarray_experiment",
-		 "Expression_cluster",
-		 "Anatomy_name",
-		 "Anatomy_term",
-		 "Anatomy_function",
-		 "Homology_group",
-		 "Antibody",
-		 "RNAi",
-		 "SAGE_tag",
-		 "SAGE_experiment",
-		 "Gene_regulation",
-		 "GO_term",
-		 "Interaction",
-		 "YH",
-		 "Position_matrix",
-		 );
+    "Transgene",
+    "Expr_pattern",
+    "Expr_profile",
+    "Life_stage",
+    "Lineage",
+    "Cell",
+    "Cell_group",
+    "Paper",
+    "Paper_name",
+    "Author",
+    "Person",
+    "Person_name",
+    "LongText",
+    "Oligo",
+    "Oligo_set",
+    "Phenotype",
+    "Phenotype_name",
+    "SK_map",
+    "Tree",
+    "TreeNode",
+    "Microarray",
+    "Microarray_results",
+    "Microarray_experiment",
+    "Expression_cluster",
+    "Anatomy_name",
+    "Anatomy_term",
+    "Anatomy_function",
+    "Homology_group",
+    "Antibody",
+    "RNAi",
+    "SAGE_tag",
+    "SAGE_experiment",
+    "Gene_regulation",
+    "GO_term",
+    "Interaction",
+    "YH",
+    "Position_matrix",
+      );
+  return @classes;
 }
-
-sub csh {
-  my @classes = (
-		 "LongText",
-		 "Movie",
-		 "Structure_data",
-		 );
-}
-
 
 
 ###############################################
@@ -484,141 +459,57 @@ sub get_curation_stats {
   if (!open (IN, "<$file")) {
     print OUT "\n\nNo curation data available for $species.\n\n";
   } else {
-    
-    my %lab_count;
-    $lab_count{HX} = $lab_count{RW} = 0;
-    $lab_count{HX_lost} = $lab_count{RW_lost} = 0;
-    $lab_count{HX_changed} = $lab_count{RW_changed} = 0;
-    $lab_count{HX_new_gene} = $lab_count{RW_new_gene} = 0;
-    $lab_count{HX_new_isoform} = $lab_count{RW_new_isoform} = 0;
+
+    my $total = 0;
+    my $lost = 0;
+    my $changed = 0;
+    my $new_gene = 0;
+    my $new_isoform = 0;
     
     while (my $line = <IN>) {
       my @f = split /\s+/, $line;
       my $type = $f[0];
       $type =~ s/://;
-      my ($clone) = ($f[1] =~ /^(\S+)\.\S+/);
-      #print $clone, "\n";
-      my $lab;
-      if ($species eq 'elegans') {
-	$lab = &get_lab($clone);
-      } else {
-	$lab = 'RW';
-      }
-      #print "$clone $lab\n";
-      $lab_count{$lab}++;
-      
+
       if ($type eq 'lost') {
-	$lab_count{"${lab}_lost"}++;
-	print "lost $f[1] $lab\n";
+        $lost++;
+	print "lost $f[1]\n";
 
       } elsif ($type eq 'changed') {
-	$lab_count{"${lab}_changed"}++;
-	print "changed $f[1] $lab\n";
+        $changed++;
+	print "changed $f[1]\n";
 	
       } elsif ($type eq 'new') {
 	if ($f[1] =~ /[a-z]$/) { # new isoform
-	  $lab_count{"${lab}_new_isoform"}++;
-	  print "new isoform $f[1] $lab\n";
+          $new_isoform++;
+	  print "new isoform $f[1]\n";
 	  
 	  # if we have a new first isoform, we should ignore the old gene that is now lost
 	  if ($f[1] =~ /a$/) {
-	    $lab_count{"${lab}_lost"}--;
-	    $lab_count{$lab}--;
+            $lost--;
+            $total--;
 	  }
 	  
 	} else { # new gene (usually a result of splitting old gene)
-	  $lab_count{"${lab}_new_gene"}++;
-	  print "new gene $f[1] $lab\n";
+          $new_gene++;
+	  print "new gene $f[1]\n";
 
 	}
-      } elsif ($type eq 'reappeared') { # ignore for now
+      } elsif ($type eq 'reappeared') { 
+        # ignore for now
       } else {
-	die "Unrecognised type: $type\n";
+	$log->log_and_die("Unrecognised type: $type\n");
       }
-      
     }
   
 
     print OUT "\n\n-----------------------------------------\n";
     print OUT "Gene model curation changes for $species\n";
     print OUT "-----------------------------------------\n\n";
-
-    my $RW = $lab_count{RW_lost} + $lab_count{RW_changed} + $lab_count{RW_new_gene} + $lab_count{RW_new_isoform};
-    my $HX = $lab_count{HX_lost} + $lab_count{HX_changed} + $lab_count{HX_new_gene} + $lab_count{HX_new_isoform};
-    my $total = $HX + $RW;
-    my $total_lost = $lab_count{HX_lost} + $lab_count{RW_lost};
-    my $total_changed = $lab_count{RW_changed} + $lab_count{HX_changed};
-    my $total_new_gene = $lab_count{RW_new_gene} + $lab_count{HX_new_gene};
-    my $total_iso = $lab_count{RW_new_isoform} + $lab_count{HX_new_isoform};
-
-    if ($species eq 'elegans') {
-	print OUT "Total $total\nlost: $total_lost\nchanged: $total_changed\nnew gene: $total_new_gene\nnew isoform: $total_iso\n";
-    } else {
-	print OUT "Total $RW\nlost: $lab_count{RW_lost}\nchanged: $lab_count{RW_changed}\nnew gene: $lab_count{RW_new_gene}\nnew isoform: $lab_count{RW_new_isoform}\n";
-    }
+    print OUT "Total $total\n";
+    print OUT "lost: $lost\n";
+    print OUT "changed: $changed\n";
+    print OUT "new gene: $new_gene\n";
+    print OUT "new isoform: $new_isoform\n";
   }
 }
-
-###############################################
-
-sub get_lab {
-
-  my ($clone_name) = @_;
-
-  my $centre = $clonelab{$clone_name};          # get the lab that sequenced this clone
-  if (!defined $centre) {return 'RW'}
-  return $centre;
-}
-
-###############################################
-
-=pod
-
-=head2   NAME - dbcomp.pl
-
-=head1 USAGE
-
-=over 4
-
-=item dbcomp.pl [-options]
-
-=back
-
-This script will (by default) perform a class by class comparison of autoace and 
-the previous WormBase release database.  It will calculate what database this
-will be but you can force the choice of the second database by using the -database
-option.  Classes to be compared are specified within the script and should be amended
-as necessary when classes are added/removed to the database.
-
-
-=over 4
-
-=item MANDATORY arguments: none
-
-=back
-
-=over 4
-
-=item OPTIONAL arguments: -debug, -help, -database
-
-
--debug and -help are standard Wormbase script options.
-
--database allows you to specify the path of a database which will
-then be compared to the BUILD/autoace directory.
-
--database2 allows you to specify a second database to compare to that specified
-by -database (rather than compare with previous build)
-
-
-=back
-
-=head1 AUTHOR - Dan Lawson (but completely rewritten by Keith Bradnam, and rewritten again by Gary Williams)
-
-
-Email krb@sanger.ac.uk
-
-
-
-=cut
-
