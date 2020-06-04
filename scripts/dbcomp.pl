@@ -136,7 +136,7 @@ print OUT  " +------------------------+---------+---------+---------+---------+-
 #&classes("Sanger Sequence Data", &sanger_seq_data);
 &classes("Sanger", &sanger);
 &classes("CalTech", &caltech);
-&classes("Cold Spring Harbor", &csh);
+&classes("OICR", &csh);
 
 #########################################################################
 # Get numbers of genes curated
