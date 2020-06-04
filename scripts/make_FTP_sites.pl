@@ -399,7 +399,7 @@ sub copy_gff_files{
     my $target_gff2_file = "$gff_dir/${fname_prefix}.annotations.gff2.gz";
     my $target_gff3_file = "$gff_dir/${fname_prefix}.annotations.gff3.gz";
     my $target_gtf_file = "$gff_dir/${fname_prefix}.canonical_geneset.gtf.gz";
-    my $target_prot_file = "$gff_dir/${fname_prefix}.protein_annotation.gff3";
+    my $target_prot_file = "$gff_dir/${fname_prefix}.protein_annotation.gff3.gz";
 
     foreach my $fname_pair ([$source_gff2_file,  $target_gff2_file],
                             [$source_gff3_file,  $target_gff3_file],
