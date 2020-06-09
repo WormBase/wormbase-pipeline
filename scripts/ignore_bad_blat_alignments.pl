@@ -72,7 +72,6 @@ my $chromosomes_dir = $wormbase->chromosomes; # AUTOACE CHROMSOMES
 my $gff_dir         = $wormbase->gff;         # AUTOACE GFF
 my $gff_splits_dir  = $wormbase->gff_splits;  # AUTOACE GFF SPLIT
 
-
 my %mol_types = ( 'elegans'          => [qw( EST mRNA OST RST Trinity Nanopore)],
                   'briggsae'         => [qw( mRNA EST Trinity)],
                   'remanei'          => [qw( mRNA EST)],
@@ -110,6 +109,7 @@ foreach my $chromosome (@chromosomes) {
   my @tri_introns;
   my @iso_introns;
   my @nan_introns;
+  my @nan_introns_confirmed;
 
   my $est_match;
   my $rst_match;
@@ -125,7 +125,29 @@ foreach my $chromosome (@chromosomes) {
   if (grep /^mRNA$/, @{$mol_types{$species}}) {@mrn_introns = $ovlp->get_intron_from_exons($ovlp->get_mRNA_BEST($chromosome))};
   if (grep /^Trinity$/, @{$mol_types{$species}}) {@tri_introns = $ovlp->get_intron_from_exons($ovlp->get_Trinity_BEST($chromosome))};
   if (grep /^IsoSeq$/, @{$mol_types{$species}}) {@iso_introns = $ovlp->get_intron_from_exons($ovlp->get_IsoSeq_BEST($chromosome))};
-  if (grep /^Nanopore$/, @{$mol_types{$species}}) {@nan_introns = $ovlp->get_intron_from_exons($ovlp->get_Nanopore_BEST($chromosome))};
+  if (grep /^Nanopore$/, @{$mol_types{$species}}) {
+    @nan_introns = $ovlp->get_intron_from_exons($ovlp->get_Nanopore_BEST($chromosome));
+    my @RNASeq_introns = $ovlp->get_RNASeq_splice($chromosome);
+    # get only those Nanopore introns that are confirmed by the RNASeq introns
+    my $RNASeq_confirmed_match = $ovlp->compare(\@RNASeq_introns, exact_match => 1, same_sense => 0); # non-canonical splice site RNASeq introns are sometimes placed on the wrong' strand, so compare to both strands
+    my %Nano_not_confirmed;
+    foreach my $nano (@nan_introns) {
+      if (! $RNASeq_confirmed_match->match($nano)) {
+	$Nano_not_confirmed{$nano->[0]} = 1; # note the name of any Nanopore intron that does not have any matching RNASeq introns 
+      }
+    }
+    foreach my $nano (@nan_introns)  { # get the introns of Nanaopore transcripts that have all their introns confirmed
+      if (!exists $Nano_not_confirmed{$nano->[0]}) {
+	push @nan_introns_confirmed, $nano;
+      } else {
+	$log->write_to("$nano->[0] has an intron with no RNASeq confirmation\n");
+	print ACE "\n\n";
+	print ACE "Sequence : $nano->[0]\n";
+	print ACE "Ignore Remark \"Has an intron with no RNASeq supporting evidence\"\n";
+	print ACE "Ignore Inferred_automatically \"ignore_bad_blat_alignments\"\n";
+      }
+    }
+  }
  
   my @CDS_introns = $ovlp->get_curated_CDS_introns($chromosome);
 
@@ -135,7 +157,7 @@ foreach my $chromosome (@chromosomes) {
   if (grep /^mRNA$/, @{$mol_types{$species}}) {$mrn_match = $ovlp->compare(\@mrn_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
   if (grep /^Trinity$/, @{$mol_types{$species}}) {$tri_match = $ovlp->compare(\@tri_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
   if (grep /^IsoSeq$/, @{$mol_types{$species}}) {$iso_match = $ovlp->compare(\@iso_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
-  if (grep /^Nanopore$/, @{$mol_types{$species}}) {$nan_match = $ovlp->compare(\@nan_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
+  if (grep /^Nanopore$/, @{$mol_types{$species}}) {$nan_match = $ovlp->compare(\@nan_introns_confirmed, exact_match => 1, same_sense => 0)};  # exact match to either sense
 
 
   my %overlapping_hsps = (); # EST/RST/OST/mRNA/Trinity/IsoSeq/Nanopore transcripts that match a CDS, keyed by transcript name, value is array of matching CDSs
