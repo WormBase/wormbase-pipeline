@@ -140,7 +140,7 @@ foreach my $chromosome (@chromosomes) {
       if (!exists $Nano_not_confirmed{$nano->[0]}) {
 	push @nan_introns_confirmed, $nano;
       } else {
-	$log->write_to("$nano->[0] has an intron with no RNASeq confirmation\n");
+#	$log->write_to("$nano->[0] has an intron with no RNASeq confirmation\n");
 	print ACE "\n\n";
 	print ACE "Sequence : $nano->[0]\n";
 	print ACE "Ignore Remark \"Has an intron with no RNASeq supporting evidence\"\n";
