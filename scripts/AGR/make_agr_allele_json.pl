@@ -52,10 +52,6 @@ my $db = Ace->connect(-path => $acedbpath, -program => $tace) or die("Connection
 my $it = $db->fetch_many(-query => 'find Variation WHERE Live AND COUNT(Gene) == 1 AND (Phenotype OR Disease_info OR Interactor) AND NOT Natural_variant');
 process($it);
 
-
-# $it = $db->fetch_many(-query => 'find Variation WHERE Live AND Corresponding_transgene');
-# process($it);
-
 $it = $db->fetch_many(-query => 'find Transgene');
 process_transgenes($it);
 
@@ -118,7 +114,6 @@ sub process{
       synonyms      => [keys \%synonyms],
       secondaryIds => [],
       taxonId       => "NCBITaxon:" . $taxid,
-#     gene          => "WB:$gene",
       crossReferences => [ { id => "WB:$obj", pages => ['allele','allele/references']}],
     };
     map { push @{$json_obj->{crossReferences}}, {id => "WB:$_", pages => ['reference']} } $obj->Reference;
@@ -153,9 +148,6 @@ sub process_transgenes{
   
     next unless $disease or $phenotype or $interaction;
 
-#   my ($gene) = $obj->Construct->Gene->name if $obj->Construct && $obj->Construct->Gene;
-#   next if defined $bgi_genes and not exists $bgi_genes->{"WB:$gene"};
-
     my $symbol = $obj->Public_name ? $obj->Public_name->name : "$obj";
     my %synonyms = map {$_->name => 1} $obj->Synonym;
 
@@ -166,30 +158,18 @@ sub process_transgenes{
       synonyms      => [keys \%synonyms],
       secondaryIds => [],
       taxonId       => "NCBITaxon:" . $taxid,
-#     gene          => "WB:$gene",
       crossReferences => [ { id => "WB:$obj", pages => ['transgene','transgene/references'] }],
     };
     $json_obj->{description} = "${\$obj->Summary}" if $obj->Summary;
     map { push @{$json_obj->{crossReferences}}, {id => "WB:$_", pages => ['reference']} }$obj->Reference;
 
-    my $construct = $obj->Construct;
-    next unless $construct;
-
-#   $$json_obj{construct}="WB:$construct";
-    
-#    next unless $obj->Genetic_information; # skip the transgenes where the type hasn't been curated
-#    if(grep {$_ eq 'Integrated'} $obj->Genetic_information){
-#        $$json_obj{constructInsertionType}='Transgenic Insertion'
-#    }elsif(grep {$_ eq 'Extrachromosomal'} $obj->Genetic_information){
-#        $$json_obj{constructInsertionType}='Extrachromosomal Array'
-#    }else{next} # skip the ones without a AGR type
-
-    push @$json_obj{alleleObjectRelations} , {objectRelation => {associationType => 'contains',construct => "WB:$construct"}};
+    # $json_obj{alleleObjectRelations}=[{objectRelation => {associationType => 'contains',construct => "WB:$construct"}}];
+    $json_obj{alleleObjectRelations}=[] if $obj->Construct;
+    map {push @{$json_obj{alleleObjectRelations}},{ alleleObjectRelation => {associationType =>'contains',construct => "WB:$_}"} } $obj->Construct;
 
     push @alleles, $json_obj;
   }
 }
-
 
 my $data = {
   metaData => AGR::get_file_metadata_json( (defined $ws_version) ? $ws_version : $wormbase->get_wormbase_version_name() ),

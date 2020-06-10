@@ -48,7 +48,7 @@ while (my $obj = $it->next) {
      # the two below are actually lists in the database, so it needs changing the JSON schema
      $json_obj{constructComponents}=[];
      map {push @{$json_obj{constructComponents}},{ componentRelation => 'is_regulated_by',componentID => "WB:${\$_}", componentSymbol => "${\$_->Public_name}"}} $obj->Driven_by_gene;
-     push @{$json_obj{constructComponents}},{ componentRelation => 'expresses',componentID => "WB:${\$obj->Gene}", componentSymbol => "${\$obj->Gene->Public_name}"} if $obj->Gene;
+     map {push @{$json_obj{constructComponents}},{ componentRelation => 'expresses',componentID => "WB:${\$_}", componentSymbol => "${\$_->Public_name}"}} $obj->Gene;
 
      push @constructs, \%json_obj;
 }
