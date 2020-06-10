@@ -161,11 +161,11 @@ sub process_transgenes{
       crossReferences => [ { id => "WB:$obj", pages => ['transgene','transgene/references'] }],
     };
     $json_obj->{description} = "${\$obj->Summary}" if $obj->Summary;
-    map { push @{$json_obj->{crossReferences}}, {id => "WB:$_", pages => ['reference']} }$obj->Reference;
+    map { push @{$json_obj->{crossReferences}}, {id => "WB:$_", pages => ['reference']} } $obj->Reference;
 
     # $json_obj{alleleObjectRelations}=[{objectRelation => {associationType => 'contains',construct => "WB:$construct"}}];
-    $json_obj{alleleObjectRelations}=[] if $obj->Construct;
-    map {push @{$json_obj{alleleObjectRelations}},{ alleleObjectRelation => {associationType =>'contains',construct => "WB:$_}"} } $obj->Construct;
+    $json_obj->{alleleObjectRelations}=[] if $obj->Construct;
+    map {push @{$json_obj->{alleleObjectRelations}},{objectRelation => {associationType =>'contains',construct => "WB:$_"}}} $obj->Construct;
 
     push @alleles, $json_obj;
   }
