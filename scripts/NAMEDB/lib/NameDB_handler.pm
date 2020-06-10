@@ -1985,10 +1985,10 @@ sub new_strains {
 
 }
 #############################################################################
-# kill a set of feature names
+# kill a set of strain names
 #
 # Args:
-# $names - an array-ref of feature IDs to kill
+# $names - an array-ref of strain IDs to kill
 # $why is optional remark text.
 
 
@@ -2000,9 +2000,9 @@ sub kill_strains {
 
 }
 #############################################################################
-# find_variations($pattern)
-# returns an array-ref of hash-ref of any variations whose name matches the input pattern.
-# pattern can be any of a regular expression or part of the name of a WBVarID, or name
+# find_strains($pattern)
+# returns an array-ref of hash-ref of any strain whose name matches the input pattern.
+# pattern can be any of a regular expression or part of the name of a WBStrainID, or name
 # patterns are case-sensitive
 # the pattern is contrained to match at the start of the name, use '.*' at the start of the pattern to match anywhere in the name
 # example patterns:
@@ -2012,8 +2012,8 @@ sub kill_strains {
 # $pattern - string
 #
 # Returns an array-ref of hash of 
-#      'id' => 'WBVar01000645'
-#      'name' => 'gk427998'
+#      'id' => 'WBStrain00000001'
+#      'name' => 'N2'
 #
 # If nothing is found, an empty array-ref is returned.
 
@@ -2028,7 +2028,7 @@ sub find_strains {
 #Resurrect a batch of dead strains.
 #
 # Args:
-# $ids - an array-ref of feature IDs to resurrect
+# $ids - an array-ref of Strain IDs to resurrect
 
 
 sub resurrect_strains {
@@ -2039,6 +2039,89 @@ sub resurrect_strains {
 
 }
 
+#############################################################################
+
+#============================================================================
+# People
+#============================================================================
+
+# new_person($name, $email, $wbperson);
+# Args:
+# $name - how they are called
+# $email - how they are mailed
+# $wbperson - how they are identified
+
+sub new_person {
+  my ($self, $name, $email, $wbperson) = @_;
+
+  my %data = (
+	      'Name' => $name,
+	      'Email' => $email,
+	      'WBPerson' => $wbperson,
+	     );
+
+  my $info = $self->{'db'}->new_person(\%data);
+  return $info;
+
+}
+#############################################################################
+# kill_person($identifier)
+# $identifier should be a single Person identifier (one of WBPersonID, email, Person's name)
+
+# Args:
+# $person - string, person identifier of the person to delete
+
+sub kill_person {
+  my ($self, $person) = @_;
+
+  my $info = $self->{'db'}->kill_person($person);
+  return $info;
+
+}
+
+#############################################################################
+# info_person($identifier)
+# $identifier should be a single Person identifier (one of WBPersonID, email, Person's name)
+
+# Args:
+# $person - string, person identifier of the person to look at
+
+sub info_person {
+  my ($self, $person) = @_;
+
+  my $info = $self->{'db'}->info_person($person);
+  return $info;
+
+}
+
+#############################################################################
+# update_person($identifier, $name, $email, $wbperson)
+# $identifier should be a single Person identifier (one of WBPersonID, email, Person's name)
+
+# Args:
+# $person - string, person identifier of the person to update (name, email or wbpersonID)
+# $name - update how they are called, or undef
+# $email - update how they are mailed, or undef
+# $wbperson - update how they are identified, or undef
+
+sub update_person {
+  my ($self, $person, $name, $email, $wbperson) = @_;
+
+  my %data = (
+	      'Name' => $name,
+	      'Email' => $email,
+	      'WBPerson' => $wbperson,
+	     );
+
+ 
+  my $info = $self->{'db'}->info_person($person, \%data);
+  return $info;
+
+}
+
+
+
+#############################################################################
 #############################################################################
 
 #############################################################################
