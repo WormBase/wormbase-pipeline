@@ -1,0 +1,170 @@
+#!/bin/env perl
+#
+# script to create the JSON for 
+#   https://github.com/alliance-genome/agr_schemas/tree/release-1.0.1.1/ingest/htp
+# based on: 
+#   https://docs.google.com/spreadsheets/d/1H7bzMJVj6KevZHDGp61tCCdRo8ubHHzEKWaYu_7gn-w
+#
+
+use strict;
+use Storable;
+use Ace;
+use JSON;
+use Storable qw(dclone);
+
+use lib $ENV{CVS_DIR};
+use Wormbase;
+use Modules::AGR;
+
+my ($debug, $test, $verbose, $store, $acedbpath, $outfile,$ws_version);
+GetOptions (
+  'debug=s'     => \$debug,
+  'test'        => \$test,
+  'verbose'     => \$verbose,
+  'store:s'     => \$store,
+  'database:s'  => \$acedbpath,
+  'outfile:s'   => \$outfile,
+  'wsversion=s' => \$ws_version,
+)||die("unknown command line option: $@\n");
+
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+      );
+}
+
+my $tace = $wormbase->tace;
+my $date = AGR::get_rfc_date();
+
+$acedbpath  ||= $wormbase->autoace;
+$ws_version ||= $wormbase->get_wormbase_version_name;
+$outfile    ||= "./wormbase.htp_metadata.${ws_version}.json";
+
+my $db = Ace->connect(-path => $acedbpath, -program => $tace) or die('Connection failure: '. Ace->error);
+
+my @htps;
+
+
+my $assembly = fetch_assembly($db,$wormbase);
+
+
+# RNASeq
+my $it = $db->fetch_many(-query => 'find Analysis RNASeq_Study*;Follow Subproject;Species_in_analysis="Caenorhabditis elegans"')||die(Ace->error);
+while (my $subProject = $it->next){
+	my %json_obj;
+	my $sample=$subproject->Sample;
+	$json_obj{primaryId} = {sampleId => "WB:$subproject"}; # required
+	$json_obj{sampleTitle} = $subProject->Title->name;
+	$json_obj{taxonId} = $wormbase->ncbi_tax_id;
+	$json_obj{datasetId} = ["WB:${\$sample->name}"];
+	$json_obj{sex}=$sample->Sex->name if $sample->Sex->name;
+	$json_obj{sampleAge}="WB:${\$sample->Life_stage->name}" if $sample->Life_stage;
+	if ($sample->Tissue){
+		$json_obj{sampleLocation}=[]
+		map {push @{$json_obj{sampleLocation},"WB:${\$_->name}"}} $sample->Tissue;
+	}
+	$json_obj{assayType}='MMO:0000659'; # RNA-seq assay
+	$json_obj{assemblyVersion}=$assembly;
+	push @htps,\%json_obj;
+}
+
+# MMO:0000659 - RNA-seq assay
+# MMO:0000649 - microarray
+# MMO:0000648 - transcript array
+# MMO:0000664 - proteomic profiling
+# MMO:0000666 - high trhoughput proteomic profiling
+# MMO:0000000 - measurement method
+
+# micro arrays - single channel
+$it = $db->fetch_many(-query => 'find Microarray_experiment;Microarray_sample')||die(Ace->error);
+while (my $array = $it->next){
+	my %json_obj;
+	my $sample=$array->Microarray_sample;
+	$json_obj{primaryId} = {sampleId => "WB:$array"}; # required
+	$json_obj{taxonId} = $wormbase->ncbi_tax_id;
+	$json_obj{datasetId} = ["WB:${\$sample->name}"];
+	$json_obj{sex}=$sample->Sex->name if $sample->Sex->name;
+	$json_obj{sampleAge}="WB:${\$sample->Life_stage->name}" if $sample->Life_stage;
+	if ($sample->Tissue){
+		$json_obj{sampleLocation}=[]
+		map {push @{$json_obj{sampleLocation},"WB:${\$_->name}"}} $sample->Tissue;
+	}
+	$json_obj{assayType}='MMO:0000649'; # micro array
+	$json_obj{assemblyVersion}=$assembly;
+	push @htps,\%json_obj;
+}
+
+# micro arrays - dual channel
+$it = $db->fetch_many(-query => 'find Microarray_experiment;Sample_A;Sample_B')||die(Ace->error);
+while (my $array = $it->next){
+	my %json_obj;
+	my @samples=($array->Sample_A , $array->Sample_B);
+
+	foreach my $s(@samples){
+		$json_obj{primaryId} = {sampleId => "WB:$s"}; # required
+		$json_obj{taxonId} = $wormbase->ncbi_tax_id;
+		$json_obj{datasetId} = ["WB:$s"];
+		$json_obj{sex}=$s->Sex->name if $s->Sex->name;
+		$json_obj{sampleAge}="WB:${\$s->Life_stage->name}" if $s->Life_stage;
+		if ($s->Tissue){
+			$json_obj{sampleLocation}=[]
+			map {push @{$json_obj{sampleLocation},"WB:${\$_->name}"}} $s->Tissue;
+		}
+		$json_obj{assayType}='MMO:0000649'; # micro array
+		$json_obj{assemblyVersion}=$assembly;
+		push @htps,\%json_obj;
+	}
+}
+
+
+my $data = {
+  metaData => AGR::get_file_metadata_json( (defined $ws_version) ? $ws_version : $wormbase->get_wormbase_version_name(), $date ),
+  data     => \@htps,
+};
+
+my $out_fh;
+if ($outfile) {
+  open $out_fh, ">$outfile" or die "Could not open $outfile for writing\n";
+} else {
+  $out_fh = \*STDOUT;
+}
+
+
+my $json_obj = JSON->new;
+my $string = $json_obj->allow_nonref->canonical->pretty->encode($data);
+print $out_fh $string;
+
+$db->close;
+
+
+sub fetch_assembly{
+	my ($db,$wormbase) = @_;
+	# get the assembly name for the canonical bioproject
+	my $assembly_name;
+  
+	my $species_obj = $acedb->fetch(-class => 'Species', -name => $wormbase->full_name);
+	my @seq_col = $species_obj->at('Assembly');
+        
+	foreach my $seq_col_name (@seq_col) {
+		my $bioproj;
+		my $seq_col = $seq_col_name->fetch;
+		my $this_assembly_name = $seq_col->Name;
+
+		my @db = $seq_col->at('Origin.DB_info.Database');
+		foreach my $db (@db) {
+       			$bioproj = $db->right->right->name if ($db->name eq 'NCBI_BioProject');
+		}
+    
+		if (defined $bioproj and $wormbase->ncbi_bioproject eq $bioproj) {
+			$assembly_name = $this_assembly_name->name;
+			last;
+		}
+        }
+    
+	if (not defined $assembly_name) {
+	    die "Could not find name of current assembly for " . $wormbase->species() . "\n";
+	}
+        return $assembly_name;
+}
