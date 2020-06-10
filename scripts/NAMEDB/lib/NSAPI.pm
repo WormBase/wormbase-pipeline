@@ -473,6 +473,137 @@ sub info_gene {
   return $content
 
 }
+
+#======================================================================
+#======================================================================
+# PERSON operations
+#======================================================================
+# new_person
+# POST /api/person
+
+# Args:
+# $data - hash-ref with values being the new data to update with
+#         the hashes contain one or more of the keys ('WBPerson', 'Email', 'Name').
+# e.g.
+# $data = {"Email" => "jbloggs@wormbase.org", "Name" => "Joe Bloggs", "WBPerson" => "WBPerson 0000001"};
+
+#
+sub new_person {
+  my ($self, $data) = @_;
+  
+  if ($self->noise()) {print "new person","\n"}
+  
+
+#{
+#  "active?": true,
+#  "email": "matthew.russell@wormbase.org",
+#  "id": "WBPerson33035",
+#  "name": "Matt Russell", 
+#} 
+  my $payload = '{"data": {"active?": true,';
+  
+  my $email = $data->{'Email'};
+  my $wbperson = $data->{'WBPerson'};
+  my $name = $data->{'Name'};
+  
+  $payload .= '"email": "'.$email.'",' if (defined $email);
+  $payload .= '"id": "'.$wbperson.'",' if (defined $wbperson);
+  $payload .= '"name": "'.$name.'",' if (defined $name);
+  
+  chop $payload; # remove last ','
+  $payload .= '}';
+
+  if ($self->noise()) {print $payload,"\n"}
+  
+  my $content = $self->curl("POST", "person", $payload);
+  if ($self->noise()) {print Dumper $content}
+  
+  return $content;
+}
+
+#======================================================================
+# kill_person($identifier)
+# $identifier should be a single Person identifier (one of WBPersonID, email, Person's name)
+# DELETE /api/person/{identifier}
+
+# Args:
+# $person - string, person identifier of the person to delete
+
+sub kill_person {
+  my ($self, $person) = @_;
+  
+  if ($self->noise()) {print "delete $person","\n"}
+  
+  my $content = $self->curl("DELETE", "person/$person");
+  if ($self->noise()) {print Dumper $content}
+  
+  return $content;
+}
+#======================================================================
+# info_person($identifier)
+# $identifier should be a single Person identifier (one of WBPersonID, email, Person's name)
+# GET /api/person/{identifier}
+
+# Args:
+# $person - string, person identifier of the person to look at
+
+sub info_person {
+  my ($self, $person) = @_;
+  
+  if ($self->noise()) {print "info $person","\n"}
+  
+  my $content = $self->curl("GET", "person/$person");
+  if ($self->noise()) {print Dumper $content}
+  
+  return $content;
+}
+#======================================================================
+# update_person($identifier)
+# $identifier should be a single Person identifier (one of WBPersonID, email, Person's name)
+# PUT /api/person/{identifier}
+
+# Args:
+# $person - string, person identifier of the person to update
+# $data - hash-ref with values being the new data to update with
+#         the hashes contain one or more of the keys ('WBPerson', 'Email', 'Name').
+# e.g.
+# $data = {"WBPerson" => "jbloggs@wormbase.org"};
+
+#
+sub update_person {
+  my ($self, $person, $data) = @_;
+  
+  if ($self->noise()) {print "update $person","\n"}
+  
+
+#{
+#  "active?": true,
+#  "email": "matthew.russell@wormbase.org",
+#  "id": "WBPerson33035",
+#  "name": "Matt Russell", 
+#} 
+  my $payload = '{"data": {"active?": true,';
+  
+  my $email = $data->{'Email'};
+  my $wbperson = $data->{'WBPerson'};
+  my $name = $data->{'Name'};
+  
+  $payload .= '"email": "'.$email.'",' if (defined $email);
+  $payload .= '"id": "'.$wbperson.'",' if (defined $wbperson);
+  $payload .= '"name": "'.$name.'",' if (defined $name);
+  
+  chop $payload; # remove last ','
+  $payload .= '}';
+
+  if ($self->noise()) {print $payload,"\n"}
+  
+  my $content = $self->curl("PUT", "person/$person", $payload);
+  if ($self->noise()) {print Dumper $content}
+  
+  return $content;
+}
+
+#======================================================================
 #======================================================================
 #======================================================================
 #======================================================================
@@ -993,7 +1124,7 @@ sub batch_split_genes {
 #======================================================================
 # BATCH STRAIN operations
 #======================================================================
-# new_strain($names, $why)
+# new_strains($names, $why)
 
 # Assign identifiers and associate names, creating new strains
 
@@ -1022,7 +1153,7 @@ sub new_strains {
   return $self->batch('POST', 'entity/strain', $payload);
 
 }
-# find_strain($pattern)
+# find_strains($pattern)
 # returns a hash ref of any strain whose name matches the input pattern.
 # pattern can be any of a regular expression or part of the name of a WBStrainID, or name
 # patterns are case-sensitive
