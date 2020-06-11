@@ -4,10 +4,10 @@
 #   https://github.com/alliance-genome/agr_schemas/tree/release-1.0.1.1/ingest/htp
 # based on: 
 #   https://docs.google.com/spreadsheets/d/1H7bzMJVj6KevZHDGp61tCCdRo8ubHHzEKWaYu_7gn-w
-#
 
 use strict;
 use Storable;
+use Getopt::Long;
 use Ace;
 use JSON;
 use Storable qw(dclone);
@@ -16,17 +16,19 @@ use lib $ENV{CVS_DIR};
 use Wormbase;
 use Modules::AGR;
 
-my ($debug, $test, $verbose, $store, $acedbpath, $outfile,$ws_version);
+my ($debug, $test, $verbose, $store, $acedbpath, $outfile,$ws_version,$outFdata);
 GetOptions (
   'debug=s'     => \$debug,
   'test'        => \$test,
   'verbose'     => \$verbose,
   'store:s'     => \$store,
   'database:s'  => \$acedbpath,
-  'outfile:s'   => \$outfile,
+  'samplefile:s'=> \$outfile,
+  'datasetfile:s'=> \$outFdata,
   'wsversion=s' => \$ws_version,
 )||die("unknown command line option: $@\n");
 
+my $wormbase;
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
@@ -40,34 +42,45 @@ my $date = AGR::get_rfc_date();
 
 $acedbpath  ||= $wormbase->autoace;
 $ws_version ||= $wormbase->get_wormbase_version_name;
-$outfile    ||= "./wormbase.htp_metadata.${ws_version}.json";
 
 my $db = Ace->connect(-path => $acedbpath, -program => $tace) or die('Connection failure: '. Ace->error);
 
-my @htps;
-
+my @htps; # high troughput samples
+my @htpd; # high thruput datasets
 
 my $assembly = fetch_assembly($db,$wormbase);
 
-
 # RNASeq
-my $it = $db->fetch_many(-query => 'find Analysis RNASeq_Study*;Follow Subproject;Species_in_analysis="Caenorhabditis elegans"')||die(Ace->error);
-while (my $subProject = $it->next){
-	my %json_obj;
-	my $sample=$subproject->Sample;
-	$json_obj{primaryId} = {sampleId => "WB:$subproject"}; # required
-	$json_obj{sampleTitle} = $subProject->Title->name;
-	$json_obj{taxonId} = $wormbase->ncbi_tax_id;
-	$json_obj{datasetId} = ["WB:${\$sample->name}"];
-	$json_obj{sex}=$sample->Sex->name if $sample->Sex->name;
-	$json_obj{sampleAge}="WB:${\$sample->Life_stage->name}" if $sample->Life_stage;
-	if ($sample->Tissue){
-		$json_obj{sampleLocation}=[]
-		map {push @{$json_obj{sampleLocation},"WB:${\$_->name}"}} $sample->Tissue;
+my $it = $db->fetch_many(-query => 'find Analysis RNASeq_Study*;Species_in_analysis="Caenorhabditis elegans"')||die(Ace->error);
+while (my $analysis = $it->next){
+	# sample
+	foreach my $subproject ($analysis->Subproject){
+		my %json_obj;
+		my $sample=$subproject->Sample;
+		$json_obj{primaryId} = {sampleId => "WB:$subproject"}; # required
+		$json_obj{sampleTitle} = $subproject->Title->name;
+		$json_obj{taxonId} = $wormbase->ncbi_tax_id;
+		$json_obj{datasetId} = ["WB:${\$subproject->Project->name}"];
+		$json_obj{sex}=$sample->Sex->name if $sample->Sex->name;
+		$json_obj{sampleAge}="WB:${\$sample->Life_stage->name}" if $sample->Life_stage;
+		if ($sample->Tissue){
+			$json_obj{sampleLocation}=[];
+			map {push @{$json_obj{sampleLocation}},"WB:${\$_->name}"} $sample->Tissue;
+		}
+		$json_obj{assayType}='MMO:0000659'; # RNA-seq assay
+		$json_obj{assemblyVersion}=$assembly;
+		push @htps,\%json_obj;
 	}
-	$json_obj{assayType}='MMO:0000659'; # RNA-seq assay
-	$json_obj{assemblyVersion}=$assembly;
-	push @htps,\%json_obj;
+
+	# dataset
+	my %json2_obj;
+	my @papers = map {get_paper($_)} $analysis->Reference;
+	$json2_obj{primaryId} = $analysis->name; # required
+	$json2_obj{publication} = \@papers if @papers;;
+	$json2_obj{title} = $analysis->Title->name;
+	$json2_obj{summary} = $analysis->Description;
+	$json2_obj{category}='unclassified';
+	push @htpd,\%json2_obj;
 }
 
 # MMO:0000659 - RNA-seq assay
@@ -82,14 +95,14 @@ $it = $db->fetch_many(-query => 'find Microarray_experiment;Microarray_sample')|
 while (my $array = $it->next){
 	my %json_obj;
 	my $sample=$array->Microarray_sample;
-	$json_obj{primaryId} = {sampleId => "WB:$array"}; # required
+	$json_obj{primaryId} = {sampleId => "WB:$sample"}; # required
 	$json_obj{taxonId} = $wormbase->ncbi_tax_id;
-	$json_obj{datasetId} = ["WB:${\$sample->name}"];
+	$json_obj{datasetId} = ["WB:$sample"];
 	$json_obj{sex}=$sample->Sex->name if $sample->Sex->name;
 	$json_obj{sampleAge}="WB:${\$sample->Life_stage->name}" if $sample->Life_stage;
 	if ($sample->Tissue){
-		$json_obj{sampleLocation}=[]
-		map {push @{$json_obj{sampleLocation},"WB:${\$_->name}"}} $sample->Tissue;
+		$json_obj{sampleLocation}=[];
+		map {push @{$json_obj{sampleLocation},"WB:$_"}} $sample->Tissue;
 	}
 	$json_obj{assayType}='MMO:0000649'; # micro array
 	$json_obj{assemblyVersion}=$assembly;
@@ -109,8 +122,8 @@ while (my $array = $it->next){
 		$json_obj{sex}=$s->Sex->name if $s->Sex->name;
 		$json_obj{sampleAge}="WB:${\$s->Life_stage->name}" if $s->Life_stage;
 		if ($s->Tissue){
-			$json_obj{sampleLocation}=[]
-			map {push @{$json_obj{sampleLocation},"WB:${\$_->name}"}} $s->Tissue;
+			$json_obj{sampleLocation}=[];
+			map {push @{$json_obj{sampleLocation},"WB:$_"}} $s->Tissue;
 		}
 		$json_obj{assayType}='MMO:0000649'; # micro array
 		$json_obj{assemblyVersion}=$assembly;
@@ -118,33 +131,56 @@ while (my $array = $it->next){
 	}
 }
 
+################################################
 
-my $data = {
-  metaData => AGR::get_file_metadata_json( (defined $ws_version) ? $ws_version : $wormbase->get_wormbase_version_name(), $date ),
-  data     => \@htps,
-};
-
-my $out_fh;
-if ($outfile) {
-  open $out_fh, ">$outfile" or die "Could not open $outfile for writing\n";
-} else {
-  $out_fh = \*STDOUT;
-}
-
-
-my $json_obj = JSON->new;
-my $string = $json_obj->allow_nonref->canonical->pretty->encode($data);
-print $out_fh $string;
+print_json(\@htps,$outfile);
+print_json(\@htpd,$outFdata);
 
 $db->close;
 
+sub print_json{
+	my ($data,$file) = @_;
+	my $completeData = {
+	  metaData => AGR::get_file_metadata_json( (defined $ws_version) ? $ws_version : $wormbase->get_wormbase_version_name(), $date ),
+	  data     => $data,
+	};
+        my $out_fh;
+	if ($file) {
+	  open $out_fh, ">$outfile" or die "Could not open $outfile for writing\n";
+	} else {
+	  $out_fh = \*STDOUT;
+	}
+
+	my $json_obj = JSON->new;
+	print $out_fh $json_obj->allow_nonref->canonical->pretty->encode($completeData);
+}
+
+###########
+sub get_paper {
+  my ($wb_paper) = @_;
+
+  my $json_paper = {};
+
+  my $pmid;
+  foreach my $db ($wb_paper->Database) {
+    if ($db->name eq 'MEDLINE') {
+      $pmid = $db->right->right->name;
+      last;
+    }
+  }
+  $json_paper->{publicationId} = $pmid ? "PMID:$pmid" : "WB:$wb_paper";
+  $json_paper->{crossReference} = {id =>"WB:$wb_paper",pages => ['reference']};
+
+  return $json_paper;
+}
+###########
 
 sub fetch_assembly{
 	my ($db,$wormbase) = @_;
 	# get the assembly name for the canonical bioproject
 	my $assembly_name;
   
-	my $species_obj = $acedb->fetch(-class => 'Species', -name => $wormbase->full_name);
+	my $species_obj = $db->fetch(-class => 'Species', -name => $wormbase->full_name);
 	my @seq_col = $species_obj->at('Assembly');
         
 	foreach my $seq_col_name (@seq_col) {
