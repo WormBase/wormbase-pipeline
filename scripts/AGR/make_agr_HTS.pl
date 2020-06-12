@@ -61,7 +61,7 @@ while (my $analysis = $it->next){
 		$json_obj{sampleTitle} = $subproject->Title->name;
 		$json_obj{taxonId} = $wormbase->ncbi_tax_id;
 		$json_obj{datasetId} = ["WB:${\$subproject->Project->name}"];
-		$json_obj{sex}=$sample->Sex->name if $sample->Sex->name;
+		$json_obj{sex}=$sample->Sex->name if $sample->Sex;
 		$json_obj{sampleAge}="WB:${\$sample->Life_stage->name}" if $sample->Life_stage;
 		if ($sample->Tissue){
 			$json_obj{sampleLocation}=[];
@@ -75,11 +75,11 @@ while (my $analysis = $it->next){
 	# dataset
 	my %json2_obj;
 	my @papers = map {get_paper($_)} $analysis->Reference;
-	$json2_obj{primaryId} = $analysis->name; # required
+	$json2_obj{primaryId} = 'WB:'.$analysis->name; # required
 	$json2_obj{publication} = \@papers if @papers;;
-	$json2_obj{title} = $analysis->Title->name;
-	$json2_obj{summary} = $analysis->Description;
-	$json2_obj{category}='unclassified';
+	$json2_obj{title} = $analysis->Title->name if $analysis->Title;
+	$json2_obj{summary} = $analysis->Description->name if $analysis->Description;
+	$json2_obj{categoryTags}=['unclassified'];
 	push @htpd,\%json2_obj;
 }
 
@@ -97,38 +97,72 @@ while (my $array = $it->next){
 	my $sample=$array->Microarray_sample;
 	$json_obj{primaryId} = {sampleId => "WB:$sample"}; # required
 	$json_obj{taxonId} = $wormbase->ncbi_tax_id;
-	$json_obj{datasetId} = ["WB:$sample"];
-	$json_obj{sex}=$sample->Sex->name if $sample->Sex->name;
+	$json_obj{datasetId} = ["WB:$array"];
+	$json_obj{sex}=$sample->Sex->name if $sample->Sex;
 	$json_obj{sampleAge}="WB:${\$sample->Life_stage->name}" if $sample->Life_stage;
 	if ($sample->Tissue){
 		$json_obj{sampleLocation}=[];
-		map {push @{$json_obj{sampleLocation},"WB:$_"}} $sample->Tissue;
+		map {push @{$json_obj{sampleLocation}},"WB:$_"} $sample->Tissue;
 	}
 	$json_obj{assayType}='MMO:0000649'; # micro array
 	$json_obj{assemblyVersion}=$assembly;
 	push @htps,\%json_obj;
+
+	# dataset
+	my %json2_obj;
+	my @papers = map {get_paper($_)} $array->Reference;
+	$json2_obj{primaryId} = 'WB:'.$array->name; # required
+	$json2_obj{publication} = \@papers if @papers;;
+	$json2_obj{categoryTags}=['unclassified'];
+	$json2_obj{numChannels}=1;
+	push @htpd,\%json2_obj;
+
 }
 
 # micro arrays - dual channel
 $it = $db->fetch_many(-query => 'find Microarray_experiment;Sample_A;Sample_B')||die(Ace->error);
 while (my $array = $it->next){
-	my %json_obj;
 	my @samples=($array->Sample_A , $array->Sample_B);
 
+	my $n=1;
 	foreach my $s(@samples){
+		my %json_obj;
+		my $suffix = ($n==1) ? 'A' : 'B'; # for the datasets
+
 		$json_obj{primaryId} = {sampleId => "WB:$s"}; # required
 		$json_obj{taxonId} = $wormbase->ncbi_tax_id;
-		$json_obj{datasetId} = ["WB:$s"];
-		$json_obj{sex}=$s->Sex->name if $s->Sex->name;
+		$json_obj{datasetId} = ["WB:$s:$suffix"];
+		$json_obj{sex}=$s->Sex->name if $s->Sex;
 		$json_obj{sampleAge}="WB:${\$s->Life_stage->name}" if $s->Life_stage;
 		if ($s->Tissue){
 			$json_obj{sampleLocation}=[];
-			map {push @{$json_obj{sampleLocation},"WB:$_"}} $s->Tissue;
+			map {push @{$json_obj{sampleLocation}},"WB:$_"} $s->Tissue;
 		}
 		$json_obj{assayType}='MMO:0000649'; # micro array
 		$json_obj{assemblyVersion}=$assembly;
 		push @htps,\%json_obj;
+
+		# dataset
+		my %json2_obj;
+		my @papers = map {get_paper($_)} $array->Reference;
+		$json2_obj{primaryId} = "WB:$s:$suffix"; # required
+		$json2_obj{publication} = \@papers if @papers;;
+		$json2_obj{categoryTags}=['unclassified'];
+		$json2_obj{numChannels}=2;
+		push @htpd,\%json2_obj;
+		$n++;
 	}
+
+	# dataset
+	my %json2_obj;
+	my @papers = map {get_paper($_)} $array->Reference;
+	$json2_obj{primaryId} = 'WB:'.$array->name; # required
+	$json2_obj{publication} = \@papers if @papers;;
+	$json2_obj{categoryTags}=['unclassified'];
+	$json2_obj{numChannels}=2;
+	$json2_obj{subSeries}=[$samples[0].':A',$samples[1].':B'];
+	push @htpd,\%json2_obj;
+
 }
 
 ################################################
@@ -140,19 +174,20 @@ $db->close;
 
 sub print_json{
 	my ($data,$file) = @_;
+	print STDERR "printing $file\n";
 	my $completeData = {
 	  metaData => AGR::get_file_metadata_json( (defined $ws_version) ? $ws_version : $wormbase->get_wormbase_version_name(), $date ),
 	  data     => $data,
 	};
-        my $out_fh;
+        my $fh;
 	if ($file) {
-	  open $out_fh, ">$outfile" or die "Could not open $outfile for writing\n";
+	  open $fh, ">$file" or die "Could not open $outfile for writing\n";
 	} else {
-	  $out_fh = \*STDOUT;
+	  $fh = \*STDOUT;
 	}
 
 	my $json_obj = JSON->new;
-	print $out_fh $json_obj->allow_nonref->canonical->pretty->encode($completeData);
+	print $fh $json_obj->allow_nonref->canonical->pretty->encode($completeData);
 }
 
 ###########
