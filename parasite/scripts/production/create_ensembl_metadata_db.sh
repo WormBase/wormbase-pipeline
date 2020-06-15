@@ -41,24 +41,18 @@ ${PARASITE_STAGING_MYSQL}-ensrw -N -e "drop database if exists ${db_name};"
 echo "Creating new ${db_name} from ${EM_table_SQL}"
 ${PARASITE_STAGING_MYSQL}-ensrw -N -e "create database ${db_name};"
 cat ${EM_table_SQL} | ${PARASITE_STAGING_MYSQL}-ensrw ${db_name}
-
 for this_core_db in $(${PARASITE_STAGING_MYSQL} -N -e "SHOW DATABASES LIKE \"%core_${PARASITE_VERSION}_${ENSEMBL_VERSION}%\""); do
-#    echo "Updating ${db_name} with metadta from ${this_core_db}";
-   this_metadata_uri=$($PARASITE_STAGING_MYSQL-ensrw details url | sed -e 's/@/\\@/g')"${db_name}"
-   this_database_uri=$($PARASITE_STAGING_MYSQL-ensrw details url | sed -e 's/@/\\@/g')"${this_core_db}"
-# Throws exception run in this script; runs fine in terminal.  FFS.
-# Fix later, for now print commands that can be copied & pasted into terminal
-echo \
-   metadata_updater.pl  -metadata_uri     "${this_metadata_uri}"                             \
-                        -database_uri     "${this_database_uri}"                             \
-                        -e_release        "${ENSEMBL_VERSION}"                               \
-                        -eg_release       "${EG_VERSION}"                                    \
-                        -parasite_release "${PARASITE_VERSION}"                              \
-                        -release_date     "${datestamp}"                                     \
-                        -current_release  "${RELEASE}"                                       \
-                        -email            "${EMAIL}"                                         \
-                        -comment          "creating ${db_name} for WBPS ${PARASITE_VERSION}" \
-                        -source           'Manual'
+   echo "Updating ${db_name} with metadata from ${this_core_db}";
+   metadata_updater.pl  -metadata_uri     $($PARASITE_STAGING_MYSQL-ensrw details url)${db_name}      \
+                        -database_uri     $($PARASITE_STAGING_MYSQL-ensrw details url)${this_core_db} \
+                        -e_release        ${ENSEMBL_VERSION}                                          \
+                        -eg_release       ${EG_VERSION}                                               \
+                        -parasite_release ${PARASITE_VERSION}                                         \
+                        -release_date     "'${datestamp}'"                                            \
+                        -current_release  "'${RELEASE}'"                                              \
+                        -email            "'${EMAIL}'"                                                \
+                        -comment          "'creating ${db_name} for WBPS ${PARASITE_VERSION}'"        \
+                        -source           "'Manual'"
 done
 
 echo -n "Done at "
