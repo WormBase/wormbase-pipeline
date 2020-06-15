@@ -27,7 +27,7 @@ use Modules::Overlap;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $database, $output, $species);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $database, $output, $species, $chromosome, $noload);
 
 
 GetOptions ("help"       => \$help,
@@ -37,6 +37,8 @@ GetOptions ("help"       => \$help,
 	    "store:s"    => \$store,
 	    "database:s" => \$database,
             "species:s"  => \$species,
+	    "chromosome:s" => \$chromosome, # specify a single chromosome with prefix ('CHROMOSOME_II') for debugging purposes
+	    "noload"     => \$noload, # specify that the resulting ace file should not be loaded into the database for debugging purposes
 	   );
 
 if ( $store ) {
@@ -61,8 +63,11 @@ if ($test) {
 my $log = Log_files->make_build_log($wormbase);
 
 if (! defined $database) {$database = $wormbase->autoace}
-
-$output = $wormbase->acefiles . "/ignore_bad_blat_alignments.ace";
+if (defined $chromosome) {
+  $output = $wormbase->acefiles . "/ignore_bad_blat_alignments_${chromosome}.ace";
+} else {
+  $output = $wormbase->acefiles . "/ignore_bad_blat_alignments.ace";
+}
 
 #################################
 
@@ -95,7 +100,14 @@ $species = $wormbase->species;
 open (ACE, ">$output") || die "Can't open $output\n";
 
 my $regex = $wormbase->seq_name_regex;
-my @chromosomes = $wormbase->get_chromosome_names(-mito => 0, -prefix => 1);
+
+my @chromosomes;
+
+if (defined $chromosome) {
+  @chromosomes = ($chromosome);
+} else {
+  @chromosomes = $wormbase->get_chromosome_names(-mito => 0, -prefix => 1);
+}
 
 foreach my $chromosome (@chromosomes) {
   $log->write_to("\n\nChromosome: $chromosome\n");
@@ -132,6 +144,13 @@ foreach my $chromosome (@chromosomes) {
     my $RNASeq_confirmed_match = $ovlp->compare(\@RNASeq_introns, exact_match => 1, same_sense => 0); # non-canonical splice site RNASeq introns are sometimes placed on the wrong' strand, so compare to both strands
     my %Nano_not_confirmed;
     foreach my $nano (@nan_introns) {
+# debug
+#      if ($nano->[0] eq 'male_Nanopore_Roach_126350') {
+#      if ($nano->[0] ne 'EM_Nanopore_Li_212889') {
+#	next;
+#    
+#  }
+
       if (! $RNASeq_confirmed_match->match($nano)) {
 	$Nano_not_confirmed{$nano->[0]} = 1; # note the name of any Nanopore intron that does not have any matching RNASeq introns 
       }
@@ -224,10 +243,12 @@ foreach my $chromosome (@chromosomes) {
     }
   }
   
+  print ACE "\n\n\n// FINISHED $chromosome\n";
 }
+print ACE "\n// Finished - Closing file - normal exit\n";
 close (ACE);
 
-$wormbase->load_to_database($database, $output, "ignore_bad_blat_alignments", $log);
+$wormbase->load_to_database($database, $output, "ignore_bad_blat_alignments", $log) if (!$noload);
 
 
 
