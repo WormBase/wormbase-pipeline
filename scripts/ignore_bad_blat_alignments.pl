@@ -191,37 +191,43 @@ foreach my $chromosome (@chromosomes) {
       foreach my $id (@ids) {
 	$overlapping_hsps{$id}{$cds_id} = 1;
       }
-    } elsif ((grep /^RST$/, @{$mol_types{$species}}) && $rst_match->match($cds)) {
+    }
+    if ((grep /^RST$/, @{$mol_types{$species}}) && $rst_match->match($cds)) {
       my @ids = $rst_match->matching_IDs;
       foreach my $id (@ids) {
 	$overlapping_hsps{$id}{$cds_id} = 1;
       }
 
-    } elsif ((grep /^OST$/, @{$mol_types{$species}}) && $ost_match->match($cds)) {
+    }
+    if ((grep /^OST$/, @{$mol_types{$species}}) && $ost_match->match($cds)) {
       my @ids = $ost_match->matching_IDs;
       foreach my $id (@ids) {
 	$overlapping_hsps{$id}{$cds_id} = 1;
       }
 
-    } elsif ((grep /^mRNA$/, @{$mol_types{$species}}) && $mrn_match->match($cds)) {
+    }
+    if ((grep /^mRNA$/, @{$mol_types{$species}}) && $mrn_match->match($cds)) {
       my @ids = $mrn_match->matching_IDs;
       foreach my $id (@ids) {
 	$overlapping_hsps{$id}{$cds_id} = 1;
       }
 
-    } elsif ((grep /^Trinity$/, @{$mol_types{$species}}) && $tri_match->match($cds)) {
+    }
+    if ((grep /^Trinity$/, @{$mol_types{$species}}) && $tri_match->match($cds)) {
       my @ids = $tri_match->matching_IDs;
       foreach my $id (@ids) {
 	$overlapping_hsps{$id}{$cds_id} = 1;
       }
 
-    } elsif ((grep /^IsoSeq$/, @{$mol_types{$species}}) && $iso_match->match($cds)) {
+    }
+    if ((grep /^IsoSeq$/, @{$mol_types{$species}}) && $iso_match->match($cds)) {
       my @ids = $iso_match->matching_IDs;
       foreach my $id (@ids) {
 	$overlapping_hsps{$id}{$cds_id} = 1;
       }
 
-    } elsif ((grep /^Nanopore$/, @{$mol_types{$species}}) && $nan_match->match($cds)) {
+    }
+    if ((grep /^Nanopore$/, @{$mol_types{$species}}) && $nan_match->match($cds)) {
       my @ids = $nan_match->matching_IDs;
       foreach my $id (@ids) {
 	$overlapping_hsps{$id}{$cds_id} = 1;
