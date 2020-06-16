@@ -50,17 +50,40 @@ my @htpd; # high thruput datasets
 
 my $assembly = fetch_assembly($db,$wormbase);
 
+
+my %htpd; # to uniqueify it
 # RNASeq
 my $it = $db->fetch_many(-query => 'find Analysis RNASeq_Study*;Species_in_analysis="Caenorhabditis elegans"')||die(Ace->error);
 while (my $analysis = $it->next){
+
+	# dataset
+	my %json2_obj;
+	my @p = $analysis->Reference;
+	my @papers = map {get_paper($_)} @p;
+
+        my $datasetId= 'WB:'.$p[0].'.ce.rs.csv';
+
+	$json2_obj{primaryId} = $datasetId; # required
+	$json2_obj{publication} = \@papers if @papers;;
+	$json2_obj{title} = $analysis->Title->name if $analysis->Title;
+	$json2_obj{summary} = $analysis->Description->name if $analysis->Description;
+	$json2_obj{categoryTags}=['unclassified'];
+	push @htpd,\%json2_obj unless $htpd{$datasetId};
+	$htpd{$datasetId}=1;
+
 	# sample
 	foreach my $subproject ($analysis->Subproject){
 		my %json_obj;
 		my $sample=$subproject->Sample;
-		$json_obj{primaryId} = {sampleId => "WB:$subproject"}; # required
+		$json_obj{sampleId} = {
+			primaryId => "WB:$subproject",
+			secondaryId => ["WB:${\$subproject->Project->name}"],
+		}; # required
 		$json_obj{sampleTitle} = $subproject->Title->name;
 		$json_obj{taxonId} = $wormbase->ncbi_tax_id;
-		$json_obj{datasetId} = ["WB:${\$subproject->Project->name}"];
+
+		$json_obj{datasetId} = [$datasetId];
+
 		$json_obj{sex}=$sample->Sex->name if $sample->Sex;
 		$json_obj{sampleAge}="WB:${\$sample->Life_stage->name}" if $sample->Life_stage;
 		if ($sample->Tissue){
@@ -71,16 +94,6 @@ while (my $analysis = $it->next){
 		$json_obj{assemblyVersion}=$assembly;
 		push @htps,\%json_obj;
 	}
-
-	# dataset
-	my %json2_obj;
-	my @papers = map {get_paper($_)} $analysis->Reference;
-	$json2_obj{primaryId} = 'WB:'.$analysis->name; # required
-	$json2_obj{publication} = \@papers if @papers;;
-	$json2_obj{title} = $analysis->Title->name if $analysis->Title;
-	$json2_obj{summary} = $analysis->Description->name if $analysis->Description;
-	$json2_obj{categoryTags}=['unclassified'];
-	push @htpd,\%json2_obj;
 }
 
 # MMO:0000659 - RNA-seq assay
@@ -93,11 +106,35 @@ while (my $analysis = $it->next){
 # micro arrays - single channel
 $it = $db->fetch_many(-query => 'find Microarray_experiment;Microarray_sample')||die(Ace->error);
 while (my $array = $it->next){
+
+	# dataset
+	my %json2_obj;
+
+	my @p = $array->Reference;
+	my @papers = map {get_paper($_)} @p;
+
+        my $datasetId= 'WB:'.$p[0].'.ce.mr.csv';
+
+	my @papers = map {get_paper($_)} @p;
+	$json2_obj{primaryId} = $datasetId; # required
+	$json2_obj{publication} = \@papers if @papers;;
+	$json2_obj{categoryTags}=['unclassified'];
+	$json2_obj{numChannels}=1;
+
+	push @htpd,\%json2_obj unless $htpd{$datasetId};
+	$htpd{$datasetId}=1;
+
+	# sample
 	my %json_obj;
 	my $sample=$array->Microarray_sample;
 	$json_obj{primaryId} = {sampleId => "WB:$sample"}; # required
+	$json_obj{sampleId} = {
+		primaryId => "WB:$sample",
+		secondaryId => ["WB:${\$array->name}"],
+	};
+
 	$json_obj{taxonId} = $wormbase->ncbi_tax_id;
-	$json_obj{datasetId} = ["WB:$array"];
+	$json_obj{datasetId} = [$datasetId];
 	$json_obj{sex}=$sample->Sex->name if $sample->Sex;
 	$json_obj{sampleAge}="WB:${\$sample->Life_stage->name}" if $sample->Life_stage;
 	if ($sample->Tissue){
@@ -108,30 +145,36 @@ while (my $array = $it->next){
 	$json_obj{assemblyVersion}=$assembly;
 	push @htps,\%json_obj;
 
-	# dataset
-	my %json2_obj;
-	my @papers = map {get_paper($_)} $array->Reference;
-	$json2_obj{primaryId} = 'WB:'.$array->name; # required
-	$json2_obj{publication} = \@papers if @papers;;
-	$json2_obj{categoryTags}=['unclassified'];
-	$json2_obj{numChannels}=1;
-	push @htpd,\%json2_obj;
-
 }
 
 # micro arrays - dual channel
 $it = $db->fetch_many(-query => 'find Microarray_experiment;Sample_A;Sample_B')||die(Ace->error);
 while (my $array = $it->next){
-	my @samples=($array->Sample_A , $array->Sample_B);
 
+	# dataset
+	my %json2_obj;
+	my @p = $array->Reference;
+	my @papers = map {get_paper($_)} @p;
+        my $datasetId= 'WB:'.$p[0].'.ce.mr.csv';
+	my @papers = map {get_paper($_)} @p;
+	$json2_obj{primaryId} = $datasetId; # required
+	$json2_obj{publication} = \@papers if @papers;;
+	$json2_obj{categoryTags}=['unclassified'];
+	$json2_obj{numChannels}=2;
+	
+	push @htpd,\%json2_obj unless $htpd{$datasetId};
+	$htpd{$datasetId}=1;
+
+	# sample
+	my @samples=($array->Sample_A , $array->Sample_B);
 	my $n=1;
 	foreach my $s(@samples){
 		my %json_obj;
 		my $suffix = ($n==1) ? 'A' : 'B'; # for the datasets
 
-		$json_obj{primaryId} = {sampleId => "WB:$s"}; # required
+		$json_obj{primaryId} = {sampleId => "WB:$s:$suffix"}; # required
 		$json_obj{taxonId} = $wormbase->ncbi_tax_id;
-		$json_obj{datasetId} = ["WB:$s:$suffix"];
+		$json_obj{datasetId} = [$datasetId];
 		$json_obj{sex}=$s->Sex->name if $s->Sex;
 		$json_obj{sampleAge}="WB:${\$s->Life_stage->name}" if $s->Life_stage;
 		if ($s->Tissue){
@@ -142,27 +185,8 @@ while (my $array = $it->next){
 		$json_obj{assemblyVersion}=$assembly;
 		push @htps,\%json_obj;
 
-		# dataset
-		my %json2_obj;
-		my @papers = map {get_paper($_)} $array->Reference;
-		$json2_obj{primaryId} = "WB:$s:$suffix"; # required
-		$json2_obj{publication} = \@papers if @papers;;
-		$json2_obj{categoryTags}=['unclassified'];
-		$json2_obj{numChannels}=2;
-		push @htpd,\%json2_obj;
 		$n++;
 	}
-
-	# dataset
-	my %json2_obj;
-	my @papers = map {get_paper($_)} $array->Reference;
-	$json2_obj{primaryId} = 'WB:'.$array->name; # required
-	$json2_obj{publication} = \@papers if @papers;;
-	$json2_obj{categoryTags}=['unclassified'];
-	$json2_obj{numChannels}=2;
-	$json2_obj{subSeries}=[$samples[0].':A',$samples[1].':B'];
-	push @htpd,\%json2_obj;
-
 }
 
 ################################################
