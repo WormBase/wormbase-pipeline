@@ -27,7 +27,7 @@ perl -MProductionMysql -E '
      --database "$NEWDB"
 done
 
-if [ "$#" ] ; then
+if [ $# -gt 0 ] ; then
   echo "Ran in partial mode. Will not drop old stuff or copy comparators"
   exit
 fi
