@@ -1930,7 +1930,7 @@ sub find_variations {
 sub info_variation {
   my ($self, $name) = @_;
 
-  my $info = $self->{'db'}->find_entity('variation', $name);
+  my $info = $self->{'db'}->info_entity('variation', $name);
   return $info->{'matches'};
 
 }
@@ -2136,7 +2136,7 @@ sub find_strains {
 sub info_strain {
   my ($self, $name) = @_;
 
-  my $info = $self->{'db'}->find_entity('strain', $name);
+  my $info = $self->{'db'}->info_entity('strain', $name);
   return $info->{'matches'};
 
 }
