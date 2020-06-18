@@ -2008,7 +2008,7 @@ sub resurrect_features {
 sub info_feature {
   my ($self, $name) = @_;
 
-  my $info = $self->{'db'}->find_entity('sequence-feature', $name);
+  my $info = $self->{'db'}->info_entity('sequence-feature', $name);
   return $info->{'matches'};
 
 }
