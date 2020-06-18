@@ -57,27 +57,17 @@ my $it = $db->fetch_many(-query => 'find Analysis RNASeq_Study*;Species_in_analy
 while (my $analysis = $it->next){
 
 	# dataset
-	my %json2_obj;
 	my @p = $analysis->Reference;
 	my @papers = map {get_paper($_)} @p;
-
-        my $datasetId= 'WB:'.$p[0].'.ce.rs.csv';
-
-	$json2_obj{primaryId} = $datasetId; # required
-	$json2_obj{publication} = \@papers if @papers;;
-	$json2_obj{title} = $analysis->Title->name if $analysis->Title;
-	$json2_obj{summary} = $analysis->Description->name if $analysis->Description;
-	$json2_obj{categoryTags}=['unclassified'];
-	push @htpd,\%json2_obj unless $htpd{$datasetId};
-	$htpd{$datasetId}=1;
 
 	# sample
 	foreach my $subproject ($analysis->Subproject){
 		my %json_obj;
 		my $sample=$subproject->Sample;
+        	my $datasetId="WB:${\$subproject->Project->name}";
+
 		$json_obj{sampleId} = {
 			primaryId => "WB:$subproject",
-			secondaryId => ["WB:${\$subproject->Project->name}"],
 		}; # required
 		$json_obj{sampleTitle} = $subproject->Title->name;
 		$json_obj{taxonId} = $wormbase->ncbi_tax_id;
@@ -93,6 +83,15 @@ while (my $analysis = $it->next){
 		$json_obj{assayType}='MMO:0000659'; # RNA-seq assay
 		$json_obj{assemblyVersion}=$assembly;
 		push @htps,\%json_obj;
+
+		my %json2_obj;
+		$json2_obj{primaryId} = $datasetId; # required
+		$json2_obj{publication} = \@papers if @papers;;
+		$json2_obj{title} = $analysis->Title->name if $analysis->Title;
+		$json2_obj{summary} = $analysis->Description->name if $analysis->Description;
+		$json2_obj{categoryTags}=['unclassified'];
+		push @htpd,\%json2_obj unless $htpd{$datasetId};
+		$htpd{$datasetId}=1;
 	}
 }
 
@@ -100,7 +99,7 @@ while (my $analysis = $it->next){
 # MMO:0000649 - microarray
 # MMO:0000648 - transcript array
 # MMO:0000664 - proteomic profiling
-# MMO:0000666 - high trhoughput proteomic profiling
+# MMO:0000666 - high throughput proteomic profiling
 # MMO:0000000 - measurement method
 
 # micro arrays - single channel
