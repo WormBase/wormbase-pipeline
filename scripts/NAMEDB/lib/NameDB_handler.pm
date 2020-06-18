@@ -2033,7 +2033,7 @@ sub new_strains {
   my ($self, $names, $why) = @_;
   my %new_ids;
 
-  my $info = $self->{'db'}->new_entities('varation', $names, $why);
+  my $info = $self->{'db'}->new_entities('strain', $names, $why);
 
   my @ids = @{$info->{'ids'}};
   
