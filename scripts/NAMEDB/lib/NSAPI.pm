@@ -59,13 +59,13 @@ use Data::Dumper;
 #curl -X GET -H "Authorization: Token $TOKEN" -H "content-type: application/json" --data '{"prov": {}}' "https://names.wormbase.org/api/recent/variation/console?from=2018-07-24&until=2019-07-26" 
 
 # delete a variation
-#curl -X DELETE -H "Authorization: Token $TOKEN" -H "content-type: application/json" -v --data '{"prov": {}}' "https://names.wormbase.org/api/variation/WBVar02149574"
+#curl -X DELETE -H "Authorization: Token $TOKEN" -H "content-type: application/json" -v --data '{"prov": {}}' "https://names.wormbase.org/api/entity/variation/WBVar02149574"
 
 # update the public name of a variation
-#curl -X PUT -H "Authorization: Token $TOKEN" -H "content-type: application/json" --data '{"data": {"name": "lazy1"},"prov": {}}'  https://names.wormbase.org/api/variation/WBVar02149581
+#curl -X PUT -H "Authorization: Token $TOKEN" -H "content-type: application/json" --data '{"data": {"name": "lazy1"},"prov": {}}'  https://names.wormbase.org/api/entity/variation/WBVar02149581
 
 #resurrect a dead variation
-#curl -X POST -H "Authorization: Token $TOKEN" -H "content-type: application/json" --data '{"prov": {}}'  https://names.wormbase.org/api/variation/WBVar02149574/resurrect
+#curl -X POST -H "Authorization: Token $TOKEN" -H "content-type: application/json" --data '{"prov": {}}'  https://names.wormbase.org/api/entity/variation/WBVar02149574/resurrect
 
 # typical gene values:
 #$VAR1 = {
@@ -106,7 +106,7 @@ sub ping  { return "Bonjour!" }
 
 =over 4
 
-=item $db = NameDB->connect($species)
+=item $db = NameDB->connect($test)
 
 Connect to the database.
 Returns a NSAPI object if successful.
@@ -116,10 +116,17 @@ Returns a NSAPI object if successful.
 
 #--------------------- connect, disconnect -----------------
 # get the Google authentication token ready to make REST calls
+
+# there is an optional 'test' argument - if this is true, then the
+# 'test' NameServer database will be used instead of the live server.
+
 sub connect {
-  my $class             = shift;
+  my $class = shift;
   my $self = {};
   bless $self, $class;
+
+  my $test = shift;
+  $self->test($test);
 
   $self->{'TOKEN'} = $self->get_token();
 
@@ -149,6 +156,20 @@ sub noise {
   my $level = shift;
   $self->{'noise'} = $level if (defined $level);
   return $self->{'noise'};
+}
+
+=item $db->test(0)
+
+Set or reset and return whether we wish to use the test server or not.
+
+=cut
+
+sub test {
+  my $self = shift;
+  my $level = shift;
+  if (!defined $level && !defined $self->{'test'}) {$level = 0}
+  $self->{'test'} = $level;
+  return $self->{'test'};
 }
 
 #======================================================================
@@ -465,7 +486,7 @@ sub info_gene {
 
   my $encoded = CGI::escape($gene);
 
-  my $payload = undef; # don't wat to pass in a payload, but want a dummy parameter so $not_found is set correctly
+  my $payload = undef; # don't want to pass in a payload, but want a dummy parameter so $not_found is set correctly
   my $not_found = 1; # don'y throw an error if the gene is not found
   my $content = $self->curl("GET", "gene/$encoded", $payload, $not_found);
   
@@ -1121,7 +1142,377 @@ sub batch_split_genes {
 }
 
 #======================================================================
+# Entities
 #======================================================================
+#
+# Example entity-types are: 'sequence-feature', 'strain', 'variation' (and any others that have been created)
+#
+# Entities are a simple way to make new simple Object types
+#
+# They have three attributes
+# generic? indicates if the entity is "generic" or not (if it is true it supports only the fields "status", "id" and "name")
+#          Only entity/gene currently has generic? set to false and you can ignore the generic? entity for the foreseeable future.
+#          No other type will have generic? set to false unless a new "concrete" type is coded into the Names service.
+# enabled? indicates if the endpoints are turned on for that entity type (can be disabled via a API call)
+# named?   indicates if the entity requires a name when creating/updating
+
+#======================================================================
+# Check if a named entity-type is valid and get its attributes
+# Args:
+#      entity_type - name of entity to check - lowercase string, e.g. "variation"
+# Returned:
+#      $valid - true if this is a valid entity type
+#      $named - true if this entity type can take names
+#      $enabled - true if the entity type endpoints are turned on
+
+sub check_entity {
+  my ($self, $entity_type) = @_; # name of entity to check
+  
+  my $content = $self->curl("GET", "entity");
+  if ($self->noise()) {print Dumper $content}
+  my $entities = $content->{'entity-types'};
+  my $enabled;
+  my $named;
+  my $valid = 0;
+  foreach my $entity (@{$entities}) {
+    if ($entity->{'entity-type'} eq $entity_type) {
+      $valid = 1;
+      $enabled = $entity->{'enabled?'};
+      $named = $entity->{'named?'};
+      last;
+    }
+  }
+  return ($valid, $named, $enabled);
+}
+
+#======================================================================
+# SINGLE ENTITY operations
+#======================================================================
+
+#======================================================================
+# find entities by match to a pattern
+# find_entity('variation', $pattern)
+# returns a hash ref of any entity whose name matches the input pattern.
+# pattern can be any of a regular expression or part of the name of a WBStrainID, or name
+# patterns are case-sensitive
+# the pattern is contrained to match at the start of the name, use '.*' at the start of the pattern to match anywhere in the name
+# example patterns:
+# .*int
+
+# Args:
+# $entity_type - name of type of entity - lowercase string, e.g. 'variation'
+# $pattern - string to search for
+sub find_entity {
+  my ($self, $entity_type, $pattern) = @_;
+  my ($valid, $named, $enabled) = $self->check_entity($entity_type);
+  if (!$valid) {die "$entity_type is not a valid entity_type\n"}
+
+  my $encoded = CGI::escape($pattern);
+  
+  my $content = $self->curl("GET", "entity/$entity_type/?pattern=$encoded");
+  if ($self->noise()) {print Dumper $content}
+  return $content;
+ 
+}
+#======================================================================
+# create new entity object
+# new_entity('variation', $names, $why)
+
+# Assign identifiers and associate names, creating new entity-types
+
+
+# Args:
+# $entity_type - string e.g. 'variation'
+# $name - name to create entity-type IDs for.
+# $why is optional remark text.
+
+# Returns a sequence of primary entity-type identifiers in the same order as the input names,
+# and a unique batch code (for undo).
+
+sub new_entity {
+  my ($self, $entity_type, $name, $why) = @_;
+  my ($valid, $named, $enabled) = $self->check_entity($entity_type);
+  if (!$valid) {die "$entity_type is not a valid entity_type\n"}
+
+  if (!defined $why) {$why = ''}
+
+  my $payload = '{"data": {"name":' . $name . '';
+  $payload .= '}, "prov": {';
+  $payload .= '"why": "'.$why.'"' if ($why ne '');
+  $payload .= '}}';
+  if ($self->noise()) {print $payload,"\n"}
+
+  return $self->curl('POST', "entity/$entity_type", $payload);
+
+}
+#======================================================================
+# delete an entity
+# kill_entity('variation', $name, $why)
+
+# Args:
+# $entity_type - entity_type e.g. 'sequence-feature'
+# $name - name or ID of entity-type to kill
+# $why is optional remark text.
+
+sub kill_entity {
+  my ($self, $entity_type, $name, $why) = @_;
+  my ($valid, $named, $enabled) = $self->check_entity($entity_type);
+  if (!$valid) {die "$entity_type is not a valid entity_type\n"}
+
+  if (!defined $why) {$why = ''}
+
+  my $payload = '{prov": {';
+  $payload .= '"why": "'.$why.'"' if ($why ne ''); #was provenance/why
+  $payload .= '}}';
+  if ($self->noise()) {print $payload,"\n"}
+
+  return $self->curl('DELETE', "entity/$entity_type/$name", $payload);
+
+}
+#======================================================================
+# summarize a single existing entity
+# Args:
+# $entity_type - 'variation','strain' etc.
+# $name - ID of the entity to be described
+#
+# Returns hash-ref like:
+# {"id":"WBVar00296473","name":"th7","status":"live","history":[{"when":"2020-01-24T10:25:36.101Z","batch/id":"5e2ac665-3d0e-4ca4-bd27-8265f72c20dd","t":"2020-01-24T10:26:45Z","what":"import","who":{"name":"Matthew Russell","email":"matthew.russell@wormbase.org","id":"WBPerson33035"},"how":"importer","changes":[{"attr":"id","value":"WBVar00296473","added":true},{"attr":"name","value":"th7","added":true},{"attr":"status","value":"live","added":true}]}]}
+#
+sub info_entity {
+  my ($self, $entity_type, $name) = @_;
+  my ($valid, $named, $enabled) = $self->check_entity($entity_type);
+  if (!$valid) {die "$entity_type is not a valid entity_type\n"}
+
+  my $encoded = CGI::escape($name);
+
+  my $content = $self->curl("GET", "entity/$entity_type/$encoded");
+  
+  if ($self->noise()) {print Dumper $content}
+  return $content;
+
+}
+
+#======================================================================
+# update an existing entity
+# update_entity('variation', $ID, $new_name, $why)
+
+# Add a new name to an existing entity
+
+# Args:
+# $entity_type - 'variation','strain' etc.
+# $id - ID of the entity to be updated
+# $new_name - the new name of the entity
+# $why is optional remark text.
+
+# Upon successful completion, returns a sequence of primary variation
+# identifiers, and a unique operation batch code.
+sub update_entity {
+  my ($self, $entity_type, $ID, $new_name, $why) = @_;
+  my ($valid, $named, $enabled) = $self->check_entity($entity_type);
+  if (!$valid) {die "$entity_type is not a valid entity_type\n"}
+  if (!$named) {die "$entity_type is not a named entity_type\n"}
+
+  my $encoded = CGI::escape($ID);
+
+  if (!defined $why) {$why = ''}
+
+  my $payload = '{"data": {"name": "' . $new_name . '"}, "prov": {';
+  $payload .= '"why": "'.$why.'"' if ($why ne '');
+  $payload .= '}}';
+  if ($self->noise()) {print $payload,"\n"}
+
+  my $content = $self->curl('PUT', "entity/$entity_type/$encoded", $payload);
+
+  if ($self->noise()) {print Dumper $content}
+  return $content;
+}
+#======================================================================
+# resurrect a killed entity
+sub resurrect_entity {
+  my ($self, $entity_type, $ID) = @_;
+  my ($valid, $named, $enabled) = $self->check_entity($entity_type);
+  if (!$valid) {die "$entity_type is not a valid entity_type\n"}
+
+  my $encoded = CGI::escape($ID);
+
+  my $content = $self->curl("POST", "entity/$entity_type/$encoded/resurrect");
+  
+  if ($self->noise()) {print Dumper $content}
+  return $content;
+}
+#======================================================================
+
+#======================================================================
+# BATCH ENTITY operations
+#======================================================================
+
+# delete entities
+# kill_entities('variation', $names, $why)
+
+# Args:
+# $names - an array-ref of entity-type IDs to kill
+# $why is optional remark text.
+
+sub kill_entities {
+  my ($self, $entity_type, $names, $why) = @_;
+  my ($valid, $named, $enabled) = $self->check_entity($entity_type);
+  if (!$valid) {die "$entity_type is not a valid entity_type\n"}
+
+  if (!defined $why) {$why = ''}
+
+  my $payload = '{"data": [';
+  $payload .= join(',', map { "\"$_\"" } @{$names});
+  $payload .= '], "prov": {';
+  $payload .= '"why": "'.$why.'"' if ($why ne ''); #was provenance/why
+  $payload .= '}}';
+  if ($self->noise()) {print $payload,"\n"}
+
+  return $self->batch('DELETE', "entity/$entity_type", $payload);
+
+}
+#======================================================================
+# new
+# create new entities
+# new_entities('variation', $names, $why)
+
+# Assign identifiers and associate names, creating new entity-types
+
+# $names is a number of variations to create
+#     or for non-variation entity-types, ...
+# $names should be sequence of one or more names to create,
+# $why is optional.
+
+# Args:
+# $entity_type - string of name of type of entities to create
+# $names - an array-ref of names to create entity-type IDs for. OR a number of variations to create.
+# $why is optional remark text.
+
+# Returns a sequence of primary entity-type identifiers in the same order as the input names,
+# and a unique batch code (for undo).
+
+sub new_entities {
+  my ($self, $entity_type, $names, $why) = @_;
+  my ($valid, $named, $enabled) = $self->check_entity($entity_type);
+  if (!$valid) {die "$entity_type is not a valid entity_type\n"}
+
+  if (!defined $why) {$why = ''}
+
+  my $payload;
+  
+  if (!$named) {
+
+    $payload = '{"data": {"n" ';
+    $payload .= $names;
+    $payload .= '}, "prov": {';
+    $payload .= '"why": "'.$why.'"' if ($why ne '');
+    $payload .= '}}';
+
+  } else {
+
+    $payload = '{"data": [';
+    $payload .= join(',', map { "{ \"name\": \"$_\" }" } @{$names});
+    $payload .= '], "prov": {';
+    $payload .= '"why": "'.$why.'"' if ($why ne '');
+    $payload .= '}}';
+  }
+
+  if ($self->noise()) {print $payload,"\n"}
+
+  return $self->batch('POST', "entity/$entity_type", $payload);
+
+}
+#======================================================================
+# update existing entities
+# update_entities('variation', $ID, $new_name, $why)
+
+# Add new names to existing entities
+
+# Args:
+# $entity_type - 'variation','strain' etc.
+# $data - hash-ref with keys = ID and values = new name
+# $why is optional remark text.
+
+# Upon successful completion, returns a sequence of primary variation
+# identifiers, and a unique operation batch code.
+sub update_entities {
+  my ($self, $entity_type, $data, $why) = @_;
+  my ($valid, $named, $enabled) = $self->check_entity($entity_type);
+  if (!$valid) {die "$entity_type is not a valid entity_type\n"}
+  if (!$named) {die "$entity_type is not a named entity_type\n"}
+
+
+  if (!defined $why) {$why = ''}
+
+  my $payload = '{"data": [';
+  foreach my $id (keys %{$data}) {
+    my $name = $data->{$id};
+    $payload .= '{"id": "'.$id.'",';
+    $payload .= '"name": "'.$name.'"},';
+  }
+  
+  chop $payload; # remove last ','
+  $payload .= '], "prov": {';
+  $payload .= '"why": "'.$why.'"' if ($why ne '');
+  $payload .= '}}';
+  if ($self->noise()) {print $payload,"\n"}
+
+  my $content = $self->batch('PUT', "entity/$entity_type", $payload);
+
+  if ($self->noise()) {print Dumper $content}
+  return $content;
+}
+#======================================================================
+
+# resurrect killed entities
+# Args:
+# entity_type - string e.g. strain
+# $IDs - array-ref - list of IDs to resurrect
+# $why is optional remark text.
+sub resurrect_entities {
+  my ($self, $entity_type, $IDs) = @_;
+  my ($valid, $named, $enabled) = $self->check_entity($entity_type);
+  if (!$valid) {die "$entity_type is not a valid entity_type\n"}
+
+  my $payload = '{"data": [';
+  $payload .= join(',', map { "\"$_\"" } @{$IDs});
+  $payload .= ']}';
+
+  if ($self->noise()) {print $payload,"\n"}
+
+  my $content = $self->batch("POST", "entity/$entity_type/resurrect", $payload);
+  
+  if ($self->noise()) {print Dumper $content}
+  return $content;
+}
+#======================================================================
+
+# remove_names from a batch of entities
+# Args:
+# entity_type - string e.g. strain
+# $names - array-ref - list of naames to remove
+# $why is optional remark text.
+sub remove_names_from_entities {
+  my ($self, $entity_type, $names, $why) = @_;
+  my ($valid, $named, $enabled) = $self->check_entity($entity_type);
+  if (!$valid) {die "$entity_type is not a valid entity_type\n"}
+  if (!$named) {die "$entity_type is not a named entity_type\n"}
+
+  if (!defined $why) {$why = ''}
+
+  my $payload = '{"data": [';
+  $payload .= join(',', map { "\"$_\"" } @{$names});
+  $payload .= '], "prov": {';
+  $payload .= '"why": "'.$why.'"' if ($why ne '');
+  $payload .= '}}';
+  if ($self->noise()) {print $payload,"\n"}
+
+  my $content = $self->batch("DELETE", "entity/$entity_type/name", $payload);
+  
+  if ($self->noise()) {print Dumper $content}
+  return $content;
+}
+#======================================================================
+
 # BATCH STRAIN operations
 #======================================================================
 # new_strains($names, $why)
@@ -1135,7 +1526,7 @@ sub batch_split_genes {
 # $names - an array-ref of names to create Strain IDs for.
 # $why is optional remark text.
 
-# Returns a sequence of primary variation identifiers in the same order as the input names,
+# Returns a sequence of primary strain identifiers in the same order as the input names,
 # and a unique batch code (for undo).
 
 sub new_strains {
@@ -1175,155 +1566,6 @@ sub find_strains {
 }
 
 
-#======================================================================
-#======================================================================
-# BATCH VARIATIONS operations
-#======================================================================
-# new_variations($names, $why)
-
-# Assign identifiers and associate names, creating new variations
-
-# $names should be sequence of one or more variation names,
-# $why is optional.
-
-# Args:
-# $names - an array-ref of names to create Variation IDs for.
-# $why is optional remark text.
-
-# Returns a sequence of primary variation identifiers in the same order as the input names,
-# and a unique batch code (for undo).
-
-sub new_varations {
-  my ($self, $names, $why) = @_;
-
-  if (!defined $why) {$why = ''}
-
-  my $payload = '{"data": [';
-  $payload .= join(',', map { "{ \"name\": \"$_\" }" } @{$names}); #was variation/name
-  $payload .= '], "prov": {';
-  $payload .= '"why": "'.$why.'"' if ($why ne ''); #was provenance/why
-  $payload .= '}}';
-  if ($self->noise()) {print $payload,"\n"}
-
-  return $self->batch('POST', 'entity/variation', $payload);
-
-}
-
-
-#======================================================================
-# update_variations($new_names, $why)
-
-# Add new names to existing Variations
-
-# Args:
-# $new_names - a hash-ref (key) of Variation IDs and (value) their new names
-# $why is optional remark text.
-
-# Upon successful completion, returns a sequence of primary variation
-# identifiers, and a unique operation batch code.
-
-sub update_variations {
-  my ($self, $new_names, $why) = @_;
-
-  if (!defined $why) {$why = ''}
-
-  my $payload = '{"data": [';
-  $payload .= join(',', map { "{ \"id\": \"$_\", \"name\": \"$new_names->{$_}\" }" } keys %{$new_names}); #was variation/id   variation/name
-  $payload .= '], "prov": {';
-  $payload .= '"why": "'.$why.'"' if ($why ne ''); #was provenance/why
-  $payload .= '}}';
-  if ($self->noise()) {print $payload,"\n"}
-
-  return $self->batch('PUT', 'entity/variation', $payload);
-
-}
-
-#======================================================================
-# kill_variations($identifiers, $why)
-
-# Args:
-# $names - an array-ref of Variation IDs to kill
-# $why is optional remark text.
-
-sub kill_variations {
-  my ($self, $names, $why) = @_;
-
-  if (!defined $why) {$why = ''}
-
-  my $payload = '{"data": [';
-  $payload .= join(',', map { "\"$_\"" } @{$names});
-  $payload .= '], "prov": {';
-  $payload .= '"why": "'.$why.'"' if ($why ne ''); #was provenance/why
-  $payload .= '}}';
-  if ($self->noise()) {print $payload,"\n"}
-
-  return $self->batch('DELETE', 'entity/variation', $payload);
-
-}
-#======================================================================
-#Resurrect a batch of dead variations.
-
-# Args:
-# $names - an array-ref of Variation IDs to resurrect
-
-sub resurrect_variations {
-  my ($self, $names) = @_;
-
-  my $payload = '{"data": [';
-  $payload .= join(',', map { "\"$_\"" } @{$names});
-  $payload .= ']}';
-  if ($self->noise()) {print $payload,"\n"}
-
-  return $self->batch('POST', 'entity/variation/resurrect', $payload);
-}
-#======================================================================
-# find_variations($pattern)
-# returns a hash ref of any variations whose name matches the input pattern.
-# pattern can be any of a regular expression or part of the name of a WBVarID, or name
-# patterns are case-sensitive
-# the pattern is contrained to match at the start of the name, use '.*' at the start of the pattern to match anywhere in the name
-# example patterns:
-# .*int
-
-# Args:
-# $pattern - string
-
-sub find_variations {
-  my ($self, $pattern) = @_;
-
-  my $encoded = CGI::escape($pattern);
-  
-  my $content = $self->curl("GET", "entity/variation/?pattern=$encoded");
-
-  if ($self->noise()) {print Dumper $content}
-  return $content
-
-}
-
-#======================================================================
-# BATCH FEATURES operations
-#======================================================================
-#kill_features($identifiers, $why)
-
-# Args:
-# $names - an array-ref of Feature IDs to kill
-# $why is optional remark text.
-
-sub kill_features {
-  my ($self, $names, $why) = @_;
-
-  if (!defined $why) {$why = ''}
-
-  my $payload = '{"data": [';
-  $payload .= join(',', map { "\"$_\"" } @{$names});
-  $payload .= '], "prov": {';
-  $payload .= '"why": "'.$why.'"' if ($why ne ''); #was provenance/why
-  $payload .= '}}';
-  if ($self->noise()) {print $payload,"\n"}
-
-  return $self->batch('DELETE', 'entity/sequence-feature', $payload);
-
-}
 
 #======================================================================
 # $names=>new_features($number)
@@ -1344,22 +1586,6 @@ sub new_features {
 
   return $self->batch('POST', 'entity/sequence-feature', $payload);
 
-}
-#======================================================================
-#Resurrect a batch of dead features.
-
-# Args:
-# $names - an array-ref of Feature IDs to resurrect
-
-sub resurrect_features {
-  my ($self, $names) = @_;
-
-  my $payload = '{"data": [';
-  $payload .= join(',', map { "\"$_\"" } @{$names});
-  $payload .= ']}';
-  if ($self->noise()) {print $payload,"\n"}
-
-  return $self->batch('POST', 'entity/sequence-feature/resurrect', $payload);
 }
 
 #======================================================================
@@ -1444,7 +1670,9 @@ sub curl {
   
   my $cmd="curl -X $method -H \"Authorization: Token $self->{'TOKEN'}\" -H \"content-type: application/json\"  -v ";
   $cmd.="--data \'$payload\'" if (defined $payload);
-  my $url = "https://names.wormbase.org/api/$type";
+  my $test = '';
+  if ($self->test()) {$test = 'test-'}
+  my $url = "https://${test}names.wormbase.org/api/$type";
   my $res;
   
   # to capture both STDOUT and STDERR, it is easiest and safest to
