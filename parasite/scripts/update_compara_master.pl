@@ -118,13 +118,14 @@ if ($recreatedb) {
   open(my $tgt_fh, "| mysql -u $master_user -p$master_pass -h $master_host -P $master_port -D $master_dbname")
       or die "Could not open pipe to target db $master_dbname\n";
   foreach my $table ('ncbi_taxa_node', 'ncbi_taxa_name') {
-    open(my $src_fh, "mysqldump -u $tax_user -h $tax_host -P $tax_port ncbi_taxonomy $table |")
-        or die "Could not open mysqldump stream from ncbi_taxonomy\n";
+    open(my $src_fh, "mysqldump -u $tax_user -h $tax_host -P $tax_port $tax_dbname $table |")
+        or die "Could not open mysqldump stream from $tax_dbname\n";
     while(<$src_fh>) {
       print $tgt_fh $_;
     }
+    close($src_fh) or die "error whilst reading mysqldump (source db $tax_dbname) pipe:$!";
   }
-  close($tgt_fh) or die "Could not successfully close pipe to target db $master_dbname\n";
+  close($tgt_fh) or die "error whilst writing to pipe to mysql (target db $master_dbname): $!";
 }
 
 
