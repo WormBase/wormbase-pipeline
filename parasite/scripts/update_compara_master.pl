@@ -118,7 +118,7 @@ if ($recreatedb) {
   open(my $tgt_fh, "| mysql -u $master_user -p$master_pass -h $master_host -P $master_port -D $master_dbname")
       or die "Could not open pipe to target db $master_dbname\n";
   foreach my $table ('ncbi_taxa_node', 'ncbi_taxa_name') {
-    open(my $src_fh, "mysqldump -u $tax_user -h $tax_host -P $tax_port ncbi_taxonomy $table |")
+    open(my $src_fh, "mysqldump -u $tax_user -h $tax_host -P $tax_port $tax_dbname $table |")
         or die "Could not open mysqldump stream from ncbi_taxonomy\n";
     while(<$src_fh>) {
       print $tgt_fh $_;
