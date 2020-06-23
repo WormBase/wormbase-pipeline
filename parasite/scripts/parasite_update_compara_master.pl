@@ -50,10 +50,12 @@ GetOptions(
     );
 
 die("must specify registry conf file on commandline\n") unless($reg_conf);
-die("Must specify -reg_conf, -masterdbname") unless $reg_conf and $master_dbname;
+# die("Must specify -reg_conf, -masterdbname") unless $reg_conf and $master_dbname;
+
+eval { require($reg_conf) };
+$master_dbname = $Parasite::Compara::Registry::MASTER_DB_NAME if not defined $master_dbname;
 
 Bio::EnsEMBL::Registry->load_all($reg_conf);
-
 
 $collection_name = "wormbase" if not defined $collection_name;
 
@@ -72,7 +74,9 @@ if (defined $sfile) {
 
 my @core_dbs;
 if (@species) {
-  @core_dbs = map { Bio::EnsEMBL::Registry->get_DBAdaptor($_, 'core') } @species; 
+foreach my $s (@species) {
+}
+  @core_dbs = map { Bio::EnsEMBL::Registry->get_DBAdaptor($_, 'core') } @species;
 } else {
   @core_dbs = @{Bio::EnsEMBL::Registry->get_all_DBAdaptors(-GROUP => 'core')};
 }
@@ -81,7 +85,8 @@ die "No core databases found! " unless @core_dbs;
 if ($recreatedb) { 
   die("When creating the db from scratch, you must give -comparacode") unless $compara_code ;
 
-  $tax_dbname = "ncbi_taxonomy" if not defined $tax_dbname;
+#   $tax_dbname = "ncbi_taxonomy" if not defined $tax_dbname;
+   $tax_dbname = $Parasite::Compara::Registry::TAXONOMY_DB_NAME if not defined $tax_dbname;
 
   print STDERR "Re-creating database from scratch\n";
 
