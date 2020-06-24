@@ -25,7 +25,7 @@ use NameDB_handler;
 
 =pod
 
-=head batch_pname_update.pl
+=head batch_gene.pl
 
 =item Options:
 
@@ -530,7 +530,7 @@ sub remove_cgc_gene {
     print OUT "//\tCGC-name '$line' queued for being suppressed\n";
     if ($count == $BATCH_SIZE) {
       my $info = $db->remove_cgc_name_genes(\@names, $why);
-      $count = 0;
+      $count =  0;
       @names = ();
       $batch = $info->{retracted}{'id'}; # was batch/id
       print OUT "// batch '$batch' resurrected\n";
