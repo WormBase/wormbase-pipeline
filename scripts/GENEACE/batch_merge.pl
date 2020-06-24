@@ -15,6 +15,8 @@ use Wormbase;
 
 =item Options:
 
+  -test      Use the test nameserver
+
   -old       Used the output format from the old nameserver
 
   -file	     file containing genes to merge <Mandatory>
@@ -68,9 +70,10 @@ e.g. perl batch_merge.pl -file merger.txt
 
 =cut
 
-my ($help, $verbose, $store, $wormbase);
+my ($test, $help, $verbose, $store, $wormbase);
 my ($file, $debug, $load, $old, $ns, $out, $force, $override);
 GetOptions(
+	   "test"       => \$test,
 	   'file:s'     => \$file,
 	   'debug:s'    => \$debug,
 	   'load'       => \$load,
@@ -88,9 +91,10 @@ if (defined $debug) {$log = Log_files->make_log("NAMEDB:$file", $debug);}
 else {$log = Log_files->make_log("NAMEDB:$file");}
 
 $wormbase = Wormbase->new(
-                             -organism => $species, 
-                             -debug => $debug, 
-                            );
+			  -organism => $species, 
+			  -debug => $debug,
+			  -test => $test,
+			 );
 
 
 $log->write_to(sprintf("%s started at: %s\n",join( ' ',$0,@ARGV) ,`date +%H:%M:%S`));
@@ -108,7 +112,7 @@ $log->write_to("Working.........\n-----------------------------------\n\n\n1) ki
 
 if ($ns) {
   $log->write_to("Contacting NameServer.....\n");
-  $db = NameDB_handler->new($wormbase);
+  $db = NameDB_handler->new($wormbase, $test);
 }
 
 my $ace = Ace->connect('-path', $database) or $log->log_and_die("cant open $database: $!\n");

@@ -16,6 +16,7 @@ use Wormbase;
 
 =item Options:
 
+  -test      use the test nameserver
   -file	     file containing genes to split <Mandatory>
 
     FORMAT:
@@ -43,6 +44,7 @@ my ($test, $file, $load, $ns);
 my ($help, $debug, $verbose, $store, $wormbase, $species);
 
 GetOptions(
+	   "test"       => \$test,
 	   "store:s"    => \$store,
 	   "species:s"  => \$species,
 	   'file:s'     => \$file,
@@ -57,7 +59,8 @@ if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
-                             -organism => $species
+                             -organism => $species,
+			     -test => $test,
                              );
 }
 
@@ -69,7 +72,7 @@ else {$log = Log_files->make_log("NAMEDB:$file");}
 my $db;
 if ($ns) {
   $log->write_to("Contacting NameServer .....\n");
-  $db = NameDB_handler->new($wormbase);
+  $db = NameDB_handler->new($wormbase, $test);
 }
 
 my $database = "/nfs/wormpub/DATABASES/geneace";

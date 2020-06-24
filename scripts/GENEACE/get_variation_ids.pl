@@ -21,28 +21,30 @@ my ($wormbase, $debug, $test, $store, $species,$infile,$outfile,$nocheck,
     $ace_file_template, $input_is_public_names, $input_is_other_names, $input, $output,$public);
 
 GetOptions (
-    "debug=s"   => \$debug,   # send log emails only to one user
-    "store:s"   => \$store,   # if you want to pass a Storable instead of recreating it
-    "species:s" => \$species, # elegans/briggsae/whateva .. needed for logging
-    'input:s'     => \$input,   # File containing new public_names for new Variations
-    "output:s"    => \$output,  # File to capture the new WBVar and name associations
-    'acetemplate=s' => \$ace_file_template, #unknown template file that is also printed along with the IDs retrieved by the script
-    )||die(@!);
-    
+	    "test"      => \$test,    # use the test nameserver and test acedb database
+	    "debug=s"   => \$debug,   # send log emails only to one user
+	    "store:s"   => \$store,   # if you want to pass a Storable instead of recreating it
+	    "species:s" => \$species, # elegans/briggsae/whateva .. needed for logging
+	    'input:s'   => \$input,   # File containing new public_names for new Variations
+	    "output:s"  => \$output,  # File to capture the new WBVar and name associations
+	    'acetemplate=s' => \$ace_file_template, #unknown template file that is also printed along with the IDs retrieved by the script
+	   )||die(@!);
+
 die "Species option is mandatory\n" unless $species; # need that for NameDB to fetch the correct regexps
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
   $wormbase = Wormbase->new( -debug    => $debug,
-                             -organism => $species
+                             -organism => $species,
+			     -test => $test,
       );
 }
 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
-my $db = NameDB_handler->new($wormbase);
+my $db = NameDB_handler->new($wormbase, $test);
 
 
 # there should be *only* one public_name per line in the input_file

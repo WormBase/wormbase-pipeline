@@ -20,9 +20,10 @@ use Log_files;
 use Wormbase;
 use strict;
 
-my ($help, $debug, $verbose, $store, $wormbase, $species);
+my ($test, $help, $debug, $verbose, $store, $wormbase, $species);
 my ($file, $debug);
 GetOptions(
+	   "test"       => \$test,
            'file:s'     => \$file,
            'debug:s'    => \$debug,
 	   "store:s"    => \$store,
@@ -33,7 +34,8 @@ if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
-                             -organism => $species
+                             -organism => $species,
+			     -test => $test,
                              );
 }
 
@@ -42,7 +44,7 @@ if (defined $debug) {$log = Log_files->make_log("NAMEDB:$file", $debug);}
 else {$log = Log_files->make_log("NAMEDB:$file");}
 
 $log->write_to("Contacting NameServer .....\n");
-my $db = NameDB_handler->new($wormbase);
+my $db = NameDB_handler->new($wormbase, $test);
 
 my (@merges, %all_ids);
 

@@ -24,7 +24,7 @@ my ($wormbase, $debug, $test, $store, $species,$infile,$outfile,$nocheck,
 
 GetOptions (
     "debug=s"   => \$debug,   # send log emails only to one user
-    "test"      => \$test,    # run against the test database on utlt-db
+    "test"      => \$test,    # run against the test database and test nameserver
     "store:s"   => \$store,   # if you want to pass a Storable instead of recreating it
     "species:s" => \$species, # elegans/briggsae/whateva .. needed for logging
     'nocheck'   => \$nocheck, # don't check public_names
@@ -50,7 +50,7 @@ if ( $store ) {
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
-my $db = NameDB_handler->new($wormbase);
+my $db = NameDB_handler->new($wormbase, $test);
 
 # there should be *only* one public_name per line in the input_file
 # like:

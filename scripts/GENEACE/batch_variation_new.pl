@@ -15,6 +15,7 @@ use Wormbase;
 
 =item Options:
 
+  -test      use the test database
 
   -file	     file containing variation information from the nameserver emails. <Mandatory>
 
@@ -41,6 +42,7 @@ e.g. perl batch_merge.pl -file merger.txt
 
 my ($USER, $test, $file, $debug, $load, $old, $ns, $PASS,$out,$force,$override);
 GetOptions(
+	   "test"       => \$test,
 	   'file:s'     => \$file,
 	   'debug:s'    => \$debug,
 	   'load'       => \$load,
@@ -70,12 +72,15 @@ if ($load && $override) {
    $log->log_and_die("OPTIONS ERROR: You cannot use the -load and -override option at the same time!!!!!!!\n");
 }
 
-my $wormbase = Wormbase->new("-organism" =>$species);
+my $wormbase = Wormbase->new(
+			     -organism => $species,
+			     -test => $test,
+			    );
 my $database = "/nfs/wormpub/DATABASES/geneace";
 $log->write_to("Working.........\n-----------------------------------\n\n\n1) creating variations in file [${file}]\n\n");
 
 
-my $ace = Ace->connect('-path', $database) or $log->log_and_die("cant open $database: $!\n");
+my $ace = Ace->connect(-path => $database) or $log->log_and_die("cant open $database: $!\n");
 
 my $outdir = $database."/NAMEDB_Files/";
 my $backupsdir = $outdir."BACKUPS/";

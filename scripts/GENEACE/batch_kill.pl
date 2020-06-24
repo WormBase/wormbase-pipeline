@@ -16,6 +16,7 @@ use Wormbase;
 
 =item Options:
 
+  -test      use the test nameserver
   -file	     file containing genes to kill <Mandatory>
 
     FORMAT:
@@ -42,13 +43,14 @@ e.g. perl batch_kill.pl -file deathrow.txt [simple example]
 
 =cut
 
-my ($help, $debug, $verbose, $store, $wormbase);
+my ($test, $help, $debug, $verbose, $store, $wormbase);
 my ($file, $ns, $load, $transposon, $domain);
 if (!defined $domain) {$domain = 'Gene'}
 
 
 my $species = 'elegans';
 GetOptions(
+	   "test"       => \$test,
 	   'file:s'     => \$file,
 	   'ns'         => \$ns,
 	   'debug:s'    => \$debug,
@@ -66,8 +68,9 @@ my $db;
 my $ecount;
 
 $wormbase = Wormbase->new(
-			  "-organism" => $species, 
-			  -debug => $debug, 
+			  -organism => $species, 
+			  -debug => $debug,
+			  -test => $test,
 			 );
 
 my $database = "/nfs/wormpub/DATABASES/geneace";
@@ -81,7 +84,7 @@ elsif (defined $load) { $log->write_to("Output has been scheduled for auto-loadi
 
 if ($ns) {
   $log->write_to("Contacting NameServer.....\n");
-  $db = NameDB_handler->new($wormbase);
+  $db = NameDB_handler->new($wormbase, $test);
 }
 
 my $ace = Ace->connect('-path', $database) or $log->log_and_die("cant open $database: $!\n");

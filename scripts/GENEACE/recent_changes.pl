@@ -30,6 +30,7 @@ use NameDB_handler;
 
 =item Options:
 
+  -test     run against the test name server
   -load     load the output ACE file into geneace
   -from     start date to read data from the Nameserver
   -until    end date to read data from the Nameserver
@@ -49,10 +50,12 @@ e.g. perl recent_changes.pl -outfile results_file.ace -load
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $verbose, $store, $wormbase, $geneace);
+my ($test, $help, $debug, $verbose, $store, $wormbase, $geneace);
 my ($outfile, $load, $from, $until);
 
-GetOptions ("help"       => \$help,
+GetOptions (
+	    "test"       => \$test,
+	    "help"       => \$help,
             "debug=s"    => \$debug,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
@@ -66,7 +69,10 @@ GetOptions ("help"       => \$help,
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
-  $wormbase = Wormbase->new( -debug   => $debug);
+  $wormbase = Wormbase->new(
+			    -debug   => $debug,
+			    -test => $test,
+			   );
 }
 
 # Display help if required
@@ -98,7 +104,7 @@ my %cgc2gene = $wormbase->FetchData("cgc_name2gene", undef, "$currentdb/COMMON_D
 open (OUT, ">$outfile") || $log->log_and_die("Can't open file $outfile");
 print OUT "\n\n// Nameserver Recent changes\n// From: $from\n// Until: $until\n\n\n";
 
-my $db = NameDB_handler->new($wormbase);
+my $db = NameDB_handler->new($wormbase, $test);
 
 # we wish to pull out recent activity on the *web* interface in order to read it into geneace in the correct order of events.
 my $gene_data = $db->recent_gene($from, $until, 'web');

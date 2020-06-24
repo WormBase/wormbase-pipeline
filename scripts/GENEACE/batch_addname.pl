@@ -19,15 +19,17 @@ use Log_files;
   -species   what species these are for - default = elegans
   -force     bypass CGC name validation check eg to add Cbr-cyp-33E1; use with care!
   -type      allows you to specify Sequence names to add (defaults to CGC if not speciefied)
+  -test      use the test name server
 
 e.g. perl batch_addname.pl -file genenames.txt -species briggsae
 
 =cut
 
-my ($help, $debug, $verbose, $store, $wormbase);
+my ($test, $help, $debug, $verbose, $store, $wormbase);
 my ($file, $species, $force, $type);
 
 GetOptions(
+	   "test"       => \$test,
 	   "help"       => \$help,
 	   "debug=s"    => \$debug,
 	   "verbose"    => \$verbose,
@@ -44,6 +46,7 @@ if ( $store ) {
   $wormbase = Wormbase->new( 
 			    -debug    => $debug,
 			    -organism => $species,
+			    -test => $test,
 			   );
 }
 
@@ -59,7 +62,7 @@ my $log = Log_files->make_log("NAMEDB:$file", $ENV{USER});
 $log->write_to("loading $file to Nameserver\n\n");
 $log->write_to("FORCE mode is ON!\n\n") if $force;
 
-my $db = NameDB_handler->new($wormbase);
+my $db = NameDB_handler->new($wormbase, $test);
 
 #open file and read
 

@@ -24,6 +24,8 @@ use Getopt::Long;
 
 =item Options:
 
+  This script always runs these unit tests agaist the test name server
+
   -file      file containing IDs and old/new names  <Mandatory>
 
     FORMAT: standard
@@ -84,14 +86,13 @@ unless (defined $species){
   $log->write_to ("Species has been set to elegans as it was not specified on command line\n\n");
 }
 
+$test = 1; # always run this script against the test name server
+$db = NameDB_handler->new($wormbase, $test);
 
-$db = NameDB_handler->new($wormbase, $log);
 
-
-if ($help) {
   $db->{'db'}->print_authentication_instructions();
 } else {
-  $db->test();
+  $db->unittest();
 }
 
 

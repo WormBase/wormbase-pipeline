@@ -30,10 +30,12 @@ use Getopt::Long;
 # check user is wormpub
 #######################
 
-my ($help, $debug, $verbose, $store, $wormbase, $species);
+my ($test, $help, $debug, $verbose, $store, $wormbase, $species);
 my ($verbose, $load,$ndbUser,$ndbPass, $path, $input_file,$pg);
 
-GetOptions ('help'              => \$help,
+GetOptions (
+	    "test"              => \$test,
+	    'help'              => \$help,
             'debug=s'           => \$debug,
             'verbose'           => \$verbose,
             'load'              => \$load,
@@ -55,7 +57,8 @@ if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
-                             -organism => $species
+                             -organism => $species,
+			     -test => $test,
                              );
 }
 
@@ -122,7 +125,7 @@ my $strain_count = `grep Strain: $input_file | wc -l`;
 open(INPUT, $input_file) || die "Can't open inputfile!"; 
 
 # setup the nameserver
-my $db = NameDB_handler->new($wormbase);
+my $db = NameDB_handler->new($wormbase, $test);
 my $geneAceDB = Ace->connect(-path => $geneace_dir) or die Ace->error;
 
 while(<INPUT>){

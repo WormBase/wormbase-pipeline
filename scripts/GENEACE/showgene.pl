@@ -54,6 +54,9 @@ use NameDB_handler;
      Prints all of the change events, not just the first and last
 
 
+    -test
+     use the test name server
+
 =cut
 
 
@@ -61,11 +64,13 @@ use NameDB_handler;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $verbose, $store, $wormbase);
+my ($test, $help, $debug, $verbose, $store, $wormbase);
 my ($species, $gene, $variation, $seqfeature, $strain, $entity, $all);
 my $BATCH_SIZE = 500; # maximum entries to put into any one batch API call
 
-GetOptions ("help"       => \$help,
+GetOptions (
+	    "test"       => \$test,
+	    "help"       => \$help,
             "debug=s"    => \$debug,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
@@ -83,6 +88,7 @@ if ( $store ) {
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
 			     -organism => $species,
+			     -test => $test,
 			     );
 }
 
@@ -93,7 +99,7 @@ if ( $store ) {
 my $log = Log_files->make_build_log($wormbase);
 
 
-my $db = NameDB_handler->new($wormbase);
+my $db = NameDB_handler->new($wormbase, $test);
 
 
 if (defined $gene) {
