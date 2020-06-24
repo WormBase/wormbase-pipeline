@@ -167,8 +167,9 @@ Set or reset and return whether we wish to use the test server or not.
 sub test {
   my $self = shift;
   my $level = shift;
-  if (!defined $level && !defined $self->{'test'}) {$level = 0}
-  $self->{'test'} = $level;
+  if (defined $level) {
+    $self->{'test'} = $level;
+  }
   return $self->{'test'};
 }
 
@@ -989,7 +990,7 @@ sub remove_cgc_name_genes {
   my ($self, $data) = @_;
   
   my $payload = '{"data": [';
-  $payload .= join(',', map { "\"$_\"" } @{$data});
+  $payload .= join(',', map { "{ \"cgc-name\": \"$_\" }" } @{$data});
   $payload .= ']}';
   if ($self->noise()) {print $payload,"\n"}
   
