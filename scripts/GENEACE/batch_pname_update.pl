@@ -27,6 +27,7 @@ use Getopt::Long;
 
 =item Options:
 
+  -test      use test nameserver
   -file      file containing IDs and old/new names  <Mandatory>
 
     FORMAT: standard
@@ -49,10 +50,11 @@ e.g. perl pname_update.pl -species elegans -file variation_name_data
 
 
 #connect to name server
-my ($help, $debug, $verbose, $store, $wormbase, $species);
+my ($test, $help, $debug, $verbose, $store, $wormbase, $species);
 my ($file, $cgc, $sequence, $newonly);
 
 GetOptions (
+	    "test"       => \$test,
 	    "file=s"     => \$file,
 	    "debug=s"    => \$debug,
 	    "store:s"    => \$store,
@@ -68,7 +70,8 @@ if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
-                             -organism => $species
+                             -organism => $species,
+			     -test => $test,
 			     );
 }
 # establish log file.
@@ -87,7 +90,7 @@ if (!$newonly) {
   die "-sequence is only available with -newonly" if ($sequence);
 }
 
-$db = NameDB_handler->new($wormbase);
+$db = NameDB_handler->new($wormbase, $test);
 
 open (DATA, "<$file");
 
