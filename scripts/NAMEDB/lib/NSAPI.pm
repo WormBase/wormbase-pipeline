@@ -989,7 +989,7 @@ sub remove_cgc_name_genes {
   my ($self, $data) = @_;
   
   my $payload = '{"data": [';
-  $payload .= join(',', map { "\"$_\"" } @{$data});
+  $payload .= join(',', map { "{ \"cgc-name\": \"$_\" }" } @{$data});
   $payload .= ']}';
   if ($self->noise()) {print $payload,"\n"}
   
