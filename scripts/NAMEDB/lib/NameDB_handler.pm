@@ -2184,10 +2184,11 @@ sub kill_person {
 
 #############################################################################
 # info_person($identifier)
-# $identifier should be a single Person identifier (one of WBPersonID, email, Person's name)
+# $identifier should be a single Person identifier (one of WBPersonID, email)
 
 # Args:
 # $person - string, person identifier of the person to look at
+# returns hash with keys: email, name, id
 
 sub info_person {
   my ($self, $person) = @_;
@@ -2199,10 +2200,10 @@ sub info_person {
 
 #############################################################################
 # update_person($identifier, $name, $email, $wbperson)
-# $identifier should be a single Person identifier (one of WBPersonID, email, Person's name)
+# $identifier should be a single Person identifier (one of WBPersonID, email)
 
 # Args:
-# $person - string, person identifier of the person to update (name, email or wbpersonID)
+# $person - string, person identifier of the person to update (email or wbpersonID)
 # $name - update how they are called, or undef
 # $email - update how they are mailed, or undef
 # $wbperson - update how they are identified, or undef
@@ -2210,14 +2211,12 @@ sub info_person {
 sub update_person {
   my ($self, $person, $name, $email, $wbperson) = @_;
 
-  my %data = (
-	      'Name' => $name,
-	      'Email' => $email,
-	      'WBPerson' => $wbperson,
-	     );
-
+  my %data;
+  if ($name) {$data{'Name'} = $name}
+  if ($email) {$data{'Email'} = $email}
+  if ($wbperson) {$data{'WBPerson'} = $wbperson}
  
-  my $info = $self->{'db'}->info_person($person, \%data);
+  my $info = $self->{'db'}->update_person($person, \%data);
   return $info;
 
 }

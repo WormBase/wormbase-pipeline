@@ -533,7 +533,7 @@ sub new_person {
   $payload .= '"name": "'.$name.'",' if (defined $name);
   
   chop $payload; # remove last ','
-  $payload .= '}';
+  $payload .= '}, "prov": {}}';
 
   if ($self->noise()) {print $payload,"\n"}
   
@@ -553,17 +553,20 @@ sub new_person {
 
 sub kill_person {
   my ($self, $person) = @_;
-  
+
   if ($self->noise()) {print "delete $person","\n"}
-  
-  my $content = $self->curl("DELETE", "person/$person");
+
+  my $encoded = CGI::escape($person);
+
+  my $content = $self->curl("DELETE", "person/$encoded");
   if ($self->noise()) {print Dumper $content}
   
   return $content;
 }
 #======================================================================
 # info_person($identifier)
-# $identifier should be a single Person identifier (one of WBPersonID, email, Person's name)
+# summarise information on a single individual
+# $identifier should be a single Person identifier (one of WBPersonID, email)
 # GET /api/person/{identifier}
 
 # Args:
@@ -573,8 +576,10 @@ sub info_person {
   my ($self, $person) = @_;
   
   if ($self->noise()) {print "info $person","\n"}
-  
-  my $content = $self->curl("GET", "person/$person");
+
+  my $encoded = CGI::escape($person);
+
+  my $content = $self->curl("GET", "person/$encoded");
   if ($self->noise()) {print Dumper $content}
   
   return $content;
@@ -615,11 +620,13 @@ sub update_person {
   $payload .= '"name": "'.$name.'",' if (defined $name);
   
   chop $payload; # remove last ','
-  $payload .= '}';
+  $payload .= '}, "prov": {}}';
 
   if ($self->noise()) {print $payload,"\n"}
-  
-  my $content = $self->curl("PUT", "person/$person", $payload);
+
+  my $encoded = CGI::escape($person);
+
+  my $content = $self->curl("PUT", "person/$encoded", $payload);
   if ($self->noise()) {print Dumper $content}
   
   return $content;
