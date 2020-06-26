@@ -115,13 +115,13 @@ while (my $array = $it->next){
         my $datasetId= 'WB:'.$p[0].'.ce.mr.csv';
 
 	my @papers = map {get_paper($_)} @p;
-	$json2_obj{primaryId} = $datasetId; # required
-	$json2_obj{publication} = \@papers if @papers;;
-	$json2_obj{categoryTags}=['unclassified'];
-	$json2_obj{numChannels}=1;
+#	$json2_obj{primaryId} = $datasetId; # required
+#	$json2_obj{publication} = \@papers if @papers;;
+#	$json2_obj{categoryTags}=['unclassified'];
+#	$json2_obj{numChannels}=1;
 
-	push @htpd,\%json2_obj unless $htpd{$datasetId};
-	$htpd{$datasetId}=1;
+#	push @htpd,\%json2_obj unless $htpd{$datasetId};
+#	$htpd{$datasetId}=1;
 
 	# sample
 	my %json_obj;
@@ -133,7 +133,7 @@ while (my $array = $it->next){
 	};
 
 	$json_obj{taxonId} = $wormbase->ncbi_tax_id;
-	$json_obj{datasetId} = [$datasetId];
+	#	$json_obj{datasetId} = [$datasetId];
 	$json_obj{sex}=$sample->Sex->name if $sample->Sex;
 	$json_obj{sampleAge}="WB:${\$sample->Life_stage->name}" if $sample->Life_stage;
 	if ($sample->Tissue){
@@ -154,15 +154,15 @@ while (my $array = $it->next){
 	my %json2_obj;
 	my @p = $array->Reference;
 	my @papers = map {get_paper($_)} @p;
-        my $datasetId= 'WB:'.$p[0].'.ce.mr.csv';
-	my @papers = map {get_paper($_)} @p;
-	$json2_obj{primaryId} = $datasetId; # required
-	$json2_obj{publication} = \@papers if @papers;;
-	$json2_obj{categoryTags}=['unclassified'];
-	$json2_obj{numChannels}=2;
-	
-	push @htpd,\%json2_obj unless $htpd{$datasetId};
-	$htpd{$datasetId}=1;
+#       my $datasetId= 'WB:'.$p[0].'.ce.mr.csv';
+#	my @papers = map {get_paper($_)} @p;
+#	$json2_obj{primaryId} = $datasetId; # required
+#	$json2_obj{publication} = \@papers if @papers;;
+#	$json2_obj{categoryTags}=['unclassified'];
+#	$json2_obj{numChannels}=2;
+
+#	push @htpd,\%json2_obj unless $htpd{$datasetId};
+#	$htpd{$datasetId}=1;
 
 	# sample
 	my @samples=($array->Sample_A , $array->Sample_B);
@@ -173,7 +173,7 @@ while (my $array = $it->next){
 
 		$json_obj{primaryId} = {sampleId => "WB:$s:$suffix"}; # required
 		$json_obj{taxonId} = $wormbase->ncbi_tax_id;
-		$json_obj{datasetId} = [$datasetId];
+#		$json_obj{datasetId} = [$datasetId];
 		$json_obj{sex}=$s->Sex->name if $s->Sex;
 		$json_obj{sampleAge}="WB:${\$s->Life_stage->name}" if $s->Life_stage;
 		if ($s->Tissue){
