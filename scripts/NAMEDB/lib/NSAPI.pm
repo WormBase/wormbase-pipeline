@@ -506,6 +506,7 @@ sub info_gene {
 # Args:
 # $data - hash-ref with values being the new data to update with
 #         the hashes contain one or more of the keys ('WBPerson', 'Email', 'Name').
+#         the email address must end "@wormbase.org"
 # e.g.
 # $data = {"Email" => "jbloggs@wormbase.org", "Name" => "Joe Bloggs", "WBPerson" => "WBPerson 0000001"};
 
@@ -593,6 +594,7 @@ sub info_person {
 # $person - string, person identifier of the person to update
 # $data - hash-ref with values being the new data to update with
 #         the hashes contain one or more of the keys ('WBPerson', 'Email', 'Name').
+#         the email address must end "@wormbase.org"
 # e.g.
 # $data = {"WBPerson" => "jbloggs@wormbase.org"};
 
