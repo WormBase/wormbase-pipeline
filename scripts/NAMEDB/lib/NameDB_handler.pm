@@ -58,6 +58,7 @@ sub new {
 		      remanei   => 'Caenorhabditis remanei',
 		      brenneri  => 'Caenorhabditis brenneri',
 		      japonica  => 'Caenorhabditis japonica',
+                      pristionchus => 'Pristionchus pacificus',
 		      brugia    => 'Brugia malayi',
 		      ovolvulus => 'Onchocerca volvulus',
 		      sratti    => 'Strongyloides ratti',
