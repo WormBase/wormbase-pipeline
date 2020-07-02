@@ -490,8 +490,8 @@ sub validate_name {
 						    "CGC" => '^Ppa-[a-z21]{3,4}-[1-9]\d*(\.\d+)?$',	
 						    "Sequence" => '^PPA\d{5}$',
 						   },
-                       'Caenorhabditisjaponica' => {
-						    "CGC" => '^Cjp-[a-z21]{3,4}-[1-9]\d*(\.\d+)?$',	
+                       'Caenorhabditis japonica' => {
+                                                    "CGC" => '^Cjp-[a-z21]{3,4}-[1-9]\d*(\.\d+)?$',	
 						    "Sequence" => '^CJA\d{5}$',
 						   },
 		       'Brugia malayi' => {
