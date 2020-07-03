@@ -4,8 +4,15 @@ require 'bio'
 require 'date'
 require 'json'
 require 'optparse'
+require 'zlib'
 
-Options = Struct.new(:fasta,:gff,:db,:ws_version,:wquery)
+Options = Struct.new(:fasta,:gff,:db,:ws_version,:wquery,:outfile)
+
+
+##
+# = Parser Class
+#
+# to extend getopts and generate a autohelp
 
 class Parser
 	def self.parse(options)
@@ -17,11 +24,15 @@ class Parser
 
 			opts.banner = "Usage: make_agr_variations.rb [options]"
 
-			opts.on("-f","--file NAME","FASTA file") do |f|
+			opts.on("-f","--fasta NAME","FASTA file") do |f|
 				args.fasta = f
 			end
 
-			opts.on("-g","--gff NAME","GFF file") do |g|
+			opts.on("-o","--outfile NAME","JSON output file") do |o|
+				args.outfile = o
+			end
+
+			opts.on("-g","--gff NAME","gzipped GFF file") do |g|
 				args.gff = g
 			end
 
@@ -48,16 +59,22 @@ class Parser
 	end
 end
 
+##
+# = TableMaker class
+#
+# connects to giface and runs tablemaker def files against a keyset
+
 class TableMaker
 	def initialize(giface,database)
 		@giface = giface
 		@database = database
 	end
 
+	##
 	# as example query="query find Variation *;Reference"
 	def execute_wquery(query,wquery,outfile='/tmp/tablemaker.outfile')
 		IO.popen("#{@giface} #{@database}","r+"){|pipe|
-			unless query.nil? # will quey all variation
+			unless query.nil? # will query all variation
 				pipe.puts query
 				pipe.puts "Table-maker -active -o #{outfile} #{wquery}"
 			else # query only the current keyset from the query
@@ -70,6 +87,7 @@ class TableMaker
                 return self.parse_output(outfile)
 	end
 
+	##
 	# that one is specific to that particular query, so probably not too generally useful
 	def parse_output(outfile)
 		results=Hash.new
@@ -79,12 +97,12 @@ class TableMaker
 			c = line.split
 			results[c[0]]=Hash.new # WBVarXXX
 			results[c[0]]["name"] = c[0] # WBVarXXX
-			if columns[1]
+			if c[1]
 				results[c[0]]["paper"]=Hash.new # WBPaperXXX
 				results[c[0]]["paper"][c[1]] = c[2] || 'n/a' # PubmedID
 			end
 		}
-		File.unlink(outfile)
+#		File.unlink(outfile)
 		return results
 	end
 end
@@ -113,14 +131,14 @@ chromosomes= Hash.new
 
 # hardcoded giface ... which is probably not needed
 tablemaker = TableMaker.new('/nfs/panda/ensemblgenomes/wormbase/software/packages/acedb/RHEL7/4.9.62/giface',options.db)
-filter = tablemaker.execute_wquery("query find Variation *;Reference",options.wquery) 
+filter = tablemaker.execute_wquery("query find Variation *;Reference;SMap",options.wquery) 
 
 Bio::FlatFile.open(Bio::FastaFormat, options.fasta).each_entry{|e|
    chromosomes[e.entry_id.to_s] = e.seq
 }
 
 # parse from the GFF the respective variation lines
-File.open(options.gff).each{|line|
+Zlib::GzipReader.open(options.gff).each{|line|
   variation = Hash.new
   cols = line.split("\t")
   next unless term2so[cols[2]]
@@ -191,4 +209,4 @@ meta = {
 
 bleh =  {:data => variations, :metaData => meta}
 
-puts JSON.pretty_generate(bleh)
+File.write(options.outfile , JSON.pretty_generate(bleh))
