@@ -63,35 +63,76 @@ sub map_cDNA
   }
 
 
-# check if two transcripts have duplicate structure
-sub duplicate
-  {
-    my $self = shift;
-    my $other = shift;
-
-    if (!defined $self) {return}
-
-    # check for exact match
-    if( $self->start != $other->start ) {
-      return 0;
-    }
-    elsif( $self->end != $other->end ) {
-      return 0;
-    }
-    elsif (scalar @{$self->sorted_exons} != scalar @{$other->sorted_exons}) {
-      return 0;
-    }
-      
-    foreach my $exon_idx (0 .. $#{$self->sorted_exons}) {
-      if ($self->{sorted_exons}->[$exon_idx]->[0] != $other->{sorted_exons}->[$exon_idx]->[0]) {
-	return 0;
-      }
-      if ($self->{sorted_exons}->[$exon_idx]->[1] != $other->{sorted_exons}->[$exon_idx]->[1]) {
-	return 0;
-      }
-    }
-    return 1;
+# check if two transcripts ($self and $other) have duplicate structure
+sub duplicate {
+  my $self = shift;
+  my $other = shift;
+  
+  if (!defined $self) {return}
+  
+  # check for exact match
+  if( $self->start != $other->start ) {
+    return 0;
+  } elsif( $self->end != $other->end ) {
+    return 0;
+  } elsif (scalar @{$self->sorted_exons} != scalar @{$other->sorted_exons}) {
+    return 0;
   }
+  
+  foreach my $exon_idx (0 .. $#{$self->sorted_exons}) {
+    if ($self->{sorted_exons}->[$exon_idx]->[0] != $other->{sorted_exons}->[$exon_idx]->[0]) {
+      return 0;
+    }
+    if ($self->{sorted_exons}->[$exon_idx]->[1] != $other->{sorted_exons}->[$exon_idx]->[1]) {
+      return 0;
+    }
+  }
+  return 1;
+}
+
+# check if two transcripts ($self and $other) have near-duplicate structures
+# i.e. introns exactly match and the 5'/3' ends are near each other
+# the distance between the different 5' and 3' ends that should be considered suitable for 
+# being a true near-duplicate are given by the arguments $fiveprimedelta and $threeprimedelta
+sub near_duplicate {
+  my ($self, $other, $fiveprimedelta, $threeprimedelta) = @_;
+
+  if (!defined $self) {return}
+  
+  # check for near match of start and end
+  if( abs($self->start - $other->start) > $fiveprimedelta ) {
+    return 0;
+  }
+  if( abs($self->end - $other->end) > $threeprimedelta ) {
+    return 0;
+  }
+  if (scalar @{$self->sorted_exons} != scalar @{$other->sorted_exons}) {
+    return 0;
+  }
+
+  # check for exact matches of introns
+  foreach my $intron_idx (0 .. $#{$self->sorted_introns}) {
+    if ($self->{sorted_introns}->[$intron_idx]->[0] != $other->{sorted_introns}->[$intron_idx]->[0]) {
+      return 0;
+    }
+    if ($self->{sorted_introns}->[$intron_idx]->[1] != $other->{sorted_introns}->[$intron_idx]->[1]) {
+      return 0;
+    }
+  }
+
+  # we want two transcripts, each with SL or polyA site features that are different, to be distinguished as being different, not a near duplicate
+  if ($self->SL && $other->SL) {
+    if ($self->SL->[1] != $other->SL->[1]) {return 0}
+  }
+
+  if ($self->polyA_site && $other->polyA_site) {
+    if ($self->polyA_site->[1] != $other->polyA_site->[1]) {return 0}
+  }
+
+  return 1;
+
+}
+
 
 
 # check whether any of the cDNA introns match the introns in this CDS
@@ -251,7 +292,7 @@ sub add_matching_cDNA
         if ($self->SL and $exon->[0] < $self->SL->[1] or
             $self->polyA_site and $exon->[1] > $self->polyA_site->[0]) {
           # do not extend - probably a badly cDNA
-0        } else {
+        } else {
 	  $self->{'evidence'}{"$exon->[0]"}{$name} = 1; # add cDNA name as evidence for this exon
 	  # move the cDNA evidence names from the old exon start to the new one
 	  my @names = keys %{$self->{'evidence'}{"$curr_start"}};
@@ -259,7 +300,6 @@ sub add_matching_cDNA
 	    $self->{'evidence'}{"$exon->[0]"}{$name} = 1; # add cDNA name as evidence for this exon
 	  }
 	  delete $self->{'evidence'}{"$curr_start"};
-
 
           delete $self->{'exons'}->{$curr_start};
           $self->{'exons'}->{"$exon->[0]"} = $exon->[1];

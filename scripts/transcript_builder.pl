@@ -69,7 +69,8 @@ GetOptions ( "debug:s"      => \$debug,
 #@test_cds = ("C09G5.8a", "C09G5.8b"); # two isoforms 'a' is full-length, 'b' is defined by a SL1 but currently the 'b' coding transcript is extended up by three exons that look bogus.
 #@test_cds = ("R03D7.6a", "R03D7.6b", "R03D7.6c"); # three isoforms 'a' & 'b' are full-length and bogusly short, 'c' is defined by a SL1 but currently the 'c' coding transcript is extended up by two exons that look bogus.
 #@test_cds = ("C08G5.4a", "C08G5.4b", "C08G5.4c"); # bog-standard normal set of isoforms
-
+#@test_cds = ("F57C9.2"); # On CHROMOSOME_I - two transcripts differing by 2 bases with one constrained by the SL1 Feature
+# what happens in the cases of?: daf-16, C24A3.2a, C25H3.9a, C34F11.6, Y65B4A.6a/b, K08E7.2, F21H12.5
 
 # want to check if a CDS has a TSL asserted as evidence and when cDNAs are added to the structire, truncate the cDNA structure so the transcript is never longer than the TSL site.
 # add asserted Isoform Feature_evidence to the $cds objects as $cds->SL data
@@ -77,9 +78,9 @@ GetOptions ( "debug:s"      => \$debug,
 # when a transcript object is extended, check to see if there is a SL feature and only add exons after this - truncate exons overlapping the SL site
 
 
-#$debug = "gw3";
+$debug = "gw3";
 ##$detailed_debug = 1;
-#$test = 1;
+$test = 1;
 if (defined $test) {
   print "WORKING IN TEST_BUILD\n";
 }
@@ -168,10 +169,10 @@ my $prob_file = sprintf("%s/%s", $transcript_dir, $problem_fname);
 $log->write_to("Going to write problems to $prob_file\n") if ($verbose);
 open (my $prob_fh,">$prob_file") or $log->log_and_die("cant open $prob_file\n");
 
-print "Get Read_coverage\n" if ($debug);
-my %Read_coverage;
+#print "Get Read_coverage\n" if ($debug);
+#my %Read_coverage;
 #if (! $debug) { # this takes a long time to load, so ignore this stuff during debugging
-  %Read_coverage = get_read_coverage();
+#  %Read_coverage = get_read_coverage();
 #} else {
 #  print "Not read in because debugging and it takes a long time\n";
 #}
@@ -525,7 +526,6 @@ foreach my $chrom ( @chromosomes ) {
   }
 
 
-
   ##########################################################
   # Second round.
   #
@@ -686,16 +686,17 @@ foreach my $chrom ( @chromosomes ) {
 	  my $downstream_CDS;
 	DOWN: while (! defined $downstream_CDS ) {
 	    $index++;
-	    if ( $downstream_CDS = $cds_objs[ $index ] ) {
+	    if ( $downstream_CDS = $cds_objs[ $index ] && defined $downstream_CDS) {
 	      
 	      unless ( $downstream_CDS ) {
-		last;
 		$log->write_to("TB : $round : last gene in array\n") if ($verbose);
+		last;
 	      }
 	      # dont count isoforms
 	      my $down_name = $downstream_CDS->name;
 	      my $name = $cds->name;
 	      $name =~ s/[a-z]//;
+
 	      $down_name =~ s/[a-z]//;
 	      if ( $name eq $down_name ) {
 		undef $downstream_CDS;
@@ -720,6 +721,7 @@ foreach my $chrom ( @chromosomes ) {
 	}
       }
     }
+
     
     ##########################################################=
     #  $round = "Fifth (extend transcripts again) round:";
@@ -746,8 +748,11 @@ foreach my $chrom ( @chromosomes ) {
     } else {
       
       # find transcript isoforms which have weak evidence compared to their siblings and remove them
-      purge_weakly_supported_transcript_structures(\@cds_objs_in_gene, \%Read_coverage);
+###      purge_weakly_supported_transcript_structures(\@cds_objs_in_gene, \%Read_coverage);
       
+      # merge transcripts that differ slightly at the ends
+      merge_near_duplicates(\@cds_objs_in_gene, \%cds2gene);
+
       # find duplicate transcripts in a gene and make then non-identical so that the ENA will accept them
       purge_duplicates(\@cds_objs_in_gene, \%cds2gene);
       
@@ -767,14 +772,41 @@ foreach my $chrom ( @chromosomes ) {
     
     
   } # foreach $cds (@cds_objs)
+
+#  # debug
+#  foreach my $c (@cds_objs) {
+#    foreach my $t ($c->transcripts) {
+#      print $t->name," exons - end of round 5\n";
+#      for (my $i=0; $i<scalar @{$t->sorted_exons}; $i++) {
+#	print $t->sorted_exons->[$i]->[0]," ",$t->sorted_exons->[$i]->[1],"\n";
+#      }
+#    }
+#  }
+
   
   # find transcript isoforms which have weak evidence compared to their siblings and remove them
-  purge_weakly_supported_transcript_structures(\@cds_objs_in_gene, \%Read_coverage);
+###  purge_weakly_supported_transcript_structures(\@cds_objs_in_gene, \%Read_coverage);
   
+
   # process last gene
+
+  # merge transcripts that differ slightly at the ends
+  merge_near_duplicates(\@cds_objs_in_gene, \%cds2gene);
+
+#  # debug
+#  foreach my $c (@cds_objs) {
+#    foreach my $t ($c->transcripts) {
+#      print $t->name," exons - end of merge near duplicates\n";
+#      for (my $i=0; $i<scalar @{$t->sorted_exons}; $i++) {
+#	print $t->sorted_exons->[$i]->[0]," ",$t->sorted_exons->[$i]->[1],"\n";
+#      }
+#    }
+#  }
+
+  
   # find duplicate transcripts in a gene and make then non-identical so that the ENA will accept them
   purge_duplicates(\@cds_objs_in_gene, \%cds2gene);
-  
+
   # output
   foreach my $cds (@cds_objs_in_gene) {
     $cds->report($out_fh, $coords, $wormbase->full_name, \%cds2gene);
@@ -782,8 +814,6 @@ foreach my $chrom ( @chromosomes ) {
   
   $log->write_to("$count0 cDNAs rejected in round 0 (inconsistent attached features)\n");
   $log->write_to("$count1 cDNAs rejected in round 1 (low quality and overlaps two or more genes)\n");
-  #  $log->write_to("$count2 cDNAs rejected in round 2 (introns matched in two or more genes)\n");
-  #  $log->write_to("$count3 cDNAs rejected in round 3 (overlaps two or more genes)\n");
 
 } # foreach (@chromosomes)
 
@@ -809,7 +839,165 @@ exit(0);
 #######################################################################################################
 
 
-# find duplicate transcripts within a gene locus and make them non-identical so that they are accepted by the ENA
+# find near-duplicate $other and $transcript transcripts within a CDS and merge them. 
+# if they are being merged, then the $other transcript has its ends adjusted and $transcript has an ignore value set so that it will not be reported
+sub merge_near_duplicates {
+  my ($cds_objs, $cds2gene) = @_;
+
+  foreach my $cds (@{$cds_objs}) {
+    my @transcripts = (); # list of transcripts in this CDS that we have already looked at
+    foreach my $transcript ($cds->transcripts) {
+      if (exists $transcript->{'ignore'}) {next;}
+
+# debug
+#if ($cds->name eq 'B0025.4') {
+#print $cds->name,"\n";
+#}
+	  
+
+      foreach my $other (@transcripts) {
+	if ($transcript->near_duplicate($other, 500, 500)) { # merge transcripts with ends within 500 bp - subjective, feels right!
+	  $transcript->{'ignore'} = 1; # ignore, don't report this.
+
+          # add all unique cDNA from transcript to other transcript
+	  foreach my $cDNA (@{$transcript->{'matching_cdna'}}) {
+	    my $found = 0;
+	    foreach my $other_cDNA (@{$other->{'matching_cdna'}}) {
+	      if ($cDNA->{name} eq $other_cDNA->{name}) {
+		$found = 1;
+		last;
+	      }
+	    }
+	    if (!$found) {
+	      push( @{$other->{'matching_cdna'}}, $cDNA);
+	    }
+	  }
+#	  print "other: ",$other->name,": start ",$other->start," end ",$other->end," strand ",$other->strand," ",scalar @{$other->sorted_exons}," exons ", $other->sorted_exons->[0]->[0],"..",$other->sorted_exons->[0]->[1]," ",$other->sorted_exons->[1]->[0],"..",$other->sorted_exons->[1]->[1]," ",$other->sorted_exons->[2]->[0],"..",$other->sorted_exons->[2]->[1];
+#	  if ($other->SL) {print " SL"}
+#	  if ($other->polyA_site) {print " PolyA_site"}
+#	  print "\n";
+#	  print "transcript: ",$transcript->name,": start ",$transcript->start," end ",$transcript->end," strand ",$transcript->strand, " ",scalar @{$transcript->sorted_exons}," exons ", $transcript->sorted_exons->[0]->[0],"..",$transcript->sorted_exons->[0]->[1]," ",$transcript->sorted_exons->[1]->[0],"..",$transcript->sorted_exons->[1]->[1]," ",$transcript->sorted_exons->[2]->[0],"..",$transcript->sorted_exons->[2]->[1];
+#	  if ($transcript->SL) {print " SL"}
+#	  if ($transcript->polyA_site) {print " PolyA_site"}
+#	  print "\n";
+
+	  # if transcript has a SL, and other doesn't then set SL in other and modify its start
+	  if ($transcript->SL && !$other->SL) {
+	    $other->SL($transcript->SL);
+#	    $other->start($transcript->start);
+	    # set new 5' start of first exon of $other to be $transcript->start
+	    my $curr_start = $other->start;
+	    my $exon_end = $other->sorted_exons->[0]->[1];
+	    delete $other->exon_data->{$curr_start};
+	    $other->{'exons'}->{$transcript->start} = $exon_end;
+	    $other->sort_exons; # sets $other->start
+	    $other->cds->gene_start($other->start);
+	    
+	  } elsif (!$other->SL) {
+	    # else find mode of starts of cDNAs and modify other's start
+	    my $mode = fuzzy_mode('start', $other);
+	    if (defined $mode) {
+	      # set new 5' start of first exon of $other to be $mode
+	      my $curr_start = $other->start;
+	      my $exon_end = $other->sorted_exons->[0]->[1];
+	      delete $other->exon_data->{$curr_start};
+	      $other->{'exons'}->{$mode} = $exon_end;
+	      $other->sort_exons; # sets $other->start
+	      $other->cds->gene_start($other->start);
+	    } else {die "mode not set when merging $transcript->name\n"}
+	  }
+
+	  # if transcript has a polyA, and the other doesn't then set the polyA site in other and modify its end
+	  if ($transcript->polyA_site && !$other->polyA_site) {
+	    $other->polyA_site($transcript->polyA_site);
+#	    $other->end($transcript->end);
+	    # set new 3' end of last exon of $other to be $transcript->end
+	    my $last_exon_start = $other->last_exon->[0];
+	    $other->{'exons'}->{$last_exon_start} = $transcript->end;
+	    $other->sort_exons;  # sets $other->end
+	    $other->cds->gene_end($other->end);
+	  } elsif (!$other->polyA_site) {
+	    # else find mode of ends of cDNAs and modify other's end
+	    my $mode = fuzzy_mode('end', $other);
+	    if (defined $mode) {
+	      # set new 3' end of last exon of $other to be $mode
+	      my $last_exon_start = $other->last_exon->[0];
+	      $other->{'exons'}->{$last_exon_start} = $mode;
+	      $other->sort_exons;  # sets $other->end
+	      $other->cds->gene_end($other->end);
+	    } else {die "mode not set when merging $transcript->name\n"}
+	  }
+	}
+
+#	print "other: ",$other->name,": start ",$other->start," end ",$other->end," strand ",$other->strand," ",scalar @{$other->sorted_exons}," exons ", $other->sorted_exons->[0]->[0],"..",$other->sorted_exons->[0]->[1]," ",$other->sorted_exons->[1]->[0],"..",$other->sorted_exons->[1]->[1]," ",$other->sorted_exons->[2]->[0],"..",$other->sorted_exons->[2]->[1];
+#	if ($other->SL) {print " SL"}
+#	if ($other->polyA_site) {print " PolyA_site"}
+#	print "\n";
+
+      }
+      push @transcripts, $transcript;
+    }
+  }
+}
+
+# get the approximate mode of the starts or ends of a set of cDNAs
+# we want it to be approximate because cDNA sequences are not precisely aligned (sequencing errors, clipping is approximate, etc)
+# so the end points do not always simply align to the 'correct' base - there is a cluster of end points around the 'correct' base.
+# to get the best approximation of a cluster of end points, we assume (from experience) that the aligned end point is within about 
+# 10 bases of the 'correct' point, so we want to count base positions within about 10 of the aligned end base as being a possible position
+# with the probability weighting of it being correct decreasing as we get further from the aligned end point.
+# we then sum the weighted counts of the possible end points and take the maximum as being the likely 'correct' position of the end point 
+# of this cluster of cDNAs.
+sub fuzzy_mode {
+  my ($end, $transcript) = @_;
+  
+  my %positions;
+  
+  my $CDS_start = $transcript->cds->start;
+  my $CDS_end = $transcript->cds->end;
+  my $last_exon_start = $transcript->last_exon->[0];
+  my $first_exon_end = $transcript->sorted_exons->[0]->[1];
+  print "CDS start $CDS_start CDS end $CDS_end first exon end $first_exon_end last exon start $last_exon_start\n";
+
+
+  foreach my $cDNA (@{$transcript->{'matching_cdna'}}) {
+    my $pos;
+    if ($end eq 'start') {
+      $pos = $cDNA->start;
+      if ($pos >= $CDS_start || $pos >= $first_exon_end) {next} # want the cDNA start to be before the CDS and before the first intron
+    } else { # $end is 'end'
+      $pos = $cDNA->end;
+      if ($pos <= $CDS_end || $pos <= $last_exon_start) {next} # want the cDNA end to be after the CDS and after the last intron 
+    }
+    for (my $c=0; $c<10; $c++) {
+      $positions{$pos-$c} += (10-$c); 
+      if ($c) {$positions{$pos+$c} += (10-$c)} # don't want to weight the $c==0 $pos position twice!
+    }
+  }
+
+  # get position of maximum value = mode
+  my $max=0;
+  my $mode; # returns undef if no good value is found
+  foreach my $pos (keys %positions) {
+    my $value = $positions{$pos};
+    print "$pos=$value ";
+    if ($value > $max) {$max=$value; $mode=$pos}
+    if ($value == $max) { # get the strongest-longest mode position
+      if ($end eq 'start' && $pos < $mode) {$mode=$pos}
+      if ($end eq 'end' && $pos > $mode) {$mode=$pos}
+    }
+  }
+  print "mode = $mode\n";
+
+  if (!$mode && $end eq 'start') {$mode = $transcript->start}
+  if (!$mode && $end eq 'end') {$mode = $transcript->end}
+  print "final mode = $mode\n";
+
+  return $mode;
+}
+
+
+# Want no identical transcripts - make them non-identical so that they are accepted by the ENA
 sub purge_duplicates {
   my ($cds_objs, $cds2gene) = @_;
 
@@ -861,7 +1049,6 @@ sub purge_duplicates {
       }
     }
   }
-
 }
 
 

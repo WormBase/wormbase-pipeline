@@ -112,20 +112,6 @@ sub new {
     $self->{name} = $name;
     $self->{strand} = $strand;
     $self->{probably_matching_cds} = [];
-
-    my $prev_exon_end;
-    my (%introns, @introns);
-    
-    foreach my $exon ( @{$self->sorted_exons}) {
-      my $exon_start = $exon->[0];
-      if (defined $prev_exon_end) {
-        push @introns, [$prev_exon_end + 1, $exon_start - 1];
-          $introns{$prev_exon_end + 1} = $exon_start - 1;
-      }
-      $prev_exon_end = $exon->[1];
-    }
-    $self->intron_data(\%introns);
-    $self->{sorted_introns} = \@introns;
   }
     return $self;
 }
@@ -167,8 +153,28 @@ sub sort_exons {
 
   $self->start( $start );
   $self->end( $end );
+
+  $self->update_introns_from_exons;
 }
 
+
+sub update_introns_from_exons {
+  my $self = shift;
+
+  my $prev_exon_end;
+  my (%introns, @introns);
+  
+  foreach my $exon ( @{$self->sorted_exons}) {
+    my $exon_start = $exon->[0];
+    if (defined $prev_exon_end) {
+      push @introns, [$prev_exon_end + 1, $exon_start - 1];
+      $introns{$prev_exon_end + 1} = $exon_start - 1;
+    }
+    $prev_exon_end = $exon->[1];
+  }
+  $self->intron_data(\%introns);
+  $self->{sorted_introns} = \@introns;
+}
 
 sub sort_introns {
   my $self = shift;
