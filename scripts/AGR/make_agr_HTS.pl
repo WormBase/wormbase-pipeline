@@ -80,7 +80,7 @@ while (my $analysis = $it->next){
 
 		if ($sample->Life_stage){
 			my $ls=$sample->Life_stage;
-			my $uterm = 'post embryonic, pre-adult';
+			my $uterm; #= 'post embryonic, pre-adult';
 			if ($uberon{$ls->name}){
 				 ($uterm) = keys %{$uberon{$ls->name}};
 			}
