@@ -31,7 +31,7 @@ use LSF::JobManager;
 
 my $script = "ignore_bad_blat_alignments.pl";
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $database, $species, @chromosomes, $noload, $mem, @output_names, $chunk_total, $chunk_id, $output);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $database, $species, @chromosomes, $noload, $mem, @output_names, $chunk_total, $chunk_id, $output, $ovlp);
 
 
 GetOptions ("help"       => \$help,
@@ -123,17 +123,18 @@ if (@chromosomes || defined $chunk_id) {
 
   foreach my $chromosome (@chromosomes) {
     $log->write_to("\n\nChromosome: $chromosome\n");
+
+    $ovlp = Overlap->new($database, $wormbase);
+
+    my @RNASeq_introns = $ovlp->get_RNASeq_splice($chromosome);
     
-    my $ovlp = Overlap->new($database, $wormbase);
-    
-    my @est_introns;
-    my @rst_introns;
-    my @ost_introns;
-    my @mrn_introns;
-    my @tri_introns;
-    my @iso_introns;
-    my @nan_introns;
-    my @nan_introns_confirmed;
+    my $est_introns;
+    my $rst_introns;
+    my $ost_introns;
+    my $mrn_introns;
+    my $tri_introns;
+    my $iso_introns;
+    my $nan_introns;
     
     my $est_match;
     my $rst_match;
@@ -142,61 +143,27 @@ if (@chromosomes || defined $chunk_id) {
     my $tri_match;
     my $iso_match;
     my $nan_match;
+
+    # get the transcript intron matches to the RNASeq introns and return only those transcripts where all introns are confirmed by RNASeq introns
+    if (grep /^EST$/, @{$mol_types{$species}}) {$est_introns = confirm_introns(\@RNASeq_introns, $ovlp->get_intron_from_exons($ovlp->get_EST_BEST($chromosome)))};
+    if (grep /^RST$/, @{$mol_types{$species}}) {$rst_introns = confirm_introns(\@RNASeq_introns, $ovlp->get_intron_from_exons($ovlp->get_RST_BEST($chromosome)))};
+    if (grep /^OST$/, @{$mol_types{$species}}) {$ost_introns = confirm_introns(\@RNASeq_introns, $ovlp->get_intron_from_exons($ovlp->get_OST_BEST($chromosome)))};
+    if (grep /^mRNA$/, @{$mol_types{$species}}) {$mrn_introns = confirm_introns(\@RNASeq_introns, $ovlp->get_intron_from_exons($ovlp->get_mRNA_BEST($chromosome)))};
+    if (grep /^Trinity$/, @{$mol_types{$species}}) {$tri_introns = confirm_introns(\@RNASeq_introns, $ovlp->get_intron_from_exons($ovlp->get_Trinity_BEST($chromosome)))};
+    if (grep /^IsoSeq$/, @{$mol_types{$species}}) {$iso_introns = confirm_introns(\@RNASeq_introns, $ovlp->get_intron_from_exons($ovlp->get_IsoSeq_BEST($chromosome)))};
+    if (grep /^Nanopore$/, @{$mol_types{$species}}) {$nan_introns = confirm_introns(\@RNASeq_introns, $ovlp->get_intron_from_exons($ovlp->get_Nanopore_BEST($chromosome)))};
+
     
-    if (grep /^EST$/, @{$mol_types{$species}}) {@est_introns = $ovlp->get_intron_from_exons($ovlp->get_EST_BEST($chromosome))};
-    if (grep /^RST$/, @{$mol_types{$species}}) {@rst_introns = $ovlp->get_intron_from_exons($ovlp->get_RST_BEST($chromosome))};
-    if (grep /^OST$/, @{$mol_types{$species}}) {@ost_introns = $ovlp->get_intron_from_exons($ovlp->get_OST_BEST($chromosome))};
-    if (grep /^mRNA$/, @{$mol_types{$species}}) {@mrn_introns = $ovlp->get_intron_from_exons($ovlp->get_mRNA_BEST($chromosome))};
-    if (grep /^Trinity$/, @{$mol_types{$species}}) {@tri_introns = $ovlp->get_intron_from_exons($ovlp->get_Trinity_BEST($chromosome))};
-    if (grep /^IsoSeq$/, @{$mol_types{$species}}) {@iso_introns = $ovlp->get_intron_from_exons($ovlp->get_IsoSeq_BEST($chromosome))};
-    if (grep /^Nanopore$/, @{$mol_types{$species}}) {
-      @nan_introns = $ovlp->get_intron_from_exons($ovlp->get_Nanopore_BEST($chromosome));
-      my @RNASeq_introns = $ovlp->get_RNASeq_splice($chromosome);
-      # get only those Nanopore introns that are confirmed by the RNASeq introns
-      my $RNASeq_confirmed_match = $ovlp->compare(\@RNASeq_introns, exact_match => 1, same_sense => 0); # non-canonical splice site RNASeq introns are sometimes placed on the wrong' strand, so compare to both strands
-      my %Nano_not_confirmed;
-      my %Nano_matched;
-      foreach my $nano (@nan_introns) {
-	# debug
-	#      if ($nano->[0] eq 'male_Nanopore_Roach_126350') {
-	#      if ($nano->[0] ne 'EM_Nanopore_Li_212889') {
-	#	next;
-	#    
-	#  }
-	
-	my @matches = $RNASeq_confirmed_match->match($nano);
-	if (! scalar @matches) {
-	  $Nano_not_confirmed{$nano->[0]} = 1; # note the name of any Nanopore intron that does not have any matching RNASeq introns 
-	} else {
-	  foreach my $matching_rnaseq (@matches) {
-	    # get lowest and highest scoring RNASeq matches for each transcript
-	    if (!exists $Nano_matched{$nano->[0]}{lo} || $Nano_matched{$nano->[0]}{lo} > $matching_rnaseq->[5]) {$Nano_matched{$nano->[0]}{lo} = $matching_rnaseq->[5]}
-	    if (!exists $Nano_matched{$nano->[0]}{hi} || $Nano_matched{$nano->[0]}{hi} < $matching_rnaseq->[5]) {$Nano_matched{$nano->[0]}{hi} = $matching_rnaseq->[5]}
-	  }	  
-	}
-      }
-      foreach my $nano (@nan_introns)  { 
-	if (exists $Nano_not_confirmed{$nano->[0]} ||                               # ignore the Nanopore transcripts that have an unconfirmed intron
-	    $Nano_matched{$nano->[0]}{hi} > $Nano_matched{$nano->[0]}{lo} * 100) {  # or that have a more than 100x difference in RNASeq intron score between highest and lowest scoring introns
-	  print ACE "\n\n";
-	  print ACE "Sequence : $nano->[0]\n";
-	  print ACE "Ignore Remark \"Has an intron with very poor or no RNASeq supporting evidence\"\n";
-	  print ACE "Ignore Inferred_automatically \"ignore_bad_blat_alignments\"\n";
-	} else { 
-	  push @nan_introns_confirmed, $nano;
-	}
-      }
-    }
-    
+    # only want transcripts that match introns to one CDS's introns
     my @CDS_introns = $ovlp->get_curated_CDS_introns($chromosome);
     
-    if (grep /^EST$/, @{$mol_types{$species}}) {$est_match = $ovlp->compare(\@est_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
-    if (grep /^RST$/, @{$mol_types{$species}}) {$rst_match = $ovlp->compare(\@rst_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
-    if (grep /^OST$/, @{$mol_types{$species}}) {$ost_match = $ovlp->compare(\@ost_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
-    if (grep /^mRNA$/, @{$mol_types{$species}}) {$mrn_match = $ovlp->compare(\@mrn_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
-    if (grep /^Trinity$/, @{$mol_types{$species}}) {$tri_match = $ovlp->compare(\@tri_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
-    if (grep /^IsoSeq$/, @{$mol_types{$species}}) {$iso_match = $ovlp->compare(\@iso_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
-    if (grep /^Nanopore$/, @{$mol_types{$species}}) {$nan_match = $ovlp->compare(\@nan_introns_confirmed, exact_match => 1, same_sense => 0)};  # exact match to either sense
+    if (grep /^EST$/, @{$mol_types{$species}}) {$est_match = $ovlp->compare($est_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
+    if (grep /^RST$/, @{$mol_types{$species}}) {$rst_match = $ovlp->compare($rst_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
+    if (grep /^OST$/, @{$mol_types{$species}}) {$ost_match = $ovlp->compare($ost_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
+    if (grep /^mRNA$/, @{$mol_types{$species}}) {$mrn_match = $ovlp->compare($mrn_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
+    if (grep /^Trinity$/, @{$mol_types{$species}}) {$tri_match = $ovlp->compare($tri_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
+    if (grep /^IsoSeq$/, @{$mol_types{$species}}) {$iso_match = $ovlp->compare($iso_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
+    if (grep /^Nanopore$/, @{$mol_types{$species}}) {$nan_match = $ovlp->compare($nan_introns, exact_match => 1, same_sense => 0)};  # exact match to either sense
     
     
     my %overlapping_hsps = (); # EST/RST/OST/mRNA/Trinity/IsoSeq/Nanopore transcripts that match a CDS, keyed by transcript name, value is array of matching CDSs
@@ -367,9 +334,47 @@ sub usage {
 }
 
 ##########################################
+sub confirm_introns {
+  my ($RNASeq_introns, @tran_introns) = @_;
 
+  my @tran_introns_confirmed;
 
-
+  # get only those CDNA Transcript introns that are confirmed by the RNASeq introns
+  my $RNASeq_confirmed_match = $ovlp->compare($RNASeq_introns, exact_match => 1, same_sense => 0); # non-canonical splice site RNASeq introns are sometimes placed on the wrong' strand, so compare to both strands
+  my %Tran_not_confirmed;
+  my %Tran_matched;
+  foreach my $tran (@tran_introns) {
+    #	# debug
+    #	if ($tran->[0] eq 'male_Nanopore_Roach_126350') {
+    #	  next;
+    #	}
+    
+    my @matches = $RNASeq_confirmed_match->match($tran);
+    if (! scalar @matches) {
+      $Tran_not_confirmed{$tran->[0]} = 1; # note the name of any CDNA Transcript intron that does not have any matching RNASeq introns 
+    } else {
+      foreach my $matching_rnaseq (@matches) {
+	# get lowest and highest scoring RNASeq matches for each transcript
+	if (!exists $Tran_matched{$tran->[0]}{lo} || $Tran_matched{$tran->[0]}{lo} > $matching_rnaseq->[5]) {$Tran_matched{$tran->[0]}{lo} = $matching_rnaseq->[5]}
+	if (!exists $Tran_matched{$tran->[0]}{hi} || $Tran_matched{$tran->[0]}{hi} < $matching_rnaseq->[5]) {$Tran_matched{$tran->[0]}{hi} = $matching_rnaseq->[5]}
+      }	  
+    }
+  }
+  foreach my $tran (@tran_introns)  { 
+    if (exists $Tran_not_confirmed{$tran->[0]} ||                               # ignore the CDNA Transcript transcripts that have an unconfirmed intron
+	$Tran_matched{$tran->[0]}{hi} > $Tran_matched{$tran->[0]}{lo} * 100) {  # or that have a more than 100x difference in RNASeq intron score between highest and lowest scoring introns
+      print ACE "\n\n";
+      print ACE "Sequence : $tran->[0]\n";
+      print ACE "Ignore Remark \"Has an intron with very poor or no RNASeq supporting evidence\"\n";
+      print ACE "Ignore Inferred_automatically \"ignore_bad_blat_alignments\"\n";
+    } else { 
+      push @tran_introns_confirmed, $tran;
+    }
+  }
+  
+  return \@tran_introns_confirmed;
+}
+##########################################
 
 # Add perl documentation in POD format
 # This should expand on your brief description above and 
