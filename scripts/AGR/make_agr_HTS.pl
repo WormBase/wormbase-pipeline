@@ -98,7 +98,7 @@ while (my $analysis = $it->next){
 			map {push @{$json_obj{sampleLocation}},"WB:${\$_->name}"} $sample->Tissue;
 		}
 		$json_obj{assayType}='MMO:0000659'; # RNA-seq assay
-		$json_obj{assemblyVersion}=$assembly;
+		$json_obj{assemblyVersion}=[$assembly];
 		push @htps,\%json_obj;
 
 		# dataset
