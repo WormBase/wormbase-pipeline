@@ -215,8 +215,8 @@ while (my $array = $it->next){
 #		$json_obj{datasetId} = [$datasetId];
 		$json_obj{sex}=$s->Sex->name if $s->Sex;
 
-		if ($sample->Life_stage){
-			my $ls=$sample->Life_stage;
+		if ($s->Life_stage){
+			my $ls=$s->Life_stage;
 			my $uterm = 'post embryonic, pre-adult';
 			if ($uberon{$ls->name}){
 				 ($uterm) = keys %{$uberon{$ls->name}};
