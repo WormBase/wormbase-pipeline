@@ -160,7 +160,7 @@ while (my $array = $it->next){
 	$json_obj{taxonId} = $wormbase->ncbi_tax_id;
 	#	$json_obj{datasetId} = [$datasetId];
 	$json_obj{sex}=lc($sample->Sex->name) if $sample->Sex;
-	$json_obj{sampleAge}="WB:${\$sample->Life_stage->name}" if $sample->Life_stage;
+
 	if ($sample->Life_stage){
 		my $ls=$sample->Life_stage;
 		my $uterm = 'post embryonic, pre-adult';
@@ -174,8 +174,6 @@ while (my $array = $it->next){
 					       }
 			 	     };
 	}
-
-
 
 	if ($sample->Tissue){
 		$json_obj{sampleLocation}=[];
@@ -216,7 +214,21 @@ while (my $array = $it->next){
 		$json_obj{taxonId} = $wormbase->ncbi_tax_id;
 #		$json_obj{datasetId} = [$datasetId];
 		$json_obj{sex}=$s->Sex->name if $s->Sex;
-		$json_obj{sampleAge}="WB:${\$s->Life_stage->name}" if $s->Life_stage;
+
+		if ($sample->Life_stage){
+			my $ls=$sample->Life_stage;
+			my $uterm = 'post embryonic, pre-adult';
+			if ($uberon{$ls->name}){
+				 ($uterm) = keys %{$uberon{$ls->name}};
+			}
+			next unless $ls && $ls->Public_name;
+			$json_obj{sampleAge}={stage => { stageTermId => 'WB:'.$ls->name,
+			                         stageName => $ls->Public_name->name ,
+						 stageUberonSlimTerm => {uberonTerm => $uterm},
+					       }
+			 	     };
+		}
+
 		if ($s->Tissue){
 			$json_obj{sampleLocation}=[];
 			map {push @{$json_obj{sampleLocation}},"WB:$_"} $s->Tissue;
