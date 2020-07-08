@@ -85,8 +85,10 @@ while (my $analysis = $it->next){
 				 ($uterm) = keys %{$uberon{$ls->name}};
 			}
 
-			$json_obj{sampleAge}={stage => { stageTermId => "WB:${\$ls->name}",
-				                         stageName => $ls->Pubilc_name->name ,
+			next unless $ls && $ls->Public_name;
+
+			$json_obj{sampleAge}={stage => { stageTermId => 'WB:'.$ls->name,
+				                         stageName => $ls->Public_name->name ,
 							 stageUberonSlimTerm => $uterm,
 						       }
 				 	     };
@@ -100,9 +102,18 @@ while (my $analysis = $it->next){
 		push @htps,\%json_obj;
 
 		# dataset
+		
+		# that will need more timeformat fiddling
+		$db->timestamps(1);
+                my $timestamp = $subproject->Project->timestamp;
+		$timestamp=~s/_/T/;
+		$timestamp=~s/_\w+/\+01:00/;
+		$db->timestamps(0);
+		
 		my %json2_obj;
 		$json2_obj{datasetId}= {primaryId => $datasetId}; # required
-		$json2_obj{publication} = \@papers if @papers;;
+		$json2_obj{publication} = \@papers if @papers;
+		$json2_obj{dateAssigned} = $timestamp;
 		$json2_obj{title} = $analysis->Title->name if $analysis->Title;
 		$json2_obj{summary} = $analysis->Description->name if $analysis->Description;
 		$json2_obj{categoryTags}=['unclassified'];
@@ -218,21 +229,20 @@ $db->close;
 
 
 sub read_uberron{
-	my ($file)=@_;
-        my %WB_TO_UBERON;
-
+	my ($file) = @_;
+        my %wb2u;
 	my $fh = IO::File->new($file);
 	while (<$fh>){
-		if (/^(\S+)\s+(\S+)/){
-    			my $uberon = $1;
-			my @list = split(/,/, $2);
-    			foreach my $item (@list) {
-      				$WB_TO_UBERON{$item}->{$uberon} = 1;
-			}
+          if (/^(\S+)\s+(\S+)/){
+    		my $uberon = $1;
+		my @list = split(/,/, $2);
+    		foreach my $item (@list) {
+      		  $wb2u{$item}->{"$uberon"} = 1;
 		}
+	  }
 	}
-	$WB_TO_UBERON{WBbt:0000100}->{Other} = 1;
-	return \%WB_TO_UBERRON;
+	$wb2u{'WBbt:0000100'}->{Other} = 1;
+	return \%wb2u;
 }
 
 sub print_json{

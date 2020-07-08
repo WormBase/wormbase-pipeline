@@ -131,8 +131,8 @@ chromosomes= Hash.new
 
 # hardcoded giface ... which is probably not needed
 tablemaker = TableMaker.new('/nfs/panda/ensemblgenomes/wormbase/software/packages/acedb/RHEL7/4.9.62/giface',options.db)
-filter = tablemaker.execute_wquery("query find Variation *;Reference;SMap",options.wquery) 
-
+# filter = tablemaker.execute_wquery("query find Variation *;Reference;SMap",options.wquery) 
+filter = tablemaker.execute_wquery('query find Variation WHERE Live AND COUNT(Gene) == 1 AND Reference AND SMap AND (Phenotype OR Disease_info OR Interactor) AND NOT Natural_variant',options.wquery)
 Bio::FlatFile.open(Bio::FastaFormat, options.fasta).each_entry{|e|
    chromosomes[e.entry_id.to_s] = e.seq
 }
