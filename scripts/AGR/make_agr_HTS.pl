@@ -16,7 +16,7 @@ use lib $ENV{CVS_DIR};
 use Wormbase;
 use Modules::AGR;
 
-my ($debug, $test, $verbose, $store, $acedbpath, $outfile,$ws_version,$outFdata);
+my ($debug, $test, $verbose, $store, $acedbpath, $outfile,$ws_version,$outFdata,$wb_to_uberon_file);
 GetOptions (
   'debug=s'     => \$debug,
   'test'        => \$test,
@@ -26,6 +26,7 @@ GetOptions (
   'samplefile:s'=> \$outfile,
   'datasetfile:s'=> \$outFdata,
   'wsversion=s' => \$ws_version,
+  'wb2uberon=s' => \$wb_to_uberon_file,
 )||die("unknown command line option: $@\n");
 
 my $wormbase;
@@ -52,11 +53,12 @@ my $assembly = fetch_assembly($db,$wormbase);
 
 
 my %htpd; # to uniqueify it
+my %uberon=%{read_uberron($wb_to_uberon_file)};
+
 # RNASeq
 my $it = $db->fetch_many(-query => 'find Analysis RNASeq_Study*;Species_in_analysis="Caenorhabditis elegans"')||die(Ace->error);
 while (my $analysis = $it->next){
 
-	# dataset
 	my @p = $analysis->Reference;
 	my @papers = map {get_paper($_)} @p;
 
@@ -75,7 +77,20 @@ while (my $analysis = $it->next){
 		$json_obj{datasetId} = [$datasetId];
 
 		$json_obj{sex}=$sample->Sex->name if $sample->Sex;
-		$json_obj{sampleAge}="WB:${\$sample->Life_stage->name}" if $sample->Life_stage;
+
+		if ($sample->Life_stage){
+			my $ls=$sample->Life_stage;
+			my $uterm = 'post embryonic, pre-adult';
+			if ($uberon{$ls->name}){
+				 ($uterm) = keys %{$uberon{$ls->name}};
+			}
+
+			$json_obj{sampleAge}={stage => { stageTermId => "WB:${\$ls->name}",
+				                         stageName => $ls->Pubilc_name->name ,
+							 stageUberonSlimTerm => $uterm,
+						       }
+				 	     };
+		}
 		if ($sample->Tissue){
 			$json_obj{sampleLocation}=[];
 			map {push @{$json_obj{sampleLocation}},"WB:${\$_->name}"} $sample->Tissue;
@@ -84,8 +99,9 @@ while (my $analysis = $it->next){
 		$json_obj{assemblyVersion}=$assembly;
 		push @htps,\%json_obj;
 
+		# dataset
 		my %json2_obj;
-		$json2_obj{primaryId} = $datasetId; # required
+		$json2_obj{datasetId}= {primaryId => $datasetId}; # required
 		$json2_obj{publication} = \@papers if @papers;;
 		$json2_obj{title} = $analysis->Title->name if $analysis->Title;
 		$json2_obj{summary} = $analysis->Description->name if $analysis->Description;
@@ -194,6 +210,30 @@ print_json(\@htps,$outfile);
 print_json(\@htpd,$outFdata);
 
 $db->close;
+
+
+
+####################################
+# helper functions
+
+
+sub read_uberron{
+	my ($file)=@_;
+        my %WB_TO_UBERON;
+
+	my $fh = IO::File->new($file);
+	while (<$fh>){
+		if (/^(\S+)\s+(\S+)/){
+    			my $uberon = $1;
+			my @list = split(/,/, $2);
+    			foreach my $item (@list) {
+      				$WB_TO_UBERON{$item}->{$uberon} = 1;
+			}
+		}
+	}
+	$WB_TO_UBERON{WBbt:0000100}->{Other} = 1;
+	return \%WB_TO_UBERRON;
+}
 
 sub print_json{
 	my ($data,$file) = @_;
