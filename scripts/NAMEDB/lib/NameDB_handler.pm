@@ -389,7 +389,7 @@ The data structure returned is:
 #           'species' => 'Caenorhabditis elegans' #was gene/species
 #         };
 
-
+# if the gene ID does not exist, it returns 'undef'
 
 =item Synopsis
 
@@ -429,7 +429,7 @@ sub printAllNames
     my $id = shift;
 
     my $info = $self->{'db'}->info_gene($id);
-    if (exists $info->{'message'}) {print "Not found\n";}
+    if (!defied $info) {print "Not found\n";}
     print "Current gene names for $id\n";
     print "cgc-name:      ", $info->{'cgc-name'}, "\n" if (exists $info->{'cgc-name'});
     print "sequence-name: ", $info->{'sequence-name'}, "\n" if (exists $info->{'sequence-name'});
@@ -847,9 +847,7 @@ sub merge_genes {
   
   #enforce retention of CGC named gene
   my $info1 = $self->{'db'}->info_gene($gene_id); # info_gene returns {'message' => 'Resource not found'}
-  if (exists $info1->{'message'}) {$info1 = undef}
   my $info2 = $self->{'db'}->info_gene($merge_id); # info_gene returns {'message' => 'Resource not found'}
-  if (exists $info2->{'message'}) {$info2 = undef}
   my $name1 = $info1->{'cgc-name'};
   my $name2 = $info2->{'cgc-name'};
   
@@ -917,7 +915,6 @@ sub split_gene {
   }
 
   my $info = $self->{'db'}->info_gene($gene_id);
-  if (exists $info->{'message'}) {$info = undef}
   if (!defined $long_species) {
     $long_species = $info->{'species'};
   }
@@ -1118,7 +1115,6 @@ sub idExists {
   if ($id =~ /\s+/) {return 0} # spaces in the ID are invalid
 
   my $info = $self->{'db'}->info_gene($id); # info_gene returns hashref {message' => 'Resource not found'} if the ID does not exist
-  if (exists $info->{'message'}) {$info = undef}
 
   return (defined $info) ? 1 : 0; 
 }
@@ -1146,7 +1142,6 @@ sub idGetByTypedName {
   my ($type, $name, $domain) = @_;
 
   my $info = $self->{'db'}->info_gene($name);
-  if (exists $info->{'message'}) {$info = undef}  # info_gene returns {message => 'Unable to find any entity for given identifier.'} if the ID does not exist
   if (defined $info && $type eq 'CGC') {if (exists $info->{'cgc-name'}) {return  $info->{'id'}}}
   if (defined $info && $type eq 'Sequence') {if (exists $info->{'sequence-name'}) {return  $info->{'id'}}}
   if ($type eq 'Public_name' && defined $info) { # match either CGC-name or Sequence-name
@@ -1175,7 +1170,6 @@ sub idGetByAnyName {
 
   my @array;
   my $info = $self->{'db'}->info_gene($name);
-  if (exists $info->{'message'}) {$info->{'id'} = undef}  # info_gene returns {message => 'Unable to find any entity for given identifier.'} if the ID does not exist
   push @array,  $info->{'id'};
   return wantarray ? @array : \@array;
 
@@ -1240,7 +1234,6 @@ sub idPublicName {
   my ($id) = @_;
 
   my $info = $self->{'db'}->info_gene($id);
-  if (exists $info->{'message'}) {$info = undef}  # info_gene returns {message => 'Resource not found'} if the ID does not exist
 
   my $name = $info->{'cgc-name'} if (exists $info->{'cgc-name'});
   if (! defined $name && exists $info->{'sequence-name'}) {
@@ -1270,7 +1263,6 @@ sub idLive {
 
 
   my $info = $self->{'db'}->info_gene($id);
-  if (exists $info->{'message'}) {$info = undef}  # info_gene returns {message => 'Resource not found'} if the ID does not exist
 
   return ($info->{'status'} eq 'live') ? 1 : 0; 
 }
@@ -1304,9 +1296,7 @@ sub idTypedNames {
 
   my @array;
   my $info = $self->{'db'}->info_gene($public_id);
-  if (exists $info->{'message'}) {$info = undef}  # info_gene returns {message => 'Resource not found'} if the ID does not exist
   if (defined $info) {
-
     if (($type eq 'CGC' || $type eq 'cgc-name') && exists $info->{'cgc-name'}) {push @array,  $info->{'cgc-name'}}
     if (($type eq 'Sequence' || $type eq 'cgc-sequence-name') && exists $info->{'sequence-name'})  {push @array,  $info->{'sequence-name'}}
     if (($type eq 'Biotype' || $type eq 'biotype') && exists $info->{'biotype'})  {push @array,  $info->{'biotype'}}
@@ -1332,7 +1322,6 @@ sub idAllNames {
   my ($type, $public_id) = @_;
 
   my $info = $self->{'db'}->info_gene($public_id);
-  if (exists $info->{'message'}) {$info = undef}  # info_gene returns {message => 'Resource not found'} if the ID does not exist
 
   return $info->{$type};
 
@@ -1927,6 +1916,7 @@ sub find_variations {
 # If nothing is found, an empty array-ref is returned.
 # keys:
 # id, name, status, history
+# If the ID does not exist, it returns 'undef'.
 
 sub info_variation {
   my ($self, $name) = @_;
@@ -1995,6 +1985,7 @@ sub resurrect_features {
 #############################################################################
 # info_feature($id)
 # returns a hash-ref of information about a single feature
+# If the ID does not exist, it returns 'undef'.
 
 
 # Args:
@@ -2123,6 +2114,7 @@ sub find_strains {
 #############################################################################
 # info_strain($name)
 # returns a hash-ref of information about a single strain
+# If the ID does not exist, it returns 'undef'.
 
 
 # Args:
@@ -2186,6 +2178,7 @@ sub kill_person {
 #############################################################################
 # info_person($identifier)
 # $identifier should be a single Person identifier (one of WBPersonID, email)
+# If the ID does not exist, it returns 'undef'.
 
 # Args:
 # $person - string, person identifier of the person to look at

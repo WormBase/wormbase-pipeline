@@ -459,7 +459,7 @@ sub delete_gene {
 # get all details of a single named gene
 # the identifier can be the name of a WBGeneID, CGC name or a Sequence_name
 # The gene name is case-sensitive
-# returns hash-ref of details. If the ID doesn't exist then it returns {"message" => "Unable to find any entity for given identifier."}
+# returns hash-ref of details. If the ID doesn't exist then it returns 'undef'.
 #
 # $VAR1 = {
 #           'history' => [
@@ -572,6 +572,7 @@ sub kill_person {
 
 # Args:
 # $person - string, person identifier of the person to look at
+# If the person is not found then it returns 'undef'.
 
 sub info_person {
   my ($self, $person) = @_;
@@ -580,7 +581,10 @@ sub info_person {
 
   my $encoded = CGI::escape($person);
 
-  my $content = $self->curl("GET", "person/$encoded");
+  my $payload = undef; # don't want to pass in a payload, but want a dummy parameter so $not_found is set correctly
+  my $not_found = 1; # don't throw an error if the person is not found
+
+  my $content = $self->curl("GET", "person/$encoded", $payload, $not_found);
   if ($self->noise()) {print Dumper $content}
   
   return $content;
@@ -1287,7 +1291,8 @@ sub kill_entity {
 #
 # Returns hash-ref like:
 # {"id":"WBVar00296473","name":"th7","status":"live","history":[{"when":"2020-01-24T10:25:36.101Z","batch/id":"5e2ac665-3d0e-4ca4-bd27-8265f72c20dd","t":"2020-01-24T10:26:45Z","what":"import","who":{"name":"Matthew Russell","email":"matthew.russell@wormbase.org","id":"WBPerson33035"},"how":"importer","changes":[{"attr":"id","value":"WBVar00296473","added":true},{"attr":"name","value":"th7","added":true},{"attr":"status","value":"live","added":true}]}]}
-#
+# if the entity is not found, then it returns 'undef'
+
 sub info_entity {
   my ($self, $entity_type, $name) = @_;
   my ($valid, $named, $enabled) = $self->check_entity($entity_type);
@@ -1295,7 +1300,10 @@ sub info_entity {
 
   my $encoded = CGI::escape($name);
 
-  my $content = $self->curl("GET", "entity/$entity_type/$encoded");
+  my $payload = undef; # don't want to pass in a payload, but want a dummy parameter so $not_found is set correctly
+  my $not_found = 1; # don'y throw an error if the gene is not found
+
+  my $content = $self->curl("GET", "entity/$entity_type/$encoded", $payload, $not_found);
   
   if ($self->noise()) {print Dumper $content}
   return $content;
@@ -1657,10 +1665,10 @@ sub curl {
 
   my $content =  decode_json($res);
 
-  # if having a missing entry is acceptable and the entry is missing, then don't do the error trapping, just return the contents
+  # if having a missing entry is acceptable and the entry is missing, then don't do the error trapping, just return 'undef' as a flag that the entry was not found
   if (defined $not_found && $not_found) {
     if (index($stderr, '< HTTP/1.1 404 Not Found') != -1) {
-      return $content;
+      return undef;
     }
   }
 
