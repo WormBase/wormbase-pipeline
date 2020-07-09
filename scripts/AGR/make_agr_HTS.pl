@@ -52,7 +52,7 @@ my @htpd; # high thruput datasets
 my $assembly = fetch_assembly($db,$wormbase);
 
 
-my %htpd; # to uniqueify it
+my %htp; # to uniqueify it
 my %uberon=%{read_uberron($wb_to_uberon_file)};
 
 # RNASeq
@@ -76,25 +76,9 @@ while (my $analysis = $it->next){
 		$json_obj{datasetId} = [$datasetId];
 		$json_obj{sex}=lc($sample->Sex->name) if $sample->Sex;
 
-		if ($sample->Life_stage){
-			my $ls=$sample->Life_stage;
-			my $uterm = 'post embryonic, pre-adult';
-			if ($uberon{$ls->name}){
-				 ($uterm) = keys %{$uberon{$ls->name}};
-			}
+		sampleAge(\%json_obj,$sample) if $sample->Life_stage;
+		sampleLocation(\%json_obj,$sample) if $sample->Tissue;
 
-			next unless $ls && $ls->Public_name;
-
-			$json_obj{sampleAge}={stage => { stageTermId => 'WB:'.$ls->name,
-				                         stageName => $ls->Public_name->name ,
-							 stageUberonSlimTerm => {uberonTerm => $uterm},
-						       }
-				 	     };
-		}
-		if ($sample->Tissue){
-			$json_obj{sampleLocation}=[];
-			map {push @{$json_obj{sampleLocation}},"WB:${\$_->name}"} $sample->Tissue;
-		}
 		$json_obj{assayType}='MMO:0000659'; # RNA-seq assay
 		$json_obj{assemblyVersion}=[$assembly];
 		push @htps,\%json_obj;
@@ -107,16 +91,16 @@ while (my $analysis = $it->next){
 		$timestamp=~s/_/T/;
 		$timestamp=~s/_\w+/\+01:00/;
 		$db->timestamps(0);
-		
+	
 		my %json2_obj;
 		$json2_obj{datasetId}= {primaryId => $datasetId}; # required
 		$json2_obj{publication} = \@papers if @papers;
-		$json2_obj{dateAssigned} = $timestamp;
-		$json2_obj{title} = $analysis->Title->name if $analysis->Title;
+		$json2_obj{dateAssigned} = $timestamp; #required
+		$json2_obj{title} = ($analysis->Title->name ||"$analysis"); #required
 		$json2_obj{summary} = $analysis->Description->name if $analysis->Description;
 		$json2_obj{categoryTags}=['unclassified'];
-		push @htpd,\%json2_obj unless $htpd{$datasetId};
-		$htpd{$datasetId}=1;
+		push @htpd,\%json2_obj unless $htp{$datasetId};
+		$htp{$datasetId}=1;
 	}
 }
 
@@ -127,7 +111,14 @@ while (my $analysis = $it->next){
 # MMO:0000666 - high throughput proteomic profiling
 # MMO:0000000 - measurement method
 
+
+
+# we can't submit microarrays without dataset, as the datasetId is required
+
+=pod
+
 # micro arrays - single channel
+
 $it = $db->fetch_many(-query => 'find Microarray_experiment;Microarray_sample')||die(Ace->error);
 while (my $array = $it->next){
 
@@ -145,8 +136,8 @@ while (my $array = $it->next){
 #	$json2_obj{categoryTags}=['unclassified'];
 #	$json2_obj{numChannels}=1;
 
-#	push @htpd,\%json2_obj unless $htpd{$datasetId};
-#	$htpd{$datasetId}=1;
+#	push @htpd,\%json2_obj unless $htp{$datasetId};
+#	$htp{$datasetId}=1;
 
 	# sample
 	my %json_obj;
@@ -156,29 +147,15 @@ while (my $array = $it->next){
 		primaryId => "WB:$sample",
 		secondaryId => ["WB:${\$array->name}"],
 	};
+	$json_obj{sampleTitle} = "WB:$sample";
 
 	$json_obj{taxonId} = $wormbase->ncbi_tax_id;
 	#	$json_obj{datasetId} = [$datasetId];
 	$json_obj{sex}=lc($sample->Sex->name) if $sample->Sex;
 
-	if ($sample->Life_stage){
-		my $ls=$sample->Life_stage;
-		my $uterm = 'post embryonic, pre-adult';
-		if ($uberon{$ls->name}){
-			 ($uterm) = keys %{$uberon{$ls->name}};
-		}
-		next unless $ls && $ls->Public_name;
-		$json_obj{sampleAge}={stage => { stageTermId => 'WB:'.$ls->name,
-			                         stageName => $ls->Public_name->name ,
-						 stageUberonSlimTerm => {uberonTerm => $uterm},
-					       }
-			 	     };
-	}
+	sampleAge(\%json_obj,$sample) if ($sample->Life_stage);
+	sampleLocation(\%json_obj,$sample) if ($sample->Tissue);
 
-	if ($sample->Tissue){
-		$json_obj{sampleLocation}=[];
-		map {push @{$json_obj{sampleLocation}},"WB:$_"} $sample->Tissue;
-	}
 	$json_obj{assayType}='MMO:0000649'; # micro array
 	$json_obj{assemblyVersion}=$assembly;
 	push @htps,\%json_obj;
@@ -200,8 +177,8 @@ while (my $array = $it->next){
 #	$json2_obj{categoryTags}=['unclassified'];
 #	$json2_obj{numChannels}=2;
 
-#	push @htpd,\%json2_obj unless $htpd{$datasetId};
-#	$htpd{$datasetId}=1;
+#	push @htpd,\%json2_obj unless $htp{$datasetId};
+#	$htp{$datasetId}=1;
 
 	# sample
 	my @samples=($array->Sample_A , $array->Sample_B);
@@ -211,28 +188,14 @@ while (my $array = $it->next){
 		my $suffix = ($n==1) ? 'A' : 'B'; # for the datasets
 
 		$json_obj{primaryId} = {sampleId => "WB:$s:$suffix"}; # required
+		$json_obj{sampleTitle} = "WB:$s:$suffix";
 		$json_obj{taxonId} = $wormbase->ncbi_tax_id;
 #		$json_obj{datasetId} = [$datasetId];
 		$json_obj{sex}=$s->Sex->name if $s->Sex;
 
-		if ($s->Life_stage){
-			my $ls=$s->Life_stage;
-			my $uterm = 'post embryonic, pre-adult';
-			if ($uberon{$ls->name}){
-				 ($uterm) = keys %{$uberon{$ls->name}};
-			}
-			next unless $ls && $ls->Public_name;
-			$json_obj{sampleAge}={stage => { stageTermId => 'WB:'.$ls->name,
-			                         stageName => $ls->Public_name->name ,
-						 stageUberonSlimTerm => {uberonTerm => $uterm},
-					       }
-			 	     };
-		}
+                sampleAge(\%json_obj,$s) if $s->Life_stage;
+		sampleLocation(\%json_obj,$s) if $s->Tissue;
 
-		if ($s->Tissue){
-			$json_obj{sampleLocation}=[];
-			map {push @{$json_obj{sampleLocation}},"WB:$_"} $s->Tissue;
-		}
 		$json_obj{assayType}='MMO:0000649'; # micro array
 		$json_obj{assemblyVersion}=$assembly;
 		push @htps,\%json_obj;
@@ -240,6 +203,7 @@ while (my $array = $it->next){
 		$n++;
 	}
 }
+=cut
 
 ################################################
 
@@ -249,10 +213,35 @@ print_json(\@htpd,$outFdata);
 $db->close;
 
 
-
 ####################################
 # helper functions
 
+# will change the hashref, so no return
+
+sub sampleAge{
+	my ($jsonRef,$sample)=@_;
+
+	my $ls=$sample->Life_stage;
+
+	return unless $ls && $ls->Public_name;
+
+	$jsonRef->{sampleAge}={stage => { stageTermId => 'WB:'.$ls->name,
+		                          stageName => $ls->Public_name->name ,
+					  stageUberonSlimTerm => {uberonTerm => ((keys %{$uberon{$ls->name}})[0]||'post embryonic, pre-adult')},
+				        }
+	};
+}
+
+sub sampleLocation{
+	my ($jsonRef,$sample)=@_;
+	$jsonRef->{sampleLocation}=[];
+	map {push @{$jsonRef->{sampleLocation}},
+				{anatomicalStructureTermId => "WB:$_",
+				 anatomicalStructureUberonSlimTermIds => [{uberonTerm =>((keys %{$uberon{$_->name}})[0] || 'Other')}],
+				 whereExpressedStatement => ($_->Term->name || 'C.elegans Cell and Anatomy'),
+			        }
+  	} $sample->Tissue;
+}
 
 sub read_uberron{
 	my ($file) = @_;
