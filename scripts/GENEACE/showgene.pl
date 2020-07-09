@@ -164,6 +164,7 @@ sub usage {
 sub find_gene {
   my ($gene, $all) = @_;
   my $info = $db->info_gene("$gene");
+  if (!defined $info) {print "$gene: not found\n";}
   
   print "// Genes matching '$gene'\n";
   my $id = $info->{'id'};
@@ -237,7 +238,7 @@ sub find_variation {
 
   my $info = $db->{'db'}->curl('GET', "entity/variation/$variation");
 
-  if (exists $info->{'message'} && $info->{'message'} eq 'Entity lookup failed') {
+  if (!defined $info) {
     print "$variation Not found\n";
   } else {
     print "ID: ".$info->{'id'}."\n";
@@ -251,7 +252,7 @@ sub find_seqfeature {
   my ($seqfeature) = @_;
 
   my $info = $db->{'db'}->curl('GET', "entity/sequence-feature/$seqfeature", undef, 1);
-  if (exists $info->{'message'} && $info->{'message'} eq 'Entity lookup failed') {
+  if (!defined $info) {
     print "$seqfeature Not found\n";
   } else {
     print "ID: ".$info->{'id'}."\n";
@@ -266,7 +267,7 @@ sub find_strain {
 
   my $info = $db->{'db'}->curl('GET', "entity/strain/$strain", undef, 1);
 
-  if (exists $info->{'message'} && $info->{'message'} eq 'Entity lookup failed') {
+  if (!defined $info) {
     print "$strain Not found\n";
   } else {
     print "ID: ".$info->{'id'}."\n";
