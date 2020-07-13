@@ -3,7 +3,15 @@
 # script to find BLAT alignments that match to more than one CDS and
 # set the Ignore tag in them so that they are not used in the
 # transcript_builder script.
-# 
+#
+# This now uses the RNASeq_intron GFF files which are not finished in the Build until after the
+# transcript_builder is run.
+# Therefore this script is now run towards the end of the Build and the resulting .ace file is stored
+# in ~wormpub/BUILD_DATA/MISC_DYNAMIC and this file is read into the database at the start of the next
+# Build - this is acceptable because the cDNA/mRNA/Trinity/Nanopore transcript data and the RNASeq_intron
+# data does not usually change much between Builds.
+#
+#
 # by Gary Williams
 #
 # Last updated by: $Author: pad $     
@@ -31,7 +39,7 @@ use LSF::JobManager;
 
 my $script = "ignore_bad_blat_alignments.pl";
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $database, $species, @chromosomes, $noload, $mem, @output_names, $chunk_total, $chunk_id, $output, $ovlp);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $database, $species, @chromosomes, $load, $mem, @output_names, $chunk_total, $chunk_id, $output, $ovlp);
 
 
 GetOptions ("help"       => \$help,
@@ -42,7 +50,7 @@ GetOptions ("help"       => \$help,
 	    "database:s" => \$database,
             "species:s"  => \$species,
 	    "chromosome:s" => \@chromosomes, # specify a single chromosome with prefix ('CHROMOSOME_II') for debugging purposes
-	    "noload"     => \$noload, # specify that the resulting ace file should not be loaded into the database for debugging purposes
+	    "load"       => \$load, # specify that the resulting ace file should be loaded into the database
 	    "mem:s"      => \$mem,
 	    "chunktotal:s" => \$chunk_total,
 	    "chunkid:s"  => \$chunk_id,
@@ -96,6 +104,8 @@ my %mol_types = ( 'elegans'          => [qw( EST mRNA OST RST Trinity Nanopore)]
 
 ##########################
 
+$species = $wormbase->species;
+
 @chromosomes = split(/,/, join(',', @chromosomes));
 if (@chromosomes || defined $chunk_id) {
   
@@ -114,7 +124,6 @@ if (@chromosomes || defined $chunk_id) {
   $log->write_to("They should be inspected to see if the gene models should be merged or if the transcripts are chimeric or incompletely spliced operon transcripts\n\n");
   $log->write_to("The following transcripts have had the Ignore tag set and will not be used for building Coding_transcripts in transcript_builder.pl\n\n");
   
-  $species = $wormbase->species;
   open (ACE, ">$output") || die "Can't open $output\n";
   
   my $regex = $wormbase->seq_name_regex;
@@ -255,49 +264,63 @@ if (@chromosomes || defined $chunk_id) {
   @chromosomes = $wormbase->get_chromosome_names;
   my $chunk_total = 24;
   $chunk_total = scalar (@chromosomes) if $chunk_total > scalar (@chromosomes);
-  my $job_name = "worm_".$wormbase->species."_ignore_bad_blat";
 
-  # create and submit LSF jobs
-  $log->write_to("bsub commands . . . .\n\n");
-  my $lsf = LSF::JobManager->new();
-  foreach my $chunk_id (1..$chunk_total) {
-    my $batchname = "batch_${chunk_id}";
-    my $output = $wormbase->acefiles . "/ignore_bad_blat_alignments_${batchname}.ace"; # ace file
-    push @output_names, $output;
-    unlink $output if -e $output;
-    my $err = "$scratch_dir/ignore_bad_blat_alignment.$batchname.err.$$";
-    my $cmd = "$script -database $database -chunkid $chunk_id -chunktotal $chunk_total -output $output";
-    $log->write_to("$cmd\n");
-    print "$cmd\n";
-    $cmd = $wormbase->build_cmd($cmd);
-    my @bsub_options = (
-			-e => "$err",
-			-o => '/dev/null',
-			-M => "$mem",
-			-R => "\"select[mem>$mem] rusage[mem=$mem]\"",
-			-J => $job_name,
-		       );
-    $lsf->submit(@bsub_options, $cmd);
-  }
+  if ($load) {
 
-  $lsf->wait_all_children(history => 1);
-  $log->write_to("All ignore_bad_blat_alignment jobs have completed.\n");
-  my $critical_error = 0;
-  for my $job ($lsf->jobs) {
-    $log->error("Job $job (".$job->history->command.") exited non zero\n") if $job->history->exit_status != 0;
-    $critical_error++ if $job->history->exit_status != 0;
-  }
-  $lsf->clear;
-  $log->log_and_die("There were $critical_error critical errors in the ignore_bad_blat_alignments jobs, please check and re-run with -mem 6000 if you suspect memory issues\n") if $critical_error;
-  
-  $log->write_to("All batch jobs done.\n", $log);
-
-  if (!$noload) {
-    $log->write_to("Loading files to ".$wormbase->autoace."\n", $log);
+    $log->write_to("Loading files from ".$wormbase->misc_dynamic."\n", $log);
+    my $ok = 0;
     foreach my $acefile (@output_names) {
       $log->write_to("Loading $acefile\n", $log);
-      $wormbase->load_to_database($wormbase->autoace, $acefile, 'ignore_bad_blat_alignments.pl', $log);
+      if (-e $acefile) {
+	$wormbase->load_to_database($wormbase->autoace, $acefile, 'ignore_bad_blat_alignments.pl', $log);
+	$ok = 1;
+      }
     }
+    if (!$ok) { # there may be a concatenated single file left over from when this is initially set up
+      my $acefile = $wormbase->misc_dynamic . "/". $species . "_ignore_bad_blat_alignments.ace";
+      $wormbase->load_to_database($wormbase->autoace, $acefile, 'ignore_bad_blat_alignments.pl', $log);      
+    }
+
+
+  } else { # submit the batch jobs
+    
+    my $job_name = "worm_".$wormbase->species."_ignore_bad_blat";
+    
+    # create and submit LSF jobs
+    $log->write_to("bsub commands . . . .\n\n");
+    my $lsf = LSF::JobManager->new();
+    foreach my $chunk_id (1..$chunk_total) {
+      my $batchname = "batch_${chunk_id}";
+      my $output = $wormbase->misc_dynamic . "/". $species . "_ignore_bad_blat_alignments_${batchname}.ace"; # ace file
+      push @output_names, $output;
+      unlink $output if -e $output;
+      my $err = "$scratch_dir/ignore_bad_blat_alignment.$batchname.err.$$";
+      my $cmd = "$script -database $database -chunkid $chunk_id -chunktotal $chunk_total -output $output";
+      $log->write_to("$cmd\n");
+      print "$cmd\n";
+      $cmd = $wormbase->build_cmd($cmd);
+      my @bsub_options = (
+			  -e => "$err",
+			  -o => '/dev/null',
+			  -M => "$mem",
+			  -R => "\"select[mem>$mem] rusage[mem=$mem]\"",
+			  -J => $job_name,
+			 );
+      $lsf->submit(@bsub_options, $cmd);
+    }
+    
+    $lsf->wait_all_children(history => 1);
+    $log->write_to("All ignore_bad_blat_alignment jobs have completed.\n");
+    my $critical_error = 0;
+    for my $job ($lsf->jobs) {
+      $log->error("Job $job (".$job->history->command.") exited non zero\n") if $job->history->exit_status != 0;
+      $critical_error++ if $job->history->exit_status != 0;
+    }
+    $lsf->clear;
+    $log->log_and_die("There were $critical_error critical errors in the ignore_bad_blat_alignments jobs, please check and re-run with -mem 6000 if you suspect memory issues\n") if $critical_error;
+    
+    $log->write_to("All batch jobs done.\n", $log);
+    
   }
 
 
