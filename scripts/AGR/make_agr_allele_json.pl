@@ -114,9 +114,12 @@ sub process{
       synonyms      => [keys \%synonyms],
       secondaryIds => [],
       taxonId       => "NCBITaxon:" . $taxid,
-      crossReferences => [ { id => "WB:$obj", pages => ['allele','allele/references']}],
-    };
-    map { push @{$json_obj->{crossReferences}}, {id => "WB:$_", pages => ['reference']} } $obj->Reference;
+        };
+
+    if ($obj->Reference){
+            $json_obj->{crossReferences} = [ { id => "WB:$obj", pages => ['allele','allele/references']}];
+	    map { push @{$json_obj->{crossReferences}}, {id => "WB:$_", pages => ['reference']} } $obj->Reference;
+    }
     $$json_obj{alleleObjectRelations}=[{objectRelation => {associationType => 'allele_of', gene => "WB:$gene"}}];
 
     if ($obj->Corresponding_transgene){
