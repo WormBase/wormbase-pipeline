@@ -6,7 +6,7 @@ require 'json'
 require 'optparse'
 require 'zlib'
 
-Options = Struct.new(:fasta,:gff,:db,:ws_version,:wquery,:outfile)
+Options = Struct.new(:fasta,:gff,:db,:ws_version,:wquery,:outfile,:all)
 
 
 ##
