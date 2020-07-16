@@ -19,6 +19,7 @@ class Parser
 		args = Options.new("world")
 
 		args.wquery = "agr_variations.def" # default
+                args.all = false
 
 		opt_parser = OptionParser.new do |opts|
 
@@ -48,7 +49,11 @@ class Parser
 				args.wquery = t
 			end
 
-			opts.on("-h","--help","print help") do
+                        opts.on("-a","--all","Retrieve all variations") do |a|
+                                args.all = a
+                        end
+
+                        opts.on("-h","--help","print help") do
 				puts opts
 				exit
 			end
@@ -131,8 +136,13 @@ chromosomes= Hash.new
 
 # hardcoded giface ... which is probably not needed
 tablemaker = TableMaker.new('/nfs/panda/ensemblgenomes/wormbase/software/packages/acedb/RHEL7/4.9.62/giface',options.db)
-# filter = tablemaker.execute_wquery("query find Variation *;Reference;SMap",options.wquery) 
-filter = tablemaker.execute_wquery('query find Variation WHERE Live AND COUNT(Gene) == 1 AND Reference AND SMap AND (Phenotype OR Disease_info OR Interactor) AND NOT Natural_variant',options.wquery)
+# filter = tablemaker.execute_wquery("query find Variation *;Reference;SMap",options.wquery)
+if options.all
+  filter = tablemaker.execute_wquery('query find Variation *;SMap',options.wquery)
+else
+  filter = tablemaker.execute_wquery('query find Variation WHERE Live AND COUNT(Gene) == 1 AND Reference AND SMap AND (Phenotype OR Disease_info OR Interactor) AND NOT Natural_variant',options.wquery)
+end
+
 Bio::FlatFile.open(Bio::FastaFormat, options.fasta).each_entry{|e|
    chromosomes[e.entry_id.to_s] = e.seq
 }
