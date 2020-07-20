@@ -1017,6 +1017,14 @@ sub load_to_database {
     while (my $entry = <WBTMPIN>) {
       $entries++;
 
+      # LongText enties are not formed by contiguous lines of text separated by a blank line
+      # they can contain blank lines.
+      # So, if we find a LongText class entry, stop splitting the file and simply read in the original file.
+      if ($entry =~ /LongText\s+\:\s+/) {
+	@files_to_load = ($file);
+	last;
+      }
+      
       if (!$writing) {
 	$file_count++;
 	$writing = 1;
