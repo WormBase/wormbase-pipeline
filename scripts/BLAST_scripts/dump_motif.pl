@@ -43,7 +43,7 @@ if ( $store ) {
 my $log = Log_files->make_build_log($wormbase);
 
 # define the names of the methods to be dumped
-@methods = qw(hmmpanther pfscan pirsf prints scanprosite smart tigrfam ncoils seg signalp tmhmm pfam superfamily) unless @methods;
+@methods = qw(hmmpanther pfscan pirsf prints scanprosite smart tigrfam ncoils seg signalp tmhmm pfam superfamily mobidblite hamap) unless @methods;
 
 $log->write_to("Dumping methods".@methods."\n");
 
