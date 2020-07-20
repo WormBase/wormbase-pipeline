@@ -4,6 +4,7 @@ use feature 'say';
 use ProductionMysql;
 use List::MoreUtils qw/first_index last_index/;
 my %chosen_bioprojects = (
+    'angiostrongylus_cantonensis' => 'prjna350391',
     'ancylostoma_ceylanicum' => 'prjna231479',
     'ascaris_suum' => 'prjna62057',
     'caenorhabditis_remanei' => 'prjna53967',
@@ -13,6 +14,7 @@ my %chosen_bioprojects = (
     'fasciola_hepatica' => 'prjeb25283',
     'haemonchus_contortus' => 'prjeb506',
     'heligmosomoides_polygyrus' => 'prjeb15396',
+    'hymenolepis_diminuta' => 'prjeb30942',
     'loa_loa' => 'prjna246086',
     'macrostomum_lignano' => 'prjna371498',
     'meloidogyne_arenaria' => 'prjeb8714',
@@ -21,7 +23,10 @@ my %chosen_bioprojects = (
     'meloidogyne_javanica' => 'prjeb8714',
     'onchocerca_flexuosa' => 'prjna230512',
     'onchocerca_ochengi' => 'prjeb1204',
+    'schistosoma_japonicum' => 'prjna520774',
     'schmidtea_mediterranea' => 'prjna379262',
+    'steinernema_carpocapsae' => 'prjna202318',
+    'steinernema_feltiae' => 'prjna353610',
     'taenia_asiatica' => 'prjna299871',
     'toxocara_canis' => 'prjeb533',
     'trichinella_nativa' => 'prjna179527',
