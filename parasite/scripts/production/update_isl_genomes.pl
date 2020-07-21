@@ -84,8 +84,6 @@ map {print $_} @lines[0 .. $first_index - 1 ];
 
 for my $species (@species){
   my $core_db = ProductionMysql->staging->core_db($species);
-  
-  print "# " if $core_db =~ /plectus_sambesii/; #breaks something in ISL
   say &line(
     core_db => $core_db,
     taxon => ProductionMysql->staging->meta_value($core_db, "species.taxonomy_id"),
