@@ -53,6 +53,7 @@ my ($all,
     $overload_sage,
     $overload_pcr,
     $restructure_mirna,
+    $overload_mirna,
     $final,
     );
 
@@ -79,6 +80,7 @@ GetOptions (
   "add_utr"            => \$add_utr,
   "add_supplementary"  => \$add_supplementary,
   "restructure_mirna"  => \$restructure_mirna,
+  "overload_mirna"     => \$overload_mirna,
   "final"              => \$final,
 
   "workdir=s"   => \$working_dir,
@@ -230,6 +232,13 @@ if ($overload_transposon or $all) {
 ############################################################
 if ($restructure_mirna) {
     &run_munging_script("GFF_post_process/restructure_mirnas.pl");
+}
+
+############################################################
+# Adds miRNA type to mature miRNA transcript lines
+############################################################
+if ($overload_mirna or $all) {
+    &run_munging_script("GFF_post_process/overload_gff_miRNA.pl");
 }
 
 #############################################################
