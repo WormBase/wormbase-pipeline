@@ -79,19 +79,18 @@ open (my $inh, "<", $f) or die "$!: $f";
 my @lines = (<$inh>);
 my $first_index = first_index { $_ =~ /wbps/} @lines;
 my $last_index = last_index { $_ =~ /wbps/} @lines;
-open (my $outh, ">" , $f) or die "$!: $f";
 
-map {print $outh $_} @lines[0 .. $first_index - 1 ];
+map {print $_} @lines[0 .. $first_index - 1 ];
 
 for my $species (@species){
   my $core_db = ProductionMysql->staging->core_db($species);
-  print $outh "# " if $core_db =~ /plectus_sambesii/; #breaks something in ISL
-  say $outh &line(
+  
+  print "# " if $core_db =~ /plectus_sambesii/; #breaks something in ISL
+  say &line(
     core_db => $core_db,
     taxon => ProductionMysql->staging->meta_value($core_db, "species.taxonomy_id"),
     assembly => ProductionMysql->staging->meta_value($core_db, "assembly.default"),
   );
 }
-map {print $outh $_} @lines[$last_index +1 .. @lines - 1 ];
+map {print $_} @lines[$last_index +1 .. @lines - 1 ];
 
-print `git diff $f`;
