@@ -41,6 +41,7 @@ my %features = (
   signalp     => ['SignalP',     'signal_peptide'],
   seg         => ['Seg',         'compositionally_biased_region_of_peptide'],
   ncoils      => ['ncoils',      'coiled_coil'],
+  mobidblite  => ['MobiDB-lite', 'intrinsically_unstructured_polypeptide_region'],
     );
 
 

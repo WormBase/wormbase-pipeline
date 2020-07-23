@@ -82,7 +82,7 @@ my @method_database = (
 		       'gene3d',
 		       'hmmpanther',
 		       'hamap', # there are hits to bacterial motifs in species with bacterial endosymbionts (from contamination and horizontal transfer), so this is useful
-		       'mobidblite', # unordered domains
+#		       'mobidblite', # unordered domains - no interpro_id
 	       );
 
 
