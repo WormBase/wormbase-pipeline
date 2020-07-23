@@ -49,7 +49,7 @@ class Parser
 				args.wquery = t
 			end
 
-                        opts.on("-a","--all","Retrieve all variations") do |a|
+                        opts.on("-a","--all","Retrieve all naturally occurring variants and induced mutations from Million Mutation Project") do |a|
                                 args.all = a
                         end
 
@@ -117,6 +117,7 @@ term2so = {
 	'deletion'       => 'SO:0000159',
 	'point_mutation' => 'SO:1000008',
 	'substitution'   => 'SO:1000032', # to hack our wrong SO-terms in => DELIN
+        'SNP'            => 'SO:0000694',
 }
 
 chrom2ncbi = {
@@ -134,13 +135,12 @@ options = Parser.parse(ARGV)
 variations = Array.new
 chromosomes= Hash.new
 
-max_indel_length = 10000 #Limit indel length to 10 kb to avoid memory issues on subsequent VEP run
 
 # hardcoded giface ... which is probably not needed
 tablemaker = TableMaker.new('/nfs/panda/ensemblgenomes/wormbase/software/packages/acedb/RHEL7/4.9.62/giface',options.db)
 # filter = tablemaker.execute_wquery("query find Variation *;Reference;SMap",options.wquery)
 if options.all
-  filter = tablemaker.execute_wquery('query find Variation *;SMap',options.wquery)
+  filter = tablemaker.execute_wquery('query find Variation WHERE Live AND (!Gene OR COUNT(Gene) < 3) AND SMap AND (Natural_variant OR Reference = WBPaper00042537)',options.wquery)
 else
   filter = tablemaker.execute_wquery('query find Variation WHERE Live AND COUNT(Gene) == 1 AND Reference AND SMap AND (Phenotype OR Disease_info OR Interactor) AND NOT Natural_variant',options.wquery)
 end
@@ -149,6 +149,8 @@ Bio::FlatFile.open(Bio::FastaFormat, options.fasta).each_entry{|e|
    chromosomes[e.entry_id.to_s] = e.seq
 }
 
+allele_included = Hash.new
+
 # parse from the GFF the respective variation lines
 Zlib::GzipReader.open(options.gff).each{|line|
   variation = Hash.new
@@ -156,8 +158,11 @@ Zlib::GzipReader.open(options.gff).each{|line|
   next unless term2so[cols[2]]
 
   variation[:alleleId] = cols[8][/variation=(WBVar\d+)/,1]
-
-  next unless ['Allele','KO_consortium','NBP_knockout','Million_mutation'].include?(cols[1])
+  next if allele_included.key?(variation[:alleleId]) # Deals with identical variations from different sources in GFF
+  allele_included[variation[:alleleId]] = 1
+  
+  next unless options.all or ['Allele','KO_consortium','NBP_knockout','Million_mutation'].include?(cols[1])
+  
   next unless filter.has_key?(variation[:alleleId])
 
   variation[:start] = cols[3].to_i
@@ -171,7 +176,6 @@ Zlib::GzipReader.open(options.gff).each{|line|
 	  next unless cols[8]=~/insertion=([^;]+)/
           variation[:paddedBase] = chromosomes[cols[0]][variation[:start]-2]
 	  variation[:genomicReferenceSequence]='N/A'
-          next unless $1.to_s.length <= max_indel_length
 	  s = Bio::Sequence::NA.new($1.to_s)
 	  s.complement! if cols[6].eql?('-') # as all variations are supposed to be on the forward strand
 	  variation[:genomicVariantSequence] = s.to_s.upcase
@@ -183,7 +187,7 @@ Zlib::GzipReader.open(options.gff).each{|line|
 	  variation[:genomicReferenceSequence] = chromosomes[cols[0]].subseq(variation[:start],variation[:end])
           variation[:genomicVariantSequence] = 'N/A'
 
-  elsif ['point_mutation','substitution'].include?(cols[2]) # multi-bp substitutions need to become DELINS in the future
+  elsif ['point_mutation','substitution','SNP'].include?(cols[2]) # multi-bp substitutions need to become DELINS in the future
 	  next unless cols[8]=~/substitution=/ # to skip the crispr/cas9 alleles
 
 	  next unless variation[:start] == variation[:end] # only allow single bp delin "substitutions" due to AGR limitations
