@@ -50,10 +50,12 @@ GetOptions(
     );
 
 die("must specify registry conf file on commandline\n") unless($reg_conf);
-die("Must specify -reg_conf, -masterdbname") unless $reg_conf and $master_dbname;
+# die("Must specify -reg_conf, -masterdbname") unless $reg_conf and $master_dbname;
+
+eval { require($reg_conf) };
+$master_dbname = $Parasite::Compara::Registry::MASTER_DB_NAME if not defined $master_dbname;
 
 Bio::EnsEMBL::Registry->load_all($reg_conf);
-
 
 $collection_name = "wormbase" if not defined $collection_name;
 
@@ -72,7 +74,9 @@ if (defined $sfile) {
 
 my @core_dbs;
 if (@species) {
-  @core_dbs = map { Bio::EnsEMBL::Registry->get_DBAdaptor($_, 'core') } @species; 
+foreach my $s (@species) {
+}
+  @core_dbs = map { Bio::EnsEMBL::Registry->get_DBAdaptor($_, 'core') } @species;
 } else {
   @core_dbs = @{Bio::EnsEMBL::Registry->get_all_DBAdaptors(-GROUP => 'core')};
 }
@@ -81,7 +85,8 @@ die "No core databases found! " unless @core_dbs;
 if ($recreatedb) { 
   die("When creating the db from scratch, you must give -comparacode") unless $compara_code ;
 
-  $tax_dbname = "ncbi_taxonomy" if not defined $tax_dbname;
+#   $tax_dbname = "ncbi_taxonomy" if not defined $tax_dbname;
+   $tax_dbname = $Parasite::Compara::Registry::TAXONOMY_DB_NAME if not defined $tax_dbname;
 
   print STDERR "Re-creating database from scratch\n";
 
@@ -118,13 +123,14 @@ if ($recreatedb) {
   open(my $tgt_fh, "| mysql -u $master_user -p$master_pass -h $master_host -P $master_port -D $master_dbname")
       or die "Could not open pipe to target db $master_dbname\n";
   foreach my $table ('ncbi_taxa_node', 'ncbi_taxa_name') {
-    open(my $src_fh, "mysqldump -u $tax_user -h $tax_host -P $tax_port ncbi_taxonomy $table |")
-        or die "Could not open mysqldump stream from ncbi_taxonomy\n";
+    open(my $src_fh, "mysqldump -u $tax_user -h $tax_host -P $tax_port $tax_dbname $table |")
+        or die "Could not open mysqldump stream from $tax_dbname\n";
     while(<$src_fh>) {
       print $tgt_fh $_;
     }
+    close($src_fh) or die "error whilst reading mysqldump (source db $tax_dbname) pipe:$!";
   }
-  close($tgt_fh) or die "Could not successfully close pipe to target db $master_dbname\n";
+  close($tgt_fh) or die "error whilst writing to pipe to mysql (target db $master_dbname): $!";
 }
 
 
