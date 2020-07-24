@@ -39,7 +39,7 @@ use LSF::JobManager;
 
 my $script = "ignore_bad_blat_alignments.pl";
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $database, $species, @chromosomes, $load, $mem, @output_names, $chunk_total, $chunk_id, $output, $ovlp);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $database, $species, @chromosomes, $load, $mem, $chunk_total, $chunk_id, $output, $ovlp);
 
 
 GetOptions ("help"       => \$help,
@@ -269,10 +269,12 @@ if (@chromosomes || defined $chunk_id) {
 
     $log->write_to("Loading files from ".$wormbase->misc_dynamic."\n", $log);
     my $ok = 0;
-    foreach my $acefile (@output_names) {
-      $log->write_to("Loading $acefile\n", $log);
-      if (-e $acefile) {
-	$wormbase->load_to_database($wormbase->autoace, $acefile, 'ignore_bad_blat_alignments.pl', $log);
+    foreach my $chunk_id (1..$chunk_total) {
+      my $batchname = "batch_${chunk_id}";
+      my $output = $wormbase->misc_dynamic . "/". $species . "_ignore_bad_blat_alignments_${batchname}.ace"; # ace file
+      $log->write_to("Loading $output\n", $log);
+      if (-e $output) {
+	$wormbase->load_to_database($wormbase->autoace, $output, 'ignore_bad_blat_alignments.pl', $log);
 	$ok = 1;
       }
     }
@@ -292,7 +294,6 @@ if (@chromosomes || defined $chunk_id) {
     foreach my $chunk_id (1..$chunk_total) {
       my $batchname = "batch_${chunk_id}";
       my $output = $wormbase->misc_dynamic . "/". $species . "_ignore_bad_blat_alignments_${batchname}.ace"; # ace file
-      push @output_names, $output;
       unlink $output if -e $output;
       my $err = "$scratch_dir/ignore_bad_blat_alignment.$batchname.err.$$";
       my $cmd = "$script -database $database -chunkid $chunk_id -chunktotal $chunk_total -output $output";
