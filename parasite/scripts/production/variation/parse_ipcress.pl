@@ -7,20 +7,31 @@ use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use Getopt::Long;
 use Data::Dumper;
 
-my ($host, $user, $db, $pass, $port, $ipcress_outfile, $ipcress_fh, $phenotypes_file, $phenotypes_fh, $out, $out_fh, $intended_targets_file, $intended_targets_fh);
-my (%phenotypes, %intended_targets, %ipcress_targets);
+my ($host, $user, $db, $pass, $port, 
+$ipcress_outfile, $ipcress_fh, 
+$phenotypes_file, $phenotypes_fh, 
+$out, $out_fh, 
+$intended_targets_file, $intended_targets_fh,
+$studies_file, $studies_fh,
+$phenotype_descriptions_file, $phenotype_descriptions_fh
+);
+
+my (%phenotypes, %intended_targets, %ipcress_targets, $this_study_id, %studies, %phenotype_descriptions);
 
 
 GetOptions(
-	'host=s'			=> \$host,
-	'dbname=s'			=> \$db,
-	'pass=s'			=> \$pass,
-	'port=i'			=> \$port,
-	'user=s'			=> \$user,
-	'ipcress_outfile=s'		=> \$ipcress_outfile,
-	'phenotypes_file=s'             => \$phenotypes_file,
-	'out=s'				=> \$out,
-	'intended_targets_file=s'	=> \$intended_targets_file
+	'host=s'			 => \$host,
+	'dbname=s'			 => \$db,
+	'pass=s'			 => \$pass,
+	'port=i'			 => \$port,
+	'user=s'			 => \$user,
+	'ipcress_outfile=s'		 => \$ipcress_outfile,
+	'phenotypes_file=s'              => \$phenotypes_file,
+	'out=s'				 => \$out,
+	'intended_targets_file=s'	 => \$intended_targets_file,
+	'studies_file=s'		 => \$studies_file,
+	'study_id=s'			 => \$this_study_id,
+	'phenotype_descriptions_file=s'  => \$phenotype_descriptions_file
 	
 ) || die ("check command line params\n");
 
@@ -39,6 +50,9 @@ if (defined $intended_targets_file){
 	open($intended_targets_fh, '<', $intended_targets_file) or die "Could not open $intended_targets_file\n";
 }
 open($out_fh, '>', $out) or die "Could not create $out for writing\n";
+open($studies_fh, '<', $studies_file) or die "Could not open $studies_file\n";
+open($phenotype_descriptions_fh, '<', $phenotype_descriptions_file) or die "Could not open $phenotype_descriptions_file\n";
+
 
 # parse phenotypes file
 
@@ -49,6 +63,7 @@ while (<$phenotypes_fh>){
 	my $primer_id = $temp[0];
 	my $phenotype = $temp[1]; 	
 	push @{ $phenotypes{$primer_id} }, $phenotype;
+	$phenotype_descriptions{$phenotype} = undef;
 }
 
 # parse intended targets
@@ -64,6 +79,46 @@ if (defined $intended_targets_file ){
 	}
 }
 
+# parse studies
+
+while(<$studies_fh>){
+	my %data;
+	chomp;
+	my @temp = split(/\t/,$_);
+	if (scalar @temp != 5 ) { die "studies file should have 5 fields: study_id\tdescription\tURL\txref(PMID)\tstudy type"; }
+	my $study_id 	           = $temp[0];
+	$data{'study_description'} = $temp[1];
+	$data{'study_url'} 	   = $temp[2];
+	$data{'study_xref'}	   = $temp[3];
+	$data{'study_type'}        = $temp[4];
+	$studies{$study_id} 	   = \%data;
+}
+
+# check that this study is in the studies file
+
+unless (exists $studies{$this_study_id}){
+	die "$this_study_id not found in $studies_file\n";
+}
+
+# parse phenotype descriptions
+
+while(<$phenotype_descriptions_fh>){
+	my %data;
+	chomp;
+	my @temp = split(/\t/,$_);
+	if (scalar @temp != 2) { die "phenotype descriptions file should have 2 fields: phenotype name\tphenotype description"; }
+	my $phenotype_id 		= $temp[0];
+	my $phenotype_description	= $temp[1];
+	$phenotype_descriptions{$phenotype_id} = $phenotype_description;
+}
+
+# check that all phenotypes reported in the study have got a description
+
+foreach my $phenotype (keys %phenotype_descriptions){
+	unless (defined $phenotype_descriptions{$phenotype} ){
+		die "$phenotype not found in $phenotype_descriptions_file\n";	
+	}
+}
 
 # prepare sql - given transcript ID, retrieve gene ID
 
@@ -175,11 +230,17 @@ foreach my $primer_id (keys %phenotypes){
 		foreach my $phenotype ( @{ $phenotypes{$primer_id}} ){
 			my $print = join "\t", ($ipcress_target->{'gene'},
 				     $phenotype,
+			  	     $phenotype_descriptions{$phenotype},
+				     $this_study_id,
+				     $studies{$this_study_id}->{'study_description'},
+				     $studies{$this_study_id}->{'study_url'},
+				     $studies{$this_study_id}->{'study_xref'},
+			  	     $studies{$this_study_id}->{'study_type'},				 
 		 		     $ipcress_target->{'transcript'},
 				     $ipcress_target->{'product_length'},
 				     $ipcress_target->{'type'},
 				     $ipcress_target->{'specificity'},
-				     $primer_id
+				     $primer_id,
 			);
 			if (defined $intended_targets_file) {
 				$print = join "\t", ($print,$ipcress_target->{'match'});
