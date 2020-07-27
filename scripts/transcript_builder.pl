@@ -78,9 +78,9 @@ GetOptions ( "debug:s"      => \$debug,
 # when a transcript object is extended, check to see if there is a SL feature and only add exons after this - truncate exons overlapping the SL site
 
 
-$debug = "gw3";
+#$debug = "gw3";
 ##$detailed_debug = 1;
-$test = 1;
+#$test = 1;
 if (defined $test) {
   print "WORKING IN TEST_BUILD\n";
 }
@@ -1023,12 +1023,40 @@ sub purge_duplicates {
 	      $transcript->{'ignore'} = 1; # ignore, don't report this.
 	      last;
 	    } else {
-	      # force the structure back to being the original CDS structure
-	      # set start, end, sorted_exons
-	      $transcript->start($cds->start);
-	      $transcript->end($cds->end);
-	      $transcript->{'sorted_exons'} = $cds->sorted_exons;
-	      $reverted = $transcript->name;
+
+	      # if the cds structure is the already the same as this
+	      # transcript, then make the sibling structure the same
+	      # as its cds and just to be very sure we don't make any
+	      # duplicates, remove any other transcripts from the
+	      # sibling structure's CDS
+
+	      if ($transcript->duplicate($cds)) {
+		# force the sibling_transcript structure back to being the original CDS structure
+		# set start, end, sorted_exons
+		my $cds2 = $sibling_transcript->cds;
+		$sibling_transcript->start($cds2->start);
+		$sibling_transcript->end($cds2->end);
+		$sibling_transcript->{'sorted_exons'} = $cds2->sorted_exons;
+		foreach my $sibling_transcript2 ($cds2->transcripts) {
+		  if ($sibling_transcript2->name ne $sibling_transcript->name) {
+		    print $prob_fh "\nWARNING: Duplicate Transcript found after reversion to CDS structure: ",$transcript->name," NOT CREATING: ",$sibling_transcript2->name,"\n";
+		    $log->write_to("\nWARNING: Duplicate Transcript found after reversion to CDS structure: ".$transcript->name." NOT CREATING: ".$sibling_transcript2->name."\n");
+		    $sibling_transcript2->{'ignore'} = 1; # ignore, don't report this.
+		  }
+		}
+		
+	      # cds structure is not already the same as the
+	      # transcript, so just make the transcript the same
+	      # structure as the cds
+		
+	      } else { # make this structure the same as its cds
+		# force the structure back to being the original CDS structure
+		# set start, end, sorted_exons
+		$transcript->start($cds->start);
+		$transcript->end($cds->end);
+		$transcript->{'sorted_exons'} = $cds->sorted_exons;
+		$reverted = $transcript->name;
+	      }
 	      # now retest the new structure for duplicates
 	      foreach my $sibling_cds2 (@{$genes{$gene}}) { # look at other CDSs in this gene that we have already processed
 		foreach my $sibling_transcript2 ($sibling_cds2->transcripts) {
@@ -1037,7 +1065,6 @@ sub purge_duplicates {
 		  if ($transcript->duplicate($sibling_transcript2)) {
 		    print $prob_fh "\nWARNING: Duplicate Transcript found after reversion to CDS structure: ",$sibling_transcript2->name," NOT CREATING: ",$transcript->name,"\n";
 		    $log->write_to("\nWARNING: Duplicate Transcript found after reversion to CDS structure: ".$sibling_transcript2->name." NOT CREATING: ".$transcript->name."\n");
-#		    $log->error;
 		    $transcript->{'ignore'} = 1; # ignore, don't report this.
 		    last;
 		  }
