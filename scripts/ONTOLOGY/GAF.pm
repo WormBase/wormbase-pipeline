@@ -33,9 +33,10 @@ sub print_wormbase_GAF_line {
 
 ####################################
 sub print_wormbase_GAF_header {
-  my ($fh) = @_;
+  my ($fh,$version) = @_;
+  $version||='2.0'
 
-  print $fh "\!gaf-version: 2.0\n";
+  print $fh "\!gaf-version: $version\n";
   print $fh "\!Project_name: WormBase\n";
   print $fh "\!Contact Email: help\@wormbase.org\n";
 }

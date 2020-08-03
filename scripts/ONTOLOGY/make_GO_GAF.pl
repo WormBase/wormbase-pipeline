@@ -162,6 +162,7 @@ foreach my $suf (0..9) {
           $al eq 'contributes_to') {
         push @annot_rel, $al;
       }
+      $gaf_line->{qualifier} = 'NOT|'.$obj->Annotation_relation_not->name;
     }
     if ($obj->Annotation_relation) {
       my $al = $obj->Annotation_relation->Name;
@@ -170,9 +171,10 @@ foreach my $suf (0..9) {
           $al eq 'contributes_to') {
         push @annot_rel, $al;
       }
+      $gaf_line->{qualifier} = $obj->Annotation_relation->name;
     }
 
-    $gaf_line->{qualifier} = join("|", @annot_rel);
+#   $gaf_line->{qualifier} = join("|", @annot_rel);
     
     # Reference
     my @reference;
@@ -301,6 +303,7 @@ $log->write_to("Merging annotations...\n") if $debug;
       $a->{reference} cmp $b->{reference} or
       $a->{go_code} cmp $b->{go_code} or
       $a->{with_from} cmp $b->{with_from} or
+      $a->{qualifier} cmp $b->{qualifier} or
       $a->{date} cmp $b->{date}
 } @all_gaf_lines;
 
@@ -312,6 +315,7 @@ foreach my $gaf (@all_gaf_lines) {
       $nr_gaf_lines[-1]->{contributor} eq $gaf->{contributor} and
       $nr_gaf_lines[-1]->{go_code} eq $gaf->{go_code} and
       $nr_gaf_lines[-1]->{with_from} eq $gaf->{with_from} and
+      $nr_gad_lines[-1]->{qualifier} eq $gaf->{qualifier} and
       $nr_gaf_lines[-1]->{date} eq $gaf->{date}) {
     
     if ($debug) {
@@ -336,7 +340,7 @@ $log->write_to("Writing annotations...\n") if $debug;
 #
 my $collated_file = "$outputdir/gene_association." . $wormbase->get_wormbase_version_name. ".wb" ;
 open (my $colfh, ">$collated_file") or $log->log_and_die("Could not open $collated_file for writing\n");
-&print_wormbase_GAF_header($colfh);
+&print_wormbase_GAF_header($colfh,'2.2');
 
 my %coreSpecies = $wormbase->species_accessors;
 foreach my $species ($wormbase, values %coreSpecies){
@@ -344,7 +348,7 @@ foreach my $species ($wormbase, values %coreSpecies){
   my $out_file = "gene_association." . $wormbase->get_wormbase_version_name. ".wb." .$species->full_name(-g_species => 1);
   open(my $outfh, ">$outputdir/$out_file") or $log->log_and_die("Could not open $outputdir/out_file for writing\n");
   
-  &print_wormbase_GAF_header($outfh);
+  &print_wormbase_GAF_header($outfh,'2.2');
   foreach my $gaf (@nr_gaf_lines) {
     next if $gaf->{species} ne $species->full_name;
     unshift @{$gaf->{taxon}}, $species->ncbi_tax_id;
