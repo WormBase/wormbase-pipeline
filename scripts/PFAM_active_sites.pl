@@ -16,8 +16,8 @@ use Storable;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase, $acefile, $species, $noload);
 
-my $port= 3306;
-my $server='farmdb1';
+my $port= 3478;
+my $server='ebiworm-db';
 my $dbname = "worm_pfam";
 my $tmpDir='/tmp';
 my ($user, $pass, $update);
