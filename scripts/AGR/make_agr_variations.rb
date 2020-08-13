@@ -106,7 +106,7 @@ class TableMaker
 				results[c[0]]["paper"]||=Hash.new # WBPaperXXX
 				results[c[0]]["paper"][c[1]] = c[2] || 'n/a' # PubmedID
 			end
-			if !c[3].empty?
+			if c[3]
 				results[c[0]][:strains]||=[] # WBStrains
 				results[c[0]][:strains].push(c[3]) # adds WBStrainId
 			end
