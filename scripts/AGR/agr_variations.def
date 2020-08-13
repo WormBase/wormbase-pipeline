@@ -1,6 +1,6 @@
 // Spread sheet definition for the ACeDB software 
 // User: mh6
-// Date: 2019-05-21_16:37:06
+// Date: 2020-08-13_10:45:51
 
 // %n (%%n in the graphic) are parameter to be given on the command line in tace
 // or by default by the Parameters given in this file
@@ -24,7 +24,7 @@ Visible
 Class 
 Class Paper 
 From 1 
-Tag Reference  
+Tag Reference   
  
 Colonne 3 
 Width 12 
@@ -32,7 +32,7 @@ Optional
 Hidden 
 Show_Tag 
 From 2 
-Tag Database  
+Tag Database   
 Condition MEDLINE
  
 Colonne 4 
@@ -42,7 +42,7 @@ Hidden
 Class 
 Class Text 
 Right_of 3 
-Tag HERE   
+Tag HERE    
  
 Colonne 5 
 Width 12 
@@ -51,7 +51,7 @@ Hidden
 Class 
 Class Text 
 Right_of 4 
-Tag HERE   
+Tag HERE    
  
 Colonne 6 
 Width 40 
@@ -60,7 +60,16 @@ Visible
 Class 
 Class Text 
 Right_of 5 
-Tag HERE   
+Tag HERE    
+ 
+Colonne 7 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Strain 
+From 1 
+Tag Strain 
  
  
 
