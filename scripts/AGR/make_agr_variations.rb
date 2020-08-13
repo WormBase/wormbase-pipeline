@@ -108,7 +108,7 @@ class TableMaker
 			end
 			if !c[3].empty?
 				results[c[0]][:strains]||=[] # WBStrains
-				results[c[0]][:strains]].push(c[3]) # adds WBStrainId
+				results[c[0]][:strains].push(c[3]) # adds WBStrainId
 			end
 		}
 #		File.unlink(outfile)
