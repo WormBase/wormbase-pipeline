@@ -185,8 +185,7 @@ Zlib::GzipReader.open(options.gff).each{|line|
 	  variation[:genomicVariantSequence] = s.to_s.upcase
 	  variation[:end]+=1 if variation[:end] == variation[:start] # to make it inline with the HGVS coordinates
 
-  elsif cols[2].eql?('deletion')
-          next unless variation[:end] - variation[:start] < max_indel_length   
+  elsif cols[2].eql?('deletion')   
           variation[:paddedBase] = chromosomes[cols[0]][variation[:start]-2]
 	  variation[:genomicReferenceSequence] = chromosomes[cols[0]].subseq(variation[:start],variation[:end])
           variation[:genomicVariantSequence] = 'N/A'
