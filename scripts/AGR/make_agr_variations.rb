@@ -109,7 +109,6 @@ class TableMaker
 			if c[3]
 				results[c[0]][:strains]||=[] # WBStrains
 				results[c[0]][:strains].push(c[3]) # adds WBStrainId
-				# puts "#{c[0]} strain #{c[3]} #{results[c[0]][:strains]}"
 			end
 		}
 #		File.unlink(outfile)
