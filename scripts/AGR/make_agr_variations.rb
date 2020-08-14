@@ -100,8 +100,9 @@ class TableMaker
 			line.chomp!
 			line.gsub!('"','')
 			c = line.split("\t")
-			results[c[0]]=Hash.new # WBVarXXX
-			results[c[0]]["name"] = c[0] # WBVarXXX
+                        if !results[c[0]]
+			        results[c[0]]=Hash.new # WBVarXXX
+			        results[c[0]]["name"] = c[0] # WBVarXXX
 			if !c[1].empty?
 				results[c[0]]["paper"]||=Hash.new # WBPaperXXX
 				results[c[0]]["paper"][c[1]] = c[2] || 'n/a' # PubmedID
