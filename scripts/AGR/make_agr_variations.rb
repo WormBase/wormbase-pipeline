@@ -103,6 +103,7 @@ class TableMaker
                         if !results[c[0]]
 			        results[c[0]]=Hash.new # WBVarXXX
 			        results[c[0]]["name"] = c[0] # WBVarXXX
+                        end
 			if !c[1].empty?
 				results[c[0]]["paper"]||=Hash.new # WBPaperXXX
 				results[c[0]]["paper"][c[1]] = c[2] || 'n/a' # PubmedID
