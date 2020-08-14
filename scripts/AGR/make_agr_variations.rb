@@ -106,9 +106,10 @@ class TableMaker
 				results[c[0]]["paper"]||=Hash.new # WBPaperXXX
 				results[c[0]]["paper"][c[1]] = c[2] || 'n/a' # PubmedID
 			end
-			if !c[3].empty?
+			if c[3]
 				results[c[0]][:strains]||=[] # WBStrains
-				results[c[0]][:strains]].push(c[3]) # adds WBStrainId
+				results[c[0]][:strains].push(c[3]) # adds WBStrainId
+				# puts "#{c[0]} strain #{c[3]} #{results[c[0]][:strains]}"
 			end
 		}
 #		File.unlink(outfile)
@@ -138,7 +139,6 @@ options = Parser.parse(ARGV)
 
 variations = Array.new
 chromosomes= Hash.new
-
 
 # hardcoded giface ... which is probably not needed
 tablemaker = TableMaker.new('/nfs/panda/ensemblgenomes/wormbase/software/packages/acedb/RHEL7/4.9.62/giface',options.db)
@@ -186,7 +186,6 @@ Zlib::GzipReader.open(options.gff).each{|line|
 	  variation[:end]+=1 if variation[:end] == variation[:start] # to make it inline with the HGVS coordinates
 
   elsif cols[2].eql?('deletion')
-          next unless variation[:end] - variation[:start] < max_indel_length   
           variation[:paddedBase] = chromosomes[cols[0]][variation[:start]-2]
 	  variation[:genomicReferenceSequence] = chromosomes[cols[0]].subseq(variation[:start],variation[:end])
           variation[:genomicVariantSequence] = 'N/A'
