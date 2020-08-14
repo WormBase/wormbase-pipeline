@@ -140,7 +140,6 @@ options = Parser.parse(ARGV)
 variations = Array.new
 chromosomes= Hash.new
 
-
 # hardcoded giface ... which is probably not needed
 tablemaker = TableMaker.new('/nfs/panda/ensemblgenomes/wormbase/software/packages/acedb/RHEL7/4.9.62/giface',options.db)
 # filter = tablemaker.execute_wquery("query find Variation *;Reference;SMap",options.wquery)
@@ -186,7 +185,7 @@ Zlib::GzipReader.open(options.gff).each{|line|
 	  variation[:genomicVariantSequence] = s.to_s.upcase
 	  variation[:end]+=1 if variation[:end] == variation[:start] # to make it inline with the HGVS coordinates
 
-  elsif cols[2].eql?('deletion')   
+  elsif cols[2].eql?('deletion')
           variation[:paddedBase] = chromosomes[cols[0]][variation[:start]-2]
 	  variation[:genomicReferenceSequence] = chromosomes[cols[0]].subseq(variation[:start],variation[:end])
           variation[:genomicVariantSequence] = 'N/A'
