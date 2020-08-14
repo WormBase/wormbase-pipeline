@@ -104,7 +104,7 @@ sub change_transcript{
     my $transcriptID="$1" if $line =~ /Name=([^;\n]+)/;
     my $geneID="$1" if $line =~/(WBGene\d+)/;
     # $line=~s/;Parent/;curie=WB:$transcriptID;curie=WB:$geneID;Ontology_term=$soID;Parent/;
-    $line=~s/;Parent/;transcript_id=$transcriptID;curie=WB:$transcriptID;Ontology_term=$soID;Parent/;
+    $line=~s/;Parent/;transcript_id=WB:$transcriptID;curie=WB:$transcriptID;Ontology_term=$soID;Parent/;
     print $outf $line;
 }
 
