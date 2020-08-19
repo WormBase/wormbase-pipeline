@@ -72,6 +72,8 @@ while (my $analysis = $it->next){
 			primaryId => "WB:$subproject",
 		}; # required
 		$json_obj{sampleTitle} = $subproject->Title->name;
+		$json_obk{sampleType} = 'OBI:0000895'; # total RNA extract
+		$json_obj{assayType} = 'MMO:0000659'; # RNA-seq assay
 		$json_obj{taxonId} = $wormbase->ncbi_tax_id;
 		$json_obj{datasetId} = [$datasetId];
 		$json_obj{sex}=lc($sample->Sex->name) if $sample->Sex;
