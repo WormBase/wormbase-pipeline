@@ -99,12 +99,18 @@ class TableMaker
 		File.open(outfile).each{|line|
 			line.chomp!
 			line.gsub!('"','')
-			c = line.split
-			results[c[0]]=Hash.new # WBVarXXX
-			results[c[0]]["name"] = c[0] # WBVarXXX
-			if c[1]
-				results[c[0]]["paper"]=Hash.new # WBPaperXXX
+			c = line.split("\t")
+                        if !results[c[0]]
+			        results[c[0]]=Hash.new # WBVarXXX
+			        results[c[0]]["name"] = c[0] # WBVarXXX
+                        end
+			if !c[1].empty?
+				results[c[0]]["paper"]||=Hash.new # WBPaperXXX
 				results[c[0]]["paper"][c[1]] = c[2] || 'n/a' # PubmedID
+			end
+			if c[3]
+				results[c[0]][:strains]||=[] # WBStrains
+				results[c[0]][:strains].push(c[3]) # adds WBStrainId
 			end
 		}
 #		File.unlink(outfile)
@@ -134,7 +140,6 @@ options = Parser.parse(ARGV)
 
 variations = Array.new
 chromosomes= Hash.new
-
 
 # hardcoded giface ... which is probably not needed
 tablemaker = TableMaker.new('/nfs/panda/ensemblgenomes/wormbase/software/packages/acedb/RHEL7/4.9.62/giface',options.db)
@@ -182,7 +187,6 @@ Zlib::GzipReader.open(options.gff).each{|line|
 	  variation[:end]+=1 if variation[:end] == variation[:start] # to make it inline with the HGVS coordinates
 
   elsif cols[2].eql?('deletion')
-          next unless variation[:end] - variation[:start] < max_indel_length   
           variation[:paddedBase] = chromosomes[cols[0]][variation[:start]-2]
 	  variation[:genomicReferenceSequence] = chromosomes[cols[0]].subseq(variation[:start],variation[:end])
           variation[:genomicVariantSequence] = 'N/A'
@@ -206,6 +210,10 @@ Zlib::GzipReader.open(options.gff).each{|line|
   variation[:references] = filter[variation[:alleleId]]["paper"].map{|k,v| # creates the publication part 
 	  v.eql?('n/a')? {:publicationId => "WB:#{k}",:crossReference => {:id => "WB:#{k}",:pages => ['reference']}}:{:publicationId => "PMID:#{v}",:crossReference => {:id => "WB:#{k}",:pages => ['reference']}}
   } if filter[variation[:alleleId]]["paper"]
+
+  if options.all # add strains only to the large JSON
+	  variation[:strains]=filter[variation[:alleleId]][:strains]||['WBStrain00000001'] # defaults to N2
+  end
 
   variation[:sequenceOfReferenceAccessionNumber]=chrom2ncbi[variation[:chromosome]]
   variation[:alleleId]=variation[:alleleId].prepend('WB:') # prefix it with WB:
