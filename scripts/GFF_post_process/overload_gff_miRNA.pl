@@ -78,7 +78,7 @@ while (<$gff_in_fh>){
     }
     my $transobj = $db->fetch(Transcript => $Transcript_name);
     print "Transcript : $Transcript_name"; 
-    my $trans_type =  $transobj->Properties->right->right->name;
+    my $trans_type =  $transobj->Transcript->right->name;
     print " Type $trans_type\n";
     if ($gff3) {
         print $gff_out_fh $_.";Type=$trans_type\n";
