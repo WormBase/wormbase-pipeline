@@ -79,12 +79,12 @@ while (<$gff_in_fh>){
     my $transobj = $db->fetch(Transcript => $Transcript_name);
     print "Transcript : $Transcript_name"; 
     my $trans_type =  $transobj->Transcript->right->name;
-    print " Type $trans_type\n";
+    print " type $trans_type\n";
     if ($gff3) {
-        print $gff_out_fh $_.";Type=$trans_type\n";
+        print $gff_out_fh $_.";type=$trans_type\n";
     }
     else {
-        print $gff_out_fh $_." ; Type \"$trans_type\"\n";
+        print $gff_out_fh $_." ; type \"$trans_type\"\n";
     }
     $changed_lines++;
 }
