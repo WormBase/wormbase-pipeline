@@ -247,20 +247,25 @@ if ($prepare_gff_munge) {
 if ($gff_munge or $gff3_munge) {
     #Used for finding the previous gff files in the staging area of the sanger file system
     #previously looked at the internal FTP dir but we no longer store the data at Sanger. 
+    # On EBI, look at a copy explicitly stashed away in the previous Build version
   my $prev_gff_prefix = 
-      join("/", 
-           $wormbase->ftp_staging, 
-           "releases", 
-           "WS" . ($wormbase->version - 1),
-           "species",
-           $wormbase->full_name(-g_species => 1),
-           $wormbase->ncbi_bioproject,
-           join(".", 
-                $wormbase->full_name(-g_species => 1),
-                $wormbase->ncbi_bioproject, 
-                "WS" . ($wormbase->version - 1),
-                "annotations")
-      );
+    join("/", 
+#           $wormbase->ftp_staging, 
+#           "releases", 
+#           "WS" . ($wormbase->version - 1),
+#           "species",
+	 $wormbase->build_data,
+	 "COMPARE",
+	 "PREV_BUILD_GFF",
+	 "species",
+	 $wormbase->full_name(-g_species => 1),
+	 $wormbase->ncbi_bioproject,
+	 join(".", 
+	      $wormbase->full_name(-g_species => 1),
+	      $wormbase->ncbi_bioproject, 
+	      "WS" . ($wormbase->version - 1),
+	      "annotations")
+	);
 
   if ($gff_munge) {
     $wormbase->run_script( 'GFF_post_process/GFF_post_process.pl -all', $log); 
