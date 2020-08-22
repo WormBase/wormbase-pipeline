@@ -50,7 +50,7 @@ open(my $gff_out_fh, ">$outfile") or $log->log_and_die("Could not open $outfile 
 
 my $db = Ace->connect(-path => $database);
 
-
+$changed_lines = 0;
 
 # fill some reference hashes
 #my ($miRNA_type) = &get_miRNA_data();
@@ -67,7 +67,7 @@ while (<$gff_in_fh>){
     #Name=Y71F9AL.23;
     #  if (m/Name\=(\S+)?\;/){
     if ($gff3) {
-        if (m/Name\=(\w+\.\w+)\;?/){
+        if (m/Name\=Transcript\:(\w+\.\w+)\;?/){
             $Transcript_name = $1
         }
     }
