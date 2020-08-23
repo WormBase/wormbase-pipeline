@@ -89,7 +89,8 @@ while (<$gff_in_fh>){
     $changed_lines++;
 }
 close($gff_out_fh) or $log->log_and_die("Could not close $outfile after writing\n");
+$db->close();
 $log->write_to("Finished processing : $changed_lines lines modified\n");
+
 $log->mail();
 exit(0);
-
