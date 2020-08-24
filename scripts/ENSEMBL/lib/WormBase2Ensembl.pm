@@ -141,6 +141,7 @@ sub parse_genes_gff3_fh {
       $l[2] ne 'lincRNA' and 
       $l[2] ne 'piRNA' and 
       $l[2] ne 'antisense_RNA' and 
+      $l[2] ne 'circular_RNA' and 
       $l[2] ne 'mRNA' and 
       $l[2] ne 'nc_primary_transcript' and 
       $l[2] ne 'protein_coding_primary_transcript' and  
@@ -207,6 +208,7 @@ sub parse_genes_gff3_fh {
              $l[2] eq 'lincRNA' or
              $l[2] eq 'piRNA' or
              $l[2] eq 'antisense_RNA' or
+             $l[2] eq 'circular_RNA' or
              $l[2] eq 'pseudogenic_transcript' or
              $l[2] eq 'pseudogenic_rRNA' or
              $l[2] eq 'pseudogenic_tRNA' or
@@ -461,6 +463,12 @@ sub parse_genes_gff3_fh {
           $transcript->biotype($gff_type);
           $gene_biotypes{"miRNA"}++;
         } elsif ( $gff_type eq 'scRNA') {
+          # not acknowledged as a biotype by Ensembl; change to default ncRNA
+          $transcript->analysis($nc_ana);
+          my $bt = "ncRNA";
+          $transcript->biotype($bt);
+          $gene_biotypes{$bt}++;
+        } elsif ( $gff_type eq 'circular_RNA') {
           # not acknowledged as a biotype by Ensembl; change to default ncRNA
           $transcript->analysis($nc_ana);
           my $bt = "ncRNA";
