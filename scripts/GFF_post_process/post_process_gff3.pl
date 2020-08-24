@@ -39,6 +39,7 @@ my %source_map = (
   lincRNA                   => 'WormBase',
   asRNA                     => 'WormBase',
   piRNA                     => 'WormBase',
+  circRNA                   => 'WormBase',
   transposable_element_gene => 'WormBase_transposon',
   Transposon_CDS            => 'WormBase_transposon',
   Transposon_Pseudogene     => 'WormBase_transposon',
