@@ -75,7 +75,7 @@ while (my $analysis = $it->next){
 		$json_obj{sampleType} = 'OBI:0000895'; # total RNA extract
 		$json_obj{assayType} = 'MMO:0000659'; # RNA-seq assay
 		$json_obj{taxonId} = $wormbase->ncbi_tax_id;
-		$json_obj{datasetId} = [$datasetId];
+		$json_obj{datasetIds} = [$datasetId];
 		$json_obj{sex}=lc($sample->Sex->name) if $sample->Sex;
 
 		sampleAge(\%json_obj,$sample) if $sample->Life_stage;
@@ -237,7 +237,7 @@ sub sampleAge{
 sub sampleLocation{
 	my ($jsonRef,$sample)=@_;
 	$jsonRef->{sampleLocation}=[];
-	map {push @{$jsonRef->{sampleLocation}},
+	map {push @{$jsonRef->{sampleLocations}},
 				{anatomicalStructureTermId => "WB:$_",
 				 anatomicalStructureUberonSlimTermIds => [{uberonTerm =>((keys %{$uberon{$_->name}})[0] || 'Other')}],
 				 whereExpressedStatement => ($_->Term->name || 'C.elegans Cell and Anatomy'),
