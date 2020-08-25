@@ -96,7 +96,7 @@ while (my $analysis = $it->next){
 	
 		my %json2_obj;
 		$json2_obj{datasetId}= {primaryId => $datasetId}; # required
-		$json2_obj{publication} = \@papers if @papers;
+		$json2_obj{publications} = \@papers if @papers;
 		$json2_obj{dateAssigned} = $timestamp; #required
 		$json2_obj{title} = ($analysis->Title->name ||"$analysis"); #required
 		$json2_obj{summary} = $analysis->Description->name if $analysis->Description;
