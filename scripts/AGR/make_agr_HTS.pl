@@ -82,7 +82,7 @@ while (my $analysis = $it->next){
 		sampleLocation(\%json_obj,$sample) if $sample->Tissue;
 
 		$json_obj{assayType}='MMO:0000659'; # RNA-seq assay
-		$json_obj{assemblyVersion}=[$assembly];
+		$json_obj{assemblyVersions}=[$assembly];
 		push @htps,\%json_obj;
 
 		# dataset
@@ -152,14 +152,14 @@ while (my $array = $it->next){
 	$json_obj{sampleTitle} = "WB:$sample";
 
 	$json_obj{taxonId} = $wormbase->ncbi_tax_id;
-	#	$json_obj{datasetId} = [$datasetId];
+	#	$json_obj{datasetIds} = [$datasetId];
 	$json_obj{sex}=lc($sample->Sex->name) if $sample->Sex;
 
 	sampleAge(\%json_obj,$sample) if ($sample->Life_stage);
 	sampleLocation(\%json_obj,$sample) if ($sample->Tissue);
 
 	$json_obj{assayType}='MMO:0000649'; # micro array
-	$json_obj{assemblyVersion}=$assembly;
+	$json_obj{assemblyVersions}=$assembly;
 	push @htps,\%json_obj;
 
 }
@@ -192,14 +192,14 @@ while (my $array = $it->next){
 		$json_obj{primaryId} = {sampleId => "WB:$s:$suffix"}; # required
 		$json_obj{sampleTitle} = "WB:$s:$suffix";
 		$json_obj{taxonId} = $wormbase->ncbi_tax_id;
-#		$json_obj{datasetId} = [$datasetId];
+#		$json_obj{datasetIds} = [$datasetId];
 		$json_obj{sex}=$s->Sex->name if $s->Sex;
 
                 sampleAge(\%json_obj,$s) if $s->Life_stage;
 		sampleLocation(\%json_obj,$s) if $s->Tissue;
 
 		$json_obj{assayType}='MMO:0000649'; # micro array
-		$json_obj{assemblyVersion}=$assembly;
+		$json_obj{assemblyVersions}=$assembly;
 		push @htps,\%json_obj;
 
 		$n++;
@@ -236,7 +236,7 @@ sub sampleAge{
 
 sub sampleLocation{
 	my ($jsonRef,$sample)=@_;
-	$jsonRef->{sampleLocation}=[];
+	$jsonRef->{sampleLocations}=[];
 	map {push @{$jsonRef->{sampleLocations}},
 				{anatomicalStructureTermId => "WB:$_",
 				 anatomicalStructureUberonSlimTermIds => [{uberonTerm =>((keys %{$uberon{$_->name}})[0] || 'Other')}],
