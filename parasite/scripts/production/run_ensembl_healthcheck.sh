@@ -17,10 +17,7 @@ else
 fi
 #PRINT_ANT=1 if you need
 export NO_JAR=1
-./run-configurable-testrunner.sh $(mysql-pan-prod details script) $($PARASITE_STAGING_MYSQL details suffix_1) \
-  --secondary.host $($PREVIOUS_PARASITE_STAGING_MYSQL host) \
-  --secondary.port $($PREVIOUS_PARASITE_STAGING_MYSQL port) \
-  --secondary.user $($PREVIOUS_PARASITE_STAGING_MYSQL user)\
+./run-configurable-testrunner.sh $(mysql-pan-prod details script) $($PARASITE_STAGING_MYSQL details suffix_1) $($PREVIOUS_PARASITE_STAGING_MYSQL details suffix_2) \
   --production.database ensembl_production_parasite \
   --output Info \
   "${ARGS[@]}"
