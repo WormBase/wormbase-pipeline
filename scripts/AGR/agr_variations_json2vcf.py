@@ -43,7 +43,7 @@ chrom2ncbi = {
 print "##fileformat=VCFv4.3"
 print datetime.datetime.today().strftime("##fileDate=%Y%m%d")
 print "##source=AllianceJSON"
-print "##INFO<ID=DP,Number=1,Type=Integer,Description=\"Total Depth\">"
+print "##INFO<ID=GT,Number=1,Type=String,Description=\"Genotype\">"
 headers = ['#CHROM','POS','ID','REF','ALT','QUAL','FILTER','INFO','FORMAT']
 
 with open(sys.argv[1], 'r') as read_file:
@@ -71,6 +71,6 @@ with open(sys.argv[1], 'r') as read_file:
                 refSeq = v["paddedBase"]+refSeq
                 varSeq = v["paddedBase"]+varSeq
                 pos = pos-1 # include the padding base in POS
-        print "\t".join([v["chromosome"], str(pos), v["alleleId"], refSeq, varSeq, '.', 'PASS', 'GT', gtString])
+        print "\t".join([v["chromosome"], str(pos), v["alleleId"], refSeq, varSeq, '.', 'PASS', '', 'GT', gtString])
 
 
