@@ -188,7 +188,10 @@ foreach my $sub_query (
     }
 
     # Back-to-mod xrefs
-    my @baseXrefs = qw(gene gene/expression gene/references gene/phenotypes);
+    my @baseXrefs = qw(gene gene/expression gene/references);
+    push @baseXrefs, 'gene/phenotypes' if
+	($obj->Allele and $obj->Allele->Phenotype) or
+	($obj->RNAi_result and $obj->RNAi_result->Phenotype);
     push @baseXrefs, 'gene/expression_images' if ($obj->Expr_pattern && grep {$_->Picture} $obj->Expr_pattern);
 
     push @xrefs, {
