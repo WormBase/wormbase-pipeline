@@ -44,7 +44,7 @@ print "##fileformat=VCFv4.3"
 print datetime.datetime.today().strftime("##fileDate=%Y%m%d")
 print "##source=AllianceJSON"
 print "##INFO<ID=DP,Number=1,Type=Integer,Description=\"Total Depth\">"
-headers = ['#CHROM','POS','ID','REF','ALT','QUAL','FILTER','INFO']
+headers = ['#CHROM','POS','ID','REF','ALT','QUAL','FILTER','INFO','FORMAT']
 
 with open(sys.argv[1], 'r') as read_file:
     parsed = json.load(read_file)
