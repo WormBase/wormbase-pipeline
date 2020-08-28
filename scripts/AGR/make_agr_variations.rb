@@ -217,7 +217,9 @@ Zlib::GzipReader.open(options.gff).each{|line|
 
   variation[:sequenceOfReferenceAccessionNumber]=chrom2ncbi[variation[:chromosome]]
   variation[:alleleId]=variation[:alleleId].prepend('WB:') # prefix it with WB:
-
+  
+  variation[:crossReferences] = [{:id => variation[:alleleId], :pages => ['allele']}]
+  
   variations.push(variation)
 }
 
