@@ -315,7 +315,7 @@ foreach my $gaf (@all_gaf_lines) {
       $nr_gaf_lines[-1]->{contributor} eq $gaf->{contributor} and
       $nr_gaf_lines[-1]->{go_code} eq $gaf->{go_code} and
       $nr_gaf_lines[-1]->{with_from} eq $gaf->{with_from} and
-      $nr_gad_lines[-1]->{qualifier} eq $gaf->{qualifier} and
+      $nr_gaf_lines[-1]->{qualifier} eq $gaf->{qualifier} and
       $nr_gaf_lines[-1]->{date} eq $gaf->{date}) {
     
     if ($debug) {
