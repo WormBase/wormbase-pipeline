@@ -195,7 +195,8 @@ while( my $obj = $it->next) {
 
     @inferred_genes = ();
   } else {
-    die "Could not identify a central object for the annotation from Disease_model_annotation ${\$obj->name}\n";
+    warn "Could not identify a central object for the annotation from Disease_model_annotation ${\$obj->name}\n";
+    next;
   }
 
   my $assoc_rel = {
