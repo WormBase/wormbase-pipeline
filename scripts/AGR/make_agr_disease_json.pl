@@ -169,10 +169,15 @@ while( my $obj = $it->next) {
     push @with_list, "WBVar:" . $allele->name if (defined $allele && $build);
     
   } elsif (defined $allele) {
-    $obj_type = "allele";
-    $obj_name = $allele->Public_name->name;
-    $assoc_type = 'is_implicated_in';
-    $obj_id = 'WB:' . $allele->name;
+    if ($allele->Public_name){
+	    $obj_type = "allele";
+	    $obj_name = $allele->Public_name->name;
+	    $assoc_type = 'is_implicated_in';
+	    $obj_id = 'WB:' . $allele->name;
+    }else{
+	    warn "$allele is missing a public name. Skipping ${\$obj->name}\n";
+	    next;
+    }
 
     # WB/CalTech specific changes to the format
     push @with_list, "WB:" . $gene->name if (defined $gene && $build);
