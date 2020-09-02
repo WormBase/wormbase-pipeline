@@ -115,7 +115,7 @@ my $t = localtime;
 $log->write_to("$t - Processing Genes\n") if $debug;
 # Gene / Diseases
 my $it = $db->fetch_many( -query => 
-	'find Gene WBGene*;Species="'.$wormbase->long_name.'";Disease_relevance OR Experimental_model'
+	'find Gene WBGene*;Species="'.$wormbase->long_name.'";Disease_relevance OR Experimental_model OR Models_disease_in_annotation OR Modifies_disease_in_annotation'
 );
 while (my $g = $it->next){
    my @papers;
@@ -125,6 +125,9 @@ while (my $g = $it->next){
    if ($g->Experimental_model){
 	   push @papers, grep {$_->class eq 'Paper'} $g->get('Experimental_model',4);
    }
+   push @papers, $g->Modifies_disease_in_annotation->Paper_evidence if $g->Modifies_disease_in_annotation;
+   push @papers, $g->Models_disease_in_annotation->Paper_evidence if $g->Models_disease_in_annotation;
+
    map {$geneHash{"$g"}->{"$_"}->{Disease}=1} @papers;
 }
 
