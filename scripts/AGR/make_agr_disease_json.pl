@@ -149,6 +149,7 @@ while( my $obj = $it->next) {
   my ($allele) = $obj->Variation;
   my ($transgene) = $obj->Transgene;
   my ($gene) = $obj->Disease_relevant_gene;
+  my ($genotype) = $obj->Genotype;
   my (@inferred_genes) = map { 'WB:'.$_->name } $obj->Inferred_gene;
   my ($obj_id, $obj_name, $obj_type, $assoc_type);
   my (@with_list) = map {'WB:'.$_->name} ($obj->Interacting_variation,$obj->Interacting_gene,$obj->Interacting_transgene);
@@ -199,6 +200,10 @@ while( my $obj = $it->next) {
     $obj_id = 'WB:' . $gene->name;
 
     @inferred_genes = ();
+  } elsif (defined $genotype){
+	  $obj_type = 'genotype';
+	  $obj_name = "${\$genotype->Genotype_name}";
+	  $obj_id = 'WB:' . $genotype->name;
   } else {
     warn "Could not identify a central object for the annotation from Disease_model_annotation ${\$obj->name}\n";
     next;
