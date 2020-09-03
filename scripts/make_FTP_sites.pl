@@ -157,7 +157,7 @@ my $maintainers = "All";
 
 my $targetdir = ($testout) 
     ? "$testout/releases/$WS_version_name"
-    : $wormbase->ftp_staging . "/releases/$WS_version_name";
+    : $wormbase->ftp_site . "/releases/.${WS_version_name}";
 
 $log->write_to("WRITING TO $targetdir\n");
 
