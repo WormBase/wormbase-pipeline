@@ -201,7 +201,7 @@ Zlib::GzipReader.open(options.gff).each{|line|
 
 	  gffAlleles = cols[8][/substitution=([^;]+)/,1].split('/')
 	  from = gffAlleles[0]
-	  to = gffAlleles[1]
+	  to = gffAlleles[1].chomp
 
 	  # all alleles should be on forward strand, appears some strands mislabeled in GFF
 	  if ref.eql?(from)
