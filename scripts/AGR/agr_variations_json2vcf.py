@@ -32,7 +32,7 @@ def get_header_info(gff):
             elif line.startswith('#!assembly'):
                 assembly = columns[-1]
         else:
-            break
+            return assembly, chr_lengths
     return assembly, chr_lengths
                 
             
