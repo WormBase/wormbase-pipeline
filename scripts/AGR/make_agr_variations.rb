@@ -214,7 +214,8 @@ Zlib::GzipReader.open(options.gff).each{|line|
               t.complement!
 			  variation[:genomicVariantSequence] = t.to_s.upcase
 		  else
-			  abort("GFF allele doesn't match ref for " + variation[:alleleId])
+			  STDERR.puts "GFF allele doesn't match ref for " + variation[:alleleId]) + ': ' + ref + ' (' + from + '/' + to + ')'
+			  next
 		  end
 	  end
 
