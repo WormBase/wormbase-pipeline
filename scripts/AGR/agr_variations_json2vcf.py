@@ -112,5 +112,5 @@ with open(args.json, 'r') as read_file:
 
         vcf_lines.append(vcf_data)
 
-    for v in sorted(vcf_lines, key=operator.itemgetter('chromosome', 'start')):
+    for v in sorted(vcf_lines, key=operator.itemgetter('chromosome', 'pos')):
         print v["line"]
