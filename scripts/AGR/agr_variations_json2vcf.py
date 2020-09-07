@@ -5,7 +5,7 @@
 
 import json
 import datetime
-import sys
+import argparse
 import operator
 
 
@@ -20,6 +20,21 @@ def genotype_string(variation, allStrains):
             genotypes.append('./.')
 
     return "\t".join(genotypes)
+
+def get_header_info(gff):
+    chr_lengths = {}
+    with open(gff, 'r') as file:
+        line = file.readline()
+        if line.startswith('#'):
+            columns = line.split()
+            if line.startswith('##sequence-region'):
+                chr_lengths[columns[1]] = columns[3]
+            elif line.startswith('#!assembly'):
+                assembly = columns[-1]
+        else:
+            break
+    return assembly, chr_lengths
+                
             
 def get_strains(variations):
     strains = set()
@@ -28,6 +43,8 @@ def get_strains(variations):
             strains.add(strain)
     return tuple(sorted(strains))
 
+
+chromosomes = ('I', 'II', 'III', 'IV', 'V', 'X', 'MtDNA');
 
 chrom2ncbi = {
 	'I': 'RefSeq:NC_003279.8',
@@ -39,14 +56,26 @@ chrom2ncbi = {
 	'MtDNA': 'RefSeq:NC_001328.1',
 }
 
+parser = argparse.ArgumentParser()
+parser.add_argument("-j", "--json", help="JSON input file")
+parser.add_argument("-g", "--gff", help="Corresponding GFF file")
+
+args = parse.parse_args()
+
+assembly, chr_lengths = get_header_info(args.gff)
 
 print "##fileformat=VCFv4.3"
 print datetime.datetime.today().strftime("##fileDate=%Y%m%d")
+print "##reference=" + assembly
 print "##source=AllianceJSON"
-print "##INFO<ID=GT,Number=1,Type=String,Description=\"Genotype\">"
+
+for chr in chromosomes:
+    print "##contig=<ID=" + chr + ",length=" + chr_lengths[chr] + ">"
+
+print "##FORMAT<ID=GT,Number=1,Type=String,Description=\"Genotype\">"
 headers = ['#CHROM','POS','ID','REF','ALT','QUAL','FILTER','INFO','FORMAT']
 
-with open(sys.argv[1], 'r') as read_file:
+with open(args.json, 'r') as read_file:
     parsed = json.load(read_file)
 
     # get all strains for column headers
@@ -71,6 +100,6 @@ with open(sys.argv[1], 'r') as read_file:
                 refSeq = v["paddedBase"]+refSeq
                 varSeq = v["paddedBase"]+varSeq
                 pos = pos-1 # include the padding base in POS
-        print "\t".join([v["chromosome"], str(pos), v["alleleId"], refSeq, varSeq, '.', 'PASS', '', 'GT', gtString])
+        print "\t".join([v["chromosome"], str(pos), v["alleleId"], refSeq, varSeq, '.', 'PASS', '.', 'GT', gtString])
 
 
