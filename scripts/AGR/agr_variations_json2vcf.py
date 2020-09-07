@@ -44,7 +44,7 @@ def get_strains(variations):
     return tuple(sorted(strains))
 
 
-chromosomes = ('I', 'II', 'III', 'IV', 'V', 'X', 'MtDNA');
+chromosomes = ('I', 'II', 'III', 'IV', 'V', 'X', 'MtDNA')
 
 chrom2ncbi = {
 	'I': 'RefSeq:NC_003279.8',
@@ -60,7 +60,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-j", "--json", help="JSON input file")
 parser.add_argument("-g", "--gff", help="Corresponding GFF file")
 
-args = parse.parse_args()
+args = parser.parse_args()
 
 assembly, chr_lengths = get_header_info(args.gff)
 
