@@ -196,7 +196,8 @@ Zlib::GzipReader.open(options.gff).each{|line|
 
 	  next unless variation[:start] == variation[:end] # only allow single bp delin "substitutions" due to AGR limitations
 
-	  variation[:genomicReferenceSequence] = chromosomes[cols[0]].subseq(variation[:start],variation[:end])
+	  ref = chromosomes[cols[0]].subseq(variation[:start],variation[:end])
+	  variation[:genomicReferenceSequence] = ref
 
 	  gffAlleles = cols[8][/substitution=([^;]+)/,1].split('/')
 	  from = gffAlleles[0]
@@ -213,7 +214,7 @@ Zlib::GzipReader.open(options.gff).each{|line|
               t.complement!
 			  variation[:genomicVariantSequence] = t.to_s.upcase
 		  else
-			  abort("GFF allele doesn't match ref or revcom(ref) for " + variation[:alleleId])
+			  abort("GFF allele doesn't match ref for " + variation[:alleleId])
 		  end
 	  end
 
