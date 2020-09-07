@@ -134,18 +134,18 @@ if ($test) {
 #############################################################################
 # Step 5: remove very old data from DATABASE directory
 #############################################################################
-print STDERR "Removing old releases\n";
-for(my $ws = $WS_current - 5; $ws >=1 ; $ws--) {
-  my $old_name = "WS{$ws}";
-  my $old_path = $wormbase->wormpub . "/DATABASES/$old_name";
-  if (-d $old_path) {
-    if ($test) {
-      print STDERR "TEST: would have deleted $old_path\n";
-    } else {
-      $wormbase->run_command("rm -fr $old_path", 'no_log');
-    }
-  }
-}
+#print STDERR "Removing old releases\n";
+#for(my $ws = $WS_current - 5; $ws >=1 ; $ws--) {
+#  my $old_name = "WS{$ws}";
+#  my $old_path = $wormbase->wormpub . "/DATABASES/$old_name";
+#  if (-d $old_path) {
+#    if ($test) {
+#      print STDERR "TEST: would have deleted $old_path\n";
+#    } else {
+#      $wormbase->run_command("rm -fr $old_path", 'no_log');
+#    }
+#  }
+#}
 
 #############################################################################
 # Step 6: zip up files from remaining old directories
