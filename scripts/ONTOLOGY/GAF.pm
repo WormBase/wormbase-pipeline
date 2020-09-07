@@ -34,7 +34,7 @@ sub print_wormbase_GAF_line {
 ####################################
 sub print_wormbase_GAF_header {
   my ($fh,$version) = @_;
-  $version||='2.0'
+  $version||='2.0';
 
   print $fh "\!gaf-version: $version\n";
   print $fh "\!Project_name: WormBase\n";

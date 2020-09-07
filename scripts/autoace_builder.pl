@@ -623,22 +623,22 @@ sub build_release {
 sub go_public {
 
   my $ftp_release_dir = $wormbase->ftp_site . "/releases";
-  my $ftp_staging_dir = $wormbase->ftp_site . "/staging/releases";
+#  my $ftp_staging_dir = $wormbase->ftp_site . "/staging/releases";
   my $db_dir = $wormbase->wormpub . "/DATABASES";
   my $rel   = $wormbase->get_wormbase_version_name;
   
-  if (not -d "$ftp_staging_dir/$rel") {
-    $log->log_and_die("Did not find $ftp_staging_dir/$rel. Something wrong. Not going public\n");
+  if (not -d "$ftp_release_dir/.${rel}") {
+    $log->log_and_die("Did not find $ftp_release_dir/.${rel} Something wrong. Not going public\n");
   }
   if (not -d "$db_dir/$rel") {
-    $log->log_and_die("Did not find $db_dir/$rel. Something wrong. Not going public\n");
+    $log->log_and_die("Did not find $db_dir/$rel Something wrong. Not going public\n");
   }
-  if (not -e "$ftp_staging_dir/$rel/letter.$rel") {
-    $log->log_and_die("Did not find $ftp_staging_dir/$rel/letter.$rel. Something wrong. Not going public\n");
+  if (not -e "$ftp_release_dir/.${rel}/letter.$rel") {
+    $log->log_and_die("Did not find $ftp_release_dir/.${rel}/letter.$rel Something wrong. Not going public\n");
   }
   
   $log->write_to("Moving the release folder from staging to live\n");
-  $wormbase->run_command("mv $ftp_staging_dir/$rel $ftp_release_dir/", $log) 
+  $wormbase->run_command("mv $ftp_release_dir/.${rel} $ftp_release_dir/$rel", $log) 
       and $log->log_and_die("Failed to mv release folder into place - aborting\n");
   
   $log->write_to("Updating the current_development symlink\n");

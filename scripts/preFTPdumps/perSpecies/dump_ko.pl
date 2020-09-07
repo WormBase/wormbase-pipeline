@@ -44,7 +44,7 @@ $log->write_to("dumping ".(scalar $jeff->get_alleles)." knockout consortium alle
 
 $outfile = $wormbase->reports . '/knockout_consortium_alleles.xml'
     if not defined $outfile;
-my $outfh = new IO::File "| tidy -xml > $outfile";
+my $outfh = new IO::File "| tidy -i -xml > $outfile";
 
 $jeff->print_alleles($outfh);
 $outfh->close;

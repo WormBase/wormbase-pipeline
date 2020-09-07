@@ -157,7 +157,7 @@ my $maintainers = "All";
 
 my $targetdir = ($testout) 
     ? "$testout/releases/$WS_version_name"
-    : $wormbase->ftp_staging . "/releases/$WS_version_name";
+    : $wormbase->ftp_site . "/releases/.${WS_version_name}";
 
 $log->write_to("WRITING TO $targetdir\n");
 
@@ -477,7 +477,7 @@ sub copy_gff_files{
     my $cur_ver_label = sprintf("%s.%s.WS%d", $g_species, $bioproj, $WS_version);
 
     my $prev_ver_gff3_file = sprintf("%s/releases/WS%d/species/%s/%s/%s.%s.WS%s.annotations.gff3.gz", 
-                                     $wormbase->ftp_staging,
+                                     $wormbase->ftp_site,
                                      $WS_version - 1,
                                      $g_species,
                                      $bioproj,
@@ -1209,6 +1209,7 @@ sub make_md5sums {
   while(<FIND>) {
     chomp;
     s/^$targetdir\///;
+    if (-d $_) {next}
     push @files, $_;
   }
 
