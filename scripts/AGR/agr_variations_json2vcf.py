@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# based on 
+# based on
 #       * VCF v4.3 (http://samtools.github.io/hts-specs/VCFv4.3.pdf)
 #       * AGR JSON 1.0.1.3 (https://docs.google.com/document/d/1yAECtOs1VCEs3mhplJMXqg1akBQJyJbjPnvG2RrE5Aw/edit)
 
@@ -21,6 +21,7 @@ def genotype_string(variation, allStrains):
 
     return "\t".join(genotypes)
 
+
 def get_header_info(gff):
     chr_lengths = {}
     assembly = ''
@@ -36,9 +37,9 @@ def get_header_info(gff):
             else:
                 return assembly, chr_lengths
             line = f.readline()
-    return assembly, chr_lengths
-                
-            
+    return assembly, chr_length
+
+
 def get_strains(variations):
     strains = set()
     for variation in variations:
@@ -50,13 +51,13 @@ def get_strains(variations):
 chromosomes = ('I', 'II', 'III', 'IV', 'V', 'X', 'MtDNA')
 
 chrom2ncbi = {
-	'I': 'RefSeq:NC_003279.8',
-	'II': 'RefSeq:NC_003280.10',
-	'III': 'RefSeq:NC_003281.10',
-	'IV': 'RefSeq:NC_003282.8',
-	'V': 'RefSeq:NC_003283.11',
-	'X': 'RefSeq:NC_003284.9',
-	'MtDNA': 'RefSeq:NC_001328.1',
+    'I': 'RefSeq:NC_003279.8',
+    'II': 'RefSeq:NC_003280.10',
+    'III': 'RefSeq:NC_003281.10',
+    'IV': 'RefSeq:NC_003282.8',
+    'V': 'RefSeq:NC_003283.11',
+    'X': 'RefSeq:NC_003284.9',
+    'MtDNA': 'RefSeq:NC_001328.1',
 }
 
 parser = argparse.ArgumentParser()
@@ -75,7 +76,8 @@ for chr in chromosomes:
     print "##contig=<ID=" + chr + ",length=" + chr_lengths[chr] + ">"
 
 print "##FORMAT<ID=GT,Number=1,Type=String,Description=\"Genotype\">"
-headers = ['#CHROM','POS','ID','REF','ALT','QUAL','FILTER','INFO','FORMAT']
+headers = ['#CHROM', 'POS', 'ID', 'REF',
+           'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT']
 
 with open(args.json, 'r') as read_file:
     parsed = json.load(read_file)
@@ -83,17 +85,18 @@ with open(args.json, 'r') as read_file:
     # get all strains for column headers
     strains = get_strains(parsed["data"])
     for s in strains:
-        headers.append('WB:' + s) # need curie form of strain
+        headers.append('WB:' + s)  # need curie form of strain
     print "\t".join(headers)
-    
-    for v in sorted(parsed["data"],key=operator.itemgetter('chromosome','start')):
 
-        refSeq   = "" if v["genomicReferenceSequence"]=="N/A" else v["genomicReferenceSequence"]
-        varSeq   = "" if v["genomicVariantSequence"]  =="N/A" else v["genomicVariantSequence"]
-        pos      = int(v["start"])
-        gtString = genotype_string(v, strains) 
+    vcf_lines = []
+    for v in sorted(parsed["data"], key=operator.itemgetter('chromosome', 'start')):
+        vcf_data = {}
 
-        
+        refSeq = "" if v["genomicReferenceSequence"] == "N/A" else v["genomicReferenceSequence"]
+        varSeq = "" if v["genomicVariantSequence"] == "N/A" else v["genomicVariantSequence"]
+        pos = int(v["start"])
+        gtString = genotype_string(v, strains)
+
         if 'paddedBase' in v.keys():
             if pos == 1:
                 refSeq = refSeq+v["paddedBase"]
@@ -101,7 +104,13 @@ with open(args.json, 'r') as read_file:
             else:
                 refSeq = v["paddedBase"]+refSeq
                 varSeq = v["paddedBase"]+varSeq
-                pos = pos-1 # include the padding base in POS
-        print "\t".join([v["chromosome"], str(pos), v["alleleId"], refSeq, varSeq, '.', 'PASS', '.', 'GT', gtString])
+                pos = pos-1  # include the padding base in POS
+        vcf_data["chromosome"] = v["chromosome"]
+        vcf_data["pos"] = pos
+        vcf_data["line"] = "\t".join([v["chromosome"], str(
+            pos), v["alleleId"], refSeq, varSeq, '.', 'PASS', '.', 'GT', gtString])
 
+        vcf_lines.append(vcf_data)
 
+    for v in sorted(vcf_lines, key=operator.itemgetter('chromosome', 'start')):
+        print v["line"]
