@@ -24,16 +24,18 @@ def genotype_string(variation, allStrains):
 def get_header_info(gff):
     chr_lengths = {}
     assembly = ''
-    with open(gff, 'r') as file:
-        line = file.readline()
-        if line.startswith('#'):
-            columns = line.split()
-            if line.startswith('##sequence-region'):
-                chr_lengths[columns[1]] = columns[3]
-            elif line.startswith('#!assembly'):
-                assembly = columns[-1]
-        else:
-            return assembly, chr_lengths
+    with open(gff, 'r') as f:
+        line = f.readline()
+        while line:
+            if line.startswith('#'):
+                columns = line.split()
+                if line.startswith('##sequence-region'):
+                    chr_lengths[columns[1]] = columns[3]
+                elif line.startswith('#!assembly'):
+                    assembly = columns[-1]
+            else:
+                return assembly, chr_lengths
+            line = f.readline()
     return assembly, chr_lengths
                 
             
@@ -62,7 +64,6 @@ parser.add_argument("-j", "--json", help="JSON input file")
 parser.add_argument("-g", "--gff", help="Corresponding GFF file")
 
 args = parser.parse_args()
-
 assembly, chr_lengths = get_header_info(args.gff)
 
 print "##fileformat=VCFv4.3"
