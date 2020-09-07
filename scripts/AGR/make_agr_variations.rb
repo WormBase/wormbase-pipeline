@@ -203,16 +203,16 @@ Zlib::GzipReader.open(options.gff).each{|line|
 	  to = gffAlleles[1]
 
 	  # all alleles should be on forward strand, appears some strands mislabeled in GFF
-	  if ref.eql?(from):
+	  if ref.eql?(from)
 		  variation[:genomicVariantSequence] = to
-	  else:
+	  else
 		  f = Bio::Sequence::NA.new(from)
 		  f.complement!
-		  if ref.eql?(f.to_s.upcase):
+		  if ref.eql?(f.to_s.upcase)
 			  t = Bio::Sequence::NA.new(to)
               t.complement!
 			  variation[:genomicVariantSequence] = t.to_s.upcase
-		  else:
+		  else
 			  abort("GFF allele doesn't match ref or revcom(ref) for " + variation[:alleleId])
 		  end
 	  end
