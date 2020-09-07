@@ -23,6 +23,7 @@ def genotype_string(variation, allStrains):
 
 def get_header_info(gff):
     chr_lengths = {}
+    assembly = ''
     with open(gff, 'r') as file:
         line = file.readline()
         if line.startswith('#'):
