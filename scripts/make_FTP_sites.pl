@@ -1209,6 +1209,7 @@ sub make_md5sums {
   while(<FIND>) {
     chomp;
     s/^$targetdir\///;
+    if (-d $_) {next}
     push @files, $_;
   }
 
