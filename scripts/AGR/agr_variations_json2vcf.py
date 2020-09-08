@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # based on
-#       * VCF v4.3 (http://samtools.github.io/hts-specs/VCFv4.3.pdf)
+#       * VCF v4.2 (http://samtools.github.io/hts-specs/VCFv4.2.pdf)
 #       * AGR JSON 1.0.1.3 (https://docs.google.com/document/d/1yAECtOs1VCEs3mhplJMXqg1akBQJyJbjPnvG2RrE5Aw/edit)
 
 import json
@@ -67,7 +67,7 @@ parser.add_argument("-g", "--gff", help="Corresponding GFF file")
 args = parser.parse_args()
 assembly, chr_lengths = get_header_info(args.gff)
 
-print "##fileformat=VCFv4.3"
+print "##fileformat=VCFv4.2"
 print datetime.datetime.today().strftime("##fileDate=%Y%m%d")
 print "##reference=" + assembly
 print "##source=AllianceJSON"
