@@ -7,15 +7,19 @@ import json
 import datetime
 import argparse
 import operator
+import re
 
 
-def genotype_string(variation, allStrains):
+def genotype_string(variation, allStrains, zygosity):
     variationStrains = set(variation["strains"])
     genotypes = []
 
     for s in allStrains:
         if s in variationStrains:
-            genotypes.append('1/1')
+            if zygosity == 'homozygous':
+                genotypes.append('1/1')
+            else:
+                genotypes.append('1/2')
         else:
             genotypes.append('./.')
 
@@ -60,24 +64,39 @@ chrom2ncbi = {
     'MtDNA': 'RefSeq:NC_001328.1',
 }
 
+expand_iupac = {
+    'R': 'A,G',
+    'Y': 'C,T',
+    'S': 'C,G',
+    'W': 'A,T',
+    'K': 'G,T',
+    'M': 'A,C',
+}
+
 parser = argparse.ArgumentParser()
 parser.add_argument("-j", "--json", help="JSON input file")
 parser.add_argument("-g", "--gff", help="Corresponding GFF file")
+parser.add_argument("-o", "--out", help="Output VCF file")
 
 args = parser.parse_args()
 assembly, chr_lengths = get_header_info(args.gff)
 
-print "##fileformat=VCFv4.2"
-print datetime.datetime.today().strftime("##fileDate=%Y%m%d")
-print "##reference=" + assembly
-print "##source=AllianceJSON"
+vcf_file = open(args.out, 'w')
+
+vcf_file.write("##fileformat=VCFv4.2\n" +
+               datetime.datetime.today().strftime("##fileDate=%Y%m%d") + "\n" +
+               "##reference=" + assembly + "\n" +
+               "##source=AllianceJSON\n")
 
 for chr in chromosomes:
-    print "##contig=<ID=" + chr + ",length=" + chr_lengths[chr] + ">"
+    vcf_file.write("##contig=<ID=" + chr + ",length=" + chr_lengths[chr] + ">\n")
 
-print "##FORMAT<ID=GT,Number=1,Type=String,Description=\"Genotype\">"
+vcf_file.write("##FORMAT<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n")
+
 headers = ['#CHROM', 'POS', 'ID', 'REF',
            'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT']
+
+nt_regex = re.compile('^[ACGT]$')
 
 with open(args.json, 'r') as read_file:
     parsed = json.load(read_file)
@@ -86,17 +105,17 @@ with open(args.json, 'r') as read_file:
     strains = get_strains(parsed["data"])
     for s in strains:
         headers.append('WB:' + s)  # need curie form of strain
-    print "\t".join(headers)
+    vcf_file.write("\t".join(headers) + "\n")
 
     vcf_lines = []
-    for v in sorted(parsed["data"], key=operator.itemgetter('chromosome', 'start')):
+    for v in (parsed["data"]):
         vcf_data = {}
 
         refSeq = "" if v["genomicReferenceSequence"] == "N/A" else v["genomicReferenceSequence"]
         varSeq = "" if v["genomicVariantSequence"] == "N/A" else v["genomicVariantSequence"]
         pos = int(v["start"])
-        gtString = genotype_string(v, strains)
-
+        zygosity = 'homozygous'
+        
         if 'paddedBase' in v.keys():
             if pos == 1:
                 refSeq = refSeq+v["paddedBase"]
@@ -107,10 +126,24 @@ with open(args.json, 'r') as read_file:
                 pos = pos-1  # include the padding base in POS
         vcf_data["chromosome"] = v["chromosome"]
         vcf_data["pos"] = pos
+
+        if len(varSeq) == 1:
+            if nt_regex.match(varSeq) is None:
+                if varSeq in expand_iupac.keys():
+                    varSeq = expand_iupac[varSeq]
+                    zygosity = 'heterozygous'
+                else:
+                    print("Unrecognised alternative allele " + varSeq, file=sys.stderr)
+                    break
+        
+        gtString = genotype_string(v, strains, zygosity)
+        
         vcf_data["line"] = "\t".join([v["chromosome"], str(
             pos), v["alleleId"], refSeq, varSeq, '.', 'PASS', '.', 'GT', gtString])
 
         vcf_lines.append(vcf_data)
 
     for v in sorted(vcf_lines, key=operator.itemgetter('chromosome', 'pos')):
-        print v["line"]
+        vcf_file.write(v["line"] + "\n")
+
+    vcf_file.close()
