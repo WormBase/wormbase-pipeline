@@ -6,7 +6,7 @@
 set -x
 set -euo pipefail
 
-STAGING_DIR=/nfs/nobackup/ensemblgenomes/wormbase/parasite/production/dumps/WBPS${PARASITE_VERSION}/biomart/WBPS${PARASITE_VERSION}
+STAGING_DIR=${PARASITE_SCRATCH}/dumps/WBPS${PARASITE_VERSION}/biomart/WBPS${PARASITE_VERSION}
 RELEASE_DIR=/nfs/ftp/pub/databases/wormbase/collaboration/UTE/WBPS${PARASITE_VERSION}
 
 
