@@ -207,16 +207,8 @@ Zlib::GzipReader.open(options.gff).each{|line|
 	  if ref.eql?(from)
 		  variation[:genomicVariantSequence] = to
 	  else
-		  f = Bio::Sequence::NA.new(from)
-		  f.complement!
-		  if ref.eql?(f.to_s.upcase)
-			  t = Bio::Sequence::NA.new(to)
-              t.complement!
-			  variation[:genomicVariantSequence] = t.to_s.upcase
-		  else
-			  STDERR.puts "GFF allele doesn't match ref for " + variation[:alleleId] + ': ' + ref + ' (' + from + '/' + to + ')'
-			  next
-		  end
+	          STDERR.puts "GFF allele doesn't match ref for " + variation[:alleleId] + ': ' + ref + ' (' + from + '/' + to + ')'
+		  next
 	  end
 
 	  if to.length == 1 # WS276 hack for the missing term, so if from is 1bp and to is 1bp it is a point mutation
