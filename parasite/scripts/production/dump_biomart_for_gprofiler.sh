@@ -30,7 +30,8 @@ sudo -u wormbase mkdir -pv $RELEASE_DIR/biomart
 sudo -u wormbase rsync -av --delete $STAGING_DIR/ $RELEASE_DIR/biomart/
 
 perl -MProductionMysql -E '
-my $m = "^(trichinella_pseudospiralis)_(iss[0-9]+)(prjna257433)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$|^(.*?)_(.{1,5}).*?_(.*?)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$|^()([a-z])[^_]+_([^_]+)_core_.*\$" ;
+my $m = "^(trichinella_pseudospiralis)_(iss[0-9]+)(prjna257433)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$|^(steinernema_carpocapsae)_(v[0-9]+)(prjna202318)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$|^(.*?)_(.{1,5}).*?_(.*?)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$|^()([a-z])[^_]+_([^_]+)_core_.*\$" ;
+
 my %core_db_to_biomart_name;
 my %bps;
 for my $core_db (ProductionMysql->staging->core_databases) {
