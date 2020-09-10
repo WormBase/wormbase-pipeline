@@ -600,7 +600,6 @@ sub post_merge_steps {
 sub ontologies {
   $wormbase->run_script( "ONTOLOGY/make_anatomy_GAF.pl", $log);
   $wormbase->run_script( "ONTOLOGY/make_phenotype_GAF.pl", $log);
-  $wormbase->run_script( "ONTOLOGY/make_disease_GAF.pl", $log);
   $wormbase->run_script( "ONTOLOGY/make_lifestage_GAF.pl", $log);
   $wormbase->run_script( "ONTOLOGY/make_GO_GAF.pl", $log);
   $wormbase->run_script( "ONTOLOGY/get_easy_phenotypes.pl", $log);
