@@ -106,7 +106,7 @@ class TableMaker
                         end
 			if !c[1].empty?
 				results[c[0]]["paper"]||=Hash.new # WBPaperXXX
-				results[c[0]]["paper"][c[1]] = c[2] || 'n/a' # PubmedID
+				results[c[0]]["paper"][c[1]] = (c[2].nil? or c[2].empty?) ? 'n/a' : c[2] # PubmedID
 			end
 			if c[3]
 				results[c[0]][:strains]||=[] # WBStrains
