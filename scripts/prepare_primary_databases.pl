@@ -19,9 +19,7 @@ use File::Path;
 # prepare primary databases                                                     #
 #################################################################################
 my %search_places = (
-                     elegans => [['citace', 'caltech', 'citace*'],
-                                 #['stlace', 'stl',     'stlace*'],
-                                 #['cshace', 'csh',     'cshl*'],
+                     elegans => [['citace', 'citace', 'citace*'],
                                  ],
 );
 
