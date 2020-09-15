@@ -100,7 +100,7 @@ INT: while (my $obj = $it->next) {
 
   foreach my $g ($obj->Interactor_overlapping_gene) {
     my $gn      = $g->name;
-    unless ($g->Pulic_name) {
+    unless ($g->Public_name) {
 	warn "Skipping $obj - no public name\n";
 	next;
     }
