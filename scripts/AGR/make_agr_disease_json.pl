@@ -102,7 +102,7 @@ while( my $obj = $it->next) {
   $evi_date = sprintf('%4d-%02d-%02dT00:00:00+00:00', $y, $m, $d);
 
   my ($paper) = &get_paper( $obj->Paper_evidence );
-  my @evi_codes = map { $go2eco{$_->name} } $obj->Evidence_code;
+  my @evi_codes = map { $go2eco{$_->right} } $obj->Evidence_code;
 
   # [200507 mh6]
   # the crossReference should be annotation specific, but as the id changes every release the 
