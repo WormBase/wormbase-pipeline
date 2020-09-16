@@ -207,7 +207,7 @@ while( my $obj = $it->next) {
     next;
   }
 
-  $assoc_type = $obj->Association_type->name if $obj->Association_type;
+  $assoc_type = $obj->Association_type->name if $obj->Association_type and !defined $strain;
   
   my $assoc_rel = {
     associationType => $assoc_type,
