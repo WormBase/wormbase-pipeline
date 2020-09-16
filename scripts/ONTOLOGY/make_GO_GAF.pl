@@ -154,15 +154,32 @@ foreach my $suf (0..9) {
     
     # qualifier (Annotation_relation)
     my @annot_rel;
+    # interpro defaults based on Kimberly
+    if ($obj->Motif){
+	    my $type;
+	    if ("${\$obj->GO_term->Type}" eq 'Molecular_function'){
+		    $type = 'enables';
+	    }elsif("${\$obj->GO_term->Type}" eq 'Biological_process'){
+		    $type = 'involved_in';
+	    }elsif("${\$obj->GO_term->Type}" eq 'Cellular_component'){
+                    if (grep {"$_" eq 'GO:0032991'} $obj->GO_term->Ancestor){
+			    $type = 'part_of';
+		    }else{
+			    $type = 'located_in';
+		    }
+	    }
+	    $gaf_line->{qualifier} = $type if $type;
+    }
+    
     if ($obj->Annotation_relation_not) {
       push @annot_rel, "NOT";
       my $al = $obj->Annotation_relation_not->Name;
       $al =~ s/\s+/_/; 
       if ($al eq 'colocalizes_with' or
           $al eq 'contributes_to') {
-        push @annot_rel, $al;
+        push @annot_rel, "$al";
       }
-      $gaf_line->{qualifier} = 'NOT|'.$obj->Annotation_relation_not->name;
+      $gaf_line->{qualifier} = 'NOT|'.$obj->Annotation_relation_not->Name;
     }
     if ($obj->Annotation_relation) {
       my $al = $obj->Annotation_relation->Name;
@@ -171,11 +188,18 @@ foreach my $suf (0..9) {
           $al eq 'contributes_to') {
         push @annot_rel, $al;
       }
-      $gaf_line->{qualifier} = $obj->Annotation_relation->name;
+      $gaf_line->{qualifier} = "${\$obj->Annotation_relation->Name}";
     }
 
-#   $gaf_line->{qualifier} = join("|", @annot_rel);
-    
+    # special for WS278, data should be fixed for release WS279+
+    unless($gaf_line->{qualifier}){
+	    if ($obj->GO_code->name =~/^(IMP|IGI)$/){
+		    $gaf_line->{qualifier} = 'acts_upstream_of_or_within';
+	    }elsif($obj->GO_code->name =~/^(IDA|ND)$/){
+		    $gaf_line->{qualifier} = 'located_in';
+	    }
+    }
+
     # Reference
     my @reference;
     if ($obj->Reference) {
