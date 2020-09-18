@@ -179,7 +179,7 @@ foreach my $suf (0..9) {
           $al eq 'contributes_to') {
         push @annot_rel, "$al";
       }
-      $gaf_line->{qualifier} = 'NOT|'.$obj->Annotation_relation_not->Name;
+      $gaf_line->{qualifier} = 'NOT|'.$al;
     }
     if ($obj->Annotation_relation) {
       my $al = $obj->Annotation_relation->Name;
@@ -188,7 +188,7 @@ foreach my $suf (0..9) {
           $al eq 'contributes_to') {
         push @annot_rel, $al;
       }
-      $gaf_line->{qualifier} = "${\$obj->Annotation_relation->Name}";
+      $gaf_line->{qualifier} = "$al";
     }
 
     # special for WS278, data should be fixed for release WS279+
@@ -200,6 +200,23 @@ foreach my $suf (0..9) {
 	    }
     }
 
+    # that is another bit, that exists only temporary until upstream sorts out the annotation
+    if ($obj->GO_term){
+	    my $type;
+	    if ("${\$obj->GO_term->Type}" eq 'Molecular_function'){
+		    $type = 'enables';
+	    }elsif("${\$obj->GO_term->Type}" eq 'Biological_process'){
+		    $type = 'involved_in';
+	    }elsif("${\$obj->GO_term->Type}" eq 'Cellular_component'){
+                    if (grep {"$_" eq 'GO:0032991'} $obj->GO_term->Ancestor){
+			    $type = 'part_of';
+		    }else{
+			    $type = 'located_in';
+		    }
+	    }
+	    $gaf_line->{qualifier} = $type if $type;
+    }
+ 
     # Reference
     my @reference;
     if ($obj->Reference) {
