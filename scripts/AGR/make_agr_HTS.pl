@@ -96,7 +96,7 @@ while (my $analysis = $it->next){
 	
 		my %json2_obj;
 		$json2_obj{datasetId}= {primaryId => $datasetId,
-					preferredCrossReference => ,{id =>"WB:$datasetId",pages => ['htp/dataset']}
+					preferredCrossReference => ,{id =>$datasetId,pages => ['htp/dataset']}
 		}; # required
 		$json2_obj{publications} = \@papers if @papers;
 		$json2_obj{dateAssigned} = $timestamp; #required
