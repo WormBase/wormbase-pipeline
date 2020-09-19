@@ -74,7 +74,7 @@ while (my $analysis = $it->next){
 		$json_obj{sampleTitle} = $subproject->Title->name;
 		$json_obj{sampleType} = 'OBI:0000895'; # total RNA extract
 		$json_obj{assayType} = 'MMO:0000659'; # RNA-seq assay
-		$json_obj{taxonId} = $wormbase->ncbi_tax_id;
+		$json_obj{taxonId} = 'NCBITaxon:' . $wormbase->ncbi_tax_id;
 		$json_obj{datasetIds} = [$datasetId];
 		$json_obj{sex}=lc($sample->Sex->name) if $sample->Sex;
 
@@ -153,7 +153,7 @@ while (my $array = $it->next){
 	};
 	$json_obj{sampleTitle} = "WB:$sample";
 
-	$json_obj{taxonId} = $wormbase->ncbi_tax_id;
+	$json_obj{taxonId} = 'NCBITaxon:' . $wormbase->ncbi_tax_id;
 	#	$json_obj{datasetIds} = [$datasetId];
 	$json_obj{sex}=lc($sample->Sex->name) if $sample->Sex;
 
@@ -193,7 +193,7 @@ while (my $array = $it->next){
 
 		$json_obj{primaryId} = {sampleId => "WB:$s:$suffix"}; # required
 		$json_obj{sampleTitle} = "WB:$s:$suffix";
-		$json_obj{taxonId} = $wormbase->ncbi_tax_id;
+		$json_obj{taxonId} = 'NCBITaxon:' . $wormbase->ncbi_tax_id;
 #		$json_obj{datasetIds} = [$datasetId];
 		$json_obj{sex}=$s->Sex->name if $s->Sex;
 
