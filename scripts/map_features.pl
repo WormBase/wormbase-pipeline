@@ -138,7 +138,7 @@ else {
 }
 unless ($outdir) {$outdir = $wb->acefiles;}
 $log->write_to("// writing to ".$outdir."\n\n");
-unless ($curout) {$curout = "/nfs/wormpub/DATABASES/camace/${version}_feature_parents_${species}.ace";}
+unless ($curout) {$curout = $wb->databases('camace') . "/${version}_feature_parents_${species}.ace";}
 
 # WS version for output files
 our ($WS_version) = $wb->get_wormbase_version_name;
