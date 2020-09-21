@@ -82,7 +82,7 @@ $db->close();
 
 $log->write_to("Processing annotations...\n") if $debug;
 # AcePerl/tace combo leaks memory over time, so best to do the work
-# in bactches, reconnecting for each batch
+# in batches, reconnecting for each batch
 foreach my $suf (0..9) {
   $log->write_to("Fetching annotations with suffix '${suf}'...\n") if $debug;
 
@@ -203,11 +203,7 @@ foreach my $suf (0..9) {
     # that is another bit, that exists only temporary until upstream sorts out the annotation
     if ($obj->GO_term){
 	    my $type;
-	    if ("${\$obj->GO_term->Type}" eq 'Molecular_function'){
-		    $type = 'enables';
-	    }elsif("${\$obj->GO_term->Type}" eq 'Biological_process'){
-		    $type = 'involved_in';
-	    }elsif("${\$obj->GO_term->Type}" eq 'Cellular_component'){
+	    if("${\$obj->GO_term->Type}" eq 'Cellular_component'){
                     if (grep {"$_" eq 'GO:0032991'} $obj->GO_term->Ancestor){
 			    $type = 'part_of';
 		    }else{
