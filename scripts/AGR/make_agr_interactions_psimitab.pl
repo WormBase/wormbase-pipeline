@@ -100,6 +100,10 @@ INT: while (my $obj = $it->next) {
 
   foreach my $g ($obj->Interactor_overlapping_gene) {
     my $gn      = $g->name;
+    unless ($g->Public_name) {
+	warn "Skipping $obj - no public name\n";
+	next;
+    }
     my $gnp     = $g->Public_name->name;
     my $g_tax   = $g->Species->NCBITaxonomyID->name;
     my $g_sp_nm = $g->Species->name;

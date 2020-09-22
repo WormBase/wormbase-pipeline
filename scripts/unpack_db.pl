@@ -94,7 +94,7 @@ sub unpack_stuff {
   }
 
   if ($database eq "citace"){
-    $ftp     = "$ftp_dir/caltech";
+    $ftp     = "$ftp_dir/citace";
     $dbdir   = "$primaries/citace";
     $logfile = "$logs/unpack_citace.$rundate.$$";
     $dbname  = "citace_dump";

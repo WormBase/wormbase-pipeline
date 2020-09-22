@@ -104,7 +104,7 @@ $Iso->interactive(0); # don't want any interactive stuff done at all
 # int - pos (current position in list of child nodes)
 
 if (!defined $outfile) {
-  $outfile = "/nfs/wormpub/CURATION_DATA/${species}_isoformer.ace";
+  $outfile = $wormbase->wormpub . "/CURATION_DATA/${species}_isoformer.ace";
 }
 
 open (ISOFORM, "> $outfile")  or die "cant open $Iso->outfile()\n";

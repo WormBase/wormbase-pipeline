@@ -82,7 +82,7 @@ $db->close();
 
 $log->write_to("Processing annotations...\n") if $debug;
 # AcePerl/tace combo leaks memory over time, so best to do the work
-# in bactches, reconnecting for each batch
+# in batches, reconnecting for each batch
 foreach my $suf (0..9) {
   $log->write_to("Fetching annotations with suffix '${suf}'...\n") if $debug;
 
@@ -154,15 +154,32 @@ foreach my $suf (0..9) {
     
     # qualifier (Annotation_relation)
     my @annot_rel;
+    # interpro defaults based on Kimberly
+    if ($obj->Motif){
+	    my $type;
+	    if ("${\$obj->GO_term->Type}" eq 'Molecular_function'){
+		    $type = 'enables';
+	    }elsif("${\$obj->GO_term->Type}" eq 'Biological_process'){
+		    $type = 'involved_in';
+	    }elsif("${\$obj->GO_term->Type}" eq 'Cellular_component'){
+                    if (grep {"$_" eq 'GO:0032991'} $obj->GO_term->Ancestor){
+			    $type = 'part_of';
+		    }else{
+			    $type = 'located_in';
+		    }
+	    }
+	    $gaf_line->{qualifier} = $type if $type;
+    }
+    
     if ($obj->Annotation_relation_not) {
       push @annot_rel, "NOT";
       my $al = $obj->Annotation_relation_not->Name;
       $al =~ s/\s+/_/; 
       if ($al eq 'colocalizes_with' or
           $al eq 'contributes_to') {
-        push @annot_rel, $al;
+        push @annot_rel, "$al";
       }
-      $gaf_line->{qualifier} = 'NOT|'.$obj->Annotation_relation_not->name;
+      $gaf_line->{qualifier} = 'NOT|'.$al;
     }
     if ($obj->Annotation_relation) {
       my $al = $obj->Annotation_relation->Name;
@@ -171,11 +188,31 @@ foreach my $suf (0..9) {
           $al eq 'contributes_to') {
         push @annot_rel, $al;
       }
-      $gaf_line->{qualifier} = $obj->Annotation_relation->name;
+      $gaf_line->{qualifier} = "$al";
     }
 
-#   $gaf_line->{qualifier} = join("|", @annot_rel);
-    
+    # special for WS278, data should be fixed for release WS279+
+    unless($gaf_line->{qualifier}){
+	    if ($obj->GO_code->name =~/^(IMP|IGI)$/){
+		    $gaf_line->{qualifier} = 'acts_upstream_of_or_within';
+	    }elsif($obj->GO_code->name =~/^(IDA|ND)$/){
+		    $gaf_line->{qualifier} = 'located_in';
+	    }
+    }
+
+    # that is another bit, that exists only temporary until upstream sorts out the annotation
+    if ($obj->GO_term){
+	    my $type;
+	    if("${\$obj->GO_term->Type}" eq 'Cellular_component'){
+                    if (grep {"$_" eq 'GO:0032991'} $obj->GO_term->Ancestor){
+			    $type = 'part_of';
+		    }else{
+			    $type = 'located_in';
+		    }
+	    }
+	    $gaf_line->{qualifier} = $type if $type;
+    }
+ 
     # Reference
     my @reference;
     if ($obj->Reference) {

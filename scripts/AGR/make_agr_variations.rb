@@ -49,11 +49,11 @@ class Parser
 				args.wquery = t
 			end
 
-                        opts.on("-a","--all","Retrieve all naturally occurring variants and induced mutations from Million Mutation Project") do |a|
-                                args.all = a
-                        end
+            opts.on("-a","--all","Retrieve all naturally occurring variants and induced mutations from Million Mutation Project") do |a|
+                args.all = a
+            end
 
-                        opts.on("-h","--help","print help") do
+            opts.on("-h","--help","print help") do
 				puts opts
 				exit
 			end
@@ -106,7 +106,7 @@ class TableMaker
                         end
 			if !c[1].empty?
 				results[c[0]]["paper"]||=Hash.new # WBPaperXXX
-				results[c[0]]["paper"][c[1]] = c[2] || 'n/a' # PubmedID
+				results[c[0]]["paper"][c[1]] = (c[2].nil? or c[2].empty?) ? 'n/a' : c[2] # PubmedID
 			end
 			if c[3]
 				results[c[0]][:strains]||=[] # WBStrains
@@ -123,7 +123,7 @@ term2so = {
 	'deletion'       => 'SO:0000159',
 	'point_mutation' => 'SO:1000008',
 	'substitution'   => 'SO:1000032', # to hack our wrong SO-terms in => DELIN
-        'SNP'            => 'SO:0000694',
+    'SNP'            => 'SO:0000694',
 }
 
 chrom2ncbi = {
@@ -165,9 +165,9 @@ Zlib::GzipReader.open(options.gff).each{|line|
   variation[:alleleId] = cols[8][/variation=(WBVar\d+)/,1]
   next if allele_included.key?(variation[:alleleId]) # Deals with identical variations from different sources in GFF
   allele_included[variation[:alleleId]] = 1
-  
+
   next unless options.all or ['Allele','KO_consortium','NBP_knockout','Million_mutation'].include?(cols[1])
-  
+
   next unless filter.has_key?(variation[:alleleId])
 
   variation[:start] = cols[3].to_i
@@ -179,7 +179,7 @@ Zlib::GzipReader.open(options.gff).each{|line|
 
   if cols[2].eql?('insertion_site')
 	  next unless cols[8]=~/insertion=([^;]+)/
-          variation[:paddedBase] = chromosomes[cols[0]][variation[:start]-2]
+      variation[:paddedBase] = chromosomes[cols[0]][variation[:start]-2]
 	  variation[:genomicReferenceSequence]='N/A'
 	  s = Bio::Sequence::NA.new($1.to_s)
 	  s.complement! if cols[6].eql?('-') # as all variations are supposed to be on the forward strand
@@ -187,7 +187,7 @@ Zlib::GzipReader.open(options.gff).each{|line|
 	  variation[:end]+=1 if variation[:end] == variation[:start] # to make it inline with the HGVS coordinates
 
   elsif cols[2].eql?('deletion')
-          variation[:paddedBase] = chromosomes[cols[0]][variation[:start]-2]
+	  variation[:paddedBase] = chromosomes[cols[0]][variation[:start]-2]
 	  variation[:genomicReferenceSequence] = chromosomes[cols[0]].subseq(variation[:start],variation[:end])
           variation[:genomicVariantSequence] = 'N/A'
 
@@ -196,18 +196,36 @@ Zlib::GzipReader.open(options.gff).each{|line|
 
 	  next unless variation[:start] == variation[:end] # only allow single bp delin "substitutions" due to AGR limitations
 
-	  to = cols[8][/substitution=([^;]+)/,1].split('/')[1]
-	  variation[:genomicReferenceSequence] = chromosomes[cols[0]].subseq(variation[:start],variation[:end])
-	  s = Bio::Sequence::NA.new(to)
-	  s.complement! if cols[6].eql?('-') # as all variations are supposed to be on the forward strand
-	  variation[:genomicVariantSequence] = s.to_s.upcase
+	  ref = chromosomes[cols[0]].subseq(variation[:start],variation[:end])
+	  variation[:genomicReferenceSequence] = ref
+
+	  gffAlleles = cols[8][/substitution=([^;]+)/,1].split('/')
+	  from = gffAlleles[0]
+	  to = gffAlleles[1].chomp
+
+	  # all alleles should be on forward strand, appears some strands mislabeled in GFF
+	  if ref.eql?(from)
+		  variation[:genomicVariantSequence] = to
+	  else
+                  # workaround for GFF strand issue, should be removed when GFF fixed
+                  f = Bio::Sequence::NA.new(from)
+                  f.complement!
+                  if ref.eql?(f.to_s.upcase)
+                      t = Bio::Sequence::NA.new(to)
+                      t.complement!
+                      variation[:genomicVariantSequence] = t.to_s.upcase
+                  else
+	              STDERR.puts "GFF allele doesn't match ref for " + variation[:alleleId] + ': ' + ref + ' (' + from + '/' + to + ')'
+		      next
+                  end
+	  end
 
 	  if to.length == 1 # WS276 hack for the missing term, so if from is 1bp and to is 1bp it is a point mutation
-	          variation[:type]='SO:1000008' 	  
+	          variation[:type]='SO:1000008'
 	  end
   end
-  
-  variation[:references] = filter[variation[:alleleId]]["paper"].map{|k,v| # creates the publication part 
+
+  variation[:references] = filter[variation[:alleleId]]["paper"].map{|k,v| # creates the publication part
 	  v.eql?('n/a')? {:publicationId => "WB:#{k}",:crossReference => {:id => "WB:#{k}",:pages => ['reference']}}:{:publicationId => "PMID:#{v}",:crossReference => {:id => "WB:#{k}",:pages => ['reference']}}
   } if filter[variation[:alleleId]]["paper"]
 
@@ -217,9 +235,9 @@ Zlib::GzipReader.open(options.gff).each{|line|
 
   variation[:sequenceOfReferenceAccessionNumber]=chrom2ncbi[variation[:chromosome]]
   variation[:alleleId]=variation[:alleleId].prepend('WB:') # prefix it with WB:
-  
+
   variation[:crossReferences] = [{:id => variation[:alleleId], :pages => ['allele']}]
-  
+
   variations.push(variation)
 }
 
@@ -227,7 +245,7 @@ meta = {
 	:dataProvider => {
 		:crossReference => {
 			:id => 'WormBase',
-			:pages => ['homepage'] 
+			:pages => ['homepage']
 		},
                 :type => 'curated'
 	},
