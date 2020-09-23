@@ -139,7 +139,7 @@ while(<BLAT>) {
   my @f = split(/\t/, $_);
 
   my ($match, $qsize, $qname, $tname) = ($f[0], $f[10], $f[9], $f[13]);
-  if (undefined $qsize || undefined $tname) {next} # skip mangled lines - these are very rare!
+  if (!defined $qsize || !defined $tname) {next} # skip mangled lines - these are very rare!
   
   my $coverage = ($match/$qsize)*100; 
 
