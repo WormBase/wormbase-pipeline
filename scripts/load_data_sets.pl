@@ -73,7 +73,7 @@ sub parse_misc_elegans_files {
 		       $wormbase->misc_dynamic."/misc_TEC_RED_homol.ace"        => "TEC_RED"               ,
 		       # $wormbase->misc_static."/orthologs.ensembl.ace"        => "ensembl_orthologs"     ,
 		       # $wormbase->misc_static."/orthologs.genes.ace"          => "ortholog_stubs"        ,
-		       $wormbase->misc_static.'/orthologs.agr.ace.gz'           => 'agr_orthologs'         ,
+		       # $wormbase->misc_static.'/orthologs.agr.ace.gz'           => 'agr_orthologs'         ,
 		       $wormbase->misc_static."/misc_TEC_RED_sequence_data.ace" => "TEC_RED"               ,
 		       $wormbase->misc_static."/nembase_nematode_contigs.ace"   => "nembase_ace"           ,
 		       $wormbase->misc_static."/other_nematode_ESTs.ace"        => "other_nematode_ace"    ,
