@@ -97,14 +97,14 @@ sub new {
   $self->{'check'} = shift;      # true if existing GTF file and cufflinks data should be left untouched (for checkpointing and restarting)
 
   # set up useful paths etc.
-  $self->{'RNASeqBase'}      = "/nfs/nobackup/ensemblgenomes/wormbase/BUILD/RNASeq/" . $self->{wormbase}->{species};
+  $self->{'RNASeqBase'}      = "/hps/nobackup2/production/ensemblgenomes/wormbase/BUILD/RNASeq/" . $self->{wormbase}->{species};
   $self->{'RNASeqSRADir'}    = $self->RNASeqBase . "/SRA"; # holds Experiment data and analysis results
   $self->{'RNASeqGenomeDir'} = $self->RNASeqBase . "/Genome"; # holds Genome and indexes
   $self->{'RNASeqTransferDir'} = $self->RNASeqBase . "/Transfer"; # holds symlinks to files to be transferred to the Sanger NGS server
   $self->{'Software'}        = "/nfs/panda/ensemblgenomes/wormbase/software/packages";
 #  $self->{'alignmentDir'}    = "tophat_out"; # use this for tophat
   $self->{'alignmentDir'}    = "star_out"; # use this for STAR
-  $self->{'Use_NGS_file_system'} = 1; # if 0 then store files in /nfs/nobackup; if 1 then store files in NGS file system and access then via http
+  $self->{'Use_NGS_file_system'} = 1; # if 0 then store files in /hps/nobackup2; if 1 then store files in NGS file system and access then via http
 #  $self->{'Use_changed_part_of_BAM'} = 0; # if 0 then copy complete BAM file from NGS server; if 1 then work out which genes changed and pull across onto reads aligning near those genes then update the cufflinks ouput from last Build
 
   # get the name of the directory for this species at the NGS site
@@ -1357,7 +1357,7 @@ sub exclude_experiments {
 
     Title   :   remove_old_experiment_files
     Usage   :   self->remove_old_experiment_files()
-    Function:   deletes old experiment files from the directories on /nfs/nobackup, keeping stuff as specified by $new_genome and $check
+    Function:   deletes old experiment files from the directories on /hps/nobackup2, keeping stuff as specified by $new_genome and $check
     Returns :   
     Args    :   experiments - hashref of all experiments to be aligned 
 
@@ -2801,7 +2801,7 @@ sub bam2bigwig {
 }
 #####################################################################################################
 # push all files to the NGS server
-# we expect the following files to be available at the /nfs/nobackup filesystem:
+# we expect the following files to be available at the /hps/nobackup2 filesystem:
 #   accepted_hits.bam
 #   accepted_hits.bam.bai
 #   coverage
@@ -3008,8 +3008,8 @@ sub list_NGS_files {
 }
 
 #####################################################################################################
-# cleanup from /nfs/nobackup all files that we pushed to the NGS server, plus other crud in the alignment and SRR directories
-# we expect the following files to be available at the /nfs/nobackup filesystem:
+# cleanup from /hps/nobackup2 all files that we pushed to the NGS server, plus other crud in the alignment and SRR directories
+# we expect the following files to be available at the /hps/nobackup2 filesystem:
 #   accepted_hits.bam
 #   accepted_hits.bam.bai
 #   coverage
