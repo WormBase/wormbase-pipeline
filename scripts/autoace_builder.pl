@@ -197,8 +197,13 @@ $wormbase->run_script("check_class.pl -stage run_inverted -classes Feature_data"
 
 
 #must have farm complete by this point.
-$wormbase->run_script( 'load_data_sets.pl -misc', $log) if $misc_data_sets;
-$wormbase->run_script( 'load_data_sets.pl -homol', $log) if $homol_data_sets;
+if ($misc_data_sets){
+	$wormbase->run_script('AGR/import_AGR_gene_objects.pl -load',$log);
+	$wormbase->run_script('AGR/agr_orthologs.pl -load',$log);
+	$wormbase->run_script('load_data_sets.pl -misc', $log);
+	$wormbase->run_script('load_data_sets.pl -homol', $log);
+}
+
 # $build_dumpGFF.pl; (homol) is run chronologically here but previous call will operate
 $wormbase->run_script( 'make_wormrna.pl'                         , $log) if $rna;
 if ($confirm) {
