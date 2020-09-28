@@ -20,17 +20,18 @@ my ($PASS,$USER, $DB); # mysql ones
 my $DOMAIN;
 
 my ($wormbase, $debug, $test, $store, $species,$infile,$outfile,$nocheck, 
-    $ace_file_template, $input_is_public_names, $input_is_other_names, $input, $output,$public);
+    $ace_file_template, $input_is_public_names, $input_is_other_names, $input, $output,$public,$varname);
 
 GetOptions (
     "debug=s"   => \$debug,   # send log emails only to one user
-    "test"      => \$test,    # run against the test database and test nameserver
+    "test"      => \$test,    # run against the test database on utlt-db
     "store:s"   => \$store,   # if you want to pass a Storable instead of recreating it
     "species:s" => \$species, # elegans/briggsae/whateva .. needed for logging
     'nocheck'   => \$nocheck, # don't check public_names
     'input:s'   => \$input,   # File containing new public_names for new Variations
     "output:s"  => \$output,  # File to capture the new WBVar and name associations
     'acetemplate=s' => \$ace_file_template, #unknown template file that is also printed along with the IDs retrieved by the script
+    'varname'   => \$varname,
     'public'    => \$public,   # The file only contains public_names so these should be used (This should be used for all types unless Variation with other names).
     'domain:s'  => \$DOMAIN, # specify Gene, Variation, Feature or Strain to retrieve this type of ID.
     )||die(@!);
@@ -50,7 +51,7 @@ if ( $store ) {
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
-my $db = NameDB_handler->new($wormbase, $test);
+my $db = NameDB_handler->new($wormbase);
 
 # there should be *only* one public_name per line in the input_file
 # like:
@@ -76,127 +77,70 @@ while (<IN>) {
     chomp;
     s/\"//g;
     my @names;
-
-#should the -public flag be set??
-#    unless (/\S+\s+\S+/) {
-#        
-#    }
-#    if (/\S+\s+\S+/) {
-#        print "File appears to contain multiple name attributes, assuming that is intended";
-#    }
-
-#    unless ($public){      
-#        @names = split(/\s+/, $_);
-#    }
-#    else {
-
     @names = $_;
-#    }
-#    if (scalar(@names) == 2 or scalar(@names) == 1) {
-#        my @entries, \@names,
-#    } else {
-#        $log->log_and_die("Bad line:$_\n");
-#    }
 
     my $id;
     foreach my $entry (@names) {
-        my ($public_name) = $entry;
         if ($DOMAIN =~ /Strain/){
-            if (defined $public_name and not defined &_check_strain($public_name)) {
+            my $strain_ref = $db->info_strain($entry);
+            unless (defined $strain_ref) {
+                print OUT "\/\/Cannot find $entry\n";
                 next;
             }
-            my ($ids, $batch_id) = $db->new_strains([$public_name]);
-            ($id) = keys %{$ids};
+            if (defined $strain_ref) {
+                my $WBstrain_id = $strain_ref->{'id'};
+                print OUT "-R $DOMAIN $entry $WBstrain_id\n";
+            }
         }
+    
         
         if ($DOMAIN =~ /Variation/){
-             next unless (defined &_check_var($public_name));
-             my ($ids, $batch_id) = $db->new_variations([$public_name]);
-             ($id) = keys %{$ids};
+            my $var_ref = $db->info_variation($entry);
+            my $WBvar_id;
+            unless (defined $var_ref) {
+                print OUT "\/\/Cannot find $entry\n";
+                next;
+            }
+            if (defined $var_ref) {
+                if ($entry =~ /WBVar/) {
+                    $WBvar_id = $var_ref->{'name'};
+                }
+                else {
+                    $WBvar_id = $var_ref->{'id'};
+                }
+                print OUT "-R $DOMAIN $entry $WBvar_id\n";
+            }
         }
         
         
         elsif ($DOMAIN =~ /Gene/){
-            if (defined $public_name and not defined &_check_gene($public_name)) {
+            my $gene_ref = $db->info_genes($entry);
+            unless (defined $gene_ref) {
+                print OUT "\/\/Cannot find $entry\n";
                 next;
-            }  
-            my ($ids, $batch_id) = $db->new_genes([$public_name]);
-            ($id) = keys %{$ids};
+            }
+            if (defined $gene_ref) {
+                my $WBgene_id = $gene_ref->[0]{'id'};
+                print OUT "-R $DOMAIN $entry $WBgene_id\n";
+            }
         }
-        
-          print OUT "\n$DOMAIN : \"$id\"\n";
-          print OUT "Public_name \"$public_name\"\n";
-#          print OUT "Other_name \"$other_name\"\n" if (defined $other_name);
-          print OUT "Live\nRemark \"Batch $DOMAIN object requested via get_NS_ids.pl\"\n";              
-          if (defined $ace_file_template) {
-              print OUT "$ace_file_template\n";
-          }
     }
 }
+
 $log->mail;
 # small function to check the strain public_name for sanity
-sub _check_strain {
-  my $name = shift;
-  my $strain;
-  my $strain_ref = $db->find_strains($name);
-  foreach my $hash (@{$strain_ref}) {
-    if ($hash->{'strain/name'} eq '$id') {$strain = $hash->{'strain/id'}}
-  }
-  if($strain) {  
-    print STDERR "ERROR: $name already exists as $strain\n";
-    return undef;
-  }
-  return 1;
-}
 
-# small function to check the variation public_name for sanity
-sub _check_var {
-  my $name = shift;
-  my $var;
-  my $var_ref = $db->find_variations($name);
-  foreach my $hash (@{$var_ref}) {
-    if ($hash->{'name'} eq $name) {$var = $hash->{'id'}}
-  }
-  if($var) {  
-    print STDERR "ERROR: $name already exists as $var\n";
-    return undef;
-  }
-  return 1;
-}
-
-# small function to check the gene public_name for sanity
-sub _check_gene {
-  my $name = shift;
-  my $gene;
-  my $gene_ref = $db->find_genes($name);
-  foreach my $hash (@{$gene_ref}) {
-    if ($hash->{'name'} eq $name) {$gene = $hash->{'id'}}
-  }
-  if($gene) {  
-    print STDERR "ERROR: $name already exists as $gene\n";
-    return undef;
-  }
-  return 1;
-}
 
 
 __END__
 
 =pod
 
-=head1 NAME - get_variation_ids.pl
+=head1 NAME - show_NS_ids.pl
 
 =head1 DECRIPTION
 
-This script takes a list of submitter-supplied variation names  and generates new WBVar identifiers in the name server, 
-writing the results to the given output file. 
-
-The input file is expected to contain a list of submitter-supplied variation names, one per line. Optionally, each 
-line may also contain an additional name, which is added to the NameDB as the public name. If no second name is 
-defined, the generated WBVar identifier will be used as the public name
-
-By default, the script will refuse to create new WBVar identifiers for public names that already exist in the
-database; this behaviour can be switched off with the -nocheck option. 
+This script takes a list of submitter-supplied <single_domian> public_names 
 
 -head1 OUTPUT
 

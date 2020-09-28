@@ -18,14 +18,16 @@ use strict;
 =item Options:
 
   -file      file containing list of GeneIDs and CGC names eg WBGene00008040 ttr-5
+  -test      use the test name server
 
 e.g. perl batch_delName.pl -file genenames.txt
 
 =cut
 
-my ($help, $debug, $verbose, $store, $wormbase, $species);
+my ($test, $help, $debug, $verbose, $store, $wormbase, $species);
 my ($file);
 GetOptions(
+	   "test"       => \$test,
            "help"       => \$help,
            "debug=s"    => \$debug,
            "verbose"    => \$verbose,
@@ -41,6 +43,7 @@ if ( $store ) {
   $wormbase = Wormbase->new( 
                             -debug    => $debug,
                             -organism => $species,
+			    -test => $test,
                            );
 }
 
@@ -49,7 +52,7 @@ my $log = Log_files->make_log("NAMEDB:$0:$file", $ENV{'USER'});
 
 $log->write_to("loading $file to Nameserver\n\n");
 
-my $db = NameDB_handler->new($wormbase);
+my $db = NameDB_handler->new($wormbase, $test);
 
 # open file and read
 # file needs to be in such a format:

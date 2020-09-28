@@ -22,9 +22,11 @@ use Storable;
 ###################################################
 
 my ($input, $seq, $cgc, $who, $id, $load, $update_nameDB, $sneak, $outdir, $bio);
-my ($help, $debug, $verbose, $store, $wormbase, $species);
-my $species = 'elegans';
-GetOptions ('input=s'     => \$input, # when loading from input file
+my ($test, $help, $debug, $verbose, $store, $wormbase, $species);
+
+GetOptions (
+	    "test"        => \$test,  # use the test acedb database and the test nameserver
+	    'input=s'     => \$input, # when loading from input file
             'seq=s'       => \$seq,   # sequence name for new/existing gene
 	    'cgc=s'       => \$cgc,   # cgc name for new/existing gene
 	    'who=s'       => \$who,   # Person ID for new genes being created (should specify your ID eg. 1983 but will request one.)
@@ -39,7 +41,11 @@ GetOptions ('input=s'     => \$input, # when loading from input file
 	    'bio:s'       => \$bio,   # Mandatory biotype (CDS, PSeudogene, etc.)
 	    )||die($@);
 
-my $wormbase = Wormbase->new(-debug => $debug, -organism => $species);
+$wormbase = Wormbase->new(
+			  -debug => $debug,
+			  -organism => $species,
+			  -test => $test,
+			 );
 
 my $log = Log_files->make_build_log($wormbase);
 
@@ -104,7 +110,7 @@ if($who){
   $person = "WBPerson$tmp";
 }
 
-my $namedb = NameDB_handler->new($wormbase);
+my $namedb = NameDB_handler->new($wormbase, $test);
 
 
 ############################################################

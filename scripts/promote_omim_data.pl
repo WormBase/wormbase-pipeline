@@ -22,7 +22,7 @@ use Storable;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $noload, $database, $acefile, $obofile, $species);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $noload, $database, $acefile, $flatfile, $obofile, $species);
 
 
 GetOptions ("help"       => \$help,
@@ -35,6 +35,7 @@ GetOptions ("help"       => \$help,
 	    "noload"     => \$noload,
 	    "acefile:s"  => \$acefile,
 	    "obofile:s"  => \$obofile,
+            "flatfile:s" => \$flatfile,
 	   );
 
 if ( $store ) {
@@ -57,11 +58,13 @@ my $WS_name         = $wormbase->get_wormbase_version_name();
 my $species_name    = $wormbase->full_name;
 
 $acefile = $wormbase->acefiles . "/omim_db_data.ace" if not defined $acefile;
+$flatfile = $wormbase->ontology . "/disease_associations.by_orthology.tsv.txt" if not defined $flatfile;
 $obofile = $wormbase->primaries . "/citace/temp_unpack_dir/home/citace/Data_for_${WS_name}/Data_for_Ontology/disease_ontology.${WS_name}.obo" 
     if not defined $obofile;
 $database = $wormbase->autoace if not defined $database;
 
-open (my $outfh, ">$acefile") or $log->log_and_die("Can't write ace file $acefile");
+open (my $outfh, ">$acefile") or $log->log_and_die("Cannot write ace file $acefile");
+open (my $outflat, ">$flatfile") or $log->log_and_die("Cannot write flat file $flatfile");
 
 # Additional information is now required to add the Disease Ontology terms to genes where an OMIM disease ID has 
 # been identified by human protein orthology.
@@ -79,21 +82,15 @@ while (<TACE>) {
   s/\"//g;
 
   if (/^WBGene\d+/) {
-    print "$_\n";
-    my ($gene, $gspecies, $ortholog, $species,  $analysis, $database, $database_field, $database_acc) = split(/\t/, $_);
+    my ($gene, $ortholog, $species,  $analysis, $database, $database_field, $database_acc) = split(/\t/, $_);
 
-    next if $analysis !~ /Compara/;
+    next if $ortholog !~ /^HGNC:/;
 
-    $gene2omim{$gene}->{$database_field}->{$database_acc} = 1; 
+    $gene2omim{$gene}->{$database_field}->{$database_acc}++; 
 
-    #
-    # Add DO connections only for C.elegans genes
-    #
-    if ($gspecies eq $species_name) {
-      if (exists $omim2do->{$database_acc}) {
-        foreach my $doid (keys %{$omim2do->{$database_acc}}) {
-          $gene2do{$gene}->{$doid}->{$database_acc}->{$ortholog} = 1;
-        }
+    if (exists $omim2do->{$database_acc}) {
+      foreach my $doid (keys %{$omim2do->{$database_acc}}) {
+        $gene2do{$gene}->{$doid}->{$database_acc}->{$ortholog}->{$analysis} = 1;
       }
     }
   }
@@ -102,19 +99,24 @@ while (<TACE>) {
 my %stats;
 
 #
-# Database lines;
+# Database lines; for these, will conservatively only add them if they have support from >= 2 methods
 #
 foreach my $gene (sort keys %gene2omim) {
-  $stats{database}->{genecount}++;
       
   print $outfh "\nGene : \"$gene\"\n";
+  my $gene_had_data = 0;
+
   foreach my $tp (keys %{$gene2omim{$gene}}) {
     foreach my $oid (sort keys %{$gene2omim{$gene}->{$tp}}) {
-      print $outfh "Database OMIM $tp $oid\n";
-
-      $stats{database}->{$tp}++;
+      if ($gene2omim{$gene}->{$tp}->{$oid} > 1) { 
+        print $outfh "Database OMIM $tp $oid\n";
+        $stats{database}->{$tp}++;
+        $gene_had_data = 1;
+      }
     }
   }
+
+  $stats{database}->{genecount}++ if $gene_had_data;
 }
 
 #
@@ -133,6 +135,9 @@ foreach my $gene (sort keys %gene2do) {
       push @list, "OMIM:$omim_id";
       foreach my $orth (keys %{$gene2do{$gene}->{$do_id}->{$omim_id}}) {
         $orths{$orth} = 1;
+        my @methods = sort keys %{$gene2do{$gene}->{$do_id}->{$omim_id}->{$orth}};
+
+        printf $outflat "%s\t%s\t%s\t%s\t%s\n", $gene, $do_id, "OMIM:$omim_id", $orth, join("|", @methods);
       }
       push @list, sort keys %orths;
     }
@@ -141,7 +146,9 @@ foreach my $gene (sort keys %gene2do) {
     print $outfh "Potential_model \"$do_id\" \"Homo sapiens\" Inferred_automatically \"Inferred by orthology to human genes with OMIM annotation ($list_str)\"\n";
   }
 }
-close($outfh);
+close($outfh) or $log->log_and_die("Could not close acefile after writing\n");
+close($outflat) or $log->log_and_die("Could not close flat file after writing\n");
+
 
 if ($noload){
   $log->write_to("Output NOT loaded into ".$wormbase->autoace."\n");
@@ -210,17 +217,10 @@ Visible
 Class 
 Class Gene
 From 1
+Condition Ortholog AND Species = "$species_name"
+
 
 Colonne 2 
-Width 16 
-Optional 
-Visible 
-Class 
-Class Species
-From 1
-Tag Species
-
-Colonne 3 
 Width 40 
 Mandatory 
 Visible 
@@ -229,51 +229,51 @@ Class Gene
 From 1 
 Tag Ortholog  
 
-Colonne 4 
+Colonne 3 
 Width 12 
 Mandatory 
 Visible 
 Class 
 Class Species 
-Right_of 3 
+Right_of 2 
 Tag  HERE 
 Condition "Homo sapiens"
+
+Colonne 4 
+Width 12 
+Mandatory 
+Visible 
+Class 
+Class Analysis 
+Right_of 3 
+Tag  HERE  # From_analysis 
 
 Colonne 5 
 Width 12 
 Mandatory 
 Visible 
 Class 
-Class Analysis 
-Right_of 4 
-Tag  HERE  # From_analysis 
-
+Class Database 
+From 2 
+Tag Database  
+Condition "OMIM"
+ 
 Colonne 6 
 Width 12 
 Mandatory 
 Visible 
 Class 
-Class Database 
-From 3 
-Tag Database  
-Condition "OMIM"
- 
-Colonne 7 
-Width 12 
-Mandatory 
-Visible 
-Class 
 Class Database_field 
-Right_of 6 
+Right_of 5 
 Tag HERE   
  
-Colonne 8 
+Colonne 7 
 Width 12 
 Optional 
 Visible 
 Class 
 Class Accession_number 
-Right_of 7 
+Right_of 6 
 Tag HERE   
 
 // End of these definitions

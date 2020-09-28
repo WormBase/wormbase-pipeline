@@ -1,10 +1,10 @@
 #!/software/bin/perl -w
 #
-# features.pl
+# batch_people.pl
 # 
 # by Gary Williams                  
 #
-# This is for managing Feature IDs in the new (datomic) NameServer system
+# This is for managing Person IDs in the new (datomic) NameServer system
 #
 # Last updated by: $Author: pad $     
 # Last updated on: $Date: 2013-08-14 12:19:59 $      
@@ -25,49 +25,54 @@ use NameDB_handler;
 
 =pod
 
-=head batch_pname_update.pl
+=head people.pl
 
 =item Options:
 
-  -action    one of "new", "kill", "resurrect", "help"
-  -file      TAB or comma delimited file containing input IDs and old/new names  <Mandatory>
   -test      use the test nameserver
+  -action    one of "new", "update", "kill", "help"
+  -file      TAB or comma delimited file containing input IDs and old/new names  <Mandatory>
 
     for action "new":
-    column 1 - number of IDs to create
+    column 1 - Person's name
+    column 2 - Person's email
+    column 3 - Person's WBPersonID
 
     example:
-    10100
-    
+    Joe Bloggs	joe.bloggs@wormbase.org	WBPerson0029076    
+    Jane Doe	jane.doe@wormbase.org	WBPerson0029231
+
+    for action "update":
+    column 1 - identifier (one of email or WBPerson)
+    column 2 - new name, email or WBPerson to give this person - If it doesn't have a '@' or a 'WBPerson' in it then it is assumed to be a name
+
+    example:
+    Joe Bloggs	jb1@ebi.ac.uk
+    WBPerson0029231	Jessy Doe
+
 
     for action "kill":
-    column 1 - Feature ID / name to kill
+    column 1 - name, email or WBPerson of person to remove from the database
     
     example:
-    WBsf1026946
-    WBsf1026947
-    WBsf1026948
+    WBPerson0029231
+    joe.bloggs@wormbase.org
 
 
-    for action "resurrect":
-    column 1 - Feature ID to resurrect
-    
-    example:
-    WBsf1026946
-    WBsf1026947
-    WBsf1026948
+    for action "find":
+    column 1 -  person ID to find
+    person ID can be either of their email address or WBPersonID
 
+    example name:
+    Jane Doe
 
     for action "help" - no input is required, instructions on how to set up authentication to use the Nameserver are output
 
 
-  -output    output file holding ace results
-  -why       optional string describing the reason for performing the action
   -debug     limits to specified user <Optional>
-  -species   can be used to specify non elegans
   
 
-e.g. perl batch_features.pl -species elegans -action new -file feature_name_data -output results_file.ace
+e.g. perl batch_people.pl -action new -file new_name_data
 
 =cut
 
@@ -79,8 +84,7 @@ e.g. perl batch_features.pl -species elegans -action new -file feature_name_data
 ######################################
 
 my ($test, $help, $debug, $verbose, $store, $wormbase);
-my ($species, $file, $output, $action, $why);
-my $BATCH_SIZE = 500; # maximum entries to put into any one batch API call
+my ($file, $action);
 
 GetOptions (
 	    "test"       => \$test,
@@ -88,18 +92,15 @@ GetOptions (
             "debug=s"    => \$debug,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
-	    "species:s"  => \$species,
 	    "file:s"     => \$file,
-	    "output:s"   => \$output,
 	    "action:s"   => \$action,
-	    "why:s"      => \$why,
 	    );
+
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
-			     -organism => $species,
 			     -test => $test,
 			     );
 }
@@ -115,24 +116,22 @@ my $log = Log_files->make_build_log($wormbase);
 if (!defined $file) {die "-file file not specified\n"}
 if (!-e $file) {die "-file file doesn't exist\n"}
 
-if (!defined $output) {die "-output file not specified\n"}
-
 if (!defined $action) {die "-action not specified\n"}
 
 
 open (IN, "<$file") || $log->log_and_die("Can't open file $file");
-open (OUT, ">$output") || $log->log_and_die("Can't open file $output");
-OUT->autoflush(1);       # empty the buffer after every line when writing to OUT
 
 my $db = NameDB_handler->new($wormbase, $test);
 
 
 if ($action eq 'new') {
-  new_ft();
+  new_people();
+} elsif ($action eq 'update') {
+  update_people();
 } elsif ($action eq 'kill') {
-  kill_ft();
-} elsif ($action eq 'resurrect') {
-  resurrect_ft();
+  kill_people();
+} elsif ($action eq 'find') {
+  info_person();
 } elsif ($action eq 'help') {
   help_authentication();
 } else {
@@ -140,8 +139,6 @@ if ($action eq 'new') {
 }
 
 
-
-close(OUT);
 close(IN);
 $db->close;
 
@@ -177,91 +174,110 @@ sub usage {
 
 ##########################################
 
-sub new_ft {
-  my $number;
+#    column 1 - Person's name
+#    column 2 - Person's email
+#    column 3 - Person's WBPersonID
+
+sub new_people {
+  my @names;
+
+  my $batch;
+  while (my $line = <IN>) {
+    chomp $line;
+    if ($line =~ /^#/) {next}
+    if ($line eq '') {next}
+ 
+    my ($name, $email, $wbperson) = split /[\t,]/, $line;
+    $name =~ s/ $//;
+    $name =~ s/^ //;
+    $email =~ s/ $//;
+    $email =~ s/^ //;
+    $wbperson =~ s/ $//;
+    $wbperson =~ s/^ //;
+    if ($name eq '') {die "line '$line' has no person name\n"}
+    if ($email !~ /\@/) {die "line '$line' has an invalid email\n"}
+    if ($wbperson !~ /^WBPerson/) {die "line '$line' has an invalid WBPerson\n"}
+    
+    print "//\tperson name '$line' queued for creation\n";
+
+    my $info = $db->new_person($name, $email, $wbperson);
+
+    print "// batch '$line' created\n";
+
+  }
+}
+##########################################
+#    column 1 - identifier (one of email or WBPerson)
+#    column 2 - new name, email or WBPerson to give this person - If it doesn't have a '@' or a 'WBPerson' in it then it is assumed to be a name
+
+sub update_people {
+
+  while (my $line = <IN>) {
+    my ($name, $email, $wbperson);
+    chomp $line;
+    if ($line =~ /^#/) {next}
+    if ($line eq '') {next}
+
+    my ($person, $update) = split /[\t,]/, $line;
+    $person =~ s/ $//;
+    $person =~ s/^ //;
+    $update =~ s/ $//;
+    $update =~ s/^ //;
+
+    if ($update =~ /\@/) {$email = $update}
+    elsif ($update =~ /^WBPerson\d+/) {$wbperson = 'WBPerson'}
+    else {$name = $update}
+
+    my $info = $db->update_person($person, $name, $email, $wbperson);
+    print "// batch '$line' updated\n";
+    
+  }
+
+}
+
+##########################################
+
+sub kill_people {
+
+  while (my $line = <IN>) {
+    chomp $line;
+    if ($line =~ /^#/) {next}
+    if ($line eq '') {next}
+    my ($person) = split /[\t,]/, $line;
+    $person =~ s/ $//;
+    $person =~ s/^ //;
+
+      my $info = $db->kill_person($person);
+      print "// batch '$person' killed\n";
+    
+  }
+
+}
+
+
+##########################################
+
+sub info_person {
+
+  while (my $line = <IN>) {
+    chomp $line;
+    if ($line =~ /^#/) {next}
+    if ($line eq '') {next}
+
+    my ($person) = split /[\t,]/, $line;
+    $person =~ s/ $//;
+    $person =~ s/^ //;
+
+    my $info = $db->info_person($person);
+
+    my $email = $info->{'email'};
+    my $name = $info->{'name'};
+    my $id = $info->{'id'};
+    print "Person $person // Name: '$name' ID: '$id' Email: '$email'\n";
+    
+  }
   
-  while (my $line = <IN>) {
-    chomp $line;
-    if ($line =~ /^#/) {next}
-    if ($line eq '') {next}
-    print OUT "//\t'$line' features queued for creation\n";
-    
-    my ($new_ids, $batch) = $db->new_features($line);
-    foreach my $id (@{$new_ids}) {
-      print OUT "\nFeature : $id\n";
-    }
-    
-    print OUT "// batch '$batch' created\n";
-  }
-
-
 }
-
-
-##########################################
-
-sub kill_ft {
-  my @names;
-
-  my $batch;
-  my $count = 0;
-  while (my $line = <IN>) {
-    chomp $line;
-    if ($line =~ /^#/) {next}
-    if ($line eq '') {next}
-    push @names, $line;
-    print OUT "\n-D Feature $line\n";
-    $count++;
-    print OUT "//\tfeature '$line' queued for being killed\n";
-    if ($count == $BATCH_SIZE) {
-      my $info = $db->kill_features(\@names, $why);
-      $count = 0;
-      @names = ();
-      $batch = $info->{'dead'}{'id'}; # was batch/id
-      print OUT "// batch '$batch' killed\n";
-    }
-  }
-
-  if ($count) {
-    my $info = $db->kill_features(\@names, $why);
-    $batch = $info->{'dead'}{'id'}; # was batch/id
-    print OUT "// batch '$batch' killed\n";
-  }
-
-}
-
-##########################################
-
-sub resurrect_ft {
-  my @names;
-
-  my $batch;
-  my $count = 0;
-  while (my $line = <IN>) {
-    chomp $line;
-    if ($line =~ /^#/) {next}
-    if ($line eq '') {next}
-    push @names, $line;
-    print OUT "\nFeature : $line\n";
-    $count++;
-    print OUT "//\tfeature '$line' queued for being resurrected\n";
-    if ($count == $BATCH_SIZE) {
-      my $info = $db->resurrect_features(\@names, $why);
-      $count = 0;
-      @names = ();
-      $batch = $info->{live}{'id'}; # was batch/id
-      print OUT "// batch '$batch' resurrected\n";
-    }
-  }
-
-  if ($count) {
-    my $info = $db->resurrect_features(\@names, $why);
-    $batch = $info->{live}{'id'}; # was batch/id
-    print OUT "// batch '$batch' resurrected\n";
-  }
-
-}
-
 
 ##########################################
 sub help_authentication {

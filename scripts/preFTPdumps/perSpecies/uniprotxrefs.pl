@@ -46,7 +46,7 @@ $log->write_to("$t - Processing GO Annotations\n") if $debug;
 # GO_annotations
 my $it = $db->fetch_many(-query => 'find GO_annotation;Reference');
 while (my $go = $it->next){
-   my @papers = $go->Reference;
+   my @papers = map {$_->name} $go->Reference;
    my @genes  = $go->Gene;
    foreach my $g (@genes){
 	   next unless $g->Species eq $wormbase->long_name;
@@ -59,7 +59,7 @@ $log->write_to("$t - Processing Interactions\n") if $debug;
 # Interaction
 my $it = $db->fetch_many(-query => 'find Interaction;Physical;Paper');
 while (my $interaction = $it->next){
-   my @papers = $interaction->Paper;
+   my @papers = map {$_->name} $interaction->Paper;
    my @genes  = $interaction->Interactor_overlapping_gene;
    foreach my $g (@genes){
 	   next unless $g->Species eq $wormbase->long_name;
@@ -72,7 +72,7 @@ $log->write_to("$t - Processing RNAi\n") if $debug;
 # RNAi
 my $it = $db->fetch_many(-query => 'find RNAi;Phenotype;Reference');
 while (my $rnai = $it->next){
-   my @papers = $rnai->Reference;
+   my @papers = map {$_->name} $rnai->Reference;
    my @genes  = $rnai->Gene;
    foreach my $g (@genes){
 	   next unless $g->Species eq $wormbase->long_name;
@@ -87,7 +87,7 @@ my @vars = grep {/WBVar\d+/} map {"$_"} $db->fetch(-query => 'find Variation;Gen
 while ( my $v = shift @vars){
    my $var = $db->fetch(Variation => $v);
    next unless $var->Species eq $wormbase->long_name;
-   my @papers = $var->Reference;
+   my @papers = map {$_->name} $var->Reference;
    my @genes  = $var->Gene;
    foreach my $g (@genes){
 	   map {$geneHash{"$g"}->{"$_"}->{Phenotype}=1} @papers;
@@ -103,7 +103,7 @@ $log->write_to("$t - Processing Expression Patterns\n") if $debug;
 # Expression pattern
 my $it = $db->fetch_many(-query => 'find Expr_pattern;Gene;Reference');
 while (my $ep = $it->next){
-   my @papers = $ep->Reference;
+   my @papers = map {$_->name} $ep->Reference;
    my @genes  = $ep->Gene;
    foreach my $g (@genes){
 	   next unless $g->Species eq $wormbase->long_name;
@@ -115,16 +115,19 @@ my $t = localtime;
 $log->write_to("$t - Processing Genes\n") if $debug;
 # Gene / Diseases
 my $it = $db->fetch_many( -query => 
-	'find Gene WBGene*;Species="'.$wormbase->long_name.'";Disease_relevance OR Experimental_model'
+	'find Gene WBGene*;Species="'.$wormbase->long_name.'";Disease_relevance OR Experimental_model OR Models_disease_in_annotation OR Modifies_disease_in_annotation'
 );
 while (my $g = $it->next){
    my @papers;
    if ($g->Disease_relevance){
-	   push @papers, grep {$_->class eq 'Paper'} $g->get('Disease_relevance',4);
+	   push @papers, map {$_->name} grep {$_->class eq 'Paper'} $g->get('Disease_relevance',4);
    }
    if ($g->Experimental_model){
-	   push @papers, grep {$_->class eq 'Paper'} $g->get('Experimental_model',4);
+	   push @papers, map {$_->name} grep {$_->class eq 'Paper'} $g->get('Experimental_model',4);
    }
+   push @papers, map {$_->name} $g->Modifies_disease_in_annotation->Paper_evidence if $g->Modifies_disease_in_annotation;
+   push @papers, map {$_->name} $g->Models_disease_in_annotation->Paper_evidence if $g->Models_disease_in_annotation;
+
    map {$geneHash{"$g"}->{"$_"}->{Disease}=1} @papers;
 }
 
@@ -146,6 +149,9 @@ $log->mail();
 ###########################
 sub get_pmid{
 	my ($wbpaperId)=@_;
+	unless ($db->ping){ # gen3 workaround, but it shouldn't disconnect in the first place
+		$db = Ace->connect(-path => $dbpath)||die(Ace->error); # $db->reconnect doesn't work
+	}
 	my $paper = $db->fetch(Paper => $wbpaperId);
 	my $pmid = 'nopmid';
 	foreach my $pref ($paper->Database) {

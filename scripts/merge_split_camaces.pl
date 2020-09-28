@@ -429,17 +429,17 @@ sub update_canonical {
   ## Check Canonical Database for errors one last time. ##
   $log->write_to ("\nChecking $canonical for inconsistencies\n-----------------------------------\n\n");
   # WBGene IDs
-  $log->write_to ("Running camace_nameDB_comm.pl on $canonical.....\n");
 
-  if ($debug) {
-    print "Running camace_nameDB_comm.pl on $canonical.....\n";
-    $wormbase->run_script("NAMEDB/camace_nameDB_comm.pl -database $canonical -debug $debug -test", $log) && die "Failed to run camace_nameDB_comm.pl\n";
-    print "camace_nameDB_comm.pl Finished for $canonical, check the build log email for errors.\n\n";
-  }
-  else {
-    $wormbase->run_script("NAMEDB/camace_nameDB_comm.pl -database $canonical -debug pad", $log) && die "Failed to run camace_nameDB_comm.pl\n";
-  }
-    $log->write_to ("camace_nameDB_comm.pl Finished, check the build log email for errors.\n\n");
+#  $log->write_to ("Running camace_nameDB_comm.pl on $canonical.....\n");
+#  if ($debug) {
+#    print "Running camace_nameDB_comm.pl on $canonical.....\n";
+#    $wormbase->run_script("NAMEDB/camace_nameDB_comm.pl -database $canonical -debug $debug -test", $log) && die "Failed to run camace_nameDB_comm.pl\n";
+#    print "camace_nameDB_comm.pl Finished for $canonical, check the build log email for errors.\n\n";
+#  }
+#  else {
+#    $wormbase->run_script("NAMEDB/camace_nameDB_comm.pl -database $canonical -debug pad", $log) && die "Failed to run camace_nameDB_comm.pl\n";
+#  }
+#    $log->write_to ("camace_nameDB_comm.pl Finished, check the build log email for errors.\n\n");
 
   unless ($nochecks) {
     # Gene structures
@@ -599,6 +599,7 @@ sub load_curation_data {
     if ($species eq "elegans") {
           push (@files,
 		"$wormpub/CURATION_DATA/Tiling_array_data/tiling_array.ace",
+		"$wormpub/CURATION_DATA/PCCR.ace",
 		"$wormpub/BUILD_DATA/MISC_DYNAMIC/RNASeq_splice_elegans_high_qual.ace_WS${WS_version}",
 		"$wormpub/BUILD_DATA/MISC_DYNAMIC/Gu_TSS_data.ace",
 		"$wormpub/CURATION_DATA/assign_orientation.WS${WS_version}.ace",

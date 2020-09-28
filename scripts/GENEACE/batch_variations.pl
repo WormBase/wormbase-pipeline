@@ -29,6 +29,7 @@ use NameDB_handler;
 
 =item Options:
 
+  -test      use the test nameserver
   -action    one of "new", "update", "kill", "resurrect", "find", "help"
   -file      TAB or comma delimited file containing input IDs and old/new names  <Mandatory>
 
@@ -96,11 +97,13 @@ e.g. perl batch_variations.pl -species elegans -action new -file variation_name_
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $verbose, $store, $wormbase);
+my ($test, $help, $debug, $verbose, $store, $wormbase);
 my ($species, $file, $output, $action, $why);
 my $BATCH_SIZE = 500; # maximum entries to put into any one batch API call
 
-GetOptions ("help"       => \$help,
+GetOptions (
+	    "test"       => \$test,
+	    "help"       => \$help,
             "debug=s"    => \$debug,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
@@ -117,6 +120,7 @@ if ( $store ) {
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
 			     -organism => $species,
+			     -test => $test,
 			     );
 }
 
@@ -140,7 +144,7 @@ open (IN, "<$file") || $log->log_and_die("Can't open file $file");
 open (OUT, ">$output") || $log->log_and_die("Can't open file $output");
 OUT->autoflush(1);       # empty the buffer after every line when writing to OUT
 
-my $db = NameDB_handler->new($wormbase);
+my $db = NameDB_handler->new($wormbase, $test);
 
 
 if ($action eq 'new') {

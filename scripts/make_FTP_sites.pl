@@ -157,7 +157,7 @@ my $maintainers = "All";
 
 my $targetdir = ($testout) 
     ? "$testout/releases/$WS_version_name"
-    : $wormbase->ftp_staging . "/releases/$WS_version_name";
+    : $wormbase->ftp_site . "/releases/.${WS_version_name}";
 
 $log->write_to("WRITING TO $targetdir\n");
 
@@ -347,8 +347,9 @@ sub copy_dna_files{
       # copy over outstanding dna files
       foreach my $dna_file (glob("$seqdir/*.dna.gz"), glob("$seqdir/*.dna"), glob("$seqdir/*.pep")) {
         if (not exists $copied_files{$dna_file}) {
-          my ($prefix) = $dna_file =~ /$seqdir\/(\S+)\./;
           my $target;
+          my ($prefix) = $dna_file =~ /$seqdir\/(\S+)\.(pep|dna)/;
+
           if ($dna_file =~ /pep/) {
               $target = "$dna_dir/${gspecies}.${bioproj}.${WS_version_name}.$prefix.pep.gz";
           }
@@ -399,7 +400,7 @@ sub copy_gff_files{
     my $target_gff2_file = "$gff_dir/${fname_prefix}.annotations.gff2.gz";
     my $target_gff3_file = "$gff_dir/${fname_prefix}.annotations.gff3.gz";
     my $target_gtf_file = "$gff_dir/${fname_prefix}.canonical_geneset.gtf.gz";
-    my $target_prot_file = "$gff_dir/${fname_prefix}.protein_annotation.gff3";
+    my $target_prot_file = "$gff_dir/${fname_prefix}.protein_annotation.gff3.gz";
 
     foreach my $fname_pair ([$source_gff2_file,  $target_gff2_file],
                             [$source_gff3_file,  $target_gff3_file],
@@ -476,7 +477,7 @@ sub copy_gff_files{
     my $cur_ver_label = sprintf("%s.%s.WS%d", $g_species, $bioproj, $WS_version);
 
     my $prev_ver_gff3_file = sprintf("%s/releases/WS%d/species/%s/%s/%s.%s.WS%s.annotations.gff3.gz", 
-                                     $wormbase->ftp_staging,
+                                     $wormbase->ftp_site,
                                      $WS_version - 1,
                                      $g_species,
                                      $bioproj,
@@ -1208,6 +1209,7 @@ sub make_md5sums {
   while(<FIND>) {
     chomp;
     s/^$targetdir\///;
+    if (-d $_) {next}
     push @files, $_;
   }
 

@@ -20,25 +20,17 @@ use Ace;
 # variables   #
 ###############
 
-my (
-  $store,
-  $test,
-  $debug,
-  $species,
-  $noload,
-  $acefile,
-  $ace_fh,
-  $wormbase,
-    );
+my ($store,$test,$debug,$species,$noload,$acefile,$ace_fh,$wormbase,$database);
 
 GetOptions(
-  "debug=s"       => \$debug,
+  'debug=s'       => \$debug,
   'store=s'       => \$store,
   'species=s'     => \$species,
-  "test"          => \$test,
-  "noload"        => \$noload,
-  "acefile=s"     => \$acefile,
-    );
+  'test'          => \$test,
+  'noload'        => \$noload,
+  'acefile=s'     => \$acefile,
+  'database=s'    => \$database,
+)||die($@);
 
 #################################################
 # config 
@@ -85,13 +77,15 @@ my $log = Log_files->make_build_log($wormbase);
 # Paths etc. #
 ##############
 
-$acefile = $wormbase->acefiles . "/protein_xref_promotion.ace" if not defined $acefile;
+$acefile = $wormbase->acefiles . '/protein_xref_promotion.ace' if not defined $acefile;
 
 my %cds2gene = $wormbase->FetchData('cds2wbgene_id');
 my %gene_info;
 
 my $tmpdef = &write_TM_def;
-my $tm_query = $wormbase->table_maker_query($wormbase->autoace,$tmpdef);
+$database||=$wormbase->autoace;
+my $tm_query = $wormbase->table_maker_query($database,$tmpdef);
+
 while(<$tm_query>) {
   s/\"//g;
   next if (/acedb/ or /\/\// or /^\s*$/);
@@ -106,11 +100,15 @@ while(<$tm_query>) {
 
   $gene_info{$gene_id}->{$db_name}->{$db_field}->{$db_val} = 1;
 }
+
 unlink $tmpdef;
 
 open($ace_fh, ">$acefile") or $log->log_and_die("Could not open $acefile for writing\n");
+
+my $n = 0;
 foreach my $g (sort keys %gene_info) {
   print $ace_fh "\nGene : $g\n";
+  $n++;
   foreach my $db (sort keys %{$gene_info{$g}}) {
     foreach my $dbf (sort keys %{$gene_info{$g}->{$db}}) {
       my @vals = keys %{$gene_info{$g}->{$db}->{$dbf}};
@@ -123,6 +121,12 @@ foreach my $g (sort keys %gene_info) {
     }
   }
 }
+
+
+if ($wormbase->species eq 'elegans'){
+	$log->log_and_die("there were no xrefs to promote in C.elegans, which is very unlikely\n") unless $n;
+}
+
 close($ace_fh) or $log->log_and_die("Could not close output file $ace_fh\n");
 
 unless ($noload) {

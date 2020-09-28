@@ -113,7 +113,7 @@ foreach $xaceinstances (@xaceinstances) {
 #  $wormbase->run_script("NAMEDB/camace_nameDB_comm.pl -database $xaceinstances", $log);
   
   # Run additional checks for camace
-  if ($xaceinstances eq "/nfs/wormpub/BUILD/PRIMARIES/camace"){
+  if ($xaceinstances =~ m#BUILD/PRIMARIES/camace$#){
     print "Checking $xaceinstances for gene curation errors\n\nrunning check_predicted_genes.pl -database $xaceinstances\n";
     $wormbase->run_script("check_predicted_genes.pl -database $xaceinstances", $log);
   }

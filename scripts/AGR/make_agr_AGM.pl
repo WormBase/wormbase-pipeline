@@ -10,20 +10,21 @@ use Ace;
 use lib $ENV{CVS_DIR};
 use Modules::AGR;
 
-my ($database,$alleles,$outfile,$ws_version);
+my ($database,$alleles,$outfile,$ws_version,$diseases);
 GetOptions (
 	'database:s' => \$database,
 	'alleles:s'  => \$alleles,
+	'diseases:s' => \$diseases,
 	'outfile:s'  => \$outfile,
 	'wsversion:s'=> \$ws_version,
 )||die @!;
 
 my $db = Ace->connect(-path => $database) or die(Ace->error);
 
-my $jsondoc = read_json($alleles);
-my @ids = map {$_->{primaryId}} @{$jsondoc->{data}};
-my %strains;
+my @ids = read_ids($alleles);
+my @disease_ids = read_disease_ids($diseases);
 
+my %strains;
 while (my $id = shift @ids){
 	$id =~s/WB://;
 	my $aceVar;
@@ -33,6 +34,7 @@ while (my $id = shift @ids){
 	}elsif($id=~/WBTransgene/){
       	    $aceVar = $db->fetch(Transgene => $id);
 	}
+	warn("cannot find $id\n") unless $aceVar;
         @strains = $aceVar->Strain;
 
 	next unless @strains; # for the alleles without curated strain data
@@ -55,7 +57,17 @@ while (my($k,$v)= each %strains){
 		affectedGenomicModelComponents => [map {{alleleID => "WB:$_",zygosity => 'GENO:0000137'}} @$v],
 	};
 	push @annotation,$strain;
-	# last;
+}
+
+foreach my $dId (@disease_ids){
+	my $d = $db->fetch(Genotype => $dId);
+	my $disease_annotation = {
+		primaryId => "WB:$dId",
+		name      => ($d->Genotype_name ? "${\$d->Genotype_name}" : $dId),
+		taxonId   => 'NCBITaxon:6239',
+		crossReference => {id => "WB:$dId",pages => ['genotype']} # needs to be added to the resources file
+	};
+	push @annotation, $disease_annotation;
 }
 
 my $date = AGR::get_rfc_date();
@@ -77,6 +89,24 @@ print $out_fh $string;
 $db->close;
 
 ###########################
+
+sub read_disease_ids{
+	my ($file) = @_;
+	open IN, "<$file";
+	my @ids;
+	while (<IN>){
+		push @ids, "$1" if /(WBGenotype\d+)/
+	}
+	return @ids;
+}
+
+sub read_ids{
+	my ($file)=@_;
+	my $jsondoc = read_json($file);
+	my @ids = map {$_->{primaryId}} @{$jsondoc->{data}};
+	return @ids;
+}
+
 sub read_json{
 	my ($file) = @_;
 

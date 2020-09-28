@@ -1,4 +1,7 @@
 #!/usr/bin/env perl
+#
+# Script to create BGI JSON file according to AGR 1.0.1.3 schema as specified in
+# https://docs.google.com/document/d/1yAECtOs1VCEs3mhplJMXqg1akBQJyJbjPnvG2RrE5Aw/edit
 
 use strict;
 use Storable;	
@@ -186,6 +189,9 @@ foreach my $sub_query (
 
     # Back-to-mod xrefs
     my @baseXrefs = qw(gene gene/expression gene/references);
+    push @baseXrefs, 'gene/phenotypes' if
+	($obj->Allele and $obj->Allele->Phenotype) or
+	($obj->RNAi_result and $obj->RNAi_result->Phenotype);
     push @baseXrefs, 'gene/expression_images' if ($obj->Expr_pattern && grep {$_->Picture} $obj->Expr_pattern);
 
     push @xrefs, {

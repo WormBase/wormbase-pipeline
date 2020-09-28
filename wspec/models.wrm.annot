@@ -726,7 +726,7 @@
                                     Wet_shrubland
                                     Dry_shrubland
                    Substrate UNIQUE ?Text // e.g. snail, soil, apple, rotting fruit
-                   Associated_organisms ?Species
+                   Associated_organisms ?Text
                    Life_stage ?Life_stage
                    Log_size_of_population UNIQUE Float
                    Sampled_by Text // the person who found the worms

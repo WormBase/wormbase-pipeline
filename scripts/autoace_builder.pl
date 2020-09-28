@@ -197,8 +197,13 @@ $wormbase->run_script("check_class.pl -stage run_inverted -classes Feature_data"
 
 
 #must have farm complete by this point.
-$wormbase->run_script( 'load_data_sets.pl -misc', $log) if $misc_data_sets;
-$wormbase->run_script( 'load_data_sets.pl -homol', $log) if $homol_data_sets;
+if ($misc_data_sets){
+	$wormbase->run_script('AGR/import_AGR_gene_objects.pl -load',$log);
+	$wormbase->run_script('AGR/agr_orthologs.pl -load',$log);
+	$wormbase->run_script('load_data_sets.pl -misc', $log);
+	$wormbase->run_script('load_data_sets.pl -homol', $log);
+}
+
 # $build_dumpGFF.pl; (homol) is run chronologically here but previous call will operate
 $wormbase->run_script( 'make_wormrna.pl'                         , $log) if $rna;
 if ($confirm) {
@@ -245,22 +250,20 @@ if ($prepare_gff_munge) {
 
 #several GFF manipulation steps
 if ($gff_munge or $gff3_munge) {
-    #Used for finding the previous gff files in the staging area of the sanger file system
-    #previously looked at the internal FTP dir but we no longer store the data at Sanger. 
   my $prev_gff_prefix = 
-      join("/", 
-           $wormbase->ftp_staging, 
-           "releases", 
-           "WS" . ($wormbase->version - 1),
-           "species",
-           $wormbase->full_name(-g_species => 1),
-           $wormbase->ncbi_bioproject,
-           join(".", 
-                $wormbase->full_name(-g_species => 1),
-                $wormbase->ncbi_bioproject, 
-                "WS" . ($wormbase->version - 1),
-                "annotations")
-      );
+    join("/", 
+	 $wormbase->ftp_site,
+	 "releases",
+	 "WS" . ($wormbase->version - 1),
+	 "species",
+	 $wormbase->full_name(-g_species => 1),
+	 $wormbase->ncbi_bioproject,
+	 join(".", 
+	      $wormbase->full_name(-g_species => 1),
+	      $wormbase->ncbi_bioproject, 
+	      "WS" . ($wormbase->version - 1),
+	      "annotations")
+	);
 
   if ($gff_munge) {
     $wormbase->run_script( 'GFF_post_process/GFF_post_process.pl -all', $log); 
@@ -602,7 +605,6 @@ sub post_merge_steps {
 sub ontologies {
   $wormbase->run_script( "ONTOLOGY/make_anatomy_GAF.pl", $log);
   $wormbase->run_script( "ONTOLOGY/make_phenotype_GAF.pl", $log);
-  $wormbase->run_script( "ONTOLOGY/make_disease_GAF.pl", $log);
   $wormbase->run_script( "ONTOLOGY/make_lifestage_GAF.pl", $log);
   $wormbase->run_script( "ONTOLOGY/make_GO_GAF.pl", $log);
   $wormbase->run_script( "ONTOLOGY/get_easy_phenotypes.pl", $log);
@@ -625,22 +627,22 @@ sub build_release {
 sub go_public {
 
   my $ftp_release_dir = $wormbase->ftp_site . "/releases";
-  my $ftp_staging_dir = $wormbase->ftp_site . "/staging/releases";
+#  my $ftp_staging_dir = $wormbase->ftp_site . "/staging/releases";
   my $db_dir = $wormbase->wormpub . "/DATABASES";
   my $rel   = $wormbase->get_wormbase_version_name;
   
-  if (not -d "$ftp_staging_dir/$rel") {
-    $log->log_and_die("Did not find $ftp_staging_dir/$rel. Something wrong. Not going public\n");
+  if (not -d "$ftp_release_dir/.${rel}") {
+    $log->log_and_die("Did not find $ftp_release_dir/.${rel} Something wrong. Not going public\n");
   }
   if (not -d "$db_dir/$rel") {
-    $log->log_and_die("Did not find $db_dir/$rel. Something wrong. Not going public\n");
+    $log->log_and_die("Did not find $db_dir/$rel Something wrong. Not going public\n");
   }
-  if (not -e "$ftp_staging_dir/$rel/letter.$rel") {
-    $log->log_and_die("Did not find $ftp_staging_dir/$rel/letter.$rel. Something wrong. Not going public\n");
+  if (not -e "$ftp_release_dir/.${rel}/letter.$rel") {
+    $log->log_and_die("Did not find $ftp_release_dir/.${rel}/letter.$rel Something wrong. Not going public\n");
   }
   
   $log->write_to("Moving the release folder from staging to live\n");
-  $wormbase->run_command("mv $ftp_staging_dir/$rel $ftp_release_dir/", $log) 
+  $wormbase->run_command("mv $ftp_release_dir/.${rel} $ftp_release_dir/$rel", $log) 
       and $log->log_and_die("Failed to mv release folder into place - aborting\n");
   
   $log->write_to("Updating the current_development symlink\n");

@@ -635,7 +635,9 @@ sub get_intron_from_exons {
       if (@{$in} > 5) {
 	# store the hit positions if known
 	if (($hit_start < $hit_end && $prev_hit_end <= $hit_start) || # 5' read
-	    ($hit_start > $hit_end && $prev_hit_end >= $hit_start)) { # 3' read
+	    ($hit_start > $hit_end && $prev_hit_end >= $hit_start) || # 3' read
+	    ($id =~ /(IsoSeq|_SS_GG|Nanopore)/) # Trinity/Isoseq/Nanopore sequences do not have orientation sorted out yet -- just accept anything
+	   ) { 
 	  push @out, [$id, $prev_end+1, $start-1, $sense, $prev_hit_end, $hit_start, $score];
 	}
       } else {

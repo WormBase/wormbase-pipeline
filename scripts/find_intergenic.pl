@@ -312,7 +312,7 @@ foreach my $chromosome (@chromosomes) {
       $sequence = $seq_obj->Sub_sequence("${\$wormbase->chromosome_prefix}$chromosome", "$seq_start", "$width");
 
       if ($sequence) {
-         my $seq = Bio::PrimarySeq->new(-id   => ">${last_name}_endofsequence",
+         my $seq = Bio::PrimarySeq->new(-id   => "${last_name}_endofsequence",
                                          -desc => "$chromosome $print_start len:$width",
                                          -seq  => uc($sequence));
 	$seqio->write_seq($seq);
@@ -335,7 +335,7 @@ foreach my $chromosome (@chromosomes) {
 	    $sequence = $seq_obj->DNA_revcomp($sequence);
 	  }
 
-          my $seq = Bio::PrimarySeq->new(-id   => ">$last_name.${prime}prime",
+          my $seq = Bio::PrimarySeq->new(-id   => "$last_name.${prime}prime",
                                          -desc => "$chromosome $print_start",
                                          -seq  => uc($sequence));
           $seqio->write_seq($seq);

@@ -89,9 +89,9 @@ sub new {
 
 
   if ($species eq 'elegans') {
-    $self->{curated_database} = "/nfs/wormpub/camace_${USER}";
+    $self->{curated_database} = $self->{wormbase}->wormpub . "/camace_${USER}";
   } else {
-    $self->{curated_database} = "/nfs/wormpub/${species}_curation";
+    $self->{curated_database} = $self->{wormbase}->wormpub . "${species}_curation";
   }
 
 
@@ -2231,6 +2231,8 @@ sub person {
   } elsif ($USER eq 'jane') { # Jane Lomax
     $personid = 'WBPerson28994';
   } elsif ($USER eq 'wormpub') {
+    $personid = 'WBPerson4025'; # Gary again
+  } elsif ($USER eq 'wormbase') {
     $personid = 'WBPerson4025'; # Gary again
   } else {
     die "Unknown WBPerson id: $USER\n";

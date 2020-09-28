@@ -103,7 +103,7 @@ if ( $store ) {
 } else {
   # check that the given species is correct
   if (!defined $species) {
-    if (defined $database && (glob($database) ne glob("~wormpub/BUILD/autoace") && glob($database) ne glob("~wormpub/DATABASES/current_DB)"))) {
+    if (defined $database && (glob($database) ne glob($wormbase->wormpub . "/BUILD/autoace") && glob($database) ne glob($wormbase->wormpub . "/DATABASES/current_DB)"))) {
       croak("Please give the -species parameter if using a non-standard database\n");
     } else {
       $species = 'elegans';
@@ -330,7 +330,7 @@ foreach my $chromosome (@chromosomes) {
 #  if (! @genblastg_exons && exists $run{GENBLASTG_DIFFERS_FROM_CDS}) {
 #    my %GFF_data = 
 #      (
-#       file		=> "~wormpub/BUILD_DATA/MISC_DYNAMIC/genBlastG/${species}_v128.gff3", 
+#       file		=> $wormbase->wormpub . "/BUILD_DATA/MISC_DYNAMIC/genBlastG/${species}_v128.gff3", 
 #       gff_source	=> "hybrid2",
 #       gff_type		=> "coding_exon",
 #       ID_after		=> "Parent=",
@@ -630,7 +630,7 @@ sub get_expression {
     
     my %GFF_data = 
       (
-       file => "~wormpub/CURATION_DATA/Tiling_array_data/tiling_array_${chromosome}.gff",
+       file => $wormbase->wormpub . "/CURATION_DATA/Tiling_array_data/tiling_array_${chromosome}.gff",
        gff_source => 'tiling_array',
        gff_type   => 'tiling_array',
        ID_after   => 'ID\s+',
@@ -655,7 +655,7 @@ sub get_unmatched_454 {
 
     my %GFF_data = 
       (
-       file => "~wormpub/CURATION_DATA/WS206_454_shin_cluster.gff",
+       file => $wormbase->wormpub . "/CURATION_DATA/WS206_454_shin_cluster.gff",
        gff_source => '454_read_cluster',
        gff_type   => 'expressed_sequence_match',
        ID_after   => 'position\s+',

@@ -86,7 +86,8 @@ sub _read_mapping_data {
   # access like: $fields_hashref = @{ $mapping_data[$release]{$chrom}[$next_difference] }
   my %mapping_data;
 
-  foreach my $release (($release1+1) .. $release2) {
+  if ($release1 =~ /\^d+$/) {$release1++}
+  foreach my $release ($release1 .. $release2) {
     my %chroms;
 
     my $infile = $self->_genome_differences_dir . "/sequence_differences.WS$release";
@@ -158,7 +159,7 @@ sub remap_ace {
   my ($self, $chromosome, $start, $end) = @_;
                       
   my $sense = "+";
-  my ($indel, $change);
+  my ($indel, $change, $start_deleted, $end_deleted);
 
   if ($start > $end) {
     $sense = "-";
@@ -167,7 +168,7 @@ sub remap_ace {
     $end = $tmp;
   }
 
-  ($start, $end, $sense, $indel, $change) = $self->remap_gff($chromosome, $start, $end, $sense);
+  ($start, $end, $sense, $indel, $change, $start_deleted, $end_deleted) = $self->remap_gff($chromosome, $start, $end, $sense);
 
   if ($sense eq '-') {
     my $tmp = $start;
@@ -175,7 +176,7 @@ sub remap_ace {
     $end = $tmp;
   }
                                                    
-  return ($start, $end, $indel, $change);
+  return ($start, $end, $indel, $change, $start_deleted, $end_deleted);
 
 }
 

@@ -701,7 +701,7 @@
                                     Wet_shrubland
                                     Dry_shrubland
                    Substrate UNIQUE ?Text // e.g. snail, soil, apple, rotting fruit
-                   Associated_organisms ?Species
+                   Associated_organisms ?Text
                    Life_stage ?Life_stage
                    Log_size_of_population UNIQUE Float
                    Sampled_by Text // the person who found the worms
@@ -3809,6 +3809,7 @@
           Group Project ?Analysis XREF Subproject
                 Subproject ?Analysis XREF Project
           Description ?Text
+          Category ?Text //Dataset Category search in AGR
           Sample ?Condition XREF Analysis
           Independent_variable Life_stage
                                Sex
@@ -3825,6 +3826,7 @@
           Expression_cluster_RNAseq ?Expression_cluster XREF RNAseq
           Expression_cluster_tiling_array ?Expression_cluster XREF Tiling_array
           Expression_cluster_qPCR ?Expression_cluster XREF qPCR  //added by Wen for qPCR curation
+          Microarray_experiment ?Microarray_experiment // To create Microarray Datasets in AGR
           Gene_cluster ?Gene_cluster XREF Analysis
           Molecule ?Molecule XREF Analysis
           Species_in_analysis ?Species XREF In_analysis

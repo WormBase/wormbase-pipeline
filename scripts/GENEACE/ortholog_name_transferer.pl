@@ -31,7 +31,7 @@ my $deletebatchfile  = "/nfs/wormpub/DATABASES/geneace/CGC/delete_batch_load";
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
-            "test"       => \$test,
+            "test"       => \$test, # use the test acedb database and the test nameserver
             "verbose"    => \$verbose,
             "store:s"    => \$store,
 	    "database:s" => \$database,
@@ -759,7 +759,7 @@ sub date {
 sub sanity_check {
   my (@genes) = @_;
   
-  my $db = NameDB_handler->new($wormbase);
+  my $db = NameDB_handler->new($wormbase, $test);
 
   foreach my $gene (@genes) {
     my $gene_name = $gene->name;

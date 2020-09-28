@@ -102,7 +102,7 @@ while( my $obj = $it->next) {
   $evi_date = sprintf('%4d-%02d-%02dT00:00:00+00:00', $y, $m, $d);
 
   my ($paper) = &get_paper( $obj->Paper_evidence );
-  my @evi_codes = map { $go2eco{$_->name} } $obj->Evidence_code;
+  my @evi_codes = map { $go2eco{$_->right} } $obj->Evidence_code;
 
   # [200507 mh6]
   # the crossReference should be annotation specific, but as the id changes every release the 
@@ -114,7 +114,7 @@ while( my $obj = $it->next) {
       { 
         crossReference => {
           id => $obj->Disease_term->name,
-          pages => ['disease'],
+          pages => ['disease/wb'],
         },
         type => 'curated',
       },
@@ -149,10 +149,12 @@ while( my $obj = $it->next) {
   my ($allele) = $obj->Variation;
   my ($transgene) = $obj->Transgene;
   my ($gene) = $obj->Disease_relevant_gene;
+  my ($genotype) = $obj->Genotype;
   my (@inferred_genes) = map { 'WB:'.$_->name } $obj->Inferred_gene;
-  my ($obj_id, $obj_name, $obj_type, $assoc_type);
+  my ($obj_id, $obj_name, $obj_type);
   my (@with_list) = map {'WB:'.$_->name} ($obj->Interacting_variation,$obj->Interacting_gene,$obj->Interacting_transgene);
-
+  my $assoc_type = 'is_implicated_in';
+  
   if ($white && $allele){ # remove annotations unless they are in the AGR allele variations
 	  next unless $wl->{"$allele"}
   }
@@ -169,10 +171,14 @@ while( my $obj = $it->next) {
     push @with_list, "WBVar:" . $allele->name if (defined $allele && $build);
     
   } elsif (defined $allele) {
-    $obj_type = "allele";
-    $obj_name = $allele->Public_name->name;
-    $assoc_type = 'is_implicated_in';
-    $obj_id = 'WB:' . $allele->name;
+    if ($allele->Public_name){
+	    $obj_type = "allele";
+	    $obj_name = $allele->Public_name->name;
+	    $obj_id = 'WB:' . $allele->name;
+    }else{
+	    warn "$allele is missing a public name. Skipping ${\$obj->name}\n";
+	    next;
+    }
 
     # WB/CalTech specific changes to the format
     push @with_list, "WB:" . $gene->name if (defined $gene && $build);
@@ -181,7 +187,6 @@ while( my $obj = $it->next) {
   } elsif (defined $transgene) {
     $obj_type = $build ? 'transgene' : 'allele';# as quick fix for 3.0
     $obj_name = $transgene->Public_name->name;
-    $assoc_type = 'is_implicated_in';
     $obj_id = 'WB:' . $transgene->name;
     
     # WB/CalTech specific changes to the format
@@ -190,14 +195,20 @@ while( my $obj = $it->next) {
   } elsif (defined $gene) {
     $obj_type = 'gene';
     $obj_name = $gene->Public_name->name;
-    $assoc_type = 'is_implicated_in';
     $obj_id = 'WB:' . $gene->name;
 
     @inferred_genes = ();
+  } elsif (defined $genotype){
+	  $obj_type = 'genotype';
+	  $obj_name = "${\$genotype->Genotype_name}";
+	  $obj_id = 'WB:' . $genotype->name;
   } else {
-    die "Could not identify a central object for the annotation from Disease_model_annotation $obj->name\n";
+    warn "Could not identify a central object for the annotation from Disease_model_annotation ${\$obj->name}\n";
+    next;
   }
 
+  $assoc_type = $obj->Association_type->name if $obj->Association_type and !defined $strain;
+  
   my $assoc_rel = {
     associationType => $assoc_type,
     objectType      => $obj_type,
@@ -236,7 +247,7 @@ while( my $obj = $it->next) {
 
     # WB/CalTech specific changes
     $annot->{modifier} = $mod_annot if $build;
-    $annot->{negation} = 'not' if $obj->at('Modifier_qualifier_not');
+    # $annot->{negation} = 'not' if $obj->at('Modifier_qualifier_not'); # according to Ranjana, it should not be included
   }
 
   if ($obj->Experimental_condition){

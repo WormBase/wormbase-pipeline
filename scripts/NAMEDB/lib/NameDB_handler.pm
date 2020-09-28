@@ -17,8 +17,7 @@ This is an API layer above the NSAPI.pm module specifically for handling GeneID 
 
 =item Synopsis
 
-my $db = NameDB_handler->new($wormbase, $species);
-	
+my $db = NameDB_handler->new($wormbase, $test);
 my $gene_id = $db->merge_genes($id_to_keep, $id_to_kill);
 my $split   = $db->split_genes($cds_name, $name_type,$gene_id);
 
@@ -30,13 +29,28 @@ New genes created are given the same species name as the Wormbase->{species} nam
 our @ISA = qw( NSAPI );
 
 
-# status - done
+
+=head2 
+
+This sets up a new NameDB object.
+
+=item Synopsis
+
+my $db = NameDB_handler->new($wormbase);
+
+  or if you wish to use the test NameServer database to debug things, set the optional 'test' argument:
+
+my $db = NameDB_handler->new($wormbase, 1);
+
+=cut
+
 sub new {
   my $class = shift;
   my $self = {};
   bless $self, $class;
 
   $self->{'wormbase'} = shift;    
+  my $test = shift;
 
   $self->{'full_name'} = {
 		      elegans   => 'Caenorhabditis elegans',
@@ -44,6 +58,7 @@ sub new {
 		      remanei   => 'Caenorhabditis remanei',
 		      brenneri  => 'Caenorhabditis brenneri',
 		      japonica  => 'Caenorhabditis japonica',
+                      pristionchus => 'Pristionchus pacificus',
 		      brugia    => 'Brugia malayi',
 		      ovolvulus => 'Onchocerca volvulus',
 		      sratti    => 'Strongyloides ratti',
@@ -53,8 +68,8 @@ sub new {
   $self->{'short_species'} = $self->{'wormbase'}->species;
   $self->{'long_species'} = $self->{'wormbase'}->long_name;
 
-
-  $self->{'db'} = NSAPI->connect();
+  if (!defined $test) {$test = 0}
+  $self->{'db'} = NSAPI->connect($test);
   
   #read in clone list to validate CDS names with
   # *** %clones does not appear to be used now, but it doesn't hurt to have it ***
@@ -101,10 +116,9 @@ sub close {
   $self->{'db'}->disconnect();
 }
 
-
 #######################################################################
 
-=head2 test
+=head2 unittest
 
 status - in progress
 
@@ -112,11 +126,11 @@ This tests some things in this package.
 
 =item Synopsis
 
-$db->test();	
+$db->unittest();	
 
 =cut
 
-sub test {
+sub unittest {
   my ($self) = @_;
 
 # %data - hash keyed by type of entity to be tested, one of: 'gene', 'variation', 'strain', 'feature', 'person', 'species', 'stats'
@@ -375,7 +389,7 @@ The data structure returned is:
 #           'species' => 'Caenorhabditis elegans' #was gene/species
 #         };
 
-
+# if the gene ID does not exist, it returns 'undef'
 
 =item Synopsis
 
@@ -415,7 +429,7 @@ sub printAllNames
     my $id = shift;
 
     my $info = $self->{'db'}->info_gene($id);
-    if (exists $info->{'message'}) {print "Not found\n";}
+    if (!defied $info) {print "Not found\n";}
     print "Current gene names for $id\n";
     print "cgc-name:      ", $info->{'cgc-name'}, "\n" if (exists $info->{'cgc-name'});
     print "sequence-name: ", $info->{'sequence-name'}, "\n" if (exists $info->{'sequence-name'});
@@ -477,8 +491,8 @@ sub validate_name {
 						    "CGC" => '^Ppa-[a-z21]{3,4}-[1-9]\d*(\.\d+)?$',	
 						    "Sequence" => '^PPA\d{5}$',
 						   },
-                       'Caenorhabditisjaponica' => {
-						    "CGC" => '^Cjp-[a-z21]{3,4}-[1-9]\d*(\.\d+)?$',	
+                       'Caenorhabditis japonica' => {
+                                                    "CGC" => '^Cjp-[a-z21]{3,4}-[1-9]\d*(\.\d+)?$',	
 						    "Sequence" => '^CJA\d{5}$',
 						   },
 		       'Brugia malayi' => {
@@ -833,9 +847,7 @@ sub merge_genes {
   
   #enforce retention of CGC named gene
   my $info1 = $self->{'db'}->info_gene($gene_id); # info_gene returns {'message' => 'Resource not found'}
-  if (exists $info1->{'message'}) {$info1 = undef}
   my $info2 = $self->{'db'}->info_gene($merge_id); # info_gene returns {'message' => 'Resource not found'}
-  if (exists $info2->{'message'}) {$info2 = undef}
   my $name1 = $info1->{'cgc-name'};
   my $name2 = $info2->{'cgc-name'};
   
@@ -903,7 +915,6 @@ sub split_gene {
   }
 
   my $info = $self->{'db'}->info_gene($gene_id);
-  if (exists $info->{'message'}) {$info = undef}
   if (!defined $long_species) {
     $long_species = $info->{'species'};
   }
@@ -1104,7 +1115,6 @@ sub idExists {
   if ($id =~ /\s+/) {return 0} # spaces in the ID are invalid
 
   my $info = $self->{'db'}->info_gene($id); # info_gene returns hashref {message' => 'Resource not found'} if the ID does not exist
-  if (exists $info->{'message'}) {$info = undef}
 
   return (defined $info) ? 1 : 0; 
 }
@@ -1132,7 +1142,6 @@ sub idGetByTypedName {
   my ($type, $name, $domain) = @_;
 
   my $info = $self->{'db'}->info_gene($name);
-  if (exists $info->{'message'}) {$info = undef}  # info_gene returns {message => 'Unable to find any entity for given identifier.'} if the ID does not exist
   if (defined $info && $type eq 'CGC') {if (exists $info->{'cgc-name'}) {return  $info->{'id'}}}
   if (defined $info && $type eq 'Sequence') {if (exists $info->{'sequence-name'}) {return  $info->{'id'}}}
   if ($type eq 'Public_name' && defined $info) { # match either CGC-name or Sequence-name
@@ -1161,7 +1170,6 @@ sub idGetByAnyName {
 
   my @array;
   my $info = $self->{'db'}->info_gene($name);
-  if (exists $info->{'message'}) {$info->{'id'} = undef}  # info_gene returns {message => 'Unable to find any entity for given identifier.'} if the ID does not exist
   push @array,  $info->{'id'};
   return wantarray ? @array : \@array;
 
@@ -1226,7 +1234,6 @@ sub idPublicName {
   my ($id) = @_;
 
   my $info = $self->{'db'}->info_gene($id);
-  if (exists $info->{'message'}) {$info = undef}  # info_gene returns {message => 'Resource not found'} if the ID does not exist
 
   my $name = $info->{'cgc-name'} if (exists $info->{'cgc-name'});
   if (! defined $name && exists $info->{'sequence-name'}) {
@@ -1256,7 +1263,6 @@ sub idLive {
 
 
   my $info = $self->{'db'}->info_gene($id);
-  if (exists $info->{'message'}) {$info = undef}  # info_gene returns {message => 'Resource not found'} if the ID does not exist
 
   return ($info->{'status'} eq 'live') ? 1 : 0; 
 }
@@ -1290,9 +1296,7 @@ sub idTypedNames {
 
   my @array;
   my $info = $self->{'db'}->info_gene($public_id);
-  if (exists $info->{'message'}) {$info = undef}  # info_gene returns {message => 'Resource not found'} if the ID does not exist
   if (defined $info) {
-
     if (($type eq 'CGC' || $type eq 'cgc-name') && exists $info->{'cgc-name'}) {push @array,  $info->{'cgc-name'}}
     if (($type eq 'Sequence' || $type eq 'cgc-sequence-name') && exists $info->{'sequence-name'})  {push @array,  $info->{'sequence-name'}}
     if (($type eq 'Biotype' || $type eq 'biotype') && exists $info->{'biotype'})  {push @array,  $info->{'biotype'}}
@@ -1318,7 +1322,6 @@ sub idAllNames {
   my ($type, $public_id) = @_;
 
   my $info = $self->{'db'}->info_gene($public_id);
-  if (exists $info->{'message'}) {$info = undef}  # info_gene returns {message => 'Resource not found'} if the ID does not exist
 
   return $info->{$type};
 
@@ -1814,7 +1817,7 @@ sub new_variations {
   my ($self, $names, $why) = @_;
   my %new_ids;
 
-  my $info = $self->{'db'}->new_varations($names, $why);
+  my $info = $self->{'db'}->new_entities('varation', $names, $why);
 
   my @ids = @{$info->{'ids'}};
   
@@ -1840,7 +1843,7 @@ sub new_variations {
 sub update_variations {
   my ($self, $new_names, $why) = @_;
 
-  my $info = $self->{'db'}->update_variations($new_names, $why);
+  my $info = $self->{'db'}->update_entities('variation', $new_names, $why);
   return $info;
 
 }
@@ -1856,7 +1859,7 @@ sub update_variations {
 sub kill_variations {
   my ($self, $names, $why) = @_;
 
-  my $info = $self->{'db'}->kill_variations($names, $why);
+  my $info = $self->{'db'}->kill_entities('variation', $names, $why);
   return $info;
 
 }
@@ -1871,7 +1874,7 @@ sub kill_variations {
 sub resurrect_variations {
   my ($self, $names) = @_;
 
-  my $info = $self->{'db'}->resurrect_variations($names);
+  my $info = $self->{'db'}->resurrect_entities('variation', $names);
   return $info;
 
 }
@@ -1896,8 +1899,30 @@ sub resurrect_variations {
 sub find_variations {
   my ($self, $pattern) = @_;
 
-  my $info = $self->{'db'}->find_variations($pattern);
+  my $info = $self->{'db'}->find_entity('variation', $pattern);
   return $info->{'matches'};
+
+}
+#############################################################################
+# info_variation($name)
+# returns a hash-ref of information about a single variation
+
+
+# Args:
+# $name - string
+#
+# Returns a hash-ref of data
+#
+# If nothing is found, an empty array-ref is returned.
+# keys:
+# id, name, status, history
+# If the ID does not exist, it returns 'undef'.
+
+sub info_variation {
+  my ($self, $name) = @_;
+
+  my $info = $self->{'db'}->info_entity('variation', $name);
+  return $info;
 
 }
 
@@ -1920,7 +1945,7 @@ sub new_features {
   my ($self, $number) = @_;
   my %new_ids;
 
-  my $info = $self->{'db'}->new_features($number);
+  my $info = $self->{'db'}->new_entities('sequence-feature', $number);
   my @ids = @{$info->{'ids'}};
   
   return (\@ids, $info->{'id'});
@@ -1937,7 +1962,7 @@ sub new_features {
 sub kill_features {
   my ($self, $names, $why) = @_;
 
-  my $info = $self->{'db'}->kill_features($names, $why);
+  my $info = $self->{'db'}->kill_entities('sequence-feature', $names, $why);
   return $info;
 
 }
@@ -1952,12 +1977,33 @@ sub kill_features {
 sub resurrect_features {
   my ($self, $ids) = @_;
 
-  my $info = $self->{'db'}->resurrect_features($ids);
+  my $info = $self->{'db'}->resurrect_entities('sequence-feature', $ids);
   return $info;
 
 }
 
 #############################################################################
+# info_feature($id)
+# returns a hash-ref of information about a single feature
+# If the ID does not exist, it returns 'undef'.
+
+
+# Args:
+# $id - string
+#
+# Returns a hash-ref of data
+#
+# If nothing is found, an empty array-ref is returned.
+# keys:
+# id, name, status, history
+
+sub info_feature {
+  my ($self, $name) = @_;
+
+  my $info = $self->{'db'}->info_entity('sequence-feature', $name);
+  return $info->{'matches'};
+
+}
 
 #############################################################################
 
@@ -1966,42 +2012,83 @@ sub resurrect_features {
 #======================================================================
 
 #############################################################################
-# new_strains($number)
-# creates new Feature IDs
+# new_strains($names, $why)
+# creates new Strain IDs
 #
 # Args:
-# $number - number of Strains to create
+# $names - array ref of names to give the new strains. Names have a format of letters then digits (e.g. 'pex2')
+# $why - string provenence reason for creating the strains (optional)
 #
-# Returns an array-ref of new Feature IDs with the batch ID
+# Returns a hash ref keyed by the new WBVar IDs with the names as values and the batch ID
 
 sub new_strains {
-  my ($self, $number) = @_;
+  my ($self, $names, $why) = @_;
   my %new_ids;
 
-  my $info = $self->{'db'}->new_strains($number);
+  my $info = $self->{'db'}->new_entities('strain', $names, $why);
+
   my @ids = @{$info->{'ids'}};
   
-  return (\@ids, $info->{'id'});
+  for my $i (0 .. $#ids) {
+    my $id  = $ids[$i]{'id'};
+    my $name = $ids[$i]{'name'};
+    $new_ids{$id} = $name;
+  }
+  
+  return (\%new_ids, $info->{'id'});
 
 }
 #############################################################################
-# kill a set of feature names
+# update_strains($new_names, $why)
+# updates Strain IDs with new names
 #
 # Args:
-# $names - an array-ref of feature IDs to kill
+# $names - hash ref of (key) WBVar IDs and (values) names to give the new strains
+# $why - string provenence reason for creating the strains (optional)
+#
+# Returns an array ref of $info->{'updated'}->{'id'}
+
+sub update_strains {
+  my ($self, $new_names, $why) = @_;
+
+  my $info = $self->{'db'}->update_entities('strain', $new_names, $why);
+  return $info;
+
+}
+
+#############################################################################
+# kill a set of strain names
+#
+# Args:
+# $names - an array-ref of strain IDs to kill
 # $why is optional remark text.
 
 
 sub kill_strains {
   my ($self, $names, $why) = @_;
 
-  my $info = $self->{'db'}->kill_strains($names, $why);
+  my $info = $self->{'db'}->kill_entities('strain', $names, $why);
+  return $info;
+
+}
+
+#############################################################################
+#Resurrect a batch of dead strains.
+#
+# Args:
+# $names - an array-ref of strain IDs to resurrect
+
+
+sub resurrect_strains {
+  my ($self, $names) = @_;
+
+  my $info = $self->{'db'}->resurrect_entities('strain', $names);
   return $info;
 
 }
 #############################################################################
-# find_variations($pattern)
-# returns an array-ref of hash-ref of any variations whose name matches the input pattern.
+# find_strains($pattern)
+# returns an array-ref of hash-ref of any strains whose name matches the input pattern.
 # pattern can be any of a regular expression or part of the name of a WBVarID, or name
 # patterns are case-sensitive
 # the pattern is contrained to match at the start of the name, use '.*' at the start of the pattern to match anywhere in the name
@@ -2020,25 +2107,117 @@ sub kill_strains {
 sub find_strains {
   my ($self, $pattern) = @_;
 
-  my $info = $self->{'db'}->find_strains($pattern);
+  my $info = $self->{'db'}->find_entity('strain', $pattern);
   return $info->{'matches'};
+
 }
-
 #############################################################################
-#Resurrect a batch of dead strains.
-#
+# info_strain($name)
+# returns a hash-ref of information about a single strain
+# If the ID does not exist, it returns 'undef'.
+
+
 # Args:
-# $ids - an array-ref of feature IDs to resurrect
+# $name - string
+#
+# Returns a hash-ref of data
+#
+# If nothing is found, an empty array-ref is returned.
+# keys:
+# id, name, status, history
 
+sub info_strain {
+  my ($self, $name) = @_;
 
-sub resurrect_strains {
-  my ($self, $ids) = @_;
-
-  my $info = $self->{'db'}->resurrect_strains($ids);
+  my $info = $self->{'db'}->info_entity('strain', $name);
   return $info;
 
 }
 
+#############################################################################
+
+
+#============================================================================
+# People
+#============================================================================
+
+# new_person($name, $email, $wbperson);
+# Args:
+# $name - how they are called
+# $email - how they are mailed
+# $wbperson - how they are identified
+
+sub new_person {
+  my ($self, $name, $email, $wbperson) = @_;
+
+  my %data = (
+	      'Name' => $name,
+	      'Email' => $email,
+	      'WBPerson' => $wbperson,
+	     );
+
+  my $info = $self->{'db'}->new_person(\%data);
+  return $info;
+
+}
+#############################################################################
+# kill_person($identifier)
+# $identifier should be a single Person identifier (one of WBPersonID, email, Person's name)
+
+# Args:
+# $person - string, person identifier of the person to delete
+
+sub kill_person {
+  my ($self, $person) = @_;
+
+  my $info = $self->{'db'}->kill_person($person);
+  return $info;
+
+}
+
+#############################################################################
+# info_person($identifier)
+# $identifier should be a single Person identifier (one of WBPersonID, email)
+# If the ID does not exist, it returns 'undef'.
+
+# Args:
+# $person - string, person identifier of the person to look at
+# returns hash with keys: email, name, id
+
+sub info_person {
+  my ($self, $person) = @_;
+
+  my $info = $self->{'db'}->info_person($person);
+  return $info;
+
+}
+
+#############################################################################
+# update_person($identifier, $name, $email, $wbperson)
+# $identifier should be a single Person identifier (one of WBPersonID, email)
+
+# Args:
+# $person - string, person identifier of the person to update (email or wbpersonID)
+# $name - update how they are called, or undef
+# $email - update how they are mailed, or undef
+# $wbperson - update how they are identified, or undef
+
+sub update_person {
+  my ($self, $person, $name, $email, $wbperson) = @_;
+
+  my %data;
+  if ($name) {$data{'Name'} = $name}
+  if ($email) {$data{'Email'} = $email}
+  if ($wbperson) {$data{'WBPerson'} = $wbperson}
+ 
+  my $info = $self->{'db'}->update_person($person, \%data);
+  return $info;
+
+}
+
+
+
+#############################################################################
 #############################################################################
 
 #############################################################################

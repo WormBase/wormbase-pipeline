@@ -9,7 +9,7 @@ use Storable;
 
 my ($debug, $test, $database,$species, $verbose, $store );
 my ($giface, $giface_server, $giface_client, $port);
-my ($gff3, $gff, $dump_dir, $rerun_if_failed, $methods, $chrom_choice);
+my ($gff3, $gff, $dump_dir, $rerun_if_failed, $methods, $chrom_choice, $mem);
 
 my $dumpGFFscript = "GFF_method_dump.pl";
 
@@ -17,22 +17,23 @@ use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
 use LSF::JobManager;
 
 GetOptions (
-  "debug:s"        => \$debug,
-  "test"           => \$test,
-  "verbose"        => \$verbose,
-  "database:s"     => \$database,
-  "dump_dir:s"     => \$dump_dir,
-  "methods:s"      => \$methods,
-  "chromosomes:s"  => \$chrom_choice,
-  "store:s"        => \$store,
-  "giface:s"       => \$giface,
-  "gifaceserver:s" => \$giface_server, 
-  "gifaceclient:s" => \$giface_client, 
-  "gff3"           => \$gff3,
-  "gff"            => \$gff,
-  "rerunfail"      => \$rerun_if_failed,
-  "species:s"	   => \$species,
-  "port:s"         => \$port,
+	    "debug:s"        => \$debug,
+	    "test"           => \$test,
+	    "verbose"        => \$verbose,
+	    "database:s"     => \$database,
+	    "dump_dir:s"     => \$dump_dir,
+	    "methods:s"      => \$methods,
+	    "chromosomes:s"  => \$chrom_choice,
+	    "store:s"        => \$store,
+	    "giface:s"       => \$giface,
+	    "gifaceserver:s" => \$giface_server, 
+	    "gifaceclient:s" => \$giface_client, 
+	    "gff3"           => \$gff3,
+	    "gff"            => \$gff,
+	    "rerunfail"      => \$rerun_if_failed,
+	    "species:s"      => \$species,
+	    "port:s"         => \$port,
+	    "mem:s"          => \$mem,
 	   );
 my $wormbase;
 if( $store ) {
@@ -105,11 +106,13 @@ mkdir $cmd_dir, 0777;
 my $cmd_file_root = "${cmd_dir}/dump_gff_batch_$$";
 my $cmd_base = "$dumpGFFscript -database $database -species $species -dump_dir $dump_dir";
 my $cmd_number = 0;
+my $this_mem;
+if (defined $mem){$this_mem = $mem} else {$this_mem = 4500}
 
 foreach my $chrom (@individual_chrs) {
   my $common_additional_params = "-chromosome $chrom -giface $giface";
-  my @common_bsub_opts = (-M => "4500", 
-                          -R => "\"select[mem>4500] rusage[mem=4500]\"");
+  my @common_bsub_opts = (-M => "$this_mem", 
+                          -R => "\"select[mem>$this_mem] rusage[mem=$this_mem]\"");
   if ( @methods ) {
     foreach my $method ( @methods ) {
       my $this_cmd_num = ++$cmd_number;
@@ -174,10 +177,12 @@ if (@batch_chrs) {
     print $batch_fh "$seq\n";
   }
   close($batch_fh);
+  my $this_mem;
+  if (defined $mem){$this_mem = $mem} else {$this_mem = 100}
 
   my $common_additional_params = "-host $host -port $port -gifaceclient $giface_client -list $seq_list_file";
-  my @common_bsub_opts =  (-M => "100", 
-                           -R => "\"select[mem>100] rusage[mem=100]\"");
+  my @common_bsub_opts =  (-M => "$this_mem", 
+                           -R => "\"select[mem>$this_mem] rusage[mem=$this_mem]\"");
 
   if ( @methods ) {
     foreach my $method ( @methods ) {
@@ -263,9 +268,12 @@ if (@problem_cmds and scalar(@problem_cmds) < 120 and $rerun_if_failed) {
   
   my $out = "$scratch_dir/wormpubGFFdump.rerun.lsfout";
   my $job_name = "worm_".$wormbase->species."_gffbatch";
-  
-  my @common_bsub_opts = (-M => "4500", 
-                          -R => "\"select[mem>4500] rusage[mem=4500]\"");
+
+  my $this_mem;
+  if (defined $mem){$this_mem = $mem} else {$this_mem = 4500}
+
+  my @common_bsub_opts = (-M => "$this_mem", 
+                          -R => "\"select[mem>$this_mem] rusage[mem=$this_mem]\"");
   
   my $rerun_count = 0;
   my @new_problem_cmds;

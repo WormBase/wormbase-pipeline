@@ -199,7 +199,6 @@ sub write_ace_orthologs {
     }
     
     next if not exists $live_genes{$wb_gm->stable_id};
-    #printf STDERR " Registering homol...%d...\n", $i++;
     $homols{$m_gm->stable_id}->{$wb_species}->{$wb_gm->stable_id} = 1;
     $homols{$wb_gm->stable_id}->{$m_species}->{$m_gm->stable_id} = 1;
   }
@@ -254,16 +253,22 @@ sub get_xref{
     $xs = dbxrefP('UniProt','UniProt_AC',$x);
   } elsif($x->dbname eq 'ZFIN_ID'){
     $xs = dbxrefP('ZFIN','primary_acc',$x);
+    $xs.= agrxref('ZFIN:',$x->primary_id)
   } elsif($x->dbname eq 'SGD_GENE'){
     $xs = dbxrefS('SGD','SGD_acc',$x);
+    $xs.= agrxref('SGD:',$x->display_id)
   } elsif($x->dbname eq 'MGI'){
     $xs = dbxrefS('MGI','MGI_acc',$x);
+    $xs.= agrxref('MGI:',$x->display_id)
   } elsif($x->dbname eq 'FlyBaseCGID_gene'){
     $xs = dbxrefS('FLYBASE','FlyBase_gn',$x);
   } elsif($x->dbname eq 'flybase_gene_id'){
     $xs = dbxrefS('FLYBASE','FlyBase_ID',$x);
+    $xs.= agrxref('FB:',$x->display_id);
   } elsif($x->dbname eq 'HGNC'){
     $xs = dbxrefS('HGNC','symbol',$x);
+    $xs.= "\n".dbxrefP('HGNC','id',$x);
+    $xs.= agrxref('',$x->primary_id);
   } elsif($x->dbname eq 'MIM_GENE'){
     $xs = dbxrefP('OMIM','gene',$x);
   } elsif($x->dbname eq 'MIM_MORBID'){
@@ -283,14 +288,22 @@ sub get_xref{
 #  display_id xref printing
 sub dbxrefS{
   my ($db,$ac,$xref)=@_;
-  my $p = $xref->info_type eq 'PROJECTION'?'projected_':'';
-  return sprintf "Database \"$db\" \"$p$ac\" \"%s\"",$xref->display_id 
+  return dbxref($db,$ac,$xref->display_id,$xref);
 }
 
 # primary_id xref printing
 sub dbxrefP{
   my ($db,$ac,$xref)=@_;
-  my $p = $xref->info_type eq 'PROJECTION'?'projected_':'';
-  return sprintf "Database \"$db\" \"$p$ac\" \"%s\"",$xref->primary_id;
+  return dbxref($db,$ac,$xref->primary_id,$xref);
 }
 
+sub agrxref{
+	my ($prefix,$id)=@_;
+	return "\nDatabase \"AGR\" \"cURI\" \"$prefix$id\"";
+}
+
+sub dbxref{
+	my ($db,$ac,$x,$xref)=@_;
+        my $p = $xref->info_type eq 'PROJECTION'?'projected_':'';
+        return "Database \"$db\" \"$p$ac\" \"$x\"";
+}

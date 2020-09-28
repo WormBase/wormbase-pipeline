@@ -8,7 +8,7 @@
 # Usage : unpack_db.pl [-options]
 #
 # A PERL wrapper to automate the extraction and building of:
-# the Cold Spring Harbor Laboratory database (cshace)
+# the Ontario Instistite of Cancer Research database (cshace)
 # the Caltech database (citace)
 #
 # Last updated by: $Author: pad $
@@ -94,7 +94,7 @@ sub unpack_stuff {
   }
 
   if ($database eq "citace"){
-    $ftp     = "$ftp_dir/caltech";
+    $ftp     = "$ftp_dir/citace";
     $dbdir   = "$primaries/citace";
     $logfile = "$logs/unpack_citace.$rundate.$$";
     $dbname  = "citace_dump";

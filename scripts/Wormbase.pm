@@ -991,21 +991,85 @@ sub load_to_database {
 
   $tsuser =~ s/\./_/g;
 
+  my $parsed = 0;
+  my $active = 0;		# counts of objects
 
-  my $tace = $self->tace;
-  my $command = <<EOF;
-pparse $file
+
+  # split the ace file if it is large as it loads more efficiently
+  my @files_to_load;
+  if ($st->size > 5000000) {
+    # change input separator to paragraph mode;
+    my $oldlinesep = $/;
+    $/ = "";
+    
+    # make temp directory
+    my $tmpdir = "$database/tmpace";
+    mkpath($tmpdir);
+    $self->delete_files_from($tmpdir, "*", "-");
+
+    # split ace file
+    my $file_count = 0;
+    my $entries = 0;
+    my $writing = 0;
+    my $split_file;
+
+    open (WBTMPIN, "<$file") || $log->log_and_die ("cant open $file\n"); # open original ace file
+    while (my $entry = <WBTMPIN>) {
+      $entries++;
+
+      # LongText enties are not formed by contiguous lines of text separated by a blank line
+      # they can contain blank lines.
+      # So, if we find a LongText class entry, stop splitting the file and simply read in the original file.
+      if ($entry =~ /LongText\s+\:\s+/) {
+	@files_to_load = ($file);
+	last;
+      }
+      
+      if (!$writing) {
+	$file_count++;
+	$writing = 1;
+	$split_file = "$tmpdir/${basename}_split_${file_count}";
+	open (WBTMPACE, ">$split_file") || $log->log_and_die ("cant open $split_file\n");
+	chmod 0666, $split_file;
+	push @files_to_load, $split_file;
+      }
+
+      print WBTMPACE "\n\n$entry";
+      
+      if ($entries > 5000) {
+	close(WBTMPACE);
+	$writing = 0;
+	$entries = 0;
+      }
+    }
+
+    close(WBTMPIN);
+    if ($writing) {
+      close (WBTMPACE);
+    }
+
+    # reset input line separator
+    $/ = $oldlinesep;
+  } else {
+    push @files_to_load, $file;
+  }
+
+  foreach my $file_to_load (@files_to_load) {
+    print "Loading $file_to_load ...\n";
+    my $tace = $self->tace;
+    my $command = <<EOF;
+pparse $file_to_load
 save
 quit
 EOF
-  if (not open( WRITEDB, "echo '$command'| $tace -tsuser $tsuser $database |" )) {
-    if ($log) {
-      $log->log_and_die("Could not open write pipe to database\n");
-    } else {
-      die "Couldn't open pipe to database\n";
+    if (not open( WRITEDB, "echo '$command'| $tace -tsuser $tsuser $database |" )) {
+      if ($log) {
+	$log->log_and_die("Could not open write pipe to database\n");
+      } else {
+	die "Couldn't open pipe to database\n";
+      }
     }
-  }
-
+    
 # expect output like:
 #
 # acedb> // Parsing file /nfs/disk100/wormpub/BUILD/autoace/acefiles/feature_binding_site.ace
@@ -1013,31 +1077,30 @@ EOF
 # // 51 Active Objects
 # acedb> // 51 Active Objects
 # acedb>
-  my $parsed = 0;
-  my $active = 0;		# counts of objects
-
-  while (my $line = <WRITEDB>) {
-    print "$line";
-    if ($line =~ 'ERROR') {
-      if ($log) {
-	$log->write_to("ERROR while parsing ACE file $file\n$line\n");
-	$log->error;
-	$error=1;
+    
+    while (my $line = <WRITEDB>) {
+      print "$line";
+      if ($line =~ 'ERROR') {
+	if ($log) {
+	  $log->write_to("ERROR while parsing ACE file $file_to_load\n$line\n");
+	  $log->error;
+	  $error=1;
+	}
+      } elsif ($line =~ /objects processed:\s+\d+\s+found,\s+(\d+)\s+parsed ok,/) {
+	$parsed += $1;
+      } elsif ($line =~ /(\d+)\s+Active Objects/) {
+	$active += $1;
       }
-    } elsif ($line =~ /objects processed:\s+\d+\s+found,\s+(\d+)\s+parsed ok,/) {
-      $parsed = $1;
-    } elsif ($line =~ /(\d+)\s+Active Objects/) {
-      $active = $1;
+    }
+    if (not close(WRITEDB)) {
+      if ($log) {
+	$log->log_and_die("Could not close write pipe to database\n");
+      } else {
+	die "Could not close write pipe to database\n";
+      }
     }
   }
-  if (not close(WRITEDB)) {
-    if ($log) {
-      $log->log_and_die("Could not close write pipe to database\n");
-    } else {
-      die "Could not close write pipe to database\n";
-    }
-  }
-
+  
   if (! $error) {
     # check against previous loads of this file
     my $last_parsed;		# objects parsed on the previous build
@@ -1074,7 +1137,7 @@ EOF
       # contain both the old entries with $basename in and newer entries
       # with $file in.
       #
-      # Eventualy the following bit looking for matches to $basenaem
+      # Eventually the following bit looking for matches to $basename
       # will not be required.
 
       if (!$got_last || !$got_last_but_one) {
@@ -2119,7 +2182,7 @@ matches the input seqeunce name.
 
 =over4
 
-&load_to_database($database, $file, "tsuser" );
+&load_to_database($database, $file, "tsuser", $log );
 
 =back
 

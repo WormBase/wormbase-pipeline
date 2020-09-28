@@ -82,7 +82,7 @@ $db->close();
 
 $log->write_to("Processing annotations...\n") if $debug;
 # AcePerl/tace combo leaks memory over time, so best to do the work
-# in bactches, reconnecting for each batch
+# in batches, reconnecting for each batch
 foreach my $suf (0..9) {
   $log->write_to("Fetching annotations with suffix '${suf}'...\n") if $debug;
 
@@ -154,14 +154,32 @@ foreach my $suf (0..9) {
     
     # qualifier (Annotation_relation)
     my @annot_rel;
+    # interpro defaults based on Kimberly
+    if ($obj->Motif){
+	    my $type;
+	    if ("${\$obj->GO_term->Type}" eq 'Molecular_function'){
+		    $type = 'enables';
+	    }elsif("${\$obj->GO_term->Type}" eq 'Biological_process'){
+		    $type = 'involved_in';
+	    }elsif("${\$obj->GO_term->Type}" eq 'Cellular_component'){
+                    if (grep {"$_" eq 'GO:0032991'} $obj->GO_term->Ancestor){
+			    $type = 'part_of';
+		    }else{
+			    $type = 'located_in';
+		    }
+	    }
+	    $gaf_line->{qualifier} = $type if $type;
+    }
+    
     if ($obj->Annotation_relation_not) {
       push @annot_rel, "NOT";
       my $al = $obj->Annotation_relation_not->Name;
       $al =~ s/\s+/_/; 
       if ($al eq 'colocalizes_with' or
           $al eq 'contributes_to') {
-        push @annot_rel, $al;
+        push @annot_rel, "$al";
       }
+      $gaf_line->{qualifier} = 'NOT|'.$al;
     }
     if ($obj->Annotation_relation) {
       my $al = $obj->Annotation_relation->Name;
@@ -170,10 +188,31 @@ foreach my $suf (0..9) {
           $al eq 'contributes_to') {
         push @annot_rel, $al;
       }
+      $gaf_line->{qualifier} = "$al";
     }
 
-    $gaf_line->{qualifier} = join("|", @annot_rel);
-    
+    # special for WS278, data should be fixed for release WS279+
+    unless($gaf_line->{qualifier}){
+	    if ($obj->GO_code->name =~/^(IMP|IGI)$/){
+		    $gaf_line->{qualifier} = 'acts_upstream_of_or_within';
+	    }elsif($obj->GO_code->name =~/^(IDA|ND)$/){
+		    $gaf_line->{qualifier} = 'located_in';
+	    }
+    }
+
+    # that is another bit, that exists only temporary until upstream sorts out the annotation
+    if ($obj->GO_term){
+	    my $type;
+	    if("${\$obj->GO_term->Type}" eq 'Cellular_component'){
+                    if (grep {"$_" eq 'GO:0032991'} $obj->GO_term->Ancestor){
+			    $type = 'part_of';
+		    }else{
+			    $type = 'located_in';
+		    }
+	    }
+	    $gaf_line->{qualifier} = $type if $type;
+    }
+ 
     # Reference
     my @reference;
     if ($obj->Reference) {
@@ -301,6 +340,7 @@ $log->write_to("Merging annotations...\n") if $debug;
       $a->{reference} cmp $b->{reference} or
       $a->{go_code} cmp $b->{go_code} or
       $a->{with_from} cmp $b->{with_from} or
+      $a->{qualifier} cmp $b->{qualifier} or
       $a->{date} cmp $b->{date}
 } @all_gaf_lines;
 
@@ -312,6 +352,7 @@ foreach my $gaf (@all_gaf_lines) {
       $nr_gaf_lines[-1]->{contributor} eq $gaf->{contributor} and
       $nr_gaf_lines[-1]->{go_code} eq $gaf->{go_code} and
       $nr_gaf_lines[-1]->{with_from} eq $gaf->{with_from} and
+      $nr_gaf_lines[-1]->{qualifier} eq $gaf->{qualifier} and
       $nr_gaf_lines[-1]->{date} eq $gaf->{date}) {
     
     if ($debug) {
@@ -336,7 +377,7 @@ $log->write_to("Writing annotations...\n") if $debug;
 #
 my $collated_file = "$outputdir/gene_association." . $wormbase->get_wormbase_version_name. ".wb" ;
 open (my $colfh, ">$collated_file") or $log->log_and_die("Could not open $collated_file for writing\n");
-&print_wormbase_GAF_header($colfh);
+&print_wormbase_GAF_header($colfh,'2.2');
 
 my %coreSpecies = $wormbase->species_accessors;
 foreach my $species ($wormbase, values %coreSpecies){
@@ -344,7 +385,7 @@ foreach my $species ($wormbase, values %coreSpecies){
   my $out_file = "gene_association." . $wormbase->get_wormbase_version_name. ".wb." .$species->full_name(-g_species => 1);
   open(my $outfh, ">$outputdir/$out_file") or $log->log_and_die("Could not open $outputdir/out_file for writing\n");
   
-  &print_wormbase_GAF_header($outfh);
+  &print_wormbase_GAF_header($outfh,'2.2');
   foreach my $gaf (@nr_gaf_lines) {
     next if $gaf->{species} ne $species->full_name;
     unshift @{$gaf->{taxon}}, $species->ncbi_tax_id;
