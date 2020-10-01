@@ -366,8 +366,7 @@ print "Using database $database\n";
 print "Connecting to $database ...\n";
 my $db = Ace->connect (-path => "$database") || die("Cannot connect to database at $database\n");
 
-my $
-
+if (!defined $outfile) {$outfile = $wormbase->spell ."/expr_graph.csv"}
 
 open (OUT, ">$outfile") || die "Can't open $outfile";
 print OUT '"Gene","Gene_name","Life-stage","Library","Protocol","FPKM value"'."\n";
