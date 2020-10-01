@@ -769,6 +769,16 @@ sub copy_annotations_files{
   }
 
   #
+  # CSV file of RNASeq expression data from the life-stage graph on the Gene web page
+  #
+  my $CSV_target = "$annotation_dir/$gspecies.$bioproj.$WS_version_name.expr_graph.csv.gz";
+  my $CSV_expr = $wormbase->spell . "/expr_graph.csv";
+  if (-e $CSV_expr) {
+    $wormbase->run_command("cat $CSV_expr | gzip -n -9 -c > $CSV_target", $log);
+  }
+
+  
+  #
   # RNASeq gene expression data for each TierII and elegans
   #  
   foreach my $species (keys %accessors){
@@ -1371,6 +1381,7 @@ GSPECIES.BIOPROJ.WSREL.gsc_oligo_mapping.txt.gz
 GSPECIES.BIOPROJ.WSREL.cdna2orf.txt.gz
 GSPECIES.BIOPROJ.WSREL.confirmed_genes.fa.gz
 GSPECIES.BIOPROJ.WSREL.TAR_gene_expression.tar.gz
+GSPECIES.BIOPROJ.WSREL.expr_graph.csv.gz
 GSPECIES.BIOPROJ.WSREL.reuters_citation_index.xml.gz
 GSPECIES.BIOPROJ.WSREL.omim_xrefs.txt
 GSPECIES.BIOPROJ.WSREL.changed_CGC_names.txt
