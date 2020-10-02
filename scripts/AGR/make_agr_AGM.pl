@@ -62,7 +62,7 @@ while (my($k,$v)= each %strains){
 foreach my $dId (@disease_ids){
 	my $d = $db->fetch(Genotype => $dId);
 	my $disease_annotation = {
-		primaryId => "WB:$dId",
+		primaryID => "WB:$dId",
 		name      => ($d->Genotype_name ? "${\$d->Genotype_name}" : $dId),
 		taxonId   => 'NCBITaxon:6239',
 		crossReference => {id => "WB:$dId",pages => ['genotype']} # needs to be added to the resources file
