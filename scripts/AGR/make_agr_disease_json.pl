@@ -490,13 +490,11 @@ sub get_condition_relations {
         my @inducing_chemicals = map {{
             conditionStatement => 'chemical treatment:' . $_->Public_name->name,
             chemicalOntologyId => get_chemical_ontology_id($_),
-            conditionClassId => $zeco{'chemical treatment'},
-            conditionId => $zeco{'chemical treatment'}
+            conditionClassId => $zeco{'chemical treatment'}
             }} $obj->Inducing_chemical;
         my @inducing_agents     = map {{
             conditionStatement => 'experimental conditions:' . $_->name,
-            conditionClassId => $zeco{'experimental conditions'},
-            conditionId => $zeco{'experimental conditions'}
+            conditionClassId => $zeco{'experimental conditions'}
             }} $obj->Inducing_agent;
         @inducers = (@inducing_chemicals, @inducing_agents);
         push @conditions, {conditionRelationType => $condition_relation_type,
@@ -517,13 +515,11 @@ sub get_condition_relations {
         my @modifying_molecules = map {{
             conditionStatement => 'chemical treatment:' . $_->Public_name->name,
             chemicalOntologyId => get_chemical_ontology_id($_),
-            conditionClassId => $zeco{'chemical treatment'},
-            conditionId => $zeco{'chemical treatment'}
+            conditionClassId => $zeco{'chemical treatment'}
             }} $obj->Modifier_molecule;
         my @other_modifiers = map {{
           conditionStatement => 'experimental conditions:' . $_->name,
-          conditionClassId => $zeco{'experimental conditions'},
-          conditionId => $zeco{'experimental conditions'}
+          conditionClassId => $zeco{'experimental conditions'}
         }} $obj->Other_modifier;
         @modifiers = (@modifying_molecules, @other_modifiers);
         push @conditions, {conditionRelationType => $condition_relation_type,
