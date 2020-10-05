@@ -143,7 +143,8 @@ sub parse_genes_gff3_fh {
       $l[2] ne 'antisense_RNA' and 
       $l[2] ne 'circular_RNA' and 
       $l[2] ne 'mRNA' and 
-      $l[2] ne 'nc_primary_transcript' and 
+      $l[2] ne 'nc_primary_transcript' and
+      $l[2] ne 'miRNA_primary_transcript' and
       $l[2] ne 'protein_coding_primary_transcript' and  
       $l[2] ne 'pseudogenic_transcript' and 
       $l[2] ne 'pseudogenic_rRNA' and
