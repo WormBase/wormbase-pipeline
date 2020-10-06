@@ -134,7 +134,7 @@ sub process_genes_phenotype{
 	            phenotypeStatement       => $phen_desc,
         	    dateAssigned             => $date,
 	            evidence                 => $pap,
-		    conditionRelations       => @{get_condition_relations($obj)},
+		    #conditionRelations       => @{get_condition_relations($obj)},
         	  }; 
 	          push @pheno_annots, $json_obj;
         	}

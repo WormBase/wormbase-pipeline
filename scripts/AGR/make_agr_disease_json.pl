@@ -263,8 +263,9 @@ while( my $obj = $it->next) {
     $annot->{experimentalConditions} = \@exp_conditions if @exp_conditions;
   }
 
-  my $conditions = get_condition_relations($obj);
-  $annot->{conditionRelations} = $conditions if @$conditions;
+  # Commented out until required
+  #my $conditions = get_condition_relations($obj);
+  #$annot->{conditionRelations} = $conditions if @$conditions;
   
   push @annots, $annot;# unless ($obj_type eq 'transgene' && ! $build);
 
