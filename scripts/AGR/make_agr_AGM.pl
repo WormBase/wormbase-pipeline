@@ -60,6 +60,7 @@ while (my($k,$v)= each %strains){
 }
 
 foreach my $dId (@disease_ids){
+    if ($dId =~ /^WBGenotype/) {
 	my $d = $db->fetch(Genotype => $dId);
 	my $disease_annotation = {
 		primaryID => "WB:$dId",
@@ -68,6 +69,21 @@ foreach my $dId (@disease_ids){
 		crossReference => {id => "WB:$dId",pages => ['genotype']} # needs to be added to the resources file
 	};
 	push @annotation, $disease_annotation;
+    }
+    else {
+	if (exists $strains{$dId}) {
+            warn "$dId already retrieved from alleles file, ignoring entry in disease file\n";
+            next;
+        }
+	my $s = $db->fetch(Strain => $dId);
+	my $strain = {
+	    primaryID => "WB:$dId",
+            name      => ($s->Public_name ?"${\$s->Public_name}" :$dId),
+            taxonId   => 'NCBITaxon:6239',
+            crossReference => {id => "WB:$dId", pages => ['strain']},
+        };
+        push @annotation, $strain;
+    }
 }
 
 my $date = AGR::get_rfc_date();
