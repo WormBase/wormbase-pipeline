@@ -78,6 +78,12 @@ my %go2eco = (
 	IMR => 'ECO:0000320',
 );
 
+my %zeco = (
+    'experimental conditions' => 'ZECO:0000104',
+    'chemical treatment'      => 'ZECO:0000111',
+    'temperature exposure'    => 'ZECO:0000160',
+    );
+
 my $db = Ace->connect(-path => $acedbpath, -program => $tace) or die('Connection failure: '. Ace->error);
 
 my ( $it, @annots);
@@ -131,17 +137,15 @@ while( my $obj = $it->next) {
   # based on a list of annotations to skip for AGR from 
   # https://wiki.wormbase.org/index.php/Specifications_for_data_submission_to_the_Alliance
   # * had Qualifier_not as not to be submitted, but that changed with 3.1.0
+  # Inducing_chemical, Modifier_molecule, and Other_molecule were also not submitted prior to 4.0
   unless ($build) {
 	  next if ($obj->Interacting_variation
 	         ||$obj->Interacting_transgene
 	         ||$obj->Interacting_gene
 	         ||$obj->RNAi_experiment
-	         ||$obj->Inducing_chemical
 	         ||$obj->Modifier_transgene
 	         ||$obj->Modifier_variation
 	         ||$obj->Modifier_gene
-		 ||$obj->Modifier_molecule
-		 ||$obj->Other_modifier
 	  );
   }
 
@@ -250,15 +254,19 @@ while( my $obj = $it->next) {
     # $annot->{negation} = 'not' if $obj->at('Modifier_qualifier_not'); # according to Ranjana, it should not be included
   }
 
-  if ($obj->Experimental_condition){
+  if ($build && $obj->Experimental_condition){
     my @inducing_c     = map { $_->name } $obj->Inducing_chemical;
     my @inducing_a     = map { "$_" } $obj->Inducing_agent;
     my @exp_conditions = map {{textCondition => $_}} (@inducing_c,@inducing_a);
 
     # WB/CalTech specific changes
-    $annot->{experimentalConditions} = \@exp_conditions if (@exp_conditions && $build);
+    $annot->{experimentalConditions} = \@exp_conditions if @exp_conditions;
   }
 
+  # Commented out until required
+  #my $conditions = get_condition_relations($obj);
+  #$annot->{conditionRelations} = $conditions if @$conditions;
+  
   push @annots, $annot;# unless ($obj_type eq 'transgene' && ! $build);
 
   # here needs to be a bit of logic that adds the secondary annotations
@@ -299,6 +307,7 @@ while( my $obj = $it->next) {
 
           push @annots, $secondaryAnnotation; # unless ($class eq 'transgene' && ! $build);
   }
+
 }
 
 $db->close;
@@ -448,4 +457,75 @@ sub get_whitelist{
 		$whitelist{"$v"}=1;
 	}
 	return \%whitelist;
+}
+
+
+sub get_chemical_ontology_id {
+    my $obj = shift;
+
+    for my $db ($obj->Database) {
+        next unless $db->name eq 'ChEBI';
+        return 'CHEBI:' . $db->right->right->name;
+    }
+
+    return 'WB:' . $obj->name;
+}
+
+
+sub get_condition_relations {
+    my $obj = shift;
+
+    my $condition_relation_type = 'has_condition';
+    if ($obj->Modifier_association_type) {
+        if ($obj->Modifier_association_type->name eq 'condition_ameliorated_by') {
+            $condition_relation_type = 'ameliorates';
+        }
+        elsif ($obj->Modifier_association_type->name eq 'condition_exacerbated_by') {
+            $condition_relation_type = 'exacerbates';
+        }
+    }
+
+    my (@modifiers, @inducers, @conditions);
+    if ($obj->Experimental_condition){
+        $condition_relation_type = 'induces';
+        my @inducing_chemicals = map {{
+            conditionStatement => 'chemical treatment:' . $_->Public_name->name,
+            chemicalOntologyId => get_chemical_ontology_id($_),
+            conditionClassId => $zeco{'chemical treatment'}
+            }} $obj->Inducing_chemical;
+        my @inducing_agents     = map {{
+            conditionStatement => 'experimental conditions:' . $_->name,
+            conditionClassId => $zeco{'experimental conditions'}
+            }} $obj->Inducing_agent;
+        @inducers = (@inducing_chemicals, @inducing_agents);
+        push @conditions, {conditionRelationType => $condition_relation_type,
+                           conditions            => \@inducers};
+    }
+    if ($obj->Modifier_info) {
+        if ($obj->Modifier_association_type) {
+            if ($obj->Modifier_association_type->name eq 'condition_ameliorated_by') {
+                $condition_relation_type = 'ameliorates';
+            }
+            elsif ($obj->Modifier_association_type->name eq 'condition_exacerbated_by') {
+                $condition_relation_type = 'exacerbates';
+            }
+            else{
+                $condition_relation_type = 'has_condition';
+            }
+        }
+        my @modifying_molecules = map {{
+            conditionStatement => 'chemical treatment:' . $_->Public_name->name,
+            chemicalOntologyId => get_chemical_ontology_id($_),
+            conditionClassId => $zeco{'chemical treatment'}
+            }} $obj->Modifier_molecule;
+        my @other_modifiers = map {{
+          conditionStatement => 'experimental conditions:' . $_->name,
+          conditionClassId => $zeco{'experimental conditions'}
+        }} $obj->Other_modifier;
+        @modifiers = (@modifying_molecules, @other_modifiers);
+        push @conditions, {conditionRelationType => $condition_relation_type,
+                           conditions            => \@modifiers};
+    }
+
+    return \@conditions;
 }

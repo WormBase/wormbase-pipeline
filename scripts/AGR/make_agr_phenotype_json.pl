@@ -43,6 +43,13 @@ if (not defined $outfile) {
   $outfile = "./wormbase.agr_phenotype.${ws_version}.json";
 }
 
+my %zeco = (
+    'experimental conditions' => 'ZECO:0000104',
+    'chemical treatment'      => 'ZECO:0000111',
+    'temperature exposure'    => 'ZECO:0000160',
+    );
+
+
 # restrict to genes in the BGI, if provded
 my ($bgi_genes, @pheno_annots);
 
@@ -127,6 +134,7 @@ sub process_genes_phenotype{
 	            phenotypeStatement       => $phen_desc,
         	    dateAssigned             => $date,
 	            evidence                 => $pap,
+		    #conditionRelations       => @{get_condition_relations($obj)},
         	  }; 
 	          push @pheno_annots, $json_obj;
         	}
@@ -176,6 +184,7 @@ sub process {
             phenotypeStatement       => $phen_desc,
             dateAssigned             => $date,
             evidence                 => $pap,
+	    conditionRelations       => @{get_condition_relations($obj)},
           }; 
           push @pheno_annots, $json_obj;
         
@@ -187,14 +196,67 @@ sub process {
               phenotypeStatement       => $phen_desc,
               dateAssigned             => $date,
               evidence                 => $pap,
+	      conditionRelations       => @{get_condition_relations($obj)},
             };
             push @pheno_annots, $json_obj;
           }
 
         }
-     }
-   }
+      }
+    }
 }
+
+
+sub get_chemical_ontology_id {
+    my $obj = shift;
+
+    for my $db ($obj->Database) {
+        next unless $db->name eq 'ChEBI';
+        return 'CHEBI:' . $db->right->right->name;
+    }
+
+    return 'WB:' . $obj->name;
+}
+
+
+sub get_condition_relations {
+    my $obj = shift;
+
+    my $condition_relation_type = 'has_condition';
+
+
+    my (@conditions, @assays, @molecules);
+    my $pa = $obj->at('Phenotype_assay');
+    if (defined $pa){
+        my @temperatures = map {{
+            conditionStatement => 'temperature exposure:' . $_->name,
+            conditionClassId => $zeco{'temperature exposure'},
+            }} $pa->Temperature;
+        my @treatments = map {{
+            conditionStatement => 'experimental conditions:' . $_->name,
+            conditionClassId => $zeco{'experimental conditions'},
+            }} $pa->Treatment;
+        @assays = (@temperatures, @treatments);
+        push @conditions, {conditionRelationType => $condition_relation_type,
+                           conditions            => \@assays} if $assays;
+    }
+
+    my $ab = $obj->at('Affected_by');
+    if (defined $ab) {
+	my @molecules = map {{
+	    conditionStatement => 'chemical treatment:' . $_->Public_name->name,
+	    chemicalOntologyId => get_chemical_ontology_id($_),
+	    conditionClassId => $zeco{'chemical treatment'},
+	    conditionId => $zeco{'chemical treatment'}
+	    }} $obj->Molecule;
+	
+        push @conditions, {conditionRelationType => $condition_relation_type,
+                           conditions            => \@molecules} if @molecules;
+    }
+
+    return \@conditions;
+}
+
 
 sub get_paper_json {
   my ($wb_paper) = @_;
