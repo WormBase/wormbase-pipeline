@@ -81,10 +81,10 @@ while (<$gff_in_fh>){
     my $trans_type =  $transobj->Transcript->right->name;
     print " type $trans_type\n";
     if ($gff3) {
-        print $gff_out_fh $_.";type=$trans_type\n";
+        print $gff_out_fh $_.";matureType=$trans_type\n";
     }
     else {
-        print $gff_out_fh $_." ; type \"$trans_type\"\n";
+        print $gff_out_fh $_." ; matureType \"$trans_type\"\n";
     }
     $changed_lines++;
 }

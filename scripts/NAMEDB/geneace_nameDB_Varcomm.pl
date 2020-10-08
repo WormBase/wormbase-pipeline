@@ -1,7 +1,7 @@
 #!/software/bin/perl -w
 
 use lib $ENV{'CVS_DIR'};
-#use lib "$ENV{CVS_DIR}/NAMEDB/lib";
+use lib "$ENV{CVS_DIR}/NAMEDB/lib";
 
 use strict;
 use NameDB_handler;

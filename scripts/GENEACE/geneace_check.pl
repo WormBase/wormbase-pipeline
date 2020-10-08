@@ -40,12 +40,12 @@ GetOptions ('help'          => \$help,
 ###################################################
 my $wb = Wormbase->new(-test => $test, -debug => $debug );
 # choose database to query: default is /nfs/wormpub/DATABASES/geneace
-$database = '/nfs/wormpub/DATABASES/geneace' unless $database;
+$database = '/nfs/production/panda/ensemblgenomes/wormbase/DATABASES/geneace' unless $database;
 print "Using database $database.\n\n";
 
 my $tace = $wb->tace;          # tace executable path
-my $curr_db = '/nfs/wormpub/DATABASES/current_DB'; # Used for some cross checking with geneace
-my $def_dir = "/nfs/wormpub/DATABASES/geneace/wquery";                          # where lots of table-maker definitions are kept
+my $curr_db = '/nfs/production/panda/ensemblgenomes/wormbase/DATABASES/current_DB'; # Used for some cross checking with geneace
+my $def_dir = "${database}/wquery";                          # where lots of table-maker definitions are kept
 
 my $rundate = $wb->rundate;                                # Used by various parts of script for filename creation
 my $maintainers = join (', ', 

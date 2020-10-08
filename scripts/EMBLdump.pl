@@ -620,10 +620,13 @@ sub process_feature_table {
           $mod_dir eq 'piRNA' or
           $mod_dir eq 'scRNA' or
           $mod_dir eq 'siRNA' or
-          $mod_dir eq 'snoRNA' or
+          $mod_dir eq 'snoRNA' or  
           $mod_dir eq 'snRNA') {
         $rna_class = $mod_dir;
         $mod_dir = 'ncRNA';
+      } elsif($mod_dir eq 'circRNA'){
+        $mod_dir = 'ncRNA';
+        $rna_class = 'other';
       } elsif ($mod_dir eq 'lincRNA') {
         $rna_class = "lncRNA";
         $mod_dir = "ncRNA";

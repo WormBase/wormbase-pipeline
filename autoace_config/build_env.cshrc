@@ -30,7 +30,7 @@ setenv WORM_BIN ${WORM_SW_ROOT}/bin
 setenv PIPELINE /nfs/nobackup/ensemblgenomes/wormbase/BUILD/pipeline
 setenv ACEDB_NO_BANNER
 
-setenv LSB_DEFAULTQUEUE production-rh6
+setenv LSB_DEFAULTQUEUE production-rh7
 
 ####################
 # perl 5 libraries
@@ -38,6 +38,7 @@ setenv LSB_DEFAULTQUEUE production-rh6
 setenv PERL5LIB
 setenv PERL5LIB ${PERL5LIB}:${WORM_SW_ROOT}/packages/bioperl/bioperl-1.2.3
 setenv PERL5LIB ${PERL5LIB}:${WORM_SW_ROOT}/packages/bioperl/bioperl-run
+setenv PERL5LIB ${PERL5LIB}:${WORM_SW_ROOT}/packages/bioperl/bioperl-run/lib
 
 # some build scripts connect to the ensembl databases in a limited way, but
 # do not need the full complement of modules for these
