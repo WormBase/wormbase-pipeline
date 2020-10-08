@@ -32,6 +32,7 @@ my (
   $sfile,
   $no_dnafrags,
   $locators,
+  $keep_old_species_sets,
     ); 
     
 
@@ -47,6 +48,7 @@ GetOptions(
   "sfile=s"            => \$sfile,
   "nodnafrags"         => \$no_dnafrags,
   "locators"           => \$locators,
+  "keepoldspeciessets" => \$keep_old_species_sets,
     );
 
 die("must specify registry conf file on commandline\n") unless($reg_conf);
@@ -197,11 +199,38 @@ foreach my $core_db (@core_dbs) {
   push @genome_dbs, $gdb;
 }
 
+
 #
 # Make the species set
 #
-clean_out_mlss_data( $compara_dbh );
-$compara_dbh->get_SpeciesSetAdaptor->update_collection($collection_name, \@genome_dbs, 1);
+
+if ($keep_old_species_sets) {
+  my $collection_ss = $compara_dbh->get_SpeciesSetAdaptor->fetch_collection_by_name($collection_name);
+
+  # Already have a species set for this collection. Need to check that it is up-to-date
+  if ($collection_ss) {
+    
+    my %collection_gdb_ids = (map {$_->dbID => $_} @{$collection_ss->genome_dbs});
+    my %new_gdb_ids = (map {$_->dbID => $_} @genome_dbs);
+    
+    if (grep { not exists $collection_gdb_ids{$_} } keys %new_gdb_ids or
+        grep { not exists $new_gdb_ids{$_} } keys %collection_gdb_ids) {
+      # mismatch between collection species set and new species set. 
+      print STDERR "Collection composition has changed - updating\n";
+      $compara_dbh->get_SpeciesSetAdaptor->update_collection($collection_name, $collection_ss, \@genome_dbs);
+      exit(0);
+    } else {
+      # hunky dory, no update necessary
+      print STDERR "Collection composition unchanged - not updating\n";
+    }
+    
+  } else {
+    $compara_dbh->get_SpeciesSetAdaptor->update_collection($collection_name, undef, \@genome_dbs);
+  }
+} else {
+  &clean_out_mlss_data( $compara_dbh );
+  $compara_dbh->get_SpeciesSetAdaptor->update_collection($collection_name, undef, \@genome_dbs);
+}
 unless($compara_dbh->get_SpeciesSetAdaptor->fetch_collection_by_name($collection_name)){
   die "Could not add collection for $collection_name";
 }
