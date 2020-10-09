@@ -22,23 +22,24 @@ my ($ftp_user, $ftp_pass, $ftp_host,
     $cl_ftp_user, $cl_ftp_pass, $cl_ftp_host, $cl_ftp_dir,
     );
 
-my ($help, $debug, $test, $verbose, $species, $comment, $ws_version, @clones);
+my ($help, $debug, $test, $verbose, $species, $comment, $ws_version, $manual_upload, @clones);
 
 my $ftp_dir = "clone";
 
 GetOptions (
-  "debug=s"      => \$debug,
-  "test"         => \$test,
-  "help"         => \$help,
-  "species=s"    => \$species,
-  "verbose"      => \$verbose,
-  "ftphost=s"    => \$cl_ftp_host,
-  "ftpuser=s"    => \$cl_ftp_user,
-  "ftpdir=s"     => \$cl_ftp_dir,
-  "ftppass=s"    => \$cl_ftp_pass,
-  "clones=s@"    => \@clones,
-  "wsversion=s"  => \$ws_version,
-  "comment=s"    => \$comment,
+  "debug=s"        => \$debug,
+  "test"           => \$test,
+  "help"           => \$help,
+  "species=s"      => \$species,
+  "verbose"        => \$verbose,
+  "ftphost=s"      => \$cl_ftp_host,
+  "ftpuser=s"      => \$cl_ftp_user,
+  "ftpdir=s"       => \$cl_ftp_dir,
+  "ftppass=s"      => \$cl_ftp_pass,
+  "clones=s@"      => \@clones,
+  "wsversion=s"    => \$ws_version,
+  "comment=s"      => \$comment,
+  "manualupload=s" => \$manual_upload, 
     );
 
 my $wormbase = Wormbase->new(
@@ -57,39 +58,6 @@ my ($current_date, $current_time) = &get_current_timestamp();
 my $submit_repo = $wormbase->submit_repos;
 
 my $submit_log_prefix = sprintf("%s/submit_logs/submitted_to_ENA", $submit_repo);
-
-my $login_details_file = $wormbase->wormpub . "/ebi_resources/EBIFTP.s";
-open(my $infh, $login_details_file)
-    or $log->log_and_die("Can't open secure account details file $login_details_file\n");
-while (<$infh>){
-  /^HOST:(\S+)$/ and $ftp_host = $1;
-  /^USER:(\S+)$/ and $ftp_user = $1;
-  /^PASS:(\S+)$/ and $ftp_pass = $1;
-  /^DIR:(\S+)$/  and $ftp_dir  = $1;
-}
-close($infh);
-
-# command-line takes precedence over details in file
-$ftp_host = $cl_ftp_host if defined $cl_ftp_host;
-$ftp_user = $cl_ftp_user if defined $cl_ftp_user;
-$ftp_pass = $cl_ftp_pass if defined $cl_ftp_pass;
-$ftp_dir  = $cl_ftp_dir  if defined $cl_ftp_dir;
-
-###################################################
-# Establish ftp connection                        #
-###################################################
-my $ftp = Net::FTP->new($ftp_host, Debug => 0) 
-    or $log->log_and_die("Cannot connect to $ftp_host: $@");
-$ftp->login($ftp_user,$ftp_pass)
-    or $log->log_and_die ("Cannot login to $ftp_host using WormBase credentials\n". $ftp->message);
-my @ftp_ls = $ftp->ls() 
-    or $log->log_and_die ("Cannot ls $ftp_host using WormBase credentials\n". $ftp->message);
-if (!grep /$ftp_dir/, @ftp_ls) {
-  $ftp->mkdir($ftp_dir)
-    or $log->log_and_die ("Cannot mkdir the to_ena dir for upload of files\n". $ftp->message);
-}
-$ftp->cwd($ftp_dir) 
-    or $log->log_and_die ("Cannot change into to_ena dir for upload of files\n". $ftp->message);
 
 ###################################################
 # get list of entries to be submitted
@@ -138,10 +106,10 @@ open(my $submitlogfh, ">$submit_log_file")
     or $log->log_and_die("Could not open $submit_log_file for writing\n");
 print $submitlogfh "Sequences submitted to ENA on $current_date, $current_time:\n\n";
 
-#################################
+################################################
 # Collate all of the entries to be submitted
 # into a single file - more efficient for upload
-#
+################################################
 my $collated_file = sprintf("/tmp/%s_submission_%s_%d.embl", 
                             $species,
                             $ws_version,
@@ -166,15 +134,50 @@ close($submitlogfh)
     or $log->log_and_die("Could not successfully close submit log file $submit_log_file\n");
 
 ##################################
-# Deposit the data on the FTP site
+# Deposit the data on the FTP site - if requested
 ##################################
-$ftp->put($collated_file) 
-    or $log->log_and_die ("FTP-put failed for $collated_file: ".$ftp->message."\n");
-$ftp->quit;
-
-$log->write_to("\nFile: $collated_file uploaded ENA ftp account\n");
-$log->write_to("\nRefer to log file $submit_log_file for details on which entries were uploaded\n");
-
+   
+if (not $manual_upload) {
+  my $login_details_file = $wormbase->wormpub . "/ebi_resources/EBIFTP.s";
+  open(my $infh, $login_details_file)
+      or $log->log_and_die("Can't open secure account details file $login_details_file\n");
+  while (<$infh>){
+    /^HOST:(\S+)$/ and $ftp_host = $1;
+    /^USER:(\S+)$/ and $ftp_user = $1;
+    /^PASS:(\S+)$/ and $ftp_pass = $1;
+    /^DIR:(\S+)$/  and $ftp_dir  = $1;
+  }
+  close($infh);
+  
+  # command-line takes precedence over details in file
+  $ftp_host = $cl_ftp_host if defined $cl_ftp_host;
+  $ftp_user = $cl_ftp_user if defined $cl_ftp_user;
+  $ftp_pass = $cl_ftp_pass if defined $cl_ftp_pass;
+  $ftp_dir  = $cl_ftp_dir  if defined $cl_ftp_dir;
+  
+  ###################################################
+  # Establish ftp connection                        #
+  ###################################################
+  my $ftp = Net::FTPSSL->new($ftp_host, Debug => 0) 
+      or $log->log_and_die("Cannot connect to $ftp_host: $@");
+  $ftp->login($ftp_user,$ftp_pass)
+      or $log->log_and_die ("Cannot login to $ftp_host using WormBase credentials\n". $ftp->message);
+  my @ftp_ls = $ftp->ls() 
+      or $log->log_and_die ("Cannot ls $ftp_host using WormBase credentials\n". $ftp->message);
+  if (!grep /$ftp_dir/, @ftp_ls) {
+    $ftp->mkdir($ftp_dir)
+        or $log->log_and_die ("Cannot mkdir the to_ena dir for upload of files\n". $ftp->message);
+  }
+  $ftp->cwd($ftp_dir) 
+      or $log->log_and_die ("Cannot change into to_ena dir for upload of files\n". $ftp->message);
+  
+  $ftp->put($collated_file) 
+      or $log->log_and_die ("FTP-put failed for $collated_file: ".$ftp->message."\n");
+  $ftp->quit;
+  
+  $log->write_to("\nFile: $collated_file uploaded ENA ftp account\n");
+  $log->write_to("\nRefer to log file $submit_log_file for details on which entries were uploaded\n");
+}
 
 ##################################
 # Commit changes back to repository, to 
@@ -211,7 +214,10 @@ system($tag_cmd) and do {
   $log->log_and_die("GIT repository needs rescuing\n");
 };
 
-#unlink $collated_file;
+
+if ($manual_upload) {
+  $log->write_to("*** MANUAL UPLOAD CHOSEN - YOU MUST NOW UPLOAD THE FILE $collated_file to the ENA dropbox manually ***\n");
+}
 
 $log->mail;
 exit(0);
