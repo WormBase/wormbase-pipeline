@@ -257,7 +257,7 @@ sub submit {
   reset_Force($force);
 
   print "$c\n";
-  my $output = qx(/software/bin/perl \$CVS_DIR/$c  2>&1);
+  my $output = qx(perl \$CVS_DIR/$c  2>&1);
 
   # display output text
   if ($output =~ /ERROR/) {
@@ -270,6 +270,8 @@ sub submit {
     if ($noload) {
       wide_confirm_message("OK -noload so no change.", "OK -noload so no change.\n\n$output");
     } else {
+      my ($next_id) = ($output =~ /The next available Sequence ID is: (\S+)'/);
+      if (defined $next_id) {print "$next_id\n"}
       wide_confirm_message("OK - that's been done.", "OK - that's been done.\n\n$output");
     }
   }
