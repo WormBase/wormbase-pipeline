@@ -51,9 +51,9 @@ $debug = 'gw3';
 
 if (!defined $database) {
   if ($species eq 'elegans') {
-    $database = "/nfs/wormpub/camace_$ENV{USER}";
+    $database = "/nfs/panda/ensemblgenomes/wormbase/camace_$ENV{USER}";
   } else {
-    $database = "/nfs/wormpub/${species}_curation";
+    $database = "/nfs/panda/ensemblgenomes/wormbase/${species}_curation";
   }
 }
 if (!-e $database || !-d $database) {die "Can't find database $database\n"}
