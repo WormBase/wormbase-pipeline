@@ -39,7 +39,7 @@ GetOptions (
   "clones=s@"      => \@clones,
   "wsversion=s"    => \$ws_version,
   "comment=s"      => \$comment,
-  "manualupload=s" => \$manual_upload, 
+  "manualupload" => \$manual_upload, 
     );
 
 my $wormbase = Wormbase->new(
@@ -158,7 +158,7 @@ if (not $manual_upload) {
   ###################################################
   # Establish ftp connection                        #
   ###################################################
-  my $ftp = Net::FTPSSL->new($ftp_host, Debug => 0) 
+  my $ftp = Net::FTP->new($ftp_host, Debug => 0) 
       or $log->log_and_die("Cannot connect to $ftp_host: $@");
   $ftp->login($ftp_user,$ftp_pass)
       or $log->log_and_die ("Cannot login to $ftp_host using WormBase credentials\n". $ftp->message);
