@@ -28,7 +28,7 @@ sub new {
   bless ( $self, $class );
 
   $species = "elegans" if not defined $species;
-  $diff_dir = "/nfs/wormpub/CHROMOSOME_DIFFERENCES" if not defined $diff_dir;
+  $diff_dir = "/nfs/panda/ensemblgenomes/wormbase/CHROMOSOME_DIFFERENCES" if not defined $diff_dir;
 
   $diff_dir .= "/$species/";
 
@@ -208,7 +208,11 @@ sub remap_gff {
 
   my %mapping_data = %{$self->_mapping_data};
 
-  my @releases = sort { $a <=> $b } keys %mapping_data;
+  
+  my @releases;
+  if (scalar (keys %mapping_data) > 1) {
+    @releases = sort { $a <=> $b } keys %mapping_data;
+  }
 
   my $start = $in_start;
   my $end = $in_end;
