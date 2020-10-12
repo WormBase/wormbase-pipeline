@@ -168,10 +168,10 @@ sub set_alternate_curation_database {
   if ($self->{species} eq 'elegans' && defined $self->{ace2}) {
     if ($self->{user} eq 'pad') {
       push @{$self->{carefully_check}}, qw(CHROMOSOME_IV CHROMOSOME_V);
-      $self->{carefully_check_database} = $self->{'wormbase'} . "/camace_gw3";
+      $self->{carefully_check_database} = $self->{'wormbase'}->{'wormpub'} . "/camace_gw3";
     } elsif ($self->{user} eq 'gw3') {
       push @{$self->{carefully_check}}, qw(CHROMOSOME_I CHROMOSOME_II CHROMOSOME_III CHROMOSOME_X);
-      $self->{carefully_check_database} = $self->{'wormbase'} . "/camace_pad";
+      $self->{carefully_check_database} = $self->{'wormbase'}->{'wormpub'} . "/camace_pad";
     } else {
       die "You must be either pad or gw3 to curate elegans";
     }
@@ -771,7 +771,7 @@ sub check_history_seqname {
   my $version = $self->get_history_version($self->{wormbase}->database('current'));
   my $pepname = $self->{wormbase}->pepdir_prefix . 'pep';
   my $count = 10;
-  while (!-e $self->{'wormpub'} . "/BUILD/WORMPEP/${pepname}$version/${pepname}.history${version}") {
+  while (!-e $self->{'wormbase'}->{'wormpub'} . "/BUILD/WORMPEP/${pepname}$version/${pepname}.history${version}") {
     $count--;
     if ($count == 0) {
       print "\nThere is no old WORMPEP history file for this species within the last 10 releases - is this correct?\n\n";
@@ -779,7 +779,7 @@ sub check_history_seqname {
     }
     $version--;
   }
-  my $wb = $self->{'wormpub'};
+  my $wb = $self->{'wormbase'}->{'wormpub'};
   open (PEP, "< ${wb}/BUILD/WORMPEP/${pepname}$version/${pepname}.history${version}") || die "ERROR Can't find ${wb}/BUILD/WORMPEP/${pepname}$version/${pepname}.history${version}\n";
   while (my $line = <PEP>) {
     my @f = split /\s+/, $line;
@@ -821,24 +821,26 @@ sub  change {
   close(BMERGE);
   close(BNEW);
   close(CDS2ISO);
+
+  my $wb = $self->{'wormbase'}->{wormpub};
   
   print "\nNow sort out the few isoforms that need to be deleted and un-isoform their siblings if needed\n";
   print "\n";
   
   print "\nNow run:\n";
   print "batch_merge.pl -user gw3 -pass gw3 -ns -debug gw3 -file batch_merge.dat (-test)\n";
-  print "output file: $WORMPUB/DATABASES/geneace/NAMEDB_Files/batch_merge.ace\n";
+  print "output file: $wb/DATABASES/geneace/NAMEDB_Files/batch_merge.ace\n";
   print "No association between the merged gene and the CDS objects needs to be made - it is already in the curation db\n";
   print "\n";
   
   print "batch_split.pl -user gw3 -pass gw3 -ns -debug gw3 -file batch_split.dat (-test)\n";
   print "add the Gene tag by doing some editing of the ace output database/NAMEDB_Files/batch_split.ace\n";
-  print "output file: $WORMPUB/DATABASES/geneace/NAMEDB_Files/batch_split.ace\n";
+  print "output file: $wb/DATABASES/geneace/NAMEDB_Files/batch_split.ace\n";
   print "\n";
   
   print "rm new_sneak_file\n";
   print "newgene.pl -input batch_new.dat -pseudoace new_sneak_file -species $self->{wormbase}->species -bio CDS -who WBPerson4025 -user gw3 -password gw3 -namedb -debug gw3 (-test)\n";
-  print "output is $WORMPUB/DATABASES/geneace/NAMEDB_Files/newgene_input.ace\n";
+  print "output is $wb/DATABASES/geneace/NAMEDB_Files/newgene_input.ace\n";
   print "the new_sneak_file gets appended to!\n";
   print "add the Gene tag by reading in the new_sneak_file output of newgene.pl\n";
   print "The sneak file looks like:\n";
