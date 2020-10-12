@@ -79,9 +79,9 @@ if (! defined $species) {$species = $wormbase->species}
 my $USER = $ENV{USER};
 if (! defined $database) {
   if ($species eq 'elegans') {
-    $database = "/nfs/wormpub/camace_${USER}";
+    $database = $wormbase->{wormpub} . "/camace_${USER}";
   } else {
-    $database = "/nfs/wormpub/${species}_curation";
+    $database = $wormbase->{wormpub} . "/${species}_curation";
   }
 }
 
