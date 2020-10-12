@@ -125,6 +125,8 @@ sub new {
     $person = 'WBPerson1983';
   } elsif ($user eq 'gw3') {
     $person = 'WBPerson4025';
+  } elsif ($user eq 'skd') {
+    $person = 'WBPerson51134';
   } elsif ($user eq 'mh6') {
     $person = 'WBPerson4055';
   } else {
