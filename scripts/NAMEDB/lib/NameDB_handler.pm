@@ -386,7 +386,8 @@ The data structure returned is:
 #           'sequence-name' => 'Y110A7A.10', #was gene/sequence-name
 #           'biotype' => 'cds', #was gene/biotype  biotype/cds 
 #           'cgc-name' => 'aap-1', #was gene/cgc-name
-#           'species' => 'Caenorhabditis elegans' #was gene/species
+#           'species' => 'Caenorhabditis elegans', #was gene/species
+#           'other-names' => ["name1", "name2"],
 #         };
 
 # if the gene ID does not exist, it returns 'undef'
@@ -433,6 +434,11 @@ sub printAllNames
     print "Current gene names for $id\n";
     print "cgc-name:      ", $info->{'cgc-name'}, "\n" if (exists $info->{'cgc-name'});
     print "sequence-name: ", $info->{'sequence-name'}, "\n" if (exists $info->{'sequence-name'});
+    if (exists $info->{'other-names'}) {
+      foreach my $on (@{$info->{'other-names'}}) {
+	print "other-name: $on\n";
+      }
+    }
     return 1;
   }
 
@@ -931,7 +937,8 @@ sub split_gene {
     $self->dienice("FAILED: split gene $gene_id failed because $sequence_new already exists."); #error msg
     return undef;
   }
-  my $id = $self->idSplit($gene_id, $biotype_orig, $sequence_new, $biotype_new, $why);
+  # we assume that we are not assigning any other_names to the newly created gene (so pass over 'undef')
+  my $id = $self->idSplit($gene_id, $biotype_orig, $sequence_new, $biotype_new, undef, $why);
 
   if ( $id =~ /WBGene/ ) {
     return "$id";
@@ -1485,7 +1492,7 @@ sub idMerge {
 
 =head2 idSplit
 
-=item $new_id = $db->idSplit( $source_gene_id, $biotype_orig, $sequence_new, $biotype_new, $why)
+=item $new_id = $db->idSplit( $source_gene_id, $biotype_orig, $sequence_new, $biotype_new, $other_names_new, $why)
 # status - done
 
 Split the identifier given by $source_id into two, returning the new
@@ -1500,9 +1507,9 @@ The new gene_id is returned.
 # and assign indicated sequence_name
 sub idSplit {
   my $self = shift;
-  my ( $source_gene_id, $biotype_orig, $sequence_new, $biotype_new, $why) = @_;
+  my ( $source_gene_id, $biotype_orig, $sequence_new, $biotype_new, $other_names_new, $why) = @_;
 
-  my $info = $self->{'db'}->split_genes( $source_gene_id, $biotype_orig, $sequence_new, $biotype_new, $why);
+  my $info = $self->{'db'}->split_genes( $source_gene_id, $biotype_orig, $sequence_new, $biotype_new, $other_names_new, $why);
   # info contains:
   # {'created' => {id => 'WBGene00305173'}, 'updated' => {'id' => 'WBGene00000263'}}
   return $info->{'created'}{'id'};
@@ -1578,6 +1585,12 @@ Returns:
 
 $db->new_genes([{"cgc-name" => 'abc-1', "species" => "Caenorhabditis elegans"}, {cgc-name => 'abc-2', "species" => "Caenorhabditis elegans"}]);	
 $db->new_genes([{"sequence-name" => 'H07G02.3', 'biotype' => 'CDS', "species" => "Caenorhabditis elegans"}]);	
+
+or with optional Other_name
+
+$db->new_genes([{"cgc-name" => 'abc-1', "species" => "Caenorhabditis elegans"}, {cgc-name => 'abc-2', "species" => "Caenorhabditis elegans"}, "other_names" => ["name1", "name2"]]);	
+$db->new_genes([{"sequence-name" => 'H07G02.3', 'biotype' => 'CDS', "species" => "Caenorhabditis elegans"}, "other_names" => ["name1", "name2"]]);	
+
 
 =cut
 
@@ -1713,6 +1726,36 @@ sub remove_cgc_name_genes {
 
 }
 #############################################################################
+# Remove a batch of Other-names from their genes
+#
+# Args:
+# $names - an array-ref of Other-names to remove from their genes
+#  hash-ref of: (WBGene0000001 => ['othername1', 'othername2'])
+
+
+sub remove_other_name_genes {
+  my ($self, $names) = @_;
+
+  my $info = $self->{'db'}->remove_other_name_genes($names);
+  return $info;
+
+}
+#############################################################################
+# Add a batch of Other-names to their genes
+#
+# Args:
+# $names - an array-ref of Other-names to add to their genes
+#  hash-ref of: (WBGene0000001 => ['othername1', 'othername2'])
+
+
+sub add_other_name_genes {
+  my ($self, $names) = @_;
+
+  my $info = $self->{'db'}->add_other_name_genes($names);
+  return $info;
+
+}
+#############################################################################
 # Merge a batch of pairs of genes
 #
 # Args:
@@ -1731,7 +1774,7 @@ sub batch_merge_genes {
 # Split a batch of genes
 #
 # Args:
-# $names - an array-ref of hash with keys of "from-id" existing gene, "new-biotype" existing gene's new biotype, "product-sequence-name" Sequence-name of gene to create, "product-biotype" biotype of gene to create
+# $names - an array-ref of hash with keys of "from-id" existing gene, "new-biotype" existing gene's new biotype, "product-sequence-name" Sequence-name of gene to create, "product-biotype" biotype of gene to create, "product-other-names" (optional) array of Other_names for the gene to create.
 # $why - string, optional reason for creating the genes
 
 # Returns:
@@ -1775,12 +1818,14 @@ $db->find_genes($pattern);
       {
         'id' => 'WBGene00000003',
         'sequence-name' => 'F07C3.7',
-        'cgc-name' => 'aat-2'
+        'cgc-name' => 'aat-2',
+        'other-names' => ["name1", "name2"]
       },
       {
         'id' => 'WBGene00000002',
         'sequence-name' => 'F27C8.1',
         'cgc-name' => 'aat-1'
+        'other-names' => ["name1", "name2"]
       },
 
 
@@ -1817,7 +1862,7 @@ sub new_variations {
   my ($self, $names, $why) = @_;
   my %new_ids;
 
-  my $info = $self->{'db'}->new_entities('varation', $names, $why);
+  my $info = $self->{'db'}->new_entities('variation', $names, $why);
 
   my @ids = @{$info->{'ids'}};
   
