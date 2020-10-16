@@ -222,14 +222,15 @@ sub merge_genes {
 }
 
 #======================================================================
-# split_genes($gene, $biotype_orig, $sequence_new, $biotype_new, $why)
+# split_genes($gene, $biotype_orig, $sequence_new, $biotype_new, $other_names_new, $why)
 # Split a gene, creating a new gene as a product.
 # POST /api/gene/{identifier}/split
 # Args:
 # $gene - string, gene identifier of gene to split
 # $biotype_orig - string, biotype to assign to original gene, defaults to 'CDS' if undefined, one of 	'cds'	'transcript'	'pseudogene'	'transposon'
 # $sequence_new - string, Sequence-name of the gene to create from the split
-# $biotype_new - string, biotype to assigne to the newly created gene, defaults to 'CDS' if undefined, one of 	'cds'	'transcript'	'pseudogene'	'transposon'
+# $biotype_new - string, biotype to assign to the newly created gene, defaults to 'CDS' if undefined, one of 	'cds'	'transcript'	'pseudogene'	'transposon'
+# $other_names_new - array ref of strings - other_names of the new gene, or undef if not specified
 # $why - string, optional reason for the split, ignored if undefined
 #
 # Returns:
@@ -245,7 +246,7 @@ sub merge_genes {
 
 
 sub split_genes {
-  my ($self, $gene, $biotype_orig, $sequence_new, $biotype_new, $why) = @_;
+  my ($self, $gene, $biotype_orig, $sequence_new, $biotype_new, $other_names_new, $why) = @_;
   
   if (!defined $biotype_orig || $biotype_orig eq '') {
     $biotype_orig = 'cds';
@@ -272,7 +273,14 @@ sub split_genes {
   $payload .= '"biotype": "'.$biotype_orig.'",'; #was gene/biotype
   $payload .= '"product": {';
   $payload .= '"sequence-name": "'.$sequence_new.'",'; #was gene/sequence-name
-  $payload .= '"biotype": "'.$biotype_new.'"}},'; #was gene/biotype
+  $payload .= '"biotype": "'.$biotype_new.'"'; #was gene/biotype
+  if (defined $other_names_new && scalar @{$other_names_new}) {
+    $payload .= ',';
+    $payload .= '"other-names": [';
+    $payload .= join(',', map { "\"$_\"" } @{$other_names_new});
+    $payload .= ']';
+  }
+  $payload .= '}},';
   $payload .= '"prov": {';
   $payload .= '"why": "'.$why.'"' if (defined $why) ; #was provenance/why
   $payload .= '}}';
@@ -762,12 +770,12 @@ sub recent_strain {
 # batch creates one or more new uncloned genes (they just have a CGC-name and no Sequence-name) or cloned genes (they have a Sequence name)
 # Args:
 # $data - array-ref of hashes
-#         the hashes contain either the keys ('species', 'gcg-name', 'biotype') for an uncloned gene 
-#                            or ('species', 'sequence-name', 'biotype', and optionally 'cgc-name') for a cloned gene.
+#         the hashes contain either the keys ('species', 'gcg-name', 'biotype', 'other-names') for an uncloned gene 
+#                            or ('species', 'sequence-name', 'biotype', and optionally 'cgc-name', 'other-names') for a cloned gene.
 # $why - string, optional reason for creating the genes
 # e.g.
-# $data = [{"cgc-name" => "abc-31", "species" => "Caenorhabditis elegans", "biotype" => 'CDS'}, { ... }];
-# or $data = [{"sequence-name" => "ZK1320.13", "species" => "Caenorhabditis elegans", "biotype" => 'CDS'}, { ... }];
+# $data = [{"cgc-name" => "abc-31", "species" => "Caenorhabditis elegans", "biotype" => 'CDS', "other-names" => ["other1", "other2"]}, { ... }];
+# or $data = [{"sequence-name" => "ZK1320.13", "species" => "Caenorhabditis elegans", "biotype" => 'CDS', "other-name" => ["other1", "other2"]}, { ... }];
 #
 
 sub new_genes {
@@ -795,14 +803,22 @@ sub new_genes {
     if (exists $gene_data->{'biotype'}) {
       $biotype = $biotypes{lc $gene_data->{'biotype'}};
     } 
+    my @other_names = @{$gene_data->{'other-names'}};
     
     $payload .= '{';
     $payload .= '"species": "'.$species.'",' if (defined $species); #was gene/species
     $payload .= '"cgc-name": "'.$cgc_name.'",' if (defined $cgc_name); #was gene/cgc-name
     $payload .= '"sequence-name": "'.$sequence_name.'",' if (defined $sequence_name); #was gene/sequence-name
     $payload .= '"biotype": "'.$biotype.'",' if (defined $biotype); #was gene/biotype
-    
+
+    if (scalar @other_names) {
+      $payload .= '"other-names": [';
+      $payload .= join(',', map { "\"$_\"" } @other_names);
+      $payload .= '],';
+    }
+
     chop $payload; # remove last ','
+
     $payload .= '},';
   }
   
@@ -1010,6 +1026,70 @@ sub remove_cgc_name_genes {
   return $self->batch('DELETE', 'gene/cgc-name', $payload);
   
 }
+#======================================================================
+# remove_other_name_genes($data)
+# batch removes other-names from specified genes
+#
+# Args:
+# $data - array-ref of keys of GeneIDs and values of array-ref of their other-names
+#  hash-ref of: (WBGene0000001 => ['othername1', 'othername2'])
+
+sub remove_other_name_genes {
+  my ($self, $data, $why) = @_;
+  
+  my $payload = '{"data": [';
+  foreach my $id (keys %{$data}) {
+    my $value = $data->{$id};
+    $payload .= '{"id": "'.$id.'",';
+
+    $payload .= '"other-names": [';
+    $payload .= join(',', map { "\"$_\"" } @{$value});
+    $payload .= ']';
+
+    $payload .= '},';
+  }
+  
+  chop $payload; # remove last ','
+  $payload .= '], "prov": {';
+  $payload .= '"why": "'.$why.'"' if ($why ne '');
+  $payload .= '}}';
+  if ($self->noise()) {print $payload,"\n"}
+  
+  my $batch = $self->batch('DELETE', 'gene/update-other-names', $payload);
+  
+}
+#======================================================================
+# add_other_name_genes($data)
+# batch adds other-names to specified genes
+#
+# Args:
+# $data - array-ref of keys of GeneIDs and values of array-ref of their other-names
+#  hash-ref of: (WBGene0000001 => ['othername1', 'othername2'])
+
+sub add_other_name_genes {
+  my ($self, $data, $why) = @_;
+  
+  my $payload = '{"data": [';
+  foreach my $id (keys %{$data}) {
+    my $value = $data->{$id};
+    $payload .= '{"id": "'.$id.'",';
+
+    $payload .= '"other-names": [';
+    $payload .= join(',', map { "\"$_\"" } @{$value});
+    $payload .= ']';
+
+    $payload .= '},';
+  }
+  
+  chop $payload; # remove last ','
+  $payload .= '], "prov": {';
+  $payload .= '"why": "'.$why.'"' if ($why ne '');
+  $payload .= '}}';
+  if ($self->noise()) {print $payload,"\n"}
+  
+  my $batch = $self->batch('PUT', 'gene/update-other-names', $payload);
+  
+}
 
 #======================================================================
 # batch_merge_genes($data)
@@ -1080,6 +1160,7 @@ sub batch_merge_genes {
 #      "new-biotype": "cds", #was biotype/cds
 #      "product-sequence-name": "AAH1.1",
 #      "product-biotype": "cds" #was biotype/cds
+#      "product-other-names": ["name1","name2"]
 #    }
 #  ],
 #  "prov": {
@@ -1132,10 +1213,17 @@ sub batch_split_genes {
     $payload .= '"new-biotype": "'.$hash->{'new-biotype'}.'",';
     $payload .= '"product-sequence-name": "'.$hash->{'product-sequence-name'}.'",';
     $payload .= '"product-biotype": "'.$hash->{'product-biotype'}.'"';
-    $payload .= '},';
+
+    if (exists $hash->{'product-other-names'}) {
+      $payload .= ',';
+      $payload .= '"product-other-names": [';
+      $payload .= join(',', map { "\"$_\"" } @{$hash->{'product-other-names'}});
+      $payload .= ']';
+    }
+
+    $payload .= '}';
   }
   
-  chop $payload; # remove last ','
   $payload .= '], "prov": {';
   $payload .= '"why": "'.$why.'"' if ($why ne ''); #was provenance/why
   $payload .= '}}';
