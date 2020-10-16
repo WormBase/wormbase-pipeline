@@ -13,12 +13,13 @@ use lib $ENV{CVS_DIR};
 use Modules::AGR;
 use strict;
 
-my ($database,$alleles,$outfile,$ws_version,$diseases,$skipchebi);
+my ($database,$alleles,$outfile,$ws_version,$diseases,$skipchebi,$once);
 GetOptions (
         'database:s' => \$database,
         'outfile:s'  => \$outfile,
         'wsversion:s'=> \$ws_version,
 	'skipchebi'  => \$skipchebi, # in case we have to skip entries with CHEBI ids
+	'once'       => \$once,
 )||die @!;
 
 my $db = Ace->connect(-path => $database) or die(Ace->error);
@@ -55,6 +56,7 @@ while (my $mol = $it->next){
         }
 
 	push @molecules,\%m;
+	last if $once;
 }
 
 $db->close;
