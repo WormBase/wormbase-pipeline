@@ -120,6 +120,9 @@ sub process{
             $json_obj->{crossReferences} = [ { id => "WB:$obj", pages => ['allele','allele/references']}];
 	    map { push @{$json_obj->{crossReferences}}, {id => "WB:$_", pages => ['reference']} } $obj->Reference;
     }
+    else{
+	    $json_obj->{crossReferences} = [ { id => "WB:$obj", pages => ['allele']}];
+    }
     $$json_obj{alleleObjectRelations}=[{objectRelation => {associationType => 'allele_of', gene => "WB:$gene"}}];
 
     if ($obj->Corresponding_transgene){
