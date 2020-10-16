@@ -18,7 +18,7 @@ use strict;
 my ($debug,$test,$store,$wormbase,$load,$outfile);
 GetOptions( 'debug=s'    => \$debug,
             'test'       => \$test,
-            'store'      => \$store,
+            'store=s'    => \$store,
             'load'       => \$load,
             'outfile=s'  => \$outfile,
             )||die("invalid commandline options\n");
