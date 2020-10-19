@@ -124,6 +124,7 @@ sub get_bgi{
 		foreach my $x (@{$bgE->{crossReferences}}){
 			print $outfh "Database \"EnsEMBL\" \"ENSEMBL_geneID\" \"$1\"\n" if $x->{id}=~/ENSEMBL:(\w+)/;
 			print $outfh "Database \"UniProt\" \"UniProt_AC\" \"$1\"\n" if $x->{id}=~/UniProtKB:(\w+)/;
+	                print $outfh "Database \"EntrezGene\" \"EntrezGene_id\" \"$1\"\n" if $x->{id}=~/NCBI_gene:(\w+)/;
 		}
 
 		foreach my $oId (@{$bgE->{secondaryIds}}){
