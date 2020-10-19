@@ -19,11 +19,11 @@ use Getopt::Long;
 use strict;
 
 my ($debug,$test,$store,$wormbase,$load,$outfile);
-GetOptions( 'debug=s'    => \$debug,
-            'test'       => \$test,
-            'store'      => \$store,
-	    'load'       => \$load,
-            'outfile=s'  => \$outfile,
+GetOptions( 'debug=s'      => \$debug,
+            'test'         => \$test,
+            'store=s'      => \$store,
+	    'load'         => \$load,
+            'outfile=s'    => \$outfile,
             )||die("invalid commandline options\n");
 
 if ( $store ) {
