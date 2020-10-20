@@ -1734,9 +1734,9 @@ sub remove_cgc_name_genes {
 
 
 sub remove_other_name_genes {
-  my ($self, $names) = @_;
+  my ($self, $names, $why) = @_;
 
-  my $info = $self->{'db'}->remove_other_name_genes($names);
+  my $info = $self->{'db'}->remove_other_name_genes($names, $why);
   return $info;
 
 }
