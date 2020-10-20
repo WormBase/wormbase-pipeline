@@ -29,7 +29,7 @@ use NameDB_handler;
 
 =item Options:
 
-  -action    one of "new", "update", "kill", "resurrect", "suppress", "remove-cgc", "merge", "split", "find", "help"
+  -action    one of "new", "update", "kill", "resurrect", "suppress", "remove-cgc", "add-other-name", "remove-other-name", "merge", "split", "find", "help"
   -file      TAB or comma delimited file containing input IDs and old/new names  <Mandatory>
   -test      use the test nameserver
 
@@ -90,6 +90,21 @@ use NameDB_handler;
     tag-100
     bat-1
 
+    for action "add-other-name"
+    column 1 - Gene ID
+    column 2 - names of Other_name to add to Gene, separated by commas and/or spaces
+
+    example:
+    WBGene00304791	ehk09
+    WBGene00304792	alpha-darwin, beta-wallace
+
+    for action "remove-other-name"
+    column 1 - Gene ID
+    column 2 - names of Other_name to add to Gene, separated by commas and/or spaces
+
+    example:
+    WBGene00304791	ehk09
+    WBGene00304792	alpha-darwin, beta-wallace
 
     for action "merge"
 
@@ -214,6 +229,10 @@ if ($action eq 'new') {
   suppress_gene();
 } elsif ($action eq 'remove-cgc') {
   remove_cgc_gene();
+} elsif ($action eq 'add-other-name') {
+  add_other_name();
+} elsif ($action eq 'remove-other-name') {
+  remove_other_name();
 } elsif ($action eq 'merge') {
   merge_gene();
 } elsif ($action eq 'split') {
@@ -529,7 +548,7 @@ sub remove_cgc_gene {
     $count++;
     print OUT "//\tCGC-name '$line' queued for being suppressed\n";
     if ($count == $BATCH_SIZE) {
-      my $info = $db->remove_cgc_name_genes(\@names, $why);
+      my $info = $db->remove_cgc_name_genes(\@names);
       $count =  0;
       @names = ();
       $batch = $info->{retracted}{'id'}; # was batch/id
@@ -538,9 +557,73 @@ sub remove_cgc_gene {
   }
 
   if ($count) {
-    my $info = $db->remove_cgc_name_genes(\@names, $why);
+    my $info = $db->remove_cgc_name_genes(\@names);
     $batch = $info->{retracted}{'id'}; # was batch/id
     print OUT "// batch '$batch' resurrected\n";
+  }
+
+}
+##########################################
+
+sub add_other_name {
+  my %names;
+
+  my $batch;
+  my $count = 0;
+  while (my $line = <IN>) {
+    chomp $line;
+    if ($line =~ /^#/) {next}
+    if ($line eq '') {next}
+    my @f = split /[\s,]+/, $line;
+    my $geneid = shift @f;
+    $names{$geneid} = [@f];
+    $count++;
+    print OUT "//\tOther-name '$line' queued for being added\n";
+    if ($count == $BATCH_SIZE) {
+      my $info = $db->add_other_name_genes(\%names, $why);
+      $count =  0;
+      %names = ();
+      $batch = $info->{'id'}; # was batch/id
+      print OUT "// batch '$batch'\n";
+    }
+  }
+
+  if ($count) {
+    my $info = $db->add_other_name_genes(\%names, $why);
+    $batch = $info->{'id'}; # was batch/id
+    print OUT "// batch '$batch'\n";
+  }
+
+}
+##########################################
+
+sub remove_other_name {
+  my %names;
+
+  my $batch;
+  my $count = 0;
+  while (my $line = <IN>) {
+    chomp $line;
+    if ($line =~ /^#/) {next}
+    if ($line eq '') {next}
+    my @f = split /[\s,]+/, $line;
+    my $geneid = shift @f;
+    $names{$geneid} = [@f];
+    $count++;
+    print OUT "//\tOther-name '$line' queued for being removed\n";
+    if ($count == $BATCH_SIZE) {
+      my $info = $db->remove_other_name_genes(\%names, $why);
+      $count =  0;
+      %names = ();
+      $batch = $info->{retracted}{'id'}; # was batch/id
+      print OUT "// batch '$batch' removed\n";
+    }
+  }
+
+  if ($count) {
+    my $info = $db->remove_other_name_genes(\%names, $why);
+    $batch = $info->{retracted}{'id'}; # was batch/id
+    print OUT "// batch '$batch' removed\n";
   }
 
 }
