@@ -176,8 +176,13 @@ sub find_gene {
   my $status = $info->{'status'};
   my $biotype = $info->{'biotype'};
   if (!defined $biotype) {$biotype = '.'}
+  my @other_names = $info->{'other-names'};
+  if (!exists $info->{'other-names'}) {@other_names = ('.')}
   print "Gene: $id\nSequence-name $seqname\nCGC name $cgcname\n";
   print "Species: $species\nStatus $status\nBiotype $biotype\n";
+  foreach my $on (@other_names) {
+    print "Other_name: $on\n";
+  }
   # order the history events by time, so element [0] is the creation and element [-1] is the last event
   my $no_changes = scalar @{$info->{'history'}};
   my @events = sort {$a->{'t'} cmp $b->{'t'}} @{$info->{'history'}};
