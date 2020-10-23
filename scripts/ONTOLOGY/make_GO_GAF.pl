@@ -174,7 +174,7 @@ foreach my $suf (0..9) {
     if ($obj->Annotation_relation_not) {
       push @annot_rel, "NOT";
       my $al = $obj->Annotation_relation_not->Name;
-      $al =~ s/\s+/_/; 
+      $al =~ s/\s+/_/g; 
       if ($al eq 'colocalizes_with' or
           $al eq 'contributes_to') {
         push @annot_rel, "$al";
@@ -183,7 +183,7 @@ foreach my $suf (0..9) {
     }
     if ($obj->Annotation_relation) {
       my $al = $obj->Annotation_relation->Name;
-      $al =~ s/\s+/_/; 
+      $al =~ s/\s+/_/g; 
       if ($al eq 'colocalizes_with' or
           $al eq 'contributes_to') {
         push @annot_rel, $al;
