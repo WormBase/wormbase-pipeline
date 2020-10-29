@@ -319,7 +319,7 @@ sub get_classes_and_ids_to_check {
 			       SK_map => 'AH10.1:Sep2001',
 			       SO_term => 'SO:0000458',
 			       Species => 'Achromobacter cycloclastes',
-			       Strain => 'BC2420',
+			       Strain => 'WBStrain00000593',
 			       Structure_data => 'WBStructure000191',
 			       Transcript => 'B0205.9.1',
 			       Transcription_factor => 'WBTranscriptionFactor000119',
