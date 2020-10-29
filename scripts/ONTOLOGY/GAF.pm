@@ -44,7 +44,7 @@ sub print_wormbase_GAF_header {
   }else {
 	  print $fh "\!generated-by: WormBase\n";
 	  my $date = DateTime->now;
-	  print $fh "\"date-generated: ".$dt->ymd."\n"
+	  print $fh "\"date-generated: ".$date->ymd."\n"
   }
 }
 
