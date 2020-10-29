@@ -2,6 +2,7 @@
 package GAF;
 
 use strict;
+use DateTime;
 use Exporter;
 
 our @ISA = qw(Exporter);
@@ -37,8 +38,14 @@ sub print_wormbase_GAF_header {
   $version||='2.0';
 
   print $fh "\!gaf-version: $version\n";
-  print $fh "\!Project_name: WormBase\n";
-  print $fh "\!Contact Email: help\@wormbase.org\n";
+  if ($version < 2.2){
+	  print $fh "\!Project_name: WormBase\n";
+	  print $fh "\!Contact Email: help\@wormbase.org\n";
+  }else {
+	  print $fh "\!generated-by: WormBase\n";
+	  my $date = DateTime->now;
+	  print $fh "\"date-generated: ".$dt->ymd."\n"
+  }
 }
 
 ####################################
