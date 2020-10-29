@@ -1457,7 +1457,8 @@ gene_association.WSREL.wb
 gene_ontology.WSREL.obo
 phenotype_association.WSREL.wb
 phenotype_ontology.WSREL.obo
-disease_association.WSREL.wb
+disease_association.WSREL.daf.txt
+disease_association.by_orthology.WSREL.tsv.txt
 disease_ontology.WSREL.obo
 development_association.WSREL.wb
 development_ontology.WSREL.obo

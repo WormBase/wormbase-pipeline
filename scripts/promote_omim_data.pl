@@ -58,7 +58,8 @@ my $WS_name         = $wormbase->get_wormbase_version_name();
 my $species_name    = $wormbase->full_name;
 
 $acefile = $wormbase->acefiles . "/omim_db_data.ace" if not defined $acefile;
-$flatfile = $wormbase->ontology . "/disease_associations.by_orthology.tsv.txt" if not defined $flatfile;
+$flatfile = $wormbase->ontology . "/disease_association.by_orthology." . $wormbase->get_wormbase_version_name . ".tsv.txt" 
+    if not defined $flatfile;
 $obofile = $wormbase->primaries . "/citace/temp_unpack_dir/home/citace/Data_for_${WS_name}/Data_for_Ontology/disease_ontology.${WS_name}.obo" 
     if not defined $obofile;
 $database = $wormbase->autoace if not defined $database;
