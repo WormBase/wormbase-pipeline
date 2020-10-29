@@ -67,7 +67,8 @@ while (<$gff_in_fh>){
     #Name=Y71F9AL.23;
     #  if (m/Name\=(\S+)?\;/){
     if ($gff3) {
-        if (m/Name\=Transcript\:(\w+\.\w+)\;?/){
+	if ((m/Name\=Transcript\:(\w+\.\w+)\;?/) || (m/Name\=Transcript\:(\w+)\;?/)) {
+#        if (m/Name\=Transcript\:(\w+\.\w+)\;?/){
             $Transcript_name = $1
         }
     }
