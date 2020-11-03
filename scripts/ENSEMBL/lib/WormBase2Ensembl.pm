@@ -157,12 +157,14 @@ sub parse_genes_gff3_fh {
     foreach my $el (split(/;/, $l[8])) {
       my ($k, $v) = $el =~ /(\S+)=(.+)/;
       if ($k eq 'ID') {
-        $id = $v;
+        ($id) = $v =~ /^(\S+)/; 
       } elsif ($k eq 'Name') {
-        $name = $v;
+        ($name) = $v =~ /^(\S+)/;
       } elsif ($k eq 'Parent') {
-        my @p = split(/,/, $v);
-        map { $parents{$_} = 1 } @p;
+        foreach my $p (split(/,/, $v)) {
+          my ($par) = $p =~ /^(\S+)/; 
+          $parents{$par} = 1;
+        }
       } 
     }
 
