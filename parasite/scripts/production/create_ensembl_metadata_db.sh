@@ -9,11 +9,10 @@ if [[ -z $RELEASE || -z $EMAIL ]]; then
    exit 255
 fi
 
-for VAR in  PARASITE_STAGING_MYSQ   \
+for VAR in  PARASITE_STAGING_MYSQL   \
             PARASITE_SCRATCH        \
             PARASITE_VERSION        \
             ENSEMBL_VERSION         \
-            EG_VERSION              \
             ENSEMBL_CVS_ROOT_DIR
 do
    if [ -z $(eval "echo \$$VAR") ]; then
@@ -43,11 +42,10 @@ ${PARASITE_STAGING_MYSQL}-ensrw -N -e "create database ${db_name};"
 cat ${EM_table_SQL} | ${PARASITE_STAGING_MYSQL}-ensrw ${db_name}
 for this_core_db in $(${PARASITE_STAGING_MYSQL} -N -e "SHOW DATABASES LIKE \"%core_${PARASITE_VERSION}_${ENSEMBL_VERSION}%\""); do
    echo "Updating ${db_name} with metadata from ${this_core_db}";
-   metadata_updater.pl  -metadata_uri     $($PARASITE_STAGING_MYSQL-ensrw details url)${db_name}      \
+   ${ENSEMBL_CVS_ROOT_DIR}/ensembl-metadata/misc_scripts/metadata_updater.pl  -metadata_uri     $($PARASITE_STAGING_MYSQL-ensrw details url)${db_name}      \
                         -database_uri     $($PARASITE_STAGING_MYSQL-ensrw details url)${this_core_db} \
                         -e_release        ${ENSEMBL_VERSION}                                          \
-                        -eg_release       ${EG_VERSION}                                               \
-                        -parasite_release ${PARASITE_VERSION}                                         \
+                        -eg_release       ${PARASITE_VERSION}                                         \
                         -release_date     "'${datestamp}'"                                            \
                         -current_release  "'${RELEASE}'"                                              \
                         -email            "'${EMAIL}'"                                                \
