@@ -13,15 +13,15 @@ use Ace::Sequence;
 
 use constant UPSTREAM => 2_500;  # how many bases upstream to do
 
-my ($species,$format,$store,$debug,$test,$database,$outfile);
+my ($species,$store,$debug,$test,$database,$outfile,$chunk);
 GetOptions(
      'species=s'  => \$species,
-     'format=s'   => \$format,
      'store=s'    => \$store,
      'debug=s'    => \$debug,
      'test'       => \$test,
      'database=s' => \$database,
      'outfile=s'  => \$outfile,
+     'chunk=s'    => \$chunk,
 )||die(@!);
 
 
@@ -52,6 +52,13 @@ $log->write_to("found ",scalar(@genes)," predicted genes\n");
 
 # create a sequence from each one and find the closest upstream transcript
 for my $g (@genes) {
+
+    # chunks hook
+    if ($chunk){
+	    $g->name =~/(\d)$/;
+	    next unless "$1" == $chunk;
+    }
+
     my $s = Ace::Sequence->new(-seq    => $g,
 			       -offset => -UPSTREAM(),
 			       -length => UPSTREAM() 
