@@ -27,14 +27,18 @@ perl -MProductionMysql -E '
      --database "$NEWDB"
 done
 
-if [ "$#" ] ; then
+if [ $# -gt 0 ] ; then
   echo "Ran in partial mode. Will not drop old stuff or copy comparators"
   exit
 fi
 find_host_and_db(){
   species="$1"
+  # if mysql-ens-sta-[1234] don't have the comparator dbs required as the ensembl version is too old
+  # then mysql-ens-mirror-[1234] will hopefully provide the db
+  # *but* check it's OK to dump from  the mirror servers before using them
+  # (if you get a "packet too large" error try uging the mysqldump option --max_allowed_packet=512M)
   for cmd in mysql-ens-sta-1 mysql-ens-sta-2 mysql-ens-sta-3 mysql-ens-sta-4; do
-    db=$( $cmd -Ne "show databases like \"%${species}_core%\"" )
+    db=$( $cmd -Ne "show databases like \"%${species}_core%_${ENSEMBL_VERSION}_%\"" )
     if [ "$db" ]; then
       echo $cmd$'\t'$db
       return

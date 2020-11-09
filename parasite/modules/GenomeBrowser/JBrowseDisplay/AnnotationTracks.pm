@@ -60,7 +60,7 @@ sub split_annotation_into_files_by_track_label {
 }
 sub track_label_for_source_and_type {
   my ($source, $type) = @_;
-  if (grep {$type eq $_} qw/gene mRNA exon CDS five_prime_UTR three_prime_UTR tRNA rRNA pseudogene tRNA_pseudogene antisense_RNA lincRNA miRNA miRNA_primary_transcript nc_primary_transcript mRNA piRNA pre_miRNA pseudogenic_rRNA pseudogenic_transcript transposable_element pseudogenic_tRNA scRNA snoRNA snRNA ncRNA/){
+  if (grep {$type eq $_} qw/gene mRNA exon CDS five_prime_UTR three_prime_UTR tRNA rRNA pseudogene tRNA_pseudogene antisense_RNA lincRNA miRNA miRNA_primary_transcript nc_primary_transcript mRNA piRNA pre_miRNA pseudogenic_rRNA pseudogenic_transcript transposable_element pseudogenic_tRNA scRNA snoRNA snRNA ncRNA nontranslating_CDS/){
     if ($source eq "WormBase" || $source eq "WormBase_imported"){
       return "Gene_Models";
     } elsif ($source eq "WormBase_transposon"){ 

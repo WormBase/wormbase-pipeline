@@ -156,10 +156,11 @@ sub dbc {
 # It needs to be executed from Java, and the two implementations are slightly different: https://docs.oracle.com/javase/7/docs/api/java/util/regex/Pattern.html#jcc
 our $GOLDEN_SPECIES_REGEX_MATCH = join ("|",
   "^trichinella_pseudospiralis_(iss[0-9]+prjna257433)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$", # $1
-  "^(.{1,2}).*?_(.{1,4}).*?_(.*?)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$", # $2, $3, $4
-  "^([a-z])[^_]+_([^_]+)_core_.*\$" # $5, $6
+  "^(.{1,2}).*?_(.{1,2}).*?_(v[1-9].*?)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$", # $1, $2, $3
+  "^(.{1,2}).*?_(.{1,4}).*?_(.*?)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$", # $4, $5, $6
+  "^([a-z])[^_]+_([^_]+)_core_.*\$" # $7, $8
 );
-our $GOLDEN_SPECIES_REGEX_REPLACEMENT = '$1$2$3$4$5$6';
+our $GOLDEN_SPECIES_REGEX_REPLACEMENT = '$1$2$3$4$5$6$7$8$9';
 
 sub core_db_to_biomart_name {
   my ($core_db) = @_;

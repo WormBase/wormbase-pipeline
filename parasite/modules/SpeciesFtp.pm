@@ -27,7 +27,10 @@ sub path_to {
   $core_db = lc ($core_db);
   my ($spe, $cies, $bp ) = split "_", $core_db;
   $bp = uc($bp);
+  # fix for special bioproject names assigned to old T. pseudospiralis genome versions
   $bp =~ s/ISS([0-9]+)PRJNA([0-9]+)/ISS$1_PRJNA$2/;
+  # fix for special bioproject names assigned to old S. carpocapsae genome versions
+  $bp =~ s/V([0-9]+)PRJNA([0-9]+)/V$1_PRJNA$2/;
   $zipped //= 1;
 
   my $dir = join("/", $self->{root}, "${spe}_${cies}", $bp);

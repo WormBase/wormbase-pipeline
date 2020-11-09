@@ -34,17 +34,20 @@ for my $file_type (@file_types){
   };
 }
 
-my @compara_species = grep {/.*_.*_.*/} map {chomp; $_} read_file("$ENV{PARASITE_CONF}/compara.species_list") or do {
-  ok(0, "Can read $ENV{PARASITE_CONF}/compara.species_list");
-  done_testing;
-  exit;
-};
-for my $file_type (("orthologs.tsv", "paralogs.tsv")){
-  subtest ".next $file_type" => sub {
-    for my $species (@compara_species){
-      my $path = SpeciesFtp->dot_next->path_to($species, $file_type);
-      ok (-s $path, $path);
-    }
-  }
+unless( exists $ENV{SKIP_FTP_COMPARA_TESTS} && $ENV{SKIP_FTP_COMPARA_TESTS} ) {
+   my @compara_species = grep {/.*_.*_.*/} map {chomp; $_} read_file("$ENV{PARASITE_CONF}/compara.species_list") or do {
+     ok(0, "Can read $ENV{PARASITE_CONF}/compara.species_list");
+     done_testing;
+     exit;
+   };
+   for my $file_type (("orthologs.tsv", "paralogs.tsv")){
+     subtest ".next $file_type" => sub {
+       for my $species (@compara_species){
+         my $path = SpeciesFtp->dot_next->path_to($species, $file_type);
+         ok (-s $path, $path);
+       }
+     }
+   }
 }
+
 done_testing;
