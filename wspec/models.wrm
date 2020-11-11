@@ -1244,6 +1244,7 @@
          Located_sequence_feature UNIQUE Junction
                                          Region
                                          Sequence_alteration
+                                         Sequence_comparison
          Parent Is_a ?SO_term XREF Is
                 Part_of ?SO_term XREF Part
                 Derived_from ?SO_term XREF Derives
