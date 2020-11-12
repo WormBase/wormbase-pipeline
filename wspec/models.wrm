@@ -1,8 +1,8 @@
-// %W%    %G%
+//
 // models.wrm - main file defining tree class structures for the WormBase database
 // This file is read only when starting a new database or when you select
 // "Read Models" or "Add Update File" from the main menus.
-// `
+// 
 // Explanation about class/object count limits
 // -----------------------------------------------------------------------------
 // Every single object specified in this file is represented in acedb by a key,
@@ -906,9 +906,12 @@
 //
 ///////////////////////////////
 
-?Species Short_name UNIQUE Text   // e.g. 'C. elegans'
+?Species Evidence #Evidence
+         Short_name UNIQUE Text   // e.g. 'C. elegans'
          Other_name Text      // sp. 7 etc.
          G_species UNIQUE Text    // e.g. 'c_elegans' - used internally for file generation
+         Reference ?Paper XREF Species
+         Remark ?Text #Evidence
          NCBITaxonomyID UNIQUE Int
          In_analysis ?Analysis XREF Species_in_analysis
          Assembly ?Sequence_collection //used for linking to the species assemblies
@@ -3480,7 +3483,7 @@
                  Sequence ?Sequence XREF Reference #Evidence
                  CDS ?CDS XREF Reference #Evidence
                  Transcript ?Transcript XREF Reference #Evidence
-                 Species ?Species #Evidence
+                 Species ?Species XREF Reference #Evidence
                  Strain ?Strain XREF Reference #Evidence
                  Genotype ?Genotype XREF Reference
                  Clone ?Clone XREF Reference #Evidence
