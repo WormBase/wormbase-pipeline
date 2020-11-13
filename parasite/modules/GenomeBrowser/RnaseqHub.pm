@@ -75,7 +75,7 @@ sub make_hub_for_core_db {
     return unless @studies;
 
     my $assembly =
-      ProductionMysql->staging->meta_value( $core_db, "assembly.name" );
+      ProductionMysql->staging->meta_value( $core_db, "assembly.default" );
     make_path( $self->path( $_Species, "doc" ) );
     my @study_tracks;
     my @run_tracks;

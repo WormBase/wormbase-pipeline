@@ -81,7 +81,7 @@ sub make_display_for_core_db {
     $self->{jbrowse_tools}->add_static_files( $out, %opts );
 
     my ($track_selector, @rnaseq_track_configs) = $self->{rnaseq_tracks}->track_selector_and_tracks_for_species_and_assembly(
-      $species, ProductionMysql->staging->meta_value( $core_db, "assembly.name" ), %opts
+      $species, ProductionMysql->staging->meta_value( $core_db, "assembly.default" ), %opts
     );
 
     my %config = %{config_stanza()};
