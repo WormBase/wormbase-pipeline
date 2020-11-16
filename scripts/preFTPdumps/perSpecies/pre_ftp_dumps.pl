@@ -39,7 +39,6 @@ if ($store) {
                              -test => $test);
 }
 
-
 my @script_conf = (
   { script => 'dump_species_functional_descriptions.pl', output => 'functional_descriptions.txt', all => 1,  mem => 12000 },
   { script => 'dump_protein_domains.pl',                 output => 'protein_domains.csv', all => 1 ,  mem => 12000 },
@@ -49,7 +48,7 @@ my @script_conf = (
   { script => 'dump_gpiv2.pl',                           output => 'gene_product_info.gpi2', all => 1, mem => 12000 },
   { script => 'dump_species_gene_interactions.pl',       output => 'interactions.txt',  mem => 12000               },
   { script => 'dump_interpolated.pl',                    output => 'interpolated_clones.txt',  mem => 12000        },
-  { script => 'dump_promoters.pl',                       output => 'potential_promotors.fa',  mem => 12000         },
+  { script => 'chunk_dump_promoters.pl',                 output => 'potential_promotors.fa',  mem => 12000         },
   { script => 'dump_swissprot.pl',                       output => 'swissprot.txt',  mem => 12000                  },
   { script => 'dump_ko.pl',                              output => 'knockout_consortium_alleles.xml',  mem => 12000},
   { script => 'dump_alaska_ids.pl',                      output => 'alaska_ids.tsv', all => 1,  mem => 12000       },
@@ -60,8 +59,6 @@ my @script_conf = (
   { script => 'dump_geneid_list.pl',                     output => 'geneOtherIDs.txt', options => '-other', all=>1,  mem => 12000 },
   { script => 'uniprotxrefs.pl',                         output => 'uniprot_papers.txt', all=>1,  mem => 12000     },
 );
-
-
 
 
 # global aspects
