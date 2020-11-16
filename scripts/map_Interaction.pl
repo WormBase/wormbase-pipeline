@@ -28,8 +28,8 @@ GetOptions(
     'acefile=s' => \$output,
     'store=s'   => \$store,
     'database=s' => \$dbdir,
-    'interaction=s' = \$testInteraction,
-)||die("invalid commandline optioon\n");
+    'interaction=s' => \$testInteraction,
+)||die("invalid commandline option\n");
 
 if ($store) { 
   $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n");
@@ -44,7 +44,7 @@ $output ||= $wb->acefiles.'/Interaction_connections.ace';
 my $log = Log_files->make_build_log($wb);
 
 # open a connection
-my $db = Ace->connect( -path    => "$dbdir", -program => $wb->$tace)
+my $db = Ace->connect( -path    => "$dbdir", -program => $wb->tace)
     or $log->log_and_die("Could not successfully connect to Acedb $dbdir\n");
 
 open(my $outfh, ">$output" ) || $log->log_and_die("Can't open output file $output\n");
