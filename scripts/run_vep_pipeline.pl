@@ -22,6 +22,9 @@ die "Species must be Elegans or Briggsae\n" unless $species eq 'Elegans' or $spe
 
 my $url = 'mysql://' . $ENV{'WORM_DBUSER'} . ':' . $password . '@' . $ENV{'WORM_DBHOST'} . ':' . 
     $ENV{'WORM_DBPORT'} . '/wb_vep_' . lc($species) . '_ehive';
+
+$ENV{EHIVE_URL} = $url;
+
 my $load_data = $no_load ? 0 : 1;
 my $test_run = $test ? 1 : 0;
 my $debug_mode = $debug ? 1 : 0;
@@ -42,10 +45,8 @@ if (!defined $fasta) {
 my $init_cmd = "init_pipeline.pl ProteinConsequence::ProteinConsequence_conf -password $password " . 
     "-species $species -database $database -fasta $fasta -gff_dir $gff_splits -load_to_ace $load_data " . 
     "-test $test_run -debug $debug_mode";
-
-for my $cmd ($init_cmd, "setenv EHIVE_URL \"$url\"", "beekeeper.pl -url $url -loop") {
-    system($cmd);
-};
+system($init_cmd);
+system("beekeeper.pl -url $url -loop");
 
 
 sub print_usage{
