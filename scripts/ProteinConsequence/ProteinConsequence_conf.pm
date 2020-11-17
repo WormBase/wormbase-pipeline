@@ -44,7 +44,7 @@ sub default_options {
         
 	# pipeline details
         pipeline_name           => 'wb_vep_' . lc($self->o('species')),
-	pipeline_database       => $self->o('pipeline_name') . '_ehive'
+	pipeline_database       => $self->o('pipeline_name') . '_ehive',
         
         # connection details for the hive's own database
         pipeline_db => {
