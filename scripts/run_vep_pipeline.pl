@@ -15,7 +15,7 @@ GetOptions(
     "test"         => \$test,
     "noload"       => \$no_load,
     "debug"        => \$debug,
-    ) or print_usage;
+    ) or print_usage();
 
 $species = ucfirst(lc($species));
 die "Species must be Elegans or Briggsae\n" unless $species eq 'Elegans' or $species eq 'Briggsae';
