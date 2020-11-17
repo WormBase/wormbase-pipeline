@@ -1,3 +1,15 @@
+=head1 NAME
+
+ProteinConsequence::ProteinConsequence_conf - eHive config file
+
+=cut
+
+=head1 DESCRIPTION
+
+eHive config file for WormBase Build variant mapping and VEP annotation pipeline.
+
+=cut
+
 package ProteinConsequence::ProteinConsequence_conf;
 
 use strict;
@@ -10,11 +22,7 @@ sub default_options {
 
      return {
 
-        # NB: You can find some documentation on this pipeline on confluence here:
-        #
-        # http://www.ebi.ac.uk/seqdb/confluence/display/EV/Protein+function+pipeline
-
-        # Pipeline wide settings
+        # pipeline wide settings
         
 	hive_root_dir                  => $ENV{'WBVEP_DIR'} . '/ensembl-hive',
         hive_force_init                => 1,
@@ -25,19 +33,20 @@ sub default_options {
         hive_default_max_retry_count   => 0,
         hive_debug_init                => 1,
 	
+	standard_max_workers           => 250,
+	highmem_max_workers            => 100,
+	hive_max_workers               => 350,
+	
+	# folder locations
 	vep_dir                 => $ENV{'WBVEP_DIR'} . '/ensembl-vep',
-
-	max_deletion_size       => 10000,
-
-	pipeline_base_dir       => $ENV{'WBVEP_WORKING_DIR'},
-        pipeline_name           => 'wb_vep_' . lc($self->o('species')),
-	pipeline_database       => $self->o('pipeline_name') . '_ehive',
+	pipeline_base_dir       => $ENV{'WBVEP_WORKING_DIR'},,
         output_dir              => $self->o('pipeline_base_dir') . '/' . $self->o('pipeline_name'),  
-	log_dir                 => $self->o('output_dir'),
         
+	# pipeline details
+        pipeline_name           => 'wb_vep_' . lc($self->o('species')),
+	pipeline_database       => $self->o('pipeline_name') . '_ehive'
         
         # connection details for the hive's own database
-
         pipeline_db => {
             -host   => $ENV{'WORM_DBHOST'},
             -port   => $ENV{'WORM_DBPORT'},
@@ -50,16 +59,16 @@ sub default_options {
         # configuration for the various resource options used in the pipeline
         
 	lsf_queue             => $ENV{'LSF_DEFAULT_QUEUE'},
-
         default_lsf_options   => '-q' . $self->o('lsf_queue') . ' -R"select[mem>4000] rusage[mem=4000]" -M4000',    
         highmem_lsf_options   => '-q' . $self->o('lsf_queue') . ' -R"select[mem>8000] rusage[mem=8000]" -M8000',     
         supermem_lsf_options  => '-q' . $self->o('lsf_queue') . ' -R"select[mem>16000] rusage[mem=16000]" -M16000',  
 
+	# batch size
 	batch_size              => 10000,
 
-	standard_max_workers    => 250,
-	highmem_max_workers     => 100,
-	hive_max_workers        => 350,
+	# VEP parameters
+	max_deletion_size       => 10000,
+
     };
 }
 

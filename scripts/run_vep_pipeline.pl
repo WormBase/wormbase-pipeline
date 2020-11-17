@@ -3,7 +3,7 @@ use strict;
 
 use Getopt::Long;
 
-my ($password, $species, $database, $fasta, $gff_splits, $test, $no_load, $debug);
+my ($password, $species, $database, $fasta, $gff_splits, $log_dir, $test, $no_load, $debug);
 
 $species = 'Elegans';
 GetOptions(
@@ -12,6 +12,7 @@ GetOptions(
     "database=s"   => \$database,
     "gff_splits=s" => \$gff_splits,
     "fasta=s"      => \$fasta,
+    "log_dir=s"    => \$log_dir,
     "test"         => \$test,
     "noload"       => \$no_load,
     "debug"        => \$debug,
@@ -42,9 +43,13 @@ if (!defined $fasta) {
     $fasta = "$database/SEQUENCES/" . lc($species) . '.genome.fa';
 }
 
+if (!defined $log_dir) {
+    $log_dir = "$database/logs";
+}
+
 my $init_cmd = "init_pipeline.pl ProteinConsequence::ProteinConsequence_conf -password $password " . 
     "-species $species -database $database -fasta $fasta -gff_dir $gff_splits -load_to_ace $load_data " . 
-    "-test $test_run -debug $debug_mode";
+    "-test $test_run -log_dir $log_dir -debug $debug_mode";
 system($init_cmd);
 system("beekeeper.pl -url $url -loop");
 
@@ -57,6 +62,7 @@ run_vep_pipeline.pl options:
     -database DATABASE_DIR  specify a different db for testing
     -gff_splits DIR NAME    specify a different dir containing split GFF files for testing
     -fasta FILE_NAME        specify a different FASTA file containing genome sequence for testing
+    -log_dir DIR NAME       specify a different directory for log files for testing
     -test                   use the test database
     -noload                 do no update AceDB
     -debug                  add debugging messages

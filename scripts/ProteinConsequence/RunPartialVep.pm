@@ -1,3 +1,18 @@
+=head1 NAME
+
+ProteinConsequence::RunPartialVep - attempt to complete failed VEP analyses
+
+=cut
+
+=head1 DESCRIPTION
+
+Attempts to complete failed VEP analyses.
+Removes lines successfully processed from VEP input VCF.
+Runs VEP on remaining variations.
+Conjoins output with original failed output.
+
+=cut
+
 package ProteinConsequence::RunPartialVep;
 
 use strict;
@@ -46,6 +61,15 @@ sub run {
 }
 
 
+=head2 create_input_file
+
+    Title:    create_input_file
+    Function: create VCF file for VEP input that only include unprocessed variations
+    Args:     filename (string) of VCF input file for failed VEP analysis
+    Returns:  filename (string) of file created for re-analysis
+
+=cut
+
 sub create_input_file {
     my ($self, $failed_file) = @_;
 
@@ -84,6 +108,16 @@ sub create_input_file {
 }
 
 
+=head2 join_results
+
+    Title:    join_results
+    Function: combines original and new VEP output files
+    Args:     filename (string) of original VCF input file for failed VEP analysis,
+              filename (string) of VCF input file created for re-analysis by VEP
+    Returns:  n/a
+
+=cut
+
 sub join_results {
     my ($self, $failed_file, $input_file) = @_;
 
@@ -102,6 +136,15 @@ sub join_results {
     return;
 }
 
+
+=head2 last_vep_result_printed
+    
+    Title:    last_vep_result_printed
+    Function: retrieves details of last result successfully printed in output of failed VEP analysis
+    Args:     filename (string) of VCF input for failed VEP analysis
+    Returns:  variation_id, position, allele
+
+=cut
 
 sub last_vep_result_printed {
     my ($self, $failed_file) = @_;
@@ -133,20 +176,6 @@ sub last_vep_result_printed {
     die "$flat_cmd: $exit_code: $stderr" unless $exit_code == 0;
 
     return ($last_id, $last_pos, $last_allele);
-}
-
-
-sub remove_header {
-    my ($self, $failed_file) = @_;
-
-    my $file = $failed_file . '.vep.txt';
-    my @cmds = ("grep -v '^#' $file > $file.tmp", "mv $file.tmp $file");
-    for my $cmd (@cmds) {
-	my ($exit_code, $stderr, $flat_cmd) = $self->run_system_command($cmd);
-	die "Couldn't remove header from $file: $exit_code: $stderr" unless $exit_code == 0;
-    }
-
-    return;
 }
 
 

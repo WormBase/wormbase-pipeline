@@ -1,3 +1,19 @@
+=head1 NAME
+
+ProteinConsequence::InitJobs - set up VEP pipeline jobs
+
+=cut
+
+=head1 DESCRIPTION
+
+Setup for WormBase Build variant mapping and VEP annotation pipeline.
+Fetches all live variations for species and splits into batches.
+Creates GFF files for VEP analysis from split GFFs.
+Prepares VEP input files.
+Dumps file containing feature positions/types.
+
+=cut
+
 package ProteinConsequence::InitJobs;
 
 use strict;
@@ -31,7 +47,7 @@ sub fetch_input {
 	-test     => $self->required_param('test'),
 	);
 
-    $self->build_index_and_gff($wb);
+    $self->construct_gff($wb);
     
     $self->prepare_input_files();
 
@@ -47,7 +63,16 @@ sub fetch_input {
 }
 
 
-sub build_index_and_gff {
+=head2 construct_gff
+
+    Title:    construct_gff
+    Function: creates GFF file for VEP input from split GFF files, dumps feature positions to file
+    Args:     Wormbase object
+    Returns:  n/a
+
+=cut
+
+sub construct_gff {
     my ($self, $wb) = @_;
 
     my $ace = Ace->connect(-path => $wb->autoace) or die "Could not create AcePerl connection";
@@ -112,6 +137,25 @@ sub build_index_and_gff {
     return;
 }
 
+
+=head2 convert_to_gff3
+
+    Title:    convert_to_gff3
+    Function: converts input from split GFF files into GFF3 format string to print
+    Args:     hashref of gene positions ({$gene}{'start'} = $start, {$gene}{'end'} = $end),
+              hashref mapping CDS to transcript IDs ({$cds}{$transcript} = 1),
+              hashref mapping CDS to protein IDs ({$cds} = $protein),
+              hashref of transcript details ({$transcript}{'start'} = $start,
+                                             {$transcript}{'end'} = $end,
+                                             {$transcript}{'gene'} = $gene),
+              hashref mapping noncoding transcripts to genes ({$nc_transcript} = $nc_gene),
+              hashref of feature positions ({$chr}{$start}{$end}{$id} = $type),
+              hashref of GFF entries already printed ({$feature_id} = 1),
+              array of columns from split GFF file
+    Returns:  GFF3 format string to print, hashref of feature positions, hashref of GFF entries
+              already printed
+
+=cut
 
 sub convert_to_gff3 {
     my ($self, $gene_positions, $cds_transcripts, $protein_ids, $mRNA_details, $noncoding_genes, $feature_positions, $entries_printed, @F) = @_;
@@ -220,6 +264,15 @@ sub convert_to_gff3 {
 }
 
 
+=head2 get_all_allele_ids_table_maker
+
+    Title:    get_all_allele_ids_table_maker
+    Function: creates TableMaker file and uses it to retrieve all live variations for species
+    Args:     Wormbase object
+    Returns:  arrayref of variation IDs
+
+=cut
+
 sub get_all_allele_ids_table_maker {
     my ($self, $wb) = @_;
 
@@ -254,6 +307,17 @@ sub get_all_allele_ids_table_maker {
 }
 
 
+=head2 get_mRNA_details_and_genes
+
+    Title:    get_mRNA_details_and_genes
+    Function: gets transcript start/end positions and corresponding gene IDs
+    Args:     Ace object
+    Returns:  hashref of transcript details ({$transcript}{'start'} = $start,
+                                             {$transcript}{'end'} = $end,
+                                             {$transcript}{'gene'} = $gene)
+
+=cut
+
 sub get_mRNA_details_and_genes {
     my ($self, $ace) = @_;
 
@@ -286,6 +350,15 @@ sub get_mRNA_details_and_genes {
     return \%mRNA_details;
 }
 
+
+=head2 get_noncoding_genes
+
+    Title:    get_noncoding_genes
+    Function: maps noncoding transcripts to gene IDs
+    Args:     Ace object
+    Returns:  hashref mapping noncoding transcripts to genes ({$transcript} = $gene)
+
+=cut
 
 sub get_noncoding_genes {
     my ($self, $ace) = @_;
@@ -324,6 +397,15 @@ sub get_noncoding_genes {
 }
 
 
+=head2 get_protein_id
+
+    Title:    get_protein_id
+    Function: retrieves the protein ID corresponding to a given CDS
+    Args:     Ace object, CDS ID string
+    Returns:  protein ID string
+
+=cut
+
 sub get_protein_id {
     my ($self, $ace, $cds) = @_;
 
@@ -335,6 +417,15 @@ sub get_protein_id {
     return '';
 }
 
+
+=head2 prepare_input_files
+
+    Title:    prepare_input_files
+    Function: prepares GFF and FASTA files for input to VEP software
+    Args:     none
+    Returns:  n/a
+
+=cut
 
 sub prepare_input_files{
     my $self = shift;
@@ -367,6 +458,16 @@ sub prepare_input_files{
     return;
 }
 
+
+=head2 split_vars_into_batches
+    
+    Title:    split_vars_into_batches
+    Function: divides allele IDs into batches
+    Args:     array ref of variation IDs
+    Returns:  hashref mapping batch IDs to strings of allele IDs ({$batch_id} = $allele_ids_str)
+
+=cut
+    
 sub split_vars_into_batches {
     my ($self, $variations) = @_;
 

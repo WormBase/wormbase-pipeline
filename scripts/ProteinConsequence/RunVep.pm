@@ -1,3 +1,15 @@
+=head1 NAME
+
+ProteinConsequence::MapVariation - run VEP
+
+=cut
+
+=head1 DESCRIPTION
+
+Runs VEP on WormBase variations.
+
+=cut
+
 package ProteinConsequence::RunVep;
 
 use strict;
@@ -43,20 +55,6 @@ sub run {
 	system("rm $input_file");
     }
     system("rm ${output_file}_summary.html");
-}
-
-
-sub remove_header {
-    my $self = shift;
-
-    my $file = $self->required_param('vep_input_file') . '.vep.txt';
-    my @cmds = ("grep -v '^#' $file > $file.tmp", "mv $file.tmp $file");
-    for my $cmd (@cmds) {
-	my ($exit_code, $stderr, $flat_cmd) = $self->run_system_command($cmd);
-	die "Couldn't remove header from $file: $exit_code: $stderr" unless $exit_code == 0;
-    }
-
-    return;
 }
 
 

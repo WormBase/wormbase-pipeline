@@ -1,3 +1,18 @@
+=head1 NAME
+
+ProteinConsequence::MapVariation - map variations and create VCF files
+
+=cut
+
+=head1 DESCRIPTION
+
+Maps variations using their flanking sequence using map_Alleles package.
+Filters out unsuitable and strangely mapped variants.
+Creates VCF files for input to VEP.
+Dumps mapped allele data to file.
+
+=cut
+
 package ProteinConsequence::MapVariation;
 
 use strict;
@@ -68,6 +83,16 @@ sub run {
     $ace->close;
 }
 
+
+=head2 extract_vcf_data
+
+    Title:    extract_vcf_data
+    Function: retrieves data needed to construct VCF files from AceDB Variation objects
+    Args:     hashref of mapped allele objects ({$variation_id} = $allele)
+    Returns:  hashref of variation data ({$chr}{$variation_position}{$allele}{'ref'} = $ref,
+                                         {$chr}{$variation_position}{$allele}{'alt'} = $alt)
+
+=cut
 
 sub extract_vcf_data {
     my ($self, $mapped_alleles) = @_;
@@ -205,6 +230,15 @@ sub extract_vcf_data {
 }
 
 
+=head2 fetch_region
+
+    Title:    fetch_region
+    Function: retrieve genomic sequence from FASTA
+    Args:     chromosome string, start position, end position
+    Returns:  sequence string
+
+=cut
+
 sub fetch_region {
     my ($self, $chr, $start, $end) = @_;
 
@@ -221,6 +255,15 @@ sub fetch_region {
     return $seq;
 }
 
+
+=head2 write_vcf
+
+    Title:    write_vcf
+    Function: writes VCF file for VEP input
+    Args:     hashref of variant data ({$chr}{$variation_position}{$allele}{'ref'} = $ref,
+                                       {$chr}{$variation_position}{$allele}{'alt'} = $alt)
+    Returns:  n/a
+=cut
 
 sub write_vcf {
     my ($self, $vcf_data, $batch_id) = @_;
@@ -239,8 +282,20 @@ sub write_vcf {
     }
 
     close (VCF);
+
+    return;
 }
 
+
+
+=head2 get_alleles
+
+    Title:    get_alleles
+    Function: retrieve AceDB variation objects using map_Alleles package
+    Args:     arrayref of variation IDs
+    Returns:  arrayref of AceDB variation objects
+
+=cut
 
 sub get_alleles {
     my ($self, $variation_ids) = @_;
