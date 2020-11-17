@@ -39,9 +39,9 @@ if (!defined $fasta) {
     $fasta = "$database/SEQUENCES/" . lc($species) . '.genome.fa';
 }
 
-my $init_cmd = "init_pipeline.pl ProteinConsequence::ProteinConsequence_conf -password $password -ws_release $ws_release " . 
-    "-species $species -database $database -fasta $fasta -gff_dir $gff_splits -load_to_ace $load_data -test $test_run " .
-    "-debug $debug_mode";
+my $init_cmd = "init_pipeline.pl ProteinConsequence::ProteinConsequence_conf -password $password " . 
+    "-species $species -database $database -fasta $fasta -gff_dir $gff_splits -load_to_ace $load_data " . 
+    "-test $test_run -debug $debug_mode";
 
 for my $cmd ($init_cmd, "setenv EHIVE_URL \"$url\"", "beekeeper.pl -url $url -loop") {
     system($cmd);
