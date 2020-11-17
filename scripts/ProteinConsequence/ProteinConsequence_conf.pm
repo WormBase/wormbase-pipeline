@@ -29,6 +29,7 @@ sub default_options {
 
 	max_deletion_size       => 10000,
 
+	pipeline_base_dir       => $ENV{'WBVEP_WORKING_DIR'},
         pipeline_name           => 'wb_vep_' . lc($self->o('species')),
 	pipeline_database       => $self->o('pipeline_name') . '_ehive',
         output_dir              => $self->o('pipeline_base_dir') . '/' . $self->o('pipeline_name'),  
@@ -216,9 +217,9 @@ sub pipeline_analyses {
 		database          => $self->o('database'),
 		load_to_ace       => $self->o('load_to_ace'),
 		pipeline_database => $self->o('pipeline_database'),
-		pipeline_host     => $self->o('pipeline_host'),
-		pipeline_port     => $self->o('pipeline_port'),
-		pipeline_user     => $self->o('pipeline_user'),
+		pipeline_host     => $ENV{'WORM_DBHOST'},
+		pipeline_port     => $ENV{'WORM_DBPORT'},
+		pipeline_user     => $ENV{'WORM_DBUSER'},
 		password          => $self->o('password'),
 		log_dir           => $self->o('log_dir'),
 	    },
