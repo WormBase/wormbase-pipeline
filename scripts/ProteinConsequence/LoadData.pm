@@ -78,7 +78,7 @@ sub generate_report {
         ORDER BY msg
     };
 
-    my $log_file = $self->required_param('log_dir') . '/' . $self->required_param('species') . '_pipeline.log'
+    my $log_file = $self->required_param('log_dir') . '/' . $self->required_param('species') . '_pipeline.log';
     open (LOG, '>', $log_file);
     my $errors = {};
 
