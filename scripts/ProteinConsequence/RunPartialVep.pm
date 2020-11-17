@@ -18,7 +18,7 @@ package ProteinConsequence::RunPartialVep;
 use strict;
 use warnings;
 
-use base ('Bio::EnsEMBL::Variation::Pipeline::BaseVariationProcess');
+use base ('ProteinConsequence::BaseProteinConsequence');
 
 
 sub run {

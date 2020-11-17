@@ -18,7 +18,7 @@ use File::Copy;
 use File::Path qw(make_path remove_tree);
 use Data::Dumper;
 
-use base ('Bio::EnsEMBL::Variation::Pipeline::BaseVariationProcess');
+use base ('ProteinConsequence::BaseProteinConsequence');
 
 sub run {
     my $self = shift;
