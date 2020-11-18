@@ -32,7 +32,6 @@ my $url = 'mysql://' . $ENV{'WORM_DBUSER'} . ':' . $password . '@' . $ENV{'WORM_
 
 $ENV{EHIVE_URL} = $url;
 
-my $load_data = $no_load ? 0 : 1;
 my $test_run = $test ? 1 : 0;
 my $debug_mode = $debug ? 1 : 0;
 
@@ -72,7 +71,7 @@ else {
     }
 
     my $init_cmd = "init_pipeline.pl ProteinConsequence::ProteinConsequence_conf -password $password " . 
-	"-species $species -database $database -fasta $fasta -gff_dir $gff_splits -load_to_ace $load_data " . 
+	"-species $species -database $database -fasta $fasta -gff_dir $gff_splits " . 
 	"-test $test_run -log_dir $log_dir -ace_dir $ace_dir -ws_release $ws_release -debug $debug_mode";
     system($init_cmd);
     system("beekeeper.pl -url $url -loop");
