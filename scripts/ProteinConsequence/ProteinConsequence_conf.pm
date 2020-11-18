@@ -37,14 +37,15 @@ sub default_options {
 	highmem_max_workers            => 100,
 	hive_max_workers               => 350,
 	
-	# folder locations
-	vep_dir                 => $ENV{'WBVEP_DIR'} . '/ensembl-vep',
-	pipeline_base_dir       => $ENV{'WBVEP_WORKING_DIR'},,
-        output_dir              => $self->o('pipeline_base_dir') . '/' . $self->o('pipeline_name'),  
-        
 	# pipeline details
         pipeline_name           => 'wb_vep_' . lc($self->o('species')),
 	pipeline_database       => $self->o('pipeline_name') . '_ehive',
+
+	# folder locations
+	vep_dir                 => $ENV{'WBVEP_DIR'} . '/ensembl-vep',
+	pipeline_base_dir       => $ENV{'WBVEP_WORKING_DIR'},
+        output_dir              => $self->o('pipeline_base_dir') . '/' . $self->o('pipeline_name'),  
+        
         
         # connection details for the hive's own database
         pipeline_db => {
@@ -230,6 +231,8 @@ sub pipeline_analyses {
 		pipeline_user     => $ENV{'WORM_DBUSER'},
 		password          => $self->o('password'),
 		log_dir           => $self->o('log_dir'),
+		ace_dir           => $self->o('ace_dir'),
+		ws_release        => $self->o('ws_release'),
 	    },
 	    -failed_job_tolerance => 0,
 	    -max_retry_count => 1,

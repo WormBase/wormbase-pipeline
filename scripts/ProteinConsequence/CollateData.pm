@@ -19,7 +19,7 @@ use strict;
 
 use Wormbase;
 use Data::Dumper;
-use File::Path qw(remove_tree);
+use File::Path qw(make_path remove_tree);
 
 use base ('ProteinConsequence::BaseProteinConsequence');
 
@@ -27,7 +27,14 @@ sub run {
     my $self = shift;
 
     my $output_dir = $self->required_param('output_dir');
-    my $out_file = $output_dir . '/' . $self->required_param('species') . '_mapped_alleles.ace';
+    my $ace_dir = $self->required_param('ace_dir');
+    unless (-d $ace_dir) {
+	my $err;
+	make_path($ace_dir, {error => \$err});
+	die "Failed to create new output directory for final .ace file: " . Dumper($err) if $err && @$err;
+    }
+
+    my $out_file = $ace_dir . '/mapped_alleles.' . $self->required_param('ws_release') . '.mapped_alleles.ace';
 
     my @files = <$output_dir/*/*>;
     for my $file (@files) {
