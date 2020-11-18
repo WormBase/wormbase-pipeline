@@ -108,7 +108,7 @@ sub pipeline_analyses {
             -max_retry_count => 0,
             -flow_into  => {
                 '2->A' => [ 'map_variation' ],
-		'A->1' => [ 'load_data' ],
+		'A->1' => [ 'collate_data' ],
 		
             },
         },
@@ -219,12 +219,11 @@ sub pipeline_analyses {
 	    -rc_name => 'supermem',
 	},
 
-	{   -logic_name    => 'load_data',
-	    -module        => 'ProteinConsequence::LoadData',
+	{   -logic_name    => 'collate_data',
+	    -module        => 'ProteinConsequence::CollateData',
 	    -parameters    => {
 		@common_params,
 		database          => $self->o('database'),
-		load_to_ace       => $self->o('load_to_ace'),
 		pipeline_database => $self->o('pipeline_database'),
 		pipeline_host     => $ENV{'WORM_DBHOST'},
 		pipeline_port     => $ENV{'WORM_DBPORT'},
