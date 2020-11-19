@@ -16,6 +16,7 @@ use Log_files;
 use Storable;
 use IO::File;
 use Getopt::Long;
+use Compress::Zlib;
 use strict;
 
 my ($debug,$test,$store,$wormbase,$load,$outfile);
@@ -112,6 +113,8 @@ sub get_bgi{
 	my $payload = get($url);
 
 	$log->log_and_die("couldn't get data for $prefix\n") unless $payload;
+
+	$payload = Compress::Zlib::memGunzip($payload) if $url =~ /\.gz$/; # If clause only required in interim while some AGR files are still unzipped
 
 	my $json = decode_json($payload);
 	foreach my $gene (@{$json->{data}}){
