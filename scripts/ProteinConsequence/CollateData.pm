@@ -34,7 +34,14 @@ sub run {
 	die "Failed to create new output directory for final .ace file: " . Dumper($err) if $err && @$err;
     }
 
-    my $out_file = $ace_dir . '/mapped_alleles.' . $self->required_param('ws_release') . '.mapped_alleles.ace';
+    my $wb = Wormbase->new(
+	-autoace  => $self->required_param('database'),
+	-organism => $self->required_param('species'),
+	-debug    => $self->required_param('debug'),
+	-test     => $self->required_param('test'),
+    );
+
+    my $out_file = $ace_dir . '/mapped_alleles.' . $wb->get_wormbase_version_name . '.mapped_alleles.ace';
 
     my @files = <$output_dir/*/*>;
     for my $file (@files) {
@@ -154,6 +161,7 @@ sub generate_report {
     
 		 close (SUMMARY);
     
+
     $wb->mail_maintainer('WormBase VEP Pipeline Report', 'mark.quintontulloch@wormbase.org', $summary_file);
 
     my $cmd = 'cat ' . $self->required_param('output_dir') . '/Batch*/*_warnings.txt > ' . $vep_warning_file;

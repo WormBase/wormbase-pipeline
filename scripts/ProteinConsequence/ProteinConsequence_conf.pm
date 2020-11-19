@@ -232,7 +232,6 @@ sub pipeline_analyses {
 		password          => $self->o('password'),
 		log_dir           => $self->o('log_dir'),
 		ace_dir           => $self->o('ace_dir'),
-		ws_release        => $self->o('ws_release'),
 	    },
 	    -failed_job_tolerance => 0,
 	    -max_retry_count => 1,
