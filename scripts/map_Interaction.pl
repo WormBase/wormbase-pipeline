@@ -109,13 +109,14 @@ foreach my $interaction (@interactions) {
               $results{Variation_interactor}->{$v} = $current_genes{$g};
             }
           } 
-        } else {
+        }	
+	if (keys %not_found) {
           $log->write_to(sprintf("%s : Adding new gene connections (%s) with Info via %s\n", 
                                  $interaction, 
                                  join(',', keys %not_found), 
                                  $v)) if $debug;
           foreach my $g (keys %not_found) {
-            $results{Interactor_overlapping_gene}->{"$g"} = \@evis;
+            $results{Interactor_overlapping_gene}->{$g} = \@evis;
           }
         }
       }
