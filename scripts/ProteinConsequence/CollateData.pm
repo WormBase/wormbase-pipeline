@@ -41,7 +41,7 @@ sub run {
 	-test     => $self->required_param('test'),
     );
 
-    my $out_file = $ace_dir . '/mapped_alleles.' . $wb->get_wormbase_version_name . '.mapped_alleles.ace';
+    my $out_file = $ace_dir . '/mapped_alleles.' . $wb->get_wormbase_version_name . '.ace';
 
     my @files = <$output_dir/*/*>;
     for my $file (@files) {

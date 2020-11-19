@@ -46,7 +46,7 @@ sub run {
 	print $fh "Sequence : \"$allele->{clone}\"\nAllele $var $allele->{clone_start} $allele->{clone_stop}\n\n";
     }
 
-    my $transcripts = $self->get_transcript_consequences($vep_output);
+    my ($transcripts, $hgvsg) = $self->get_transcript_consequences($vep_output);
 
     my ($gene_alleles, $allele_genes, $pseudogenes);
     ($gene_alleles, $allele_genes, $transcripts, $pseudogenes) = 
@@ -75,6 +75,7 @@ sub run {
     for my $var (keys %$transcripts) {
 	next unless $self->add_transcript_consequences_for_variation($var, $mapped_alleles->{$var}{allele});
 	print $fh "Variation : \"$var\"\n";
+	print $fh 'HGVSg "' . $hgvsg->{$var} . "\"\n";
 	for my $transcript (keys %{$transcripts->{$var}}) {
 	    for my $tag (keys %{$transcripts->{$var}{$transcript}}) {
 		print $fh "Transcript $transcript $tag\n";
@@ -267,14 +268,14 @@ sub get_overlapping_features {
     Title:    get_transcript_consequences
     Function: parses VEP output to retrieve transcript annotations
     Args:     VEP output filename (string)
-    Returns:  hashref of transcript annotations
+    Returns:  hashref of transcript annotations, hashref of HGVSg IDs
 
 =cut
 
 sub get_transcript_consequences {
     my ($self, $vep_output) = @_;
 
-    my %transcripts;
+    my (%transcripts, %hgvsg);
     open (VEP, '<', $vep_output);
     while (<VEP>) {
 	next if $_ =~ /^#/;
@@ -298,12 +299,14 @@ sub get_transcript_consequences {
 	$transcripts{$var}{$feature}{'HGVSp "' . $attributes{'HGVSp'} . '"'} = 1 if exists $attributes{'HGVSp'};
 	$transcripts{$var}{$feature}{'Intron_number "' . $attributes{'INTRON'} . '"'} = 1 if exists $attributes{'INTRON'};
 	$transcripts{$var}{$feature}{'Exon_number "' . $attributes{'EXON'} . '"'} = 1 if exists $attributes{'EXON'};
-
+	
 	$transcripts{$var}{$feature}{"cDNA_position \"$cdna_pos\""} = 1 unless $cdna_pos eq '-';
 	$transcripts{$var}{$feature}{"CDS_position \"$cds_pos\""} = 1 unless $cds_pos eq '-';
 	$transcripts{$var}{$feature}{"Protein_position \"$prot_pos\""} = 1 unless $prot_pos eq '-';
 	$transcripts{$var}{$feature}{"Codon_change \"$codons\""} = 1 unless $codons eq '-';
 	$transcripts{$var}{$feature}{"Amino_acid_change \"$aas\""} = 1 unless $aas eq '-';
+
+	$hgvsg{$var} = $attributes{'HGVSg'};
 
 	for my $pp ('SIFT', 'PolyPhen') {
 	    next unless exists $attributes{$pp};
@@ -314,7 +317,7 @@ sub get_transcript_consequences {
     }
     close (VEP);
 
-    return \%transcripts;
+    return (\%transcripts, \%hgvsg);
 }
 
 
