@@ -75,7 +75,7 @@ sub get_agm{
 	for my $prov(@{$obj->{dataProvider}}) {
 	    for my $x ($prov->{crossReference}) {
 		if ($x->{id} =~ /^OMIM:(\w+)$/) {
-		    print $outfh "Gene: \"$gene_id\"\n";
+		    print $outfh "Gene : \"$gene_id\"\n";
 		    print $outfh "Database \"OMIM\" \"OMIM_id\" \"$1\"\n\n";
 		    $genes_processed{$gene_id} = 1;
 		    last;
