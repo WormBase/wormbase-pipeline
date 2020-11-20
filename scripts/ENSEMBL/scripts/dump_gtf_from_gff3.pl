@@ -95,7 +95,7 @@ foreach my $slice (values %$slices) {
 }
 
 $serializer = undef;
-close $outfh;
+close $out_fh;
 
 add_public_name($out_file) if $gene_name;
 
