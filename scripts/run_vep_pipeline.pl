@@ -17,7 +17,7 @@ GetOptions(
     "ace_dir=s"    => \$ace_dir,
     "test"         => \$test,
     "load"         => \$load,
-    "debug"        => \$debug,
+    "debug=s"      => \$debug,
     "help"         => \$help
     ) or print_usage();
 
@@ -27,7 +27,7 @@ $species = ucfirst(lc($species));
 die "Species must be Elegans or Briggsae\n" unless $species eq 'Elegans' or $species eq 'Briggsae';
 
 my $test_run = $test ? 1 : 0;
-my $debug_mode = $debug ? 1 : 0;
+my $debug_mode = $debug ? $debug : 0;
 
 if (!defined $database) {
     my $basedir = $test ? $ENV{'WORMPUB'} . "/TEST/BUILD" : $ENV{'WORMPUB'} . "/BUILD";
@@ -90,7 +90,7 @@ run_vep_pipeline.pl options:
     -test                   use the test database
     -load                   load data into AceDB
     -help                   print this message
-    -debug                  add debugging messages to log output
+    -debug EMAIL            eamil for sending log messages to
 USAGE
 
 exit 1;

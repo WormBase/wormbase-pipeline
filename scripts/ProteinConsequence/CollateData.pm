@@ -162,7 +162,8 @@ sub generate_report {
 		 close (SUMMARY);
     
 
-    $wb->mail_maintainer('WormBase VEP Pipeline Report', 'mark.quintontulloch@wormbase.org', $summary_file);
+    my $to_mail = $self->required_param('debug') ? $self->required_param('debug') : 'All';
+    $wb->mail_maintainer('WormBase VEP Pipeline Report', $to_mail, $summary_file);
 
     my $cmd = 'cat ' . $self->required_param('output_dir') . '/Batch*/*_warnings.txt > ' . $vep_warning_file;
     my ($exit_code, $stderr, $flat_cmd) = $self->run_system_command($cmd);
