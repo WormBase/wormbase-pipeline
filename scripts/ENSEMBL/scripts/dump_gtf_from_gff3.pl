@@ -109,7 +109,7 @@ sub add_public_name{
     my ($out) = @_;
     
     # open acedb connection
-    my $db=Ace->connect(-path => $wb->autoace)||die(Ace::Error);
+    my $db=Ace->connect(-path => $wb->autoace)||die($Ace::Error);
     # open temp file handle
     my $tmpfile='/tmp/gtf.tmp';
     open OUTF, ">$tmpfile";
