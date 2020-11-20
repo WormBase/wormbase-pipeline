@@ -16,7 +16,7 @@ use Bio::SeqIO;
 use Bio::EnsEMBL::Analysis;
 use Bio::EnsEMBL::Utils::IO::GTFSerializer;
 
-my ($debug, $test, $store, $species,  $verbose, $wb,
+my ($debug, $test, $store, $species,  $verbose, $wb, $gene_name,
     $out_file, $out_fh, $gff3, $genome, %genes_by_slice);
 
 
@@ -29,6 +29,7 @@ my ($debug, $test, $store, $species,  $verbose, $wb,
   "genome=s"    => \$genome,
   "gff3=s"      => \$gff3,
   "outgtf=s"    => \$out_file,
+  'public_name' => \$gene_name,
  )or die ("Couldn't get options");
 
 
@@ -96,7 +97,7 @@ foreach my $slice (values %$slices) {
 $serializer = undef;
 close $outfh;
 
-add_public_name($out_file);
+add_public_name($out_file) if $gene_name;
 
 
 $log->mail();
@@ -104,13 +105,14 @@ exit(0);
 
 ###################################
 # add public_name to GTF as gene_name 
-sub add_pubilc_name{
+sub add_public_name{
     my ($out) = @_;
     
     # open acedb connection
     my $db=Ace->connect(-path => $wb->autoace)||die(Ace::Error);
     # open temp file handle
-    open OUTF, '>/tmp/gtf.tmp';
+    my $tmpfile='/tmp/gtf.tmp';
+    open OUTF, ">$tmpfile";
     
     # read file
     open INF, $out;
@@ -126,7 +128,11 @@ sub add_pubilc_name{
          print OUTF;
       }
     }
+    close OUTF;
+    close INF;
+
     # move the temp file to the correct location
+    `mv -f $tmpfile $out`;
     
 }
 

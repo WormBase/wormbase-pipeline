@@ -288,7 +288,7 @@ if ($gff_munge or $gff3_munge) {
 }
 
 if ($gtf) {
-  $wormbase->run_script("ENSEMBL/scripts/dump_gtf_from_gff3.pl", $log);
+  $wormbase->run_script("ENSEMBL/scripts/dump_gtf_from_gff3.pl -public_name", $log);
 }
 
 if ($xrefs) {
