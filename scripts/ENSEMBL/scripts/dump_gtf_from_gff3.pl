@@ -29,7 +29,7 @@ my ($debug, $test, $store, $species,  $verbose, $wb,
   "genome=s"    => \$genome,
   "gff3=s"      => \$gff3,
   "outgtf=s"    => \$out_file,
-    )or die ("Couldn't get options");
+ )or die ("Couldn't get options");
 
 
 if ( $store ) {
@@ -79,7 +79,7 @@ if ($gff3) {
 if ($out_file) {
   open( $out_fh, ">$out_file") or $log->log_and_die("Could not open $out_file for writing\n");
 } else {
-  $out_fh = \*STDOUT;
+  $log->log_and_die("$out_file not specified\n");
 }
 
 print $out_fh "#!genebuild-version ", $wb->get_wormbase_version_name, "\n";
@@ -93,8 +93,43 @@ foreach my $slice (values %$slices) {
   }
 }
 
+$serializer = undef;
+close $outfh;
+
+add_public_name($out_file);
+
+
 $log->mail();
 exit(0);
+
+###################################
+# add public_name to GTF as gene_name 
+sub add_pubilc_name{
+    my ($out) = @_;
+    
+    # open acedb connection
+    my $db=Ace->connect(-path => $wb->autoace)||die(Ace::Error);
+    # open temp file handle
+    open OUTF, '>/tmp/gtf.tmp';
+    
+    # read file
+    open INF, $out;
+    while (<INF>){
+      # parse WBGeneID
+      if (/WormBase\s+gene\s.*(WBGene\d+)/){
+         chomp;
+         my $gene = $db->fetch(Gene => "$1")||$log->log_and_die("cannot find gene: $1\n");
+         # look up the Public_name
+         my $public_name = $gene->Public_name;
+         print OUTF "$_ gene_name \"$public_name\";\n";
+      }else{
+         print OUTF;
+      }
+    }
+    # move the temp file to the correct location
+    
+}
+
 
 
 #######################################
