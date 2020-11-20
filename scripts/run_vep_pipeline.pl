@@ -26,11 +26,6 @@ print_usage() if $help;
 $species = ucfirst(lc($species));
 die "Species must be Elegans or Briggsae\n" unless $species eq 'Elegans' or $species eq 'Briggsae';
 
-my $url = 'mysql://' . $ENV{'WORM_DBUSER'} . ':' . $password . '@' . $ENV{'WORM_DBHOST'} . ':' . 
-    $ENV{'WORM_DBPORT'} . '/wb_vep_' . lc($species) . '_ehive';
-
-$ENV{EHIVE_URL} = $url;
-
 my $test_run = $test ? 1 : 0;
 my $debug_mode = $debug ? 1 : 0;
 
@@ -45,6 +40,7 @@ if (!defined $log_dir) {
 
 
 if ($load) {
+    # Load collated file into AceDB
     my $wb = Wormbase->new(
 	-autoace  => $database,
 	-organism => $species,
@@ -59,6 +55,7 @@ if ($load) {
     $wb->load_to_database($wb->autoace, $out_file, 'WB_VEP_pipeline', $log) 
 }
 else {
+    # Initialise and run ProteinConsequence eHive pipeline
     if (!defined $gff_splits) {
 	$gff_splits = "$database/GFF_SPLITS";
     }
@@ -66,6 +63,11 @@ else {
     if (!defined $fasta) {
 	$fasta = "$database/SEQUENCES/" . lc($species) . '.genome.fa';
     }
+
+    my $url = 'mysql://' . $ENV{'WORM_DBUSER'} . ':' . $password . '@' . $ENV{'WORM_DBHOST'} . ':' . 
+    $ENV{'WORM_DBPORT'} . '/wb_vep_' . lc($species) . '_ehive';
+
+    $ENV{EHIVE_URL} = $url;
 
     my $init_cmd = "init_pipeline.pl ProteinConsequence::ProteinConsequence_conf -password $password " . 
 	"-species $species -database $database -fasta $fasta -gff_dir $gff_splits " . 

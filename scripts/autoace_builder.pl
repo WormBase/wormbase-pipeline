@@ -199,6 +199,7 @@ $wormbase->run_script("check_class.pl -stage run_inverted -classes Feature_data"
 #must have farm complete by this point.
 if ($misc_data_sets){
 	$wormbase->run_script('AGR/import_AGR_gene_objects.pl -load',$log);
+	$wormbase->run_script('AGR/import_AGR_OMIM_xrefs.pl -load', $log);
 	$wormbase->run_script('AGR/agr_orthologs.pl -load',$log);
 	$wormbase->run_script('load_data_sets.pl -misc', $log);
 	$wormbase->run_script('load_data_sets.pl -homol', $log);
