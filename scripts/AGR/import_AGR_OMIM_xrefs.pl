@@ -82,6 +82,7 @@ sub get_agm{
 		}
 	    }
 	}
+	printf $outfh "Database \"DO\" id %s\n",$obj->{DOid} if $obj->{DOid};
     }
 }
 
