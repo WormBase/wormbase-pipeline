@@ -6,6 +6,7 @@ use Log_files;
 
 my ($password, $species, $database, $fasta, $gff_splits, $log_dir, $ace_dir, $test, $load, $debug, $help);
 
+$debug = 0;
 $species = 'Elegans';
 GetOptions(
     "password=s"   => \$password,
