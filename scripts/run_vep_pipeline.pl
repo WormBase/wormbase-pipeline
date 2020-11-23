@@ -3,10 +3,10 @@ use strict;
 
 use Getopt::Long;
 use Log_files;
+use Wormbase;
 
 my ($password, $species, $database, $fasta, $gff_splits, $log_dir, $ace_dir, $test, $load, $debug, $help);
 
-$debug = 0;
 $species = 'Elegans';
 GetOptions(
     "password=s"   => \$password,
@@ -39,21 +39,23 @@ if (!defined $log_dir) {
     $log_dir = "$database/logs";
 }
 
+my $wb = Wormbase->new(
+    -autoace  => $database,
+    -organism => $species,
+    -debug    => $debug,
+    -test     => $test,
+    );
+
+$ace_dir = $wb->acefiles unless defined $ace_dir;
+
 
 if ($load) {
     # Load collated file into AceDB
-    my $wb = Wormbase->new(
-	-autoace  => $database,
-	-organism => $species,
-	-debug    => $debug,
-	-test     => $test,
-    );
-
     my $log = Log_files->make_build_log($wb);
-    $ace_dir = $wb->acefiles unless defined $ace_dir;
-
+    
     my $out_file = $ace_dir . '/mapped_alleles.' . $wb->get_wormbase_version_name . '.mapped_alleles.ace';
     $wb->load_to_database($wb->autoace, $out_file, 'WB_VEP_pipeline', $log) 
+
 }
 else {
     # Initialise and run ProteinConsequence eHive pipeline
