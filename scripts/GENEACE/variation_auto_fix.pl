@@ -36,11 +36,11 @@ GetOptions ('help'          => \$help,
 ###################################################
 my $wb = Wormbase->new(-test => $test, -debug => $debug );
 # choose database to query: default is /nfs/wormpub/DATABASES/geneace
-$database = '/nfs/wormpub/DATABASES/geneace' unless $database;
+$database = '/nfs/production/panda/ensemblgenomes/wormbase/DATABASES/geneace' unless $database;
 print "Using database $database.\n\n";
 
 my $tace = $wb->tace;          # tace executable path
-my $curr_db = '/nfs/wormpub/DATABASES/current_DB'; # Used for some cross checking with geneace
+my $curr_db = '/nfs/production/panda/ensemblgenomes/wormbase/DATABASES/current_DB'; # Used for some cross checking with geneace
 my $def_dir = "$ENV{CVS_DIR}/../wquery/geneace";                          # where lots of table-maker definitions are kept
 
 my $rundate = $wb->rundate;                                # Used by various parts of script for filename creation
@@ -101,18 +101,18 @@ my $ga = init Geneace($wb);
 my $Gene_info = $ga -> gene_info($database, "seq2id");
 my %Gene_info = %{$Gene_info};
 
-  print  "Checking Variations and attempting to fix things:\n";
-  print  LOG "Checking Variations and attempting to fix things:\n";
+print  "Checking Variations and attempting to fix things:\n";
+print  LOG "Checking Variations and attempting to fix things:\n";
 
 
-  # check that there is a Version tag
+# check that there is a Version tag
 foreach my $variation ($db->fetch(-query=>'Find Variation WHERE NOT Laboratory')){
     print LOG "ERROR: $variation ($variation has no Laboratory\n";
     unless (defined $variation->Public_name){
 	next;
     }
     my $allele_name = $variation->Public_name;
-    if (($allele_name->name =~ /([[:alpha:]]+)\d+/) || ($allele_name->name =~ /([[:alpha:]]+)\d+/) {
+    if (($allele_name->name =~ /([[:alpha:]]+)\d+/) || ($allele_name->name =~ /([[:alpha:]]+)\d+/)) {
 	next if $1 =~ /^\S{2}P/;
 	next if $1 =~ /^CE/;
 	next if $1 =~ /WBVar/;
@@ -129,168 +129,168 @@ foreach my $variation ($db->fetch(-query=>'Find Variation WHERE NOT Laboratory')
     }
 }
 
-  # check that there is a Status tag
-  foreach my $gene ($db->fetch(-query=>'Find Gene WHERE NOT Status')){
+# check that there is a Status tag
+foreach my $gene ($db->fetch(-query=>'Find Gene WHERE NOT Status')){
     print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has no Status tag\n";    
-  }
+}
 
-  # test for Other_name tag but no value
-  foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Other_name AND NOT NEXT')){
+# test for Other_name tag but no value
+foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Other_name AND NOT NEXT')){
     print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has 'Other_name' tag without value\n";
-  }
+}
 
-  # checks that when a Gene belongs to a Gene_class, it should have a CGC_name
-  foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Gene_class AND NOT CGC_name')){
+# checks that when a Gene belongs to a Gene_class, it should have a CGC_name
+foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Gene_class AND NOT CGC_name')){
     my $gc = $gene->Gene_class;
     if(!defined($gc)){
-      print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has no CGC_name but has an unpopulated Gene_class tag\n";
+	print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has no CGC_name but has an unpopulated Gene_class tag\n";
     }
     else{
-      print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has no CGC_name but links to Gene_class $gc\n";
+	print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has no CGC_name but links to Gene_class $gc\n";
     }
-  }
+}
 
-  # checks existence of a CGC name but no gene_class
-  foreach my $gene ($db->fetch(-query=>'Find Gene WHERE CGC_name AND NOT Gene_class')){
+# checks existence of a CGC name but no gene_class
+foreach my $gene ($db->fetch(-query=>'Find Gene WHERE CGC_name AND NOT Gene_class')){
     my $cgc_name = $gene->CGC_name;
     print  LOG "ERROR: $gene has CGC name ($cgc_name) but is not linked to its Gene_class\n";
-  }
+}
 
-  # checks Genes that do not have a map position nor an interpolated_map_position but has sequence info
-  my $query = "Find Live_genes WHERE !(Map | Interpolated_map_position) & Sequence_name & Species=\"*elegans\" & !Positive_clone=\"MTCE\" & !Made_into_transposon";
-  foreach my $gene ($db->fetch(-query=>"$query")){
+# checks Genes that do not have a map position nor an interpolated_map_position but has sequence info
+my $query = "Find Live_genes WHERE !(Map | Interpolated_map_position) & Sequence_name & Species=\"*elegans\" & !Positive_clone=\"MTCE\" & !Made_into_transposon";
+foreach my $gene ($db->fetch(-query=>"$query")){
     if( $Gene_info{$gene} ) {
-      print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has neither Map nor Interpolated_map_position info but has Sequence_name\n";
+	print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has neither Map nor Interpolated_map_position info but has Sequence_name\n";
     }
     else {
-      print LOG "$gene not in Gene_info hash\n";
+	print LOG "$gene not in Gene_info hash\n";
     }
-  }
+}
 
-  # test for Map tag and !NEXT
-  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Map AND NOT NEXT")){
+# test for Map tag and !NEXT
+foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Map AND NOT NEXT")){
     print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has a 'Map' tag without a value\n";
-  }
+}
 
-  # test for Interpolated_map_position tag and !NEXT
-  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Interpolated_map_position AND NOT NEXT")){
+# test for Interpolated_map_position tag and !NEXT
+foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Interpolated_map_position AND NOT NEXT")){
     print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has an 'Interpolated_map_position' tag without a value\n";
-  }
+}
 
-  # test for Other_sequence tag and no value
-  foreach my $gene ($db->fetch(-query=>"Find Other_sequence AND NOT NEXT")){
+# test for Other_sequence tag and no value
+foreach my $gene ($db->fetch(-query=>"Find Other_sequence AND NOT NEXT")){
     print LOG "ERROR(a): $gene ($Gene_info{$gene}{'Public_name'}) has Other_sequence tag but no associated value\n";
     if ($ace){print ACE "\n\nGene : \"$gene\"\n-D Other_sequence\n";}
-  }
+}
 
 
   # A seq. should normally be linked to only one gene id: there are cases where .a is WBGenex and .b is WBGy (eg, ZC416.8a/b)
-  # The query is to find sequences (CDS/Transcript/Pseudogene) that have more than one Sequence_name_for values
-  # this tells you if a gene id is linked to > 1 sequences
-  foreach my $gene_name ($db->fetch(-query=>"Find Gene_name WHERE COUNT Sequence_name_for > 1")){
-
+# The query is to find sequences (CDS/Transcript/Pseudogene) that have more than one Sequence_name_for values
+# this tells you if a gene id is linked to > 1 sequences
+foreach my $gene_name ($db->fetch(-query=>"Find Gene_name WHERE COUNT Sequence_name_for > 1")){
+    
     # skip hard-coded exceptions for eat-18/lev-10, cha-1/unc-17 & B0564.1/tin-9.2 
     next if ($gene_name eq "Y105E8A.7" || $gene_name eq "ZC416.8" || $gene_name eq "B0564.1");
-
+    
     my @gene_ids = $gene_name->Sequence_name_for;
     print LOG "ERROR: $gene_name is connected to multiple gene IDs: @gene_ids\n";
-  }
+}
 
-  # Look for missing Method tag for Live genes
-  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Live AND NOT Method")){
+# Look for missing Method tag for Live genes
+foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Live AND NOT Method")){
     print LOG "ERROR: $gene is a Live gene but has no 'Method' tag\n";
-  }
+}
 
-  # Look for Method tag but no Method field after it
-  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Method AND NOT NEXT")){
+# Look for Method tag but no Method field after it
+foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Method AND NOT NEXT")){
     print LOG "ERROR: $gene has a 'Method' tag but no value\n";
-  }
+}
 
 
-  # test for missing Species tag
-  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE NOT Species")){
+# test for missing Species tag
+foreach my $gene ($db->fetch(-query=>"Find Gene WHERE NOT Species")){
     print LOG "ERROR(a): $gene ($Gene_info{$gene}{'CGC_name'}) has no 'Species' info\n";
     if ($ace){
-      print ACE "\n\nGene : \"$gene\"\n";
-      if ( $Gene_info{$gene}{'Public_name'} !~ /^Cb-|^Cr-|^Cv-/ ){
-        print ACE "Species \"Caenorhabditis elegans\"\n";
-      }
-      if ( $Gene_info{$gene}{'Public_name'} =~/^Cb-.+/ ){
-        print ACE "Species \"Caenorhabditis briggsae\"\n";
-      }
-      if ( $Gene_info{$gene}{'Public_name'} =~/^Cr-.+/ ){
-        print ACE "Species \"Caenorhabditis remanei\"\n";
-      }
-      if ( $Gene_info{$gene}{'Public_name'} =~/^Cv-.+/ ){
-        print ACE "Species \"Caenorhabditis vulgaris\"\n";
-      }
+	print ACE "\n\nGene : \"$gene\"\n";
+	if ( $Gene_info{$gene}{'Public_name'} !~ /^Cb-|^Cr-|^Cv-/ ){
+	    print ACE "Species \"Caenorhabditis elegans\"\n";
+	}
+	if ( $Gene_info{$gene}{'Public_name'} =~/^Cb-.+/ ){
+	    print ACE "Species \"Caenorhabditis briggsae\"\n";
+	}
+	if ( $Gene_info{$gene}{'Public_name'} =~/^Cr-.+/ ){
+	    print ACE "Species \"Caenorhabditis remanei\"\n";
+	}
+	if ( $Gene_info{$gene}{'Public_name'} =~/^Cv-.+/ ){
+	    print ACE "Species \"Caenorhabditis vulgaris\"\n";
+	}
     }
-  }
+}
 
-  # Look for Species tag but no Species field after it
-  foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Species AND NOT NEXT')){
+# Look for Species tag but no Species field after it
+foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Species AND NOT NEXT')){
     print LOG "ERROR: $gene has a 'Species' tag but no value\n";
- }
+}
 
-  # checks that a gene with alleles are not dead (i.e. merged into something else)
-  foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Dead AND Allele')){
+# checks that a gene with alleles are not dead (i.e. merged into something else)
+foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Dead AND Allele')){
     print LOG "ERROR: Mama mia! $gene is dead but is still connected to an allele\n";
-  }
+}
 
-  # checks that a gene with references are not dead (i.e. merged into something else)
-  foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Dead AND Reference')){
-      print LOG "ERROR: Oh my sainted Aunt! $gene is dead but is still connected to a reference\n";
-  }
+# checks that a gene with references are not dead (i.e. merged into something else)
+foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Dead AND Reference')){
+    print LOG "ERROR: Oh my sainted Aunt! $gene is dead but is still connected to a reference\n";
+}
 
-  # checks that a gene with orthologs has not been merged into something else ie Dead. nb. It is OK for Transposon_CDSs to have Orthologs
-  foreach my $gene ($db->fetch(-query=>'Find Gene WHERE NOT Live AND Merged_into AND Ortholog')){
-      print LOG "ERROR: Zut alors! $gene has been merged (and is Dead) but is still connected to an ortholog\n";
-  }
-  
-  # checks that a gene with mapping data is not dead.
-  foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Dead AND Map_info')){
+# checks that a gene with orthologs has not been merged into something else ie Dead. nb. It is OK for Transposon_CDSs to have Orthologs
+foreach my $gene ($db->fetch(-query=>'Find Gene WHERE NOT Live AND Merged_into AND Ortholog')){
+    print LOG "ERROR: Zut alors! $gene has been merged (and is Dead) but is still connected to an ortholog\n";
+}
+
+# checks that a gene with mapping data is not dead.
+foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Dead AND Map_info')){
     print LOG "ERROR: ERROR: Bleedin' Nora! $gene is dead but still has mapping data\n";
-  }
+}
 
-  # checks that a Gene doesn't have both Map and Interpolated_map_position tags
-  foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Map AND Interpolated_map_position')){
+# checks that a Gene doesn't have both Map and Interpolated_map_position tags
+foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Map AND Interpolated_map_position')){
     print LOG "ERROR: $gene has both Map and Interpolated_map_position tags, are you crazy?\n";
-  }
+}
 
-  # checks for genes that have no Live tag but a split_from tag
-  foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Split_from AND Dead AND NOT Merged_into AND NOT Made_into_transposon')){
+# checks for genes that have no Live tag but a split_from tag
+foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Split_from AND Dead AND NOT Merged_into AND NOT Made_into_transposon')){
     print LOG "ERROR: $gene has Split_from tag but no Live tag\n" unless ($gene eq "WBGene00195119");
-  }
+}
 
 
 
-  # get all genes
-  my @gene_ids = $db->fetch(-class => 'Gene',
-	                    -name  => 'WBGene*');
+# get all genes
+my @gene_ids = $db->fetch(-class => 'Gene',
+			  -name  => 'WBGene*');
 
-  # now loop through looking for specific errors that might be in any Gene object
-  foreach my $gene_id (@gene_ids){
+# now loop through looking for specific errors that might be in any Gene object
+foreach my $gene_id (@gene_ids){
     # useful to see where you are in the script if running on command line
-
+    
     my $species = $gene_id->Species;
     if ($verbose) {
-      print "$gene_id:";
-      if($species eq 'Caenorhabditis elegans' and exists $Gene_info{$gene_id}{'Public_name'}) {
-        print $Gene_info{$gene_id}{'Public_name'};
-      }
-      print "\n";
+	print "$gene_id:";
+	if($species eq 'Caenorhabditis elegans' and exists $Gene_info{$gene_id}{'Public_name'}) {
+	    print $Gene_info{$gene_id}{'Public_name'};
+	}
+	print "\n";
     }
     &test_locus_for_errors($gene_id);
-  }
+}
 
   
-  # check highest gene id number = gene obj. number
-  my $last_gene_id = $gene_ids[-1];
-  $last_gene_id =~ s/WBGene(0)+//;
-  
-  if ( scalar @gene_ids != $last_gene_id ){
+# check highest gene id number = gene obj. number
+my $last_gene_id = $gene_ids[-1];
+$last_gene_id =~ s/WBGene(0)+//;
+
+if ( scalar @gene_ids != $last_gene_id ){
     print LOG "ERROR: The highest gene id ($last_gene_id) is not equal to total number of Gene objects (", scalar @gene_ids, ")";
-  }
+}
 
 
 #######################################
@@ -300,8 +300,8 @@ foreach my $variation ($db->fetch(-query=>'Find Variation WHERE NOT Laboratory')
 $db->close;
 print LOG "\nEnded at ",`date`,"\n";
 close(LOG)
-or warn $! ? "Error closing log: $!"
-                   : "Exit status $? log close";
+    or warn $! ? "Error closing log: $!"
+    : "Exit status $? log close";
 print "Exit status $? log close\n\n" if ($debug);
 
 
