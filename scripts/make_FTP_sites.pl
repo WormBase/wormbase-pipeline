@@ -904,7 +904,6 @@ sub copy_annotations_files{
                  );
     if ($wb->species eq 'elegans') {
       push @files, ('interactions.txt',
-                    'potential_promotors.fa',
                     'swissprot.txt',
                     'knockout_consortium_alleles.xml',
                     'confirmed_genes.fa',
@@ -1416,6 +1415,7 @@ GSPECIES.BIOPROJ.WSREL.protein_annotation.gff3.gz
 GSPECIES.BIOPROJ.WSREL.ncRNA_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.pseudogenic_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.intergenic_sequences.fa.gz
+GSPECIES.BIOPROJ.WSREL.upstream_sequences.fa.gz
 
 [CORE:pristionchus]species/GSPECIES/BIOPROJ/annotation
 GSPECIES.BIOPROJ.WSREL.SRA_gene_expression.tar.gz

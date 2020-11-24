@@ -175,6 +175,7 @@ $wormbase->run_script( 'WBGene_span.pl'                   , $log ) if $gene_span
 if ($cdna_files) {
   my $seqdir = $wormbase->sequences;
   $wormbase->run_script( 'find_intergenic.pl'               , $log );
+  $wormbase->run_script( 'find_upstream_seqs.pl', $log); 
   $wormbase->run_script( "fasta_dumper.pl -classmethod Transcript:Coding_transcript -output $seqdir/mRNA_transcripts.dna", $log);
   $wormbase->run_script( "fasta_dumper.pl -classmethod Pseudogene:Pseudogene -output $seqdir/pseudogenic_transcripts.dna", $log);
   if ($wormbase->species eq 'elegans') {
