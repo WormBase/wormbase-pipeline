@@ -1,8 +1,8 @@
 #!/bin/env perl
-# trawl throught he rest endpoint and import from the AGR OMIM Xrefs into WormBase
+# import OMIM Xrefs and DOids from AGR DAF file into WormBase
 # potential issues:
 #  * the REST endpoint will change regularly (or its payload)
-#  * AGM schema will also change regulary (https://github.com/alliance-genome/agr_schemas/tree/master/ingest/disease)
+#  * AGR schema will also change regulary (https://github.com/alliance-genome/agr_schemas/tree/master/ingest/disease)
 #
 # URLs:
 # * https://fms.alliancegenome.org/api/datafile/by/DAF?latest=true
@@ -19,9 +19,10 @@ use Getopt::Long;
 use Compress::Zlib;
 use strict;
 
-my ($debug,$test,$store,$wormbase,$load,$outfile);
+my ($debug,$test,$store,$wormbase,$load,$outfile, $database);
 GetOptions( 'debug=s'      => \$debug,
             'test'         => \$test,
+	    'database=s'   => \$database,
             'store=s'      => \$store,
 	    'load'         => \$load,
             'outfile=s'    => \$outfile,
@@ -31,8 +32,9 @@ if ( $store ) {
     $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
     $wormbase = Wormbase->new(
-	-debug   => $debug,
-	-test    => $test,
+	-autoace  => $database,
+	-debug    => $debug,
+	-test     => $test,
 	);
 }
 
@@ -65,24 +67,32 @@ sub get_agm{
 
     my $payload = get($url);
     $log->log_and_die("couldn't get human disease data\n") unless $payload;
-    my $unzipped =Compress::Zlib::memGunzip($payload);
+    my $unzipped = Compress::Zlib::memGunzip($payload);
 
-    my %genes_processed;
+    my %xrefs;
     my $json = decode_json($unzipped);
-    foreach my $obj (@{$json->{data}}){
+    foreach my $obj (@{$json->{data}}) {
 	my $gene_id = $obj->{objectId};
-	next if exists $genes_processed{$gene_id};
+	$xrefs{$gene_id}{'DO'}{$obj->{DOid}} = 1 if $obj->{DOid};
 	for my $prov(@{$obj->{dataProvider}}) {
 	    for my $x ($prov->{crossReference}) {
 		if ($x->{id} =~ /^OMIM:(\w+)$/) {
-		    print $outfh "Gene : \"$gene_id\"\n";
-		    print $outfh "Database \"OMIM\" \"gene\" \"$1\"\n\n";
-		    $genes_processed{$gene_id} = 1;
+		    $xrefs{$gene_id}{'OMIM'} = $1;
 		    last;
 		}
 	    }
 	}
-	printf $outfh "Database \"DO\" id %s\n",$obj->{DOid} if $obj->{DOid};
     }
+
+    for my $gene_id (keys %xrefs) {
+	print $outfh "Gene : \"$gene_id\"\n";
+	printf $outfh "Database \"OMIM\" \"gene\" \"%s\"\n", $xrefs{$gene_id}{'OMIM'} if exists $xrefs{$gene_id}{'OMIM'};
+	for my $do_id (keys %{$xrefs{$gene_id}{'DO'}}) {
+	    print $outfh "Database \"DO\" \"id\" \"$do_id\"\n";
+	}
+	print $outfh "\n";
+    }
+
+    return;
 }
 
