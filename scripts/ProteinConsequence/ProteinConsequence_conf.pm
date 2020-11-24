@@ -60,8 +60,8 @@ sub default_options {
         # configuration for the various resource options used in the pipeline
         
 	lsf_queue             => $ENV{'LSF_DEFAULT_QUEUE'},
-        default_lsf_options   => '-q' . $self->o('lsf_queue') . ' -R"select[mem>4000] rusage[mem=4000]" -M4000',    
-        highmem_lsf_options   => '-q' . $self->o('lsf_queue') . ' -R"select[mem>8000] rusage[mem=8000]" -M8000',     
+        default_lsf_options   => '-q' . $self->o('lsf_queue') . ' -R"select[mem>2000] rusage[mem=2000]" -M2000',    
+        highmem_lsf_options   => '-q' . $self->o('lsf_queue') . ' -R"select[mem>5000] rusage[mem=5000]" -M5000',     
         supermem_lsf_options  => '-q' . $self->o('lsf_queue') . ' -R"select[mem>16000] rusage[mem=16000]" -M16000',  
 
 	# batch size
@@ -217,7 +217,7 @@ sub pipeline_analyses {
 	    -max_retry_count => 1,
 	    -analysis_capacity => $self->o('standard_max_workers'),
 	    -hive_capacity     => $self->o('hive_max_workers'),
-	    -rc_name => 'supermem',
+	    -rc_name => 'highmem',
 	},
 
 	{   -logic_name    => 'collate_data',
