@@ -53,7 +53,7 @@ if (not defined $infile or not defined $outfile) {
   $log->log_and_die("You must define -infile and -outfile\n");
 }
 
-&get_molecular_consequences();
+my $var_consequences = get_molecular_consequences();
 
 my $db = Ace->connect(-path => $database);
 
@@ -170,35 +170,16 @@ while (<$gff_in_fh>) {
       $current_els[2] = $new_term;
     }
     
-    if (exists $var{$allele}->{mol_change}) {
-      my $cons = $var{$allele}->{mol_change};
+    if (exists $var_consequences->{$allele}) {
+      push @new_els, ['Consequence', $var_consequences->{$allele}{'consequence'}];
+      push @new_els, ['AAChange', $var_consequences->{$allele}{'aa_change'}] if exists $var_consequences->{$allele}{'aa_change'};
 
-      if ($cons eq 'Frameshift' or
-          $cons eq 'Missense' or
-          $cons eq 'Nonsense' or
-          $cons eq 'Readthrough' or
-          $cons eq 'Coding_exon') {
+      if ($var_consequences->{$allele}{'severity'} >= 23) {
         if ($current_els[2] ne 'transposable_element_insertion_site' and 
             $current_els[2] ne 'tandem_duplication') {
           $is_putative_change_of_function_allele = 1;
         }
       }
-
-      push @new_els, ['Consequence', $cons];
-      
-      my @consequences = $variation->at('Affects.Predicted_CDS[2]');
-      
-      my $aachange;
-      foreach my $con (@consequences) {
-        if (grep { $con->name eq $_ } ('Missense', 'Nonsense')) {
-          my $aa = $con->right->right;
-          $aachange = $aa if $aa =~ /\s+to\s+/; 
-        } elsif ( $con eq 'Readthrough') {
-          my $aa = $con->right;
-          $aachange = $aa if $aa =~ /\s+to\s+/; 
-        }
-      }
-      push @new_els, ['AAChange', $aachange] if defined $aachange;
     }
     
     my @new_el_strings;
@@ -265,42 +246,68 @@ exit(0);
 ##############################################################
 
 sub get_molecular_consequences {
-  my %interested = ('Genomic_neighbourhood' => 1,
-                    'Regulatory_feature'    => 2,
-                    'Promoter'              => 3,
-                    'UTR_5'                 => 4,
-                    'UTR_3'                 => 5,
-                    'Intron'                => 6,
-                    'Coding_exon'           => 7,
-                    'Silent'                => 8,
-                    'Splice_site'           => 9,
-                    'Readthrough'           => 10,
-                    'Nonsense'              => 11,
-                    'Frameshift'            => 12,
-                    'Missense'              => 13,
-		      );
-
-  my $table = $wormbase->table_maker_query($database, &write_mol_change_def_file);
-  
-  while(<$table>) {
-    chomp;
-    s/\"//g; #"
-    next if (! defined $_);
-    next if (/acedb/ or /\/\//);
-    my ($var_name, @mut_affects) = split(/\s+/,$_);
-    next if not defined $var_name;
+    # ranking based on EnsEMBL VEP order of severity
+    my %severity_ranking = ('intergenic_variant'                 => 1,
+			    'feature_truncation'                 => 2,
+			    'regulatory_region_variant'          => 3,
+			    'feature_elongation'                 => 4,
+			    'regulatory_region_amplification'    => 5,
+			    'regulatory_region_ablation'         => 6,
+			    'TF_binding_site_variant'            => 7,
+			    'TFBS_amplification'                 => 8,
+			    'TFBS_ablation'                      => 9,
+			    'downstream_gene_variant'            => 10,
+			    'upstream_gene_variant'              => 11,
+			    'non_coding_transcript_variant'      => 12,
+			    'NMD_transcript_variant'             => 13,
+			    'intron_variant'                     => 14,
+			    'non_coding_transcript_exon_variant' => 15,
+			    '3_prime_UTR_variant'                => 16,
+			    '5_prime_UTR_variant'                => 17,
+			    'mature_miRNA_variant'               => 18,
+			    'coding_sequence_variant'            => 19,
+			    'synonymous_variant'                 => 20,
+			    'stop_retained_variant'              => 21,
+			    'start_retained_variant'             => 22,
+			    'incomplete_terminal_codon_variant'  => 23,
+			    'splice_region_variant'              => 24,
+			    'protein_altering_variant'           => 25,
+			    'missense_variant'                   => 26,
+			    'inframe_deletion'                   => 27,
+			    'inframe_insertion'                  => 28,
+			    'transcript_amplification'           => 29,
+			    'start_lost'                         => 30,
+			    'stop_lost'                          => 31,
+			    'frameshift_variant'                 => 32,
+			    'stop_gained'                        => 33,
+			    'splice_donor_variant'               => 34,
+			    'splice_acceptor_variant'            => 35,
+			    'transcript_ablation'                => 36,
+	);
     
-    foreach my $mut_affects (@mut_affects) {
-      
-      if($mut_affects and $interested{$mut_affects}){
-        if( not exists $var{$var_name}->{mol_change} or 
-            $interested{$mut_affects} > $interested{ $var{$var_name}->{mol_change} }) {
-          $var{$var_name}->{mol_change} = $mut_affects;
-        }
-      }
+    my $table = $wormbase->table_maker_query($database, &write_mol_change_def_file);
+  
+    my %var_consequences;
+    while(<$table>) {
+	chomp;
+	s/\"//g; 
+	next if (! defined $_);
+	next if (/acedb/ or /\/\//);
+	
+	my ($var_name, $transcript, $consequence_string, $aa_change) = split(/\t/, $_);
+	my @consequences = split(',', $consequence_string);
+	
+	for my $consequence (@consequences) {
+	    my $severity = $severity_ranking{$consequence};
+	    next if exists $var_consequences{$var_name} and $var_consequences{$var_name}{'severity'} > $severity;
+	    $var_consequences{$var_name}{'consequence'} = $consequence;
+	    $var_consequences{$var_name}{'severity'} = $severity;
+	    $var_consequences{$var_name}{'aa_change'} = $aa_change if $aa_change =~ /\//;
+	}
     }
-  }
-  close($table);
+    close($table);
+
+    return \%var_consequences;
 }
 
 
@@ -308,6 +315,7 @@ sub write_mol_change_def_file {
   my $def = '/tmp/overload_SNP_GFF_mol_chng.def';
   open TMP,">$def" or $log->log_and_die("cant write $def: $!\n");
   my $txt = <<END;
+
 Sortcolumn 1
 
 Colonne 1 
@@ -329,115 +337,45 @@ Tag Sequence
 Colonne 3
 Width 12 
 Mandatory 
-Hidden 
+Visible 
 Class 
-Class CDS 
+Class Transcript 
 From 1 
-Tag Predicted_CDS 
+Tag Transcript
  
 Colonne 4 
 Width 12 
 Optional 
-Visible 
-Show_Tag 
+Hidden
+Show_Tag
 Right_of 3 
-Tag  HERE  # Missense 
+Tag Molecular_change # VEP_consequence
  
-Colonne 5 
-Width 12 
-Optional 
-Visible 
-Show_Tag 
-Right_of 3 
-Tag  HERE  # Nonsense 
- 
-Colonne 6 
-Width 12 
-Optional 
-Visible 
-Show_Tag 
-Right_of 3 
-Tag  HERE  # Splice_site 
- 
-Colonne  7
-Width 12 
-Optional 
-Visible 
-Show_Tag 
-Right_of 3 
-Tag  HERE  # Frameshift 
- 
-Colonne 8 
-Width 12 
-Optional 
-Visible 
-Show_Tag 
-Right_of 3 
-Tag  HERE  # Intron 
- 
-Colonne 9 
-Width 12 
-Optional 
-Visible 
-Show_Tag 
-Right_of 3 
-Tag  HERE  # Coding_exon 
- 
-Colonne 10 
-Width 12 
-Optional 
-Visible 
-Show_Tag 
-Right_of 3 
-Tag  HERE  # Promoter 
- 
-Colonne 11 
-Width 12 
-Optional 
-Visible 
-Show_Tag 
-Right_of 3 
-Tag  HERE  # UTR_3 
- 
-Colonne 12 
-Width 12 
-Optional 
-Visible 
-Show_Tag 
-Right_of 3 
-Tag  HERE  # UTR_5 
- 
-Colonne 13 
-Width 12 
-Optional 
-Visible 
-Show_Tag 
-Right_of 3 
-Tag  HERE  # Regulatory_feature 
- 
-Colonne 14 
-Width 12 
-Optional 
-Visible 
-Show_Tag 
-Right_of 3  
-Tag  HERE  # Genomic_neighbourhood 
- 
-Colonne 15 
-Width 12 
-Optional 
-Visible 
-Show_Tag 
-Right_of 3  
-Tag  HERE  # Silent 
-
-Colonne 16
+Colonne 5
 Width 12
 Optional
 Visible
+Text
+Right_of 4
+Tag  HERE
+
+Colonne 6
+Width 12 
+Optional 
+Hidden
 Show_Tag
-Right_of 3
-Tag  HERE  # Readthrough
+Right_of 3 
+Tag Molecular_change # Amino_acid_change
+ 
+Colonne 7
+Width 12
+Optional
+Visible
+Text
+Right_of 6
+Tag  HERE
+
+
 
 END
 
