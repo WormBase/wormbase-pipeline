@@ -134,7 +134,7 @@ sub get_bgi{
 			print $outfh "Other_name \"$oId\"\n";
 		}
 		
-		map {print $outfh "Other_name \"$_\"\n"} @{bgE->{synonyms}};
+		map {print $outfh "Other_name \"$_\"\n"} @{$bgE->{synonyms}};
 
 		print $outfh "Live\n";
 		$log->log_and_die("cannot find species ${\$bgE->{taxonId}}") unless($taxon2name{$bgE->{taxonId}});
