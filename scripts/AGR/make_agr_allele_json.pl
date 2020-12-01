@@ -88,14 +88,9 @@ sub process{
 	    $objectsIds{"$obj"}=1;
     }
 
-    my $has_interaction;
+    my $has_interaction  = 1 if $obj->Interactor;
     my $has_disease = 1 if $obj->Disease_info;
     my $has_phenotype = 1 if $obj->Description;
-    if ($obj->Interactor) {
-      foreach my $item ($obj->Interactor->col) {
-        $has_interaction = 1 if $item eq 'Regulatory';
-      }
-    }
   
     next unless $has_disease or $has_phenotype or $has_interaction or $obj->Corresponding_transgene;
 
@@ -143,14 +138,9 @@ sub process_transgenes{
   while (my $obj = $it->next) {
     next unless $obj->isObject();
 
-    my $interaction;
+    my $interaction = 1 if $obj->Interactor;
     my $disease = $obj->Disease_info;
     my $phenotype = $obj->Phenotype;
-    if ($obj->Interactor) {
-      foreach my $item ($obj->Interactor->col) {
-        $interaction = 1 if $item eq 'Regulatory';
-      }
-    }
   
     next unless $disease or $phenotype or $interaction;
 
