@@ -290,10 +290,12 @@ sub upload_to_ebi {
   
   $ftp->binary();
   
-  #
+  # If test dont upload any file to ENA
+  unless ($test) {
   $ftp->put($outfile)
       or $log->log_and_die ("FTP-put failed for $outfile: ".$ftp->message."\n");
-   #   
+   }   
+   
       
   $ftp->quit;
 
