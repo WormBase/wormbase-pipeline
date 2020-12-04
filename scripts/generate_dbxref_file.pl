@@ -298,7 +298,7 @@ sub upload_to_ebi {
   
   $ftp->quit;
 
-  $log->write_to("Successfully uploaded file $outfile to ENA Xref FTP drop-box\n");
+  $log->write_to("Successfully uploaded file $outfile to ENA Xref FTP drop-box unless you ran in test mode\n");
 
   # Secondly, copy the file to a reserved area on the FTP site - for UniProt to pick up xrefs
   # 
