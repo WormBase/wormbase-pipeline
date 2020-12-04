@@ -292,16 +292,14 @@ sub upload_to_ebi {
   
   # If test dont upload any file to ENA
   unless ($test) {
-  $ftp->put($outfile)
+      $ftp->put($outfile)
       or $log->log_and_die ("FTP-put failed for $outfile: ".$ftp->message."\n");
    }   
-   
-      
+  
   $ftp->quit;
 
   $log->write_to("Successfully uploaded file $outfile to ENA Xref FTP drop-box\n");
 
-  #
   # Secondly, copy the file to a reserved area on the FTP site - for UniProt to pick up xrefs
   # 
   my $uni_file = join(".", "wormbase_xrefs", $wormbase->get_wormbase_version_name, $wormbase->ncbi_tax_id, "txt", "gz");
