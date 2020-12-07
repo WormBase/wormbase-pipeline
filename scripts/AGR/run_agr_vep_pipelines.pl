@@ -85,6 +85,7 @@ sub download_from_agr {
 	    run_system_cmd("mv $filename ${mod}_${datatype}.${extension}", "Renaming $filename");
 	}
 	merge_bam_files($mod);
+	sort_vcf_files($mod);
     }
 }
     
@@ -192,6 +193,8 @@ sub merge_bam_files {
 	if (-e "${mod}_MOD-GFF-BAM-MODEL.bam") {
 	    run_system_cmd("samtools merge ${mod}_BAM.bam ${mod}_MOD-GFF-BAM-KNOWN.bam ${mod}_MOD-GFF-BAM-MODEL.bam",
 			   "Merging $mod BAM files");
+	    run_system_cmd("rm ${mod}_MOD-GFF-BAM-KNOWN.bam", "Deleting $mod unmerged known transcripts BAM file");
+	    run_system_cmd("rm ${mod}_MOD-GFF-BAM-MODEL.bam", "Deleting $mod unmerged model transcripts BAM file");
 	}
 	else{
 	    run_system_cmd("mv ${mod}_MOD-GFF-BAM-KNOWN.bam ${mod}_BAM.bam", "Renaming $mod MOD-GFF-BAM-KNOWN file");
@@ -200,6 +203,22 @@ sub merge_bam_files {
     else {
 	run_system_cmd("mv ${mod}_MOD-GFF-BAM-MODEL.bam ${mod}_BAM.bam", "Renaming $mod MOD-GFF-BAM-MODEL file")
 	    if -e "${mod}_MOD-GFF-BAM-MODEL.bam";
+    }
+
+    run_system_cmd("samtools sort -o ${mod}_BAM.sorted.bam -T tmp ${mod}_BAM.bam", "Sorting $mod BAM file");
+
+    return;
+}
+
+
+sub sort_vcf_files {
+    my $mod = shift;
+    
+    for my $datatype ('VCF', 'HTVCF') {
+	next unless -e "${mod}_${datatype}.vcf";
+	run_system_cmd("sort -k1,1 -k4,4n -k5,5n -t\$'\\t' ${mod}_${datatype}.vcf > ${mod}_${datatype}.sorted.vcf",
+		       "Sorting $mod $datatype file");
+	run_system_cmd("mv ${mod}_${datatype}.sorted.vcf ${mod}_${datatype}.vcf", "Renaming sorted $mod $datatype file");
     }
 
     return;
