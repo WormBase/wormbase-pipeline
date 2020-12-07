@@ -85,7 +85,7 @@ sub generate_report {
 			      $self->required_param('password')) or die $DBI::errstr;
 
     my $query = qq{
-        SELECT msg FROM log_message
+        SELECT when_logged, msg FROM log_message
         WHERE msg NOT LIKE 'loop iteration%'
             AND msg NOT LIKE 'Mapping%'
             AND msg NOT LIKE 'Fetching%'
@@ -106,15 +106,15 @@ sub generate_report {
         ORDER BY msg
     };
 
-    my $log_file = $self->required_param('log_dir') . '/' . $self->required_param('species') . '_pipeline.log';
+    my $log_file = $self->required_param('log_dir') . '/VEP_pipeline_' . $self->required_param('species') . '.log';
     open (LOG, '>', $log_file);
     my $errors = {};
 
     my $sth = $dbh->prepare($query);
     $sth->execute();
     while(my $result = $sth->fetchrow_arrayref) {
-	print LOG $result->[0] . "\n";
-	$errors = process_log_message($errors, $result->[0]);
+	print LOG $result->[0] . "\t" . $result->[1] . "\n";
+	$errors = process_log_message($errors, $result->[1]);
     }
 
     close (LOG);
@@ -142,8 +142,8 @@ sub generate_report {
 	other                     => 'Other warnings/errors'
 	);
 
-    my $summary_file = $self->required_param('log_dir') . '/' . $self->required_param('species') . '_summary.log';    
-    my $vep_warning_file = $self->required_param('log_dir') . '/' . $self->required_param('species');
+    my $summary_file = $self->required_param('log_dir') . '/VEP_pipeline_' . $self->required_param('species') . '_summary.log';    
+    my $vep_warning_file = $self->required_param('log_dir') . '/VEP_pipeline' . $self->required_param('species') . '_warnings.txt';
 
     open (SUMMARY, '>', $summary_file);
     print SUMMARY 'The WormBase VEP Pipeline for ' . $self->required_param('database') . ' has completed.  A summary of ' .
