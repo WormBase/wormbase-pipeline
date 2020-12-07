@@ -143,7 +143,7 @@ sub generate_report {
 	);
 
     my $summary_file = $self->required_param('log_dir') . '/VEP_pipeline_' . $self->required_param('species') . '_summary.log';    
-    my $vep_warning_file = $self->required_param('log_dir') . '/VEP_pipeline' . $self->required_param('species') . '_warnings.txt';
+    my $vep_warning_file = $self->required_param('log_dir') . '/VEP_pipeline_' . $self->required_param('species') . '_warnings.txt';
 
     open (SUMMARY, '>', $summary_file);
     print SUMMARY 'The WormBase VEP Pipeline for ' . $self->required_param('database') . ' has completed.  A summary of ' .
