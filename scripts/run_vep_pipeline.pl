@@ -53,7 +53,7 @@ if ($load) {
     # Load collated file into AceDB
     my $log = Log_files->make_build_log($wb);
     
-    my $out_file = $ace_dir . '/mapped_alleles.' . $wb->get_wormbase_version_name . '.mapped_alleles.ace';
+    my $out_file = $ace_dir . '/mapped_alleles.' . $wb->get_wormbase_version_name . '.ace';
     $wb->load_to_database($wb->autoace, $out_file, 'WB_VEP_pipeline', $log) 
 
 }
