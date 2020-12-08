@@ -3251,12 +3251,12 @@ GFF_source "RNASeq_stranded"
 GFF_feature "transcript_region"
 GFF_SO "SO:0000833" // transcript_region
 
-Method : "DNAseI_hypersensitive_site"
+Method : "DNaseI_hypersensitive_site"
 Remark "A hypersensitive site is a short region of chromatin and is detected by its super sensitivity to cleavage by DNase I. In a hypersensitive site, the nucleosomal structure is not organized in the usual fashion, which results in a 100 fold increase in sensitivity to enzyme attack than in bulk chromatin."
 Colour BLACK
-GFF_source "DNAseI_hypersensitive_site"
-GFF_feature "DNAseI_hypersensitive_site" // SO:0000685
-GFF_SO "SO:0000685" // DNAseI_hypersensitive_site
+GFF_source "DNaseI_hypersensitive_site"
+GFF_feature "DNaseI_hypersensitive_site" // SO:0000685
+GFF_SO "SO:0000685" // DNaseI_hypersensitive_site
 
 ///////////////////////////////////////////////////////
 // Methods for Feature markup and transcript masking //
@@ -4475,7 +4475,7 @@ Right_priority 5.0
 
 //space
 
-Method : "DNAseI_hypersensitive_site"
+Method : "DNaseI_hypersensitive_site"
 Right_priority 5.25
 
 Method : "Expr_pattern"
