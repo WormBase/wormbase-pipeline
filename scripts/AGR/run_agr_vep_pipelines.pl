@@ -7,7 +7,7 @@ use LWP::Simple;
 use Const::Fast;
 use File::Path qw(make_path);
 use Time::Piece;
-use Arhive::Extract;
+use Archive::Extract;
 
 const my $FMS_LATEST_PREFIX => 'https://fms.alliancegenome.org/api/datafile/by/';
 const my $FMS_LATEST_SUFFIX => '?latest=true';
