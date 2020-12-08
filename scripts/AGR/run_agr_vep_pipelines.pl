@@ -28,7 +28,7 @@ const my %ASSEMBLIES => ('GRCm38'   => 'MGI',
     );
 const my $BASE_DIR => $ENV{'AGR_VEP_BASE_DIR'} . '/' . $ENV{'AGR_RELEASE'} . '/' . $ENV{'DOWNLOAD_DATE'};
 
-my ($test, $password, $help);
+my ($url, $test, $password, $help);
 my $stages = '1,2,3,4,5';
 my $mods_string = 'FB,MGI,RGD,SGD,WB,ZFIN,HUMAN';
 
@@ -36,6 +36,7 @@ GetOptions(
     "mods|m=s"     => \$mods_string,
     "stages|s=s"   => \$stages,
     "password|p=s" => \$password,
+    "url|u=s"      => \$url,
     "test|t"       => \$test,
     "help|h"       => \$help,
     ) or print_usage();
@@ -44,7 +45,7 @@ print_usage() if $help;
 
 my @mods = split(',', $mods_string);
 
-download_from_agr(\@mods) if $stages =~ /1/;
+download_from_agr(\@mods, $url) if $stages =~ /1/;
 
 for my $mod (@mods) {
     chdir "$BASE_DIR/$mod";
@@ -56,8 +57,32 @@ for my $mod (@mods) {
 
 
 sub download_from_agr {
-    my $mods = shift;
+    my ($mods, $url) = @_;
 
+    my $download_urls = defined $url ? get_urls_from_snapshot($url) : get_latest_urls();
+    
+    for my $mod (@$mods) {
+	my $mod_dir = "$BASE_DIR/$mod";
+	make_path($mod_dir) unless -d $mod_dir;
+	chdir $mod_dir;
+	for my $datatype (keys %{$download_urls->{$mod}}){
+	    my ($filename) = $download_urls->{$mod}{$datatype} =~ /\/([^\/]+)$/;
+	    run_system_cmd('wget ' . $download_urls->{$mod}{$datatype}, "Downloading $mod $datatype file");
+	    $filename = check_if_actually_compressed($filename) if $filename !~ /\.gz/; # temporary hack to get around gzipped files in FMS without .gz extension
+	    run_system_cmd("gunzip $filename", "Decompressing $filename") if $filename =~ /\.gz$/; # if clause only required in interim while some FMS files not gzipped
+	    $filename =~ s/\.gz$//;
+	    my $extension = $DATATYPE_EXTENSIONS{$datatype};
+	    run_system_cmd("mv $filename ${mod}_${datatype}.${extension}", "Renaming $filename");
+	}
+	merge_bam_files($mod);
+	sort_vcf_files($mod);
+    }
+
+    return;
+}
+
+
+sub get_latest_urls {
     my %download_urls;
     for my $datatype (@FMS_DATATYPES) {
 	my $content = get($FMS_LATEST_PREFIX . $datatype . $FMS_LATEST_SUFFIX);
@@ -71,26 +96,31 @@ sub download_from_agr {
 	    $download_urls{$mod}{$datatype} = $entry->{s3Url};
 	}
     }
-    
-    for my $mod (@$mods) {
-	my $mod_dir = "$BASE_DIR/$mod";
-	make_path($mod_dir) unless -d $mod_dir;
-	chdir $mod_dir;
-	for my $datatype (keys %{$download_urls{$mod}}){
-	    my ($filename) = $download_urls{$mod}{$datatype} =~ /\/([^\/]+)$/;
-	    run_system_cmd('wget ' . $download_urls{$mod}{$datatype}, "Downloading $mod $datatype file");
-	    $filename = check_if_actually_compressed($filename) if $filename !~ /\.gz/; # temporary hack to get around gzipped files in FMS without .gz extension
-	    run_system_cmd("gunzip $filename", "Decompressing $filename") if $filename =~ /\.gz$/; # if clause only required in interim while some FMS files not gzipped
-	    $filename =~ s/\.gz$//;
-	    my $extension = $DATATYPE_EXTENSIONS{$datatype};
-	    run_system_cmd("mv $filename ${mod}_${datatype}.${extension}", "Renaming $filename");
+ 
+    return \%download_urls;
+}
+
+
+sub get_urls_from_snapshot {
+    my $snapshot_url = shift;
+
+    my %download_urls;
+    my $content = get($snapshot_url);
+    my $snapshot = decode_json($content);
+    for my $entry (@{$snapshot->{snapShot}{dataFiles}}) {
+	my $datatype = $entry->{dataType}{name};
+	next unless exists $DATATYPE_EXTENSIONS{$datatype};
+	my $mod = $entry->{dataSubType}{name};
+	if ($datatype eq 'FASTA' or $datatype eq 'VCF' ) {
+	    next unless exists $ASSEMBLIES{$mod};
+	    $mod = $ASSEMBLIES{$mod};
 	}
-	merge_bam_files($mod);
-	sort_vcf_files($mod);
+	$download_urls{$mod}{$datatype} = $entry->{s3Url};
     }
 
-    return;
+    return \%download_urls;
 }
+
 
 sub check_if_actually_compressed {
     my $filename = shift;
