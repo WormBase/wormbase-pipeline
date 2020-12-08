@@ -7,6 +7,7 @@ use LWP::Simple;
 use Const::Fast;
 use File::Path qw(make_path);
 use Time::Piece;
+use Arhive::Extract;
 
 const my $FMS_LATEST_PREFIX => 'https://fms.alliancegenome.org/api/datafile/by/';
 const my $FMS_LATEST_SUFFIX => '?latest=true';
@@ -79,6 +80,7 @@ sub download_from_agr {
 	for my $datatype (keys %{$download_urls{$mod}}){
 	    my ($filename) = $download_urls{$mod}{$datatype} =~ /\/([^\/]+)$/;
 	    run_system_cmd('wget ' . $download_urls{$mod}{$datatype}, "Downloading $mod $datatype file");
+	    $filename = check_if_actually_compressed($filename) if $filename !~ /\.gz/; # temporary hack to get around gzipped files in FMS without .gz extension
 	    run_system_cmd("gunzip $filename", "Decompressing $filename") if $filename =~ /\.gz$/; # if clause only required in interim while some FMS files not gzipped
 	    $filename =~ s/\.gz$//;
 	    my $extension = $DATATYPE_EXTENSIONS{$datatype};
@@ -87,6 +89,17 @@ sub download_from_agr {
 	merge_bam_files($mod);
 	sort_vcf_files($mod);
     }
+
+    return;
+}
+
+sub check_if_actually_compressed {
+    my $filename = shift;
+
+    my $archive_file = Archive::Extract->new(archive => $filename);
+    return $filename . '.gz'if $archive_file->is_gz;
+   
+    return $filename;
 }
     
 
@@ -200,9 +213,11 @@ sub merge_bam_files {
 	    run_system_cmd("mv ${mod}_MOD-GFF-BAM-KNOWN.bam ${mod}_BAM.bam", "Renaming $mod MOD-GFF-BAM-KNOWN file");
 	}
     }
+    elsif (-e "${mod}_MOD-GFF-BAM-MODEL.bam") {
+	run_system_cmd("mv ${mod}_MOD-GFF-BAM-MODEL.bam ${mod}_BAM.bam", "Renaming $mod MOD-GFF-BAM-MODEL file"); 
+    }
     else {
-	run_system_cmd("mv ${mod}_MOD-GFF-BAM-MODEL.bam ${mod}_BAM.bam", "Renaming $mod MOD-GFF-BAM-MODEL file")
-	    if -e "${mod}_MOD-GFF-BAM-MODEL.bam";
+	return;
     }
 
     run_system_cmd("samtools sort -o ${mod}_BAM.sorted.bam -T tmp ${mod}_BAM.bam", "Sorting $mod BAM file");
@@ -216,7 +231,7 @@ sub sort_vcf_files {
     
     for my $datatype ('VCF', 'HTVCF') {
 	next unless -e "${mod}_${datatype}.vcf";
-	run_system_cmd("sort -k1,1 -k4,4n -k5,5n -t\$'\\t' ${mod}_${datatype}.vcf > ${mod}_${datatype}.sorted.vcf",
+	run_system_cmd("vcf-sort ${mod}_${datatype}.vcf > ${mod}_${datatype}.sorted.vcf",
 		       "Sorting $mod $datatype file");
 	run_system_cmd("mv ${mod}_${datatype}.sorted.vcf ${mod}_${datatype}.vcf", "Renaming sorted $mod $datatype file");
     }
