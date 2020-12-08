@@ -7,7 +7,6 @@ use LWP::Simple;
 use Const::Fast;
 use File::Path qw(make_path);
 use Time::Piece;
-use Archive::Extract;
 
 const my $FMS_LATEST_PREFIX => 'https://fms.alliancegenome.org/api/datafile/by/';
 const my $FMS_LATEST_SUFFIX => '?latest=true';
@@ -96,8 +95,18 @@ sub download_from_agr {
 sub check_if_actually_compressed {
     my $filename = shift;
 
-    my $archive_file = Archive::Extract->new(archive => $filename);
-    return $filename . '.gz'if $archive_file->is_gz;
+    my $is_gzipped = 0;
+    open (FILE, "file $filename |");
+    while (<FILE>) {
+	chomp;
+	$is_gzipped = 1 if $_ =~ /gzip compressed data/;
+    }
+    close (FILE);
+
+    if ($is_gzipped) {
+	run_system_cmd("mv $filename $filename.gz", "Adding .gz extension to $filename");
+	return $filename . '.gz';
+    }
    
     return $filename;
 }
