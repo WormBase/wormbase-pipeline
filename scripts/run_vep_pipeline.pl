@@ -39,6 +39,7 @@ if (!defined $log_dir) {
     $log_dir = "$database/logs";
 }
 
+my $maintainer = 'All';
 my $wb = Wormbase->new(
     -autoace  => $database,
     -organism => $species,
@@ -54,8 +55,9 @@ if ($load) {
     my $log = Log_files->make_build_log($wb);
     
     my $out_file = $ace_dir . '/mapped_alleles.' . $wb->get_wormbase_version_name . '.ace';
-    $wb->load_to_database($wb->autoace, $out_file, 'WB_VEP_pipeline', $log) 
+    $wb->load_to_database($wb->autoace, $out_file, 'WB_VEP_pipeline', $log);
 
+    $log->mail($maintainer, 'BUILD REPORT: run_vep_pipeline.pl');
 }
 else {
     # Initialise and run ProteinConsequence eHive pipeline
