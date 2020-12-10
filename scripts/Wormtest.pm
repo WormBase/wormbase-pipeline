@@ -38,6 +38,15 @@ sub make_build_tester {
 }
 
 
+sub elegans_loaded_first {
+    my $self;
+
+    if ($self->{'wormbase'}->species eq 'elegans') {
+
+    }
+}
+
+
 sub primary_seq_dumps_present {
     my $self;
 
