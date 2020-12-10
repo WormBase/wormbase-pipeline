@@ -92,12 +92,18 @@ while (my($species,$wb)=each %accessors){
       next unless($name && $id); # both need to be defined to produce a valid ace-file
 
       my $ace_name = sprintf("%s_%s", $wb->ncbi_bioproject, $name);
+      my $biop =  $wb->ncbi_bioproject;
 
       if ($l[2] eq 'gene') {
         $geneid2name{$id} = $ace_name;
 
         printf($acefh "\nGene : \"%s\"\n", $ace_name);
-        printf($acefh "Public_name \"%s\"\n", $name);
+	if ($name =~ /^WBGene\d{8}/) {
+	    printf($acefh "Public_name \"${biop}_%s\"\n", $name);
+	}
+	else {
+	    printf($acefh "Public_name \"%s\"\n", $name);
+	}
         printf($acefh "Species \"%s\"\n", $wb->full_name);
         print $acefh "Method \"Gene\"\n";
         print $acefh "Remark \"Tier3 species gene\" Inferred_automatically \"tier3_stubs.pl\"\n";
