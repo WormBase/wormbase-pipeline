@@ -13,6 +13,7 @@ use Bio::Seq;
 use Bio::SeqIO;
 use Bio::EnsEMBL::CoordSystem;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
+use Bio::EnsEMBL::Production::Utils::ProductionDbUpdater;
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 use WormBase2Ensembl;
@@ -50,6 +51,14 @@ $cvsDIR = $generic_config->{cvsdir} if exists  $generic_config->{cvsdir};
 die "You must define a location of the Ensembl code " .
     "either with cvsdir (in the YAML file) " .
     "or ENSEMBL_CVS_ROOT_DIR in the environment\n" if not defined $cvsDIR; 
+
+my $ensembl_version;
+$ensembl_version = $ENV{ENSEMBL_VERSION} if exists $ENV{ENSEMBL_VERSION};
+$ensembl_version = $generic_config->{ensembl_version} if exists $generic_config->{ensembl_version};
+
+die "You must define the version of the Ensembl code that you're using " .
+    "either with ensembl_version (in the YAML file) " .
+    "or ENSEMBL_VERSION in the environment\n" if not defined $ensembl_version;
 
 if ($allspecies) {
   die "You cannot supply both -species and -allspecies!\n" if @species;
@@ -156,20 +165,46 @@ sub setupdb {
     system($cmd) and die "Could not load taxonomy\n";
     
     print STDERR "Loading production table...\n";
-    $cmd = "perl $cvsDIR/ensembl-production/scripts/production_database/populate_production_db_tables.pl "
-        . "--host $db->{host} "
-        . "--user $db->{user} "
-        . "--pass $db->{password} "
-        . "--port $db->{port} "
-        . "--database $db->{dbname} "
-        . "--mhost $prod_db->{host} "
-        . "--mport $prod_db->{port} "
-        . "--muser $prod_db->{user} "
-        . "--mdatabase $prod_db->{dbname} "
-	. "--dropbaks "
-	. "--dumppath /tmp/ ";
-    print STDERR "$cmd\n";
-    system($cmd) and die "Could not populate production tables\n";
+
+    if ($ensembl_version < 100){
+    	$cmd = "perl $cvsDIR/ensembl-production/scripts/production_database/populate_production_db_tables.pl "
+            . "--host $db->{host} "
+            . "--user $db->{user} "
+            . "--pass $db->{password} "
+            . "--port $db->{port} "
+            . "--database $db->{dbname} "
+            . "--mhost $prod_db->{host} "
+            . "--mport $prod_db->{port} "
+            . "--muser $prod_db->{user} "
+            . "--mdatabase $prod_db->{dbname} "
+	    . "--dropbaks "
+	    . "--dumppath /tmp/ ";
+
+       print STDERR "$cmd\n";
+       system($cmd) and die "Could not populate production tables\n";
+    }
+
+   # populate_production_db_tables.pl is no longer supported in E! 100 and above.
+   # now use the ProductionDbUpdater module instead.
+ 
+   else{
+       my $prod_dba = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
+           -user    => $prod_db->{user},	
+           -dbname  => $prod_db->{dbname},
+           -host    => $prod_db->{host},
+           -port    => $prod_db->{port} 
+       );
+
+       my $dba = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
+           -host   => $db->{host},
+           -user   => $db->{user},
+           -dbname => $db->{dbname},
+           -pass   => $db->{password},
+           -port   => $db->{port},
+       );
+
+       &populate_prod_tables($prod_dba, $dba);
+   }
 
     my $db_opt_string = sprintf("-dbhost %s -dbport %s -dbuser %s -dbpass %s -dbname %s", 
                                 $db->{host},
@@ -619,4 +654,26 @@ sub empty_out_old_gene_set {
   $dbc->do('TRUNCATE TABLE dependent_xref') or die $dbc->errstr;
   $dbc->do('TRUNCATE TABLE genome_statistics') or die $dbc->errstr;
   
+}
+
+######################################################
+sub populate_prod_tables {
+
+    my ($prod_dba, $dba) = @_;
+	
+    my $updater = Bio::EnsEMBL::Production::Utils::ProductionDbUpdater->new(
+        -PRODUCTION_DBA => $prod_dba
+    );
+
+    my $tables = [
+      'attrib_type',
+      'biotype',
+      'external_db',
+      'misc_set',
+      'unmapped_reason'
+     ];
+     
+     print STDERR "Populating prod tables with ProductionDbUpdater...\n";
+     $updater->update_controlled_tables($dba->dbc, $tables);
+	
 }
