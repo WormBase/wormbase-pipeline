@@ -9,6 +9,21 @@ use Path::Class;
 const my $MAX_DAYS_SINCE_CITACE_DUMP => 21;
 const my $MAX_DAYS_SINCE_GENEACE_COPY => 7;
 
+const my %MOL_TYPES = ( 'elegans'          => [qw(EST mRNA ncRNA OST tc1 RST Trinity Nanopore)],
+			'briggsae'         => [qw(mRNA EST Trinity)],
+			'remanei'          => [qw(mRNA EST)],
+			'brenneri'         => [qw(mRNA EST)],
+			'japonica'         => [qw(mRNA EST Trinity)],
+			'brugia'           => [qw(mRNA EST Trinity IsoSeq)],
+			'pristionchus'     => [qw(mRNA EST)],
+			'ovolvulus'        => [qw(mRNA EST Trinity)],
+			'sratti'           => [qw(mRNA EST)],
+			'tmuris'           => [qw(mRNA EST Trinity IsoSeq)],
+			'nematode'         => [qw(EST )],
+			'nembase'          => [qw(EST )],
+			'washu'            => [qw(EST )],
+    );
+
 sub make_build_tester {
     my ($class, $wormbase, $log, $prev_release) = @_;
 
@@ -95,12 +110,31 @@ sub elegans_loaded_first {
     return if $self->{'wormbase'}->species eq 'elegans';
     
     if (-e $self->{'wormbase'}->primary('camace')) {
-	$self->write_to('Elegans primary database loaded before ' . $self->{'wormbase'}->species . "\n");
+	$self->{'log'}->write_to('Elegans primary database loaded before ' . $self->{'wormbase'}->species . "\n");
     }
     else {
-	$self->log_and_die($self->{'wormbase'}->species . " primary database must be loaded after C. elegans\n");
+	$self->{'log'}->log_and_die($self->{'wormbase'}->species . " primary database must be loaded after C. elegans\n");
     }
     
+    return;
+}
+
+
+sub masked_files_present {
+    my $self = shift;
+
+    my $filenames = $self->_folder_contains_files($self->{'wormbase'}->cdna_dir);
+    my %masked_files_found;
+    for my $filename (@$filenames) {
+	next unless $filename =~ /\.masked/;
+	my ($type) = $filename =~ /^(.+)\.masked/;
+	$masked_files_found{$type}++;
+    }
+    for my $mol_type ($MOL_TYPES{$self->{'wormbase'}->species}) {
+	$self->{'log'}->log_and_die("Masked $mol_type files not found\n" unless exists $files_present{$mol_type});
+    }
+    $self->{'log'}->write_to("Masked files for all expected molecule types present\n");
+
     return;
 }
 
@@ -109,6 +143,11 @@ sub primary_seq_dumps_present {
     my $self = shift;
 
     my $filenames = $self->_folder_contains_files($self->{'wormbase'}->cdna_dir);
+    my %files_present = map {$_ => 1} @$filenames;
+    for my $mol_type ($MOL_TYPES{$self->{'wormbase'}->species}) {
+	$self->{'log'}->log_and_die("$mol_type cDNA dump not present\n" unless exists $files_present{$mol_type});
+    }
+    $self->{'log'}->write_to("cDNA dumps for all expected molecule types present\n");
 
     return;
 }
