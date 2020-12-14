@@ -400,7 +400,7 @@ sub get_types_from_vep_consequence { # To be deprecated after WS282
 	    $types{'Frameshift "' . abs($bp_change) . "bp $indel_type at CDS position $cds_pos\""} = 1;
 	}
 	elsif ($consequence eq 'start_lost') {
-	    $types{"Missense $prot_pos \"$aa_string\""} = 1 unless length $aas > 3;
+	    $types{"Missense $prot_pos \"$aa_string\""} = 1 if $aas =~ /^M\/.$/;
 	}
 	
     }
