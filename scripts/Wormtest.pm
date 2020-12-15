@@ -42,9 +42,125 @@ const my %MOL_TYPES = ( 'elegans'          => [qw(EST mRNA ncRNA OST tc1 RST Tri
 			'washu'            => [qw(EST)],
     );
 const my @NON_ELEGANS_CORE_SPECIES => ('Caenorhabditis briggsae', 'Caenorhabditis remanei',
-'Caenorhabditis brenneri', 'Caenorhabditis japonica', 'Pristionchus pacificus', 'Brugia malayi',
-'Brugia pahangi', 'Onchocerca volvulus', 'Strongyloides ratti', 'Trichuris muris');
-
+    'Caenorhabditis brenneri', 'Caenorhabditis japonica', 'Pristionchus pacificus', 'Brugia malayi',
+    'Brugia pahangi', 'Onchocerca volvulus', 'Strongyloides ratti', 'Trichuris muris');
+const my %GFF_FILES_EXPECTED => (
+    'init' => {
+        'elegans'      => ['Genomic_canonical', 'Link', 'Pseudogene', 'Transposon', 'Transposon_CDS',
+                           'Transposon_Pseudogene', 'Transposon_ncrNA', 'rRNA_Pseudogene', 'tRNA_Pseudogene',
+                           'curated', 'history', 'history_pseudogene', 'history_transcript', 'Non_coding_transcript',
+                           'snlRNA', 'snRNA', 'rRNA', 'scRNA', 'snoRNA', 'tRNA', 'stRNA', 'ncRNA', 'miRNA',
+                           'pre_miRNA', 'miRNA_primary_transcript', 'asRNA', 'lincRNA', 'piRNA', 'circRNA', '7kncRNA'],
+        'briggsae'     => ['Genomic_canonical', 'Link', 'Pseudogene', 'Transposon', 'Transposon_CDS',
+                           'Transposon_Pseudogene', 'Transposon_ncrNA', 'rRNA_Pseudogene', 'tRNA_Pseudogene',
+                           'curated', 'history', 'history_pseudogene', 'history_transcript', 'Non_coding_transcript',
+                           'snlRNA', 'snRNA', 'rRNA', 'scRNA', 'snoRNA', 'tRNA', 'stRNA', 'ncRNA', 'miRNA',
+                           'pre_miRNA', 'miRNA_primary_transcript', 'asRNA', 'lincRNA', 'piRNA', 'circRNA', '7kncRNA'],
+        'remanei'      => ['Genomic_canonical', 'Link', 'Pseudogene', 'Transposon', 'Transposon_CDS',
+                           'Transposon_Pseudogene', 'Transposon_ncrNA', 'rRNA_Pseudogene', 'tRNA_Pseudogene',
+                           'curated', 'Non_coding_transcript', 'snlRNA', 'snRNA', 'rRNA', 'scRNA', 'snoRNA', 'tRNA',
+                           'stRNA', 'ncRNA', 'miRNA', 'pre_miRNA', 'miRNA_primary_transcript', 'asRNA', 'lincRNA',
+                           'piRNA', 'circRNA', '7kncRNA'],
+        'brenneri'     => ['Genomic_canonical', 'Link', 'Pseudogene', 'Transposon', 'Transposon_CDS',
+                           'Transposon_Pseudogene', 'Transposon_ncrNA', 'rRNA_Pseudogene', 'tRNA_Pseudogene',
+                           'curated', 'history', 'history_pseudogene', 'history_transcript', 'Non_coding_transcript',
+                           'snlRNA', 'snRNA', 'rRNA', 'scRNA', 'snoRNA', 'tRNA', 'stRNA', 'ncRNA', 'miRNA',
+                           'pre_miRNA', 'miRNA_primary_transcript', 'asRNA', 'lincRNA', 'piRNA', 'circRNA', '7kncRNA'],
+        'japonica'     => ['Genomic_canonical', 'Link', 'Pseudogene', 'Transposon', 'Transposon_CDS',
+                           'Transposon_Pseudogene', 'Transposon_ncrNA', 'rRNA_Pseudogene', 'tRNA_Pseudogene',
+                           'curated', 'history', 'history_pseudogene', 'history_transcript', 'Non_coding_transcript',
+                           'snlRNA', 'snRNA', 'rRNA', 'scRNA', 'snoRNA', 'tRNA', 'stRNA', 'ncRNA', 'miRNA',
+                           'pre_miRNA', 'miRNA_primary_transcript', 'asRNA', 'lincRNA', 'piRNA', 'circRNA', '7kncRNA'],
+        'brugia'       => ['Genomic_canonical', 'Link', 'Pseudogene', 'Transposon', 'Transposon_CDS',
+                           'Transposon_Pseudogene', 'Transposon_ncrNA', 'rRNA_Pseudogene', 'tRNA_Pseudogene',
+                           'curated', 'history', 'history_pseudogene', 'history_transcript', 'Non_coding_transcript',
+                           'snlRNA', 'snRNA', 'rRNA', 'scRNA', 'snoRNA', 'tRNA', 'stRNA', 'ncRNA', 'miRNA',
+                           'pre_miRNA', 'miRNA_primary_transcript', 'asRNA', 'lincRNA', 'piRNA', 'circRNA', '7kncRNA'],
+        'pristionchus' => ['Genomic_canonical', 'Link', 'Pseudogene', 'Transposon', 'Transposon_CDS',
+                           'Transposon_Pseudogene', 'Transposon_ncrNA', 'rRNA_Pseudogene', 'tRNA_Pseudogene',
+                           'curated', 'history', 'history_pseudogene', 'history_transcript', 'Non_coding_transcript',
+                           'snlRNA', 'snRNA', 'rRNA', 'scRNA', 'snoRNA', 'tRNA', 'stRNA', 'ncRNA', 'miRNA',
+                           'pre_miRNA', 'miRNA_primary_transcript', 'asRNA', 'lincRNA', 'piRNA', 'circRNA', '7kncRNA'],
+        'ovolvulus'    => ['Genomic_canonical', 'Link', 'Pseudogene', 'Transposon', 'Transposon_CDS',
+                           'Transposon_Pseudogene', 'Transposon_ncrNA', 'rRNA_Pseudogene', 'tRNA_Pseudogene',
+                           'curated', 'history', 'history_pseudogene', 'history_transcript', 'Non_coding_transcript',
+                           'snlRNA', 'snRNA', 'rRNA', 'scRNA', 'snoRNA', 'tRNA', 'stRNA', 'ncRNA', 'miRNA',
+                           'pre_miRNA', 'miRNA_primary_transcript', 'asRNA', 'lincRNA', 'piRNA', 'circRNA', '7kncRNA'],
+        'sratti'       => ['Genomic_canonical', 'Link', 'Pseudogene', 'Transposon', 'Transposon_CDS',
+                           'Transposon_Pseudogene', 'Transposon_ncrNA', 'rRNA_Pseudogene', 'tRNA_Pseudogene',
+                           'curated', 'history', 'history_pseudogene', 'history_transcript', 'Non_coding_transcript',
+                           'snlRNA', 'snRNA', 'rRNA', 'scRNA', 'snoRNA', 'tRNA', 'stRNA', 'ncRNA', 'miRNA',
+                           'pre_miRNA', 'miRNA_primary_transcript', 'asRNA', 'lincRNA', 'piRNA', 'circRNA', '7kncRNA'],
+        'tmuris'       => ['Genomic_canonical', 'Link', 'Pseudogene', 'Transposon', 'Transposon_CDS',
+                           'Transposon_Pseudogene', 'Transposon_ncrNA', 'rRNA_Pseudogene', 'tRNA_Pseudogene',
+                           'curated', 'history', 'history_pseudogene', 'history_transcript', 'Non_coding_transcript',
+                           'snlRNA', 'snRNA', 'rRNA', 'scRNA', 'snoRNA', 'tRNA', 'stRNA', 'ncRNA', 'miRNA',
+                           'pre_miRNA', 'miRNA_primary_transcript', 'asRNA', 'lincRNA', 'piRNA', 'circRNA', '7kncRNA'],
+    },
+    'blat' => {
+        'elegans'      => ['BLAT_EST_BEST', 'BLAT_EST_OTHER', 'BLAT_NEMATODE', 'BLAT_OST_BEST', 'BLAT_OST_OTHER',
+                           'BLAT_RST_BEST', 'BLAT_RST_OTHER', 'BLAT_TC1_BEST', 'BLAT_TC1_OTHER', 'BLAT_mRNA_BEST',
+                           'BLAT_mRNA_OTHER', 'BLAT_ncRNA_BEST', 'BLAT_ncRNA_OTHER', 'BLAT_WASHU', 'BLAT_NEMBASE',
+                           'BLAT_Trinity_BEST', 'BLAT_Trinity_OTHER', 'BLAT_Nanopore_BEST', 'BLAT_Nanopore_OTHER',
+                           'SL1', 'SL2', 'polyA_signal_sequence', 'polyA_site', 'GenePairs', 'Orfeome', 'RNAi_primary',
+                           'RNAi_secondary', 'Expr_profile', 'Oligo_set_mapping', 'Oligo_set'],
+        'briggsae'     => ['BLAT_EST_BEST', 'BLAT_EST_OTHER', 'BLAT_NEMATODE', 'BLAT_mRNA_BEST', 'BLAT_mRNA_OTHER',
+                           'BLAT_WASHU', 'BLAT_NEMBASE', 'BLAT_Trinity_BEST', 'BLAT_Trinity_OTHER', 'SL1', 'SL2',
+                           'polyA_signal_sequence', 'polyA_site', 'Oligo_set_mapping'],
+        'remanei'      => ['BLAT_EST_BEST', 'BLAT_EST_OTHER', 'BLAT_NEMATODE', 'BLAT_mRNA_BEST', 'BLAT_mRNA_OTHER',
+                           'BLAT_WASHU', 'BLAT_NEMBASE', 'SL1', 'SL2', 'polyA_signal_sequence', 'polyA_site',
+                           'Oligo_set_mapping'],
+        'brenneri'     => ['BLAT_EST_BEST', 'BLAT_EST_OTHER', 'BLAT_NEMATODE', 'BLAT_mRNA_BEST', 'BLAT_mRNA_OTHER',
+                           'BLAT_WASHU', 'BLAT_NEMBASE', 'SL1', 'SL2', 'polyA_signal_sequence', 'polyA_site',
+                           'Oligo_set_mapping'],
+        'japonica'     => ['BLAT_EST_BEST', 'BLAT_EST_OTHER', 'BLAT_NEMATODE', 'BLAT_mRNA_BEST', 'BLAT_mRNA_OTHER',
+                           'BLAT_WASHU', 'BLAT_NEMBASE', 'BLAT_Trinity_BEST', 'BLAT_Trinity_OTHER', 'SL1', 'SL2',
+                           'polyA_signal_sequence', 'polyA_site', 'Oligo_set_mapping'],
+        'brugia'       => ['BLAT_EST_BEST', 'BLAT_EST_OTHER', 'BLAT_NEMATODE', 'BLAT_mRNA_BEST', 'BLAT_mRNA_OTHER',
+                           'BLAT_WASHU', 'BLAT_NEMBASE', 'BLAT_Trinity_BEST', 'BLAT_Trinity_OTHER', 'BLAT_IsoSeq_BEST',
+                           'BLAT_IsoSeq_OTHER', 'SL1', 'SL2', 'polyA_signal_sequence', 'polyA_site'],
+        'pristionchus' => ['BLAT_EST_BEST', 'BLAT_EST_OTHER', 'BLAT_NEMATODE', 'BLAT_mRNA_BEST', 'BLAT_mRNA_OTHER',
+                           'BLAT_WASHU', 'BLAT_NEMBASE', 'SL1', 'SL2', 'polyA_signal_sequence', 'polyA_site',
+                           'Oligo_set_mapping'],
+        'ovolvulus'    => ['BLAT_EST_BEST', 'BLAT_EST_OTHER', 'BLAT_NEMATODE', 'BLAT_mRNA_BEST', 'BLAT_mRNA_OTHER',
+                           'BLAT_WASHU', 'BLAT_NEMBASE', 'BLAT_Trinity_BEST', 'BLAT_Trinity_OTHER', 'SL1', 'SL2',
+                           'polyA_signal_sequence', 'polyA_site'],
+        'sratti'       => ['BLAT_EST_BEST', 'BLAT_EST_OTHER', 'BLAT_NEMATODE', 'BLAT_mRNA_BEST', 'BLAT_mRNA_OTHER',
+                           'BLAT_WASHU', 'BLAT_NEMBASE', 'SL1', 'SL2', 'polyA_signal_sequence', 'polyA_site'],
+        'tmuris'       => ['BLAT_EST_BEST', 'BLAT_EST_OTHER', 'BLAT_NEMATODE', 'BLAT_mRNA_BEST', 'BLAT_mRNA_OTHER',
+                           'BLAT_WASHU', 'BLAT_NEMBASE', 'BLAT_Trinity_BEST', 'BLAT_Trinity_OTHER', 'BLAT_IsoSeq_BEST',
+                           'BLAT_IsoSeq_OTHER', 'SL1', 'SL2', 'polyA_signal_sequence', 'polyA_site'],
+    },
+    'homol' => {
+        'elegans'      => ['waba_coding', 'waba_strong', 'waba_weak', 'tandem', 'RepeatMasker', 'wublastx', 'inverted'],
+        'briggsae'     => ['tandem', 'RepeatMasker', 'wublastx', 'inverted'],
+        'remanei'      => ['tandem', 'RepeatMasker', 'wublastx', 'inverted'],
+        'brenneri'     => ['tandem', 'RepeatMasker', 'wublastx', 'inverted'],
+        'japonica'     => ['tandem', 'RepeatMasker', 'wublastx', 'inverted'],
+        'brugia'       => ['tandem', 'RepeatMasker', 'wublastx', 'inverted'],
+        'pristionchus' => ['tandem', 'RepeatMasker', 'wublastx', 'inverted'],
+        'ovolvulus'    => ['tandem', 'RepeatMasker', 'wublastx', 'inverted'],
+        'sratti'       => ['tandem', 'RepeatMasker', 'wublastx', 'inverted'],
+        'tmuris'       => ['tandem', 'RepeatMasker', 'wublastx', 'inverted'],
+    },
+    'variation' => {
+        'elegans'      => ['Allele', 'CGH_allele', 'Deletion_allele', 'Deletion_and_insertion_allele',
+                           'Insertion_allele', 'KO_consortium_allele', 'Million_mutation', 'Mos_insertion',
+                           'NBP_knockout_allele', 'NemaGENETAG_consortium_allele', 'SNP', 'SNP_Swan',
+                           'SNP_Wicks', 'Substitution_allele', 'Transposon_insertion', 'WGS_Andersen',
+                           'WGS_De_Bono', 'WGS_Hawaiian_Waterston', 'WGS_Hobert', 'WGS_Jarriault',
+                           'WGS_McGrath', 'WGS_Pasadena_Quinlan', 'WGS_Stein', 'WGS_Yanai'],
+        'briggsae'     => [],
+        'remanei'      => [],
+        'brenneri'     => [],
+        'japonica'     => [],
+        'brugia'       => [],
+        'pristionchus' => [],
+        'ovolvulus'    => [],
+        'sratti'       => [],
+        'tmuris'       => [],
+    },
+);
 
 =head2 make_build_tester()
 
@@ -59,23 +175,31 @@ const my @NON_ELEGANS_CORE_SPECIES => ('Caenorhabditis briggsae', 'Caenorhabditi
 sub make_build_tester {
     my ($class, $wormbase, $log, $prev_release) = @_;
 
-    # Previous release can be specified as WS release no (with/without WS prefix), or full database path
-    # If not passed in the arguments, the environmental variable PREVREL wil be used if set
+    # Previous release can be specified as WS release no (with/without WS prefix), or full database path.
+    # If not passed in the arguments, the environmental variable PREVREL wil be used if set.
+    # Failing that, the release previous to the Wormbase object version will be used (or the latest release
+    # if the Wormbase object is connected to a test database).
     if (defined $prev_release) {
 	$prev_release = 'WS' . $prev_release if $prev_release =~ /^\d+$/;
 	$prev_release = '/nfs/production/panda/ensemblgenomes/wormbase/DATABASES/' . $prev_release 
 	    if $prev_release =~ /^WS\d+$/;
     }
-    else {
+    elsif (defined $ENV{'PREVREL'}) {
 	$prev_release = $ENV{'PREVREL'};
+    }
+    elsif ($wormbase->test) {
+	$prev_release = '/nfs/production/panda/ensemblgenomes/wormbase/DATABASES/' . $wormbase->database('current');
+    }
+    else {
+	$prev_release = $wormbase->get_wormbase_version - 1;
+	$prev_release = '/nfs/production/panda/ensemblgenomes/wormbase/DATABASES/WS' . $prev_release;
     }
 
     my $self = {};
     $self->{'wormbase'} = $wormbase;
     $self->{'previous_wormbase'} = Wormbase->new(
 	-autoace => $prev_release,
-	-debug   => $wormbase->debug,
-	-test    => $wormbase->test
+	-debug   => $wormbase->debug
 	);
     
     $self->{'log'} = $log;
@@ -181,11 +305,47 @@ sub cache_size_sufficient {
 	}
 	last;
     }
+    $cache_def_fh->close;
 
     return;
 }
 
 
+=head2 create_est_dat_files_if_required
+
+    Function: checks for the presence of EST files in the COMMON_DATA folder, and creates them if
+              not present (after checking there are really no features in the database)
+    Args:     n/a
+    Returns:  n/a
+
+=cut
+
+sub create_est_dat_files_if_required {
+    my $self = shift;
+
+    for my $filename ('est2feature.dat', 'estorientation.dat') {
+	if (-e $self->{'wormbase'}->common_data . '/' . $filename) {
+	    $self->{'log'}->write_to("$filename present, no further action required\n");
+	}
+	else {
+	    my $def_type = $filename eq 'est2feature.dat' ? 'Feature' : 'data';
+	    my $def_filepath = $self->{'wormbase'}->autoace . "/wquery/CommonData:EST_${def_type}.def";
+	    if ($self->_tablemaker_query_returns_results($def_filepath)) {
+		$self->{'log'}->log_and_die("$filename not present but EST features found in database - not creating dummy file\n");
+	    }
+	    else {
+		my $est_fh = file($self->{'wormbase'}->common_data . '/' . $filename)->openw;
+		$est_fh->print('$VAR1 = {};');
+		$est_fh->close;
+		$self->{'log'}->write_to("$filename not found and no EST features found in database, dummy file created\n");
+	    }  
+	} 
+    }	
+
+    return;
+}
+
+	
 =head2 dbxref_report_correctly_formatted
 
     Function: checks that the DB Xrefs report is present and has the correct number of columns
@@ -210,6 +370,7 @@ sub dbxref_report_correctly_formatted {
 				    " does not have the required number of columns:\n$_\n")
 	    unless $NR_DBXREF_REPORT_COLUMNS == @columns;
     }
+    $report_fh->close;
 
     $self->{'log'}->write_to('All lines in ' . $report_file->basename .
 			     " have the required number of columns\n");
@@ -507,9 +668,7 @@ sub species_merge_successful {
 =cut
 
 sub split_gffs_present {
-    my ($self, $expected_nr) = @_;
-
-    my $filenames = _folder_contains_files($self->{'wormbase'}->gff_splits);
+    my ($self, $stage) = @_;
 
     my @prefixes;
     if ($self->{'wormbase'}->species eq 'elegans') {
@@ -522,15 +681,11 @@ sub split_gffs_present {
     }
 
     for my $prefix (@prefixes) {
-	my $nr_gff_files = $self->_nr_files_with_prefix_or_suffix($filenames, $prefix, '.gff');
-	if ($nr_gff_files != $expected_nr) {
-	    my $msg = "Was expecting $expected_nr GFF files ";
-	    $msg .= "with prefix $prefix " if defined $prefix;
-	    $msg .= "but found $nr_gff_files"; 
-	    $self->{'log'}->log_and_die("$msg\n");
+	for my $gff_type (@{$GFF_FILES_EXPECTED{$stage}{$self->{'wormbase'}->species}}) {
+	    $self->_file_exists($self->{'wormbase'}->gff_splits . "/${prefix}${gff_type}.gff");
 	}
     }
-    $self->{'log'}->write_to("Found the expected number of GFF files\n");
+    $self->{'log'}->write_to("Found all expected GFF files\n");
  
     return;
 }
@@ -591,6 +746,8 @@ sub uniprot_ids_in_wormpep {
 	    $seq_count++;
 	    $uniprot_acc_count++ if $_ =~ /uniprot=/;
 	}
+	$fh->close;
+
 	if ($uniprot_acc_count == 0) {
 	    $self->{'log'}->log_and_die($file->basename . " does not contain Uniprot IDs\n");
 	}
@@ -633,7 +790,6 @@ sub _expected_seq_region_count {
 	$seq_region_count++ if $_ =~ /^##sequence-region/;
     }
     $gff_fh->close;
-
 	
     if ($seq_region_count != $seq_regions_in_db) {
 	$self->{'log'}->log_and_die("Was expecting $seq_regions_in_db sequence regions in " .
@@ -764,6 +920,27 @@ sub _previous_release_non_elegans_genes {
     }
 
     return \%non_elegans_genes;
+}
+
+
+sub _tablemaker_query_returns_results {
+    my ($self, $def_filepath) = @_;
+
+    my $tace = $self->{'wormbase'}->tace;
+    my $ace_dir = $self->{'wormbase'}->autoace;
+    my $command="Table-maker -p ${def_filepath}\nquit\n";
+
+    my $returns_results = 0;
+    open (TACE, "echo '$command' | $tace $ace_dir |");
+    while (<TACE>) {
+	chomp;
+	next if $_ eq '';
+	$returns_results = 1;
+	last;
+    }
+    close(TACE);
+
+    return $returns_results;
 }
 
 
