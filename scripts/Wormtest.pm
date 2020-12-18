@@ -220,7 +220,8 @@ sub make_build_tester {
 
 =head2 blat_files_present()
     
-    Function: checks for presence of of BLAT results files corresponding to all shattered masked sequence files
+    Function: checks for presence of of BLAT results files corresponding to all shattered
+              masked sequence files
     Args:     n/a
     Returns:  n/a
     
@@ -229,13 +230,15 @@ sub make_build_tester {
 sub blat_files_present {
     my $self = shift;
     
-    my $blat_filenames = $self->_folder_contains_files($self->{'wormbase'}->blat);
+    my ($blat_filenames, $errors);
+    ($blat_filenames, $errors) = $self->_folder_contains_files($self->{'wormbase'}->blat, $errors);
     my %blat_files_present = map {$_ => 1} @$blat_filenames;
-    
-    
+        
     my %masked_files_found;
     for my $species (keys %MOL_TYPES) {
-	my $seq_filenames = $self->_folder_contains_files($self->{'wormbase'}->basedir . "/cDNA/$species");
+	my $seq_filenames;
+	($seq_filenames, $errors) = $self->_folder_contains_files($self->{'wormbase'}->basedir .
+								  "/cDNA/$species", $errors);
 	for my $seq_filename (@$seq_filenames) {
 	    next unless $seq_filename =~ /^(.+)\.masked_(\d+)/;
 	    $masked_files_found{$species}{$1}{$2} = 1;
@@ -247,14 +250,16 @@ sub blat_files_present {
 	for my $mol_type (keys %{$masked_files_found{$species}}) {
 	    for my $shattered_file_nr (keys %{$masked_files_found{$species}{$mol_type}}) {
 		my $expected_blat_file = "${species}_${mol_type}_${shattered_file_nr}.psl";
-		$self->{'log'}->log_and_die("$expected_blat_file not found\n")
-		    unless exists $blat_files_present{$expected_blat_file};
+		unless (exists $blat_files_present{$expected_blat_file}) {
+		    $self->{'log'}->write_to("ERROR: $expected_blat_file not found\n");
+		    $errors++;
+		}
 	    }
 	}
     }
-    $self->{'log'}->write_to("All expected BLAT output files found\n");
+    $self->{'log'}->write_to("All expected BLAT output files found\n") unless $errors;
     
-    return;
+    return $errors;
 }
 
 
@@ -269,25 +274,31 @@ sub blat_files_present {
 sub build_folder_contents_present {
     my $self = shift;
     
-    my ($filenames, $subdirnames) = $self->_folder_contents($self->{'wormbase'}->autoace);
+    my ($filenames, $subdirnames, $errors);
+    ($filenames, $subdirnames, $errors) = $self->_folder_contents($self->{'wormbase'}->autoace,
+								  $errors);
     my %files_present = map {$_ => 1} @$filenames;
     my %subdirs_present = map {$_ => 1} @$subdirnames;
     for my $build_file ('runlog', 'Elegans.store') {
 	if (!exists $files_present{$build_file}) {
-	    $self->{'log'}->log_and_die("$build_file not present in " . $self->{'wormbase'}->autoace . "\n");
+	    $self->{'log'}->write_to("ERROR: $build_file not present in " .
+				     $self->{'wormbase'}->autoace . "\n");
+	    $errors++;
 	}
     }
-    for my $build_subdir ('acefiles', 'BLAT', 'CHECKS', 'CHROMOSOMES', 'COMMON_DATA', 'database', 'GFF_SPLITS',
-			  'logs', 'MISC_OUTPUT', 'ONTOLOGY', 'release', 'REPORTS', 'SEQUENCES', 'SPELL', 'TMP',
-			  'TRANSCRIPTS', 'wgf', 'wquery', 'wspec') {  
+    for my $build_subdir ('acefiles', 'BLAT', 'CHECKS', 'CHROMOSOMES', 'COMMON_DATA', 'database',
+			  'GFF_SPLITS', 'logs', 'MISC_OUTPUT', 'ONTOLOGY', 'release', 'REPORTS',
+			  'SEQUENCES', 'SPELL', 'TMP', 'TRANSCRIPTS', 'wgf', 'wquery', 'wspec') {  
 	if (!exists $subdirs_present{$build_subdir}) {
-	    $self->{'log'}->log_and_die("$build_subdir directory not present in " .
-					$self->{'wormbase'}->autoace . "\n");
+	    $self->{'log'}->write_to("ERROR: $build_subdir directory not present in " .
+				     $self->{'wormbase'}->autoace . "\n");
+	    $errors++;
 	}
     }
-    $self->{'log'}->write_to('All expected files and subdirs present in ' . $self->{'wormbase'}->autoace . "\n");
+    $self->{'log'}->write_to('All expected files and subdirs present in ' .
+			     $self->{'wormbase'}->autoace . "\n") unless $errors;
     
-    return;
+    return $errors;
 }
 
 
@@ -301,17 +312,19 @@ sub build_folder_contents_present {
 
 sub cache_size_sufficient {
     my $self = shift;
+    my $errors;
     
     unless ($self->{'wormbase'}->species eq 'briggsae') {
 	$self->{'log'}->write_to("This check is not required for species other than briggsae\n");
-	return;
+	return $errors;
     }
     
     my $cache_def_fh = file($self->{'wormbase'}->autoace . '/wspec/cachesize.wrm')->openr;
     while (my $line = $cache_def_fh->getline) {
 	next unless $line =~ /^CACHE2\s=\s(\d+)\s/;
 	if ($1 < $MIN_BRIGGSAE_CACHE2_SIZE) {
-	    $self->{'log'}->log_and_die("Cache2 size is set as $1 - the minimum recommended size is $MIN_BRIGGSAE_CACHE2_SIZE\n");
+	    $self->{'log'}->write_to("ERROR: Cache2 size is set as $1 - the minimum recommended size is $MIN_BRIGGSAE_CACHE2_SIZE\n");
+	    $errors++;
 	}
 	else {
 	    $self->{'log'}->write_to("Cache2 size of $1 is sufficient\n");
@@ -320,7 +333,7 @@ sub cache_size_sufficient {
     }
     $cache_def_fh->close;
     
-    return;
+    return $errors;
 }
 
 
@@ -335,6 +348,7 @@ sub cache_size_sufficient {
 
 sub create_est_dat_files_if_required {
     my $self = shift;
+    my $errors;
 
     for my $filename ('est2feature.dat', 'estorientation.dat') {
 	if (-e $self->{'wormbase'}->common_data . '/' . $filename) {
@@ -342,20 +356,24 @@ sub create_est_dat_files_if_required {
 	}
 	else {
 	    my $def_type = $filename eq 'est2feature.dat' ? 'Feature' : 'data';
-	    my $def_filepath = $self->{'wormbase'}->autoace . "/wquery/CommonData:EST_${def_type}.def";
+	    my $def_filepath = $self->{'wormbase'}->autoace .
+		"/wquery/CommonData:EST_${def_type}.def";
 	    if ($self->_tablemaker_query_returns_results($def_filepath)) {
-		$self->{'log'}->log_and_die("$filename not present but EST features found in database - not creating dummy file\n");
+		$self->{'log'}->write_to("ERROR: $filename not present but EST features found in " .
+					 "database - not creating dummy file\n");
+		$errors++;
 	    }
 	    else {
 		my $est_fh = file($self->{'wormbase'}->common_data . '/' . $filename)->openw;
 		$est_fh->print('$VAR1 = {};');
 		$est_fh->close;
-		$self->{'log'}->write_to("$filename not found and no EST features found in database, dummy file created\n");
+		$self->{'log'}->write_to("$filename not found and no EST features found in " .
+					 "database, dummy file created\n");
 	    }  
 	} 
     }	
 
-    return;
+    return $errors;
 }
 
 	
@@ -369,26 +387,28 @@ sub create_est_dat_files_if_required {
 
 sub dbxref_report_correctly_formatted {
     my $self = shift;
-
+    my $errors;
+    
     my $report_file = file($self->{'wormbase'}->reports . '/' . $self->{'wormbase'}->species .
 	'.dbxrefs.txt');
-
-    $self->_file_exists($report_file->stringify);
+    $errors = $self->_file_exists($report_file->stringify, $errors);
 
     my $report_fh = $report_file->openr;
     while (my $line = $report_fh->getline) {
 	next if $line =~ /^\/\//;
 	my @columns = split("\t", $line);
-	$self->{'log'}->log_and_die('The following line in ' . $report_file->basename . 
-				    " does not have the required number of columns:\n$line\n")
-	    unless $NR_DBXREF_REPORT_COLUMNS == @columns;
+	unless ($NR_DBXREF_REPORT_COLUMNS == @columns) {
+	    $self->{'log'}->write_to('ERROR: The following line in ' . $report_file->basename . 
+				     " does not have the required number of columns:\n$line\n");
+	    $errors++;
+	}
     }
     $report_fh->close;
 
     $self->{'log'}->write_to('All lines in ' . $report_file->basename .
-			     " have the required number of columns\n");
+			     " have the required number of columns\n") unless $errors;
 
-    return;
+    return $errors;
 }
 
 
@@ -402,6 +422,7 @@ sub dbxref_report_correctly_formatted {
   
 sub dna_files_have_headers {
     my $self = shift;
+    my $errors;
 
     my $chr_dir = dir($self->{'wormbase'}->chromosomes);
     my $chr_count = 0;
@@ -416,13 +437,16 @@ sub dna_files_have_headers {
 	    last;
 	}
 	$dna_fh->close;
-	$self->{'log'}->log_and_die("Header line not present for $dna_file\n$first_line\n")
-	    unless $first_line =~ /^>.+/;
+	unless ($first_line =~ /^>.+/) {
+	    $self->{'log'}->write_to("ERROR: Header line not present for $dna_file\n$first_line\n");
+	    $errors++;
+	}
     }
     
-    $self->{'log'}->write_to("$chr_count chromosome files found, all with headers present\n");
+    $self->{'log'}->write_to("$chr_count chromosome files found, all with headers present\n")
+	unless $errors;
 
-    return;
+    return $errors;
 }
 
 
@@ -436,6 +460,7 @@ sub dna_files_have_headers {
   
 sub elegans_loaded_first {
     my $self = shift;
+    my $errors;
 
     if ($self->{'wormbase'}->species eq 'elegans') {
 	$self->{'log'}->write_to("This check is not necessary for elegans\n");
@@ -446,10 +471,11 @@ sub elegans_loaded_first {
 	$self->{'log'}->write_to('Elegans primary database loaded before ' . $self->{'wormbase'}->species . "\n");
     }
     else {
-	$self->{'log'}->log_and_die($self->{'wormbase'}->species . " primary database must be loaded after C. elegans\n");
+	$self->{'log'}->write_to('ERROR:' . $self->{'wormbase'}->species .
+				 " primary database must be loaded after C. elegans\n");
     }
     
-    return;
+    return $errors;
 }
 
 
@@ -463,8 +489,8 @@ sub elegans_loaded_first {
 
 sub final_gff_dumps_present {
     my $self = shift;
-
-
+    my $errors;
+    
     my $gff_dir = $self->{'wormbase'}->species eq 'elegans' ? $self->{'wormbase'}->chromosomes :
 	$self->{'wormbase'}->sequences;
 
@@ -476,7 +502,7 @@ sub final_gff_dumps_present {
 	}
     }
     else {
-	$contigs_in_db = $self->_nr_contigs;
+	($contigs_in_db, $errors) = $self->_nr_contigs($errors);
 	push @gff_filestems, $gff_dir . '/' . $self->{'wormbase'}->species;
     }
 
@@ -484,12 +510,12 @@ sub final_gff_dumps_present {
 	for my $gff_filestem (@gff_filestems) {
 	    my $gff_file = file($gff_filestem . $suffix);
 	    $self->_file_exists($gff_file);
-	    $self->_expected_seq_region_count($contigs_in_db, $gff_file)
+	    $errors = $self->_expected_seq_region_count($contigs_in_db, $gff_file, $errors)
 		unless $self->{'wormbase'}->species eq 'elegans';
 	}
     }
 
-    $self->{'log'}->write_to('Final GFF dumps present');
+    $self->{'log'}->write_to('Final GFF dumps present') unless $errors;
 
     return;
 }
@@ -505,8 +531,10 @@ sub final_gff_dumps_present {
 
 sub homology_data_loaded {
     my $self = shift;
+    my $errors;
 
-    my $db = Ace->connect(-path => $self->{'wormbase'}->autoace, -program => $self->{'wormbase'}->tace) or 
+    my $db = Ace->connect(-path => $self->{'wormbase'}->autoace,
+			  -program => $self->{'wormbase'}->tace) or 
 	die ('Connection failure: ' . Ace->error);
 
     my $seq_count = 0;
@@ -524,17 +552,20 @@ sub homology_data_loaded {
     }
     
     my $percent_with_homol = ($seq_with_homol_data / $seq_count) * 100;
-    my $min_percent_with_homol = $self->{'wormbase'}->species eq 'elegans' ? 100 : $MIN_PERCENT_SEQS_WITH_HOMOLOGY_DATA;
+    my $min_percent_with_homol = $self->{'wormbase'}->species eq 'elegans' ? 100 :
+	$MIN_PERCENT_SEQS_WITH_HOMOLOGY_DATA;
     if ($percent_with_homol < $min_percent_with_homol) {
-	$self->{'log'}->log_and_die("Only $seq_with_homol_data of $seq_count sequence objects associated with the " .
-				    $CORE_SPECIES{$self->{'wormbase'}->species} . " sequence collection object have " .
-				    "homology data, which is less than the cutoff of ${min_percent_with_homol}\%\n");
+	$self->{'log'}->write_to(
+	    "ERROR: Only $seq_with_homol_data of $seq_count sequence objects associated with the " .
+	    $CORE_SPECIES{$self->{'wormbase'}->species} . " sequence collection object have " .
+	    "homology data, which is less than the cutoff of ${min_percent_with_homol}\%\n");
+	$errors++;
     }
     else {
 	$self->{'log'}->write_to("Homology data has been loaded successfully\n");
     }
 
-    return;
+    return $errors;
 }
 
 
@@ -548,19 +579,25 @@ sub homology_data_loaded {
     
 sub masked_files_present {
     my $self = shift;
+    my $errors;
     
     for my $species (keys %MOL_TYPES) {
-	my $filenames = $self->_folder_contains_files($self->{'wormbase'}->basedir . "/cDNA/$species");
+	my $filenames;
+	($filenames, $errors) = $self->_folder_contains_files($self->{'wormbase'}->basedir .
+							      "/cDNA/$species", $errors);
 	my %files_present = map {$_ => 1} @$filenames;
 	for my $mol_type (@{$MOL_TYPES{$species}}) {
-	    $self->{'log'}->log_and_die("Masked $mol_type files not found for $species\n")
-		unless exists $files_present{$mol_type . '.masked'} or
-		exists $files_present{$mol_type . '.masked_1'};
+	    unless (exists $files_present{$mol_type . '.masked'} or
+		    exists $files_present{$mol_type . '.masked_1'}) {
+		$self->{'log'}->write_to("ERROR: Masked $mol_type files not found for $species\n");
+		$errors++;
+	    }
 	}
     }
-    $self->{'log'}->write_to("Masked files present for all expected molecule types for all species\n");
+    $self->{'log'}->write_to("Masked files present for all expected molecule types for all " .
+			     "species\n") unless $errors;
     
-    return;
+    return $errors;
 }
 
 
@@ -574,15 +611,19 @@ sub masked_files_present {
 
 sub primary_seq_dumps_present {
     my $self = shift;
+    my ($errors, $filenames);
     
-    my $filenames = $self->_folder_contains_files($self->{'wormbase'}->cdna_dir);
+    ($filenames, $errors) = $self->_folder_contains_files($self->{'wormbase'}->cdna_dir, $errors);
     my %files_present = map {$_ => 1} @$filenames;
     for my $mol_type (@{$MOL_TYPES{$self->{'wormbase'}->species}}) {
-	$self->{'log'}->log_and_die("$mol_type cDNA dump not present\n") unless exists $files_present{$mol_type};
+	unless (exists $files_present{$mol_type}) {
+	    $self->{'log'}->write_to("ERROR: $mol_type cDNA dump not present\n");
+	    $errors++;
+	}
     }
-    $self->{'log'}->write_to("cDNA dumps for all expected molecule types present\n");
+    $self->{'log'}->write_to("cDNA dumps for all expected molecule types present\n") unless $errors;
     
-    return;
+    return $errors;
 }
 
 
@@ -596,6 +637,7 @@ sub primary_seq_dumps_present {
   
 sub recent_citace_dump {
     my $self = shift;
+    my $errors;
     
     my $dump_dir = dir($self->{'wormbase'}->ftp_upload . '/citace');
     my $most_recent_file;
@@ -608,21 +650,24 @@ sub recent_citace_dump {
     }
     
     if ($most_recent_time == 0) {
-	$self->{'log'}->log_and_die("No citace dump file found in " . $dump_dir->stringify . "\n");
+	$self->{'log'}->write_to("ERROR: No citace dump file found in " . $dump_dir->stringify .
+				 "\n");
+	$errors++;
+	return $errors;
     } 
     
     if ((time() - $most_recent_time) < ($MAX_DAYS_SINCE_CITACE_DUMP * 86400)) {
-	$self->{'log'}->write_to('Latest citace dump ' . $most_recent_file . 
-				 ' last modified @ ' . localtime($most_recent_time) .
-				 "\n");				 
+	$self->{'log'}->write_to('Latest citace dump ' . $most_recent_file . ' last modified @ ' .
+				 localtime($most_recent_time) . "\n");				 
     }
     else {
-	$self->{'log'}->log_and_die('Latest citace dump ' . $most_recent_file . 
-				    " last modified more than $MAX_DAYS_SINCE_CITACE_DUMP days ago (" .
-				    localtime($most_recent_time) . ")\n");
+	$self->{'log'}->write_to('ERROR: Latest citace dump ' . $most_recent_file . 
+				 " last modified more than $MAX_DAYS_SINCE_CITACE_DUMP days ago (" .
+				 localtime($most_recent_time) . ")\n");
+	$errors++;
     }
     
-    return;
+    return $errors;
 }
 
 
@@ -636,7 +681,8 @@ sub recent_citace_dump {
   
 sub recent_genace_dump {
     my $self = shift;
-    
+    my $errors;
+
     my $db_file = $self->{'wormbase'}->primary('geneace') . '/database/ACEDB.wrm';
     my $geneace_last_mod = (stat($db_file))[9];
     if ((time() - $geneace_last_mod) < ($MAX_DAYS_SINCE_GENEACE_COPY * 86400)) {
@@ -644,11 +690,12 @@ sub recent_genace_dump {
 				 localtime($geneace_last_mod) . "\n");
     }
     else {
-	$self->{'log'}->log_and_die("Geneace dumped more than $MAX_DAYS_SINCE_GENEACE_COPY days ago: " .
-				    localtime($geneace_last_mod) . "\n");
+	$self->{'log'}->write_to("ERROR: Geneace dumped more than $MAX_DAYS_SINCE_GENEACE_COPY " .
+				 "days ago: " . localtime($geneace_last_mod) . "\n");
+	$errors++;
     }
     
-    return;
+    return $errors;
 }
 
 
@@ -663,7 +710,8 @@ sub recent_genace_dump {
 
 sub species_merge_successful {
     my $self = shift;
-    
+    my $errors;
+
     my $non_elegans_genes = $self->_previous_release_non_elegans_genes;
     
     my $db = Ace->connect(-path => $self->{'wormbase'}->autoace,
@@ -677,17 +725,20 @@ sub species_merge_successful {
 	    $species_gene_count++ if defined $gene;
 	}
 	my $percent_found = ($species_gene_count / scalar @{$non_elegans_genes->{$species}}) * 100;
-	$self->{'log'}->log_and_die(
-	    "Less than ${MIN_PERCENT_NON_ELEGANS_GENES}\% of $species genes selected from " .
-	    $self->{'previous_wormbase'}->get_wormbase_version_name . ' (' .
-	    join('|', @{$non_elegans_genes->{$species}}) . ") found in merged database\n"
-	    ) if $percent_found < $MIN_PERCENT_NON_ELEGANS_GENES;
+	if ($percent_found < $MIN_PERCENT_NON_ELEGANS_GENES) {
+	    $self->{'log'}->write_to(
+		"ERROR: Less than ${MIN_PERCENT_NON_ELEGANS_GENES}\% of $species genes selected " .
+		'from ' .$self->{'previous_wormbase'}->get_wormbase_version_name . ' (' .
+		join('|', @{$non_elegans_genes->{$species}}) . ") found in merged database\n");
+	    $errors++;
+	}
     }
-    $self->{'log'}->write_to("Presence of non-elegans genes suggests successful database merge\n");
+    $self->{'log'}->write_to("Presence of non-elegans genes suggests successful database merge\n")
+	unless $errors;
     
-    return;
+    return $errors;
 }
-
+    
 
 =head2 split_gffs_present()
     
@@ -699,6 +750,7 @@ sub species_merge_successful {
 
 sub split_gffs_present {
     my ($self, $stage) = @_;
+    my $errors;
     
     my @prefixes;
     if ($self->{'wormbase'}->species eq 'elegans') {
@@ -712,12 +764,13 @@ sub split_gffs_present {
     
     for my $prefix (@prefixes) {
 	for my $gff_type (@{$GFF_FILES_EXPECTED{$stage}{$self->{'wormbase'}->species}}) {
-	    $self->_file_exists($self->{'wormbase'}->gff_splits . "/${prefix}${gff_type}.gff");
+	    $errors = $self->_file_exists($self->{'wormbase'}->gff_splits . 
+					  "/${prefix}${gff_type}.gff", $errors);
 	}
     }
-    $self->{'log'}->write_to("Found all expected GFF files\n");
+    $self->{'log'}->write_to("Found all expected GFF files\n") unless $errors;
     
-    return;
+    return $errors;
 }
 
 
@@ -733,19 +786,21 @@ sub split_gffs_present {
 
 sub tier2_contigs_dumped {
     my ($self, $stage) = @_;
+    my ($contigs_in_db, $errors);
     
-    return if $self->{'wormbase'}->species eq 'elegans';
+    return $errors if $self->{'wormbase'}->species eq 'elegans';
     
-    my $contigs_in_db = $self->_nr_contigs;
+    ($contigs_in_db, $errors) = $self->_nr_contigs($errors);
     
     for my $gff_type (@{$GFF_FILES_EXPECTED{$stage}{$self->{'wormbase'}->species}}) {
 	my $gff_file = file($self->{'wormbase'}->gff_splits . "/${gff_type}.gff");
-	my $contig_count = $self->_expected_seq_region_count($contigs_in_db, $gff_file);
+	my $errors = $self->_expected_seq_region_count($contigs_in_db, $gff_file);
     }
     
-    $self->{'log'}->write_to("The expected number of contigs were found in all GFF files\n");
+    $self->{'log'}->write_to("The expected number of contigs were found in all GFF files\n")
+	unless $errors;
     
-    return;
+    return $errors;
 }
 
 
@@ -759,6 +814,7 @@ sub tier2_contigs_dumped {
 
 sub uniprot_ids_in_wormpep {
     my $self = shift;
+    my $errors;
     
     my $wp_file = file($self->{'wormbase'}->wormpep . '/' . $self->{'wormbase'}->pepdir_prefix .
 		       'pep' . $self->{'wormbase'}->get_wormbase_version);
@@ -777,15 +833,16 @@ sub uniprot_ids_in_wormpep {
 	$fh->close;
 	
 	if ($uniprot_acc_count == 0) {
-	    $self->{'log'}->log_and_die($file->basename . " does not contain Uniprot IDs\n");
+	    $self->{'log'}->write_to('ERROR: ' . $file->basename . " doesn't contain Uniprot IDs\n");
+	    $errors++;
 	}
 	else {
-	    $self->{'log'}->write_to($file->basename .
-				     " has Uniprot IDs for $uniprot_acc_count of $seq_count sequences\n");
+	    $self->{'log'}->write_to($file->basename . " has Uniprot IDs for $uniprot_acc_count " .
+				     "of $seq_count sequences\n");
 	}
     }
     
-    return;
+    return $errors;
 }
 
 
@@ -799,18 +856,19 @@ sub uniprot_ids_in_wormpep {
 
 sub vep_output_present {
     my $self = shift;
+    my $errors;
     
     my $vep_ace_file = $self->{'wormbase'}->acefiles . '/mapped_alleles.' .
 	$self->{'wormbase'}->get_wormbase_version_name . '.ace';
     
-    $self->_file_exists($vep_ace_file);
+    $errors = $self->_file_exists($vep_ace_file, $errors);
     
     return;
 }
 
 
 sub _expected_seq_region_count {
-    my ($self, $seq_regions_in_db, $gff_file) = @_;
+    my ($self, $seq_regions_in_db, $gff_file, $errors) = @_;
     
     my $seq_region_count = 0;
     my $gff_fh = $gff_file->openr;
@@ -820,39 +878,45 @@ sub _expected_seq_region_count {
     $gff_fh->close;
     
     if ($seq_region_count != $seq_regions_in_db) {
-	$self->{'log'}->log_and_die("Was expecting $seq_regions_in_db sequence regions in " .
-				    $gff_file->stringify . ", but found $seq_region_count\n");
+	$self->{'log'}->write_to("ERROR: Was expecting $seq_regions_in_db sequence regions in " .
+				 $gff_file->stringify . ", but found $seq_region_count\n");
+	$errors++;
     }
     else {
 	$self->{'log'}->write_to("$seq_regions_in_db sequence regions found in " .
 				 $gff_file->stringify . ", as expected\n");
     }
     
-    return;
+    return $errors;
 }
 
 
 sub _file_exists {
-    my ($self, $filepath) = @_;
+    my ($self, $filepath, $errors) = @_;
     
     if (-e $filepath) {
 	$self->{'log'}->write_to("$filepath exists\n");
     }
     else {
-	$self->{'log'}->log_and_die("$filepath does not exist\n");
+	$self->{'log'}->write_to("$filepath does not exist\n");
+	$errors++;
     }
     
-    return;
+    return $errors;
 }
 
 
 sub _folder_contents {
-    my ($self, $dirpath) = @_;
+    my ($self, $dirpath, $errors) = @_;
     
-    $self->{'log'}->log_and_die("$dirpath does not exist") unless -d $dirpath;
+    my (@filenames, @subdirnames);
+    unless (-d $dirpath) {
+	$self->{'log'}->write_to("ERROR: $dirpath does not exist\n");
+	$errors++;
+	return (\@filenames, \@subdirnames, $errors);
+    }
     
     my $dir = dir($dirpath);
-    my (@filenames, @subdirnames);
     while (my $file_or_subdir = $dir->next) {
 	if (-f $file_or_subdir) {
 	    push @filenames, $file_or_subdir->basename;
@@ -862,43 +926,45 @@ sub _folder_contents {
 	}
     }
     
-    return (\@filenames, \@subdirnames);
+    return (\@filenames, \@subdirnames, $errors);
 }
 
 
 sub _folder_contains_files {
-    my ($self, $dirpath) = @_;
+    my ($self, $dirpath, $errors) = @_;
     
-    my ($filenames, $subdirnames) = $self->_folder_contents($dirpath);
+    my ($filenames, $subdirnames, $errors) = $self->_folder_contents($dirpath, $errors);
     if (@$filenames) {
 	$self->{'log'}->write_to("$dirpath contains files: " . 
 				 join(', ', @$filenames) . "\n");
     }
     else {
-	$self->{'log'}->log_and_die("$dirpath is empty\n");
+	$self->{'log'}->write_to("ERROR: $dirpath does not contain any files\n");
+	$errors++;
     }
     
-    return $filenames;
+    return ($filenames, $errors);
 }
 
 
 sub _folder_contains_subdirs {
-    my ($self, $dirpath) = @_;
+    my ($self, $dirpath, $errors) = @_;
     
-    my ($filenames, $subdirnames) = $self->_folder_contents($dirpath);
+    my ($filenames, $subdirnames, $errors) = $self->_folder_contents($dirpath, $errors);
     if (@$subdirnames) {
 	$self->{'log'}->write_to("$dirpath contains files: " . 
 				 join(', ', @$subdirnames) . "\n");
     }
     else {
-	$self->{'log'}->log_and_die("$dirpath is empty\n");
+	$self->{'log'}->write_to("ERROR: $dirpath does not contain any subdirectories\n");
+	$errors++;
     }
     
-    return $subdirnames;
+    return ($subdirnames, $errors);
 }
 
 sub _nr_contigs {
-    my $self = shift;
+    my ($self, $errors) = @_;
     
     my $db = Ace->connect(-path => $self->{'wormbase'}->autoace,
 			  -program => $self->{'wormbase'}->tace) or 
@@ -913,9 +979,12 @@ sub _nr_contigs {
 	$nr_sequences = scalar @sequences;
     }
     
-    $self->{'log'}->log_and_die("More than one Live Sequence_collection object\n") if $collection_count > 1;
+    if ($collection_count > 1) {
+	$self->{'log'}->write_to("ERROR: More than one Live Sequence_collection object\n");
+	$errors++;
+    }
     
-    return $nr_sequences;
+    return ($nr_sequences, $errors);
 }
 
 
