@@ -412,6 +412,45 @@ sub dbxref_report_correctly_formatted {
 }
 
 
+=head2 dna_composition_unchanged()
+
+    Function: checks that the DNA composition has not changed since the previous release (elegans only)
+    Args:     n/a
+    Returns:  n/a
+
+=cut
+
+sub dna_composition_unchanged {
+    my $self = shift;
+    my $errors;
+
+    unless ($self->{'wormbase'}->species eq 'elegans') {
+	$self->{'log'}->('Comparison of DNA composition between releases for non-elegans species is ' .
+			 "not currently implemented\n");
+	return $errors;
+    }
+
+    my $current_composition = $self->_parse_dna_composition_file($self->{'wormbase'}->chromosomes .
+							  '/composition.all');
+    my $previous_composition = $self->_parse_dna_composition_file($self->{'previous_wormbase'}->chromosomes .
+							   '/composition.all');
+    for my $base ('total', 'a', 'c', 'g', 't', '-', 'n') {
+	unless ($current_composition->{$base} == $previous_composition->{$base}) {
+	    $self->{'log'}->write_to("Mismatch between $base base counts of " .
+				     $self->{'wormbase'}->get_wormbase_version_name . ' and ' . 
+				     $self->{'previous_wormbase'}->get_wormbase_version_name . "\n");
+	    $errors++;
+	}
+    }
+
+    $self->{'log'}->write_to('DNA composition of ' . $self->{'wormbase'}->get_wormbase_version_name .
+			     ' matches ' . $self->{'previous_wormbase'}->get_wormbase_version_name . 
+			     "\n") unless $errors;
+
+    return $errors;
+}
+
+
 =head2 dna_files_have_headers()
 
     Function: checks that header lines are present for all sequence files in the chromosome directory
@@ -999,6 +1038,26 @@ sub _nr_files_with_prefix_or_suffix {
     }
     
     return $nr_files;
+}
+
+
+sub _parse_dna_composition_file {
+    my ($self, $dna_comp_filename) = @_;
+
+    my %composition;
+    my $dna_comp_fh = file($dna_comp_filename)->openr;
+    while (my $line = $dna_comp_fh->getline) {
+	chomp $line;
+	if ($line =~ /^\s*(\d+)\stotal/) {
+	    $composition{'total'} = $1;
+	}
+	elsif ($line =~ /^\s*([acgtn\-])\s(\d+)\s*$/) {
+	    $composition{$1} = $2;
+	}
+    }
+    $dna_comp_fh->close;
+    
+    return \%composition;
 }
 
 

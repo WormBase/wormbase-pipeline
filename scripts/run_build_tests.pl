@@ -9,7 +9,7 @@ use Getopt::Long;
 my ($debug, $test, $database, $species, $log_file, $prev_release, $store);
 my ($recent_citace, $primary_seq_dumps, $elegans_first, $build_contents, $dna_headers, $split_gffs,
     $tier2_contigs, $masked_files, $blat_files, $homology_loaded, $tier2_blat_contigs, $est_dat,
-    $cache_size, $uniprot_ids, $vep, $dbxref, $final_gff, $species_merge);
+    $cache_size, $uniprot_ids, $vep, $dbxref, $final_gff, $species_merge, $composition);
 GetOptions(
     'debug=s'            => \$debug,
     'test'               => \$test,
@@ -24,6 +24,7 @@ GetOptions(
     'build_contents'     => \$build_contents, # checks expected folders and files are in build directory
     'dna_headers'        => \$dna_headers, # checks DNA FASTA files all have headers
     'split_gffs:s'       => \$split_gffs, # checks that all expected split GFF files are present
+    'composition'        => \$composition, # checks that the DNA composition matches the previous release (elegans only)
     'tier2_contigs:s'    => \$tier2_contigs, # checks that non-elegans GFF files have the required number of sequence-regions
     'masked_files'       => \$masked_files, # checks for presence of masked cDNA files
     'blat_files'         => \$blat_files, # checks for presence of BLAT files
@@ -76,6 +77,9 @@ if ($split_gffs) {
 	unless $split_gffs eq 'init' or $split_gffs eq 'blat'
 	or $split_gffs eq 'homol' or $split_gffs eq 'variation';
     $errors += $wormtest->split_gffs_present($split_gffs);
+}
+if ($composition) {
+    $errors += $wormtest->dna_composition_unchanged;
 }
 if ($tier2_contigs) {
     die "Value passed to -tier2_contigs parameter must be either 'init' or 'blat'\n"
