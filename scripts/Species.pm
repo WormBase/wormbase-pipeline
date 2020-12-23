@@ -805,3 +805,50 @@ sub assembly_type {'contig'};
 sub is_canonical { 1 };
 
 1;
+
+#########################################
+
+package Smelegans;
+
+our @ISA = qw(Species);
+
+sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/ELE/elegans.lib'}
+sub chromosome_prefix {'SMCHROMOSOME_'}
+sub chromosome_names {qw(I II III IV V X)}
+sub mt_name {'MtDNA'}
+sub pep_prefix {'CE'}
+sub pepdir_prefix{'worm'};
+sub cds_regex{qr/^[A-Z0-9_cel]+\.[1-9]\d{0,3}[A-Za-z]?$/};  #the cel is for telomeric clone CDSs cTel54X.1
+sub seq_name_regex{qr/^[A-Z0-9_cel]+\.[1-9]\d{0,3}/};  #to get just the Sequence_name part
+sub cds_regex_noend{qr/^[A-Z0-9_cel]+\.[1-9]\d{0,3}[A-Za-z]?/};  # for getting the CDS part of a Transcript name
+
+sub ncbi_tax_id {'6239'};
+sub ncbi_bioproject {'PRJNA13758'};
+sub bioproject_description {'Small C.elegans test project'};
+sub short_name {'S. melegans'}
+sub gspecies_name {'s_melegans'}
+sub long_name {'Small elegans'}
+sub wormpep_prefix{'WP'}
+sub assembly_type {'chromosome'};
+sub seq_db {my $self = shift;return $self->database('camace');}
+sub upload_db_name {return ('citace')};
+sub TSL {
+  (
+    'SL1' => 'GGTTTAATTACCCAAGTTTGAG',
+    'SL2' => 'GGTTTTAACCCAGTTACTCAAG',
+    'SL2a' => 'GGTTTATACCCAGTTAACCAAG',
+    'SL2b' => 'GGTTTTAACCCAGTTTAACCAAG',
+    'SL2c' => 'GGTTTTAACCCAGTTACCAAG',
+    'SL2d' => 'GGTTTTTACCCAGTTAACCAAG',
+#    'SL2e' => 'GGTTTAAAACCCAGTTAACAAG', This is erroneous but has been around since the late 90s.
+    'SL2f' => 'GGTTTTAACCCAGTTAACCAAG',
+    'SL2g' => 'GGTTTTAACCAGTTAACTAAG',
+    'SL2h' => 'GGTTTTAACCCATATAACCAAG',
+    'SL2i' => 'GGTTTTAACCCAAGTTAACCAAG',
+    'SL2j' => 'GGTTTAAAACCCAGTTACCAAG',
+    'SL2k' => 'GGTTTTAACCCAGTTAATTGAG',
+  );
+
+};
+
+
