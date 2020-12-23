@@ -77,7 +77,7 @@ $release = 0 unless $release;
 #################################
 
 my $database = $wormbase->autoace;
-my $coords = Coords_converter->invoke($database, 0, $wormbase);
+# my $coords = Coords_converter->invoke($database, 0, $wormbase);
 my %clone_child;
 my %gene_info;
 my %sources;			# keep a note of the sources used
@@ -134,7 +134,7 @@ while (my $line = <IN>) {
     }
 
     # get the clone coords
-    ($clone, $start, $end) = $coords->LocateSpan($fields[0], $fields[3], $fields[4]);
+    ($clone, $start, $end) =  ($fields[0],$fields[3],$fields[4]);#$coords->LocateSpan($fields[0], $fields[3], $fields[4]);
 
     # adjust the end to include the STOP codon if it has been copied over from elegans
     if ($addend) {
