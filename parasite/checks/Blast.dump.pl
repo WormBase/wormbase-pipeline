@@ -33,8 +33,8 @@ my $dba = new Bio::EnsEMBL::DBSQL::DBAdaptor
 );
 # connect to database
 my $dbh = $dba->dbc->db_handle;
-my $sql_dna = "SELECT COUNT(distinct(name)) FROM seq_region;";
-my $sql_pep = "SELECT COUNT(translation_id) FROM translation;";
+my $sql_dna = "SELECT COUNT(distinct(name)) FROM seq_region;";# count number of DNA in database
+my $sql_pep = "SELECT COUNT(translation_id) FROM translation;";# count number of protein in database
 my $sql_trans = "SELECT COUNT(stable_id) FROM transcript;"; # count number of transcript in database
 my $sql_1 = "SELECT meta_value FROM meta WHERE meta_key = 'species.url';"; # retreive the species.url from meta table
 my $sql_2 = "SELECT meta_value FROM meta WHERE meta_key = 'assembly.default';";

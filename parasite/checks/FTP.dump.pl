@@ -1,7 +1,11 @@
-#!/usr/bin/env perl
 
-use strict;
-use warnings;
+# core | while read -r i ; do perl  FTP.dump.pl  
+# -host mysql-ps-staging-1.ebi.ac.uk -port 4451 -user 
+# ensro -dumpPath /hps/nobackup/production/ensemblgenomes/parasite/production/dumps/WBPS15/FTP 
+# -dbname $i ; done
+
+#!/usr/bin/env perl
+use IO::Uncompress::Gunzip;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use Getopt::Long;
 use Bio::SeqIO;
@@ -37,6 +41,23 @@ my $sql_pep = "SELECT COUNT(translation_id) FROM translation;";# count number of
 my $sql_trans = "SELECT COUNT(stable_id) FROM transcript;"; # count number of transcript in database
 my $sql_1 = "SELECT meta_value FROM meta WHERE meta_key = 'species.url';";
 my $sql_2 = "SELECT meta_value FROM meta WHERE meta_key = 'species.bioproject_id';"; 
+
+# sub routine to count the sequence in dump
+sub mycount 
+{
+my $file_path = shift ;
+my $fa = Bio::SeqIO ->new ( '-format' =>'fasta' , '-file' => "$file_path" );
+my $count_seq=0;
+while (my $seq = $fa->next_seq())
+ {
+    my $sequence = $seq->seq();
+    my $id       = $seq->display_id();
+    $count_seq++;
+    
+ }
+return $count_seq ; 
+}
+
 
 my $sth_trans = $dbh->prepare($sql_trans);          # prepare the query
 $sth_trans->execute();                        # execute the query
@@ -76,141 +97,175 @@ $value2 = $sth_2->fetchrow_array;
 my @val = split (/_/, $value1);
 my $spe_name = lc("$val[0]_$val[1]");
 
+# Getting path for different files in dump in variable for both ziped and unzipped file as I have mix of them
+my ( $pepgz,$dna_genomicgz, $dna_genomicSMgz, $dna_genomicMgz,$transgz, $pep,$dna_genomic, $dna_genomicSM, $dna_genomicM,$trans);
+$pepgz = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.protein.fa.gz" ;
+$dna_genomicgz = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.genomic.fa.gz" ;
+$dna_genomicMgz = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.genomic_masked.fa.gz" ;
+$dna_genomicSMgz = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.genomic_softmasked.fa.gz" ;
+$transgz = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.mRNA_transcripts.fa.gz" ;
 
-my ( $pep,$dna_genomic, $dna_genomicSM, $dna_genomicM,$trans  );
-$pep = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.protein.fa.gz" ;
-$dna_genomic = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.genomic.fa.gz" ;
-$dna_genomicM = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.genomic_masked.fa.gz" ;
-$dna_genomicSM = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.genomic_softmasked.fa.gz" ;
-$trans = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.mRNA_transcripts.fa.gz" ;
+$pep = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.protein.fa" ;
+$dna_genomic = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.genomic.fa" ;
+$dna_genomicM = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.genomic_masked.fa" ;
+$dna_genomicSM = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.genomic_softmasked.fa" ;
+$trans = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.mRNA_transcripts.fa" ;
 
+#print "pep:$pep\ntrans:$trans\n";
+#path for files 
+
+my $pep_path = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.protein.fa";
+my $genomic_path = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.genomic.fa";
+my $genomicM_path = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.genomic_masked.fa";
+my $genomicSM_path = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.genomic_softmasked.fa";
+my $trans_path = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.mRNA_transcripts.fa";
+
+print "working on: $db\n";
 #working on protein
-
-if(! -e $pep)
+my ($protein_result, $genomic_result, $genomicSM_result, $genomicM_result, $trans_result); 
+if(-e $pep)
 {
-print "$db\tfile doesn't exit\n";
-}
-else
-
-{
-
-my $fa = Bio::SeqIO ->new ( '-format' =>'fasta' , '-file' => "$pep" );
-my $count_seq=0;
-while (my $seq = $fa->next_seq())
+ $protein_result = mycount ($pep_path) ;
+ if ($value_pep != $protein_result)
  {
-    my $sequence = $seq->seq();
-    my $id       = $seq->display_id();
-    $count_seq++;
+print "$db\tpep_in_db:$value_pep\tpep_in_dump:$protein_result\n";
+
  }
- 
-
- #{
-print "$db\tpep_in_db:$value_pep\tpep_in_dump:$count_seq\n";
-
- #}
+ #print "$protein_result\n";
 }
+elsif (-e $pepgz)
+{
+system("gunzip $pepgz");
+$protein_result = mycount ($pep_path) ;           
+if ($value_pep != $protein_result)
+ {
+print "$db\tpep_in_db:$value_pep\tpep_in_dump:$protein_result\n";
+
+ }
+
+}
+
+else {"$db\tprotein file is not found\n";}
+
+#print "$db\tpep_in_db:$value_pep\tpep_in_dump:$protein_result\n";
+
+
+
+
 
 #working on genomic DNA
 
-if(! -e $dna_genomic)
+if(-e $dna_genomic)
 {
-print "$db\tfile doesn't exit\n";
-}
-else
-
-{
-
-my $fa = Bio::SeqIO ->new ( '-format' =>'fasta' , '-file' => "$dna_genomic" );
-my $count_seq=0;
-while (my $seq = $fa->next_seq())
+$genomic_result = mycount ($genomic_path) ;
+if ($value_dna != $genomic_result)
  {
-    my $sequence = $seq->seq();
-    my $id       = $seq->display_id();
-    $count_seq++;
- }
- 
-#if ($value != $count_seq)
- #{
-print "$db\tpep_in_db:$value_dna\tpep_in_dump:$count_seq\n";
+print "$db\tgenomeDNA_in_db:$value_dna\tgenomeDNA_in_dump:$genomic_result\n";
 
- #}
+ }
 }
+elsif (-e $dna_genomicgz)
+{
+system("gunzip $dna_genomicgz");
+$genomic_result = mycount ($genomic_path) ;
+if ($value_dna != $genomic_result)
+ {
+print "$db\tgenomeDNA_in_db:$value_dna\tgenomeDNA_in_dump:$genomic_result\n";
+
+ }
+}
+
+else {"$db\tgenomic DNA file is not found\n";}
+
+
+
 
 
 #working on masked genomic DNA
 
-if(! -e $dna_genomicM)
+if(-e $dna_genomicM)
 {
-print "$db\tfile doesn't exit\n";
-}
-else
-
-{
-
-my $fa = Bio::SeqIO ->new ( '-format' =>'fasta' , '-file' => "$dna_genomicM" );
-my $count_seq=0;
-while (my $seq = $fa->next_seq())
+$genomicM_result = mycount ($genomicM_path) ;
+if ($value_dna != $genomicM_result)
  {
-    my $sequence = $seq->seq();
-    my $id       = $seq->display_id();
-    $count_seq++;
- }
- 
-#if ($value != $count_seq)
- #{
-print "$db\tpep_in_db:$value_dna\tpep_in_dump:$count_seq\n";
+print "$db\tgenomeDNA_in_db:$value_dna\tgenomeDNAmasked_in_dump:$genomicM_result\n";
 
- #}
+ }
 }
+elsif (-e $dna_genomicMgz)
+{
+system("gunzip $dna_genomicMgz");
+$genomicM_result = mycount ($genomicM_path) ;
+if ($value_dna != $genomicM_result)
+ {
+print "$db\tgenomeDNA_in_db:$value_dna\tgenomeDNAmasked_in_dump:$genomicM_result\n";
+
+ }
+}
+
+else {"$db\tgenomic Masked DNA file is not found\n";}
+
+
+
+
+
 
 #working on soft masked genomic DNA
 
-if(! -e $dna_genomicSM)
+if(-e $dna_genomicSM)
 {
-print "$db\tfile doesn't exit\n";
-}
-else
-
-{
-
-my $fa = Bio::SeqIO ->new ( '-format' =>'fasta' , '-file' => "$dna_genomicSM" );
-my $count_seq=0;
-while (my $seq = $fa->next_seq())
+$genomicSM_result = mycount ($genomicSM_path) ;
+if ($value_dna != $genomicSM_result)
  {
-    my $sequence = $seq->seq();
-    my $id       = $seq->display_id();
-    $count_seq++;
- }
- 
-#if ($value != $count_seq)
- #{
-print "$db\tpep_in_db:$value_dna\tpep_in_dump:$count_seq\n";
+print "$db\tgenomeDNA_in_db:$value_dna\tgenomesoftmaskedDNA_in_dump:$genomicSM_result\n";
 
- #}
+ }
+
+
 }
+elsif (-e $dna_genomicSMgz)
+{
+system("gunzip $dna_genomicSMgz");
+$genomicSM_result = mycount ($genomicSM_path) ;
+if ($value_dna != $genomicSM_result)
+ {
+print "$db\tgenomeDNA_in_db:$value_dna\tgenomesoftmaskedDNA_in_dump:$genomicSM_result\n";
+
+ }
+
+
+}
+
+else {"$db\tgenomic SoftMasked DNA file is not found\n";}
+
+
+
 
 #working on soft transcript
 
-if(! -e $$trans)
+if(-e $trans)
 {
-print "$db\tfile doesn't exit\n";
-}
-else
+$trans_result = mycount ($trans_path) ;
 
-{
-
-my $fa = Bio::SeqIO ->new ( '-format' =>'fasta' , '-file' => "$trans" );
-my $count_seq=0;
-while (my $seq = $fa->next_seq())
+if ($value_trans != $trans_result)
  {
-    my $sequence = $seq->seq();
-    my $id       = $seq->display_id();
-    $count_seq++;
- }
- 
-#if ($value != $count_seq)
- #{
-print "$db\tpep_in_db:$value_trans\tpep_in_dump:$count_seq\n";
+print "$db\tmRNA_in_db:$value_trans\tmRNA_in_dump:$trans_result\n";
 
- #}
+ }
 }
+elsif (-e $transgz)
+{
+system("gunzip $transgz");
+$trans_result = mycount ($trans_path) ;
+
+if ($value_trans != $trans_result)
+ {
+print "$db\tmRNA_in_db:$value_trans\tmRNA_in_dump:$trans_result\n";
+
+ }
+}
+
+else {"$db\tgenomic SoftMasked DNA file is not found\n";}
+
+
+
