@@ -80,7 +80,7 @@ my %mol_types = ( 'elegans'          => [qw( EST mRNA ncRNA OST tc1 RST Trinity 
 		  'nematode'         => [qw( EST )],
 		  'nembase'          => [qw( EST )],
 		  'washu'            => [qw( EST )],
-
+		  'smelegans'          => [qw( mRNA ncRNA tc1 Trinity Nanopore)]
 				);
 
 my @other_nematodes = ('nematode',
