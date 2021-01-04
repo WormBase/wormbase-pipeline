@@ -64,12 +64,13 @@ if (not defined $config) {
   $config .='.config';
 }
 
+
 my $tace = $wormbase->tace;
 my $path = $wormbase->acefiles.($merge ? '/MERGE':'/primaries');
 make_path $path unless -e $path;
  
 unless (-e $config) {
-  $log->write_to("merge config file absent - database being skipped\n");
+  $log->write_to("merge config file absent - database being skipped\n$config\n");
 } else {
   open(CFG,"<$config") or $log->log_and_die("cant open $config :$!\n");
   
