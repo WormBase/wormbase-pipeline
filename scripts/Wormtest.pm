@@ -199,7 +199,9 @@ sub make_build_tester {
 	$prev_release = $wormbase->database('current');
     }
     else {
-	$prev_release = $wormbase->get_wormbase_version - 1;
+	my $current_release = $ENV{'WORMBASE_RELEASE'};
+	$current_release =~ s/^WS//;
+	$prev_release = $current_release - 1;
 	$prev_release = '/nfs/production/panda/ensemblgenomes/wormbase/DATABASES/WS' . $prev_release;
     }
     
