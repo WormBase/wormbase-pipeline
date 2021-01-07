@@ -11,7 +11,7 @@ my $dbuser = "wormro";
 my $dbport = "4331";
 my $dbpass = "";
     
-my ($database,$dna,$transcript_only,$outfile, $canonical_only);
+my ($database,$dna,$transcript_only,$outfile,$canonical_only);
 
 GetOptions( 
   'host=s'        => \$dbhost,
@@ -40,10 +40,10 @@ if (defined $outfile) {
 }
 
 
-my @transcripts;
 my $gene_adaptor = $db->get_GeneAdaptor();
 my @genes = @{$gene_adaptor->fetch_all()};
 foreach my $gene(@genes){
+  my @transcripts;
   my $geneId=$gene->stable_id();
   if ($canonical_only){ @transcripts = ($gene->canonical_transcript()); }
   else { @transcripts = (@{$gene->get_all_Transcripts()}) }
