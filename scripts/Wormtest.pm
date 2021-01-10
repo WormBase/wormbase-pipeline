@@ -828,8 +828,11 @@ sub split_gffs_present {
 sub tier2_contigs_dumped {
     my ($self, $stage) = @_;
     my ($contigs_in_db, $errors);
-    
-    return $errors if $self->{'wormbase'}->species eq 'elegans';
+
+    if ($self->{'wormbase'}->species eq 'elegans') {
+	$self->{'log'}->write_to("This check is only required for tier2 species and does not apply to C. elegans\n");
+	return $errors;
+    }
     
     ($contigs_in_db, $errors) = $self->_nr_contigs($errors);
     
