@@ -83,7 +83,7 @@ if ($composition) {
 }
 if ($tier2_contigs) {
     die "Value passed to -tier2_contigs parameter must be either 'init' or 'blat'\n"
-	unless $tier2_contigss eq 'init' or $tier2_contigs eq 'blat';
+	unless $tier2_contigs eq 'init' or $tier2_contigs eq 'blat';
     $errors += $wormtest->tier2_contigs_dumped($tier2_contigs);
 }
 if ($masked_files) {
