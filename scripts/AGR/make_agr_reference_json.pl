@@ -7,7 +7,6 @@ use Ace;
 use JSON;
 use Wormbase;
 use Modules::AGR;
-use Smart::Comments;
 
 my %WB_AGR_TYPE_MAP = (
     Journal_article           => 'Research Article',
