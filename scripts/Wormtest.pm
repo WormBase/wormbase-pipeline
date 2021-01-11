@@ -194,6 +194,8 @@ sub make_build_tester {
     }
     elsif (defined $ENV{'PREVREL'}) {
 	$prev_release = $ENV{'PREVREL'};
+	$prev_release =~ s/^WS//g;
+	$prev_release = '/nfs/production/panda/ensemblgenomes/wormbase/DATABASES/WS' . $prev_release;
     }
     elsif ($wormbase->test) {
 	$prev_release = $wormbase->database('current');
