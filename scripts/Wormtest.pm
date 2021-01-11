@@ -430,10 +430,10 @@ sub dna_composition_unchanged {
 	return $errors;
     }
 
-    my $current_composition = $self->_parse_dna_composition_file($self->{'wormbase'}->chromosomes .
-							  '/composition.all');
-    my $previous_composition = $self->_parse_dna_composition_file($self->{'previous_wormbase'}->chromosomes .
-							   '/composition.all');
+    my $current_composition = $self->_parse_dna_composition_file(
+	$self->{'wormbase'}->chromosomes . '/composition.all');
+    my $previous_composition = $self->_parse_dna_composition_file(
+	$self->{'previous_wormbase'}->chromosomes . '/composition.all');
     for my $base ('total', 'a', 'c', 'g', 't', '-', 'n') {
 	unless ($current_composition->{$base} == $previous_composition->{$base}) {
 	    $self->{'log'}->write_to("Mismatch between $base base counts of " .
