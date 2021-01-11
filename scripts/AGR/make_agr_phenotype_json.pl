@@ -238,7 +238,7 @@ sub get_condition_relations {
             }} $pa->Treatment;
         @assays = (@temperatures, @treatments);
         push @conditions, {conditionRelationType => $condition_relation_type,
-                           conditions            => \@assays} if $assays;
+                           conditions            => \@assays} if @assays;
     }
 
     my $ab = $obj->at('Affected_by');
