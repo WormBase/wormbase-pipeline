@@ -79,8 +79,6 @@ while (my $obj = $it->next) {
 	    last if $db->right->name eq 'MEDLINE';
 	}
     }
-
-    print $obj->asTable . "\n" unless $ref_id;
   
     # Get book chapter publication dates from book
     my $publication_date;
@@ -175,7 +173,6 @@ sub get_author_list {
             $nr_people = @people;
         }
        
-	print "Identical author names in $obj\n" if $nr_people > 1;
 	for (1 .. $nr_people) {
 	    push @$author_data, {name => $author->name, referenceId => $ref_id};
 	}
