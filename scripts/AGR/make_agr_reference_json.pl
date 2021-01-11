@@ -109,7 +109,7 @@ while (my $obj = $it->next) {
     if ($obj->Type) {
 	my $wb_article_type = $obj->Type->name;
 	$reference->{allianceCategory} = $WB_AGR_TYPE_MAP{$wb_article_type};
-	$reference->{MODReferenceTypes} = [$wb_article_type];
+	$reference->{MODReferenceTypes} = [{referenceType => $wb_article_type, source => 'WB'}];
     }
     else {
 	$reference->{allianceCategory} = 'Unknown';
