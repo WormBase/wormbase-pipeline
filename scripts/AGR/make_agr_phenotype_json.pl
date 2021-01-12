@@ -246,7 +246,6 @@ sub get_condition_relations {
 
     my $ab = $obj->at('Affected_by');
     if (defined $ab) {
-	print $obj->asTable ."\n";
 	my @molecules = map {{
 	    conditionStatement => 'chemical treatment:' . $_->Public_name->name,
 	    chemicalOntologyId => get_chemical_ontology_id($_),
