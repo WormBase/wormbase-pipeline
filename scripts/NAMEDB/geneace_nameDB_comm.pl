@@ -175,9 +175,11 @@ sub check_gene {
 		    next;
                   }			
                   unless ($server_genes{"$gene"}->{$type}) {
-                    $log->error("ERROR: Server - $gene missing $type name ".$ace_genes{"$gene"}->{$type}."\n");
-                    $errorcount++;
-		    next;
+		      unless (($gene =~ /WBGene00006756/) ||($gene =~ /WBGene00044083/) || ($gene =~ /WBGene00000481/) || ($gene =~ /WBGene00001147/))  {    # B0564.1 Y105E8A.7 ZC416.8)
+			  $log->error("ERROR: Server - $gene missing $type name ".$ace_genes{"$gene"}->{$type}."\n");
+			  $errorcount++;
+		      }
+		      next;
                   }
                   # confirm they are the same if both have name type	
                   if ($ace_genes{"$gene"}->{$type} ne $server_genes{"$gene"}->{$type}) {

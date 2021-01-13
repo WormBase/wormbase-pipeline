@@ -103,7 +103,7 @@ sub make_build_log {
 
     open( $log, ">$log_file" ) or croak "cant open file $log_file $!";
     print $log "WS$ver ($species) Build script : $filename @SAVED_ARGS\n\n";
-    print $log "Started at ", $wormbase->runtime, "\n";
+    print $log "Started at ", $wormbase->rundate, " ", $wormbase->runtime, "\n";
     print $log "-----------------------------------\n\n";
 
     my $self = {};
@@ -133,7 +133,7 @@ sub mail {
     my ( $self, $recipient, $subject ) = @_;
     my $fh = $self->{"FH"};
     print $fh "\n\n-----------------------------------\n";
-    print $fh "Finished at ",Wormbase::runtime(), "\n";
+    print $fh "Finished at ", Wormbase::rundate(), " ", Wormbase::runtime(), "\n";
     close $fh;
 
     $recipient = "All" unless $recipient;

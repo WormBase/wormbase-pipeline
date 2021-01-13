@@ -209,7 +209,7 @@ sub remap_gff {
   my %mapping_data = %{$self->_mapping_data};
 
   
-  my @releases;
+  my @releases = keys %mapping_data;
   if (scalar (keys %mapping_data) > 1) {
     @releases = sort { $a <=> $b } keys %mapping_data;
   }

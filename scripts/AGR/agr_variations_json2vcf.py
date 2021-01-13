@@ -8,7 +8,7 @@ import datetime
 import argparse
 import operator
 import re
-
+import sys
 
 def genotype_string(variation, allStrains, zygosity):
     variationStrains = set(variation["strains"])
@@ -133,8 +133,8 @@ with open(args.json, 'r') as read_file:
                     varSeq = expand_iupac[varSeq]
                     zygosity = 'heterozygous'
                 else:
-                    print("Unrecognised alternative allele " + varSeq, file=sys.stderr)
-                    break
+                    print("Unrecognised alternative allele " + varSeq + " for " + v["alleleId"], file=sys.stderr)
+                    next
         
         gtString = genotype_string(v, strains, zygosity)
         

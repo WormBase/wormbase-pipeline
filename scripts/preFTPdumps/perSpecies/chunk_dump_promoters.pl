@@ -1,11 +1,16 @@
 #!/bin/env perl
-# that should fire off 10 dump_promoter jobs with 16GB each and concatenate the results
+# that should fire off 10 dump_promoter.pl jobs with 16GB each and concatenate the results
 
 use lib $ENV{CVS_DIR};
+use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
 use LSF::JobManager;
-use Storable;
 
-my ($species,$store,$debug,$test,$database,$outfile,$chunk);
+use Storable;
+use Getopt::Long;
+use Wormbase;
+use Log_files;
+
+my ($species,$store,$debug,$test,$database,$outfile);
 GetOptions(
      'species=s'  => \$species,
      'store=s'    => \$store,
@@ -13,7 +18,6 @@ GetOptions(
      'test'       => \$test,
      'database=s' => \$database,
      'outfile=s'  => \$outfile,
-     'chunk=s'    => \$chunk,
 )||die(@!);
 
 my $wormbase;
@@ -24,22 +28,23 @@ if ($store) {
                              -test => $test,
                              -organism => $species);
 }
-$database = $wormbase->autoace if not defined $database;
+$database ||= $wormbase->autoace;
+$outfile ||= $wormbase->reports . '/potential_promoters.fa';
 
 my $log = Log_files->make_build_log($wormbase);
 
-my $defaultMem = 16000;
+my $mem = 16000;
 my $lsf_out = $wormbase->build_lsfout;
 my $lsf = LSF::JobManager->new();
 
 
-for my $chunk (0..9){
-  my $cmd = "preFTPdumps/perSpecies/dump_promoters.pl -outfile $outfile.$chunk -chunk $c";
-  $cmd = $wb->build_cmd($cmd);
+for my $chunk (1..10){
+  my $cmd = "preFTPdumps/perSpecies/dump_promoters.pl -outfile $outfile.$chunk -chunk $chunk -database $database";
+  $cmd = $wormbase->build_cmd($cmd);
 
   my @lsf_opts = (-M => $mem, 
                   -R => "select[mem>=$mem] rusage[mem=$mem]",
-                  -J => 'perSpeciesDumps', 
+                  -J => 'perSpeciesPromoterDumps', 
                   -o => "${lsf_out}/dump_promoters.pl.$chunk.lsfout");
   $lsf->submit(@lsf_opts, $cmd);
 }
@@ -55,7 +60,7 @@ $lsf->clear;
 
 # cleanup
 `cat $outfile.* > $outfile`;
-for my $chunk(0..9){
+for my $chunk(1..10){
 	unlink "$outfile.$chunk" if -e "$outfile.$chunk";
 }
 

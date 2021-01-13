@@ -134,8 +134,9 @@ sub process_genes_phenotype{
 	            phenotypeStatement       => $phen_desc,
         	    dateAssigned             => $date,
 	            evidence                 => $pap,
-		    #conditionRelations       => @{get_condition_relations($obj)},
         	  }; 
+		  my @condition_relations = @{get_condition_relations($pt)};
+		  $json_obj->{conditionRelations} = \@condition_relations if @condition_relations;
 	          push @pheno_annots, $json_obj;
         	}
 	    }
@@ -184,8 +185,9 @@ sub process {
             phenotypeStatement       => $phen_desc,
             dateAssigned             => $date,
             evidence                 => $pap,
-	    conditionRelations       => @{get_condition_relations($obj)},
           }; 
+	  my @condition_relations = @{get_condition_relations($pt)};
+	  $json_obj->{conditionRelations} = \@condition_relations if @condition_relations;
           push @pheno_annots, $json_obj;
         
 	  foreach my $g (@caused_by_genes) {
@@ -196,8 +198,9 @@ sub process {
               phenotypeStatement       => $phen_desc,
               dateAssigned             => $date,
               evidence                 => $pap,
-	      conditionRelations       => @{get_condition_relations($obj)},
             };
+	    my @condition_relations = @{get_condition_relations($pt)};
+	    $json_obj->{conditionRelations} = \@condition_relations if @condition_relations;
             push @pheno_annots, $json_obj;
           }
 
@@ -224,11 +227,11 @@ sub get_condition_relations {
 
     my $condition_relation_type = 'has_condition';
 
-
+        
     my (@conditions, @assays, @molecules);
     my $pa = $obj->at('Phenotype_assay');
     if (defined $pa){
-        my @temperatures = map {{
+	my @temperatures = map {{
             conditionStatement => 'temperature exposure:' . $_->name,
             conditionClassId => $zeco{'temperature exposure'},
             }} $pa->Temperature;
@@ -238,7 +241,7 @@ sub get_condition_relations {
             }} $pa->Treatment;
         @assays = (@temperatures, @treatments);
         push @conditions, {conditionRelationType => $condition_relation_type,
-                           conditions            => \@assays} if $assays;
+                           conditions            => \@assays} if @assays;
     }
 
     my $ab = $obj->at('Affected_by');
@@ -248,7 +251,7 @@ sub get_condition_relations {
 	    chemicalOntologyId => get_chemical_ontology_id($_),
 	    conditionClassId => $zeco{'chemical treatment'},
 	    conditionId => $zeco{'chemical treatment'}
-	    }} $obj->Molecule;
+	    }} $ab->Molecule;
 	
         push @conditions, {conditionRelationType => $condition_relation_type,
                            conditions            => \@molecules} if @molecules;

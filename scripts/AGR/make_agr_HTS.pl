@@ -64,6 +64,7 @@ while (my $analysis = $it->next){
 
 	# sample
 	foreach my $subproject ($analysis->Subproject){
+	        next unless $subproject->Species_in_analysis eq 'Caenorhabditis elegans';
 		my %json_obj;
 		my $sample=$subproject->Sample;
         	my $datasetId="WB:${\$subproject->Project->name}";

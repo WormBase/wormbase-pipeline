@@ -35,35 +35,33 @@ if ($store) {
 }
 
 my $log = Log_files->make_build_log($wormbase);
-$database = $wormbase->autoace if not defined $database;
+$database ||= $wormbase->autoace;
 
 $log->write_to("connecting to $database\n");
 my $db = Ace->connect(-path => $database) || $log->log_and_die("Could not connect to $database (".Ace->error.")\n");
 
-$outfile = $wormbase->reports . "/" . "potential_promoters.fa"
-    if not defined $outfile;
+$outfile ||= $wormbase->reports . '/potential_promoters.fa';
 my $of = IO::File->new($outfile,'w');
 $log->write_to("writing to $outfile\n");
 
 warn "finding predicted genes...\n";
 my @genes = $db->fetch(-query => "find Gene Species=\"${\$wormbase->long_name}\";Live;Sequence");
 
-$log->write_to("found ",scalar(@genes)," predicted genes\n");
+$log->write_to('found '.scalar(@genes)." predicted genes\n");
 
 # create a sequence from each one and find the closest upstream transcript
 for my $g (@genes) {
 
-    # chunks hook
-    if ($chunk){
+    # chunks hook (will be between 1-10)
+    if ($chunk){ # chunk needs to be 1+ , else the statement will not work
 	    $g->name =~/(\d)$/;
-	    next unless "$1" == $chunk;
+	    next unless "$1" == $chunk -1;
     }
 
     my $s = Ace::Sequence->new(-seq    => $g,
 			       -offset => -UPSTREAM(),
 			       -length => UPSTREAM() 
-	) 
-	or die "Can't open sequence segment $g: ",Ace->error,"\n";
+	) or die "Can't open sequence segment $g: ",Ace->error,"\n";
     
     my $dna = $s->dna;
     

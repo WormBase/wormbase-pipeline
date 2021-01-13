@@ -22,6 +22,7 @@ use Log_files;
 use Storable;
 use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
 use LSF::JobManager;
+use Wormtest;
 
 my ( $debug, $test, $database, $species);
 my ( $initiate, $prepare_databases, $acefile, $build, $build_check, $assembly, $first_dumps );
@@ -34,7 +35,11 @@ my ($map_features, $remap_misc_dynamic, $map, $map_alleles, $transcripts, $cdna_
 my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $treefam, $ncbi_xrefs, $load_interpro, $RRID, $omim);
 my ( $utr, $agp, $gff_munge, $gff3_munge, $extras , $ontologies, $interpolate, $check, $enaseqxrefs, $enagenexrefs, $enaprotxrefs, $xrefs);
 my ( $data_check, $buildrelease, $public,$finish_build, $gffdb, $autoace, $user, $kegg, $prepare_gff_munge, $post_merge, $gtf);
+my $skip_tests;
 
+my @all_tests = ('recent_citace', 'primary_seq_dumps', 'elegans_first', 'homology_loaded', 'split_gffs_blat', 'tier2_contigs_blat',
+		 'build_contents', 'dna_headers', 'split_gffs_init', 'tier2_contigs_init', 'masked_files', 'blat_files', 'est_dat',
+		 'cache_size', 'uniprot_ids', 'dbxref');
 
 GetOptions(
 	   'debug:s'        => \$debug,
@@ -100,30 +105,46 @@ GetOptions(
 	   'data_check'     => \$data_check,
 	   'species:s'      => \$species,
 	   'user:s'         => \$user,
-	   'kegg'           => \$kegg,
+           'kegg'           => \$kegg,
            'postmerge'      => \$post_merge,
+           'skip_tests'     => \$skip_tests
 	  )||die(@!);
 
+$skip_tests = 'all'; # Comment out this line to enable testing with Wormtest.pm
 
 my $wormbase = Wormbase->new(
     -test    => $test,
     -debug   => $debug,
     -version => $initiate,
     -organism=> $species
-);
+    );
 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
-$wormbase->run_script( "initiate_build.pl -version $initiate",$log ) if defined($initiate);
+# establish Wormtest object
+my $wormtest = Wormtest->make_build_tester($wormbase, $log);
+my @skipped_tests = $skip_tests eq 'all' ? @all_tests : split(',', $skip_tests);
+my %tests_to_skip = map {$_ => 1 } @skipped_tests;
 
-$wormbase->run_script( 'prepare_primary_databases.pl',      $log ) if $prepare_databases;
-$wormbase->run_script( "check_primary_database.pl -organism ${\$wormbase->species}", $log ) if $prepare_databases;
+my $errors = 0;
 
-$wormbase->run_script( 'make_acefiles.pl',                  $log ) if $acefile;
-$wormbase->run_script( 'make_autoace.pl',                   $log ) if $build;
+if ($initiate) {
+    $errors += $wormtest->recent_citace_dump unless exists $tests_to_skip{'recent_citace'};
+    $wormbase->run_script( "initiate_build.pl -version $initiate",$log );
+}
 
-if ($build_check) {
+if ($prepare_databases and $errors == 0) {
+    $errors += $wormtest->primary_seq_dumps_present unless exists $tests_to_skip{'primary_seq_dumps'};
+    $errors += $wormtest->elegans_loaded_first unless exists $tests_to_skip{'elegans_first'};
+    $wormbase->run_script( 'prepare_primary_databases.pl',      $log );
+    $wormbase->run_script( "check_primary_database.pl -organism ${\$wormbase->species}", $log );
+}
+
+$wormbase->run_script( 'make_acefiles.pl',                  $log ) if $acefile and $errors == 0;
+$wormbase->run_script( 'make_autoace.pl',                   $log ) if $build and $errors == 0;
+
+if ($build_check and $errors == 0) {
   # Check for missing curation by checking for Live genes that have a Sequence name but aren't connected to a current gene model.
   if ($wormbase->species eq 'elegans')  {
     $wormbase->run_script("check_class.pl -camace -genace -caltech -misc_static -briggsae -stage init", $log);
@@ -132,49 +153,79 @@ if ($build_check) {
 }
 
 
-$wormbase->run_script( "chromosome_dump.pl --dna --composition", $log ) if $first_dumps;
-$wormbase->run_script("update_Common_data.pl -clone2centre -clone2acc -clone2size -clone2dbid -genes2lab -worm_gene2cgc -worm_gene2geneID -worm_gene2class -est -est2feature -gene_id -clone2type -cds2cgc -rna2cgc -pseudo2cgc ", $log ) if $first_dumps;
+$wormbase->run_script( "chromosome_dump.pl --dna --composition", $log ) if $first_dumps and $errors == 0;
+$wormbase->run_script("update_Common_data.pl -clone2centre -clone2acc -clone2size -clone2dbid -genes2lab -worm_gene2cgc -worm_gene2geneID -worm_gene2class -est -est2feature -gene_id -clone2type -cds2cgc -rna2cgc -pseudo2cgc ", $log ) if $first_dumps and $errors == 0;
 
-$wormbase->run_script( "build_dumpGFF.pl -stage $gff_dump",                $log ) if $gff_dump;
+if ($gff_dump and $errors == 0) {
+    if ($gff_dump eq 'blat') {
+	$errors += $wormtest->homology_data_loaded unless exists $tests_to_skip{'homology_loaded'};
+    }
+    $wormbase->run_script( "build_dumpGFF.pl -stage $gff_dump", $log );
+    if ($gff_dump eq 'blat') {
+	$errors += $wormtest->split_gffs_present('blat') unless exists $tests_to_skip{'split_gffs_blat'};
+	$errors += $wormtest->tier2_contigs_dumped('blat') unless exists $tests_to_skip{'tier2_contigs_blat'};
+    }
+}
 
-$wormbase->run_script( "get_ena_submission_xrefs.pl -sequencexrefs", $log)  if $enaseqxrefs;
-$wormbase->run_script( "get_ena_submission_xrefs.pl -genexrefs", $log)  if $enagenexrefs;
+$wormbase->run_script( "get_ena_submission_xrefs.pl -sequencexrefs", $log)  if $enaseqxrefs and $errors == 0;
+$wormbase->run_script( "get_ena_submission_xrefs.pl -genexrefs", $log)  if $enagenexrefs and $errors == 0;
 
-$wormbase->run_script( "processGFF.pl -$processGFF",                       $log ) if $processGFF;
+$wormbase->run_script( "processGFF.pl -$processGFF",                       $log ) if $processGFF and $errors == 0;
 
-&make_remap_data()    if $first_dumps;
+&make_remap_data()    if $first_dumps and $errors == 0;
 
-&do_assembly_stuff() if $assembly;   # dependant on clone_acc for agp
+&do_assembly_stuff() if $assembly and $errors == 0;   # dependant on clone_acc for agp
 
-$wormbase->run_script("GetPFAM_motifs.pl", $log) if $load_interpro;
-$wormbase->run_script("GetInterPro_motifs.pl", $log) if $load_interpro;
-$wormbase->run_script("check_class.pl -stage load_interpro -classes Motif", $log) if $load_interpro;
+if ($load_interpro  and $errors == 0) {
+    $wormbase->run_script("GetPFAM_motifs.pl", $log);
+    $wormbase->run_script("GetInterPro_motifs.pl", $log);
+    $wormbase->run_script("check_class.pl -stage load_interpro -classes Motif", $log);
+}
 
-$wormbase->run_script( 'make_wormpep.pl -initial -all',                    $log ) if $make_wormpep;
-$wormbase->run_script("check_class.pl -stage make_wormpep -classes Protein,Peptide", $log) if $make_wormpep;
+if ($make_wormpep and $errors == 0) {
+    $errors += $wormtest->cache_size_sufficient unless exists $tests_to_skip{'cache_size'};
+    $wormbase->run_script( 'make_wormpep.pl -initial -all',                    $log );
+    $wormbase->run_script("check_class.pl -stage make_wormpep -classes Protein,Peptide", $log);
+}
 
-&map_features_to_genome() if $map_features;
+if ($map_features and $errors == 0) {
+    $errors += $wormtest->build_folder_contents_present unless exists $tests_to_skip{'build_contents'};
+    $errors += $wormtest->dna_files_have_headers unless exists $tests_to_skip{'dna_headers'};
+    $errors += $wormtest->split_gffs_present('init') unless exists $tests_to_skip{'split_gffs_init'};
+    $errors += $wormtest->tier2_contigs_dumped('init') unless exists $tests_to_skip{'tier2_contigs_init'}
+    &map_features_to_genome();
+}
 
 #########   BLAT  ############
-$wormbase->run_script( 'BLAT_controller.pl -dump', $log ) if $prep_blat;
+if ($prep_blat and $errors == 0) {
+    $errors += $wormtest->masked_files_present unless exists $tests_to_skip{'masked_files'};
+    $wormbase->run_script( 'BLAT_controller.pl -dump', $log );
+}
 #//--------------------------- batch job submission -------------------------//
-$wormbase->run_script( 'BLAT_controller.pl -run', $log )        if $run_blat;
+$wormbase->run_script( 'BLAT_controller.pl -run', $log ) if $run_blat and $errors == 0;
 #//--------------------------- batch job submission -------------------------//
-$wormbase->run_script( 'BLAT_controller.pl -postprocess -process -intron -load', $log ) if $finish_blat;
-$wormbase->run_script("check_class.pl -stage finish_blat -classes Homol_data", $log) if $finish_blat;
+if ($finish_blat and $errors == 0) {
+    $errors += $wormtest->blat_files_present unless exists $tests_to_skip{'blat_files'};
+    $wormbase->run_script( 'BLAT_controller.pl -postprocess -process -intron -load', $log ) if $finish_blat;
+    $wormbase->run_script("check_class.pl -stage finish_blat -classes Homol_data", $log) if $finish_blat;
+}
 #//--------------------------- batch job submission -------------------------//
 # $build_dumpGFF.pl; (blat) is run chronologically here but previous call will operate
 
-$wormbase->run_script( 'batch_transcript_build.pl -mem 12000', $log) if $transcripts;
-$wormbase->run_script("check_class.pl -stage transcripts -classes Transcript", $log) if $transcripts;
+if ($transcripts and $errors == 0) {
+    $errors += $wormtest->create_est_dat_files_if_required unless exists $tests_to_skip{'est_dat'};
+    $wormbase->run_script( 'batch_transcript_build.pl -mem 12000', $log);
+    $wormbase->run_script("check_class.pl -stage transcripts -classes Transcript", $log);
+}    
 #requires GFF dump of transcripts (done within script if all goes well)
 
-$wormbase->run_script( 'WBGene_span.pl'                   , $log ) if $gene_span;
-&make_UTR($log)                                                    if $utr;
+$wormbase->run_script( 'WBGene_span.pl'                   , $log ) if $gene_span and $errors == 0;
+&make_UTR($log)                                                    if $utr and $errors == 0;
 
-if ($cdna_files) {
+if ($cdna_files and $errors == 0) {
   my $seqdir = $wormbase->sequences;
   $wormbase->run_script( 'find_intergenic.pl'               , $log );
+  $wormbase->run_script( 'find_upstream_seqs.pl', $log); 
   $wormbase->run_script( "fasta_dumper.pl -classmethod Transcript:Coding_transcript -output $seqdir/mRNA_transcripts.dna", $log);
   $wormbase->run_script( "fasta_dumper.pl -classmethod Pseudogene:Pseudogene -output $seqdir/pseudogenic_transcripts.dna", $log);
   if ($wormbase->species eq 'elegans') {
@@ -186,32 +237,34 @@ if ($cdna_files) {
 }
 
 ####### mapping part ##########
-&map_features                                                                           if $map;
+&map_features                                                                           if $map and $errors == 0;
 
-&map_alleles                                                                            if $map_alleles;
+&map_alleles                                                                            if $map_alleles and $errors == 0;
 
-&remap_misc_dynamic                                                                     if $remap_misc_dynamic;
+&remap_misc_dynamic                                                                     if $remap_misc_dynamic and $errors == 0;
 
-$wormbase->run_script("run_inverted.pl -all" , $log)                                    if $repeats;
-$wormbase->run_script("check_class.pl -stage run_inverted -classes Feature_data", $log) if $repeats;
-
+if ($repeats and $errors == 0) {
+    $wormbase->run_script("run_inverted.pl -all" , $log);
+    $wormbase->run_script("check_class.pl -stage run_inverted -classes Feature_data", $log);
+}
 
 #must have farm complete by this point.
-if ($misc_data_sets){
+if ($misc_data_sets and $errors == 0){
 	$wormbase->run_script('AGR/import_AGR_gene_objects.pl -load',$log);
+	$wormbase->run_script('AGR/import_AGR_OMIM_xrefs.pl -load', $log);
 	$wormbase->run_script('AGR/agr_orthologs.pl -load',$log);
 	$wormbase->run_script('load_data_sets.pl -misc', $log);
 	$wormbase->run_script('load_data_sets.pl -homol', $log);
 }
 
 # $build_dumpGFF.pl; (homol) is run chronologically here but previous call will operate
-$wormbase->run_script( 'make_wormrna.pl'                         , $log) if $rna;
-if ($confirm) {
+$wormbase->run_script( 'make_wormrna.pl'                         , $log) if $rna and $errors == 0;
+if ($confirm and $errors == 0) {
   $wormbase->run_script( 'confirm_genes.pl', $log);
   $wormbase->run_script( 'update_Common_data.pl -cds2status ', $log);
 }    
-$wormbase->run_script( 'map_operons.pl'                          , $log) if $operon;
-if ($enaprotxrefs) {
+$wormbase->run_script( 'map_operons.pl'                          , $log) if $operon and $errors == 0;
+if ($enaprotxrefs and $errors == 0) {
   $wormbase->run_script( "get_ena_submission_xrefs.pl -proteinxrefs", $log);
   $wormbase->run_script( "propagate_cds_xrefs_to_protein.pl", $log );
   if ($wormbase->species eq 'elegans') {
@@ -220,23 +273,26 @@ if ($enaprotxrefs) {
   }
 }
 
-$wormbase->run_script('make_wormpep.pl -all -final', $log) if $finish_wormpep;
+if ($finish_wormpep and $errors == 0) {
+    $wormbase->run_script('make_wormpep.pl -all -final', $log);
+    $errors += $wormtest->uniprot_ids_in_wormpep unless exists $tests_to_skip{'uniprot_ids'};
+}
 
-$wormbase->run_script( 'get_treefam.pl'                          , $log) if $treefam;
-$wormbase->run_script( 'KEGG.pl', $log )                                 if $kegg;
+$wormbase->run_script( 'get_treefam.pl'                          , $log) if $treefam and $errors == 0;
+$wormbase->run_script( 'KEGG.pl', $log )                                 if $kegg and $errors == 0;
 
 # $build_dumpGFF.pl; (final) is run chronologically here but previous call will operate
 # $wormbase->run_script( "processGFF.pl -$processGFF",        $log ) if $processGFF;    #nematode - to add species to nematode BLATs
 
-$wormbase->run_script( "interpolation_manager.pl -fix -pseudo", $log) if $interpolate;
-$wormbase->run_script( "make_agp_file.pl"                        , $log) if $agp;
+$wormbase->run_script( "interpolation_manager.pl -fix -pseudo", $log) if $interpolate and $errors == 0;
+$wormbase->run_script( "make_agp_file.pl"                        , $log) if $agp and $errors == 0;
 
-if ($ncbi_xrefs and $wormbase->species eq 'elegans') {
+if ($ncbi_xrefs and $wormbase->species eq 'elegans' and $errors == 0) {
   $wormbase->run_script( 'get_GI.pl', $log );
   $wormbase->run_script( 'load_refseq_xrefs.pl', $log);
 }
 
-if ($prepare_gff_munge) {
+if ($prepare_gff_munge and $errors == 0) {
   if ($wormbase->species eq 'elegans') {
     $wormbase->run_script( 'landmark_genes2gff.pl', $log);
     $wormbase->run_script( 'landmark_genes2gff.pl -gff3', $log);
@@ -249,7 +305,7 @@ if ($prepare_gff_munge) {
 }
 
 #several GFF manipulation steps
-if ($gff_munge or $gff3_munge) {
+if (($gff_munge or $gff3_munge) and $errors == 0) {
   my $prev_gff_prefix = 
     join("/", 
 	 $wormbase->ftp_site,
@@ -286,49 +342,54 @@ if ($gff_munge or $gff3_munge) {
   }
 }
 
-if ($gtf) {
-  $wormbase->run_script("ENSEMBL/scripts/dump_gtf_from_gff3.pl", $log);
+if ($gtf and $errors == 0) {
+  $wormbase->run_script("ENSEMBL/scripts/dump_gtf_from_gff3.pl -public_name", $log);
 }
 
-if ($xrefs) {
+if ($xrefs and $errors == 0) {
   $wormbase->run_script( 'generate_dbxref_file.pl', $log);
+  $errors += $wormtest->dbxref_report_correctly_formatted unless exists $tests_to_skip{'dbxref'};
 }
 
-if ($RRID) {
+if ($RRID and $errors == 0) {
   $wormbase->run_script( 'generate_RRID_data.pl', $log);
 }
 
-if ($omim) {
+if ($omim and $errors == 0) {
   $wormbase->run_script( 'generate_OMIM_xref.pl', $log);
 }
 
-&post_merge_steps                                                        if $post_merge;
+&post_merge_steps                                                        if $post_merge and $errors == 0;
 
-&ontologies								 if $ontologies;
-&make_extras                                                             if $extras;
+&ontologies								 if $ontologies and $errors == 0;
+&make_extras                                                             if $extras and $errors == 0;
 #run some checks
-$wormbase->run_script( "post_build_checks.pl -a"                 , $log) if $check;
-$wormbase->run_script( "data_checks.pl -ace -gff"                , $log) if $data_check;
-$wormbase->run_script( "dbcomp.pl -post_gff"                     , $log) if $data_check;
-&build_release                                                           if $buildrelease;
-$wormbase->run_script("finish_build.pl"                          , $log) if $finish_build;
-&go_public                                                               if $public;
+$wormbase->run_script( "post_build_checks.pl -a"                 , $log) if $check and $errors == 0;
+if ($data_check and $errors == 0) {
+    $wormbase->run_script( "data_checks.pl -ace -gff"                , $log);
+    $wormbase->run_script( "dbcomp.pl -post_gff"                     , $log);
+}
+&build_release                                                           if $buildrelease and $errors == 0;
+$wormbase->run_script("finish_build.pl"                          , $log) if $finish_build and $errors == 0;
+&go_public                                                               if $public and $errors == 0;
 
 
-if ($load) {
+if ($load and $errors == 0) {
   my $db_to_load = ($database) ? $database : $wormbase->autoace;
 
   $log->write_to("loading $load to $db_to_load\n");
   $log->write_to("\ttsuser = $tsuser\n\n");
   $wormbase->load_to_database( $db_to_load, $load, $tsuser ,$log ); 
   #appropriate checks are made in the Wormbase.pm
-} elsif ($big_load) {
+} elsif ($big_load and $errors == 0) {
   my $db_to_load = ($database) ? $database : $wormbase->autoace;
 
   $log->write_to("Big-loading $big_load to $db_to_load\n");
   $log->write_to("\ttsuser = $tsuser\n\n");
   $wormbase->load_to_database( $db_to_load, $big_load, $tsuser ,$log, 1); 
 }
+
+$log->log_and_die("***** WARNING: $errors errors identified by Wormtest.pm - any subsequent steps will not have run *****\n") if $errors != 0;
 
 $log->mail;
 
