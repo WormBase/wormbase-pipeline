@@ -10,7 +10,7 @@
 # it depends on:
 #    wormpep + history
 #    database_used_in_build
-#    ENSEMBL/worm_lite.pl
+#    ENSEMBL/worm_lite_wormbase.pl
 #    ENSEMBL/lib/WormBase.pm
 #    ENSEMBL/etc/ensembl_lite.yml
 #    /software/worm/ensembl/ensembl-conf/<species>
@@ -476,7 +476,7 @@ sub update_dna {
   
   # worm_lite.pl magic
   my $species = $wormbase->species;
-  &run_command( "perl $Bin/ENSEMBL/scripts/worm_lite.pl -yfile $yfile_name -setup -load_dna -load_genes -species $species", $log );
+  &run_command( "perl $Bin/ENSEMBL/scripts/worm_lite_wormbase.pl -yfile $yfile_name -setup -load_dna -load_genes -species $species", $log );
   
   # create analys_tables and rules
   my $db_options = sprintf(
@@ -541,7 +541,7 @@ sub update_proteins {
                            $config->{core_database}->{port}
 			  );
   
-  &run_command("perl $Bin/ENSEMBL/scripts/worm_lite.pl -yfile $yfile_name -load_genes -species $species", $log );
+  &run_command("perl $Bin/ENSEMBL/scripts/worm_lite_wormbase.pl -yfile $yfile_name -load_genes -species $species", $log );
 }
 
 =head2 delete_gene_by_translation [UNUSED]
