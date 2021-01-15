@@ -335,9 +335,9 @@ sub pipeline_analyses {
 
 sub resource_classes {
     return {
-         'default'      => {'LSF' => '-q production-rh7 -C0 -M1000   -R"select[mem>1000]   rusage[mem=1000]"' },
-         '2Gb_job'      => {'LSF' => '-q production-rh7 -C0 -M2000   -R"select[mem>2000]   rusage[mem=2000]"' },
-         '4Gb_job'      => {'LSF' => '-q production-rh7 -C0 -M4000   -R"select[mem>4000]   rusage[mem=4000]"' },
+         'default'      => {'LSF' => '-q production-rh74 -C0 -M1000   -R"select[mem>1000]   rusage[mem=1000]"' },
+         '2Gb_job'      => {'LSF' => '-q production-rh74 -C0 -M2000   -R"select[mem>2000]   rusage[mem=2000]"' },
+         '4Gb_job'      => {'LSF' => '-q production-rh74 -C0 -M4000   -R"select[mem>4000]   rusage[mem=4000]"' },
     };
 }
 
