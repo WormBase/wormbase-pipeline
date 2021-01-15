@@ -163,16 +163,11 @@ sub get_xrefs {
   my (%accs_by_source, @ret);
   
   foreach my $db ($obj->Database) {
-    if ($db eq "SwissProt" or $db eq 'TrEMBL' or $db eq 'UniProt_GCRP' or $db eq 'RNAcentral' or $db eq 'UniProtKB') {
+    my $db_name = lc($db->name);
+    if ($db_name eq "swissprot" or $db_name eq 'trembl' or $db_name eq 'uniprot_gcrp' or $db_name eq 'rnacentral') {
       foreach my $subtype ($db->col) {
         foreach my $acc ($subtype->col) {
-          if ($db eq 'UniProtKB') { 
-            if ($subtype eq 'UniProtIsoformAcc') {
-              push @{$accs_by_source{UniProtIsoform}}, $acc->name;
-            }            
-          } else {
-            push @{$accs_by_source{$db->name}}, $acc->name;
-          }
+          push @{$accs_by_source{$db_name}}, $acc->name;
         }
       }
     }
@@ -181,18 +176,18 @@ sub get_xrefs {
   if ($type eq 'gene') {
     # for protein-coding genes, get GCRP xref(s) if one exists; if not, get SwissProt/Trembl/RNAcentral if there is only one
 
-    if (exists $accs_by_source{UniProt_GCRP}) {
-      @ret = map { "UniProtKB:$_" } @{$accs_by_source{UniProt_GCRP}};
+    if (exists $accs_by_source{uniprot_gcrp}) {
+      @ret = map { "UniProtKB:$_" } @{$accs_by_source{uniprot_gcrp}};
     } else {
       my @list;
-      if (exists $accs_by_source{SwissProt}) {
-        push @list, map { "UniProtKB:$_" } @{$accs_by_source{SwissProt}};
+      if (exists $accs_by_source{swissprot}) {
+        push @list, map { "UniProtKB:$_" } @{$accs_by_source{swissprot}};
       }
-      if (exists $accs_by_source{TrEMBL}) {
-        push @list, map { "UniProtKB:$_" } @{$accs_by_source{TrEMBL}};
+      if (exists $accs_by_source{trembl}) {
+        push @list, map { "UniProtKB:$_" } @{$accs_by_source{trembl}};
       }
-      if (exists $accs_by_source{RNAcentral}) {
-        push @list, map { "RNAcentral:$_" } @{$accs_by_source{RNAcentral}};
+      if (exists $accs_by_source{rnacentral}) {
+        push @list, map { "RNAcentral:$_" } @{$accs_by_source{rnacentral}};
       }
       
       if (scalar(@list) == 1) {
@@ -201,20 +196,16 @@ sub get_xrefs {
     }
   } elsif ($type eq 'protein') {
     # transcript or protein
-    if (exists $accs_by_source{UniProtIsoform}) {
-      @ret = map { "UniprotKB:$_" } @{$accs_by_source{UniProtIsoform}};
-    } else {
-      if (exists $accs_by_source{SwissProt}) {
-        push @ret, map { "UniProtKB:$_" } @{$accs_by_source{SwissProt}};
-      }
-      if (exists $accs_by_source{TrEMBL}) {
-        push @ret, map { "UniProtKB:$_" } @{$accs_by_source{TrEMBL}};
-      }
+    if (exists $accs_by_source{swissprot}) {
+        push @ret, map { "UniProtKB:$_" } @{$accs_by_source{swissprot}};
+    }
+    if (exists $accs_by_source{trembl}) {
+      push @ret, map { "UniProtKB:$_" } @{$accs_by_source{trembl}};
     }
   } else {
     # transcripts and ncRNAs; only going to add RNAcentral xrefs for these
-    if (exists $accs_by_source{RNAcentral}) {
-      push @ret, map { "RNAcentral:$_" } @{$accs_by_source{RNAcentral}};
+    if (exists $accs_by_source{rnacentral}) {
+      push @ret, map { "RNAcentral:$_" } @{$accs_by_source{rnacentral}};
     }
   }
 
@@ -225,8 +216,7 @@ sub get_xrefs {
 
 $log->mail;
 
-# returns status 13 when finishing, so try to clean up
-$outfile->close;
 $db->close;
+$outfile->close;
 
 exit(0);

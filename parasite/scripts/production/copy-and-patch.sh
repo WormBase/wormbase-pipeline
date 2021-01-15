@@ -20,7 +20,7 @@ perl -MProductionMysql -E '
     exit 1
   fi
   echo "Dumping $DB to $NEWDB"
-  ${PREVIOUS_PARASITE_STAGING_MYSQL}-ensrw mysqldump $DB | ${PARASITE_STAGING_MYSQL}-ensrw $NEWDB
+  ${PREVIOUS_PARASITE_STAGING_MYSQL} mysqldump $DB | ${PARASITE_STAGING_MYSQL}-ensrw $NEWDB
   echo "Using schema_patcher.pl to patch $NEWDB"
   perl $ENSEMBL_CVS_ROOT_DIR/ensembl/misc-scripts/schema_patcher.pl $(${PARASITE_STAGING_MYSQL}-ensrw details script) \
      --release $ENSEMBL_VERSION --nointeractive \

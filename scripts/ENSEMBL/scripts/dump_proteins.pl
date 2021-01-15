@@ -4,13 +4,14 @@ use strict;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use Getopt::Long;
 use IO::File;
+use Data::Dumper;
 
 my $dbhost = "mysql-wormbase-pipelines";
 my $dbuser = "wormro";
 my $dbport = "4331";
 my $dbpass = "";
     
-my ($database,$dna,$transcript_only,$outfile);
+my ($database,$dna,$transcript_only,$outfile,$canonical_only);
 
 GetOptions( 
   'host=s'        => \$dbhost,
@@ -19,7 +20,8 @@ GetOptions(
   'pass=s'        => \$dbpass,
   'dbname=s'        => \$database,
   'dna'             => \$dna,
-  'transcript_only' => \$transcript_only, 
+  'transcript_only' => \$transcript_only,
+  'canonical_only'  => \$canonical_only,
   'outfile=s'       => \$outfile) or die(@!);
 
 my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(
@@ -41,8 +43,11 @@ if (defined $outfile) {
 my $gene_adaptor = $db->get_GeneAdaptor();
 my @genes = @{$gene_adaptor->fetch_all()};
 foreach my $gene(@genes){
+  my @transcripts;
   my $geneId=$gene->stable_id();
-  foreach my $trans (@{$gene->get_all_Transcripts()}) {
+  if ($canonical_only){ @transcripts = ($gene->canonical_transcript()); }
+  else { @transcripts = (@{$gene->get_all_Transcripts()}) }
+  foreach my $trans (@transcripts) {
     my $protein=$trans->translation();
     my $transcriptId=$trans->stable_id();
     my $proteinId=$protein?$protein->stable_id():$transcriptId;

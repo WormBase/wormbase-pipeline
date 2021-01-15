@@ -211,7 +211,7 @@ while( my $obj = $it->next) {
     next;
   }
 
-  $assoc_type = $obj->Association_type->name if $obj->Association_type and !defined $strain;
+  $assoc_type = $obj->Association_type->name if $obj->Association_type and !defined $strain and !defined $allele;
   
   my $assoc_rel = {
     associationType => $assoc_type,
@@ -263,9 +263,8 @@ while( my $obj = $it->next) {
     $annot->{experimentalConditions} = \@exp_conditions if @exp_conditions;
   }
 
-  # Commented out until required
-  #my $conditions = get_condition_relations($obj);
-  #$annot->{conditionRelations} = $conditions if @$conditions;
+  my $conditions = get_condition_relations($obj);
+  $annot->{conditionRelations} = $conditions if @$conditions;
   
   push @annots, $annot;# unless ($obj_type eq 'transgene' && ! $build);
 
