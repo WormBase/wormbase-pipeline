@@ -2,22 +2,19 @@
 # change mRNAs to nontranslating_transcript for transcripts of genes that fail the ProteinTranslation datacheck
 # remove CDSs these had as a parent
 # this is appropriate for cases where a handful of "protein coding" transcripts in a user submitted GFF fail the ProteinTranslation datacheck
+# adapted from Wojtek's change_transcripts_to_noncoding.pl
+
+use strict;
+use warnings;
+
 @ARGV or die "Usage: $0 in.gff transcripts.txt";
 
 my $f = shift;
-my $fh;
-if ($f eq "-" ) {
-  $fh = STDIN;
-} else {
-  open ($fh, '<', $f) or die;
-}
+open (my $fh, '<', $f) or die;
+
 my $g = shift;
-my $gh;
-if ($g eq "-") {
-  $gh = STDIN;
-} else {
-  open ($gh, '<', $g) or die;
-}
+open (my $gh, '<', $g) or die;
+
 my %ts;
 while (<$gh>) {
   chomp;
@@ -51,7 +48,7 @@ while (<$fh>) {
    print join "\t", @c;
 }
 
-foreach $cds (@cds){
+foreach my $cds (@cds){
 	my $parent = &extract_attribute("Parent", $cds->[8]);
 	next if $ids{$parent};
 	print join "\t", @$cds;
