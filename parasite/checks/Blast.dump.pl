@@ -1,7 +1,5 @@
 #!/usr/bin/env perl
-# -port 4467 -user ensro 
-# -dumpPath /hps/nobackup/production/ensemblgenomes/parasite/production/dumps/WBPS15/BLAST
-# run the script as this: core | while read -r i ; do perl Blast.cDNA.pl -host mysql-ps-staging-2.ebi.ac.uk -port 4467 -user ensro 
+# run the script as this: core _${PARASITE_VERSION}_ | while read -r i ; do perl Blast.dump.pl $($PARASITE_STAGING_MYSQL details script) 
 # -dumpPath /hps/nobackup/production/ensemblgenomes/parasite/production/dumps/WBPS15/BLAST -dbname $i ; done
 use strict;
 use warnings;
