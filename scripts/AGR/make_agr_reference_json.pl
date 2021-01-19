@@ -39,36 +39,39 @@ my %WB_AGR_TYPE_MAP = (
     );
 
 my ($debug, $test, $verbose, $store, $wormbase, $build);
-my ($outfile, $acedbpath, $ws_version);
+my ($outfile, $re_outfile, $acedbpath, $ws_version);
 
 GetOptions (
-  'debug=s'     => \$debug,
-  'test'        => \$test,
-  'verbose'     => \$verbose,
-  'store:s'     => \$store,
-  'database:s'  => \$acedbpath,
-  'outfile:s'   => \$outfile,
-  'wsversion=s' => \$ws_version,
+    'debug=s'     => \$debug,
+    'test'        => \$test,
+    'verbose'     => \$verbose,
+    'store:s'     => \$store,
+    'database:s'  => \$acedbpath,
+    'ref:s'       => \$outfile,
+    'refex:s'     => \$re_outfile,
+    'wsversion=s' => \$ws_version,
 )||die("unknown command line option: $@\n");
 
 if ( $store ) {
-  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+    $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
-  $wormbase = Wormbase->new( -debug   => $debug,
-                             -test    => $test,
-      );
+    $wormbase = Wormbase->new( -debug   => $debug,
+			       -test    => $test,
+	);
 }
 
 my $tace = $wormbase->tace;
 $acedbpath = $wormbase->autoace unless $acedbpath;
 $ws_version = $wormbase->get_wormbase_version_name unless $ws_version;
-$outfile = "./publications.${ws_version}.json" unless defined $outfile;
+$outfile = "./reference.${ws_version}.json" unless defined $outfile;
+$re_outfile = "./reference_exchange.${ws_version}.json" unless defined $re_outfile;
 
 
 my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or die("Connection failure: ". Ace->error);
 
 my $it = $db->fetch_many(-query => 'find Paper WHERE Valid');
 my @references;
+my @exchange_refs;
 while (my $obj = $it->next) {
     next unless $obj->Species eq 'Caenorhabditis elegans';
 
@@ -94,9 +97,12 @@ while (my $obj = $it->next) {
 
     next unless ($obj->Title and $obj->Brief_citation);
 
+    my $is_pubmed = $ref_id =~ /^PMID:/ ? 1 : 0;
+    my ($reference, $exchange_ref);
+
     my $author_list = get_author_list($obj, $ref_id);
     my $resource_title = $obj->Journal ? $obj->Journal->name : $obj->Title->name;
-    my $reference = {
+    $reference = {
 	primaryId            => $ref_id,
 	authors              => $author_list,
 	title                => $obj->Title->name,
@@ -105,14 +111,24 @@ while (my $obj = $it->next) {
 	tags                 => [{referenceId => $ref_id, tagName => 'inCorpus', tagSource => 'WB'}],
 	resourceAbbreviation => $resource_title,
     };
+
+    $exchange_ref = {
+	pubMedId  => $ref_id,
+	modId     => 'WB:' . $obj->name,
+	tags      => [{referenceId => $ref_id, tagName => 'inCorpus', tagSource => 'WB'}],
+    } if $is_pubmed;
+	
     
     if ($obj->Type) {
 	my $wb_article_type = $obj->Type->name;
 	$reference->{allianceCategory} = $WB_AGR_TYPE_MAP{$wb_article_type};
+	$exchange_ref->{allianceCategory} = $WB_AGR_TYPE_MAP{$wb_article_type} if $is_pubmed;
 	$reference->{MODReferenceTypes} = [{referenceType => $wb_article_type, source => 'WB'}];
+	$exchange_ref->{MODReferenceTypes} = [{referenceType => $wb_article_type, source => 'WB'}] if $is_pubmed;
     }
     else {
 	$reference->{allianceCategory} = 'Unknown';
+	$exchange_ref->{allianceCategory} = 'Unknown' if $is_pubmed;
     }
 
     my @keywords;
@@ -143,6 +159,7 @@ while (my $obj = $it->next) {
     $reference->{crossReferences} = \@xrefs if @xrefs;
 
     push @references, $reference;
+    push @exchange_refs, $exchange_ref if $is_pubmed;
 }
 
 open (OUT, '>', $outfile) or die "Cannot open $outfile to write: $!\n";
@@ -154,6 +171,17 @@ my $data = {
 my $json_obj = JSON->new;
 print OUT $json_obj->allow_nonref->canonical->pretty->encode($data);
 close(OUT);
+
+open (RE_OUT, '>', $re_outfile) or die "Cannot open $outfile to write: $!\n";
+my $re_data = {
+    metaData => AGR::get_file_metadata_json($ws_version),
+    data     => \@exchange_refs,
+};
+
+my $re_json_obj = JSON->new;
+print RE_OUT $re_json_obj->allow_nonref->canonical->pretty->encode($re_data);
+close(RE_OUT);
+
 
 exit(0);
 
