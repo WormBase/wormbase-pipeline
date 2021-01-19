@@ -1,8 +1,9 @@
 
-# core | while read -r i ; do perl  FTP.dump.pl  
-# -host mysql-ps-staging-1.ebi.ac.uk -port 4451 -user 
-# ensro -dumpPath /hps/nobackup/production/ensemblgenomes/parasite/production/dumps/WBPS15/FTP 
+# core _${PARASITE_VERSION}_ | while read -r i ; 
+# do perl FTP.dump.pl $($PARASITE_STAGING_MYSQL details script) 
+#  -dumpPath /hps/nobackup/production/ensemblgenomes/parasite/production/dumps/WBPS15/FTP
 # -dbname $i ; done
+
 
 #!/usr/bin/env perl
 use IO::Uncompress::Gunzip;
@@ -105,13 +106,6 @@ $dna_genomicMgz = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.genomic_mask
 $dna_genomicSMgz = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.genomic_softmasked.fa.gz" ;
 $transgz = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.mRNA_transcripts.fa.gz" ;
 
-$pep = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.protein.fa" ;
-$dna_genomic = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.genomic.fa" ;
-$dna_genomicM = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.genomic_masked.fa" ;
-$dna_genomicSM = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.genomic_softmasked.fa" ;
-$trans = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.mRNA_transcripts.fa" ;
-
-#print "pep:$pep\ntrans:$trans\n";
 #path for files 
 
 my $pep_path = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.protein.fa";
@@ -120,20 +114,12 @@ my $genomicM_path = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.genomic_ma
 my $genomicSM_path = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.genomic_softmasked.fa";
 my $trans_path = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.mRNA_transcripts.fa";
 
+
 print "working on: $db\n";
 #working on protein
 my ($protein_result, $genomic_result, $genomicSM_result, $genomicM_result, $trans_result); 
-if(-e $pep)
-{
- $protein_result = mycount ($pep_path) ;
- if ($value_pep != $protein_result)
- {
-print "$db\tpep_in_db:$value_pep\tpep_in_dump:$protein_result\n";
 
- }
- #print "$protein_result\n";
-}
-elsif (-e $pepgz)
+if (-e $pepgz)
 {
 system("gunzip $pepgz");
 $protein_result = mycount ($pep_path) ;           
@@ -147,6 +133,8 @@ print "$db\tpep_in_db:$value_pep\tpep_in_dump:$protein_result\n";
 
 else {"$db\tprotein file is not found\n";}
 
+
+system("gzip $pep_path");
 #print "$db\tpep_in_db:$value_pep\tpep_in_dump:$protein_result\n";
 
 
@@ -154,17 +142,7 @@ else {"$db\tprotein file is not found\n";}
 
 
 #working on genomic DNA
-
-if(-e $dna_genomic)
-{
-$genomic_result = mycount ($genomic_path) ;
-if ($value_dna != $genomic_result)
- {
-print "$db\tgenomeDNA_in_db:$value_dna\tgenomeDNA_in_dump:$genomic_result\n";
-
- }
-}
-elsif (-e $dna_genomicgz)
+if (-e $dna_genomicgz)
 {
 system("gunzip $dna_genomicgz");
 $genomic_result = mycount ($genomic_path) ;
@@ -177,22 +155,13 @@ print "$db\tgenomeDNA_in_db:$value_dna\tgenomeDNA_in_dump:$genomic_result\n";
 
 else {"$db\tgenomic DNA file is not found\n";}
 
-
+system("gzip $genomic_path");
 
 
 
 #working on masked genomic DNA
 
-if(-e $dna_genomicM)
-{
-$genomicM_result = mycount ($genomicM_path) ;
-if ($value_dna != $genomicM_result)
- {
-print "$db\tgenomeDNA_in_db:$value_dna\tgenomeDNAmasked_in_dump:$genomicM_result\n";
-
- }
-}
-elsif (-e $dna_genomicMgz)
+if (-e $dna_genomicMgz)
 {
 system("gunzip $dna_genomicMgz");
 $genomicM_result = mycount ($genomicM_path) ;
@@ -205,6 +174,7 @@ print "$db\tgenomeDNA_in_db:$value_dna\tgenomeDNAmasked_in_dump:$genomicM_result
 
 else {"$db\tgenomic Masked DNA file is not found\n";}
 
+system("gzip $genomicM_path");
 
 
 
@@ -212,18 +182,7 @@ else {"$db\tgenomic Masked DNA file is not found\n";}
 
 #working on soft masked genomic DNA
 
-if(-e $dna_genomicSM)
-{
-$genomicSM_result = mycount ($genomicSM_path) ;
-if ($value_dna != $genomicSM_result)
- {
-print "$db\tgenomeDNA_in_db:$value_dna\tgenomesoftmaskedDNA_in_dump:$genomicSM_result\n";
-
- }
-
-
-}
-elsif (-e $dna_genomicSMgz)
+if (-e $dna_genomicSMgz)
 {
 system("gunzip $dna_genomicSMgz");
 $genomicSM_result = mycount ($genomicSM_path) ;
@@ -238,22 +197,12 @@ print "$db\tgenomeDNA_in_db:$value_dna\tgenomesoftmaskedDNA_in_dump:$genomicSM_r
 
 else {"$db\tgenomic SoftMasked DNA file is not found\n";}
 
-
+system("gzip $genomicSM_path");
 
 
 #working on soft transcript
 
-if(-e $trans)
-{
-$trans_result = mycount ($trans_path) ;
-
-if ($value_trans != $trans_result)
- {
-print "$db\tmRNA_in_db:$value_trans\tmRNA_in_dump:$trans_result\n";
-
- }
-}
-elsif (-e $transgz)
+if (-e $transgz)
 {
 system("gunzip $transgz");
 $trans_result = mycount ($trans_path) ;
@@ -267,5 +216,5 @@ print "$db\tmRNA_in_db:$value_trans\tmRNA_in_dump:$trans_result\n";
 
 else {"$db\tgenomic SoftMasked DNA file is not found\n";}
 
-
+system("gzip $trans_path");
 
