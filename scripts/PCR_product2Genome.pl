@@ -75,7 +75,7 @@ my $log = Log_files->make_build_log($wormbase);
 ###########################################
 
 $IPCRESS = "ipcress" if not defined $IPCRESS;
-$EPCR = "/nfs/production/panda/ensemblgenomes/wormbase/software/bin/e-PCR" if not defined $EPCR;
+$EPCR = "e-PCR" if not defined $EPCR;
 $MIN_PROD_SIZE = 50 if not defined $MIN_PROD_SIZE;
 $MAX_PROD_SIZE = 50000 if not defined $MAX_PROD_SIZE;
 $database = $wormbase->autoace if not $database;
