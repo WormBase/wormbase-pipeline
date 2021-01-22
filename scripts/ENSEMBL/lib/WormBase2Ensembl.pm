@@ -128,6 +128,8 @@ sub parse_genes_gff3_fh {
     
     die "pseudogene: should instead be gene + pseudogenic_transcript"
       if $l[2] eq 'pseudogene';
+    die "nontranslating_CDS should be gene + nontranslating_transcript"
+      if $l[2] eq 'nontranslating_CDS';
     next if (
       $l[2] ne 'gene' and 
       $l[2] ne 'rRNA' and 
@@ -148,7 +150,8 @@ sub parse_genes_gff3_fh {
       $l[2] ne 'protein_coding_primary_transcript' and  
       $l[2] ne 'pseudogenic_transcript' and 
       $l[2] ne 'pseudogenic_rRNA' and
-      $l[2] ne 'pseudogenic_tRNA' and 
+      $l[2] ne 'pseudogenic_tRNA' and
+      $l[2] ne 'nontranslating_transcript' and 
       $l[2] ne 'CDS' and 
       $l[2] ne 'exon');
 
@@ -175,7 +178,7 @@ sub parse_genes_gff3_fh {
     }
     
     if ($l[2] eq 'exon') {
-      # parent is mRNA
+      # parent is mRNA 
       foreach my $parent (keys %parents) {
         push @{$transcripts{$parent}->{exons}}, {
           seq       => $l[0],
@@ -213,6 +216,7 @@ sub parse_genes_gff3_fh {
              $l[2] eq 'antisense_RNA' or
              $l[2] eq 'circular_RNA' or
              $l[2] eq 'pseudogenic_transcript' or
+	     $l[2] eq 'nontranslating_transcript' or
              $l[2] eq 'pseudogenic_rRNA' or
              $l[2] eq 'pseudogenic_tRNA' or
              $l[2] eq 'nc_primary_transcript' or 
@@ -456,7 +460,11 @@ sub parse_genes_gff3_fh {
           }
           $transcript->biotype($biotype);
           $gene_biotypes{pseudogene}++;
-        } elsif ( $gff_type eq 'mRNA'){
+       	} elsif ($gff_type =~ /nontranslating_transcript/){
+	  $transcript->analysis($coding_ana); # analysis description to match the protein coding genes.
+	  $transcript->biotype('nontranslating_CDS');
+	  $gene_biotypes{nontranslating_CDS}++;
+	} elsif ( $gff_type eq 'mRNA'){
           # mRNA feature with no corresponding CDS. Barf
           die "Transcript $tid is an mRNA, but could not get a valid CDS for it. Aborting\n";
         } elsif ( $gff_type eq 'pre_miRNA' or
