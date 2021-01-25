@@ -141,12 +141,8 @@ sub get_bgi{
 
 		print $outfh 'Species "'.$taxon2name{$bgE->{taxonId}}."\"\n";
 
-		if ($so2term{$gene->{soTermId}}){
-			print $outfh 'Biotype "'.$so2term{$gene->{soTermId}}."\"\n";
-		}else{
-			$log->log_and_die("cannot find term for ${\$gene->{soTermId}}\n")
-		}
-
+		print $outfh 'Biotype "'.$gene->{soTermId}."\"\n";
+		
 	        print $outfh 'CGC_name "'.$gene->{symbol}."\" Inferred_automatically \"AGR_import\"\n" if $gene->{symbol};
 
 		if ($gene->{symbol}){
