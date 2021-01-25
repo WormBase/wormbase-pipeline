@@ -63,8 +63,9 @@ sub download_from_agr {
 
     my $download_urls = defined $url ? get_urls_from_snapshot($url) : get_latest_urls();
 
-    my $input_files_file = "$BASE_DIR/VEP_input_files.txt";
-    open (FILES, '>', $input_files_file);
+    make_path($BASE_DIR) unless -d $BASE_DIR;
+    my $input_files_file = "${BASE_DIR}/VEP_input_files.txt";
+    open (FILES, '>', $input_files_file) or die $!;
     for my $mod (@$mods) {
 	print FILES "${mod}:\n";
 	my $mod_dir = "$BASE_DIR/$mod";
@@ -278,6 +279,7 @@ sub merge_bam_files {
 
     run_system_cmd("samtools sort -o ${mod}_BAM.sorted.bam -T tmp ${mod}_BAM.bam", "Sorting $mod BAM file");
     run_system_cmd("mv ${mod}_BAM.sorted.bam ${mod}_BAM.bam", "Replacing $mod BAM file with sorted version");
+    run_system_cmd("samtools index ${mod}_BAM.bam", "Indexing $mod BAM file");
 
     return;
 }
@@ -483,7 +485,7 @@ sub create_chromosome_map {
 	$chromosome_map{$variation->{chromosome}} = $1;
     }
 
-    open (MAP, '>', "${mod}_chromosome_map.txt");
+    open (MAP, '>', "${mod}_chromosome_map.txt") or die $!;
     for my $chr (sort values %chromosome_map) {
 	print MAP $chr . "\t" . $chromosome_map{$chr} . "\n";
     }
@@ -531,7 +533,7 @@ sub convert_vcf_chromosomes {
 		next;
 	    }
 	    else {
-		die "Could not map $mod chromosome in VCF " . $columns[0] . "to RefSeq ID\n";
+		warn "Could not map $mod chromosome in $type " . $columns[0] . " to RefSeq ID\n";
 	    }
 	}
 	print OUT $_;
