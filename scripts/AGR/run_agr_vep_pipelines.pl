@@ -2,21 +2,23 @@
 use strict;
 use Getopt::Long;
 use Compress::Zlib;
+use Const::Fast;
 use JSON;
 use LWP::Simple;
-use Const::Fast;
 use File::Path qw(make_path);
 use Time::Piece;
+use File::Slurp;
 
 const my $FMS_LATEST_PREFIX => 'https://fms.alliancegenome.org/api/datafile/by/';
 const my $FMS_LATEST_SUFFIX => '?latest=true';
-const my @FMS_DATATYPES => ('FASTA', 'GFF', 'VCF', 'HTVCF', 'MOD-GFF-BAM-KNOWN', 'MOD-GFF-BAM-MODEL');
+const my @FMS_DATATYPES => ('FASTA', 'GFF', 'VCF', 'HTVCF', 'MOD-GFF-BAM-KNOWN', 'MOD-GFF-BAM-MODEL', 'VARIATION');
 const my %DATATYPE_EXTENSIONS => ('FASTA'             => 'fa',
 				  'GFF'               => 'gff',
 				  'VCF'               => 'vcf',
 				  'HTVCF'             => 'vcf',
 				  'MOD-GFF-BAM-KNOWN' => 'bam',
 				  'MOD-GFF-BAM-MODEL' => 'bam',
+				  'VARIATION'         => 'json',
     );
 const my %ASSEMBLIES => ('GRCm38'   => 'MGI',
 			 'R6'       => 'FB',
@@ -49,7 +51,7 @@ download_from_agr(\@mods, $url) if $stages =~ /1/;
 
 for my $mod (@mods) {
     chdir "$BASE_DIR/$mod";
-    process_gff_and_fasta($mod) if $stages =~ /2/;
+    process_input_files($mod) if $stages =~ /2/;
     calculate_pathogenicity_predictions($mod, $password, $test) if $stages =~ /3/;
     run_vep_on_phenotypic_variations($mod, $password, $test) if $stages =~ /4/;
     run_vep_on_htp_variations($mod, $password, $test) if $stages =~ /5/;
@@ -147,10 +149,17 @@ sub check_if_actually_compressed {
 }
     
 
-sub process_gff_and_fasta {
+sub process_input_files {
     my $mod = shift;
 
-    munge_gff($mod);
+    my $chr_map;
+    unless ($mod eq 'HUMAN') {
+	$chr_map = create_chromosome_map($mod);
+	convert_fasta_headers($mod, $chr_map);
+	convert_vcf_chromosomes($mod, $chr_map, 'VCF');
+	convert_vcf_chromosomes($mod, $chr_map, 'HTVCF') if -e "${mod}_HTVCF.vcf";
+    }
+    munge_gff($mod, $chr_map);
     run_system_cmd("bgzip -c ${mod}_FASTA.fa > ${mod}_FASTA.fa.gz", "Compressing $mod FASTA");
     run_system_cmd("sort -k1,1 -k4,4n -k5,5n -t\$'\\t' ${mod}_GFF.gff | bgzip -c > ${mod}_GFF.gff.gz",
 		       "Sorting and compressing $mod GFF");
@@ -167,6 +176,9 @@ sub calculate_pathogenicity_predictions {
     
     my $lsf_queue = $test ? $ENV{'LSF_TEST_QUEUE'} : $ENV{'LSF_DEFAULT_QUEUE'};
 
+    my $bam = 0;
+    $bam = "${mod}_BAM.bam" if -e "${mod}_BAM.bam";
+    
     my $init_cmd = "init_pipeline.pl VepProteinFunction::VepProteinFunction_conf -mod $mod" .
 	" -agr_fasta ${mod}_FASTA.fa -agr_gff ${mod}_GFF.gff -agr_bam ${mod}_BAM.bam" . 
 	' -hive_root_dir ' . $ENV{'HIVE_ROOT_DIR'} . ' -pipeline_base_dir ' . $ENV{'PATH_PRED_WORKING_DIR'} .
@@ -265,6 +277,7 @@ sub merge_bam_files {
     }
 
     run_system_cmd("samtools sort -o ${mod}_BAM.sorted.bam -T tmp ${mod}_BAM.bam", "Sorting $mod BAM file");
+    run_system_cmd("mv ${mod}_BAM.sorted.bam ${mod}_BAM.bam", "Replacing $mod BAM file with sorted version");
 
     return;
 }
@@ -277,7 +290,8 @@ sub sort_vcf_files {
 	next unless -e "${mod}_${datatype}.vcf";
 	run_system_cmd("vcf-sort ${mod}_${datatype}.vcf > ${mod}_${datatype}.sorted.vcf",
 		       "Sorting $mod $datatype file");
-	run_system_cmd("mv ${mod}_${datatype}.sorted.vcf ${mod}_${datatype}.vcf", "Renaming sorted $mod $datatype file");
+	run_system_cmd("mv ${mod}_${datatype}.sorted.vcf ${mod}_${datatype}.vcf",
+		       "Replacing sorted $mod $datatype file with sorted version");
     }
 
     return;
@@ -285,7 +299,7 @@ sub sort_vcf_files {
 
 
 sub munge_gff {
-    my $mod = shift;
+    my ($mod, $chr_map) = @_;
 
     my $gff = "${mod}_GFF.gff";
     open(IN, "grep -v '^#' $gff |") or die "Could not open $gff for reading\n";
@@ -296,6 +310,16 @@ sub munge_gff {
 	next if $line =~ /^\n$/;
 
 	my @columns = split("\t", $_);
+	if ($mod ne 'HUMAN') {
+	    if (exists $chr_map->{$columns[0]}) {
+		$columns[0] = $chr_map->{$columns[0]};
+		$line = join("\t", @columns);
+	    }
+	    else {
+		die "Could not map $mod chromosome in GFF " . $columns[0] . "to RefSeq ID\n";
+	    }
+	}
+	
 	if ($mod eq 'FB') {
 	    $line = change_FB_transgene_exons($line, \@columns);
 	}
@@ -314,7 +338,6 @@ sub munge_gff {
 	    $columns[2] = 'gene';
 	    $line = join("\t", @columns);
 	}
-       
 
 	my @biotypes = ('lnc_RNA', 'lincRNA', 'lincRNA_gene', 'miRNA', 'miRNA_gene', 'pre_miRNA', 
 			'mt_gene', 'nc_primary_transcript', 'NMD_transcript_variant', 'pseudogene',
@@ -442,6 +465,82 @@ sub run_system_cmd {
     if ($error) {
 	die "$description failed: $cmd (Exit code: $error)\n";
     }
+
+    return;
+}
+
+
+sub create_chromosome_map {
+    my ($mod) = shift;
+
+    my %chromosome_map;
+    my $variation_json = read_file("${mod}_VARIATION.json"); 
+    my $variations = decode_json $variation_json;
+
+    for my $variation (@{$variations->{data}}) {
+	my $refseq_chr = $variation->{sequenceOfReferenceAccessionNumber};
+	next unless $refseq_chr =~ /^RefSeq:(.+)$/;
+	$chromosome_map{$variation->{chromosome}} = $1;
+    }
+
+    open (MAP, '>', "${mod}_chromosome_map.txt");
+    for my $chr (sort values %chromosome_map) {
+	print MAP $chr . "\t" . $chromosome_map{$chr} . "\n";
+    }
+    close (MAP);
+
+    return \%chromosome_map;
+}
+    
+
+sub convert_fasta_headers {
+    my ($mod, $chr_map) = @_;
+
+    open (IN, '<', "${mod}_FASTA.fa");
+    open (OUT, '>', "${mod}_FASTA.fa.tmp");
+    while (<IN>) {
+	if ($_ =~ /^>(\S+)/) {
+	    if (exists $chr_map->{$1}) {
+		print OUT '>' . $chr_map->{$1} . "\n";
+		next;
+	    }
+	}
+	print OUT $_;
+    }
+    close (IN);
+    close (OUT);
+
+    run_system_cmd("mv ${mod}_FASTA.fa.tmp ${mod}_FASTA.fa",
+		   'Replacing FASTA file with RefSeq chr ID version');
+
+    return;
+}
+
+
+sub convert_vcf_chromosomes {
+    my ($mod, $chr_map, $type) = @_;
+
+    open (IN, '<', "${mod}_${type}.vcf");
+    open (OUT, '>', "${mod}_${type}.vcf.tmp");
+    while (<IN>) {
+	if ($_ !~ /^#/) {
+	    my @columns = split("\t", $_);
+	    if (exists $chr_map->{$columns[0]}) {
+		$columns[0] = $chr_map->{$columns[0]};
+		print OUT join("\t", @columns);
+		next;
+	    }
+	    else {
+		die "Could not map $mod chromosome in VCF " . $columns[0] . "to RefSeq ID\n";
+	    }
+	}
+	print OUT $_;
+    }
+    close (IN);
+    close (OUT);
+
+    run_system_cmd("mv ${mod}_${type}.vcf.tmp ${mod}_${type}.vcf",
+		   "Replacing $type file with RefSeq chr ID version");
 
     return;
 }

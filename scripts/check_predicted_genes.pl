@@ -723,8 +723,8 @@ sub main_gene_checks {
     }
     
     # check that history genes are renamed.
-    if (($method_name =~ /history/ && !($gene_model_name =~ /\:/) && !($gene_model_name =~ /WBTransposon/))) {
-      push(@error3, "ERROR: $gene_model needs to be renamed as it is part of history.\n");
+    if (($method_name =~ /history/ && !($gene_model_name =~ /\:/) && !($gene_model_name =~ /WBTransposon/) && !($gene_model_name =~ /Predicted_/))) {
+	push(@error3, "ERROR: $gene_model needs to be renamed as it is part of history.\n");
     }
     
     if ($method_name eq "Transposon") {
@@ -952,29 +952,30 @@ sub test_gene_sequence_for_errors {
     
 
     my $warning;
-      
-    if (!exists $checked_small_genes{$gene_model}) {
-      if (($gene_model_length < 35) && ($method_name eq 'curated')) {
-	$warning = "WARNING: $gene_model is very short ($gene_model_length bp),";
-	if (defined($gene_model->at('Properties.Coding.Confirmed_by'))) {
-	  $warning .= "gene is Confirmed\n";
-	} elsif (defined($gene_model->at('Visible.Matching_cDNA'))) {
-	  $warning .= "gene is Partially_confirmed\n";
-	} else {
-	  $warning .= "gene is Predicted\n";
+    unless ($build) {  
+	if (!exists $checked_small_genes{$gene_model}) {
+	    if (($gene_model_length < 35) && ($method_name eq 'curated')) {
+		$warning = "WARNING: $gene_model is very short ($gene_model_length bp),";
+		if (defined($gene_model->at('Properties.Coding.Confirmed_by'))) {
+		    $warning .= "gene is Confirmed\n";
+		} elsif (defined($gene_model->at('Visible.Matching_cDNA'))) {
+		    $warning .= "gene is Partially_confirmed\n";
+		} else {
+		    $warning .= "gene is Predicted\n";
+		}
+		push(@error3, $warning);
+	    } elsif (($gene_model_length < 55) && ($method_name eq 'curated')) {
+		if (defined($gene_model->at('Properties.Coding.Confirmed_by'))) {
+		    $warning = "WARNING: $gene_model is short ($gene_model_length bp) and is Confirmed\n";
+		}
+		elsif (defined($gene_model->at('Visible.Matching_cDNA'))) {
+		    $warning .= "WARNING: $gene_model is short ($gene_model_length bp) and is Partially_confirmed\n";
+		} else {
+		    $warning .= "WARNING: $gene_model is short ($gene_model_length bp) and is Predicted\n";
+		}
+		push(@error5, $warning);
+	    }
 	}
-	push(@error3, $warning);
-      } elsif (($gene_model_length < 55) && ($method_name eq 'curated')) {
-	if (defined($gene_model->at('Properties.Coding.Confirmed_by'))) {
-	  $warning = "WARNING: $gene_model is short ($gene_model_length bp) and is Confirmed\n";
-	}
-	elsif (defined($gene_model->at('Visible.Matching_cDNA'))) {
-	  $warning .= "WARNING: $gene_model is short ($gene_model_length bp) and is Partially_confirmed\n";
-	} else {
-	  $warning .= "WARNING: $gene_model is short ($gene_model_length bp) and is Predicted\n";
-	}
-	push(@error5, $warning);
-      }
     }
 
       
