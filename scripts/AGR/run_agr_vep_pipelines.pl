@@ -60,13 +60,17 @@ sub download_from_agr {
     my ($mods, $url) = @_;
 
     my $download_urls = defined $url ? get_urls_from_snapshot($url) : get_latest_urls();
-    
+
+    my $input_files_file = "$BASE_DIR/VEP_input_files.txt";
+    open (FILES, '>', $input_files_file);
     for my $mod (@$mods) {
+	print FILES "${mod}:\n";
 	my $mod_dir = "$BASE_DIR/$mod";
 	make_path($mod_dir) unless -d $mod_dir;
 	chdir $mod_dir;
 	for my $datatype (keys %{$download_urls->{$mod}}){
 	    my ($filename) = $download_urls->{$mod}{$datatype} =~ /\/([^\/]+)$/;
+	    print FILES "\t${datatype}: ${filename}\n";
 	    run_system_cmd('wget ' . $download_urls->{$mod}{$datatype}, "Downloading $mod $datatype file");
 	    $filename = check_if_actually_compressed($filename) if $filename !~ /\.gz/; # temporary hack to get around gzipped files in FMS without .gz extension
 	    run_system_cmd("gunzip $filename", "Decompressing $filename") if $filename =~ /\.gz$/; # if clause only required in interim while some FMS files not gzipped
@@ -77,6 +81,7 @@ sub download_from_agr {
 	merge_bam_files($mod);
 	sort_vcf_files($mod);
     }
+    close (FILES);
 
     return;
 }
