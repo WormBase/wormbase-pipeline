@@ -249,7 +249,7 @@ sub run_vep_on_htp_variations{
     run_system_cmd("gzip -9 ${mod}_HTPOSTVEPVCF.vcf", "Compressing $mod HTP variations VEP output");
     my $curl_cmd = 'curl -H "Authorization: Bearer ' . $ENV{'TOKEN'} . 
 	'" -X POST "https://fms.alliancegenome.org/api/data/submit" -F "' . $ENV{'AGR_RELEASE'} .
-	'_HTPOSTVEPVCF' . '_' . $mod . '=@' . $mod . '_HTPOSTVEPVCF.txt.gz"';
+	'_HTPOSTVEPVCF' . '_' . $mod . '=@' . $mod . '_HTPOSTVEPVCF.vcf.gz"';
     run_system_cmd($curl_cmd, "Uploading $mod HTP VEP results to AGR") unless $test;
     
     return;
