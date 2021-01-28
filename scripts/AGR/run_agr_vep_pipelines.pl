@@ -147,6 +147,33 @@ const my %REFSEQ_CHROMOSOMES => (
 	'25' => 'NC_007136.7',
 	'MT' => 'NC_002333.2',
     },
+    'HUMAN' => {
+	'1'  => 'NC000001.11',
+	'2'  => 'NC000002.12',
+	'3'  => 'NC000003.12',
+	'4'  => 'NC000004.12',
+	'5'  => 'NC000005.10',
+	'6'  => 'NC000006.12',
+	'7'  => 'NC000007.14',
+	'8'  => 'NC000008.11',
+	'9'  => 'NC000009.12',
+	'10' => 'NC000010.11',
+	'11' => 'NC000011.10',
+	'12' => 'NC000012.12',
+	'13' => 'NC000013.11',
+	'14' => 'NC000014.9',
+	'15' => 'NC000015.10',
+	'16' => 'NC000016.10',
+	'17' => 'NC000017.11',
+	'18' => 'NC000018.10',
+	'19' => 'NC000019.10',
+	'20' => 'NC000020.11',
+	'21' => 'NC000021.9',
+	'22' => 'NC000022.11',
+	'X'  => 'NC0000023.11',
+	'Y'  => 'NC0000024.10',
+	'MT' => 'NC012920.1'
+    },
     );
 
 my ($url, $test, $password, $cleanup, $help);
@@ -186,9 +213,10 @@ sub download_from_agr {
     
     make_path($BASE_DIR) unless -d $BASE_DIR;
     my $input_files_file = "${BASE_DIR}/VEP_input_files.txt";
-    open (FILES, '>', $input_files_file) or die $!;
+    open (FILES, '>>', $input_files_file) or die $!;
     for my $mod (@$mods) {
-	print FILES "${mod}:\n";
+	my $time = localtime();
+	print FILES "${mod}: $time\n";
 	my $mod_dir = "$BASE_DIR/$mod";
 	make_path($mod_dir) unless -d $mod_dir;
 	chdir $mod_dir;
@@ -277,12 +305,11 @@ sub process_input_files {
     cleanup_intermediate_files($mod);
 
     my $chr_map;
-    unless ($mod eq 'HUMAN') {
-	check_chromosome_map($mod);
-	convert_fasta_headers($mod);
-	convert_vcf_chromosomes($mod, 'VCF');
-	convert_vcf_chromosomes($mod, 'HTVCF') if -e "${mod}_HTVCF.vcf";
-    }
+    check_chromosome_map($mod);
+    convert_fasta_headers($mod);
+    convert_vcf_chromosomes($mod, 'VCF');
+    convert_vcf_chromosomes($mod, 'HTVCF');
+  
     munge_gff($mod);
     run_system_cmd("bgzip -c ${mod}_FASTA.refseq.fa > ${mod}_FASTA.refseq.fa.gz", "Compressing $mod FASTA");
     run_system_cmd("sort -k1,1 -k4,4n -k5,5n -t\$'\\t' ${mod}_GFF.refseq.gff | bgzip -c > ${mod}_GFF.refseq.gff.gz",
@@ -395,6 +422,7 @@ sub run_vep_on_htp_variations{
     open (OUT, '>', $ENV{'HTP_VEP_WORKING_DIR'} . "/${mod}_vep/${mod}.vep.vcf.tmp");
     while (<IN>) {
 	if ($_ =~ /^#/) {
+	    $_ =~ s/##fileformat=VCF4/##fileformat=VCF4./; # can remove once RGD fix header
 	    print OUT $_;
 	}
 	else {
