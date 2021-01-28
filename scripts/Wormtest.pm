@@ -552,16 +552,16 @@ sub final_gff_dumps_present {
     for my $suffix ('.gff', '.gff3') {
 	for my $gff_filestem (@gff_filestems) {
 	    my $gff_file = file($gff_filestem . $suffix);
-	    $errors += $self->_file_exists($gff_file);
+	    $errors = $self->_file_exists($gff_file, $errors);
 	    next unless -e $gff_file;
-	    $errors += $self->_expected_seq_region_count($contigs_in_db, $gff_file, $errors)
+	    $errors = $self->_expected_seq_region_count($contigs_in_db, $gff_file, $errors)
 		unless $self->{'wormbase'}->species eq 'elegans';
 	}
     }
 
     $self->{'log'}->write_to('Final GFF dumps present') unless $errors;
 
-    return;
+    return $errors;
 }
 
 
