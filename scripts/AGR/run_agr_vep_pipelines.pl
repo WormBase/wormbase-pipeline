@@ -422,7 +422,6 @@ sub run_vep_on_htp_variations{
     open (OUT, '>', $ENV{'HTP_VEP_WORKING_DIR'} . "/${mod}_vep/${mod}.vep.vcf.tmp");
     while (<IN>) {
 	if ($_ =~ /^#/) {
-	    $_ =~ s/##fileformat=VCF4/##fileformat=VCF4./; # can remove once RGD fix header
 	    print OUT $_;
 	}
 	else {
