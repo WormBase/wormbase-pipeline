@@ -326,10 +326,7 @@ sub calculate_pathogenicity_predictions {
     backup_pathogenicity_prediction_db($mod, $password);
     
     my $lsf_queue = $test ? $ENV{'LSF_TEST_QUEUE'} : $ENV{'LSF_DEFAULT_QUEUE'};
-    
-    my $bam = 0;
-    $bam = "${mod}_BAM.bam" if -e "${mod}_BAM.bam";
-    
+        
     my $init_cmd = "init_pipeline.pl VepProteinFunction::VepProteinFunction_conf -mod $mod" .
 	" -agr_fasta ${mod}_FASTA.refseq.fa -agr_gff ${mod}_GFF.refseq.gff -agr_bam ${mod}_BAM.bam" . 
 	' -hive_root_dir ' . $ENV{'HIVE_ROOT_DIR'} . ' -pipeline_base_dir ' . $ENV{'PATH_PRED_WORKING_DIR'} .
@@ -355,8 +352,8 @@ sub run_vep_on_phenotypic_variations {
     return unless -e "${mod}_VCF.vcf";
     
     my $base_vep_cmd = "vep -i ${mod}_VCF.refseq.vcf -gff ${mod}_GFF.refseq.gff.gz -fasta ${mod}_FASTA.refseq.fa.gz --force_overwrite " .
-	"-hgvsg -hgvs -shift_hgvs=0 --symbol --distance 0 --plugin ProtFuncSeq,mod=$mod,pass=$password";
-    $base_vep_cmd .= " --bam ${mod}_BAM.bam" if -e "${mod}_BAM.bam";
+	"--bam ${mod}_BAM.bam -hgvsg -hgvs -shift_hgvs=0 --symbol --distance 0 --plugin ProtFuncSeq,mod=$mod,pass=$password";
+   
     my $gl_vep_cmd = $base_vep_cmd . " --per_gene --output_file ${mod}_VEPGENE.txt";
     my $tl_vep_cmd = $base_vep_cmd . " --output_file ${mod}_VEPTRANSCRIPT.txt";
     
@@ -400,11 +397,10 @@ sub run_vep_on_htp_variations{
     
     return unless -e "${mod}_HTVCF.vcf";
     
-    my $bam = -e "${mod}_BAM.bam" ? "${mod}_BAM.bam" : 0;
     my $lsf_queue = $test ? $ENV{'LSF_TEST_QUEUE'} : $ENV{'LSF_DEFAULT_QUEUE'};
     
     my $init_cmd = "init_pipeline.pl ModVep::ModVep_conf -mod $mod -vcf ${mod}_HTVCF.refseq.vcf -gff ${mod}_GFF.refseq.gff.gz" .
-	" -fasta ${mod}_FASTA.refseq.fa.gz -bam $bam -hive_root_dir " . $ENV{'HIVE_ROOT_DIR'} . ' -pipeline_base_dir ' .
+	" -fasta ${mod}_FASTA.refseq.fa.gz -bam ${mod}_BAM.bam -hive_root_dir " . $ENV{'HIVE_ROOT_DIR'} . ' -pipeline_base_dir ' .
 	$ENV{'HTP_VEP_WORKING_DIR'} . ' -pipeline_host ' . $ENV{'WORM_DBHOST'} . ' -pipeline_user ' . $ENV{'WORM_DBUSER'} .
 	' -pipeline_port ' . $ENV{'WORM_DBPORT'} . ' -lsf_queue ' . $lsf_queue . ' -vep_dir ' . $ENV{'VEP_DIR'} . 
 	" -debug_mode 0 -password $password";
@@ -469,6 +465,7 @@ sub merge_bam_files {
 	run_system_cmd("mv ${mod}_MOD-GFF-BAM-MODEL.bam ${mod}_BAM.bam", "Renaming $mod MOD-GFF-BAM-MODEL file"); 
     }
     else {
+	run_system_cmd("touch ${mod}_BAM.bam", "Creating dummy BAM file");
 	return;
     }
     
