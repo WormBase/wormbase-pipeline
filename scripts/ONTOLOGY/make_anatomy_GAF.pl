@@ -39,7 +39,6 @@ else {
 
 my $log = Log_files->make_build_log($wormbase);
 my $date = &get_GAF_date();
-my $taxid = $wormbase->ncbi_tax_id;
 my $full_name = $wormbase->full_name;
 my $tace = $wormbase->tace;
 
@@ -59,6 +58,8 @@ $log->write_to( scalar(keys %$gene_info) . " genes read\n" ) if $verbose;
 $log->write_to("Querying Expr_pattern objects...\n") if $verbose;
 
 $it = $db->fetch_many( -query => 'find Expr_pattern Anatomy_term' );
+
+my %taxon_ids;
 while ( my $obj = $it->next ) {
   $count++;
 
@@ -68,6 +69,7 @@ while ( my $obj = $it->next ) {
   foreach my $g ($obj->Gene) {
     next if not exists $gene_info->{$g} or $gene_info->{status} eq 'Dead';
     $genes{$g->name}++;
+    $taxon_ids{$g->name} = $g->Species->NCBITaxonomyID;
   }
   foreach my $at ($obj->Anatomy_term) {
     $at{$at} = {};
@@ -114,6 +116,7 @@ while ( my $obj = $it->next ) {
   foreach my $g ($obj->Gene) {
     next if not exists $gene_info->{$g} or $gene_info->{status} eq 'Dead';
     $genes{$g->name}++;
+    $taxon_ids{$g->name} = $g->Species->NCBITaxonomyID;
   }
   foreach my $at ($obj->Anatomy_term) {
     foreach my $tag ($at->col) {
@@ -153,7 +156,7 @@ foreach my $g (sort keys %output_hash) {
                                  join("|", map { "WB:$_" } @ec_objs), 
                                  "A",  
                                  $gene_info->{$g}->{sequence_name},
-                                 $taxid, 
+                                 $taxon_ids{$g}, 
                                  $date);
       }
     }
