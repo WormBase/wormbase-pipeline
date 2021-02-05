@@ -52,7 +52,7 @@ my $db = Ace->connect( -path => $acedbpath, -program => $tace )
 
 my ($gene_info, $it, $count);
 
-$gene_info = &get_gene_info( $acedbpath, $wormbase, $full_name );
+$gene_info = &get_gene_info( $acedbpath, $wormbase );
 $log->write_to( scalar(keys %$gene_info) . " genes read\n" ) if $verbose;
 
 $log->write_to("Querying Expr_pattern objects...\n") if $verbose;
@@ -165,6 +165,9 @@ foreach my $g (sort keys %output_hash) {
 
 
 close($outfh);
+
+&make_species_files($wormbase, $outfile);
+
 $db->close;
 $log->mail;
 

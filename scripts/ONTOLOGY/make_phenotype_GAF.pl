@@ -47,16 +47,7 @@ my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or $log->log_and_
 my ($count, $it);
 my $gene_info = {};
 
-my %sp2tax = (
-	'Caenorhabditis elegans' => 6239,
-	'Caenorhabditis briggsae' => 6238,
-	'Pristionchus pacificus' => 54126,
-);
-
-
-foreach my $species(keys %sp2tax) {
-  $gene_info =  {%$gene_info , %{&get_gene_info( $acedbpath, $wormbase, $species)}};
-}
+$gene_info = &get_gene_info( $acedbpath, $wormbase );
 
 $log->write_to( "Got name information for " . scalar(keys %$gene_info) . " genes\n");
 
@@ -66,7 +57,7 @@ open(my $out, ">$outfile") or $log->log_and_die("cannot open $outfile : $!\n");
 
 $it = $db->fetch_many(-query=>'find Variation WHERE (Phenotype OR Phenotype_not_observed)');
 
-my (%g2v_via_var, %gpvs_with_pub, %gpvs_with_person); 
+my (%g2v_via_var, %gpvs_with_pub, %gpvs_with_person, %taxon_ids); 
 
 while (my $obj=$it->next) {
   next unless $obj->isObject();
@@ -78,6 +69,10 @@ while (my $obj=$it->next) {
 
   @affected_genes = map { $_->name } $obj->Gene;
   next if not @affected_genes;
+
+  for my $g ($obj->Gene) {
+      $taxon_ids{$g->name} = $obj->Species->NCBITaxonomyID;
+  }
   
   foreach my $key ('Phenotype', 'Phenotype_not_observed') {
     foreach my $pobj ($obj->$key) {
@@ -133,7 +128,7 @@ foreach my $g (sort keys %g2v_via_var) {
                                    $with_from, 
                                    "P",
                                    $gene_info->{$g}->{sequence_name},
-                                   $sp2tax{$gene_info->{$g}->{species}},
+				   $taxon_ids{$g},
                                    $date);
           $count++;
         }
@@ -157,7 +152,7 @@ foreach my $g (sort keys %g2v_via_var) {
                                      $with_from, 
                                      "P",
                                      $gene_info->{$g}->{sequence_name},
-                                     $sp2tax{$gene_info->{$g}->{species}},
+				     $taxon_ids{$g},
                                      $date);
             $count++;
           }  
@@ -181,7 +176,7 @@ foreach my $g (sort keys %g2v_via_var) {
                                      "",
                                      "P",
                                      $gene_info->{$g}->{sequence_name},
-                                     $sp2tax{$gene_info->{$g}->{species}},
+				     $taxon_ids{$g},
                                      $date);
             $count++;
           }
@@ -245,7 +240,7 @@ while (my $obj = $it->next) {
                                $with_from,
                                "P",  
                                $gene_info->{$g}->{sequence_name},
-                               $sp2tax{$gene_info->{$g}->{species}},
+			       $taxon_ids{$g},
                                $date );
       $count++;
     }
@@ -262,12 +257,16 @@ while (my $obj = $it->next) {
                                $with_from,
                                "P",  
                                $gene_info->{$g}->{sequence_name},
-                               $sp2tax{$gene_info->{$g}->{species}},
+			       $taxon_ids{$g},
                                $date );
       $count++;
     }
   }
 }
+
+close($out);
+
+&make_species_files($wormbase, $outfile);
 
 $log->write_to("Printed $count phenotype lines RNAi objects\n");
 

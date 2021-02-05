@@ -5,7 +5,7 @@ use DateTime;
 use Exporter;
 
 our @ISA = qw(Exporter);
-our @EXPORT = qw(print_wormbase_GAF_line print_wormbase_GAF_header get_GAF_date get_gene_info);
+our @EXPORT = qw(print_wormbase_GAF_line print_wormbase_GAF_header get_GAF_date get_gene_info make_species_files);
 
 ###################################
 sub print_wormbase_GAF_line {
@@ -106,6 +106,46 @@ sub get_gene_info {
   return \%data;
 }
 
+
+###################################
+sub make_species_files {
+    my ($wormbase, $file, $daf) = @_;
+
+    my %species_lines;
+    my @headers;
+    open (COLLATED, '<', $file) or die "Could not open $file for writing\n";
+    while (<COLLATED>) {
+	chomp;
+	if ($_ =~ /^!/) {
+	    push @headers, $_;
+	    next;
+	}
+	my $taxon_id;
+	if ($daf) {
+	    ($taxon_id) = $_ =~ /^(\d+)\s/;
+	}
+	else {
+	    ($taxon_id) = $_ =~ /taxon:(\d+)\s/;
+	}
+	push @{$species_lines{$taxon_id}}, $_;
+    }
+    close (COLLATED);
+
+    my %accessors = ($wormbase->species_accessors);
+    $accessors{$wormbase->species} = $wormbase;
+
+
+    for my $wb(values %accessors) {
+	next unless exists $species_lines{$wb->ncbi_tax_id};
+	my $species_file = $file . '.' . $wb->full_name('-g_species' => 1);
+	open (SPECIES, '>', $species_file) or die "Could not open $species_file for writing\n";
+	print SPECIES join("\n", @headers) . "\n";
+	print SPECIES join("\n", @{$species_lines{$wb->ncbi_tax_id}}) . "\n";
+	close (SPECIES);
+    }
+
+    return;
+}	
 
 
 sub _write_name_status_tm_def {

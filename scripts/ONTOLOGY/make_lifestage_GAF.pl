@@ -41,8 +41,6 @@ else {
 
 my $log = Log_files->make_build_log($wormbase);
 my $date = &get_GAF_date();
-my $taxid = $wormbase->ncbi_tax_id;
-my $full_name = $wormbase->full_name;
 
 $acedbpath ||= $wormbase->autoace;
 my $tace = $wormbase->tace;
@@ -54,7 +52,7 @@ my $db = Ace->connect( -path => $acedbpath, -program => $tace )
 
 my ($gene_info, $it, $count);
 
-$gene_info = &get_gene_info( $acedbpath, $wormbase, $full_name );
+$gene_info = &get_gene_info( $acedbpath, $wormbase );
 $log->write_to( scalar(keys %$gene_info) . " genes read\n" ) if $verbose;
 
 $outfile ||= $wormbase->ontology . "/development_association." . $wormbase->get_wormbase_version_name . ".wb";
@@ -62,6 +60,8 @@ open(my $outfh, ">$outfile" ) or $log->log_and_die("cannot open $outfile : $!\n"
 &print_wormbase_GAF_header($outfh, $wormbase->get_wormbase_version_name);
 
 $it = $db->fetch_many( -query => 'find Expr_pattern Life_stage' );
+
+my %taxon_ids;
 while ( my $obj = $it->next ) {
   $count++;
   $log->write_to("$count objects processed\n") if $verbose and ( $count % 1000 == 0 );
@@ -71,6 +71,7 @@ while ( my $obj = $it->next ) {
   foreach my $g ($obj->Gene) {
     next if not exists $gene_info->{$g} or $gene_info->{status} eq 'Dead';
     $genes{$g->name}++;
+    $taxon_ids{$g->name} = $g->Species->NCBITaxonomyID;
   }
   foreach my $ls ($obj->Life_stage) {
     my $qual = $ls->right;
@@ -93,15 +94,16 @@ while ( my $obj = $it->next ) {
                                "WB:".$obj->name, 
                                "L",  
                                $gene_info->{$g}->{sequence_name},
-                               $taxid, 
+                               $taxon_ids{$g}, 
                                $date);
     }
   }
 }
 
 if ($rnaseq) {
-  $it = $db->fetch_many(-query => "Find Gene RNAseq_FPKM AND Species = \"$full_name\" AND NOT Dead");
+  $it = $db->fetch_many(-query => "Find Gene RNAseq_FPKM AND NOT Dead");
   while (my $g = $it->next) {
+    $taxon_ids{$g->name} = $g->Species->NCBITaxonomyID;
     foreach my $ls ($g->RNASeq_FPKM) {
       my %sra_accs;
       foreach my $data ($ls->col) {
@@ -126,7 +128,7 @@ if ($rnaseq) {
                                  $with_from,
                                  "L",  
                                  $gene_info->{$g}->{sequence_name},
-                                 $taxid, 
+                                 $taxon_ids{$g}, 
                                  $date);
       }
     }
@@ -134,6 +136,9 @@ if ($rnaseq) {
 }
 
 close($outfh);
+
+&make_species_files($wormbase, $outfile);
+
 $db->close;
 $log->mail;
 
