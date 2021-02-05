@@ -349,7 +349,7 @@ sub calculate_pathogenicity_predictions {
 sub run_vep_on_phenotypic_variations {
     my ($mod, $password, $test) = @_;
     
-    return unless -e "${mod}_VCF.vcf";
+    return unless -e "${mod}_VCF.refseq.vcf";
     
     my $base_vep_cmd = "vep -i ${mod}_VCF.refseq.vcf -gff ${mod}_GFF.refseq.gff.gz -fasta ${mod}_FASTA.refseq.fa.gz --force_overwrite " .
 	"--bam ${mod}_BAM.bam -hgvsg -hgvs -shift_hgvs=0 --symbol --distance 0 --plugin ProtFuncSeq,mod=$mod,pass=$password";
@@ -395,7 +395,7 @@ sub run_vep_on_phenotypic_variations {
 sub run_vep_on_htp_variations{
     my ($mod, $password, $test) = @_;
     
-    return unless -e "${mod}_HTVCF.vcf";
+    return unless -e "${mod}_HTVCF.refseq.vcf";
     
     my $lsf_queue = $test ? $ENV{'LSF_TEST_QUEUE'} : $ENV{'LSF_DEFAULT_QUEUE'};
     
