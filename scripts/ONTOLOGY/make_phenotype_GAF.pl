@@ -62,7 +62,7 @@ $log->write_to( "Got name information for " . scalar(keys %$gene_info) . " genes
 
 open(my $out, ">$outfile") or $log->log_and_die("cannot open $outfile : $!\n");
 
-&print_wormbase_GAF_header($out);
+&print_wormbase_GAF_header($out, $wormbase->get_wormbase_version_name);
 
 $it = $db->fetch_many(-query=>'find Variation WHERE (Phenotype OR Phenotype_not_observed)');
 

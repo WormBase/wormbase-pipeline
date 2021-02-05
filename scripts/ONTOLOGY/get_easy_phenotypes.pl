@@ -12,6 +12,7 @@ use Wormbase;
 use Getopt::Long;
 use Log_files;
 use Storable;	
+use GAF;
 
 my ($ep, %at, $var);
 my ($help, $debug, $test, $verbose, $store, $wormbase);
@@ -79,7 +80,7 @@ open($out, ">$output") or $log->log_and_die("cannot open $output : $!\n");
 $output = $wormbase->ontology."/rnai_phenotypes_quick.".$wormbase->get_wormbase_version_name.".wb";
 open($out_quick, ">$output") or $log->log_and_die("cannot open $output : $!\n");
 
-
+&print_wormbase_GAF_header($out, $wormbase->get_wormbase_version_name, 'RNAi');
 
 my $it=$db->fetch_many(-query=>'find RNAi Phenotype');
 my $count=0;

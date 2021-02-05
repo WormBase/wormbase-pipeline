@@ -379,7 +379,7 @@ $log->write_to("Writing annotations...\n") if $debug;
 #
 my $collated_file = "$outputdir/gene_association." . $wormbase->get_wormbase_version_name. ".wb" ;
 open (my $colfh, ">$collated_file") or $log->log_and_die("Could not open $collated_file for writing\n");
-&print_wormbase_GAF_header($colfh,'2.2');
+&print_wormbase_GAF_header($colfh, $wormbase->get_wormbase_version_name, 'GO', '2.2');
 
 my %coreSpecies = $wormbase->species_accessors;
 foreach my $species ($wormbase, values %coreSpecies){
@@ -387,7 +387,7 @@ foreach my $species ($wormbase, values %coreSpecies){
   my $out_file = "gene_association." . $wormbase->get_wormbase_version_name. ".wb." .$species->full_name(-g_species => 1);
   open(my $outfh, ">$outputdir/$out_file") or $log->log_and_die("Could not open $outputdir/out_file for writing\n");
   
-  &print_wormbase_GAF_header($outfh,'2.2');
+  &print_wormbase_GAF_header($outfh, $wormbase->get_wormbase_version_name, 'GO', '2.2');
   foreach my $gaf (@nr_gaf_lines) {
     next if $gaf->{species} ne $species->full_name;
     unshift @{$gaf->{taxon}}, $species->ncbi_tax_id;

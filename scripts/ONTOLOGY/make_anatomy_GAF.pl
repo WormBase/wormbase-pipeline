@@ -138,7 +138,7 @@ while ( my $obj = $it->next ) {
 }
 
 open(my $outfh, ">$outfile" ) or $log->log_and_die("cannot open $outfile : $!\n");
-&print_wormbase_GAF_header($outfh);
+&print_wormbase_GAF_header($outfh, $wormbase->get_wormbase_version_name);
 
 foreach my $g (sort keys %output_hash) {
   foreach my $at (sort keys %{$output_hash{$g}}) {

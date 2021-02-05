@@ -6,7 +6,7 @@ use Getopt::Long;
 use Ace;
 use JSON;
 use Storable qw(dclone);
-
+use DateTime;
 use lib $ENV{CVS_DIR};
 use Wormbase;
 use Modules::AGR;
@@ -364,12 +364,15 @@ sub write_DAF_header {
 
   my ($fh) = @_;
 
-  print $fh "!daf-version 1.0\n";
-  print $fh "!Date: $date\n";
-  print $fh "!Project_name: WormBase (WB) Version $ws_version\n";
-  print $fh "!URL: http://www.wormbase.org/\n";
-  print $fh "!Contact Email: wormbase-help\@wormbase.org\n";
-  print $fh "!Funding: NHGRI at US NIH, grant number U41 HG002223\n";
+  my $header_date = DateTime->now;
+  print $fh "\!daf-version 1.0\n";print $fh "\!generated-by: WormBase\n";
+  print $fh "\!generated-by: WormBase\n";
+  print $fh "\!date-generated: ".$date->ymd."\n";
+  print $fh "\!project-URL: https://wormbase.org\n";
+  print $fh "\!specification-URL: https://wiki.wormbase.org/index.php/WormBase_gene_association_file\n";
+  print $fh "\!project-release: $release\n";
+  print $fh "\!Contact Email: help\@wormbase.org\n";
+  print $fh "\!Funding: NHGRI at US NIH, grant number U41 HG002223\n";
 
 }
 
