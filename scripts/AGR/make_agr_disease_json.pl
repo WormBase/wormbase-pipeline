@@ -172,8 +172,8 @@ while( my $obj = $it->next) {
 	$taxon_ids{$obj_id} = $strain->Species->NCBITaxonomyID;
     }
     else {
-	warn "Could not identify species for $obj_id, skipping\n";
-	next;
+	warn "Could not identify species for $obj_id, defaulting to c. elegans\n";
+	$taxon_ids{$obj_id} = 6239;
     }
     # WB/CalTech specific changes to the format
     push @with_list, "WB:" . $gene->name if (defined $gene && $build);
@@ -189,8 +189,8 @@ while( my $obj = $it->next) {
 	    $taxon_ids{$obj_id} = $allele->Species->NCBITaxonomyID;
 	}
 	else {
-	    warn "Could not identify species for $obj_id, skipping\n";
-	    next;
+	    warn "Could not identify species for $obj_id, defaulting to c. elegans\n";
+	    $taxon_ids{$obj_id} = 6239;
 	}
     }else{
 	    warn "$allele is missing a public name. Skipping ${\$obj->name}\n";
@@ -209,8 +209,8 @@ while( my $obj = $it->next) {
 	$taxon_ids{$obj_id} = $transgene->Species->NCBITaxonomyID;
     }
     else {
-	warn "Could not identify species for $obj_id, skipping\n";
-	next;
+        warn "Could not identify species for $obj_id, defaulting to c. elegans\n";
+	$taxon_ids{$obj_id} = 6239;
     }   
     # WB/CalTech specific changes to the format
     push @with_list, "WB:" . $gene->name if (defined $gene && $build);
@@ -223,8 +223,8 @@ while( my $obj = $it->next) {
 	$taxon_ids{$obj_id} = $gene->Species->NCBITaxonomyID;
     }
     else {
-	warn "Could not identify species for $obj_id, skipping\n";
-	next;
+        warn "Could not identify species for $obj_id, defaulting to c. elegans\n";
+	$taxon_ids{$obj_id} = 6239;
     }
 
     @inferred_genes = ();
@@ -236,8 +236,8 @@ while( my $obj = $it->next) {
 	  $taxon_ids{$obj_id} = $genotype->Species->NCBITaxonomyID;
       }
       else {
-	  warn "Could not identify species for $obj_id, skipping\n";
-	  next;
+	  warn "Could not identify species for $obj_id, defaulting to c. elegans\n";
+	  $taxon_ids{$obj_id} = 6239;
       }
   } else {
     warn "Could not identify a central object for the annotation from Disease_model_annotation ${\$obj->name}\n";
