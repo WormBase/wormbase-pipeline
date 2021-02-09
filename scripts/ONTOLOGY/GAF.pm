@@ -1,4 +1,3 @@
-
 package GAF;
 
 use strict;
@@ -6,7 +5,7 @@ use DateTime;
 use Exporter;
 
 our @ISA = qw(Exporter);
-our @EXPORT = qw(print_wormbase_GAF_line print_wormbase_GAF_header get_GAF_date get_gene_info);
+our @EXPORT = qw(print_wormbase_GAF_line print_wormbase_GAF_header get_GAF_date get_gene_info make_species_files);
 
 ###################################
 sub print_wormbase_GAF_line {
@@ -34,18 +33,24 @@ sub print_wormbase_GAF_line {
 
 ####################################
 sub print_wormbase_GAF_header {
-  my ($fh,$version) = @_;
-  $version||='2.0';
+    my ($fh, $release, $type, $version) = @_;
+    $version||='2.0';
 
-  print $fh "\!gaf-version: $version\n";
-  if ($version < 2.2){
-	  print $fh "\!Project_name: WormBase\n";
-	  print $fh "\!Contact Email: help\@wormbase.org\n";
-  }else {
-	  print $fh "\!generated-by: WormBase\n";
-	  my $date = DateTime->now;
-	  print $fh "\!date-generated: ".$date->ymd."\n"
-  }
+    my $date = DateTime->now;
+
+    print $fh "\!gaf-version: $version\n" unless $type eq 'RNAi';
+    print $fh "\!generated-by: WormBase\n";
+    print $fh "\!date-generated: ".$date->ymd."\n";
+    print $fh "\!project-URL: https://wormbase.org\n";
+    if ($type eq 'GO') {
+	print $fh "\!specification-URL: https://github.com/geneontology/geneontology.github.io/blob/issue-go-annotation-2917-gaf-2_2-doc/_docs/go-annotation-file-gaf-format-22.md\n";
+    }
+    else {
+	print $fh "\!specification-URL: https://wiki.wormbase.org/index.php/WormBase_gene_association_file\n";
+    }
+    print $fh "\!project-release: $release\n";
+    print $fh "\!Contact Email: help\@wormbase.org\n";
+    
 }
 
 ####################################
@@ -101,6 +106,46 @@ sub get_gene_info {
   return \%data;
 }
 
+
+###################################
+sub make_species_files {
+    my ($wormbase, $file, $daf) = @_;
+
+    my %species_lines;
+    my @headers;
+    open (COLLATED, '<', $file) or die "Could not open $file for writing\n";
+    while (<COLLATED>) {
+	chomp;
+	if ($_ =~ /^!/) {
+	    push @headers, $_;
+	    next;
+	}
+	my $taxon_id;
+	if ($daf) {
+	    ($taxon_id) = $_ =~ /^(\d+)\s/;
+	}
+	else {
+	    ($taxon_id) = $_ =~ /taxon:(\d+)\s/;
+	}
+	push @{$species_lines{$taxon_id}}, $_;
+    }
+    close (COLLATED);
+
+    my %accessors = ($wormbase->species_accessors);
+    $accessors{$wormbase->species} = $wormbase;
+
+
+    for my $wb(values %accessors) {
+	next unless exists $species_lines{$wb->ncbi_tax_id};
+	my $species_file = $file . '.' . $wb->full_name('-g_species' => 1);
+	open (SPECIES, '>', $species_file) or die "Could not open $species_file for writing\n";
+	print SPECIES join("\n", @headers) . "\n";
+	print SPECIES join("\n", @{$species_lines{$wb->ncbi_tax_id}}) . "\n";
+	close (SPECIES);
+    }
+
+    return;
+}	
 
 
 sub _write_name_status_tm_def {

@@ -12,6 +12,8 @@ use Wormbase;
 use Getopt::Long;
 use Log_files;
 use Storable;	
+use lib "$ENV{CVS_DIR}/ONTOLOGY";
+use GAF;
 
 my ($ep, %at, $var);
 my ($help, $debug, $test, $verbose, $store, $wormbase);
@@ -74,12 +76,12 @@ warn scalar keys %description , " phenotypes read\n";
 
 my $out;
 my $out_quick;
-$output = $wormbase->ontology."/rnai_phenotypes.".$wormbase->get_wormbase_version_name.".wb" unless $output;
+$output = $wormbase->ontology."/rnai_phenotypes.".$wormbase->get_wormbase_version_name.".c_elegans.wb" unless $output;
 open($out, ">$output") or $log->log_and_die("cannot open $output : $!\n");
-$output = $wormbase->ontology."/rnai_phenotypes_quick.".$wormbase->get_wormbase_version_name.".wb";
+$output = $wormbase->ontology."/rnai_phenotypes_quick.".$wormbase->get_wormbase_version_name.".c_elegans.wb";
 open($out_quick, ">$output") or $log->log_and_die("cannot open $output : $!\n");
 
-
+&print_wormbase_GAF_header($out, $wormbase->get_wormbase_version_name, 'RNAi');
 
 my $it=$db->fetch_many(-query=>'find RNAi Phenotype');
 my $count=0;

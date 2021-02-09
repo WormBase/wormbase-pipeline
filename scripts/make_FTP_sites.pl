@@ -663,9 +663,28 @@ sub copy_ontology_files {
   mkpath($ace_ontology_dir,1,0775);
   mkpath($ftp_ontology_dir,1,0775);
   
+  my %accessors = ($wormbase->species_accessors);
+  $accessors{$wormbase->species} = $wormbase;
+  my %species_name_map;
+  while(my ($species, $wb) = each %accessors) {
+      $species_name_map{$wb->full_name('-g_species' => 1)} = $species;
+  }
+
   $wormbase->run_command("cp -f $obo_dir/*.obo $ace_ontology_dir/", $log);
   foreach my $file (glob("$ace_ontology_dir/*.*")) {
-    $wormbase->run_command("cp -f $file $ftp_ontology_dir/", $log);
+      my ($filestem, $suffix) = $file =~ /\/([^\/]+)\.([^\.\/]+)$/;
+      if (exists $species_name_map{$suffix}) {
+	  my ($filetype, $release, $extension) = $filestem =~ /^([^\.]+)\.(WS\d+)\.([^\.]+)$/; 
+	  my $wb = $accessors{$species_name_map{$suffix}};
+	  my $bioproj = $wb->ncbi_bioproject;
+	  my $new_filename = join('.', $suffix, $bioproj, $release, $filtype, $extension);
+	  my $species_dir = "$targetdir/species/$species/$bioproj";
+	  mkpath($species_dir,1,0775);
+	  $wormbase->run_command("cp -f $file ${species_dir}/${new_filename}", $log);
+      }
+      else {
+	  $wormbase->run_command("cp -f $file $ftp_ontology_dir/", $log);
+      }
   }
   
   $runtime = $wormbase->runtime;

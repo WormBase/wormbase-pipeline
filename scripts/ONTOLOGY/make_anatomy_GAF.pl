@@ -39,7 +39,6 @@ else {
 
 my $log = Log_files->make_build_log($wormbase);
 my $date = &get_GAF_date();
-my $taxid = $wormbase->ncbi_tax_id;
 my $full_name = $wormbase->full_name;
 my $tace = $wormbase->tace;
 
@@ -53,12 +52,14 @@ my $db = Ace->connect( -path => $acedbpath, -program => $tace )
 
 my ($gene_info, $it, $count);
 
-$gene_info = &get_gene_info( $acedbpath, $wormbase, $full_name );
+$gene_info = &get_gene_info( $acedbpath, $wormbase );
 $log->write_to( scalar(keys %$gene_info) . " genes read\n" ) if $verbose;
 
 $log->write_to("Querying Expr_pattern objects...\n") if $verbose;
 
 $it = $db->fetch_many( -query => 'find Expr_pattern Anatomy_term' );
+
+my %taxon_ids;
 while ( my $obj = $it->next ) {
   $count++;
 
@@ -68,6 +69,7 @@ while ( my $obj = $it->next ) {
   foreach my $g ($obj->Gene) {
     next if not exists $gene_info->{$g} or $gene_info->{status} eq 'Dead';
     $genes{$g->name}++;
+    $taxon_ids{$g->name} = $g->Species->NCBITaxonomyID;
   }
   foreach my $at ($obj->Anatomy_term) {
     $at{$at} = {};
@@ -114,6 +116,7 @@ while ( my $obj = $it->next ) {
   foreach my $g ($obj->Gene) {
     next if not exists $gene_info->{$g} or $gene_info->{status} eq 'Dead';
     $genes{$g->name}++;
+    $taxon_ids{$g->name} = $g->Species->NCBITaxonomyID;
   }
   foreach my $at ($obj->Anatomy_term) {
     foreach my $tag ($at->col) {
@@ -135,7 +138,7 @@ while ( my $obj = $it->next ) {
 }
 
 open(my $outfh, ">$outfile" ) or $log->log_and_die("cannot open $outfile : $!\n");
-&print_wormbase_GAF_header($outfh);
+&print_wormbase_GAF_header($outfh, $wormbase->get_wormbase_version_name);
 
 foreach my $g (sort keys %output_hash) {
   foreach my $at (sort keys %{$output_hash{$g}}) {
@@ -153,7 +156,7 @@ foreach my $g (sort keys %output_hash) {
                                  join("|", map { "WB:$_" } @ec_objs), 
                                  "A",  
                                  $gene_info->{$g}->{sequence_name},
-                                 $taxid, 
+                                 $taxon_ids{$g}, 
                                  $date);
       }
     }
@@ -162,6 +165,9 @@ foreach my $g (sort keys %output_hash) {
 
 
 close($outfh);
+
+&make_species_files($wormbase, $outfile);
+
 $db->close;
 $log->mail;
 
