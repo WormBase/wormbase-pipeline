@@ -171,15 +171,19 @@ while (<$gff_in_fh>) {
     }
     
     if (exists $var_consequences->{$allele}) {
-      push @new_els, ['Consequence', $var_consequences->{$allele}{'consequence'}];
-      push @new_els, ['AAChange', $var_consequences->{$allele}{'aa_change'}] if exists $var_consequences->{$allele}{'aa_change'};
+	for my $attribute ('Consequence', 'VEP_impact', 'AAchange', 'Codon_change', 'HGVSg', 'HGVSc',
+			   'SIFT', 'PolyPhen', 'cDNA_position', 'CDS_position', 'AA_position',
+			   'Intron_nr', 'Exon_nr') {
+	    push @new_els, [$attribute, $var_consequences->{$allele}{$attribute}]
+		if exists $var_consequences->{$allele}{$attribute};
+	}
 
-      if ($var_consequences->{$allele}{'severity'} >= 23) {
-        if ($current_els[2] ne 'transposable_element_insertion_site' and 
-            $current_els[2] ne 'tandem_duplication') {
-          $is_putative_change_of_function_allele = 1;
-        }
-      }
+	if ($var_consequences->{$allele}{'severity'} >= 23) {
+	    if ($current_els[2] ne 'transposable_element_insertion_site' and 
+		$current_els[2] ne 'tandem_duplication') {
+		$is_putative_change_of_function_allele = 1;
+	    }
+	}
     }
     
     my @new_el_strings;
@@ -291,18 +295,34 @@ sub get_molecular_consequences {
     while(<$table>) {
 	chomp;
 	s/\"//g; 
+	s/\\//g;
 	next if (! defined $_);
 	next if (/acedb/ or /\/\//);
 	
-	my ($var_name, $transcript, $consequence_string, $aa_change) = split(/\t/, $_);
+	my ($var_name, $transcript, $consequence_string, $vep_impact, $aa_change, $codon_change,
+	    $sift_score, $sift_prediction, $polyphen_score, $polyphen_prediction, $hgvsg, $hgvsc,
+	    $hgvsp, $cdna_pos, $cds_pos, $prot_pos, $intron_nr, $exon_nr) = split(/\t/, $_);
 	my @consequences = split(',', $consequence_string);
 	
 	for my $consequence (@consequences) {
 	    my $severity = $severity_ranking{$consequence};
 	    next if exists $var_consequences{$var_name} and $var_consequences{$var_name}{'severity'} > $severity;
-	    $var_consequences{$var_name}{'consequence'} = $consequence;
+	    $var_consequences{$var_name}{'Consequence'} = $consequence;
 	    $var_consequences{$var_name}{'severity'} = $severity;
-	    $var_consequences{$var_name}{'aa_change'} = $aa_change if $aa_change =~ /\//;
+	    $var_consequences{$var_name}{'VEP_impact'} = $vep_impact;
+	    $var_consequences{$var_name}{'AAchange'} = $aa_change if $aa_change =~ /\//;
+	    $var_consequences{$var_name}{'Codon_change'} = $codon_change if $codon_change =~ /\//;
+	    $var_consequences{$var_name}{'HGVSg'} = $hgvsg; 
+	    $var_consequences{$var_name}{'HGVSc'} = $hgvsc if $hgvsc;
+	    $var_consequences{$var_name}{'HGVSp'} = $hgvsp if $hgvsp;
+	    $var_consequences{$var_name}{'SIFT'} = $sift_prediction . '(' . $sift_score . ')' if $sift_score;
+	    $var_consequences{$var_name}{'PolyPhen'} = $polyphen_prediction . '(' . $polyphen_score . ')' if $polyphen_score;
+	    $var_consequences{$var_name}{'cDNA_position'} = $cdna_pos if $cdna_pos;
+	    $var_consequences{$var_name}{'CDS_position'} = $cds_pos if $cds_pos;
+	    $var_consequences{$var_name}{'AA_position'} = $prot_pos if $prot_pos;
+	    $var_consequences{$var_name}{'Intron_nr'} = $intron_nr if $intron_nr;
+	    $var_consequences{$var_name}{'Exon_nr'} = $exon_nr if $exon_nr;
+	    
 	}
     }
     close($table);
@@ -318,13 +338,13 @@ sub write_mol_change_def_file {
 
 Sortcolumn 1
 
-Colonne 1 
-Width 12 
-Optional 
-Visible 
-Class 
-Class Variation 
-From 1 
+Colonne 1
+Width 12
+Optional
+Visible
+Class
+Class Variation
+From 1
 
 Colonne 2
 Width 12
@@ -335,22 +355,21 @@ From 1
 Tag Sequence
 
 Colonne 3
-Width 12 
-Mandatory 
-Visible 
-Class 
-Class Transcript 
-From 1 
+Width 12
+Mandatory
+Visible
+Class
+Class Transcript
+From 1
 Tag Transcript
- 
-Colonne 4 
-Width 12 
-Optional 
+
+Colonne 4
+Width 12
+Optional
 Hidden
 Show_Tag
-Right_of 3 
-Tag Molecular_change # VEP_consequence
- 
+Right_of 3
+Tag Molecular_change # VEP_consequence                                                                                                                                                                                                                              
 Colonne 5
 Width 12
 Optional
@@ -360,13 +379,12 @@ Right_of 4
 Tag  HERE
 
 Colonne 6
-Width 12 
-Optional 
+Width 12
+Optional
 Hidden
 Show_Tag
-Right_of 3 
-Tag Molecular_change # Amino_acid_change
- 
+Right_of 3
+Tag Molecular_change # VEP_impact                                                                                                                                                                                                                            
 Colonne 7
 Width 12
 Optional
@@ -375,11 +393,210 @@ Text
 Right_of 6
 Tag  HERE
 
+Colonne 8
+Width 12
+Optional
+Hidden
+Show_Tag
+Right_of 3
+Tag Molecular_change # Amino_acid_change                                                                   
 
+Colonne 9
+Width 12
+Optional
+Visible
+Text
+Right_of 8
+Tag  HERE
+
+Colonne 10
+Width 12
+Optional
+Hidden
+Show_Tag
+Right_of 3
+Tag Molecular_change # Codon_change                                                          
+                                                                                                                                                                                                    
+Colonne 11
+Width 12
+Optional
+Visible
+Text
+Right_of 10
+Tag  HERE
+
+Colonne 12
+Width 12
+Optional
+Hidden
+Show_Tag
+Right_of 3
+Tag Molecular_change # SIFT 
+                                                                                                                                                               
+Colonne 13
+Width 12
+Optional
+Visible
+Float
+Right_of 12
+Tag  HERE
+
+Colonne 14
+Width 12
+Optional
+Visible
+Text
+Right_of 13
+Tag  HERE
+
+Colonne 15 
+Width 12
+Optional
+Hidden
+Show_Tag
+Right_of 3
+Tag Molecular_change # PolyPhen
+                                                                                                                                                                                                    
+Colonne 16
+Width 12
+Optional
+Visible
+Float
+Right_of 15
+Tag  HERE
+                                                                                                                                                                                                    
+Colonne 17
+Width 12
+Optional
+Visible
+Text
+Right_of 16
+Tag  HERE
+
+Colonne 18
+Width 12
+Mandatory
+Visible
+Text
+From 1
+Tag HGVSg
+
+Colonne 19
+Width 12
+Optional
+Hidden
+Show_Tag
+Right_of 3
+Tag Molecular_change # HGVSc 
+                                                                                                                                                                                                    
+Colonne 20
+Width 12
+Optional
+Visible
+Text
+Right_of 19
+Tag  HERE
+
+Colonne 21
+Width 12
+Optional
+Hidden
+Show_Tag
+Right_of 3
+Tag Molecular_change # HGVSp
+                                                                                                                                                                                                    
+Colonne 22
+Width 12
+Optional
+Visible
+Text
+Right_of 21
+Tag  HERE
+
+Colonne 23
+Width 12
+Optional
+Hidden
+Show_Tag
+Right_of 3
+Tag Molecular_change # cDNA_position
+                                                                                                                                                                                                    
+Colonne 24
+Width 12
+Optional
+Visible
+Text
+Right_of 23
+Tag  HERE
+
+Colonne 25
+Width 12
+Optional
+Hidden
+Show_Tag
+Right_of 3
+Tag Molecular_change # CDS_position                                                         
+                                                                                                                                                                                                    
+Colonne 26
+Width 12
+Optional
+Visible
+Text
+Right_of 25
+Tag  HERE
+
+Colonne 27
+Width 12
+Optional
+Hidden
+Show_Tag
+Right_of 3
+Tag Molecular_change # Protein_position                                                          
+                                                                                                                                 
+Colonne 28
+Width 12
+Optional
+Visible
+Text
+Right_of 27
+Tag  HERE
+
+Colonne 29
+Width 12
+Optional
+Hidden
+Show_Tag
+Right_of 3
+Tag Molecular_change # Intron_number                                                                                                    
+
+Colonne 30
+Width 12
+Optional
+Visible
+Text
+Right_of 29
+Tag  HERE
+
+Colonne 31
+Width 12
+Optional
+Hidden
+Show_Tag
+Right_of 3
+Tag Molecular_change # Exon_number                                                                      
+
+Colonne 32
+Width 12
+Optional
+Visible
+Text
+Right_of 31
+Tag  HERE
 
 END
 
   print TMP $txt;
   close TMP;
+
   return $def;
 }
