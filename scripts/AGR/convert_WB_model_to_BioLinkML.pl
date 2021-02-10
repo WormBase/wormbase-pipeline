@@ -4,6 +4,7 @@ use Const::Fast;
 use Path::Class;
 use Text::Tabs;
 use Getopt::Long;
+use Smart::Comments;
 
 const my $WB_MODEL_SPEC => $ENV{WORMPUB} . "/wormbase-pipeline/wspec/models.wrm";
 
@@ -90,6 +91,7 @@ YAML_HEADER
 	my $domain = @domains > 1 ? 'named_thing' : $domains[0];
 	$out_fh->print("    domain: $domain\n");
 	$out_fh->print("    range: " . $slots->{$slot}{'range'} . "\n");
+	$out_fh->print("\n");
     }
 
     return;
@@ -99,18 +101,19 @@ YAML_HEADER
 sub process_slot_value {
     my ($class, $slot, $value, $classes, $associations, $slots, $hash_slots, $comments, $prefix) = @_;
 
-    my $comment_key = substr($slot, length($prefix));
+    my $slot_key = substr($slot, length($prefix));
 
     if ($value =~ /#(\w+)$/) {
-	$value =~ s/\s*#\w+$//;
 	for my $hash_slot_value (@{$hash_slots->{$1}}) {
-	    ($classes, $associations, $slots) = process_slot_value($slot . '_' . $hash_slot_value->{'slot'},
+	    ($classes, $associations, $slots) = process_slot_value($class, $slot . '_' . $hash_slot_value->{'slot'},
 								   $value . ' ' . $hash_slot_value->{'value'},
 								   $classes, $associations, $slots, $hash_slots,
 								   $comments, $slot . '_');
 	}
+	$value =~ s/\s*#\w+$//;
     }
-    elsif ($value =~ /\?(\w+)\s.*\?(\w+)/) {
+    
+    if ($value =~ /\?(\w+)\s.*\?(\w+)/) {
 	$classes->{"${1}_${2}"}{'description'} = "Linking class for $1 and $2 classes";
 	push @{$classes->{"$1_$2"}{'slots'}}, "has_$1";
 	push @{$classes->{"$1_$2"}{'slots'}}, "has_$2";
@@ -140,16 +143,18 @@ sub process_slot_value {
 	$associations->{$assoc_name}{'subject_range'} = $class;
 	$associations->{$assoc_name}{'predicate_subproperty_of'} = "has_$slot";
 	$associations->{$assoc_name}{'object_range'} = $1;
+	push @{$classes->{$class}{'slots'}}, "has_$slot";
 	$slots->{"has_$slot"}{'domain'}{$class}++;
 	$slots->{"has_$slot"}{'range'} = $1;
 	$slots->{"has_$slot"}{'is_a'} = 'related_to';
-	$slots->{"has_$slot"}{'description'} = $comments->{$comment_key} if exists $comments->{$comment_key};
+	$slots->{"has_$slot"}{'description'} = $comments->{$slot_key} if exists $comments->{$slot_key};
     }
-    else{
+    else {
 	$slots->{$slot}{'is_a'} = 'node_property';
 	$slots->{$slot}{'domain'}{$class}++;
 	$slots->{$slot}{'range'} = $value eq '' ? 'boolean' : 'string';
-	$slots->{$slot}{'description'} = $comments->{$comment_key} if exists $comments->{$comment_key};
+	$slots->{$slot}{'description'} = $comments->{$slot_key} if exists $comments->{$slot_key};
+	#$slots->{$slot}{'values_from'} = '[' . join(', ', @{$controlled_vocabs->{$slot_key}}) . ']' if exists $controlled_vocabs->{$slot_key};
 	push @{$classes->{$class}{'slots'}}, $slot;
     }
    	    
@@ -160,9 +165,8 @@ sub process_slot_value {
 sub extract_slot_details {
     my $model_lines = shift;
 
-    my ($class, $class_or_hash, $indent, $previous_indent, $prefix, $previous_text);
-    my (%classes, %hashes, %comments);
-    my (@slot_title_parts, @indent_lengths);
+    my ($class, $class_or_hash, $previous_indent);
+    my (%classes, %hashes, %comments, %slot_parts);
 
     for my $ix (0 .. scalar(@$model_lines) - 1) {
 	my $line = $model_lines->[$ix];
@@ -175,14 +179,12 @@ sub extract_slot_details {
 	    $line =~ s/\s*\/\/.+$//;
 	}
 
+	# Start of new class/hash definition
 	if ($line =~ /^([\?#])(\w+)\s(.+)$/) {
 	    $class_or_hash = $1 eq '?' ? 'class' : 'hash';
 	    $class = $2;
-	    $previous_indent = (length $class) + 2;
-	    $prefix = '';
-	    @indent_lengths = ($previous_indent);
-	    @slot_title_parts = ('');
-	    
+	    undef %slot_parts;
+	    $previous_indent = 0;
 	    # Replace class name with spaces so line can be treated like others
 	    $line = ' ' x ((length $class) + 2);
 	    $line .= $3;
@@ -191,45 +193,49 @@ sub extract_slot_details {
 	my ($leading_spaces, $text) = $line =~ /^(\s+)(\S.+)$/;
 	$text =~ s/\s+/ /g;
 	
-	$indent = length($leading_spaces);
+	my $indent = length($leading_spaces);
 	my @parts = split(' ', $text);
+	                    
+	# Check indentation of next line
+	my $next_line = $model_lines->[$ix + 1];
+	my ($nl_leading_spaces) = $next_line =~ /^(\s+)\S+/;
+	my $next_indent = length $nl_leading_spaces;
 	
-	pop @slot_title_parts;
-	if ($indent == $previous_indent) {
-	    push @slot_title_parts, $parts[0];
-	    my $next_line = $model_lines->[$ix + 1];
-	    my ($nl_leading_spaces) = $next_line =~ /^(\s+)\S+/;
-	    if (length $nl_leading_spaces > $indent) {
-		shift @parts;
-		push @slot_title_parts, $parts[0];
+	# If reduction in indentation, remove slot title parts as required    
+	if ($indent < $previous_indent) {
+	    for my $slot_indent (sort {$b<=>$a} keys %slot_parts) {
+		last if $slot_indent < $indent;
+		delete $slot_parts{$slot_indent};
 	    }
 	}
-	elsif ($indent > $previous_indent) {
-	    push @slot_title_parts, $parts[0];
-	    push @indent_lengths, $indent;
-	}
-	else {
-	    my $x = -1;
-	    while ($indent_lengths[$x] > $indent) {
-		pop @indent_lengths;
-		pop @slot_title_parts;
-		$x--;
-	    }
-	    push @slot_title_parts, $parts[0];
+   	
+	 
+	# Combine multiple words before next level of indentation
+	while (length $parts[0] < $next_indent - $indent) {
+	    my $first_part = shift @parts;
+	    $slot_parts{$indent} = $first_part;
+	    $indent += (length $first_part) + 1;
 	    
-	    my $next_line = $model_lines->[$ix + 1];
-	    my ($nl_leading_spaces) = $next_line =~ /^(\s+)\S+/;
-	    if (length $nl_leading_spaces > $indent) {
-		shift @parts;
-		push @slot_title_parts, $parts[0];
-	    }
+	}
+	$slot_parts{$indent} = shift @parts; 
+  
+	# If next level increases indent then incorporate first 2 parts into slot tag
+	if ($next_indent > $indent) {
+	    $slot_parts{$next_indent} = shift @parts;
 	}
 	
-	shift @parts;
-	
+	my @slot_title_parts;
+	for my $slot_indent(sort {$a<=>$b} keys %slot_parts) {
+	    push @slot_title_parts, $slot_parts{$slot_indent} if defined $slot_parts{$slot_indent};
+	}
 	my $slot_title = join('_', @slot_title_parts);
 	$slot_title =~ s/_unique//g;
 	
+	if ($class eq 'view') {
+	    ### SP: %slot_parts
+	    print "$slot_title\n";
+	}
+
 	for my $ix (0 .. @parts - 1) {
 	    $parts[$ix] =~ s/_unique//g;
 	}
