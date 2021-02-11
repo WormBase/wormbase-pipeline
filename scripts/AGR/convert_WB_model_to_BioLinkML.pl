@@ -13,7 +13,11 @@ GetOptions(
     );
 
 my $model_lines = get_and_parse_model_lines();
-my ($class_slots, $hash_slots, $comments) = extract_slot_details($model_lines);
+my ($class_slots, $hash_slots, $comments, $controlled_vocabs) = extract_slot_details($model_lines);
+
+$controlled_vocabs = filter_controlled_vocabs($controlled_vocabs);
+$class_slots = merge_controlled_vocabs($class_slots, $controlled_vocabs);
+$hash_slots = merge_controlled_vocabs($hash_slots, $controlled_vocabs);
 
 my ($classes, $associations, $slots);
 for my $class (keys %$class_slots) {
@@ -22,7 +26,7 @@ for my $class (keys %$class_slots) {
 	($classes, $associations, $slots) = process_slot_value($class, $slot_value->{'slot'},
 							       $slot_value->{'value'}, $classes,
 							       $associations, $slots, $hash_slots,
-							       $comments, '');		       
+							       $comments, '', $controlled_vocabs);		       
     }
 }
 
@@ -58,57 +62,68 @@ YAML_HEADER
 
     my $out_fh = file($out_file)->openw;
     $out_fh->print("$header\n\nclasses:\n\n");
-    for my $class (keys %$classes) {
+    for my $class (sort keys %$classes) {
 	my %slots_printed = ();
-	$out_fh->print("  $class:\n");
-        $out_fh->print("    description: " . $classes->{$class}{'description'} . "\n");
-	$out_fh->print("    is_a: named_thing\n");
-	$out_fh->print("    slots:\n");
+	replace_pipes_and_print($out_fh, "  $class:\n");
+        replace_pipes_and_print($out_fh, "    description: " . $classes->{$class}{'description'} . "\n");
+	replace_pipes_and_print($out_fh, "    is_a: named_thing\n");
+	replace_pipes_and_print($out_fh, "    slots:\n");
 	for my $slot (@{$classes->{$class}{'slots'}}) {
-	    $out_fh->print("      - $slot\n") unless exists $slots_printed{$slot};
+	    replace_pipes_and_print($out_fh, "      - $slot\n") unless exists $slots_printed{$slot};
 	    $slots_printed{$slot}++;
 	}
-	$out_fh->print("\n");
+	replace_pipes_and_print($out_fh, "\n");
     }
-    for my $assoc (keys %$associations) {
-	$out_fh->print("  $assoc\n    is_a: association\n");
-	$out_fh->print("    defining_slots:\n");
+    for my $assoc (sort keys %$associations) {
+	replace_pipes_and_print($out_fh, "  $assoc\n    is_a: association\n");
+	replace_pipes_and_print($out_fh, "    defining_slots:\n");
 	for my $ds (qw(subject predicate object)) {
-	    $out_fh->print("      - $ds\n");
+	    replace_pipes_and_print($out_fh, "      - $ds\n");
 	}
-	$out_fh->print("    slot_usage:\n");
-	$out_fh->print("      subject:\n        range: " . $associations->{$assoc}{'subject_range'} . "\n");
-	$out_fh->print("      predicate:\n        subproperty_of: " . $associations->{$assoc}{'predicate_subpropert_of'} . "\n");
-	$out_fh->print("      object:\n        range: " . $associations->{$assoc}{'object_range'} . "\n");
-	$out_fh->print("\n");
+	replace_pipes_and_print($out_fh, "    slot_usage:\n");
+	replace_pipes_and_print($out_fh, "      subject:\n        range: " . $associations->{$assoc}{'subject_range'} . "\n");
+	replace_pipes_and_print($out_fh, "      predicate:\n        subproperty_of: " . $associations->{$assoc}{'predicate_subproperty_of'} . "\n");
+	replace_pipes_and_print($out_fh, "      object:\n        range: " . $associations->{$assoc}{'object_range'} . "\n");
+	replace_pipes_and_print($out_fh, "\n");
     }
-    $out_fh->print("\nslots:\n\n");
-    for my $slot (keys %$slots) {
-	$out_fh->print("  $slot:\n");
-	$out_fh->print("    is_a: " . $slots->{$slot}{'is_a'} . "\n");
-	$out_fh->print("    description: >-\n      " . $slots->{$slot}{'description'}) if exists $slots->{$slot}{'description'};
+    replace_pipes_and_print($out_fh, "\nslots:\n\n");
+    for my $slot (sort keys %$slots) {
+	replace_pipes_and_print($out_fh, "  $slot:\n");
+	replace_pipes_and_print($out_fh, "    is_a: " . $slots->{$slot}{'is_a'} . "\n");
+	replace_pipes_and_print($out_fh, "    description: >-\n      " . $slots->{$slot}{'description'} . "\n") if exists $slots->{$slot}{'description'};
 	my @domains = keys %{$slots->{$slot}{'domain'}};
 	my $domain = @domains > 1 ? 'named_thing' : $domains[0];
-	$out_fh->print("    domain: $domain\n");
-	$out_fh->print("    range: " . $slots->{$slot}{'range'} . "\n");
-	$out_fh->print("\n");
+	replace_pipes_and_print($out_fh, "    domain: $domain\n");
+	replace_pipes_and_print($out_fh, "    range: " . $slots->{$slot}{'range'} . "\n");
+	replace_pipes_and_print($out_fh, "    values_from: " . $slots->{$slot}{'values_from'} . "\n") if exists $slots->{$slot}{'values_from'};
+	replace_pipes_and_print($out_fh, "\n");
     }
+
+    return;
+}
+
+
+sub replace_pipes_and_print{
+    my ($out_fh, $string) = @_;
+
+    $string =~ s/\|/_/g;
+    $out_fh->print($string);
 
     return;
 }
  
    
 sub process_slot_value {
-    my ($class, $slot, $value, $classes, $associations, $slots, $hash_slots, $comments, $prefix) = @_;
+    my ($class, $slot, $value, $classes, $associations, $slots, $hash_slots, $comments, $prefix, $controlled_vocabs) = @_;
 
     my $slot_key = substr($slot, length($prefix));
 
     if ($value =~ /#(\w+)$/) {
 	for my $hash_slot_value (@{$hash_slots->{$1}}) {
-	    ($classes, $associations, $slots) = process_slot_value($class, $slot . '_' . $hash_slot_value->{'slot'},
+	    ($classes, $associations, $slots) = process_slot_value($class, $slot . '|' . $hash_slot_value->{'slot'},
 								   $value . ' ' . $hash_slot_value->{'value'},
 								   $classes, $associations, $slots, $hash_slots,
-								   $comments, $slot . '_');
+								   $comments, $slot . '|', $controlled_vocabs);
 	}
 	$value =~ s/\s*#\w+$//;
     }
@@ -117,8 +132,8 @@ sub process_slot_value {
 	$classes->{"${1}_${2}"}{'description'} = "Linking class for $1 and $2 classes";
 	push @{$classes->{"$1_$2"}{'slots'}}, "has_$1";
 	push @{$classes->{"$1_$2"}{'slots'}}, "has_$2";
-	push @{$classes->{$class}{'slots'}}, "has_$1_$2";
-	$slots->{"has_$1_$2"}{'domain'}{$class}++;
+	push @{$classes->{$class}{'slots'}}, "has_${slot}_$1_$2";
+	$slots->{"has_${slot}_$1_$2"}{'domain'}{$class}++;
 	$slots->{"has_$1"}{'domain'}{"$1_$2"}++;
 	$slots->{"has_$2"}{'domain'}{"$1_$2"}++;
 	$slots->{"has_$1"}{'range'} = $1;
@@ -154,7 +169,8 @@ sub process_slot_value {
 	$slots->{$slot}{'domain'}{$class}++;
 	$slots->{$slot}{'range'} = $value eq '' ? 'boolean' : 'string';
 	$slots->{$slot}{'description'} = $comments->{$slot_key} if exists $comments->{$slot_key};
-	#$slots->{$slot}{'values_from'} = '[' . join(', ', @{$controlled_vocabs->{$slot_key}}) . ']' if exists $controlled_vocabs->{$slot_key};
+	$slots->{$slot}{'values_from'} = '[' . join(', ', @{$controlled_vocabs->{$class}{$slot_key}}) . ']' 
+	    if $value eq 'controlled_vocabulary';
 	push @{$classes->{$class}{'slots'}}, $slot;
     }
    	    
@@ -165,8 +181,9 @@ sub process_slot_value {
 sub extract_slot_details {
     my $model_lines = shift;
 
-    my ($class, $class_or_hash, $previous_indent);
-    my (%classes, %hashes, %comments, %slot_parts);
+    my ($class, $class_or_hash, $previous_indent, $possible_cv);
+    my @cv;
+    my (%classes, %hashes, %comments, %slot_parts, %controlled_vocabs);
 
     for my $ix (0 .. scalar(@$model_lines) - 1) {
 	my $line = $model_lines->[$ix];
@@ -208,7 +225,6 @@ sub extract_slot_details {
 		delete $slot_parts{$slot_indent};
 	    }
 	}
-   	
 	 
 	# Combine multiple words before next level of indentation
 	while (length $parts[0] < $next_indent - $indent) {
@@ -228,13 +244,15 @@ sub extract_slot_details {
 	for my $slot_indent(sort {$a<=>$b} keys %slot_parts) {
 	    push @slot_title_parts, $slot_parts{$slot_indent} if defined $slot_parts{$slot_indent};
 	}
-	my $slot_title = join('_', @slot_title_parts);
-	$slot_title =~ s/_unique//g;
+
+	# Join with pipes that are later switch to underscores to differentiate between tags
+	my $slot_title = join('|', @slot_title_parts);
 	
-	if ($class eq 'view') {
-	    ### SP: %slot_parts
-	    print "$slot_title\n";
+	if ($slot_title =~ /^(.+)_unique\|([^\|]+)$/) {
+	    $controlled_vocabs{$class}{$1}{$2} = @parts;
 	}
+   
+	$slot_title =~ s/_unique//g;
 
 	for my $ix (0 .. @parts - 1) {
 	    $parts[$ix] =~ s/_unique//g;
@@ -251,7 +269,53 @@ sub extract_slot_details {
 	$previous_indent = $indent;
     }
 
-    return (\%classes, \%hashes, \%comments);
+    return (\%classes, \%hashes, \%comments, \%controlled_vocabs);
+}
+
+
+sub merge_controlled_vocabs {
+    my ($slot_values, $controlled_vocabs) = @_;
+
+    my %cvs_added;
+    my %merged_slot_values;
+    for my $class (keys %$slot_values) {
+	for my $slot_value (@{$slot_values->{$class}}) {
+	    my ($slot_stem) = $slot_value->{'slot'} =~ /^(.+)\|[^\|]+$/;
+	    if (exists $controlled_vocabs->{$class}{$slot_stem}) {
+		unless (exists $cvs_added{$class}{$slot_stem}) {
+		    push @{$merged_slot_values{$class}}, {slot => $slot_stem, 
+							  value => 'controlled_vocabulary'};
+		    $cvs_added{$class}{$slot_stem} = 1;
+		}
+	    }
+	    else {
+		push @{$merged_slot_values{$class}}, $slot_value;
+	    }
+	}
+    }
+    
+    return \%merged_slot_values;
+}
+
+
+sub filter_controlled_vocabs {
+    my $possible_cvs = shift;
+
+    my %valid_cvs;
+    for my $class (keys %$possible_cvs) {
+	for my $group (keys %{$possible_cvs->{$class}}) {
+	    my $is_valid = 1;
+	    for my $term (keys %{$possible_cvs->{$class}{$group}}) {
+		if ($possible_cvs->{$class}{$group}{$term} > 0) {
+		    $is_valid = 0;
+		    last;
+		}
+	    }
+	    push @{$valid_cvs{$class}{$group}}, keys %{$possible_cvs->{$class}{$group}} if $is_valid;
+	}
+    }
+
+    return \%valid_cvs;
 }
 
     
