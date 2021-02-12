@@ -504,7 +504,7 @@ sub collate_and_sort {
   #
   if ($gff3) {
     my $outfile = "$working_dir/post_process_gff3.gff3";
-    $wormbase->run_script("GFF_post_process/post_process_gff3.pl -infile $processed_gff_file -outfile $outfile", $log)
+    $wormbase->run_script("GFF_post_process/post_process_gff3.pl -infile $processed_gff_file -outfile $outfile -tecred", $log)
         and $log->log_and_die("Unsuccessful post-processing of GFF3 prior to collation\n");
 
     if ($debug) {

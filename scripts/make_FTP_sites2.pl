@@ -650,95 +650,45 @@ sub copy_rna_files{
 # copy across ontology files
 ############################################
 sub copy_ontology_files {
- 
-  print "Copy ontology innit\n";
-
+  
   my $runtime = $wormbase->runtime;
-  $log->write_to("$runtime: Copying ontology files\n");
-
-  my $ace_dir = $wormbase->autoace;  
+  $log->write_to("$runtime: copying ontology files\n");
+  
+  my $ace_dir = $wormbase->autoace;
+  
   my $obo_dir = $wormbase->primaries . "/citace/temp_unpack_dir/home/citace/Data_for_${WS_version_name}/Data_for_Ontology/";
   my $ace_ontology_dir = "$ace_dir/ONTOLOGY";
   my $ftp_ontology_dir = "$targetdir/ONTOLOGY";
-  #print "$ace_dir $obo_dir $ace_ontology_dir $ftp_ontology_dir\n";
-
+  
   mkpath($ace_ontology_dir,1,0775);
   mkpath($ftp_ontology_dir,1,0775);
-
-    # run through all possible organisms
-  my %accessors = ($wormbase->species_accessors);
-  $accessors{elegans} = $wormbase;
-
-  my %copied;
-
-  foreach my $wb (values %accessors) {
-    next if exists $skip_species{$wb->species};
-    next if @only_species and not exists $only_species{$wb->species};
-
-    my $gspecies = $wb->full_name('-g_species' => 1);
-    my $bioproj = $wb->ncbi_bioproject;
-    my $prefix = $wb->pepdir_prefix;
-
-    #print "$gspecies $bioproj $prefix  \n";
-   
-
-    # Copy to species folders
-    foreach my $file (glob("$ace_ontology_dir/*.*")) {
-	my @a = split(/\./, $file);
-	my @b = split(/\//, $a[0]);
-	# If is daf file
-	if ($file=~/$gspecies/ and $file=~/daf\.txt/) {
-		my $species_dir = "$targetdir/species/$gspecies/$bioproj";
-		#print "cp -f $file $targetdir/species/$gspecies/$bioproj/annotation/$gspecies\.$bioproj\.$WS_version_name\.$b[-1]\.daf\n ";
-		$wormbase->run_command("cat $file | gzip -n -9 > $targetdir/species/$gspecies/$bioproj/annotation/$gspecies\.$bioproj\.$WS_version_name\.$b[-1]\.daf.gz", $log);
-		$copied{$file}=1;
-	}
-	elsif ($file=~/$gspecies/ and $file=~/rnai_phenotypes/) {
-		my $species_dir = "$targetdir/species/$gspecies/$bioproj";
-		#print "cp -f $file $targetdir/species/$gspecies/$bioproj/annotation/$gspecies\.$bioproj\.$WS_version_name\.$b[-1]\.wb\n ";
-		$wormbase->run_command("cat $file | gzip -n -9 > $targetdir/species/$gspecies/$bioproj/annotation/$gspecies\.$bioproj\.$WS_version_name\.$b[-1]\.wb.gz", $log);
-		$copied{$file}=1;
-	}
-	elsif ($file=~/$gspecies/) {
-		my $species_dir = "$targetdir/species/$gspecies/$bioproj";
-		#print "cp -f $file $targetdir/species/$gspecies/$bioproj/annotation/$gspecies\.$bioproj\.$WS_version_name\.$b[-1]\.gaf\n ";
-		$wormbase->run_command("cat $file | gzip -n -9 > $targetdir/species/$gspecies/$bioproj/annotation/$gspecies\.$bioproj\.$WS_version_name\.$b[-1]\.gaf.gz", $log);
-		$copied{$file}=1;
-	}
-	else {
-	}
-    }
-}
- 
-# Copy the rest of the files without species name to the ontology folder
-   foreach my $file (glob("$ace_ontology_dir/*.*")) {
-	my @a = split(/\./, $file);
-	my @b = split(/\//, $a[0]);
-	if (exists $copied{$file}) {
-		#print "Copied $file\n";
-	}
-	else {
-		if ($file=~/daf\.txt/) {
-			#print "cp -f $file $targetdir/ONTOLOGY/$b[-1]\.$WS_version_name\.daf\n ";
-			$wormbase->run_command("cp -f $file $targetdir/ONTOLOGY/$b[-1]\.$WS_version_name\.daf", $log);
-		}
-		elsif ($file=~/rnai_phenotypes/) {
-			#print "cp -f $file $targetdir/ONTOLOGY/$b[-1]\.$WS_version_name\.wb\n ";
-			$wormbase->run_command("cp -f $file $targetdir/ONTOLOGY/$b[-1]\.$WS_version_name\.wb", $log);
-		}
-		else {
-			#print "cp -f $file $targetdir/ONTOLOGY/$b[-1]\.$WS_version_name\.gaf\n ";
-			$wormbase->run_command("cp -f $file $targetdir/ONTOLOGY/$b[-1]\.$WS_version_name\.gaf", $log);
-		}
-
-	}
-
-    }
-    
   
-   $runtime = $wormbase->runtime;
-   $log->write_to("$runtime: Finished copying ontology files!\n\n");
+  my %accessors = ($wormbase->species_accessors);
+  $accessors{$wormbase->species} = $wormbase;
+  my %species_name_map;
+  while(my ($species, $wb) = each %accessors) {
+      $species_name_map{$wb->full_name('-g_species' => 1)} = $species;
+  }
 
+  $wormbase->run_command("cp -f $obo_dir/*.obo $ace_ontology_dir/", $log);
+  foreach my $file (glob("$ace_ontology_dir/*.*")) {
+      my ($filestem, $suffix) = $file =~ /\/([^\/]+)\.([^\.\/]+)$/;
+      if (exists $species_name_map{$suffix}) {
+	  my ($filetype, $release, $extension) = $filestem =~ /^([^\.]+)\.(WS\d+)\.([^\.]+)$/; 
+	  my $wb = $accessors{$species_name_map{$suffix}};
+	  my $bioproj = $wb->ncbi_bioproject;
+	  my $new_filename = join('.', $suffix, $bioproj, $release, $filtype, $extension);
+	  my $species_dir = "$targetdir/species/$species/$bioproj";
+	  mkpath($species_dir,1,0775);
+	  $wormbase->run_command("cp -f $file ${species_dir}/${new_filename}", $log);
+      }
+      else {
+	  $wormbase->run_command("cp -f $file $ftp_ontology_dir/", $log);
+      }
+  }
+  
+  $runtime = $wormbase->runtime;
+  $log->write_to("$runtime: Finished copying ontology files\n\n");
 }
 
 

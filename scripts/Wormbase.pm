@@ -1373,8 +1373,10 @@ sub establish_paths {
     $self->{'autoace'}    = $self->species eq 'elegans' ? "$basedir/autoace" : "$basedir/".$self->species;
     $self->{'orgdb'}      = $self->{'autoace'}; #."/".$self->{'organism'};
   }
-  
+ 
+ #$basedir = '/nfs/panda/ensemblgenomes/wormbase/BUILD';
   $self->{'basedir'}    = $basedir;
+#	print "BASE $basedir\n";
 
   if ($self->test) {
     $self->{'ftp_upload'} = $self->wormpub . "/TEST/ftp_uploads/wormbase";
@@ -1452,6 +1454,8 @@ sub establish_paths {
   $self->{'smasked_genome_seq'} = $self->sequences . "/" . $self->{species} . ".genome_softmasked.fa";
   
   # create dirs if missing
+  #my $wep = $self->wormpep;
+  #print "WORMPEP $wep\n";
   mkpath( $self->logs )        unless ( -e $self->logs );
   mkpath( $self->common_data ) unless ( -e $self->common_data );
   mkpath( $self->wormpep )     unless ( -e $self->wormpep );
