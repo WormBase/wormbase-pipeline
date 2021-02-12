@@ -522,7 +522,7 @@ sub copy_report_files {
                     "all_classes") {
     if (-e "$source_report_dir/$file") {
       $wormbase->run_command("cat $source_report_dir/$file | gzip -n > $target_report_dir/${file}_report.$WS_version_name.txt.gz", $log); 
-    }   
+    }
   }
 
   $runtime = $wormbase->runtime;
@@ -847,7 +847,9 @@ sub copy_annotations_files{
     my $out_prefix = "$targetdir/species/$gspecies/$bioproj/annotation/$gspecies.${bioproj}.${WS_version_name}.";
 
     foreach my $io_pair ([ "dbxrefs.txt", "xrefs.txt.gz" ],
-                         [ "gene_product_info.gpi", "gene_product_info.gpi.gz" ]) {
+                         [ "gene_product_info.gpi", "gene_product_info.gpi.gz" ],
+			 [ "gene_product_info.gpi2", "gene_product_info.gpi2.gz" ]
+) {
       my ($in_suffix, $out_suffix) = @$io_pair;
 
       my $in_file = $in_prefix . $in_suffix;
@@ -1406,11 +1408,9 @@ GSPECIES.BIOPROJ.WSREL.changed_CGC_names.txt
 GSPECIES.BIOPROJ.WSREL.readable_changed_CGC_names.txt
 GSPECIES.BIOPROJ.WSREL.TSS.wig.tar.gz
 GSPECIES.BIOPROJ.WSREL.interactions.txt.gz
-GSPECIES.BIOPROJ.WSREL.potential_promotors.fa.gz
 GSPECIES.BIOPROJ.WSREL.swissprot.txt.gz
 GSPECIES.BIOPROJ.WSREL.molecules.ace.gz
 GSPECIES.BIOPROJ.WSREL.xrefs.txt.gz
-GSPECIES.BIOPROJ.WSREL.gene_product_info.gpi.gz
 
 [elegans]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.wormpep_package.tar.gz
@@ -1426,6 +1426,8 @@ GSPECIES.BIOPROJ.WSREL.go_annotations.gaf.gz
 GSPECIES.BIOPROJ.WSREL.repeats.fa.gz
 GSPECIES.BIOPROJ.WSREL.geneIDs.txt.gz
 GSPECIES.BIOPROJ.WSREL.geneOtherIDs.txt.gz
+GSPECIES.BIOPROJ.WSREL.gene_product_info.gpi.gz
+GSPECIES.BIOPROJ.WSREL.gene_product_info.gpi2.gz
 
 [CORE]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.best_blastp_hits.txt.gz
