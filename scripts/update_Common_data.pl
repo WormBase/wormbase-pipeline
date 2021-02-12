@@ -173,6 +173,8 @@ if ($all) {
     if (
       $arg eq 'est2feature' or
       $arg eq 'gene_id' or 
+      $arg eq 'worm_gene2cgc' or
+      $arg eq 'worm_gene2geneID' or
       $arg eq 'est' or
       $arg eq 'cds2wormpep') {
       push @bsub_options, (
@@ -181,8 +183,8 @@ if ($all) {
         -J => $job_name);
     } else {
       push @bsub_options, (
-        -M => "3000", 
-        -R => "\"select[mem>3000] rusage[mem=3000]\"",
+        -M => "6000", 
+        -R => "\"select[mem>6000] rusage[mem=6000]\"",
         -J => $job_name);
     }
     my $cmd = "update_Common_data.pl -${arg}";

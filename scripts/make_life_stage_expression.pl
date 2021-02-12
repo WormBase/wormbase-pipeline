@@ -393,6 +393,7 @@ if (defined $gene_name) { # for testing
 } else {
   my $iterator = $db->fetch_many(-query => 'Find Gene where Status = "Live" AND Species = "Caenorhabditis elegans"');
   while ($gene = $iterator->next) {
+	  unless ($gene=~/WBGene/) {next}; # Make sure not to read VC2010 genes
     print "Doing $gene ...\n";
 #    if ($gene->name eq 'WBGene00001495') {
 #      next; # lacks a Public_name in WS273
