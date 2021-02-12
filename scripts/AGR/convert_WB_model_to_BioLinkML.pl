@@ -30,11 +30,38 @@ for my $class (keys %$class_slots) {
     }
 }
 
-print_yaml($out_file);
+($classes, $slots) = avoid_duplicate_class_and_slot_names($classes, $slots);
+print_yaml($out_file, $classes, $associations, $slots);
+
+
+sub avoid_duplicate_class_and_slot_names {
+    my ($classes, $slots) = @_;
+
+    my (%final_slots, %changed_slots);
+    for my $slot (keys %$slots) {
+	if (exists $classes->{$slot} or $slot eq 'date') {
+	    $final_slots{$slot . '_slot'} = $slots->{$slot};
+	    $changed_slots{$slot}++;
+	}
+	else {
+	    $final_slots{$slot} = $slots->{$slot};
+	}
+    }
+    
+    for my $class (keys %$classes) {
+	for my $ix (0 .. scalar @{$classes->{$class}{'slots'}} - 1) {
+	    if (exists $changed_slots{$classes->{$class}{'slots'}[$ix]}) {
+		$classes->{$class}{'slots'}[$ix] .= '_slot';
+	    }
+	}
+    }
+    
+    return ($classes, \%final_slots);
+}
 
 
 sub print_yaml {
-    my $out_file = shift;
+    my ($out_file, $classes, $associations, $slots) = @_;
 
     my $header = <<'YAML_HEADER';
 
@@ -58,24 +85,131 @@ default_range: string
 imports:
   - biolinkml:types
 
+classes:
+
+  named thing:
+    is_a: entity
+    description: "a databased entity or concept/class"
+
+  entity:
+    description: >-
+      Root Biolink Model class for all things and informational relationships, real or imagined.
+    abstract: true
+
+  association:
+    is_a: entity
+    description: >-
+      A typed association between two entities, supported by evidence
+    comments:
+      - This is roughly the model used by biolink and ontobio at the moment
+    slots:
+      - subject
+      - predicate
+      - object
+    slot_usage:
+      type:
+        description: rdf:type of biolink:Association should be fixed at rdf:Statement
+      category:
+        range: association
+    exact_mappings:
+      - biolink:Association
+
 YAML_HEADER
 
+
+    my $footer = <<'YAML_FOOTER';
+
+  node property:
+    description: >-
+      A group for any property that holds between a node and a value
+
+  related to:
+    description: >-
+      A relationship that is asserted between two named things
+    domain: named thing
+    range: named thing
+    multivalued: true
+    inherited: true
+    symmetric: true
+
+  subject:
+    is_a: association slot
+    local_names:
+      ga4gh: annotation subject
+      neo4j: node with outgoing relationship
+    description: >-
+      Connects an association to the subject of the association.
+      For example, in a gene-to-phenotype association, the gene is subject and phenotype is object.
+    required: true
+    range: named thing
+    exact_mappings:
+      - biolink:subject
+
+  object:
+    is_a: association slot
+    description: >-
+      Connects an association to the object of the association.
+      For example, in a gene-to-phenotype association, the gene is subject and phenotype is object.
+    required: true
+    range: named thing
+    local_names:
+      ga4gh: descriptor
+      neo4j: node with incoming relationship
+    exact_mappings:
+      - biolink:object
+
+  predicate:
+    is_a: association slot
+    description: >-
+      A high-level grouping for the relationship type. AKA minimal predicate.
+      This is analogous to category for nodes.
+    domain: association
+    notes: >-
+      Has a value from the Biolink related_to hierarchy. In RDF,  this
+      corresponds to rdf:predicate and in Neo4j this corresponds to the
+      relationship type. The convention is for an edge label in snake_case
+      form. For example, biolink:related_to, biolink:causes, biolink:treats
+    range: predicate type
+    required: true
+    local_names:
+      ga4gh: annotation predicate
+      translator: predicate
+    exact_mappings:
+      - biolink:predicate
+
+  association slot:
+    abstract: true
+    domain: association
+    aliases: ['edge property', 'statement property']
+    description: >-
+      any slot that relates an association to another entity
+    exact_mappings:
+      - biolink:association_slot
+
+types:
+
+  predicate type:
+    typeof: uriorcurie
+    description: >-
+      A CURIE from the biolink related_to hierarchy.
+      For example, biolink:related_to, biolink:causes, biolink:treats.
+
+YAML_FOOTER
+
     my $out_fh = file($out_file)->openw;
-    $out_fh->print("$header\n\nclasses:\n\n");
+    $out_fh->print($header);
     for my $class (sort keys %$classes) {
-	my %slots_printed = ();
 	replace_pipes_and_print($out_fh, "  $class:\n");
         replace_pipes_and_print($out_fh, "    description: " . $classes->{$class}{'description'} . "\n");
-	replace_pipes_and_print($out_fh, "    is_a: named_thing\n");
+	replace_pipes_and_print($out_fh, "    is_a: named thing\n");
 	replace_pipes_and_print($out_fh, "    slots:\n");
 	for my $slot (@{$classes->{$class}{'slots'}}) {
-	    replace_pipes_and_print($out_fh, "      - $slot\n") unless exists $slots_printed{$slot};
-	    $slots_printed{$slot}++;
+	    replace_pipes_and_print($out_fh, "      - $slot\n");
 	}
 	replace_pipes_and_print($out_fh, "\n");
     }
     for my $assoc (sort keys %$associations) {
-	replace_pipes_and_print($out_fh, "  $assoc\n    is_a: association\n");
+	replace_pipes_and_print($out_fh, "  $assoc:\n    is_a: association\n");
 	replace_pipes_and_print($out_fh, "    defining_slots:\n");
 	for my $ds (qw(subject predicate object)) {
 	    replace_pipes_and_print($out_fh, "      - $ds\n");
@@ -88,16 +222,20 @@ YAML_HEADER
     }
     replace_pipes_and_print($out_fh, "\nslots:\n\n");
     for my $slot (sort keys %$slots) {
+	print $slot . "\n";
 	replace_pipes_and_print($out_fh, "  $slot:\n");
 	replace_pipes_and_print($out_fh, "    is_a: " . $slots->{$slot}{'is_a'} . "\n");
 	replace_pipes_and_print($out_fh, "    description: >-\n      " . $slots->{$slot}{'description'} . "\n") if exists $slots->{$slot}{'description'};
 	my @domains = keys %{$slots->{$slot}{'domain'}};
-	my $domain = @domains > 1 ? 'named_thing' : $domains[0];
+	my $domain = @domains > 1 ? 'named thing' : $domains[0];
 	replace_pipes_and_print($out_fh, "    domain: $domain\n");
-	replace_pipes_and_print($out_fh, "    range: " . $slots->{$slot}{'range'} . "\n");
+	my @ranges = keys %{$slots->{$slot}{'range'}};
+	my $range = @ranges > 1 ? 'named thing' : $ranges[0];
+	replace_pipes_and_print($out_fh, "    range: $range\n");
 	replace_pipes_and_print($out_fh, "    values_from: " . $slots->{$slot}{'values_from'} . "\n") if exists $slots->{$slot}{'values_from'};
 	replace_pipes_and_print($out_fh, "\n");
     }
+    $out_fh->print($footer);
 
     return;
 }
@@ -128,21 +266,26 @@ sub process_slot_value {
 	$value =~ s/\s*#\w+$//;
     }
     
+    my $us_slot = $slot =~ s/\|/_/gr;  # Need to replace pipes now to avoid duplicate slots from e.g. has_gene|contains and has_gene_contains
     if ($value =~ /\?(\w+)\s.*\?(\w+)/) {
+	my $us1 = $1 =~ s/\|/_/gr;
+	my $us2 = $2 =~ s/\|/_/gr;
 	$classes->{"${1}_${2}"}{'description'} = "Linking class for $1 and $2 classes";
 	push @{$classes->{"$1_$2"}{'slots'}}, "has_$1";
 	push @{$classes->{"$1_$2"}{'slots'}}, "has_$2";
-	push @{$classes->{$class}{'slots'}}, "has_${slot}_$1_$2";
-	$slots->{"has_${slot}_$1_$2"}{'domain'}{$class}++;
-	$slots->{"has_$1"}{'domain'}{"$1_$2"}++;
-	$slots->{"has_$2"}{'domain'}{"$1_$2"}++;
-	$slots->{"has_$1"}{'range'} = $1;
-	$slots->{"has_$2"}{'range'} = $2;
-	$slots->{"has_$1"}{'is_a'} = 'related_to';
-	$slots->{"has_$2"}{'is_a'} = 'related_to';
+	push @{$classes->{$class}{'slots'}}, "has_$1_$2";
+	$slots->{"has_${us1}_${us2}"}{'is_a'} = 'related to';
+	$slots->{"has_${us1}_${us2}"}{'domain'}{$class}++;
+	$slots->{"has_${us1}_${us2}"}{'range'}{"$1_$2"}++;
+	$slots->{"has_$us1"}{'domain'}{"$1_$2"}++;
+	$slots->{"has_$us2"}{'domain'}{"$1_$2"}++;
+	$slots->{"has_$us1"}{'range'}{$1}++;
+	$slots->{"has_$us2"}{'range'}{$2}++;
+	$slots->{"has_$us1"}{'is_a'} = 'related to';
+	$slots->{"has_$us2"}{'is_a'} = 'related to';
 	my $assoc_name = join('_', $class, 'has', $slot, $1, $2, 'association');
 	$associations->{$assoc_name}{'subject_range'} = $class;
-	$associations->{$assoc_name}{'predicate_subproperty_of'} = $slot;
+	$associations->{$assoc_name}{'predicate_subproperty_of'} = "has_$1_$2";
 	$associations->{$assoc_name}{'object_range'} = "$1_$2";
 	$assoc_name = join('_', $1, $2, 'has', $1, 'association');
 	$associations->{$assoc_name}{'subject_range'} = "$1_$2";
@@ -156,20 +299,20 @@ sub process_slot_value {
     elsif ($value =~ /\?(\w+)/) {
 	my $assoc_name = join('_', $class, 'has', $slot, $1, 'association');
 	$associations->{$assoc_name}{'subject_range'} = $class;
-	$associations->{$assoc_name}{'predicate_subproperty_of'} = "has_$slot";
+	$associations->{$assoc_name}{'predicate_subproperty_of'} = "has_$1";
 	$associations->{$assoc_name}{'object_range'} = $1;
-	push @{$classes->{$class}{'slots'}}, "has_$slot";
-	$slots->{"has_$slot"}{'domain'}{$class}++;
-	$slots->{"has_$slot"}{'range'} = $1;
-	$slots->{"has_$slot"}{'is_a'} = 'related_to';
-	$slots->{"has_$slot"}{'description'} = $comments->{$slot_key} if exists $comments->{$slot_key};
+	push @{$classes->{$class}{'slots'}}, "has_$1";
+	$slots->{"has_$1"}{'domain'}{$class}++;
+	$slots->{"has_$1"}{'range'}{$1}++;
+	$slots->{"has_$1"}{'is_a'} = 'related to';
+	$slots->{"has_$1"}{'description'} = $comments->{$slot_key} if exists $comments->{$slot_key};
     }
     else {
-	$slots->{$slot}{'is_a'} = 'node_property';
-	$slots->{$slot}{'domain'}{$class}++;
-	$slots->{$slot}{'range'} = $value eq '' ? 'boolean' : 'string';
-	$slots->{$slot}{'description'} = $comments->{$slot_key} if exists $comments->{$slot_key};
-	$slots->{$slot}{'values_from'} = '[' . join(', ', @{$controlled_vocabs->{$class}{$slot_key}}) . ']' 
+	$slots->{$us_slot}{'is_a'} = 'node property';
+	$slots->{$us_slot}{'domain'}{$class}++;
+	$slots->{$us_slot}{'range'}{get_range($value)}++;
+	$slots->{$us_slot}{'description'} = $comments->{$slot_key} if exists $comments->{$slot_key};
+	$slots->{$us_slot}{'values_from'} = '[' . join(', ', @{$controlled_vocabs->{$class}{$slot_key}}) . ']' 
 	    if $value eq 'controlled_vocabulary';
 	push @{$classes->{$class}{'slots'}}, $slot;
     }
@@ -177,6 +320,15 @@ sub process_slot_value {
     return ($classes, $associations, $slots);
 }
 
+
+sub get_range {
+    my $value = shift;
+
+    return 'boolean' if $value eq '';
+    return 'float' if $value eq 'Float';
+    return 'int' if $value eq 'Int';
+    return 'string';
+}
 
 sub extract_slot_details {
     my $model_lines = shift;
@@ -331,8 +483,13 @@ sub get_and_parse_model_lines {
 	$line =~ s/Evidence\s#Evidence/Evidence Text/;
 	$line =~ s/\s#Evidence//g;
 
-	# Convert Text class to plain text
+	# Convert text classes to plain text
 	$line =~ s/\?Text/Text/g;
+	$line =~ s/\?LongText/Text/g;
+	$line =~ s/\?Keyword/Text/g;
+	$line =~ s/\?WWW_server/Text/g;
+	$line =~ s/\?DNA/Text/g;
+	$line =~ s/\?Peptide/Text/g;
 
 	# Remove XREFs
 	$line =~ s/\sXREF\s\w+//g;
