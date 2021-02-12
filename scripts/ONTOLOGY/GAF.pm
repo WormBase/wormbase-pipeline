@@ -136,11 +136,10 @@ sub make_species_files {
 
 
     for my $wb(values %accessors) {
-	next unless exists $species_lines{$wb->ncbi_tax_id};
 	my $species_file = $file . '.' . $wb->full_name('-g_species' => 1);
 	open (SPECIES, '>', $species_file) or die "Could not open $species_file for writing\n";
 	print SPECIES join("\n", @headers) . "\n";
-	print SPECIES join("\n", @{$species_lines{$wb->ncbi_tax_id}}) . "\n";
+	print SPECIES join("\n", @{$species_lines{$wb->ncbi_tax_id}}) . "\n" if exists $species_lines{$wb->ncbi_tax_id};;
 	close (SPECIES);
     }
 
