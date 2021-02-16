@@ -13,7 +13,7 @@ GetOptions(
     );
 
 my $model_lines = get_and_parse_model_lines();
-my ($slot_details, $comments, $controlled_vocabs) = extract_slot_details($model_lines);
+my ($slot_details, $comments, $controlled_vocabs, $unique_slots) = extract_slot_details($model_lines);
 
 $controlled_vocabs = filter_controlled_vocabs($controlled_vocabs);
 $slot_details = merge_controlled_vocabs($slot_details, $controlled_vocabs);
@@ -24,7 +24,8 @@ for my $class (keys %$slot_details) {
     for my $slot_value (@{$slot_details->{$class}}) {
 	($classes, $slots) = process_slot_value($class, $slot_value->{'slot'},
 						$slot_value->{'value'}, $classes,
-						$slots, $comments, $controlled_vocabs);		       
+						$slots, $comments, $controlled_vocabs,
+						$unique_slots);		       
     }
 }
 
@@ -52,6 +53,12 @@ sub avoid_duplicate_class_and_slot_names {
 		$classes->{$class}{'slots'}[$ix] .= '_slot';
 	    }
 	}
+	next unless exists $classes->{$class}{'non_multivalued_slots'};
+	for my $ix (0 .. scalar @{$classes->{$class}{'non_multivalued_slots'}} - 1) {
+	    if (exists $changed_slots{$classes->{$class}{'non_multivalued_slots'}[$ix]}) {
+		$classes->{$class}{'non_multivalued_slots'}[$ix] .= '_slot';
+	    }
+	}
     }
     
     return ($classes, \%final_slots);
@@ -63,7 +70,7 @@ sub extract_slot_details {
 
     my ($class, $previous_indent, $possible_cv);
     my @cv;
-    my (%slots, %comments, %slot_parts, %controlled_vocabs);
+    my (%slots, %comments, %slot_parts, %controlled_vocabs, %unique_slots);
 
     for my $ix (0 .. scalar(@$model_lines) - 1) {
 	my $line = $model_lines->[$ix];
@@ -111,7 +118,6 @@ sub extract_slot_details {
 	    my $first_part = shift @parts;
 	    $slot_parts{$indent} = $first_part;
 	    $indent += (length $first_part) + 1;
-	    
 	}
 	$slot_parts{$indent} = shift @parts; 
   
@@ -132,7 +138,11 @@ sub extract_slot_details {
 	    $controlled_vocabs{$class}{$1}{$2} = @parts;
 	}
    
-	$slot_title =~ s/_unique//g;
+	my $has_unique_tag = $slot_title =~ /_unique/ ? 1 : 0;
+	if ($has_unique_tag) {
+	    $slot_title =~ s/_unique//g;
+	    $unique_slots{$class}{$slot_title} = 1;
+	}
 
 	for my $ix (0 .. @parts - 1) {
 	    $parts[$ix] =~ s/_unique//g;
@@ -144,7 +154,7 @@ sub extract_slot_details {
 	$previous_indent = $indent;
     }
 
-    return (\%slots, \%comments, \%controlled_vocabs);
+    return (\%slots, \%comments, \%controlled_vocabs, \%unique_slots);
 }
 
 
@@ -307,8 +317,21 @@ YAML_FOOTER
         replace_pipes_and_print($out_fh, "    description: " . $classes->{$class}{'description'} . "\n");
 	replace_pipes_and_print($out_fh, "    is_a: named thing\n");
 	replace_pipes_and_print($out_fh, "    slots:\n");
+	my %printed_class_slots;
 	for my $slot (@{$classes->{$class}{'slots'}}) {
+	    next if exists $printed_class_slots{$slot};
 	    replace_pipes_and_print($out_fh, "      - $slot\n");
+	    $printed_class_slots{$slot} = 1;
+	}
+	my %printed_class_nmv_slots;
+	if (exists $classes->{$class}{'non_multivalued_slots'}) {
+	    replace_pipes_and_print($out_fh, "    slot_usage:\n");
+	    for my $nmv_slot (@{$classes->{$class}{'non_multivalued_slots'}}) {
+		next if exists $printed_class_nmv_slots{$nmv_slot};
+		replace_pipes_and_print($out_fh, "      ${nmv_slot}:\n");
+		replace_pipes_and_print($out_fh, "        multivalued: false\n");
+		$printed_class_nmv_slots{$nmv_slot} = 1;
+	    }
 	}
 	replace_pipes_and_print($out_fh, "\n");
     }
@@ -334,8 +357,8 @@ YAML_FOOTER
 
 
 sub process_slot_value {
-    my ($class, $slot, $value, $classes, $slots, $comments, $controlled_vocabs) = @_;
-    
+    my ($class, $slot, $value, $classes, $slots, $comments, $controlled_vocabs, $unique_slots) = @_;
+
     # Need to replace pipes now to avoid duplicate slots (e.g. has_gene|contains and has_gene_contains)
     my $us_slot = $slot =~ s/\|/_/gr;
 
@@ -389,8 +412,12 @@ sub process_slot_value {
 	$slots->{$us_slot}{'domain'}{$class}++;
 	$slots->{$us_slot}{'range'}{get_range($value)}++;
 	$slots->{$us_slot}{'description'} = $comments->{$slot} if exists $comments->{$slot};
-	$slots->{$us_slot}{'values_from'} = '[' . join(', ', @{$controlled_vocabs->{$class}{$slot}}) . ']' 
-	    if $value eq 'controlled_vocabulary';
+	if ($value eq 'controlled_vocabulary') {
+	    $slots->{$us_slot}{'values_from'} = '[' . join(', ', @{$controlled_vocabs->{$class}{$slot}}) . ']';
+	}
+	elsif (exists $unique_slots->{$class}{$slot}) {
+	    push @{$classes->{$class}{'non_multivalued_slots'}}, $us_slot;
+	}
 	push @{$classes->{$class}{'slots'}}, $slot;
     }
    	    
