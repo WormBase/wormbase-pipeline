@@ -58,6 +58,183 @@ sub avoid_duplicate_class_and_slot_names {
 }
 
 
+sub extract_slot_details {
+    my $model_lines = shift;
+
+    my ($class, $previous_indent, $possible_cv);
+    my @cv;
+    my (%slots, %comments, %slot_parts, %controlled_vocabs);
+
+    for my $ix (0 .. scalar(@$model_lines) - 1) {
+	my $line = $model_lines->[$ix];
+
+	# Capture and remove comments
+	my $comment;
+	$line =~ s/\/\/$//;
+	if ($line =~ /\/\/\s*(.+)$/) {
+	    $comment = $1;
+	    $line =~ s/\s*\/\/.+$//;
+	}
+
+	# Start of new class/hash definition
+	if ($line =~ /^([\?#])(\w+)\s(.+)$/) {
+	    $class = $2;
+	    undef %slot_parts;
+	    $previous_indent = 0;
+	    # Replace class name with spaces so line can be treated like others
+	    $line = ' ' x ((length $class) + 2);
+	    $line .= $3;
+	    $class =~ s/_unique//;
+	}
+	
+	my ($leading_spaces, $text) = $line =~ /^(\s+)(\S.+)$/;
+	$text =~ s/\s+/ /g;
+	
+	my $indent = length($leading_spaces);
+	my @parts = split(' ', $text);
+	                    
+	# Check indentation of next line
+	my $next_line = $model_lines->[$ix + 1];
+	my ($nl_leading_spaces) = $next_line =~ /^(\s+)\S+/;
+	my $next_indent = length $nl_leading_spaces;
+	
+	# If reduction in indentation, remove slot title parts as required    
+	if ($indent < $previous_indent) {
+	    for my $slot_indent (sort {$b<=>$a} keys %slot_parts) {
+		last if $slot_indent < $indent;
+		delete $slot_parts{$slot_indent};
+	    }
+	}
+	 
+	# Combine multiple words before next level of indentation
+	while (length $parts[0] < $next_indent - $indent) {
+	    my $first_part = shift @parts;
+	    $slot_parts{$indent} = $first_part;
+	    $indent += (length $first_part) + 1;
+	    
+	}
+	$slot_parts{$indent} = shift @parts; 
+  
+	# If next level increases indent then incorporate first 2 parts into slot tag
+	if ($next_indent > $indent) {
+	    $slot_parts{$next_indent} = shift @parts;
+	}
+	
+	my @slot_title_parts;
+	for my $slot_indent(sort {$a<=>$b} keys %slot_parts) {
+	    push @slot_title_parts, $slot_parts{$slot_indent} if defined $slot_parts{$slot_indent};
+	}
+
+	# Join with pipes that are later switch to underscores to differentiate between tags
+	my $slot_title = join('|', @slot_title_parts);
+	
+	if ($slot_title =~ /^(.+)_unique\|([^\|]+)$/) {
+	    $controlled_vocabs{$class}{$1}{$2} = @parts;
+	}
+   
+	$slot_title =~ s/_unique//g;
+
+	for my $ix (0 .. @parts - 1) {
+	    $parts[$ix] =~ s/_unique//g;
+	}
+	
+	push @{$slots{$class}}, {slot => $slot_title, value => join(' ', @parts)};
+	$comments{$slot_title} = $comment if $comment;
+ 	
+	$previous_indent = $indent;
+    }
+
+    return (\%slots, \%comments, \%controlled_vocabs);
+}
+
+
+sub filter_controlled_vocabs {
+    my $possible_cvs = shift;
+
+    my %valid_cvs;
+    for my $class (keys %$possible_cvs) {
+	for my $group (keys %{$possible_cvs->{$class}}) {
+	    my $is_valid = 1;
+	    for my $term (keys %{$possible_cvs->{$class}{$group}}) {
+		if ($possible_cvs->{$class}{$group}{$term} > 0) {
+		    $is_valid = 0;
+		    last;
+		}
+	    }
+	    push @{$valid_cvs{$class}{$group}}, keys %{$possible_cvs->{$class}{$group}} if $is_valid;
+	}
+    }
+
+    return \%valid_cvs;
+}
+
+    
+sub get_and_parse_model_lines {
+    my @model_lines = file($WB_MODEL_SPEC)->slurp(chomp => 1);
+    my @parsed_lines;
+    for my $line (@model_lines) {
+	$line = expand($line);
+	next if $line =~ /^\s*\/\//;
+	next if $line =~ /^\s*$/;
+	
+	# Remove evidence hashes
+	$line =~ s/Evidence\s#Evidence/Evidence Text/;
+	$line =~ s/\s#Evidence//g;
+
+	# Convert text classes to plain text
+	$line =~ s/\?Text/Text/g;
+	$line =~ s/\?LongText/Text/g;
+	$line =~ s/\?Keyword/Text/g;
+	$line =~ s/\?WWW_server/Text/g;
+	$line =~ s/\?DNA/Text/g;
+	$line =~ s/\?Peptide/Text/g;
+
+	# Remove XREFs
+	$line =~ s/\sXREF\s\w+//g;
+
+	$line =~ s/ UNIQUE/_UNIQUE/g;
+	push @parsed_lines, lc $line;
+    }
+
+    return \@parsed_lines;
+}
+
+
+sub get_range {
+    my $value = shift;
+
+    return 'boolean' if $value eq '';
+    return 'float' if $value eq 'Float';
+    return 'int' if $value eq 'Int';
+    return 'string';
+}
+
+
+sub merge_controlled_vocabs {
+    my ($slot_values, $controlled_vocabs) = @_;
+
+    my %cvs_added;
+    my %merged_slot_values;
+    for my $class (keys %$slot_values) {
+	for my $slot_value (@{$slot_values->{$class}}) {
+	    my ($slot_stem) = $slot_value->{'slot'} =~ /^(.+)\|[^\|]+$/;
+	    if (exists $controlled_vocabs->{$class}{$slot_stem}) {
+		unless (exists $cvs_added{$class}{$slot_stem}) {
+		    push @{$merged_slot_values{$class}}, {slot => $slot_stem, 
+							  value => 'controlled_vocabulary'};
+		    $cvs_added{$class}{$slot_stem} = 1;
+		}
+	    }
+	    else {
+		push @{$merged_slot_values{$class}}, $slot_value;
+	    }
+	}
+    }
+    
+    return \%merged_slot_values;
+}
+
+
 sub print_yaml {
     my ($out_file, $classes, $slots) = @_;
 
@@ -156,16 +333,6 @@ YAML_FOOTER
 }
 
 
-sub replace_pipes_and_print{
-    my ($out_fh, $string) = @_;
-
-    $string =~ s/\|/_/g;
-    $out_fh->print($string);
-
-    return;
-}
- 
-   
 sub process_slot_value {
     my ($class, $slot, $value, $classes, $slots, $comments, $controlled_vocabs) = @_;
     
@@ -231,180 +398,15 @@ sub process_slot_value {
 }
 
 
-sub get_range {
-    my $value = shift;
+sub replace_pipes_and_print{
+    my ($out_fh, $string) = @_;
 
-    return 'boolean' if $value eq '';
-    return 'float' if $value eq 'Float';
-    return 'int' if $value eq 'Int';
-    return 'string';
+    $string =~ s/\|/_/g;
+    $out_fh->print($string);
+
+    return;
 }
-
-
-sub extract_slot_details {
-    my $model_lines = shift;
-
-    my ($class, $previous_indent, $possible_cv);
-    my @cv;
-    my (%slots, %comments, %slot_parts, %controlled_vocabs);
-
-    for my $ix (0 .. scalar(@$model_lines) - 1) {
-	my $line = $model_lines->[$ix];
-
-	# Capture and remove comments
-	my $comment;
-	$line =~ s/\/\/$//;
-	if ($line =~ /\/\/\s*(.+)$/) {
-	    $comment = $1;
-	    $line =~ s/\s*\/\/.+$//;
-	}
-
-	# Start of new class/hash definition
-	if ($line =~ /^([\?#])(\w+)\s(.+)$/) {
-	    $class = $2;
-	    undef %slot_parts;
-	    $previous_indent = 0;
-	    # Replace class name with spaces so line can be treated like others
-	    $line = ' ' x ((length $class) + 2);
-	    $line .= $3;
-	    $class =~ s/_unique//;
-	}
-	
-	my ($leading_spaces, $text) = $line =~ /^(\s+)(\S.+)$/;
-	$text =~ s/\s+/ /g;
-	
-	my $indent = length($leading_spaces);
-	my @parts = split(' ', $text);
-	                    
-	# Check indentation of next line
-	my $next_line = $model_lines->[$ix + 1];
-	my ($nl_leading_spaces) = $next_line =~ /^(\s+)\S+/;
-	my $next_indent = length $nl_leading_spaces;
-	
-	# If reduction in indentation, remove slot title parts as required    
-	if ($indent < $previous_indent) {
-	    for my $slot_indent (sort {$b<=>$a} keys %slot_parts) {
-		last if $slot_indent < $indent;
-		delete $slot_parts{$slot_indent};
-	    }
-	}
-	 
-	# Combine multiple words before next level of indentation
-	while (length $parts[0] < $next_indent - $indent) {
-	    my $first_part = shift @parts;
-	    $slot_parts{$indent} = $first_part;
-	    $indent += (length $first_part) + 1;
-	    
-	}
-	$slot_parts{$indent} = shift @parts; 
-  
-	# If next level increases indent then incorporate first 2 parts into slot tag
-	if ($next_indent > $indent) {
-	    $slot_parts{$next_indent} = shift @parts;
-	}
-	
-	my @slot_title_parts;
-	for my $slot_indent(sort {$a<=>$b} keys %slot_parts) {
-	    push @slot_title_parts, $slot_parts{$slot_indent} if defined $slot_parts{$slot_indent};
-	}
-
-	# Join with pipes that are later switch to underscores to differentiate between tags
-	my $slot_title = join('|', @slot_title_parts);
-	
-	if ($slot_title =~ /^(.+)_unique\|([^\|]+)$/) {
-	    $controlled_vocabs{$class}{$1}{$2} = @parts;
-	}
+ 
    
-	$slot_title =~ s/_unique//g;
-
-	for my $ix (0 .. @parts - 1) {
-	    $parts[$ix] =~ s/_unique//g;
-	}
-	
-	push @{$slots{$class}}, {slot => $slot_title, value => join(' ', @parts)};
-	$comments{$slot_title} = $comment if $comment;
- 	
-	$previous_indent = $indent;
-    }
-
-    return (\%slots, \%comments, \%controlled_vocabs);
-}
-
-
-sub merge_controlled_vocabs {
-    my ($slot_values, $controlled_vocabs) = @_;
-
-    my %cvs_added;
-    my %merged_slot_values;
-    for my $class (keys %$slot_values) {
-	for my $slot_value (@{$slot_values->{$class}}) {
-	    my ($slot_stem) = $slot_value->{'slot'} =~ /^(.+)\|[^\|]+$/;
-	    if (exists $controlled_vocabs->{$class}{$slot_stem}) {
-		unless (exists $cvs_added{$class}{$slot_stem}) {
-		    push @{$merged_slot_values{$class}}, {slot => $slot_stem, 
-							  value => 'controlled_vocabulary'};
-		    $cvs_added{$class}{$slot_stem} = 1;
-		}
-	    }
-	    else {
-		push @{$merged_slot_values{$class}}, $slot_value;
-	    }
-	}
-    }
-    
-    return \%merged_slot_values;
-}
-
-
-sub filter_controlled_vocabs {
-    my $possible_cvs = shift;
-
-    my %valid_cvs;
-    for my $class (keys %$possible_cvs) {
-	for my $group (keys %{$possible_cvs->{$class}}) {
-	    my $is_valid = 1;
-	    for my $term (keys %{$possible_cvs->{$class}{$group}}) {
-		if ($possible_cvs->{$class}{$group}{$term} > 0) {
-		    $is_valid = 0;
-		    last;
-		}
-	    }
-	    push @{$valid_cvs{$class}{$group}}, keys %{$possible_cvs->{$class}{$group}} if $is_valid;
-	}
-    }
-
-    return \%valid_cvs;
-}
-
-    
-sub get_and_parse_model_lines {
-    my @model_lines = file($WB_MODEL_SPEC)->slurp(chomp => 1);
-    my @parsed_lines;
-    for my $line (@model_lines) {
-	$line = expand($line);
-	next if $line =~ /^\s*\/\//;
-	next if $line =~ /^\s*$/;
-	
-	# Remove evidence hashes
-	$line =~ s/Evidence\s#Evidence/Evidence Text/;
-	$line =~ s/\s#Evidence//g;
-
-	# Convert text classes to plain text
-	$line =~ s/\?Text/Text/g;
-	$line =~ s/\?LongText/Text/g;
-	$line =~ s/\?Keyword/Text/g;
-	$line =~ s/\?WWW_server/Text/g;
-	$line =~ s/\?DNA/Text/g;
-	$line =~ s/\?Peptide/Text/g;
-
-	# Remove XREFs
-	$line =~ s/\sXREF\s\w+//g;
-
-	$line =~ s/ UNIQUE/_UNIQUE/g;
-	push @parsed_lines, lc $line;
-    }
-
-    return \@parsed_lines;
-}
 
 
