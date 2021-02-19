@@ -146,11 +146,18 @@ else {
     $enddir="$cwd"."/$enddir";
   }
 }
-# does it exist?
+
+#is this a clean target location
+my $testlocalfile = $enddir."/database/block1.wrm";
+if (-e $testlocalfile) {
+    $log->write_to("\n\nWARNING: file \"$testlocalfile\" exists which suggests that you are attempting to reuse a target location where there are already block files.\nConsider removing the target database $enddir\n\n");
+}
+
+# does it exist? and if it does die.
 if (!-d $enddir){ 
-  print "$enddir doesn't exist, will try to create it\n";
-  $log->write_to( "$enddir doesn't exist, will try to create it\n");
-  mkdir($enddir,0777) or &usage("3");
+    print "$enddir doesn't exist, will try to create it\n";
+    $log->write_to( "$enddir doesn't exist, will try to create it\n");
+    mkdir($enddir,0777) or &usage("3");
 } 
 
 
