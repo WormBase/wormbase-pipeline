@@ -89,14 +89,16 @@ $log->write_to(" running unpack_db.pl @options\n\n");
 $wormbase->run_script("unpack_db.pl @options", $log);
 
 # New non FTP code for staging the species canonical databases
-my $ref;
+my (@refs,$ref);
 if($species eq 'elegans') {
-  $ref = 'camace';
+  push @refs, 'camace';
+  push @refs, 'geneace';
 }
 else {
-  $ref = $species;
+  push @refs, $species;
 }
 
+foreach $ref (@refs) {
 $log->write_to("Transfering /nfs/wormpub/DATABASES/$ref to PRIMARIES\n");
 my $primary_path = $wormbase->primary($ref);
 my $test_file = "$primary_path/database/block1.wrm";
@@ -110,6 +112,7 @@ $wormbase->run_script("TransferDB.pl -start ".$wormbase->database($ref). " -end 
 $wormbase->run_command("ln -sf ".$wormbase->autoace."/wspec/models.wrm ".$wormbase->primary($ref)."/wspec/models.wrm", $log);
 my $test_file2 = $wormbase->primary($ref) . "/database/block1.wrm";
 ($databases{$ref}->{new_date}) = $wormbase->find_file_last_modified($test_file2);
+}
 
 my $log_msg = "\nDatabase versions used in the build (Previous => New):\n";
 
