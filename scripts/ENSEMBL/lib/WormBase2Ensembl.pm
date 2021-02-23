@@ -258,10 +258,15 @@ sub parse_genes_gff3_fh {
     TRAN: foreach my $tid (sort @tids) {
 
       my $tran = $transcripts{$tid};
-      my $gff_source = $tran->{source};
       my $gff_type = $tran->{type};
       my $strand = $tran->{strand};
-      my $tsid;
+      my ($tsid, $gff_source);
+      if ($tran->{source} eq "WormBase_imported") {
+        $gff_source = "WormBase"; # to maintain previous behaviour (source of either WormBase or WormBase_imported in the GFF should be WormBase in the db)
+      }
+      else {
+	$gff_source = $tran->{source};
+      }
       if ($tran->{name}) {
         $tsid = $tran->{name};
       } elsif (scalar(@tids) > 1) {
@@ -401,7 +406,7 @@ sub parse_genes_gff3_fh {
       
       my $transcript = Bio::EnsEMBL::Transcript->new(
         -stable_id => $tsid,
-        -source => 'WormBase',
+        -source => $gff_source,
           );
       $transcript->version(undef);
 
@@ -510,6 +515,7 @@ sub parse_genes_gff3_fh {
 
     # propagate analysis for first transcript up to the gene
     $gene->analysis( $gene->get_all_Transcripts->[0]->analysis );
+    $gene->source( $gene->get_all_Transcripts->[0]->source );
 
     push @all_ens_genes, $gene;
   }
