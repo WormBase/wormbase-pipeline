@@ -111,7 +111,7 @@ while( my $obj = $it->next) {
   my @evi_codes;
   for my $ec ($obj->Evidence_code) {
       if ($ec->right =~ /^ECO:/) {
-	  push @evi_codes, $ec->right;
+	  push @evi_codes, $ec->right->name;
       }
       elsif (exists $go2eco{$ec->right}) {
 	  push @evi_codes, $go2eco{$ec->right};
