@@ -120,13 +120,13 @@ while (my $obj = $it->next) {
 
     next if defined $bgi_genes and not exists $bgi_genes->{"WB:$gene"};
     
-    my %annots;
+    my (%annots, %partials);
 
     foreach my $ls ($obj->Life_stage) {
 
       next if not &record_lifestage_term_name( $ls );
 
-      my (@ats, $uncertain);
+      my (@ats, $uncertain, $partial);
 
       foreach my $thing ($ls->col()) {
         if ($thing->name eq 'Anatomy_term') {
@@ -136,15 +136,19 @@ while (my $obj = $it->next) {
           }
         } elsif ($thing->name eq 'Uncertain') {
           $uncertain = 1;
-        }
+        } elsif ($thing->name eq 'Partial') {
+	    $partial = 1;
+	}
       }
       if (not $uncertain) {
         if (@ats) {
           foreach my $at (@ats) {
             $annots{$ls->name}->{$at->name} = {};
+	    $partials{$ls->name}->{$at->name} = 1 if $partial;
           } 
         } else {
           $annots{$ls->name}->{$TL_ANATOMY_TERM} = {};
+	  $partials{$ls->name}->{$TL_ANATOMY_TERM} = 1 if $partial;
         }
       }
     }
@@ -153,7 +157,7 @@ while (my $obj = $it->next) {
 
       next if not &record_anatomy_term_name( $at );
 
-      my (@lss, $uncertain);
+      my (@lss, $uncertain, $partial);
 
       foreach my $thing ($at->col()) {
         if ($thing->name eq 'Life_stage') {
@@ -163,15 +167,20 @@ while (my $obj = $it->next) {
           }
         } elsif ($thing->name eq 'Uncertain') {
           $uncertain = 1;
-        }
+        } elsif ($thing->name eq 'Partial') {
+	    $partial = 1;
+	}
+	
       }
       if (not $uncertain) {
         if (@lss) {
           foreach my $ls (@lss) {
             $annots{$ls->name}->{$at->name} = {};
+	    $partials{$ls->name}->{$at->name} = 1;
           } 
         } else {
           $annots{$TL_LIFESTAGE_TERM}->{$at->name} = {};
+	  $partials{$TL_LIFESTAGE_TERM}->{$at->name} = {};
         }
       }
     }
@@ -200,20 +209,25 @@ while (my $obj = $it->next) {
          
         # where expressed
         my @where_expressed;
+	my $wes;
 
         if (keys %{$annots{$ls}->{$at}}) {
           foreach my $gt (sort keys %{$annots{$ls}->{$at}}) {
-            push @where_expressed, {
-              anatomicalStructureTermId => $at,
-              cellularComponentTermId => $gt,
-              whereExpressedStatement => ($at eq $TL_ANATOMY_TERM) ? $go_term->{$gt} : $anatomy_term->{$at},
-            };
+	      $wes = ($at eq $TL_ANATOMY_TERM) ? $go_term->{$gt} : $anatomy_term->{$at};
+	      $wes .= '(partial)' if exists $partials{$ls}->{$at};
+	      push @where_expressed, {
+		  anatomicalStructureTermId => $at,
+		  cellularComponentTermId => $gt,
+		  whereExpressedStatement => $wes,
+	      };
           }
         } else {
-          push @where_expressed, {
-            anatomicalStructureTermId => $at,
-            whereExpressedStatement => $anatomy_term->{$at},
-          };
+	    $wes = $anatomy_term->{$at};
+	    $wes .= ' (partial)' if exists $partials{$ls}->{$at};
+	    push @where_expressed, {
+		anatomicalStructureTermId => $at,
+		whereExpressedStatement => $wes,
+	    };
         }
 
         foreach my $whereEx (@where_expressed) {
