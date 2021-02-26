@@ -259,7 +259,9 @@ sub parse_file {
 	chomp;
 	next unless $_ =~ /^FT/;
 	if ($_ =~ /^FT\s{3}(\S+)\s+(\S+)$/) {
-	    $data{$gene}{$feature}{$sn} = $entry if $gene;
+	    if ($gene) {
+		$data{$gene}{$feature}{$sn} = $entry;
+	    }
 	    $entry = {};
 	    undef $gene;
 	    undef $sn;
@@ -269,9 +271,13 @@ sub parse_file {
 	}
 	elsif ($_ =~ /^FT\s{19}\/(\w+)=(.+)$/) {
 	    $attr = $1;
-	    $gene = $2 if $attr eq 'gene';
+	    if ($attr eq 'gene') {
+		$gene = $2;
+		$gene =~ s/"//g;
+	    }
 	    if ($attr eq 'standard_name') {
-		$sn = 2;
+		$sn = $2;
+		$sn =~ s/"//g;
 	    }
 	    else {
 		$entry->{$attr} = $2;
