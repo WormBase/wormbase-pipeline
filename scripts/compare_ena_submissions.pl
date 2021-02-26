@@ -61,7 +61,9 @@ my $current_tag = 'WS' . $current_release . '.' . $current_iteration;
 my $previous_tag = 'WS' . $previous_release . '.' . $previous_iteration;
 
 my $chr_dir = dir("$ena_dir/0");
-my ($new_genes, $removed_genes, $shared_genes, $current_data, $previous_data);
+my $new_genes = [];
+my $removed_genes = [];
+my ($shared_genes, $current_data, $previous_data);
 for my $child ($chr_dir->children(no_hidden => 1)) {
     for my $grandchild ($child->children(no_hidden => 1)) {
 	next unless $grandchild->stringify =~ /\.embl$/;
