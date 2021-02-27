@@ -470,24 +470,40 @@ sub dna_files_have_headers {
     my $chr_dir = dir($self->{'wormbase'}->chromosomes);
     my $chr_count = 0;
     while (my $dna_file = $chr_dir->next) {
-	next unless $dna_file->stringify =~ /\.dna$/;
-	$chr_count++;
-	my $first_line;
-	my $dna_fh = $dna_file->openr;
-	while (my $line = $dna_fh->getline) {
-	    chomp $line;
-	    $first_line = $line;
-	    last;
-	}
-	$dna_fh->close;
-	unless ($first_line =~ /^>.+/) {
-	    $self->{'log'}->write_to("ERROR: Header line not present for $dna_file\n$first_line\n");
-	    $errors++;
-	}
+        next unless $dna_file->stringify =~ /\.dna$/;
+        $chr_count++;
+        my $dna_fh = $dna_file->openr;
+        my $line_count = 0;
+        while (my $line = $dna_fh->getline) {
+            chomp $line;
+            $line_count++;
+            if ($line_count == 1) {
+                unless ($line =~ /^>.+/) {
+                    $self->{'log'}->write_to("ERROR: Header line not present for $dna_file\n");
+                    $errors++;
+                }
+		next;
+            }
+
+	    if ($line eq '') {
+		$self->{'log'}->write_to("ERROR: Blank line found at line $line_count of " .
+					 "$dna_file\n");
+		$errors++;
+		next;
+	    }
+
+            if ($line =~ /[^AaCcGgTtNn]/) {
+                $self->{'log'}->write_to("ERROR: Non-ACTGN base found in line $line_count " .
+                                         "of $dna_file\n");
+                $errors++;
+            }
+        }
+        $dna_fh->close;
     }
-    
-    $self->{'log'}->write_to("$chr_count chromosome files found, all with headers present\n")
-	unless $errors;
+
+    $self->{'log'}->write_to("$chr_count chromosome files found, all with headers present " .
+                             "and sequence consisting only of ACTGN bases\n")
+        unless $errors;
 
     return $errors;
 }

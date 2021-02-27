@@ -50,7 +50,6 @@ sub print_wormbase_GAF_header {
     }
     print $fh "\!project-release: $release\n";
     print $fh "\!Contact Email: help\@wormbase.org\n";
-    
 }
 
 ####################################
@@ -139,7 +138,12 @@ sub make_species_files {
 	my $species_file = $file . '.' . $wb->full_name('-g_species' => 1);
 	open (SPECIES, '>', $species_file) or die "Could not open $species_file for writing\n";
 	print SPECIES join("\n", @headers) . "\n";
-	print SPECIES join("\n", @{$species_lines{$wb->ncbi_tax_id}}) . "\n" if exists $species_lines{$wb->ncbi_tax_id};;
+	if (exists $species_lines{$wb->ncbi_tax_id}) {
+	    print SPECIES join("\n", @{$species_lines{$wb->ncbi_tax_id}}) . "\n";
+	}
+	else {
+	    print SPECIES '!info: WormBase is not currently aware of any associations for ' . $wb->full_name() . "\n";
+	}
 	close (SPECIES);
     }
 

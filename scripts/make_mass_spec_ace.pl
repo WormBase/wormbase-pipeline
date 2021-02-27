@@ -127,10 +127,6 @@ my $cds_regex = $wormbase->cds_regex;
 # 
 
 my $database_version = $wormbase->get_wormbase_version;
-if ($database_version == 666) {
-  print "In test - setting database version to 257 not 666\n";
-  $database_version = 257;
-}
 
 # open an ACE connection to parse details for mapping to genome
 my $tace            = $wormbase->tace;        # TACE PATH

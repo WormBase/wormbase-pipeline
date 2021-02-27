@@ -715,6 +715,7 @@ sub convert_fasta_headers {
 sub convert_vcf_chromosomes {
     my ($mod, $type) = @_;
 
+    return unless -e "${mod}_${type}.vcf";
     return if -e "${mod}_${type}.refseq.vcf";
 
     print "Converting $mod $type chromosome IDs to RefSeq\n";

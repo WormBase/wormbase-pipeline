@@ -47,7 +47,6 @@ GetOptions ("help"              => \$help,
 	    "force"             => \$force,             # force the command to succeed even if it would normally fail a warning or a sanity check
             ) || die(@!);
 
-$debug = 'gw3';
 
 if (!defined $database) {
   if ($species eq 'elegans') {

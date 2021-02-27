@@ -108,7 +108,18 @@ while( my $obj = $it->next) {
   $evi_date = sprintf('%4d-%02d-%02dT00:00:00+00:00', $y, $m, $d);
 
   my ($paper) = &get_paper( $obj->Paper_evidence );
-  my @evi_codes = map { $go2eco{$_->right} } $obj->Evidence_code;
+  my @evi_codes;
+  for my $ec ($obj->Evidence_code) {
+      if ($ec->right =~ /^ECO:/) {
+	  push @evi_codes, $ec->right->name;
+      }
+      elsif (exists $go2eco{$ec->right}) {
+	  push @evi_codes, $go2eco{$ec->right};
+      }
+      else {
+	  warn "No ECO conversion available for evidence code $ec for $obj\n";
+      }
+  }
 
   # [200507 mh6]
   # the crossReference should be annotation specific, but as the id changes every release the 
@@ -232,6 +243,7 @@ while( my $obj = $it->next) {
       $obj_type = 'genotype';
       $obj_name = "${\$genotype->Genotype_name}";
       $obj_id = 'WB:' . $genotype->name;
+      $assoc_type = 'is_model_of';
       if ($genotype->Species) {
 	  $taxon_ids{$obj_id} = $genotype->Species->NCBITaxonomyID;
       }
@@ -244,7 +256,7 @@ while( my $obj = $it->next) {
     next;
   }
 
-  $assoc_type = $obj->Association_type->name if $obj->Association_type and !defined $strain and !defined $allele;
+  $assoc_type = $obj->Association_type->name if $obj->Association_type and !defined $strain and !defined $allele and !defined $genotype;
   
   my $assoc_rel = {
     associationType => $assoc_type,

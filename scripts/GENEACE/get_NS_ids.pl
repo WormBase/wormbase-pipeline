@@ -123,7 +123,7 @@ while (<IN>) {
             my ($ids, $batch_id) = $db->new_genes([$public_name]);
             ($id) = keys %{$ids};
         }
-        
+          print OUT "\n\/\/-R $DOMAIN $public_name $id\n";
           print OUT "\n$DOMAIN : \"$id\"\n";
           print OUT "Public_name \"$public_name\"\n";
 #          print OUT "Other_name \"$other_name\"\n" if (defined $other_name);
