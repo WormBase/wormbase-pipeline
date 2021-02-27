@@ -66,11 +66,14 @@ $log->write_to("Fetching data from WormBase...\n");
 my $papers = &paper_tm_query();
 
 $log->write_to("Building XML documents...\n");
+print "Building XML documents\n";
 
 # Build the XML (it is very simple, so just substitute values into a string)
 my $provider_details_xml_string = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<providers>\n";
 $provider_details_xml_string .= "<provider>\n<id>$PROVIDER_ID</id>\n<resourceName>$PROVIDER_NAME</resourceName>\n";
 $provider_details_xml_string .= "<description>$PROVIDER_DESC</description>\n<email>$PROVIDER_EMAIL</email>\n</provider>\n</providers>";
+
+print "Created XML header\n";
 
 my $parser = XML::LibXML->new;
 my $provider_xml_obj = $parser->parse_string($provider_details_xml_string);
@@ -79,6 +82,8 @@ my $provider_xml_obj = $parser->parse_string($provider_details_xml_string);
 my $link_xml_obj = XML::LibXML::Document->new('1.0', 'UTF-8');
 my $root_element = $link_xml_obj->createElement('links');
 $link_xml_obj->addChild($root_element);
+
+print "Created blank XML object\n";
 
 foreach my $paper (@$papers) {
   my ($wb_id, $id) = @$paper;
@@ -114,6 +119,7 @@ foreach my $paper (@$papers) {
   # Add the completed link element to the root node
   $root_element->addChild($link_element);	
 }
+print "Finished parsing papers\n";
 
 $log->write_to("Validating and writing  XML documents...\n");
 my $schema = XML::LibXML::Schema->new(location => $SCHEMA_URL);
@@ -122,28 +128,31 @@ foreach my $pair ([$provider_xml_obj, $provider_xml],
                   [$link_xml_obj, $links_xml]) {
   my ($xml_obj, $xml_file) = @$pair;
 
-  eval {
-    $schema->validate($xml_obj) 
-  };
-  if ($@) {
-    $log->log_and_die("$xml_obj did not validate; exiting\n");
-  }
+#  eval {
+#	  print "Validating $xml_obj\n";
+#    $schema->validate($xml_obj) 
+#  };
+#  if ($@) {
+#    $log->log_and_die("$xml_obj did not validate; exiting\n");
+#  }
 
   open(my $fh, ">$xml_file") or $log->log_and_die("Cannot open $xml_file for writing\n");
   print $fh $xml_obj->toString(1);
   close($fh);
+  print "Done XML file\n";
 }
 
 my $provider_xml_z = "${provider_xml}.gz";
 my $links_xml_z    = "${links_xml}.gz";
-
+print "gz filenames\n";
 unlink $provider_xml_z if -e $provider_xml_z;
 unlink $links_xml_z if -e $links_xml_z;
-
+print "Check files\n";
 $wormbase->run_command("gzip $provider_xml", $log) and 
     $log->log_and_die("Failed to gzip $provider_xml");
 $wormbase->run_command("gzip $links_xml", $log) and
     $log->log_and_die("Failed to gzip $links_xml");
+print "Done gzip\n";
 
 if ($upload) {
   my ($ftp_host, $ftp_user, $ftp_pass, $ftp_dir);
@@ -155,7 +164,8 @@ if ($upload) {
     /^PASS:(\S+)$/ and $ftp_pass = $1;
     /^DIR:(\S+)$/  and $ftp_dir  = $1;
   }
-  
+ 
+ print "FTP details $ftp_host $ftp_user $ftp_pass $ftp_dir\n"; 
   $log->write_to("Connecting to FTP site...\n");
 
   my $ftp = Net::FTP->new($ftp_host, Debug => 0) 
@@ -166,6 +176,7 @@ if ($upload) {
       or $log->log_and_die ("Cannot change into to_ena dir for upload of files\n". $ftp->message);
   $ftp->binary();
 
+  print "STarting FTP\n";
   foreach my $file ("$provider_xml_z", "$links_xml_z") {
     $log->write_to("Depositing $file on FTP site...\n");
     $ftp->put($file) or $log->log_and_die ("FTP-put failed for $file: ".$ftp->message."\n");
@@ -223,18 +234,20 @@ Tag  HERE
 EOF
 
   open(my $fh, ">$tm_def") or $log->log_and_die("Could not open $tm_def for writing\n");
-  print $fh $query;
+  print "OUT $fh $query\n";
   close($fh);
 
   return $tm_def;
 }
 
+exit;
 
 ######################################################
 sub paper_tm_query {
 
   my $def = &paper_tm_def();
   my $tm_cmd = "Table-maker -p \"$def\"\nquit\n";
+  print "Doing tablemaker: $tm_cmd\n";
  
   my @papers;
  
@@ -248,6 +261,8 @@ sub paper_tm_query {
   }
 
   unlink $def;
+
+  print "Completed Tablemaker\n";
 
   return \@papers;
 }
