@@ -66,9 +66,9 @@ build_cache_concurrent_jobs = 25
 ;biotypes_exclude=protein_coding,pseudogene,retrotransposed
 
 ;; LSF parameters
-lsf_opt_run_small           = "-q production-rh7 "
-lsf_opt_run                 = "-q production-rh7 -We 90 -M20000 -R 'select[mem>20000]' -R  'rusage[mem=20000]'"
-lsf_opt_dump_cache          = "-q production-rh7 -We 5 -M8000 -R 'select[mem>8000]'  -R 'rusage[mem=8000]'"
+lsf_opt_run_small           = "-q production-rh74 "
+lsf_opt_run                 = "-q production-rh74 -We 90 -M20000 -R 'select[mem>20000]' -R  'rusage[mem=20000]'"
+lsf_opt_dump_cache          = "-q production-rh74 -We 5 -M8000 -R 'select[mem>8000]'  -R 'rusage[mem=8000]'"
 
 transcript_score_threshold  = 0.2
 gene_score_threshold        = 0.1
@@ -80,10 +80,10 @@ exonerate_bytes_per_job     = 2500000
 exonerate_concurrent_jobs   = 200
 exonerate_threshold         = 0.15
 exonerate_extra_params      = '--bestn 100'
-lsf_opt_exonerate           = "-q production-rh7 -We 10 -M16000 -R 'select[mem>16000]' -R 'rusage[mem=16000]'"
+lsf_opt_exonerate           = "-q production-rh74 -We 10 -M16000 -R 'select[mem>16000]' -R 'rusage[mem=16000]'"
 
 synteny_rescore_jobs        = 20
-lsf_opt_synteny_rescore     = "-q production-rh7 -We 10 -M16000 -R 'select[mem>16000]' -R  'rusage[mem=16000]'"
+lsf_opt_synteny_rescore     = "-q production-rh74 -We 10 -M16000 -R 'select[mem>16000]' -R  'rusage[mem=16000]'"
 
 ;; StableIdMapper
 mapping_types               = gene,transcript,translation,exon
