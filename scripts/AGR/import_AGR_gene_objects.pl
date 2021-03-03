@@ -131,10 +131,15 @@ sub get_bgi{
 		}
 
 		foreach my $oId (@{$bgE->{secondaryIds}}){
-			print $outfh "Other_name \"$oId\"\n";
+		        $oId =~ s/"/\\"/g;
+			print $outfh 'Other_name "' . $oId . "\"\n";
 		}
-		
-		map {print $outfh "Other_name \"$_\"\n"} @{$bgE->{synonyms}} if $bgE->{taxonId} eq 'NCBITaxon:9606'; # only for human
+		if ($bgE->{taxonId} eq 'NCBITaxon:9606') { # only for human
+		    for my $synonym (@{$bgE->{synonyms}}) {
+			$synonym =~ s/"/\\"/g;
+			print $outfh 'Other_name "' . $synonym . "\"\n";
+		    }
+		}
 
 		print $outfh "Live\n";
 		$log->log_and_die("cannot find species ${\$bgE->{taxonId}}") unless($taxon2name{$bgE->{taxonId}});
@@ -146,8 +151,10 @@ sub get_bgi{
 	        print $outfh 'CGC_name "'.$gene->{symbol}."\" Inferred_automatically \"AGR_import\"\n" if $gene->{symbol};
 
 		if ($gene->{symbol}){
+		        $gene->{symbol} =~ s/"/\\"/g;
 		  	print $outfh 'Public_name "'.$gene->{symbol} . "\"\n";
                 }else{
+		        $bgE->{name} =~ s/"/\\"/g;
                         print $outfh 'Public_name "'.$bgE->{name} ."\"\n";
 		}
 
