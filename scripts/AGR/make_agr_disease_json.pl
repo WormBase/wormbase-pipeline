@@ -243,6 +243,7 @@ while( my $obj = $it->next) {
       $obj_type = 'genotype';
       $obj_name = "${\$genotype->Genotype_name}";
       $obj_id = 'WB:' . $genotype->name;
+      $assoc_type = 'is_model_of';
       if ($genotype->Species) {
 	  $taxon_ids{$obj_id} = $genotype->Species->NCBITaxonomyID;
       }
@@ -255,7 +256,7 @@ while( my $obj = $it->next) {
     next;
   }
 
-  $assoc_type = $obj->Association_type->name if $obj->Association_type and !defined $strain and !defined $allele;
+  $assoc_type = $obj->Association_type->name if $obj->Association_type and !defined $strain and !defined $allele and !defined $genotype;
   
   my $assoc_rel = {
     associationType => $assoc_type,

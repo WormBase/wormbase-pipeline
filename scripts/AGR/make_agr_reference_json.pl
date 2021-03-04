@@ -149,13 +149,6 @@ while (my $obj = $it->next) {
         last;
     }
 
-    for my $type (qw(Gene Transgene Allele)) {
-	my @items = $obj->at('Refers_to')->at($type);
-        for my $item (@items) {
-	    push @xrefs, {id => "WB:$item", pages => [lc $type . '/references']};
-        }
-    }
-
     $reference->{crossReferences} = \@xrefs if @xrefs;
 
     push @references, $reference;
