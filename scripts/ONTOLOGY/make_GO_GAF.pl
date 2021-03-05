@@ -34,10 +34,8 @@ if ( $store ) {
 }
 
 
-
 my $log = Log_files->make_build_log($wormbase);
-
-#=pod
+	    
 $acedbpath = $wormbase->autoace if not defined $acedbpath;
 $tace      = $wormbase->tace;
 $outputdir = $wormbase->ontology if not defined $outputdir;
@@ -393,48 +391,6 @@ close($colfh) or $log->log_and_die("Could not close $outputdir/$collated_file af
 &make_species_files($wormbase, $collated_file);
 
 $log->mail;
-
-#=cut
-
-print "Im good\n";
-
-
-
-
-#
-# separate file for each species, and collated file with all species
-#
-
-my $collated_file = "$outputdir/gene_association." . $wormbase->get_wormbase_version_name. ".wb" ;
-print "$collated_file\n"; 
-open (my $colfh, ">$collated_file") or $log->log_and_die("Could not open $collated_file for writing\n");
-&print_wormbase_GAF_header($colfh, $wormbase->get_wormbase_version_name, 'GO', '2.2');
-
-my %coreSpecies = $wormbase->species_accessors;
-foreach my $species ($wormbase, values %coreSpecies){
-  
-  my $out_file = "gene_association." . $wormbase->get_wormbase_version_name. ".wb." .$species->full_name(-g_species => 1);
-  open(my $outfh, ">$outputdir/$out_file") or $log->log_and_die("Could not open $outputdir/out_file for writing\n");
-  print "$outputdir/$out_file\n";
-  &print_wormbase_GAF_header($outfh, $wormbase->get_wormbase_version_name, 'GO', '2.2');
-  foreach my $gaf (@nr_gaf_lines) {
-    next if $gaf->{species} ne $species->full_name;
-    unshift @{$gaf->{taxon}}, $species->ncbi_tax_id;
-
-    my $line = &get_gaf_line($gaf);
-    printf($outfh "! WB annotations %s\n", join(",", @{$gaf->{annot_nums}})) if $debug;
-    print $outfh $line;
-    print $colfh $line;
- }
-  close($outfh) or $log->log_and_die("Could not close $outputdir/$out_file after writing\n");
-  
-  push @per_species_files, "$outputdir/$out_file";
-}
-
-close($colfh) or $log->log_and_die("Could not close $outputdir/$collated_file after writing\n");
-
-
-
 exit(0);
 
 
