@@ -38,7 +38,7 @@ sub avoid_duplicate_class_and_slot_names {
 
     my (%final_slots, %changed_slots);
     for my $slot (keys %$slots) {
-	if (exists $classes->{$slot} or $slot eq 'date') {
+	if (exists $classes->{$slot} or $slot eq 'date' or $slot eq 'description') {
 	    $final_slots{$slot . '_slot'} = $slots->{$slot};
 	    $changed_slots{$slot}++;
 	}
