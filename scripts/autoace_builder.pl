@@ -687,13 +687,13 @@ sub build_release {
 
 sub go_public {
 
-  print "Go public\n";
+  #print "Go public\n";
   my $ftp_release_dir = $wormbase->ftp_site . "/releases";
-#  my $ftp_staging_dir = $wormbase->ftp_site . "/staging/releases";
+  #my $ftp_staging_dir = $wormbase->ftp_site . "/staging/releases";
   my $db_dir = $wormbase->wormpub . "/DATABASES";
   my $rel   = $wormbase->get_wormbase_version_name;
- $rel="WS280";
- print "$ftp_release_dir $db_dir $rel\n"; 
+  #$rel="WS280";
+  #print "$ftp_release_dir $db_dir $rel\n"; 
   if (not -d "$ftp_release_dir/.${rel}") {
     $log->log_and_die("Did not find $ftp_release_dir/.${rel} Something wrong. Not going public\n");
   }
