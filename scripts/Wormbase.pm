@@ -993,6 +993,7 @@ sub load_to_database {
   my $active = 0;		# counts of objects
 
 
+  my @entries_not_loaded;
   # split the ace file if it is large as it loads more efficiently
   my @files_to_load;
   if ($st->size > 5000000) {
@@ -1023,6 +1024,16 @@ sub load_to_database {
 	last;
       }
       
+      # Check for even number of unescaped quotes, write entries with odd number to separate file
+      # for manual checking before loading.  Throw error if any such entries found.
+      my $nr_quotes = $entry =~ tr/"//;
+      my $nr_escaped_quotes = () = $entry =~ /\\"/g;
+      if (($nr_quotes - $nr_escaped_quotes) % 2 == 1) {
+	  $entries--;
+	  push @entries_not_loaded, $entry;
+	  next;
+      }
+
       if (!$writing) {
 	$file_count++;
 	$writing = 1;
@@ -1099,6 +1110,14 @@ EOF
     }
   }
   
+  if (@entries_not_loaded) {
+      my ($filestem) = $file =~ /^(.+)\.ace$/;
+      open (UNLOADED, ">${filestem}_unloaded.ace");
+      print UNLOADED join('', @entries_not_loaded);
+      close (UNLOADED);
+      $log->error('ERROR: ' . @entries_not_loaded . " entries not loaded - written to ${filestem}_unloaded.ace\n");
+  }
+
   if (! $error) {
     # check against previous loads of this file
     my $last_parsed;		# objects parsed on the previous build
