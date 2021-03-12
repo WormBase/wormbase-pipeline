@@ -995,6 +995,7 @@ sub load_to_database {
 
   my @entries_not_loaded;
   # split the ace file if it is large as it loads more efficiently
+  my $filesize_sum = 0;
   my @files_to_load;
   if ($st->size > 5000000) {
     # change input separator to paragraph mode;
@@ -1049,12 +1050,15 @@ sub load_to_database {
 	close(WBTMPACE);
 	$writing = 0;
 	$entries = 0;
+	$filesize_sum += stat($split_file)->size;
+	
       }
     }
 
     close(WBTMPIN);
     if ($writing) {
       close (WBTMPACE);
+      $filesize_sum += stat($split_file)->size;
     }
 
     # reset input line separator
@@ -1116,6 +1120,12 @@ EOF
       print UNLOADED join('', @entries_not_loaded);
       close (UNLOADED);
       $log->error('ERROR: ' . @entries_not_loaded . " entries not loaded - written to ${filestem}_unloaded.ace\n");
+      $filesize_sum += stat("${filestem}_unloaded.ace")->size;
+  }
+
+  # Compare size of split files against original and throw error if >5% difference
+  if ($filesize_sum and ($filesize_sum / $st->size > 1.05 or $filesize_sum / $st->size < 0.95)) {
+      $log->error("ERROR: $file is " . $st->size . " bytes but split files sum to $filesize_sum bytes\n");
   }
 
   if (! $error) {
