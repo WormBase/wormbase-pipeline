@@ -128,13 +128,13 @@ foreach my $pair ([$provider_xml_obj, $provider_xml],
                   [$link_xml_obj, $links_xml]) {
   my ($xml_obj, $xml_file) = @$pair;
 
-#  eval {
-#	  print "Validating $xml_obj\n";
-#    $schema->validate($xml_obj) 
-#  };
-#  if ($@) {
-#    $log->log_and_die("$xml_obj did not validate; exiting\n");
-#  }
+  eval {
+    print "Validating $xml_file\n";
+    $schema->validate($xml_obj) 
+  };
+  if ($@) {
+    $log->log_and_die("$xml_obj did not validate; exiting\n");
+  }
 
   open(my $fh, ">$xml_file") or $log->log_and_die("Cannot open $xml_file for writing\n");
   print $fh $xml_obj->toString(1);
@@ -234,7 +234,7 @@ Tag  HERE
 EOF
 
   open(my $fh, ">$tm_def") or $log->log_and_die("Could not open $tm_def for writing\n");
-  print "OUT $fh $query\n";
+  print $fh "$query\n";
   close($fh);
 
   return $tm_def;
