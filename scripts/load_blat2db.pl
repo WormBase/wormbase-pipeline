@@ -16,7 +16,7 @@ use Carp;
 use Log_files;
 use Storable;
 
-my ($load,$delete,$dbdir,$help,$all,$wormbase,$test,$debug,$store,$species);
+my ($load,$delete,$dbdir,$help,$all,$wormbase,$test,$debug,$store,$species,$logfile);
 GetOptions (
 	    "load"    => \$load,
 	    "delete"  => \$delete,
@@ -24,6 +24,7 @@ GetOptions (
 	    "dbdir=s" => \$dbdir,
 	    "h"	      => \$help,
 	    "debug=s" => \$debug,
+            "logfile:s" => \$logfile,
 	    "test"    => \$test,
 	    "store:s" => \$store,
 	    "species:s" => \$species,
@@ -40,8 +41,8 @@ if ( $store ) {
 }
 
 # establish log file.
-my $log = Log_files->make_build_log($wormbase);
-                                                                                                                              
+my $log = $logfile ? Log_files->make_log($logfile, $debug) : Log_files->make_build_associated_log($wormbase);
+
 my $tace =  $wormbase->tace;
 my $blat_dir;
 my $acefiles;

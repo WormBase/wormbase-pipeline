@@ -19,7 +19,7 @@ use strict;
 my ($PASS,$USER, $DB); # mysql ones
 my $DOMAIN;
 
-my ($wormbase, $debug, $test, $store, $species,$infile,$outfile,$nocheck, 
+my ($wormbase, $debug, $test, $store, $species,$infile,$outfile,$nocheck, $logfile, 
     $ace_file_template, $input_is_public_names, $input_is_other_names, $input, $output,$public);
 
 GetOptions (
@@ -27,6 +27,7 @@ GetOptions (
     "test"      => \$test,    # run against the test database and test nameserver
     "store:s"   => \$store,   # if you want to pass a Storable instead of recreating it
     "species:s" => \$species, # elegans/briggsae/whateva .. needed for logging
+    "logfile:s" => \$logfile, 
     'nocheck'   => \$nocheck, # don't check public_names
     'input:s'   => \$input,   # File containing new public_names for new Variations
     "output:s"  => \$output,  # File to capture the new WBVar and name associations
@@ -48,7 +49,7 @@ if ( $store ) {
 }
 
 # establish log file.
-my $log = Log_files->make_build_log($wormbase);
+my $log = $logfile ? Log_files->make_log($logfile, $debug) : Log_files->make_build_associated_log($wormbase);
 
 my $db = NameDB_handler->new($wormbase, $test);
 

@@ -30,7 +30,7 @@ use Getopt::Long;
 # check user is wormpub
 #######################
 
-my ($test, $help, $debug, $verbose, $store, $wormbase, $species);
+my ($test, $help, $debug, $verbose, $store, $wormbase, $species, $logfile);
 my ($verbose, $load,$ndbUser,$ndbPass, $path, $input_file,$pg);
 
 GetOptions (
@@ -38,6 +38,7 @@ GetOptions (
 	    'help'              => \$help,
             'debug=s'           => \$debug,
             'verbose'           => \$verbose,
+            'logfile:s'         => \$logfile,
             'load'              => \$load,
             'ndbuser=s'         => \$ndbUser,
             'ndbpass=s'         => \$ndbPass,
@@ -64,7 +65,7 @@ if ( $store ) {
 
 
 # establish log file.
-my $log = Log_files->make_build_log($wormbase);
+my $log = $logfile ? Log_files->make_log($logfile, $debug) : Log_files->make_build_associated_log($wormbase);
 
 $log->log_and_die("input file $input_file doesn't exist\n") unless -e $input_file;
 

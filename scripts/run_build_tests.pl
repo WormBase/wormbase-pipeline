@@ -5,6 +5,7 @@ use Wormbase;
 use Wormtest;
 use Log_files;
 use Getopt::Long;
+use Storable;
 
 my ($debug, $test, $database, $species, $log_file, $prev_release, $store);
 my ($recent_citace, $primary_seq_dumps, $elegans_first, $build_contents, $dna_headers, $split_gffs,

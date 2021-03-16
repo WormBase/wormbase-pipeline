@@ -47,6 +47,7 @@ my $verbose;               # Additional printout
 my $names;                 # option to just dump Public_name data for given species.
 my $altacefiles;           # alternative location for acefiles
 my $altblat;               # alternative location for blat data
+my $logfile;
   GetOptions (
 	      "all"           => \$all,
 	      "pad"           => \$pad,
@@ -58,6 +59,7 @@ my $altblat;               # alternative location for blat data
 	      "update"        => \$update,
 	      "help"          => \$help,
 	      "debug:s"       => \$debug,
+              "logfile:s"     => \$logfile,
 	      "version:s"     => \$WS_version,
 	      "store"         => \$store,
 	      "species:s"     => \$species,
@@ -91,7 +93,7 @@ else {
 			   );
 }
 
-my $log = Log_files->make_build_log($wormbase);
+my $log = $logfile ? Log_files->make_log($logfile, $debug) : Log_files->make_build_associated_log($wormbase);
 my $tace = $wormbase->tace;
 
 if (!defined($WS_version)) {

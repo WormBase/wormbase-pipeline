@@ -166,7 +166,7 @@ e.g. perl batch_genes.pl -species elegans -action new -file gene_name_data -outp
 # variables and command-line options # 
 ######################################
 
-my ($test, $help, $debug, $verbose, $store, $wormbase);
+my ($test, $help, $debug, $verbose, $store, $wormbase, $logfile);
 my ($species, $file, $output, $action, $why, $force);
 my $BATCH_SIZE = 500; # maximum entries to put into any one batch API call
 
@@ -174,6 +174,7 @@ GetOptions (
 	    "test"       => \$test,
 	    "help"       => \$help,
             "debug=s"    => \$debug,
+            "logfile:s"  => \$logfile,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
 	    "species:s"  => \$species,
@@ -198,8 +199,7 @@ if ( $store ) {
 &usage("Help") if ($help);
 
 # establish log file.
-my $log = Log_files->make_build_log($wormbase);
-
+my $log = $logfile ? Log_files->make_log($logfile, $debug) : Log_files->make_build_associated_log($wormbase);
 
 
 if (!defined $file) {die "-file file not specified\n"}
