@@ -2394,9 +2394,8 @@
               Remark ?Text #Evidence
               DB_info ?Database ^database ?Database_field ^field Text ^accession
               Experiment Laboratory ?Laboratory
-                         Author ?Author
-                         Date UNIQUE DateType
                          Strain UNIQUE ?Strain
+              Person UNIQUE ?Person 
               Reference ?Paper OUTXREF Expr_pattern
               Transgene ?Transgene OUTXREF Expr_pattern
               Variation ?Variation INXREF Expr_pattern
