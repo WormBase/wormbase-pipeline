@@ -73,7 +73,7 @@ my $it = $db->fetch_many(-query => 'find Paper WHERE Valid');
 my @references;
 my @exchange_refs;
 while (my $obj = $it->next) {
-    next unless $obj->Species eq 'Caenorhabditis elegans';
+    #next unless $obj->Species eq 'Caenorhabditis elegans';
 
     my $ref_id = "WB:$obj";
     if ($obj->Database) {
@@ -139,6 +139,13 @@ while (my $obj = $it->next) {
     $reference->{volume}    = $obj->Volume->name if $obj->Volume;
     $reference->{pages}     = $obj->Page->name if $obj->Page;
     $reference->{publisher} = $obj->Publisher->name if $obj->Publisher;
+    if ($obj->Abstract) {
+	my $abstract = $obj->Abstract->right->name;
+	$abstract =~ s/^\n+//;
+	$abstract =~ s/\n+$//;
+	$abstract =~ s/\n/ /g;
+	$reference->{abstract}  = $abstract;
+    }
     
     my @xrefs;
     push @xrefs, {id => "WB:$obj", pages => ['reference']};
