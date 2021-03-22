@@ -217,7 +217,7 @@ sub results {
   my $old_splice_file_size = -s $old_splice_file;
 
   chdir $RNASeq->{RNASeqSRADir};
-  $rnadir=  $RNASeq->{RNASeqSRADir};
+  my $rnadir=  $RNASeq->{RNASeqSRADir};
   print "Going to folder  $rnadir\n";
   $status = $wormbase->run_command("rm -f $splice_file", $log);
   print "Running command1: cat */Introns/virtual_objects.${species}.RNASeq.ace > $splice_file\n";
