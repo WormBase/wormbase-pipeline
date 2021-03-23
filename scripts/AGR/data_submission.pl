@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 use strict;
 use warnings;
 
@@ -6,6 +6,7 @@ use Log_files;
 use Getopt::Long;
 use File::Path 'make_path';
 use JSON;
+use Wormbase;
 
 my ($fasta, $gff, $bgi, $disease, $allele, $phenotype, $expression, $ltp_variations, $htp_variations, $agm,
     $construct, $interactions, $genetic_interactions, $hts, $reference, $molecule);
@@ -182,7 +183,7 @@ if ($htp_variations or $all) {
 	"-g ${build_home}/DATABASES/${ws_release}/SEQUENCES/elegans.processed.gff3.gz -d ${build_home}/DATABASES/${ws_release} " .
 	"-w ${ws_release} -q ${cvs_dir}/AGR/agr_variations.def -o ${sub_dir}/WB_${agr_schema}_htp_variations.json",
 	"python3 ${cvs_dir}/AGR/agr_variations_json2vcf.py -j ${sub_dir}/WB_${agr_schema}_htp_variations.json -g ${gff_file} " .
-	"-o ${sub_dir}/WB_${agr_schema}_htp_variations.vcf"
+	"-m WB -o ${sub_dir}/WB_${agr_schema}_htp_variations.vcf"
 	);
     my $datatype_processed = process_datatype('HTP variation', \@cmds, $log);
     submit_data('HTVCF', "${sub_dir}/WB_${agr_schema}_htp_variations.vcf", $log)
@@ -270,7 +271,7 @@ if ($reference or $all) {
 if ($molecule or $all) {
     my @cmds = (
 	"perl ${cvs_dir}/AGR/make_agr_molecules.pl -database ${build_home}/DATABASES/${ws_release} -wsversion ${ws_release} " .
-	"outfile ${sub_dir}/WB_${agr_schema}_molecule.json",
+	"-outfile ${sub_dir}/WB_${agr_schema}_molecule.json",
 	"${agr_schema_repo}/bin/agr_validate.py -s ${agr_schema_repo}/ingest/molecules/moleculeMetaData.json " .
 	"-d ${sub_dir}/WB_${agr_schema}_molecule.json"
 	);
@@ -289,9 +290,9 @@ sub process_datatype {
 
     for my $cmd(@$cmds) {
 	my $output = `$cmd 2>&1`;
-	my $exit_code = $?;
+	my $exit_code = $? >> 8;
 	if ($exit_code != 0) {
-	    $log->error("Processing of $datatype data failed with exit code ${exit_code}:\n$output\n\n");
+	    $log->error("Processing of $datatype data failed with exit code ${exit_code}:\n$cmd\n$output\n\n");
 	    return 0;
 	}
     }

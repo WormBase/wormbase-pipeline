@@ -308,7 +308,7 @@ INT: while (my $obj = $it->next) {
   print $out_fh join("\t", @l), "\n";
 }
 
-$db->close();
+#$db->close();
 close($out_fh);
 
 exit(0);
