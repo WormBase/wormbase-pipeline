@@ -288,6 +288,7 @@ exit(0);
 sub process_datatype {
     my ($datatype, $cmds, $log) = @_;
 
+    my @cmd_output;
     for my $cmd(@$cmds) {
 	my $output = `$cmd 2>&1`;
 	my $exit_code = $? >> 8;
@@ -295,8 +296,10 @@ sub process_datatype {
 	    $log->error("Processing of $datatype data failed with exit code ${exit_code}:\n$cmd\n$output\n\n");
 	    return 0;
 	}
+	push @cmd_output, $output unless $cmd =~ /agr_validate.py/;
     }
-    $log->write_to("Processing of $datatype data succeeded\n\n");
+    my $all_output = join("\n", @cmd_output);
+    $log->write_to("Processing of $datatype data succeeded\n${all_output}\n\n");
     return 1;
 }
 

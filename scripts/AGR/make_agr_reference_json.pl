@@ -185,7 +185,8 @@ my $re_json_obj = JSON->new;
 print RE_OUT $re_json_obj->allow_nonref->canonical->pretty->encode($re_data);
 close(RE_OUT) or die "Could not close $re_outfile: $!";;
 
-
+$db->close;
+exit(0);
 
 sub get_author_list {
     my ($obj, $ref_id) = @_;
