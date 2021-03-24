@@ -346,6 +346,8 @@ while (my $int = $it->next) {
   print $of "$line\n";
 }
 $of->close;
+$db->close;
+exit(0);
 
 sub get_pmid {
   my ($paper) = @_;
