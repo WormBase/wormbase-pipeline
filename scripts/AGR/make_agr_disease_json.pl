@@ -6,11 +6,12 @@ use Getopt::Long;
 use Ace;
 use JSON;
 use Storable qw(dclone);
-
+use DateTime;
 use lib $ENV{CVS_DIR};
 use Wormbase;
 use Modules::AGR;
-
+use lib "$ENV{CVS_DIR}/ONTOLOGY";
+use GAF;
 
 my ($debug, $test, $verbose, $store, $wormbase, $build);
 my ($outfile, $acedbpath, $ws_version, $outfh, $daf,$white);
@@ -39,8 +40,6 @@ if ( $store ) {
 my $tace = $wormbase->tace;
 my $date = AGR::get_rfc_date();
 my $alt_date = join("/", $date =~ /^(\d{4})(\d{2})(\d{2})/);
-my $taxid = $wormbase->ncbi_tax_id;
-my $full_name = $wormbase->full_name;
 
 $acedbpath = $wormbase->autoace unless $acedbpath;
 $ws_version = $wormbase->get_wormbase_version_name unless $ws_version;
@@ -93,6 +92,7 @@ my $wl = get_whitelist() if $white;
 #
 $it = $db->fetch_many(-query => 'Find Disease_model_annotation');
 
+my %taxon_ids;
 while( my $obj = $it->next) {
   if (not $obj->Date_last_updated or
       not $obj->Paper_evidence or
@@ -108,7 +108,18 @@ while( my $obj = $it->next) {
   $evi_date = sprintf('%4d-%02d-%02dT00:00:00+00:00', $y, $m, $d);
 
   my ($paper) = &get_paper( $obj->Paper_evidence );
-  my @evi_codes = map { $go2eco{$_->right} } $obj->Evidence_code;
+  my @evi_codes;
+  for my $ec ($obj->Evidence_code) {
+      if ($ec->right =~ /^ECO:/) {
+	  push @evi_codes, $ec->right->name;
+      }
+      elsif (exists $go2eco{$ec->right}) {
+	  push @evi_codes, $go2eco{$ec->right};
+      }
+      else {
+	  warn "No ECO conversion available for evidence code $ec for $obj\n";
+      }
+  }
 
   # [200507 mh6]
   # the crossReference should be annotation specific, but as the id changes every release the 
@@ -168,7 +179,13 @@ while( my $obj = $it->next) {
     $obj_name = $strain->Public_name ? $strain->Public_name->name : $strain->name;
     $assoc_type = 'is_model_of';
     $obj_id = 'WB:' . $strain->name;
-
+    if ($strain->Species) {
+	$taxon_ids{$obj_id} = $strain->Species->NCBITaxonomyID;
+    }
+    else {
+	warn "Could not identify species for $obj_id, defaulting to c. elegans\n";
+	$taxon_ids{$obj_id} = 6239;
+    }
     # WB/CalTech specific changes to the format
     push @with_list, "WB:" . $gene->name if (defined $gene && $build);
     push @with_list, "WBTransgene:" . $transgene->name if (defined $transgene && $build);
@@ -176,9 +193,16 @@ while( my $obj = $it->next) {
     
   } elsif (defined $allele) {
     if ($allele->Public_name){
-	    $obj_type = "allele";
-	    $obj_name = $allele->Public_name->name;
-	    $obj_id = 'WB:' . $allele->name;
+	$obj_type = "allele";
+	$obj_name = $allele->Public_name->name;
+	$obj_id = 'WB:' . $allele->name;
+	if ($allele->Species) {
+	    $taxon_ids{$obj_id} = $allele->Species->NCBITaxonomyID;
+	}
+	else {
+	    warn "Could not identify species for $obj_id, defaulting to c. elegans\n";
+	    $taxon_ids{$obj_id} = 6239;
+	}
     }else{
 	    warn "$allele is missing a public name. Skipping ${\$obj->name}\n";
 	    next;
@@ -192,7 +216,13 @@ while( my $obj = $it->next) {
     $obj_type = $build ? 'transgene' : 'allele';# as quick fix for 3.0
     $obj_name = $transgene->Public_name->name;
     $obj_id = 'WB:' . $transgene->name;
-    
+    if ($transgene->Species) {
+	$taxon_ids{$obj_id} = $transgene->Species->NCBITaxonomyID;
+    }
+    else {
+        warn "Could not identify species for $obj_id, defaulting to c. elegans\n";
+	$taxon_ids{$obj_id} = 6239;
+    }   
     # WB/CalTech specific changes to the format
     push @with_list, "WB:" . $gene->name if (defined $gene && $build);
 
@@ -200,18 +230,33 @@ while( my $obj = $it->next) {
     $obj_type = 'gene';
     $obj_name = $gene->Public_name->name;
     $obj_id = 'WB:' . $gene->name;
+    if ($gene->Species) {
+	$taxon_ids{$obj_id} = $gene->Species->NCBITaxonomyID;
+    }
+    else {
+        warn "Could not identify species for $obj_id, defaulting to c. elegans\n";
+	$taxon_ids{$obj_id} = 6239;
+    }
 
     @inferred_genes = ();
   } elsif (defined $genotype){
-	  $obj_type = 'genotype';
-	  $obj_name = "${\$genotype->Genotype_name}";
-	  $obj_id = 'WB:' . $genotype->name;
+      $obj_type = 'genotype';
+      $obj_name = "${\$genotype->Genotype_name}";
+      $obj_id = 'WB:' . $genotype->name;
+      $assoc_type = 'is_model_of';
+      if ($genotype->Species) {
+	  $taxon_ids{$obj_id} = $genotype->Species->NCBITaxonomyID;
+      }
+      else {
+	  warn "Could not identify species for $obj_id, defaulting to c. elegans\n";
+	  $taxon_ids{$obj_id} = 6239;
+      }
   } else {
     warn "Could not identify a central object for the annotation from Disease_model_annotation ${\$obj->name}\n";
     next;
   }
 
-  $assoc_type = $obj->Association_type->name if $obj->Association_type and !defined $strain and !defined $allele;
+  $assoc_type = $obj->Association_type->name if $obj->Association_type and !defined $strain and !defined $allele and !defined $genotype;
   
   my $assoc_rel = {
     associationType => $assoc_type,
@@ -279,6 +324,7 @@ while( my $obj = $it->next) {
 	  my $sname = $secondaryPrefix.$secondary->name;
 
 	  next if $obj_id eq $sname; # skip the primary annotation
+	  $taxon_ids{$sname} = $taxon_ids{$obj_id};
 
 	  my $secondaryAnnotation = dclone($annot);
  
@@ -318,13 +364,15 @@ if ($outfile) {
 }
 
 if ($daf) {
-  &write_DAF_header( $outfh );
+  &write_DAF_header( $outfh, $wormbase->get_wormbase_version_name );
   &write_DAF_column_headers( $outfh );
 
   foreach my $annot (@annots) {
     # if an annotation has multiple lines of evidence, we need  a separate line for each one
-    &write_DAF_line( $outfh, $annot );
+    &write_DAF_line( $outfh, $annot, $taxon_ids{$annot->{objectId}} );
   }
+
+  &make_species_files($wormbase, $outfile, 1);
   
 } else {
 
@@ -362,14 +410,17 @@ sub get_paper {
 ##############################################
 sub write_DAF_header {
 
-  my ($fh) = @_;
+  my ($fh, $release) = @_;
 
-  print $fh "!daf-version 1.0\n";
-  print $fh "!Date: $date\n";
-  print $fh "!Project_name: WormBase (WB) Version $ws_version\n";
-  print $fh "!URL: http://www.wormbase.org/\n";
-  print $fh "!Contact Email: wormbase-help\@wormbase.org\n";
-  print $fh "!Funding: NHGRI at US NIH, grant number U41 HG002223\n";
+  my $header_date = DateTime->now;
+  print $fh "\!daf-version 1.0\n";
+  print $fh "\!generated-by: WormBase\n";
+  print $fh "\!date-generated: " . $header_date->ymd . "\n";
+  print $fh "\!project-URL: https://wormbase.org\n";
+  print $fh "\!specification-URL: https://wiki.wormbase.org/index.php/WormBase_gene_association_file\n";
+  print $fh "\!project-release: $release\n";
+  print $fh "\!Contact Email: help\@wormbase.org\n";
+  print $fh "\!Funding: NHGRI at US NIH, grant number U41 HG002223\n";
 
 }
 
@@ -407,7 +458,7 @@ sub write_DAF_column_headers {
 
 ###########################################################3
 sub write_DAF_line {
-  my ($fh, $obj) = @_;
+  my ($fh, $obj, $taxid) = @_;
 
   my $date = $obj->{dateAssigned};
   $date =~ s/(\d{4})\-(\d{2})\-(\d{2}).+/${1}${2}${3}/; 

@@ -16,6 +16,7 @@
 package Log_files;
 
 use Carp;
+use File::Path;
 use File::Spec;
 
 # the following will save @ARGV for posterirty when this module is loaded, 
@@ -43,10 +44,10 @@ sub make_log {
         unless ( -d "$directories" and -w "$directories" ) {
             unless ( mkdir( "$directories", 0771 ) ) {
                 warn "cant create log dir $directories - using /tmp\n";
-                $file_name = "/tmp/$fname";
+                $directories = '/tmp';
             }
         }
-        $file_name = "/tmp/$fname";
+        $file_name = "$directories/$fname";
     }
     else {
         $file_name = "/tmp/$file_name";
@@ -77,15 +78,22 @@ Generate log file in the logs directory with WS version and processID appended t
 =cut
 
 sub make_build_log {
-    my $class    = shift;
-    my $wormbase = shift;
-    my $opts     = shift;
-    my $ver      = $wormbase->get_wormbase_version;
-    my $species  = $wormbase->species;
+    my $class      = shift;
+    my $wormbase   = shift;
+    my $opts       = shift;
+    my $associated = shift;
+    my $ver        = $wormbase->get_wormbase_version;
+    my $species    = $wormbase->species;
     my $filename;
     $0 =~ m/([^\/]*$)/ ? $filename = $0 : $filename = $1;    # get filename (sometimes $0 includes full path if not run from its dir )
 
     my $path     = $wormbase->logs;
+    if ($wormbase->debug) {
+	$path .= '/debug/' . $wormbase->debug;
+	$path =~ s/@/./g;
+	mkpath($path);
+    }
+
     my $log_file = "$path/$filename" . ".WS${ver}." . $$;
     my $log;
 
@@ -113,12 +121,34 @@ sub make_build_log {
     $self->{"DEBUG"}    = $wormbase->debug;
     $self->{'wormbase'} = $wormbase;
     $self->{'SPECIES'}  = $species;
-    $self->{'RUNLOG'}   = $wormbase->autoace."/runlog";
+    $self->{'RUNLOG'}   = $wormbase->autoace."/runlog" unless $associated;
 
     bless( $self, $class );
 
     return $self;
 }
+
+
+=head2 make_build_associated_log
+
+Generate log file in the logs/associated directory with WS version and processID appended to script name.
+
+  Title   :   make_build_log
+  Usage   :   my $log = Log_files->make_build_associated_log();
+              print $log "This is a log file\n";
+  Returns :   filehandle ref
+  Args    :   Wormbase object
+
+=cut
+
+sub make_build_associated_log {
+    my ($self, $wormbase) = @_;
+
+    my $log = $self->make_build_log($wormbase, undef, 1);
+
+    return $log;
+}
+
 
 sub write_to {
     my $self = shift;
@@ -152,14 +182,16 @@ sub mail {
 
     #write out status of script to runlog for dependancy checks
     if($self->{'wormbase'}) {
-       my $runlog = $self->{'RUNLOG'};
-       open(RL,">>$runlog") or $self->error("cant write runlog\t$!\n"); #warning of failure?
-       if ( $self->report_errors != 0 ) {
-       	    print RL "ERROR : $script\tFAIL\n";
-       } else {
-            print RL "$script:run\n";
-       }
-       close RL;
+	if ($self->{'RUNLOG'}) {
+	    my $runlog = $self->{'RUNLOG'};
+	    open(RL,">>$runlog") or $self->error("cant write runlog\t$!\n"); #warning of failure?
+	    if ( $self->report_errors != 0 ) {
+		print RL "ERROR : $script\tFAIL\n";
+	    } else {
+		print RL "$script:run\n";
+	    }
+	    close RL;
+	}
     }
 
     if ( $self->report_errors != 0 ) {

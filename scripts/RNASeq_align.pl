@@ -205,20 +205,28 @@ sub results {
   # make the ace file of RNASeq spanned introns to load into acedb
   print "Running Intron analyses ...\n";
   my $splice_file = $wormbase->acefiles."/RNASeq_splice_${species}.ace";
+  print "Writing splicefile $splice_file\n";
 
   # get old splice_file size
   my $old_splice_file = $splice_file . '.old';
   # if splice_file is older than a month, then move it to be the 'old_splice_file' (because this script may be run more than once, overwriting the splice file)
   if (-M $splice_file >= 30) {
     system("mv $splice_file $old_splice_file");
+    print "Moving $splice_file to $old_splice_file\n";
   }
   my $old_splice_file_size = -s $old_splice_file;
 
   chdir $RNASeq->{RNASeqSRADir};
+  my $rnadir=  $RNASeq->{RNASeqSRADir};
+  print "Going to folder  $rnadir\n";
   $status = $wormbase->run_command("rm -f $splice_file", $log);
+  print "Running command1: cat */Introns/virtual_objects.${species}.RNASeq.ace > $splice_file\n";
   $status = $wormbase->run_command("cat */Introns/virtual_objects.${species}.RNASeq.ace > $splice_file", $log);
+  print "Running command2: acezip.pl -file $splice_file\n";
   $status = $wormbase->run_script("acezip.pl -file $splice_file", $log);
+  print "Running command3: cat */Introns/Intron.ace > ${splice_file}.tmp\n";
   $status = $wormbase->run_command("cat */Introns/Intron.ace > ${splice_file}.tmp", $log);
+  print "Running command4: acezip.pl -file ${splice_file}.tmp\n";
   $status = $wormbase->run_script("acezip.pl -file ${splice_file}.tmp", $log);
   # flatten the results of all libraries at a position into one entry
   open (FEAT, "< ${splice_file}.tmp") || $log->log_and_die("Can't open file ${splice_file}.tmp\n");

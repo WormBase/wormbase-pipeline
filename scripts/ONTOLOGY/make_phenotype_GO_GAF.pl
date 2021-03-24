@@ -91,7 +91,7 @@ if ($skiplist) {
 $output = $wormbase->ontology."/phenotype2go.".$wormbase->get_wormbase_version_name.".wb" unless $output;
 open(my $out, ">$output") or $log->log_and_die("cannot open $output : $!\n");
 
-&print_wormbase_GAF_header($out);
+&print_wormbase_GAF_header($out, $wormbase->get_wormbase_version_name);
 
 if ($rnai or $variation) {
   my @aql_results = $db->aql("select p, p->GO_term from p in class Phenotype where exists p->GO_term");

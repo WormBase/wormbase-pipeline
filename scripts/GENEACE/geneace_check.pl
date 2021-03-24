@@ -27,7 +27,7 @@ GetOptions ('help'          => \$help,
             'debug=s'       => \$debug,
 	    'class=s'       => \@classes,
 	    'database=s'    => \$database,
-            'ace'           => \$ace,
+            'ace=s'           => \$ace,
 	    'verbose'       => \$verbose,
             'test'          => \$test,
             'skipmethod=s@' =>  \@skip_methods,
@@ -69,16 +69,21 @@ if ($help){&usage('Help')}
 # Use debug mode?
 if($debug){
   print "\nDEBUG = \"$debug\"\n";
-  ($maintainers = "$debug" . '\@sanger.ac.uk');
+  ($maintainers = "$debug" . '\@ebi.ac.uk');
 }
 
 # Open file for acefile output?
 my $acefile;
 if ($ace){
-  mkdir "$database/CHECKS" unless ( -e "$database/CHECKS");
-  $acefile = "$database/CHECKS/geneace_check.$rundate.$$.ace";
-  open(ACE, ">>$acefile") || croak $!;
-  system("chmod 777 $acefile");
+    $acefile = $ace;
+    open(ACE, ">>$acefile") || croak $!;
+    system("chmod 777 $acefile");
+}
+else {
+    mkdir "$database/CHECKS" unless ( -e "$database/CHECKS");
+    $acefile = "$database/CHECKS/geneace_check.$rundate.$$.ace";  
+    open(ACE, ">>$acefile") || croak $!;
+    system("chmod 777 $acefile");
 }
 
 my $next_build_ver = $wb->get_wormbase_version() + 1 ; # next build number
@@ -887,11 +892,11 @@ sub process_allele_class{
 
   open (FH, "echo '$def' | $tace $database | ") || warn "Couldn't access $db\n";
   while (<FH>) {
-    print;
-    chomp;
-    if ($_ =~ /^\"(.+)\"\s+\"(.+)\"/) {
-      $allele2lab{$2} = $1	# $2 is allele_designation $1 is lab designation	
-    }
+      print if ($debug);
+      chomp;
+      if ($_ =~ /^\"(.+)\"\s+\"(.+)\"/) {
+	  %allele2lab->{$2}=$1;	# $2 is allele_designation $1 is lab designation	
+      }
   }
 
   my $query = "find Variation Allele";
@@ -913,25 +918,34 @@ sub process_allele_class{
 
     # check allele has no laboratory tag
     if (!defined $allele->Laboratory ) {
-      
       if (!$ace) {
 	print LOG "ERROR: $allele has no Laboratory tag\n";
       } else {
 	print LOG "ERROR(a): $allele has no Laboratory tag\n";
-
+	if ($allele->Public_name->name =~ /^WBVar/) {
+	    print LOG "\tWARNING: WBVar named allele cannot fix Laboratory\n";
+	    next;
+	}
 	# try to find lab designation for alleles with CGC-names (1 or 2 letters and then numbers)
-	if ($allele =~ /^([a-z]{1,2})\d+$/) {
+	if ($allele->Public_name->name =~ /^([a-z]+)\d+$/) {
 	  my $allele_name = $1;	  
-
-	  print ACE "\nVariation : \"$allele\"\n";
-	  print ACE "-D Laboratory\n";
-	  print ACE "\nVariation : \"$allele\"\n";
-	  print ACE "Laboratory \"$allele2lab{$allele_name}\"\n";
-	  next;
+	  my $allele_ID = $allele->name;
+	  if (defined $allele2lab{$allele_name}){
+	      print ACE "\nVariation : \"$allele_ID\"\n";
+	      print ACE "-D Laboratory\n";
+	      print ACE "\nVariation : \"$allele_ID\"\n";
+	      print ACE "Laboratory \"$allele2lab{$allele_name}\"\n";
+	      print LOG "\tSUCCESS: $allele2lab{$allele_name} found for $allele_ID\n";
+	      next;
+	  }
+	  else {
+	      print LOG "\tCHECK: $allele_name is not a recognised allele designation ($allele_ID), cannot fix Laboratory\n";
+	      next;
+	  }
 	}	
       }
     }
-  
+    
 
     # check that Lab designation (when present) is correct (for CGC named alleles)
     if (defined $allele->Laboratory) {

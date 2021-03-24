@@ -81,6 +81,8 @@ else {
     system("beekeeper.pl -url $url -loop");
 }
 
+exit(0);
+
 
 sub print_usage{
 print  <<USAGE;

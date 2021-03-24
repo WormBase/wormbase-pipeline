@@ -22,7 +22,7 @@ use Storable;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $single, $build, $species, $outfile, $report);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $single, $build, $species, $outfile, $report, $logfile);
 
 
 GetOptions ("help"       => \$help,
@@ -35,6 +35,7 @@ GetOptions ("help"       => \$help,
 	    "build"      => \$build,
 	    "outfile:s"  => \$outfile, #full path to output file
 	    "report:s"   => \$report,
+	    "logfile:s"  => \$logfile,
 	    );
 
 if ( $store ) {
@@ -49,7 +50,7 @@ if ( $store ) {
 my $output;
 
 # establish log file.
-my $log = Log_files->make_build_log($wormbase);
+my $log = $logfile ? Log_files->make_log($logfile, $debug) : Log_files->make_build_associated_log($wormbase);
 
 if ($outfile) {
   $output = $outfile;

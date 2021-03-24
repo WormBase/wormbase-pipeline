@@ -1,4 +1,4 @@
-//
+///
 // models.wrm - main file defining tree class structures for the WormBase database
 // This file is read only when starting a new database or when you select
 // "Read Models" or "Add Update File" from the main menus.
@@ -2368,10 +2368,9 @@
               Remark ?Text #Evidence
               DB_info ?Database ?Database_field Text
               Experiment Laboratory ?Laboratory
-                         Author ?Author
-                         Date UNIQUE DateType
                          Strain UNIQUE ?Strain
               Reference ?Paper XREF Expr_pattern
+              Person UNIQUE ?Person 
               Transgene ?Transgene XREF Expr_pattern
               Variation ?Variation XREF Expr_pattern
               Construct ?Construct XREF Expression_pattern

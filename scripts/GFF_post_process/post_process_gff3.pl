@@ -59,12 +59,13 @@ my %between_base_feature_types = (
 # variables and command-line options #
 ######################################
 
-my (  $debug, $test, $store, $wormbase, $species );
+my (  $debug, $test, $store, $wormbase, $species, $tecred );
 my ( $infile, $outfile, $changed_lines );
 
 GetOptions(
     'debug=s'   => \$debug,
     'test'      => \$test,
+    'tecred'      => \$tecred,
     'store:s'   => \$store,
     'species:s' => \$species,
     'infile:s'  => \$infile,
@@ -88,6 +89,31 @@ my $log = Log_files->make_build_log($wormbase);
 if (not defined $infile or not defined $outfile) { 
   $log->log_and_die("You must define -infile and -outfile\n");
 }
+
+open(my $gff_in_fh, $infile) or $log->log_and_die("Could not open $infile for reading\n");
+
+
+#### TECRED modification START ####
+
+# Read in all TECRED IDs and store in a hash
+my %tecredid;
+if ($tecred) {
+	print "Doing TECRED processing\n";
+	while(<$gff_in_fh>) {
+		chomp;
+  		my $line = $_;
+		my @l = split(/\t+/, $line);
+		if ($l[1]=~/TEC_RED/) {
+			my @trid =split(/\s+/,$l[8]);
+			$tecredid{$trid[0]}+=1;
+			#print "$trid[0]\t$tecredid{$trid[0]}\n";
+		}
+	}
+}
+close($gff_in_fh) or $log->log_and_die("Could not close $outfile after writing\n");
+
+#### TECRED modification END ####
+
 
 open(my $gff_in_fh, $infile) or $log->log_and_die("Could not open $infile for reading\n");
 open(my $gff_out_fh, ">$outfile") or $log->log_and_die("Could not open $outfile for writing\n");  
@@ -130,6 +156,28 @@ while(<$gff_in_fh>) {
   if (exists $between_base_feature_types{$l[2]}) {
     # zero-length features are immediately to the right of start (=end), regardless of strand
     $l[4] = $l[3];
+  }
+
+  #
+  # Fix up the tecreds if needed https://github.com/WormBase/website/issues/8039
+  # Remove orientation, and mark up multimapped TEC-REDs
+  #
+  if ($tecred) {
+	if ($l[1]=~/TEC_RED/) {
+  		$l[6]='.';
+		#print "$line\n";
+		
+		# Mark multimapping
+		my @trid =split(/\s+/,$l[8]);
+		if ($tecredid{$trid[0]} >1) {
+			#print "$trid[0]\t multimap\n";
+			$l[8]=$l[8] . "; multimapping=TRUE";
+		}
+		else {
+			$l[8]=$l[8] . "; multimapping=FALSE";
+			#print "$trid[0]\t$tecredid{$trid[0]}\n";
+		}	
+	}
   }
 
   #

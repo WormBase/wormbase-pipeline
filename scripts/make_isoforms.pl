@@ -35,7 +35,7 @@ use Modules::Isoformer;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $logfile);
 my ($species, $database, $gff, $notsl, $outfile, $dogene, $chromosome);
 
 GetOptions ("help"       => \$help,
@@ -45,6 +45,7 @@ GetOptions ("help"       => \$help,
 	    "store:s"    => \$store,
 	    "species:s"  => \$species,
 	    "database:s" => \$database, # database being curated
+	    "logfile:s"  => \$logfile,
 	    "gff:s"      => \$gff, # optional location of the GFF file if it is not in the normal place
 	    "notsl"      => \$notsl, # don't try to make TSL isoforms - for debugging purposes
 	    "outfile:s"  => \$outfile, # output ACE file of isoform structures
@@ -80,7 +81,7 @@ if (!defined $database && $species eq 'elegans') {$database = $currentdb}
 if (!defined $database) {$database = $wormbase->autoace()} # BUILD database for the species
 
 # establish log file.
-my $log = Log_files->make_build_log($wormbase);
+my $log = $logfile ? Log_files->make_log($logfile, $debug) : Log_files->make_build_associated_log($wormbase);
 
 my $Iso = Isoformer->new($wormbase, $log, $database, $gff, $notsl);
 

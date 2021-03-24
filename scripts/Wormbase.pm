@@ -993,7 +993,9 @@ sub load_to_database {
   my $active = 0;		# counts of objects
 
 
+  my @entries_not_loaded;
   # split the ace file if it is large as it loads more efficiently
+  my $filesize_sum = 0;
   my @files_to_load;
   if ($st->size > 5000000) {
     # change input separator to paragraph mode;
@@ -1023,6 +1025,16 @@ sub load_to_database {
 	last;
       }
       
+      # Check for even number of unescaped quotes, write entries with odd number to separate file
+      # for manual checking before loading.  Throw error if any such entries found.
+      my $nr_quotes = $entry =~ tr/"//;
+      my $nr_escaped_quotes = () = $entry =~ /\\"/g;
+      if (($nr_quotes - $nr_escaped_quotes) % 2 == 1) {
+	  $entries--;
+	  push @entries_not_loaded, $entry;
+	  next;
+      }
+
       if (!$writing) {
 	$file_count++;
 	$writing = 1;
@@ -1038,12 +1050,15 @@ sub load_to_database {
 	close(WBTMPACE);
 	$writing = 0;
 	$entries = 0;
+	$filesize_sum += stat($split_file)->size;
+	
       }
     }
 
     close(WBTMPIN);
     if ($writing) {
       close (WBTMPACE);
+      $filesize_sum += stat($split_file)->size;
     }
 
     # reset input line separator
@@ -1099,6 +1114,20 @@ EOF
     }
   }
   
+  if (@entries_not_loaded) {
+      my ($filestem) = $file =~ /^(.+)\.ace$/;
+      open (UNLOADED, ">${filestem}_unloaded.ace");
+      print UNLOADED join('', @entries_not_loaded);
+      close (UNLOADED);
+      $log->error('ERROR: ' . @entries_not_loaded . " entries not loaded - written to ${filestem}_unloaded.ace\n");
+      $filesize_sum += stat("${filestem}_unloaded.ace")->size;
+  }
+
+  # Compare size of split files against original and throw error if >5% difference
+  if ($filesize_sum and ($filesize_sum / $st->size > 1.05 or $filesize_sum / $st->size < 0.95)) {
+      $log->error("ERROR: $file is " . $st->size . " bytes but split files sum to $filesize_sum bytes\n");
+  }
+
   if (! $error) {
     # check against previous loads of this file
     my $last_parsed;		# objects parsed on the previous build
@@ -1373,7 +1402,7 @@ sub establish_paths {
     $self->{'autoace'}    = $self->species eq 'elegans' ? "$basedir/autoace" : "$basedir/".$self->species;
     $self->{'orgdb'}      = $self->{'autoace'}; #."/".$self->{'organism'};
   }
-  
+ 
   $self->{'basedir'}    = $basedir;
 
   if ($self->test) {

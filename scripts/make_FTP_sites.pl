@@ -95,6 +95,7 @@ my $dna;
 my $rna;
 my $xrefs;
 my $gff;
+my $gaf;
 my $reports;
 my $ests;
 my $blastx;
@@ -116,6 +117,7 @@ GetOptions ("help"          => \$help,
 	    "rna"           => \$rna,
 	    "wormpep"       => \$wormpep,
 	    "gff"           => \$gff,
+	    "gaf"           => \$gaf,
             "reports"       => \$reports,
 	    "annots"        => \$annots,
             "ests"          => \$ests,
@@ -172,6 +174,7 @@ $log->write_to("WRITING TO $targetdir\n");
 &copy_rna_files          if $rna or $all;
 &copy_wormpep_files      if $wormpep or $all;
 &copy_gff_files          if $gff or $all;
+&copy_gaf_files          if $gaf or $all;
 &copy_report_files       if $reports or $all;
 &copy_est_files          if $ests or $all;
 &copy_annotations_files  if $annots or $all;
@@ -522,7 +525,7 @@ sub copy_report_files {
                     "all_classes") {
     if (-e "$source_report_dir/$file") {
       $wormbase->run_command("cat $source_report_dir/$file | gzip -n > $target_report_dir/${file}_report.$WS_version_name.txt.gz", $log); 
-    }   
+    }
   }
 
   $runtime = $wormbase->runtime;
@@ -657,6 +660,7 @@ sub copy_ontology_files {
   my $ace_dir = $wormbase->autoace;
   
   my $obo_dir = $wormbase->primaries . "/citace/temp_unpack_dir/home/citace/Data_for_${WS_version_name}/Data_for_Ontology/";
+  print "Copying obo files $obo_dir\n";
   my $ace_ontology_dir = "$ace_dir/ONTOLOGY";
   my $ftp_ontology_dir = "$targetdir/ONTOLOGY";
   
@@ -664,12 +668,130 @@ sub copy_ontology_files {
   mkpath($ftp_ontology_dir,1,0775);
   
   $wormbase->run_command("cp -f $obo_dir/*.obo $ace_ontology_dir/", $log);
-  foreach my $file (glob("$ace_ontology_dir/*.*")) {
+  foreach my $file (glob("$ace_ontology_dir/*.obo")) {
     $wormbase->run_command("cp -f $file $ftp_ontology_dir/", $log);
   }
   
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying ontology files\n\n");
+}
+
+
+############################################
+# copy across gaf files
+############################################
+sub copy_gaf_files {
+ 
+  print "Copy ontology innit\n";
+
+  my $runtime = $wormbase->runtime;
+  $log->write_to("$runtime: Copying ontology files\n");
+
+  my $ace_dir = $wormbase->autoace;  
+  #my $obo_dir = $wormbase->primaries . "/citace/temp_unpack_dir/home/citace/Data_for_${WS_version_name}/Data_for_Ontology/";
+  my $ace_ontology_dir = "$ace_dir/ONTOLOGY";
+  my $ftp_ontology_dir = "$targetdir/ONTOLOGY";
+  #print "$ace_dir $obo_dir $ace_ontology_dir $ftp_ontology_dir\n";
+
+ 
+  mkpath($ace_ontology_dir,1,0775);
+  mkpath($ftp_ontology_dir,1,0775);
+
+  #print "$runtime\tStart WB\n";
+    # run through all possible organisms
+  my %accessors = ($wormbase->species_accessors);
+  $accessors{elegans} = $wormbase;
+  #print "$runtime\tEnd WB\n";
+
+  my %copied;
+
+  foreach my $wb (values %accessors) {
+    next if exists $skip_species{$wb->species};
+    next if @only_species and not exists $only_species{$wb->species};
+
+    my $gspecies = $wb->full_name('-g_species' => 1);
+    my $bioproj = $wb->ncbi_bioproject;
+    my $prefix = $wb->pepdir_prefix;
+
+    #print "$gspecies $bioproj $prefix  \n";
+   
+
+    # Copy to species folders
+    foreach my $file (glob("$ace_ontology_dir/*.*")) {
+	my @a = split(/\./, $file);
+	my @b = split(/\//, $a[0]);
+	# If is daf file
+	if ($file=~/$gspecies/ and $file=~/daf.txt/) {
+		my $species_dir = "$targetdir/species/$gspecies/$bioproj";
+		#print "cp -f $file $targetdir/species/$gspecies/$bioproj/annotation/$gspecies\.$bioproj\.$WS_version_name\.$b[-1]\.daf\n ";
+		$wormbase->run_command("cat $file | gzip -n -9 > $targetdir/species/$gspecies/$bioproj/annotation/$gspecies\.$bioproj\.$WS_version_name\.$b[-1]\.daf.gz", $log);
+		$wormbase->run_command("cp -f $file $targetdir/ONTOLOGY/", $log); # Remove before WS281
+		$copied{$file}=1;
+	}
+	# wierdly renames the output files
+	elsif ($file=~/$gspecies/ and $file=~/gene_association/) {
+		my $species_dir = "$targetdir/species/$gspecies/$bioproj";
+		#print "cp -f $file $targetdir/species/$gspecies/$bioproj/annotation/$gspecies\.$bioproj\.$WS_version_name\.$b[-1]\.wb\n ";
+		$wormbase->run_command("cat $file | gzip -n -9 > $targetdir/species/$gspecies/$bioproj/annotation/$gspecies\.$bioproj\.$WS_version_name\.go_annotations.gaf.gz", $log);
+		$wormbase->run_command("cp -f $file $targetdir/ONTOLOGY/", $log); # Remove before WS281
+		$copied{$file}=1;
+	}	
+	elsif ($file=~/$gspecies/ and $file=~/rnai_phenotypes/) {
+		my $species_dir = "$targetdir/species/$gspecies/$bioproj";
+		#print "cp -f $file $targetdir/species/$gspecies/$bioproj/annotation/$gspecies\.$bioproj\.$WS_version_name\.$b[-1]\.wb\n ";
+		$wormbase->run_command("cat $file | gzip -n -9 > $targetdir/species/$gspecies/$bioproj/annotation/$gspecies\.$bioproj\.$WS_version_name\.$b[-1]\.wb.gz", $log);
+		$wormbase->run_command("cp -f $file $targetdir/ONTOLOGY/", $log); # Remove before WS281
+		$copied{$file}=1;
+	}
+	elsif ($file=~/$gspecies/) {
+		my $species_dir = "$targetdir/species/$gspecies/$bioproj";
+		#print "cp -f $file $targetdir/species/$gspecies/$bioproj/annotation/$gspecies\.$bioproj\.$WS_version_name\.$b[-1]\.gaf\n ";
+		$wormbase->run_command("cat $file | gzip -n -9 > $targetdir/species/$gspecies/$bioproj/annotation/$gspecies\.$bioproj\.$WS_version_name\.$b[-1]\.gaf.gz", $log);
+		$wormbase->run_command("cp -f $file $targetdir/ONTOLOGY/", $log); # Remove before WS281         
+		$copied{$file}=1;
+	}
+	else {
+	}
+    }
+}
+ 
+# Copy the rest of the files without species name to the ontology folder
+   foreach my $file (glob("$ace_ontology_dir/*.*")) {
+	my @a = split(/\./, $file);
+	my @b = split(/\//, $a[0]);
+	if (exists $copied{$file}) {
+		#print "Copied $file\n";
+	}
+	else {
+		if ($file=~/daf.txt/) {
+			#print "cp -f $file $targetdir/ONTOLOGY/$b[-1]\.$WS_version_name\.daf\n ";
+			$wormbase->run_command("cp -f $file $targetdir/ONTOLOGY/$b[-1]\.$WS_version_name\.daf", $log);
+			$wormbase->run_command("cp -f $file $targetdir/ONTOLOGY/", $log); # Remove before WS281
+		}
+		elsif ($file=~/gene_association/) {
+			#print "cp -f $file $targetdir/ONTOLOGY/$b[-1]\.$WS_version_name\.wb\n ";
+			$wormbase->run_command("cp -f $file $targetdir/ONTOLOGY/$b[-1]\.$WS_version_name\.wb", $log);
+			$wormbase->run_command("cp -f $file $targetdir/ONTOLOGY/", $log); # Remove before WS281
+		}
+		elsif ($file=~/rnai_phenotypes/) {
+			#print "cp -f $file $targetdir/ONTOLOGY/$b[-1]\.$WS_version_name\.wb\n ";
+			$wormbase->run_command("cp -f $file $targetdir/ONTOLOGY/$b[-1]\.$WS_version_name\.wb", $log);
+			$wormbase->run_command("cp -f $file $targetdir/ONTOLOGY/", $log); # Remove before WS281
+		}
+		else {
+			#print "cp -f $file $targetdir/ONTOLOGY/$b[-1]\.$WS_version_name\.gaf\n ";
+			$wormbase->run_command("cp -f $file $targetdir/ONTOLOGY/$b[-1]\.$WS_version_name\.gaf", $log);
+			$wormbase->run_command("cp -f $file $targetdir/ONTOLOGY/", $log); # Remove before WS281
+		}
+
+	}
+
+    }
+    
+  
+   $runtime = $wormbase->runtime;
+   $log->write_to("$runtime: Finished copying ontology files!\n\n");
+
 }
 
 
@@ -828,7 +950,9 @@ sub copy_annotations_files{
     my $out_prefix = "$targetdir/species/$gspecies/$bioproj/annotation/$gspecies.${bioproj}.${WS_version_name}.";
 
     foreach my $io_pair ([ "dbxrefs.txt", "xrefs.txt.gz" ],
-                         [ "gene_product_info.gpi", "gene_product_info.gpi.gz" ]) {
+                         [ "gene_product_info.gpi", "gene_product_info.gpi.gz" ],
+			 [ "gene_product_info.gpi2", "gene_product_info.gpi2.gz" ]
+) {
       my ($in_suffix, $out_suffix) = @$io_pair;
 
       my $in_file = $in_prefix . $in_suffix;
@@ -860,6 +984,7 @@ sub copy_annotations_files{
     }
   }
 
+=pod
   #
   # GO annotation files
   #
@@ -879,7 +1004,7 @@ sub copy_annotations_files{
         $log->write_to("WARNING: cannot find $in_file\n");
     }
   }
-
+=cut
 
   #
   # Finally, other misc annotation files
@@ -1387,11 +1512,9 @@ GSPECIES.BIOPROJ.WSREL.changed_CGC_names.txt
 GSPECIES.BIOPROJ.WSREL.readable_changed_CGC_names.txt
 GSPECIES.BIOPROJ.WSREL.TSS.wig.tar.gz
 GSPECIES.BIOPROJ.WSREL.interactions.txt.gz
-GSPECIES.BIOPROJ.WSREL.potential_promotors.fa.gz
 GSPECIES.BIOPROJ.WSREL.swissprot.txt.gz
 GSPECIES.BIOPROJ.WSREL.molecules.ace.gz
 GSPECIES.BIOPROJ.WSREL.xrefs.txt.gz
-GSPECIES.BIOPROJ.WSREL.gene_product_info.gpi.gz
 
 [elegans]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.wormpep_package.tar.gz
@@ -1407,6 +1530,8 @@ GSPECIES.BIOPROJ.WSREL.go_annotations.gaf.gz
 GSPECIES.BIOPROJ.WSREL.repeats.fa.gz
 GSPECIES.BIOPROJ.WSREL.geneIDs.txt.gz
 GSPECIES.BIOPROJ.WSREL.geneOtherIDs.txt.gz
+GSPECIES.BIOPROJ.WSREL.gene_product_info.gpi.gz
+GSPECIES.BIOPROJ.WSREL.gene_product_info.gpi2.gz
 
 [CORE]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.best_blastp_hits.txt.gz

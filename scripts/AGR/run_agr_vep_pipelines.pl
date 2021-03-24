@@ -41,6 +41,22 @@ const my %REFSEQ_CHROMOSOMES => (
 	'Y'  => 'NC_024512.1',
 	'mitochondrion_genome' => 'NC_024511.2',
 	'Unmapped_Scaffold_8_D1580_D1567' => 'NW_007931083.1',
+	'211000022278279' => 'NW_007931104.1',
+	'211000022278436' => 'NW_001845431.1',
+	'211000022278449' => 'NW_001845819.1',
+	'211000022278760' => 'NW_001846712.1',
+	'211000022279165' => 'NW_001846812.1',
+	'211000022279188' => 'NW_001845284.1',
+	'211000022279264' => 'NW_001847227.1',
+	'211000022279392' => 'NW_001846198.1',
+	'211000022279681' => 'NW_001845031.1',
+	'211000022280328' => 'NW_001844935.1',
+	'211000022280341' => 'NW_001846187.1',
+	'211000022280347' => 'NW_001845870.1',
+	'211000022280481' => 'NW_001845220.1',
+	'211000022280494' => 'NW_001845164.1',
+	'211000022280703' => 'NW_001845199.1',
+	'rDNA' => 'NW_007931121.1',
     },
     'MGI'  => {
 	'1'  => 'NC_000067.6',
@@ -349,7 +365,7 @@ sub calculate_pathogenicity_predictions {
 sub run_vep_on_phenotypic_variations {
     my ($mod, $password, $test) = @_;
     
-    return unless -e "${mod}_VCF.vcf";
+    return unless -e "${mod}_VCF.refseq.vcf";
     
     my $base_vep_cmd = "vep -i ${mod}_VCF.refseq.vcf -gff ${mod}_GFF.refseq.gff.gz -fasta ${mod}_FASTA.refseq.fa.gz --force_overwrite " .
 	"--bam ${mod}_BAM.bam -hgvsg -hgvs -shift_hgvs=0 --symbol --distance 0 --plugin ProtFuncSeq,mod=$mod,pass=$password";
@@ -395,7 +411,7 @@ sub run_vep_on_phenotypic_variations {
 sub run_vep_on_htp_variations{
     my ($mod, $password, $test) = @_;
     
-    return unless -e "${mod}_HTVCF.vcf";
+    return unless -e "${mod}_HTVCF.refseq.vcf";
     
     my $lsf_queue = $test ? $ENV{'LSF_TEST_QUEUE'} : $ENV{'LSF_DEFAULT_QUEUE'};
     
@@ -715,6 +731,7 @@ sub convert_fasta_headers {
 sub convert_vcf_chromosomes {
     my ($mod, $type) = @_;
 
+    return unless -e "${mod}_${type}.vcf";
     return if -e "${mod}_${type}.refseq.vcf";
 
     print "Converting $mod $type chromosome IDs to RefSeq\n";
