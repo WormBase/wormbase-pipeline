@@ -8,7 +8,6 @@ use Wormbase;
 use Storable;
 use Path::Class;
 use Const::Fast;
-use Smart::Comments;
 
 my ($current_release, $current_iteration, $previous_release, $previous_iteration);
 my ($database, $species, $log_file, $store, $debug);
