@@ -420,7 +420,7 @@ sub read_model {
 	$line =~ s/\sNull\s/ Null_value /g;
 
 	# Remove XREFs and #Ordered
-	$line =~ s/\s(NO|IN|OUT)XREF\s(\w+)?/ /g;
+	$line =~ s/\s(NO|IN|OUT)XREF\s([\w\|]+)?/ /g;
 	$line =~ s/\s#Ordered//g;
 
 	# Remove UNIQUE labels preserving indentation
