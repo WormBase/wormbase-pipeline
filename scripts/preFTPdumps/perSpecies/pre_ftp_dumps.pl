@@ -98,7 +98,7 @@ $log->write_to("Waiting for LSF jobs to finish.\n");
 $lsf->wait_all_children( history => 1 );
 for my $job ( $lsf->jobs ) {
   if ($job->history->exit_status != 0) {
-    $log->write_to("WARNING: Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . "\n");
+    $log->error("ERROR: Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . "\n");
   }
 }
 $lsf->clear;
@@ -111,10 +111,10 @@ foreach my $script (keys %files_to_check) {
       if (-s $file){
         $log->write_to("OK: $script => $file ($size bytes)\n");
       } else{
-        $log->write_to("WARNING: $script created an empty $file\n");
+        $log->error("ERROR: $script created an empty $file\n");
       }
     } else{
-      $log->write_to("WARNING: $script didn't create $file\n");
+      $log->error("ERROR: $script didn't create $file\n");
     }
   }
 }
@@ -157,7 +157,7 @@ sub check_script{
   if (-e $path){
     return 1;
   } else {
-    $log->write_to("ERROR: can't find $path\n");
+    $log->error("ERROR: can't find $path\n");
     return undef;
   }
 }
