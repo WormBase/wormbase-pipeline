@@ -44,10 +44,10 @@ sub make_log {
         unless ( -d "$directories" and -w "$directories" ) {
             unless ( mkdir( "$directories", 0771 ) ) {
                 warn "cant create log dir $directories - using /tmp\n";
-                $file_name = "/tmp/$fname";
+                $directories = '/tmp';
             }
         }
-        $file_name = "/tmp/$fname";
+        $file_name = "$directories/$fname";
     }
     else {
         $file_name = "/tmp/$file_name";

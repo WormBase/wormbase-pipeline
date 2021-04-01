@@ -5,6 +5,7 @@ use Storable;
 use Getopt::Long;
 use Ace;
 use JSON;
+use lib $ENV{CVS_DIR};
 use Wormbase;
 use Modules::AGR;
 
@@ -163,6 +164,7 @@ while (my $obj = $it->next) {
 }
 
 open (OUT, '>', $outfile) or die "Cannot open $outfile to write: $!\n";
+
 my $data = {
     metaData => AGR::get_file_metadata_json($ws_version),
     data     => \@references,
@@ -170,7 +172,8 @@ my $data = {
 
 my $json_obj = JSON->new;
 print OUT $json_obj->allow_nonref->canonical->pretty->encode($data);
-close(OUT);
+close(OUT) or die "Could not close $outfile: $!";
+
 
 open (RE_OUT, '>', $re_outfile) or die "Cannot open $outfile to write: $!\n";
 my $re_data = {
@@ -180,11 +183,10 @@ my $re_data = {
 
 my $re_json_obj = JSON->new;
 print RE_OUT $re_json_obj->allow_nonref->canonical->pretty->encode($re_data);
-close(RE_OUT);
+close(RE_OUT) or die "Could not close $re_outfile: $!";;
 
-
+$db->close;
 exit(0);
-
 
 sub get_author_list {
     my ($obj, $ref_id) = @_;

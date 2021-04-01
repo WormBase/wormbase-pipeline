@@ -118,9 +118,15 @@ while (my $analysis = $it->next){
 
 
 
-# we can't submit microarrays without dataset, as the datasetId is required
+# OBI:0000895 - total RNA extract
+# OBI:0000869 - polyA RNA extract
+# OBI:0000880 - RNA extract
+# OBI:0000862 - nuclear RNA extract
+# OBI:0000423 - extract
+# OBI:0000876 - cytoplasmic RNA extract
+# OBI:0002573 - polyA depleted RNA extract
 
-=pod
+# we can't submit microarrays without dataset, as the datasetId is required
 
 # micro arrays - single channel
 
@@ -133,36 +139,48 @@ while (my $array = $it->next){
 	my @p = $array->Reference;
 	my @papers = map {get_paper($_)} @p;
 
-        my $datasetId= 'WB:'.$p[0].'.ce.mr.csv';
+#        my $datasetId= 'WB:'.$p[0].'.ce.mr.csv';
+	my $datasetId = {primaryId => 'WB:' . $array->name};
 
 	my @papers = map {get_paper($_)} @p;
-#	$json2_obj{primaryId} = $datasetId; # required
-#	$json2_obj{publication} = \@papers if @papers;;
-#	$json2_obj{categoryTags}=['unclassified'];
-#	$json2_obj{numChannels}=1;
+	$json2_obj{datasetId} = $datasetId; # required
+	$json2_obj{publications} = \@papers if @papers;;
+	$json2_obj{categoryTags}=['unclassified'];
+	$json2_obj{numChannels}=1;
+	$json2_obj{title} = $array->name;
 
-#	push @htpd,\%json2_obj unless $htp{$datasetId};
-#	$htp{$datasetId}=1;
+	$db->timestamps(1);
+	my $timestamp = $array->timestamp;
+	$timestamp=~s/_/T/;
+	$timestamp=~s/_\w+/\+01:00/;
+	$db->timestamps(0);
+	$json2_obj{dateAssigned} = $timestamp;
+	
+
+	push @htpd,\%json2_obj unless $htp{$datasetId};
+	$htp{$datasetId}=1;
 
 	# sample
 	my %json_obj;
 	my $sample=$array->Microarray_sample;
-	$json_obj{primaryId} = {sampleId => "WB:$sample"}; # required
 	$json_obj{sampleId} = {
 		primaryId => "WB:$sample",
 		secondaryId => ["WB:${\$array->name}"],
 	};
 	$json_obj{sampleTitle} = "WB:$sample";
+	$json_obj{sampleType} = 'OBI:0000880'; # RNA extract
+	
 
 	$json_obj{taxonId} = 'NCBITaxon:' . $wormbase->ncbi_tax_id;
-	#	$json_obj{datasetIds} = [$datasetId];
+	$json_obj{datasetIds} = ['WB:' . $array->name];
 	$json_obj{sex}=lc($sample->Sex->name) if $sample->Sex;
 
 	sampleAge(\%json_obj,$sample) if ($sample->Life_stage);
 	sampleLocation(\%json_obj,$sample) if ($sample->Tissue);
 
 	$json_obj{assayType}='MMO:0000649'; # micro array
-	$json_obj{assemblyVersions}=$assembly;
+	$json_obj{assemblyVersions}=[$assembly];
+	$json_obj{microarraySampleDetails} = {channelId => "WB:$sample", channelNum => 1};
 	push @htps,\%json_obj;
 
 }
@@ -176,14 +194,23 @@ while (my $array = $it->next){
 	my @p = $array->Reference;
 	my @papers = map {get_paper($_)} @p;
 #       my $datasetId= 'WB:'.$p[0].'.ce.mr.csv';
-#	my @papers = map {get_paper($_)} @p;
-#	$json2_obj{primaryId} = $datasetId; # required
-#	$json2_obj{publication} = \@papers if @papers;;
-#	$json2_obj{categoryTags}=['unclassified'];
-#	$json2_obj{numChannels}=2;
+	my $datasetId = {primaryId => 'WB:' . $array->name};
+	my @papers = map {get_paper($_)} @p;
+	$json2_obj{datasetId} = $datasetId; # required
+	$json2_obj{publications} = \@papers if @papers;;
+	$json2_obj{categoryTags}=['unclassified'];
+	$json2_obj{numChannels}=2;
+	$json2_obj{title} = $array->name;
 
-#	push @htpd,\%json2_obj unless $htp{$datasetId};
-#	$htp{$datasetId}=1;
+	$db->timestamps(1);
+	my $timestamp = $array->timestamp;
+	$timestamp=~s/_/T/;
+	$timestamp=~s/_\w+/\+01:00/;
+	$db->timestamps(0);
+	$json2_obj{dateAssigned} = $timestamp;
+
+	push @htpd,\%json2_obj unless $htp{$datasetId};
+	$htp{$datasetId}=1;
 
 	# sample
 	my @samples=($array->Sample_A , $array->Sample_B);
@@ -192,23 +219,29 @@ while (my $array = $it->next){
 		my %json_obj;
 		my $suffix = ($n==1) ? 'A' : 'B'; # for the datasets
 
-		$json_obj{primaryId} = {sampleId => "WB:$s:$suffix"}; # required
 		$json_obj{sampleTitle} = "WB:$s:$suffix";
+		$json_obj{sampleType} = 'OBI:0000880'; # RNA extract
+		$json_obj{sampleId} = {
+		    primaryId => "WB:$s",
+		    secondaryId => ["WB:${\$array->name}"],
+		};
+
 		$json_obj{taxonId} = 'NCBITaxon:' . $wormbase->ncbi_tax_id;
-#		$json_obj{datasetIds} = [$datasetId];
+		$json_obj{datasetIds} = ['WB:' . $array->name];
 		$json_obj{sex}=$s->Sex->name if $s->Sex;
 
                 sampleAge(\%json_obj,$s) if $s->Life_stage;
 		sampleLocation(\%json_obj,$s) if $s->Tissue;
 
 		$json_obj{assayType}='MMO:0000649'; # micro array
-		$json_obj{assemblyVersions}=$assembly;
+		$json_obj{assemblyVersions}=[$assembly];
+		$json_obj{microarraySampleDetails} = {channelId => "WB:$s:$suffix", channelNum => $n};
 		push @htps,\%json_obj;
 
 		$n++;
 	}
 }
-=cut
+
 
 ################################################
 

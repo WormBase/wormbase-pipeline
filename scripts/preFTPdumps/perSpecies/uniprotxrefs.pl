@@ -141,10 +141,13 @@ if (defined $fh) {
   }
   $fh->close
 }else{
-	$log->write_to("ERROR: cannot open $outfile for writing\n");
+	$log->error("ERROR: cannot open $outfile for writing\n");
 }
 
+$db->close;
+
 $log->mail();
+exit(0);
 
 ###########################
 sub get_pmid{

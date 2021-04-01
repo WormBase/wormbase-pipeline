@@ -8,10 +8,9 @@ use Wormbase;
 use Storable;
 use Path::Class;
 use Const::Fast;
-use Smart::Comments;
 
 my ($current_release, $current_iteration, $previous_release, $previous_iteration);
-my ($database, $species, $log_file, $store, $debug);
+my ($database, $species, $log_file, $store, $debug, $test);
 GetOptions(
     "curr_release|r1=s"   => \$current_release,   
     "prev_release|r2=s"   => \$previous_release,   
@@ -21,6 +20,7 @@ GetOptions(
     "species|s=s"         => \$species,
     "logfile|l=s"         => \$log_file,
     "store|st=s"          => \$store,
+    "test|t=s"            => \$test,
     "debug|d=s"           => \$debug
     );
 
@@ -32,7 +32,8 @@ else {
     $wormbase = Wormbase->new(
 	-debug    => $debug,
 	-organism => $species,
-	-autoace  => $database
+	-autoace  => $database,
+	-test     => $test
 	);
 }
 

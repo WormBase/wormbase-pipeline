@@ -89,7 +89,7 @@ while (<$gff_in_fh>) {
     }
     
     if ($variation->Strain) {
-      my @strains = $variation->Strain;
+      my @strains = map {$_->Public_name} $variation->Strain;
       push @new_els, ['Strain', \@strains];
     }
     if ($prodmethod) {
