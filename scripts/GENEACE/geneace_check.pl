@@ -179,6 +179,17 @@ sub process_gene_class{
     print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has 'Other_name' tag without value\n";
   }
 
+  # test for Public_name tag but no value          
+  foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Public_name AND NOT NEXT')){
+      print LOG "ERROR: $gene ($gene) has 'Public_name' tag without value\n";
+  }
+
+  # test for Public_name tag in live WB genes 
+  foreach my $gene ($db->fetch(-query=>'Find Gene "WBGene*" WHERE !Public_name AND Live')){
+      print LOG "ERROR: $gene ($gene) is live but has no 'Public_name'\n";
+  }
+
+
   # checks that when a Gene belongs to a Gene_class, it should have a CGC_name
   foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Gene_class AND NOT CGC_name')){
     my $gc = $gene->Gene_class;
