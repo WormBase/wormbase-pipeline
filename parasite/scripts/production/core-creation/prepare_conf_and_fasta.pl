@@ -305,10 +305,10 @@ if( $force or not -s $conf_path or $ENV{REDO_FASTA} ) {
          } elsif( 'exon' eq $feature->{type} ) {
             if( exists $RNAs{ $feature->{attribute}->{Parent} } ) {
                push( @{$RNAs{ $feature->{attribute}->{Parent} }->{ $feature->{type} }},
-                     $feature->{attribute}->{ID});
+                     'exon');
             } elsif( exists $pseudogenic_transcripts{ $feature->{attribute}->{Parent} } ) {
                push( @{$pseudogenic_transcripts{ $feature->{attribute}->{Parent} }->{ $feature->{type} }},
-                     $feature->{attribute}->{ID});
+                     'exon');
             } else {
                die "exon $feature->{attribute}->{ID} references a non-existent parent in $this_assembly->{gff3}"
             }
