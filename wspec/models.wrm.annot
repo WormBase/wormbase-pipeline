@@ -2504,11 +2504,16 @@
               Cropped_from ?Picture OUTXREF Crop_picture
 //         Pick_me_to_call Text Text
          Remark ?Text #Evidence
+         Type Expr_graph ?Text 
          Depict  Expr_pattern ?Expr_pattern OUTXREF Picture
+                 Microarray ?Microarray_experiment
+                 RNASeq ?Analysis
+                 Tiling_array ?Analysis
                  Anatomy ?Anatomy_term OUTXREF Picture
                  Cellular_component ?GO_term OUTXREF Picture
                  WBProcess ?WBProcess OUTXREF Picture
                  Gene ?Gene OUTXREF Picture
+                 Microarray_results ?Microarray_results
                  Life_stage ?Life_stage OUTXREF Picture
          Acknowledgment Template ^acknowledgement-template UNIQUE Text
                         Publication_year UNIQUE Text

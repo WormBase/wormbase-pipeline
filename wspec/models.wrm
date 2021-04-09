@@ -2476,11 +2476,16 @@
               Cropped_from ?Picture XREF Crop_picture
          Pick_me_to_call Text Text
          Remark ?Text #Evidence
+         Type Expr_graph ?Text                              // #161 added by Wen for HTP expression graphs
          Depict Expr_pattern ?Expr_pattern XREF Picture
+                Microarray ?Microarray_experiment           // #161 added by Wen for HTP expression graphs
+                RNASeq ?Analysis                            // #161 added by Wen for HTP expression graphs
+                Tiling_array ?Analysis                      // #161 added by Wen for HTP expression graphs
                 Anatomy ?Anatomy_term XREF Picture
                 Cellular_component ?GO_term XREF Picture
                 WBProcess ?WBProcess XREF Picture
                 Gene ?Gene XREF Picture
+                Microarray_results ?Microarray_results      // #161 added by Wen for HTP expression graphs
                 Life_stage ?Life_stage XREF Picture
          Acknowledgment Template UNIQUE Text
                         Publication_year UNIQUE Text
