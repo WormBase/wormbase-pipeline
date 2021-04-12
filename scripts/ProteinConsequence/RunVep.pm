@@ -50,7 +50,7 @@ sub run {
 	$self->warning("ERROR: $flat_cmd - exit code: $exit_code: $stderr") if $exit_code != 0;
     }
     else {
-	$self->remove_header() unless $input_file =~ /\w0+1$/;
+	$self->remove_header($input_file) unless $input_file =~ /\w0+1$/;
 	$self->param('vep_failure', 0);
 	system("rm $input_file");
     }
