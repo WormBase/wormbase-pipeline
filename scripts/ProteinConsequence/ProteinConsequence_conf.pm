@@ -39,7 +39,7 @@ sub default_options {
 	
 	# pipeline details
         pipeline_name           => 'wb_vep_' . lc($self->o('species')),
-	pipeline_database       => $self->o('pipeline_name') . '_ehive',
+	pipeline_database       => $self->o('pipeline_database'),
 
 	# folder locations
 	vep_dir                 => $ENV{'WBVEP_DIR'} . '/ensembl-vep',
