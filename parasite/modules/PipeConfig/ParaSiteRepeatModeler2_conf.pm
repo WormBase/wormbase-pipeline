@@ -43,12 +43,7 @@ sub default_options {
     run_all => 0,
     meta_filters => {},
 
-    # Parameters for dumping and splitting Fasta DNA files
-#    max_seq_length          => 10_000_000,
-#    max_seq_length_per_file => $self->o('max_seq_length'),
-#    max_seqs_per_file       => 10_000,
-#    max_files_per_directory => 50,
-#    max_dirs_per_directory  => $self->o('max_files_per_directory'),
+    # Don't dump scaffolds smaller than this
     min_slice_length        => 5000,
 
     # Program paths
@@ -57,10 +52,6 @@ sub default_options {
 
     # Blast engine can be wublast or ncbi
     blast_engine => 'ncbi',
-
-    # Cluster final library
-#    do_clustering       => 0,
-#    cdhit_est_exe       => $self->check_exe_in_cellar('cd-hit/4.6.8/bin/cd-hit-est'),
     
     # Filtering
     do_filtering => 0,
