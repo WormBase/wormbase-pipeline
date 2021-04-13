@@ -52,7 +52,13 @@ def parse_gff(input_gff, source_to_WB = False, seq_region_synonyms = False, has_
       except:
         sys.exit("Couldn't parse col9 attributes:\n"+line)
 
-    if this_feature["type"] == "three_prime_UTR" or this_feature["type"] == "five_prime_UTR" or this_feature["type"] == "region":
+    if this_feature["type"] == "three_prime_UTR" or \
+       this_feature["type"] == "five_prime_UTR" or \
+       this_feature["type"] == "region" or \
+       this_feature["type"] == "non_canonical_three_prime_splice_site" or \
+       this_feature["type"] == "non_canonical_five_prime_splice_site" or \
+       this_feature["type"] == "stop_codon_read_through" or \
+       this_feature["type"] == "repeat_region":
       continue
 
     if source_to_WB is True:
@@ -61,7 +67,7 @@ def parse_gff(input_gff, source_to_WB = False, seq_region_synonyms = False, has_
     if this_feature["type"] == 'gene' or this_feature["type"] == 'pseudogene':
       genes = _add_to_genes(genes, this_feature)
 
-    elif this_feature["type"] == 'mRNA' or this_feature["type"] == 'tRNA' or this_feature["type"] == 'rRNA':
+    elif this_feature["type"] == 'mRNA' or this_feature["type"] == 'tRNA' or this_feature["type"] == 'rRNA' or this_feature["type"] == "transcript":
       transcripts = _add_to_transcripts(transcripts, this_feature)
       if has_parentage is True:
         genes = _add_children_to_genes(genes, this_feature)
