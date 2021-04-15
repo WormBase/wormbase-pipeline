@@ -1045,10 +1045,10 @@ sub load_to_database {
 	push @files_to_load, $split_file;
       }
 
-      print WBTMPACE "\n\n$entry";
+      print WBTMPACE $entry;
       
       if ($entries == 5000) {
-	close(WBTMPACE);
+	close(WBTMPACE) or $log->write_to("WARNING: Could not close file handle to $file\n");
 	$writing = 0;
 	$entries = 0;
       }
@@ -1056,7 +1056,7 @@ sub load_to_database {
 
     close(WBTMPIN);
     if ($writing) {
-      close (WBTMPACE);
+      close (WBTMPACE) or $log->write_to("WARNING: Could not close file handle to $file\n");
     }
     
     @files_to_load = @{remove_partial_files($total_entries, \@files_to_load, scalar @entries_not_loaded, $log)};
@@ -1223,10 +1223,8 @@ EOF
 sub remove_partial_files {
     my ($nr_entries, $split_files, $nr_unloaded, $log) = @_;
 
-    my $total_split_entries = 0;
     my @files_to_load;
     my $file_nr = 0;
-    my $missing_entries = 0;
     for my $file (@$split_files) {
 	$file_nr++;
 	my $partial = 0;
@@ -1234,7 +1232,6 @@ sub remove_partial_files {
 	open (SPLIT, "<$file") || $log->log_and_die ("can't open $file for completeness checking\n");
 	while (my $entry = <SPLIT>) {
 	    $split_entries++;
-	    $total_split_entries++;
 	    my $nr_quotes = $entry =~ tr/"//;
 	    my $nr_escaped_quotes = () = $entry =~ /\\"/g;
 	    if (($nr_quotes - $nr_escaped_quotes) % 2 == 1) {
@@ -1245,25 +1242,25 @@ sub remove_partial_files {
 	close (SPLIT);
 
 	next if $partial;
-	if ($file_nr != scalar @split_files) {
+
+	if ($file_nr != scalar @$split_files) {
 	    if ($split_entries != 5000) {
 		$log->error("Split file $file appears to be incomplete with < 5000 entries - split file not loaded\n");
-		$missing_entries += 5000 - $split_entries;
 		next;
 	    }
 	}
 	else {
-	    if ($nr_entries != ($total_split_entries + $missing_entries)) {
-		$log->error("Split file $file appears to be incomplete with " . ($nr_entries - ($total_split_entries + $missing_entries)) .
-			    " entries less than expected\n");
+	    my $expected_entries = $nr_entries % 5000;
+	    $expected_entries = 5000 if $expected_entries == 0;
+	    if ($split_entries !=  $expected_entries) {
+		$log->error("Split file $file appears to be incomplete with " . ($expected_entries - $split_entries) .
+			    " entries less than the expected $expected_entries\n");
 		next;
 	    }		    
 	}
 	push @files_to_load, $file;
     }
 
-    $log->log_and_die("Mismatch between number of entries before and after file splitting\n")
-	if $nr_entries != ($split_files_count + $nr_unloaded);
 
     return \@files_to_load;
 }
