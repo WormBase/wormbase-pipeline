@@ -1,4 +1,7 @@
- ![WormBase logo](https://wormbase.org/img/logo/logo_wormbase_gradient.svg)
+
+<p align="center" width="100%">
+    <img width="50%" src="https://wormbase.org/img/logo/logo_wormbase_gradient.svg"> 
+</p>
 
 # WormBase Pipeline code
 
@@ -8,5 +11,8 @@ The main purpose of the code is to build and process data in order to release a 
 
 Main Project Site:
 http://www.wormbase.org
+
+
+
 
 
