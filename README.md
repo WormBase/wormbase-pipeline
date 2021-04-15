@@ -1,7 +1,6 @@
 
-<p align="center" width="100%"  href="https://www.qries.com/">
-    <img width="50%" src="https://wormbase.org/img/logo/logo_wormbase_gradient.svg"> 
-</p>
+<a href="https://wormbase.org/">
+ <img alt="WormBase Logo" src="https://wormbase.org/img/logo/logo_wormbase_gradient.svg" width="50%" > </a>
 
 # WormBase Pipeline
 
@@ -12,10 +11,7 @@ The main purpose of the code is to build and process data in order to release a 
 Main Project Site:
 http://www.wormbase.org
 
-<a href="https://www.qries.com/">
- <img alt="Qries" src="https://www.qries.com/images/banner_logo.png"
- width=150" height="70">
-</a>
+
 
 
 
