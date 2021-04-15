@@ -1,6 +1,9 @@
 
-<a href="https://wormbase.org/">
- <img alt="WormBase Logo" src="https://wormbase.org/img/logo/logo_wormbase_gradient.svg" width="50%" > </a>
+<p align="center">
+  <a href="https://wormbase.org/" >
+    <img alt="WormBase Logo" src="https://wormbase.org/img/logo/logo_wormbase_gradient.svg" class ="center" > 
+  </a>
+</p>
 
 # WormBase Pipeline
 
