@@ -147,7 +147,7 @@ foreach my $suf (0..9) {
       if (defined $strain_level) {
         push @taxids, $strain_level->name;
       } elsif (defined $species_level) {
-        push @taxids, $strain_level->name;
+        push @taxids, $species_level->name;
       }
     }  
     $gaf_line->{taxon} = \@taxids;
