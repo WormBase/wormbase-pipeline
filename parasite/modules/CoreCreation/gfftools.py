@@ -6,7 +6,7 @@ import itertools
 
 ##
 
-def parse_gff(input_gff, source_to_WB = False, seq_region_synonyms = False, has_parentage = True):
+def parse_gff(input_gff, source_to_WB = False, seq_region_synonyms = False, has_parentage = True, sources = False):
 
   if seq_region_synonyms:
     synonyms = _parse_synonyms_file(seq_region_synonyms)    
@@ -63,6 +63,12 @@ def parse_gff(input_gff, source_to_WB = False, seq_region_synonyms = False, has_
 
     if source_to_WB is True:
       this_feature["source"] = "WormBase_imported"
+
+    elif sources:
+      try:
+        this_feature["source"] = sources[fields[1]]
+      except KeyError:
+        sys.exit("Don't know what to do with source "+ fields[1])
 
     if this_feature["type"] == 'gene' or this_feature["type"] == 'pseudogene':
       genes = _add_to_genes(genes, this_feature)
@@ -291,7 +297,7 @@ def _fix_pseudogenes(genes, transcripts):
   for gene in genes:
     if genes[gene]["type"] == "pseudogene":
       for child in genes[gene]["children"]:
-        transcripts[child]["type"] == "pseudogenic_transcript" 
+        transcripts[child]["type"] = "pseudogenic_transcript" 
   return transcripts  
 
 ##
