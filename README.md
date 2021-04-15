@@ -3,7 +3,7 @@
     <img width="50%" src="https://wormbase.org/img/logo/logo_wormbase_gradient.svg"> 
 </p>
 
-# WormBase Pipeline code
+# WormBase Pipeline
 
 This is the main source repository of the WormBase codebase of the Hinxton team of WormBase.
 
