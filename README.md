@@ -7,3 +7,6 @@ Main Project Site:
 http://www.wormbase.org
 
 
+ 
+
+![WormBase logo](https://wormbase.org/img/logo/logo_wormbase_gradient.svg)
