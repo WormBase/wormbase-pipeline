@@ -1,5 +1,5 @@
 
-<p align="center" width="100%">
+<p align="center" width="100%"  href="https://www.qries.com/">
     <img width="50%" src="https://wormbase.org/img/logo/logo_wormbase_gradient.svg"> 
 </p>
 
