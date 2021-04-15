@@ -381,8 +381,6 @@ my $collated_file = "$outputdir/gene_association." . $wormbase->get_wormbase_ver
 open (my $colfh, ">$collated_file") or $log->log_and_die("Could not open $collated_file for writing\n");
 &print_wormbase_GAF_header($colfh, $wormbase->get_wormbase_version_name, 'GO', '2.2');
 for my $gaf (@nr_gaf_lines) {
-    unshift @{$gaf->{taxon}}, $wormbase->ncbi_tax_id;
-
     my $line = &get_gaf_line($gaf);
     print $colfh $line;
 }
