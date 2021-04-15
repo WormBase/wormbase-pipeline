@@ -7,7 +7,7 @@
 # Last edited by: $Author: pad $
 # Last edited on: $Date: 2015-07-02 10:23:29 $
 #====================
-#perl ~/wormbase/scripts/merge_split_camaces.pl -update -gw3 -pad -species elegans -test -version $MVERSION > /nfs/wormpub/camace_orig/WSXXX -WSXXY/load_data.txt
+#perl ~/wormbase/scripts/merge_split_camaces.pl -update -skd -pad -species elegans -test -version $MVERSION > /nfs/wormpub/camace_orig/WSXXX -WSXXY/load_data.txt
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -22,8 +22,7 @@ use Storable;
 
 my $all;                   # All
 my $pad;                   # Use Paul's split
-my $gw3;                   # Use Gary's split
-my $mh6;                   # Use MH6 split
+my $skd;                   # Use Stavros' split
 my $curation;              # create a single curation database.
 my $merge;                 # Merging databases
 my $split;                 # Splitting databases
@@ -51,8 +50,7 @@ my $logfile;
   GetOptions (
 	      "all"           => \$all,
 	      "pad"           => \$pad,
-	      "gw3"           => \$gw3,
-	      "mh6"           => \$mh6,
+	      "skd"           => \$skd,
 	      "curation"      => \$curation,
 	      "merge"         => \$merge,
 	      "split"         => \$split,
@@ -140,8 +138,7 @@ if ($test) {
 else {
   push(@databases,"orig");
   push(@databases,"pad") if ($pad || $all);
-  push(@databases,"gw3") if ($gw3 || $all);
-  push(@databases,"mh6") if ($mh6);
+  push(@databases,"skd") if ($skd || $all);
   push(@databases,"curation") if ($curation);
 }
 
