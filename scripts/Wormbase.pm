@@ -995,7 +995,6 @@ sub load_to_database {
 
   my @entries_not_loaded;
   # split the ace file if it is large as it loads more efficiently
-  my $filesize_sum = 0;
   my @files_to_load;
   if ($st->size > 5000000) {
     # change input separator to paragraph mode;
@@ -1010,12 +1009,14 @@ sub load_to_database {
     # split ace file
     my $file_count = 0;
     my $entries = 0;
+    my $total_entries = 0;
     my $writing = 0;
     my $split_file;
 
     open (WBTMPIN, "<$file") || $log->log_and_die ("cant open $file\n"); # open original ace file
     while (my $entry = <WBTMPIN>) {
       $entries++;
+      $total_entries++;
 
       # LongText enties are not formed by contiguous lines of text separated by a blank line
       # they can contain blank lines.
@@ -1046,20 +1047,19 @@ sub load_to_database {
 
       print WBTMPACE "\n\n$entry";
       
-      if ($entries > 5000) {
+      if ($entries == 5000) {
 	close(WBTMPACE);
 	$writing = 0;
 	$entries = 0;
-	$filesize_sum += stat($split_file)->size;
-	
       }
     }
 
     close(WBTMPIN);
     if ($writing) {
       close (WBTMPACE);
-      $filesize_sum += stat($split_file)->size;
     }
+    
+    @files_to_load = @{remove_partial_files($total_entries, \@files_to_load, scalar @entries_not_loaded, $log)};
 
     # reset input line separator
     $/ = $oldlinesep;
@@ -1120,12 +1120,6 @@ EOF
       print UNLOADED join('', @entries_not_loaded);
       close (UNLOADED);
       $log->error('ERROR: ' . @entries_not_loaded . " entries not loaded - written to ${filestem}_unloaded.ace\n");
-      $filesize_sum += stat("${filestem}_unloaded.ace")->size;
-  }
-
-  # Compare size of split files against original and throw error if >5% difference
-  if ($filesize_sum and ($filesize_sum / $st->size > 1.05 or $filesize_sum / $st->size < 0.95)) {
-      $log->error("ERROR: $file is " . $st->size . " bytes but split files sum to $filesize_sum bytes\n");
   }
 
   if (! $error) {
@@ -1224,6 +1218,56 @@ EOF
     }
   }
 }
+
+
+sub remove_partial_files {
+    my ($nr_entries, $split_files, $nr_unloaded, $log) = @_;
+
+    my $total_split_entries = 0;
+    my @files_to_load;
+    my $file_nr = 0;
+    my $missing_entries = 0;
+    for my $file (@$split_files) {
+	$file_nr++;
+	my $partial = 0;
+	my $split_entries = 0;
+	open (SPLIT, "<$file") || $log->log_and_die ("can't open $file for completeness checking\n");
+	while (my $entry = <SPLIT>) {
+	    $split_entries++;
+	    $total_split_entries++;
+	    my $nr_quotes = $entry =~ tr/"//;
+	    my $nr_escaped_quotes = () = $entry =~ /\\"/g;
+	    if (($nr_quotes - $nr_escaped_quotes) % 2 == 1) {
+		$log->error("Partial entry detected in split file $file - split file not loaded\n");
+		$partial = 1;
+	    }
+	}
+	close (SPLIT);
+
+	next if $partial;
+	if ($file_nr != scalar @split_files) {
+	    if ($split_entries != 5000) {
+		$log->error("Split file $file appears to be incomplete with < 5000 entries - split file not loaded\n");
+		$missing_entries += 5000 - $split_entries;
+		next;
+	    }
+	}
+	else {
+	    if ($nr_entries != ($total_split_entries + $missing_entries)) {
+		$log->error("Split file $file appears to be incomplete with " . ($nr_entries - ($total_split_entries + $missing_entries)) .
+			    " entries less than expected\n");
+		next;
+	    }		    
+	}
+	push @files_to_load, $file;
+    }
+
+    $log->log_and_die("Mismatch between number of entries before and after file splitting\n")
+	if $nr_entries != ($split_files_count + $nr_unloaded);
+
+    return \@files_to_load;
+}
+
 
 ####################################
 # remove any blank lines in a sequence file dumped by acedb
