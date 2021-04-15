@@ -12,7 +12,7 @@ The main purpose of the code is to build and process data in order to release a 
 Main Project Site:
 http://www.wormbase.org
 
-
+[<img align="left" alt="https://github.com/moon1ock" width="22px" src="https://cdn.jsdelivr.net/npm/simple-icons@3.4.1/icons/github.svg" />][website]
 
 
 
