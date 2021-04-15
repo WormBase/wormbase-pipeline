@@ -82,7 +82,6 @@ sub pipeline_wide_parameters {
     
     # Do special tasks
     do_filtering        => $self->o('do_filtering'),
-#    do_clustering       => $self->o('do_clustering'),
   };
 }
 
@@ -236,47 +235,14 @@ sub pipeline_analyses {
         cmd => 'cd #species_work_dir#; '.
                $self->o('repeatmodeler_exe').' -pa 16 -engine '.$self->o('blast_engine').' -database #species# -LTRStruct > RM.log 2>&1',
       },
-      -rc_name           => '30Gb_mem_32_cores',
+      -rc_name           => '20Gb_mem_16_cores',
       -flow_into         => {
-                              '-1' => ['RepeatModeler_HighMem_Recover'],
-			      '-2' => ['RepeatModeler_Recover']
+                              '-1' => ['RepeatModeler_HighMem'],
                             },
     },
 
     {
-      -logic_name        => 'RepeatModeler_Recover',
-      -module            => 'Bio::EnsEMBL::Hive::RunnableDB::SystemCmd',
-      -analysis_capacity => 25,
-      -max_retry_count   => 1,
-      -parameters        =>
-      {
-        cmd => 'cd #species_work_dir#; '.
-               $self->o('repeatmodeler_exe').' -pa 16 -engine '.$self->o('blast_engine').' -database #species# -LTRStruct -recoverDir RM_* > RM.log 2>&1',
-      },
-      -rc_name           => '30Gb_mem_32_cores',
-      -flow_into         => {
-                              '-1' => ['RepeatModeler_HighMem_Recover'],
-                            },
-    },
-
-    {
-      -logic_name        => 'RepeatModeler_HighMem_Recover',
-      -module            => 'Bio::EnsEMBL::Hive::RunnableDB::SystemCmd',
-      -analysis_capacity => 25,
-      -max_retry_count   => 1,
-      -parameters        =>
-      {
-        cmd => 'cd #species_work_dir#; '.
-               $self->o('repeatmodeler_exe').' -pa 16 -engine '.$self->o('blast_engine').' -database #species# -LTRStruct -recoverDir RM_* > RM.log 2>&1',
-      },
-      -rc_name           => '100Gb_mem_32_cores',
-      -flow_into         => {
-                              '-1' => ['RepeatModeler_HighMem_32_Recover'],
-                            },
-    }, 
-
-    {
-      -logic_name        => 'RepeatModeler_HighMem_32_Recover',
+      -logic_name        => 'RepeatModeler_HighMem',
       -module            => 'Bio::EnsEMBL::Hive::RunnableDB::SystemCmd',
       -analysis_capacity => 25,
       -max_retry_count   => 0,
@@ -285,7 +251,10 @@ sub pipeline_analyses {
         cmd => 'cd #species_work_dir#; '.
                $self->o('repeatmodeler_exe').' -pa 16 -engine '.$self->o('blast_engine').' -database #species# -LTRStruct -recoverDir RM_* > RM.log 2>&1',
       },
-      -rc_name           => '200Gb_mem_32_cores',
+      -rc_name           => '50Gb_mem_16_cores',
+      -flow_into         => {
+                              '-1' => ['RepeatModeler_HighMem_Recover'],
+                            },
     },
 
     {
@@ -391,9 +360,8 @@ sub resource_classes {
   
   return {
     %{$self->SUPER::resource_classes},
-    '30Gb_mem_32_cores'  => {'LSF' => '-q production-rh74 -M 30000 -n 32 -R "select [mem>30000] rusage[mem=30000] span[hosts=1]"'},
-    '100Gb_mem_32_cores' => {'LSF' => '-q production-rh74 -M 100000 -n 32 -R "select [mem>100000] rusage[mem=100000] span[hosts=1]"'},
-    '200Gb_mem_32_cores' => {'LSF' => '-q production-rh74 -M 200000 -n 32 -R "select[mem>200000] rusage[mem=200000] span[hosts=1]"'},
+    '20Gb_mem_16_cores'  => {'LSF' => '-q production-rh74 -M 20000 -n 16 -R "select [mem>20000] rusage[mem=20000] span[hosts=1]"'},
+    '50Gb_mem_16_cores' => {'LSF' => '-q production-rh74 -M 50000 -n 32 -R "select [mem>50000] rusage[mem=50000] span[hosts=1]"'},
   }
 }
 
