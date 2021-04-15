@@ -76,9 +76,9 @@ warn scalar keys %description , " phenotypes read\n";
 
 my $out;
 my $out_quick;
-$output = $wormbase->ontology."/rnai_phenotypes.".$wormbase->get_wormbase_version_name.".c_elegans.wb" unless $output;
+$output = $wormbase->ontology."/rnai_phenotypes.".$wormbase->get_wormbase_version_name.".wb.c_elegans" unless $output;
 open($out, ">$output") or $log->log_and_die("cannot open $output : $!\n");
-$output = $wormbase->ontology."/rnai_phenotypes_quick.".$wormbase->get_wormbase_version_name.".c_elegans.wb";
+$output = $wormbase->ontology."/rnai_phenotypes_quick.".$wormbase->get_wormbase_version_name.".wb.c_elegans";
 open($out_quick, ">$output") or $log->log_and_die("cannot open $output : $!\n");
 
 &print_wormbase_GAF_header($out, $wormbase->get_wormbase_version_name, 'RNAi');
