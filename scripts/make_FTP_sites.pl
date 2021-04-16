@@ -1413,15 +1413,15 @@ GSPECIES.BIOPROJ.WSREL.interactions.txt.gz
 GSPECIES.BIOPROJ.WSREL.swissprot.txt.gz
 GSPECIES.BIOPROJ.WSREL.molecules.ace.gz
 GSPECIES.BIOPROJ.WSREL.xrefs.txt.gz
-GSPECIES.BIOPROJ.WSREL.rnai_phenotypes.wb
-GSPECIES.BIOPROJ.WSREL.rnai_phenotypes_quick.wb
-GSPECIES.BIOPROJ.WSREL.disease_association.daf.txt
 
 [elegans]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.wormpep_package.tar.gz
 GSPECIES.BIOPROJ.WSREL.transposon_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.transposons.fa.gz
 GSPECIES.BIOPROJ.WSREL.transposon_cds.pep.gz
+GSPECIES.BIOPROJ.WSREL.rnai_phenotypes.wb
+GSPECIES.BIOPROJ.WSREL.rnai_phenotypes_quick.wb
+GSPECIES.BIOPROJ.WSREL.disease_association.daf.txt
 
 [CORE]species/GSPECIES/BIOPROJ/annotation
 GSPECIES.BIOPROJ.WSREL.functional_descriptions.txt.gz
