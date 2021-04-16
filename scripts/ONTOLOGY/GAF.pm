@@ -119,14 +119,18 @@ sub make_species_files {
 	    push @headers, $_;
 	    next;
 	}
-	my $taxon_id;
 	if ($daf) {
-	    ($taxon_id) = $_ =~ /^(\d+)\s/;
+	    my ($taxon_id) = $_ =~ /^(\d+)\s/;
+	    push @{$species_lines{$taxon_id}}, $_;
 	}
 	else {
-	    ($taxon_id) = $_ =~ /taxon:(\d+)\s/;
+	    my ($taxon_ids) = $_ =~ /\s(taxon:\S+)\s/;
+	    for my $taxon_id_str (split(/\|/, $taxon_ids)) {
+		my ($taxon_id) = $taxon_id_str =~ /^taxon:(\d+)$/;
+		push @{$species_lines{$taxon_id}}, $_;
+	    }
 	}
-	push @{$species_lines{$taxon_id}}, $_;
+	
     }
     close (COLLATED);
 
