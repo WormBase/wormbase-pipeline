@@ -136,6 +136,14 @@ foreach my $suf (0..9) {
     
     # Taxon id
     my @taxids;
+    my $taxid = $obj->Gene->Species->NCBITaxonomyID;
+    if ($taxid) {
+	push @taxids, $taxid->name;
+    }
+    else {
+	push @taxids, 6239; # Add elegans taxid if gene has no species
+    }
+
     if ($obj->Interacting_species) {
       my ($species_level, $strain_level);
       
