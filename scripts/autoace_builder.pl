@@ -97,7 +97,7 @@ GetOptions(
 	   'extras'         => \$extras,
 	   'ontologies'     => \$ontologies,
 	   'buildrelease'   => \$buildrelease,
-	   'public'         => \$public,
+	   'public=s'       => \$public,
 	   'finish_build'   => \$finish_build,
 	   'gffdb'          => \$gffdb,
 	   'autoace'        => \$autoace,
@@ -371,7 +371,7 @@ if ($data_check and $errors == 0) {
 }
 &build_release                                                           if $buildrelease and $errors == 0;
 $wormbase->run_script("finish_build.pl"                          , $log) if $finish_build and $errors == 0;
-&go_public                                                               if $public and $errors == 0;
+&go_public($public)                                                               if $public and $errors == 0;
 
 
 if ($load and $errors == 0) {
@@ -691,9 +691,18 @@ sub go_public {
   my $ftp_release_dir = $wormbase->ftp_site . "/releases";
   #my $ftp_staging_dir = $wormbase->ftp_site . "/staging/releases";
   my $db_dir = $wormbase->wormpub . "/DATABASES";
-  my $rel   = $wormbase->get_wormbase_version_name;
+  my $rel;
+  if ($public =~ /\d+/) {
+      $rel = 'WS'.$public;
+  }
+  else {
+      $rel   = $wormbase->get_wormbase_version_name;
+  }
+  unless (defined $rel) {
+      $log->log_and_die("No release numder specified, please use -public XXX. Not going public\n"); 
+  }
   #$rel="WS280";
-  #print "$ftp_release_dir $db_dir $rel\n"; 
+  print "$ftp_release_dir $db_dir $rel\n" if ($debug);
   if (not -d "$ftp_release_dir/.${rel}") {
     $log->log_and_die("Did not find $ftp_release_dir/.${rel} Something wrong. Not going public\n");
   }
