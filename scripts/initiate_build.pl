@@ -55,9 +55,9 @@ if (-e "${\$wormbase->autoace}/database") {
 if ($wormbase->species eq 'elegans') {
 
   # update autoace_config in BUILD/
+  print "run_command(\'cd \'.$wormbase->basedir.\' && rm -rf autoace_config && cp -rf \'.$ENV{CVS_DIR}.\'/../autoace_config \'.$wormbase->basedir.\'/autoace_config\', \'no_log\')";
   $wormbase->run_command('cd '.$wormbase->basedir.' && rm -rf autoace_config && cp -rf '.$ENV{CVS_DIR}.'/../autoace_config '.$wormbase->basedir.'/autoace_config', 'no_log')
-      and $log->log_and_die("Failed to update autoace_config dir; stopping\n");
- 
+      and $log->log_and_die("Failed to update autoace_config dir; stopping\n"); 
   
   #copy the genefinder files 
   $wormbase->run_command('cp -r '.$wormbase->build_data.'/wgf '.$wormbase->autoace.'/wgf', 'no_log');
@@ -68,13 +68,18 @@ if ($wormbase->species eq 'elegans') {
 #################################################################################
 
 ## update the species specific wspec, wquery and autoace_config
+
+print "cp -rf .$ENV{CVS_DIR}./../wspec .$wormbase->autoace./wspec\n";
 $wormbase->run_command('cp -rf '.$ENV{CVS_DIR}.'/../wspec '.$wormbase->autoace.'/wspec', 'no_log')
       and $log->log_and_die("Failed to update wspec dir; stopping\n");
+print "\n";
 $wormbase->run_command('cp -rf '.$ENV{CVS_DIR}.'/../wquery '.$wormbase->autoace.'/wquery', 'no_log')
       and $log->log_and_die("Failed to update wspec dir; stopping\n");
 
+
 ## update database.wrm 
 eval {
+  print "Update database.wrm\n";
   my $dbwrm = $wormbase->autoace .  "/wspec/database.wrm";
   $wormbase->run_command("chmod u+w $dbwrm") 
       and die "Could not make database.wrm writable in order to update the version number\n";
@@ -98,17 +103,23 @@ eval {
 
   move($tmp_dbwrm, $dbwrm) or die "Could not move $tmp_dbwrm to $dbwrm\n";
 };
+
 $@ and $log->log_and_die("Failed to inject version number into database.wrm; stopping\n");
+
+print "STEP 1: initiate_build.pl completed\n";
 
 # Dump the sequence data from the species primary database being build.
 $log->write_to("Dumping sequence data to file for ".$wormbase->species."\n");
 $wormbase->run_script("dump_primary_seq_data.pl -organism $species", $log)
-    and $log->log_and_die("Failed to successfully dump primary sequence data; stopping\n");
+and $log->log_and_die("Failed to successfully dump primary sequence data; stopping\n");
+print "STEP 2: dump_primary_seq_data.pl -organism $species completed\n";
 
+#__END__
 # Mask the sequences ready for BLATting
 $log->write_to("Masking sequence data for ".$wormbase->species."\n");
 $wormbase->run_script("BLAT_controller.pl -mask -qspecies $species", $log)
-    and $log->log_and_die("Failed to successfully mask sequence data; stopping\n");
+and $log->log_and_die("Failed to successfully mask sequence data; stopping\n");
+print "STEP 3: BLAT_controller.pl -mask -qspecies $species completed\n";
 
 # add lines to the logfile
 my $msg = "Updated ".$wormbase->species." version number to WS".$wormbase->version."\n";

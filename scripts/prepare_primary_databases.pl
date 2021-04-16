@@ -19,8 +19,7 @@ use File::Path;
 # prepare primary databases                                                     #
 #################################################################################
 my %search_places = (
-                     elegans => [['citace', 'citace', 'citace*'],
-                                 ],
+ elegans => [['citace', 'citace', 'citace*'],],
 );
 
 my ($test,$debug,$database, $store, $wormbase, $species);
@@ -54,10 +53,11 @@ if ($species eq 'elegans') {
   &last_versions();
 }
 
+
 my (@errors, @options, @delete_from);
 
 foreach my $primary (keys %databases){
-
+  print "PRIMARY: $primary\n";
   next if (defined $database and ($database ne $primary));
   
   if( not $databases{$primary}->{new_date}) {
@@ -71,14 +71,16 @@ foreach my $primary (keys %databases){
     $log->write_to("For $primary, version on FTP site is newer than current - will delete and unpack\n");
   }
 }
+
   
 if (@errors) {
   foreach my $error (@errors) {
     $log->write_to("$error\n");
+    print "ERROR: $error\n";
   }
   #$log->log_and_die("Did not find expected set of new data files; bailing\n");
 }
-  
+
 # confirm unpack_db details and execute
 foreach my $prim (@delete_from) {
   $log->write_to("Deleting old files from $prim\n");
@@ -87,6 +89,7 @@ foreach my $prim (@delete_from) {
   
 $log->write_to(" running unpack_db.pl @options\n\n");
 $wormbase->run_script("unpack_db.pl @options", $log);
+
 
 # New non FTP code for staging the species canonical databases
 my (@refs,$ref);
@@ -99,15 +102,22 @@ else {
 }
 
 foreach $ref (@refs) {
-$log->write_to("Transfering /nfs/wormpub/DATABASES/$ref to PRIMARIES\n");
 my $primary_path = $wormbase->primary($ref);
+$log->write_to("Transfering $primary_path to PRIMARIES\n");
+print "Transfering $primary_path to PRIMARIES $ref\n";
+
+# Check if the primary database is updated
 my $test_file = "$primary_path/database/block1.wrm";
 if (-e $test_file) {
   ($databases{$ref}->{last_date}) = $wormbase->find_file_last_modified($test_file);
 }
+
+# Delete the old files
 $wormbase->delete_files_from($wormbase->primary($ref),'*','+');
+
+# Transfer the new files to the build location
 $wormbase->run_script("TransferDB.pl -start ".$wormbase->database($ref). " -end $primary_path -database -wspec", $log);
-    
+
 ($databases{$ref}->{new_date}) = $wormbase->find_file_last_modified($test_file);
 $wormbase->run_command("ln -sf ".$wormbase->autoace."/wspec/models.wrm ".$wormbase->primary($ref)."/wspec/models.wrm", $log);
 my $test_file2 = $wormbase->primary($ref) . "/database/block1.wrm";

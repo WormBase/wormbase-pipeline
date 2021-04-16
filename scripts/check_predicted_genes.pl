@@ -39,6 +39,7 @@ my %databases = ( # names of common databases and their species
 		 tmuris       => 'tmuris',
 		 ovolvulus    => 'ovolvulus',
 		 sratti       => 'sratti',
+		 smelegans      => 'smelegans',
 );
 
 GetOptions ("help"       => \$help,
@@ -82,6 +83,8 @@ if ($test) {
   print "In test mode\n" if ($verbose);
 }
 
+
+
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
@@ -91,6 +94,8 @@ $log->log_and_die("Please use -database <path> specify a valid database director
 my $tace = $wormbase->tace;
 my $db = Ace->connect(-path=>$database) or  $log->log_and_die("Couldn't connect to $database\n". Ace->error);
 
+print "SET: TE:$test SP:$species DB:$db DS:$database\n";
+
 # create separate arrays for different classes of errors (1 = most severe, 4 = least severe)
 our (@error1, @error2, @error3, @error4, @error5,);
 
@@ -98,6 +103,10 @@ our (@error1, @error2, @error3, @error4, @error5,);
 my $cds_regex = $wormbase->cds_regex;
 my $cds_regex_noend = $wormbase->seq_name_regex;
 my $speciesfn = $wormbase->full_name;
+
+print "$cds_regex\n";
+print "$cds_regex_noend\n";
+print "$speciesfn\n";
 
 ################################
 #         Main Body            # 
@@ -325,7 +334,8 @@ my %Sequence = &sequence_details();
 
 # check CDS/Transcripts/Pseudogenes
 &quick_tests() if !$build; # tests for the curation databases - we assume that all these problems have been fixed by the time we do the Build
-
+&quick_tests();
+=pod
 # main Gene checks
 &main_gene_checks(); # tests for both curation databases and the Build databases
 
@@ -344,6 +354,8 @@ my %Sequence = &sequence_details();
 
 
 &print_results();
+
+=cut
 
 $log->mail();
 print "Finished.\n" if ($verbose);

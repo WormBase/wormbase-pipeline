@@ -360,7 +360,9 @@ sub process_file {
     $log->write_to( "CREATED SUBDIR $e_subdir\n");
   }
   my $e_file="$e_subdir"."/"."$filename";
-  print "Processing $filename.........\n";
+  if ($verbose) {
+    print "Processing $filename.........\n";
+  }
 
   if ($filename =~ /lock.wrm/) {
     $log->log_and_die(".. file \"$filename\" exists which suggests that you are attempting to transfer an active database.\n");

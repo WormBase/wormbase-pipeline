@@ -1328,8 +1328,9 @@ sub database {
 sub primary {
   my $self = shift;
   my $database = shift;
-  my $path  = $self->{'primary'}->{"$database"};
+  my $path  = $self->{'primary'}->{"$database"}; 
   print STDERR "no such primary database:$database\n" unless $path&&(-e $path);
+  print "Setting PRIMARY $path\n";
   return $path;
 }
 
@@ -1437,7 +1438,8 @@ sub establish_paths {
   $self->{'primary'}->{'sratti'} = $self->primaries .'/sratti';
   $self->{'primary'}->{'pristionchus'} = $self->primaries.'/pristionchus';
   $self->{'primary'}->{'tmuris'} = $self->primaries.'/tmuris';
-  
+  $self->{'primary'}->{'smelegans'} = $self->primaries.'/smelegans';
+
   $self->{'misc_static'} = $self->{'build_data'} . "/MISC_STATIC";
   $self->{'misc_dynamic'} = $self->{'build_data'} . "/MISC_DYNAMIC";
   $self->{'compare'}      = $self->{'build_data'} . "/COMPARE";
@@ -1482,7 +1484,7 @@ sub run_script {
   my $log    = shift;  
   
   my $command = $self->build_cmd($script);
-  print "$command\n" if $self->test;
+  print "RUNNING: $command\n" if $self->test;
   return $self->run_command( "$command", $log );
 }
 
@@ -1492,6 +1494,7 @@ sub run_script_on_farm {
   my $log = shift;
   
   my $cmd = 'ssh -t farm-login "'.$self->build_cmd($script).'"';
+  print "RUNNING: $cmd\n";
   return $self->run_command( "$cmd", $log );
 }
 
