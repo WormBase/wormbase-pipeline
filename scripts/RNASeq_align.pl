@@ -221,7 +221,8 @@ sub results {
 
   # make the ace file of RNASeq spanned introns to load into acedb
   print "Running Intron analyses ...\n";
-  my $splice_file = $wormbase->acefiles."/RNASeq_splice_${species}.ace";
+  my $splice_file = $wormbase->acefiles."/RNASeq_splice_${species}.ace.tmp";
+  my $final_splice_file = $wormbase->acefiles."/RNASeq_splice_${species}.ace";
   print "Writing splicefile $splice_file\n";
 
   # get old splice_file size
@@ -283,6 +284,7 @@ sub results {
   if ($old_splice_file_size < $splice_file_size * 0.9 || $old_splice_file_size > $splice_file_size * 1.1) {
     $log->error("WARNING: new file size suspicious: Old splice file size: $old_splice_file_size, New splice file size: $splice_file_size\n");
   }
+  system("mv $splice_file $final_splice_file");
 }
 
 ############################################################################
