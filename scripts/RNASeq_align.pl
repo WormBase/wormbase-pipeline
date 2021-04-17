@@ -22,7 +22,7 @@ use List::Util qw(sum); # for mean()
 use Time::localtime;
 use File::stat;
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $species, $new_genome, $check, $runlocally, $notbuild, $analyse, $results);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $species, $new_genome, $check, $runlocally, $notbuild, $analyse, $results, $restart);
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
             "test"       => \$test,
@@ -35,6 +35,7 @@ GetOptions ("help"       => \$help,
 	    "notbuild"   => \$notbuild, # don't try to make GTF or run cufflinks (for when it is run before doing the Build) 
 	    "analyse"    => \$analyse,  # firstly, run the alignments, finding Introns and cufflinks for each Experiment under LSF
 	    "results"    => \$results,  # secondly, compile the results from all of the Experiments and write out the resulting files
+	    "restart"    => \$restart,  # secondly, compile the results from all of the Experiments and write out the resulting files
 	   );
 
 
@@ -49,8 +50,11 @@ if ( $store ) {
 			   );
 }
 
-# establish log file.
+# Establish log file
 my $log = Log_files->make_build_log($wormbase);
+
+# Restart automatically if some libs are missing
+my $command= $0 . " " . join(" ", @ARGV);
 
 
 ######################################
@@ -90,6 +94,7 @@ exit(0);
 
 sub analyse {
 
+   
   # if -new_genome is set remove all the existing data so it must be aligned again
   # otherwise, unless -check is set, remove only the cufflinks data
   $log->write_to("Remove old experiment files\n");
@@ -112,7 +117,8 @@ sub analyse {
   my $total = keys %{$data};
   my $count_done = 0;
   my @jobs_to_be_run;
-  
+  my $uncompleted_jobs=0;
+
   foreach my $experiment_accession (keys %{$data}) {
     
     $count_done++;
@@ -167,11 +173,17 @@ sub analyse {
     for my $job ( $lsf->jobs ) {
       if ($job->history->exit_status != 0) {
 	$log->write_to("Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . "\n");
+	$uncompleted_jobs++;
       }
     }
   }
   $lsf->clear;
-
+  $log->write_to("In total $uncompleted_jobs exited non zero: please run again with the -check parameter\n");
+  # If there are uncompleted jobs, restart with check parameter, if -restart flag was used 
+  if ($restart and $uncompleted_jobs>0 ) {
+	$command=~/\-restart//g;
+  	print "RESTART COMMAND: perl $ENV{CVS_DIR}/$command -check\n";
+  }
 
   # now check that all of the jobs ran successfully - we have had instances of jobs disappearing from the queue!
   sanity_check(@jobs_to_be_run);
