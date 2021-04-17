@@ -178,7 +178,12 @@ sub analyse {
     }
   }
   $lsf->clear;
-  $log->write_to("In total $uncompleted_jobs exited non zero: please run again with the -check parameter\n");
+  if ($uncompleted_jobs>0 ) {
+  	$log->write_to("In total $uncompleted_jobs out of $count_done exited non zero: exited non zero: please run again with the -check parameter\n");
+  }
+  else {
+    print "All $count_done jobs have completed\n";
+  }
   # If there are uncompleted jobs, restart with check parameter, if -restart flag was used 
   if ($restart and $uncompleted_jobs>0 ) {
 	$command=~/\-restart//g;
