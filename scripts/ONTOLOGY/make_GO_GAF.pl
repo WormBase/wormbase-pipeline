@@ -136,6 +136,14 @@ foreach my $suf (0..9) {
     
     # Taxon id
     my @taxids;
+    my $taxid = $obj->Gene->Species->NCBITaxonomyID;
+    if ($taxid) {
+	push @taxids, $taxid->name;
+    }
+    else {
+	push @taxids, 6239; # Add elegans taxid if gene has no species
+    }
+
     if ($obj->Interacting_species) {
       my ($species_level, $strain_level);
       
@@ -147,7 +155,7 @@ foreach my $suf (0..9) {
       if (defined $strain_level) {
         push @taxids, $strain_level->name;
       } elsif (defined $species_level) {
-        push @taxids, $strain_level->name;
+        push @taxids, $species_level->name;
       }
     }  
     $gaf_line->{taxon} = \@taxids;
@@ -381,8 +389,6 @@ my $collated_file = "$outputdir/gene_association." . $wormbase->get_wormbase_ver
 open (my $colfh, ">$collated_file") or $log->log_and_die("Could not open $collated_file for writing\n");
 &print_wormbase_GAF_header($colfh, $wormbase->get_wormbase_version_name, 'GO', '2.2');
 for my $gaf (@nr_gaf_lines) {
-    unshift @{$gaf->{taxon}}, $wormbase->ncbi_tax_id;
-
     my $line = &get_gaf_line($gaf);
     print $colfh $line;
 }

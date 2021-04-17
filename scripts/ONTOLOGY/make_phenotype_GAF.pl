@@ -204,6 +204,7 @@ while (my $obj = $it->next) {
 
     if ($g->right(2) eq 'RNAi_primary') {
       push @affected_genes, $g;
+      $taxon_ids{$g->name} = $obj->Species->NCBITaxonomyID;
     }
   }
 
