@@ -235,17 +235,18 @@ sub results {
 
   chdir $RNASeq->{RNASeqSRADir};
   my $rnadir=  $RNASeq->{RNASeqSRADir};
-  print "Going to folder  $rnadir\n";
+  print "Going to folder $rnadir\n";
   $status = $wormbase->run_command("rm -f $splice_file", $log);
-  print "Running command1: cat */Introns/virtual_objects.${species}.RNASeq.ace > $splice_file\n";
+  print "$status\nRunning command 1(5): cat */Introns/virtual_objects.${species}.RNASeq.ace > $splice_file\n";
   $status = $wormbase->run_command("cat */Introns/virtual_objects.${species}.RNASeq.ace > $splice_file", $log);
-  print "Running command2: acezip.pl -file $splice_file\n";
+  print "$status\nRunning command 2(5): acezip.pl -file $splice_file\n";
   $status = $wormbase->run_script("acezip.pl -file $splice_file", $log);
-  print "Running command3: cat */Introns/Intron.ace > ${splice_file}.tmp\n";
+  print "$status\nRunning command 3(5): cat */Introns/Intron.ace > ${splice_file}.tmp\n";
   $status = $wormbase->run_command("cat */Introns/Intron.ace > ${splice_file}.tmp", $log);
-  print "Running command4: acezip.pl -file ${splice_file}.tmp\n";
+  print "$status\nRunning command 4(5): acezip.pl -file ${splice_file}.tmp\n";
   $status = $wormbase->run_script("acezip.pl -file ${splice_file}.tmp", $log);
   # flatten the results of all libraries at a position into one entry
+  print "$status\nRunning command 5(5): rm -f ${splice_file}.tmp leaving output file $splice_file\n";
   open (FEAT, "< ${splice_file}.tmp") || $log->log_and_die("Can't open file ${splice_file}.tmp\n");
   open (FLAT, ">> $splice_file") || $log->log_and_die("Can't open file $splice_file\n");
   my %splice;
@@ -280,7 +281,7 @@ sub results {
   
   my $splice_file_size = -s $splice_file;
   if ($old_splice_file_size < $splice_file_size * 0.9 || $old_splice_file_size > $splice_file_size * 1.1) {
-    $log->error("WARNING: old splice file size: $old_splice_file_size, new splice file size: $splice_file_size\n");
+    $log->error("WARNING: new file size suspicious: Old splice file size: $old_splice_file_size, New splice file size: $splice_file_size\n");
   }
 }
 
