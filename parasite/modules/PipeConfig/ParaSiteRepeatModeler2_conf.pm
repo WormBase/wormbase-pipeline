@@ -361,7 +361,7 @@ sub resource_classes {
   return {
     %{$self->SUPER::resource_classes},
     '20Gb_mem_16_cores'  => {'LSF' => '-q production-rh74 -M 20000 -n 16 -R "select [mem>20000] rusage[mem=20000] span[hosts=1]"'},
-    '50Gb_mem_16_cores' => {'LSF' => '-q production-rh74 -M 50000 -n 32 -R "select [mem>50000] rusage[mem=50000] span[hosts=1]"'},
+    '50Gb_mem_16_cores' => {'LSF' => '-q production-rh74 -M 50000 -n 16 -R "select [mem>50000] rusage[mem=50000] span[hosts=1]"'},
   }
 }
 
