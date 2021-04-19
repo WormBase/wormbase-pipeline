@@ -229,7 +229,7 @@ sub pipeline_analyses {
       -logic_name        => 'RepeatModeler',
       -module            => 'Bio::EnsEMBL::Hive::RunnableDB::SystemCmd',
       -analysis_capacity => 25,
-      -max_retry_count   => 0,
+      -max_retry_count   => 2,
       -parameters        =>
       {
         cmd => 'cd #species_work_dir#; '.
@@ -245,11 +245,11 @@ sub pipeline_analyses {
       -logic_name        => 'RepeatModeler_HighMem',
       -module            => 'Bio::EnsEMBL::Hive::RunnableDB::SystemCmd',
       -analysis_capacity => 25,
-      -max_retry_count   => 0,
+      -max_retry_count   => 2,
       -parameters        =>
       {
         cmd => 'cd #species_work_dir#; '.
-               $self->o('repeatmodeler_exe').' -pa 16 -engine '.$self->o('blast_engine').' -database #species# -LTRStruct -recoverDir RM_* > RM.log 2>&1',
+               $self->o('repeatmodeler_exe').' -pa 16 -engine '.$self->o('blast_engine').' -database #species# -LTRStruct > RM.log 2>&1',
       },
       -rc_name           => '50Gb_mem_16_cores',
       -flow_into         => {
