@@ -24,7 +24,7 @@ done
 # bale out immediately on error
 set -e
 
-db_name='ensembl_metadata'
+db_name="ensembl_metadata_${ENSEMBL_VERSION}"
 datestamp=$(date +%Y-%m-%d)
 timestamp=$(date +%Y-%m-%d_%H:%M:%S)
 EM_backup_file="${PARASITE_SCRATCH}/backup/${db_name}_${timestamp}.sql"
