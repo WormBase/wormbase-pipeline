@@ -15,7 +15,7 @@ use Wormbase;
 
   -file file containing a concatination of all the emails from the form <Mandatory>
 
-    Simple FORMAT:
+    Simple FORMAT for reading in here, but just concatinate the emails as the script pulls in the data based on the html in the raw file:
     Your Name	John Smith -- WBPerson1234567
     Your E-mail Address	john@smith.uk
     PubMed ID	123456
