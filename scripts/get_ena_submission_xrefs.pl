@@ -256,7 +256,7 @@ sub lookup_from_ebi_production_dbs {
         . "  -uniprotcred $uni_cred"
         . "  -orgid $ncbi_tax_id"
         . "  -bioprojectid $bioproject_id";
-    
+    print "$cmd\n" if ($debug);
     system("$cmd > $output_file") 
         and $log->log_and_die("Could not successfully run '$cmd'\n");
 
@@ -266,7 +266,7 @@ sub lookup_from_ebi_production_dbs {
         . " $ena_perl  $ENV{CVS_DIR}/get_sequence_versions_ebiprod.pl"
         . "  -enacred $ena_cred"
         . "  -bioprojectid $bioproject_id";
-    
+    print "$cmd\n" if ($debug);
     system("$cmd > $output_file") 
         and $log->log_and_die("Could not successfully run '$cmd'\n");
   } elsif ($type eq 'genexrefs') {
@@ -275,7 +275,7 @@ sub lookup_from_ebi_production_dbs {
         . " $ena_perl  $ENV{CVS_DIR}/get_gene_ids_ebiprod.pl"
         . "  -enacred $ena_cred"
         . "  -bioprojectid $bioproject_id";
-    
+    print "$cmd\n" if ($debug);
     system("$cmd > $output_file") 
         and $log->log_and_die("Could not successfully run '$cmd'\n");
 
