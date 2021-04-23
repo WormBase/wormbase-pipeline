@@ -1006,7 +1006,7 @@ sub load_to_database {
   my @entries_not_loaded;
   # split the ace file if it is large as it loads more efficiently
   my @files_to_load;
-  if ($st->size > 5000000) {
+  if ($st->size > 1000000000) {
     # change input separator to paragraph mode;
     my $oldlinesep = $/;
     $/ = "";
