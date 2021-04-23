@@ -176,11 +176,11 @@ while (my $obj = $it->next) {
         if (@lss) {
           foreach my $ls (@lss) {
             $annots{$ls->name}->{$at->name} = {};
-	    $partials{$ls->name}->{$at->name} = 1;
+	    $partials{$ls->name}->{$at->name} = 1 if $partial;
           } 
         } else {
           $annots{$TL_LIFESTAGE_TERM}->{$at->name} = {};
-	  $partials{$TL_LIFESTAGE_TERM}->{$at->name} = {};
+	  $partials{$TL_LIFESTAGE_TERM}->{$at->name} = {} if $partial;
         }
       }
     }
