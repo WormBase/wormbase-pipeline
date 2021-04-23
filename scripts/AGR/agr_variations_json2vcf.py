@@ -230,7 +230,7 @@ for chr in chrom2ncbi[args.mod].keys():
     else:
         vcf_file.write("##contig=<ID=" + chr + ",accession=\"" + chrom2ncbi[args.mod][chr] + "\">\n")
 
-vcf_file.write("##FORMAT<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n")
+vcf_file.write("##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n")
 
 headers = ['#CHROM', 'POS', 'ID', 'REF',
            'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT']
