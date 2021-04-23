@@ -511,6 +511,8 @@ sub munge_gff {
     my ($mod) = @_;
     
     system_cmd("rm ${mod}_GFF.refseq.gff", "Deleting old munged GFF file") if -e "${mod}_GFF.refseq.gff";
+
+    my $reverse_map = get_reverse_chromosome_map($mod);
     
     print "Munging $mod GFF\n";
     open(IN, "grep -v '^#' ${mod}_GFF.gff |") or die "Could not open ${mod}_GFF.gff for reading\n";
@@ -526,7 +528,8 @@ sub munge_gff {
 		$line = join("\t", @columns);
 	    }
 	    else {
-		die "Could not map $mod chromosome in GFF " . $columns[0] . " to RefSeq ID\n";
+		die "Could not map $mod chromosome in GFF " . $columns[0] . " to RefSeq ID\n"
+		    unless exists $reverse_map->{$columns[0]};
 	    }
 	}
 	
@@ -734,6 +737,8 @@ sub convert_vcf_chromosomes {
     return unless -e "${mod}_${type}.vcf";
     return if -e "${mod}_${type}.refseq.vcf";
 
+    my $reverse_map = get_reverse_chromosome_map($mod);
+    
     print "Converting $mod $type chromosome IDs to RefSeq\n";
     open (IN, '<', "${mod}_${type}.vcf");
     open (OUT, '>', "${mod}_${type}.refseq.vcf");
@@ -746,7 +751,8 @@ sub convert_vcf_chromosomes {
 		next;
 	    }
 	    else {
-		die "Could not map $mod chromosome in $type " . $columns[0] . " to RefSeq ID\n";
+		die "Could not map $mod chromosome in $type " . $columns[0] . " to RefSeq ID\n"
+		    unless exists $reverse_map->{$columns[0]};
 	    }
 	}
 	print OUT $_;
