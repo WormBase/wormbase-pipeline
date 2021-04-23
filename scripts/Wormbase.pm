@@ -68,27 +68,30 @@ sub new {
 #######################################################################
 
 sub get_wormbase_version {
-  my $self = shift;
+    my $self = shift;
+
+    my $WS_version;
     # If the environmental variable is set, use it
+    # Overrides version if already set
     if (defined $ENV{'WORMBASE_RELEASE'}) { 
       print "Using version $ENV{'WORMBASE_RELEASE'}\n";
+      $WS_version = $ENV{'WORMBASE_RELEASE'};
+      $WS_version =~ s/.*WS//;
     }
-    else {
-      unless ( $self->{'version'} ) {
+    elsif (!$self->{'version'}) {
         my $dir = $self->autoace;
         if ( -e ("$dir/wspec/database.wrm") ) {
-          my $WS_version = `grep "NAME WS" $dir/wspec/database.wrm`;
-          chomp($WS_version);
-          $WS_version =~ s/.*WS//;
-          $self->version($WS_version);
+	    $WS_version = `grep "NAME WS" $dir/wspec/database.wrm`;
+	    chomp($WS_version);
+	    $WS_version =~ s/.*WS//;
         }
         else {
-          $self->version(666);
-      }
+	    $WS_version = '666';
+	}
     }
-  }
+    $self->version($WS_version);
 
-  return ( $self->{'version'} );
+    return ($self->{'version'});
 }
 
 ###################################################################################
@@ -1019,6 +1022,7 @@ sub load_to_database {
     my $total_entries = 0;
     my $writing = 0;
     my $split_file;
+    my $contains_longtext = 0;
 
     open (WBTMPIN, "<$file") || $log->log_and_die ("cant open $file\n"); # open original ace file
     while (my $entry = <WBTMPIN>) {
@@ -1029,8 +1033,9 @@ sub load_to_database {
       # they can contain blank lines.
       # So, if we find a LongText class entry, stop splitting the file and simply read in the original file.
       if ($entry =~ /LongText\s+\:\s+/) {
-	@files_to_load = ($file);
-	last;
+	  @files_to_load = ($file);
+	  $contains_longtext = 1;
+	  last;
       }
       
       # Check for even number of unescaped quotes, write entries with odd number to separate file
@@ -1060,14 +1065,15 @@ sub load_to_database {
 	$entries = 0;
       }
     }
-
+    
     close(WBTMPIN);
     if ($writing) {
-      close (WBTMPACE) or $log->write_to("WARNING: Could not close file handle to $file\n");
+	close (WBTMPACE) or $log->write_to("WARNING: Could not close file handle to $file\n");
     }
     
-    @files_to_load = @{remove_partial_files($total_entries, \@files_to_load, scalar @entries_not_loaded, $log)};
-
+    @files_to_load = @{remove_partial_files($total_entries, \@files_to_load, scalar @entries_not_loaded, $log)}
+        unless $contains_longtext;
+    
     # reset input line separator
     $/ = $oldlinesep;
   } else {
@@ -1242,17 +1248,19 @@ sub remove_partial_files {
 	    my $nr_quotes = $entry =~ tr/"//;
 	    my $nr_escaped_quotes = () = $entry =~ /\\"/g;
 	    if (($nr_quotes - $nr_escaped_quotes) % 2 == 1) {
-		$log->error("Partial entry detected in split file $file - split file not loaded\n");
-		$partial = 1;
+		$partial++;
 	    }
 	}
 	close (SPLIT);
 
-	next if $partial;
+	if ($partial) {
+	    $log->error("ERROR: Partial entry detected in split file $file - split file not loaded\n");
+	    next;
+	}
 
 	if ($file_nr != scalar @$split_files) {
 	    if ($split_entries != 5000) {
-		$log->error("Split file $file appears to be incomplete with < 5000 entries - split file not loaded\n");
+		$log->error("ERROR: Split file $file appears to be incomplete with < 5000 entries - split file not loaded\n");
 		next;
 	    }
 	}
@@ -1260,7 +1268,7 @@ sub remove_partial_files {
 	    my $expected_entries = $nr_entries % 5000;
 	    $expected_entries = 5000 if $expected_entries == 0;
 	    if ($split_entries !=  $expected_entries) {
-		$log->error("Split file $file appears to be incomplete with " . ($expected_entries - $split_entries) .
+		$log->error("ERROR: Split file $file appears to be incomplete with " . ($expected_entries - $split_entries) .
 			    " entries less than the expected $expected_entries\n");
 		next;
 	    }		    
