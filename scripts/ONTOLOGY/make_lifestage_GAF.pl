@@ -85,7 +85,7 @@ while ( my $obj = $it->next ) {
   # User person if no reference
   if (!$ref and $obj->Person) {
       $ref = $obj->Person->name;
-      $ref_prefix = 'WB_PER';
+      $ref_prefix = 'WB';
   }
 
   foreach my $g ( keys %genes ) {
