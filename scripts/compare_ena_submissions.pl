@@ -54,8 +54,16 @@ unless ($current_release and $previous_release and $current_iteration and $previ
     
     $current_release = $wormbase->get_wormbase_version unless $current_release;
     $previous_release = $current_release - 1 unless $previous_release;
-    unless ($current_iteration) {
-	$current_iteration = exists $iterations->{$current_release} ? $iterations->{$current_release} : 0;
+    if (!$current_iteration) {
+	if (exists $iterations->{$current_release}) {
+	    $current_iteration = $iterations->{$current_release};
+	}
+	else{
+	    $log->log_and_die("No tag found for WS${current_release}, and WS${current_release} does not " .
+			      'match the expected current release (WS' . $wormbase->get_wormbase_version .
+			      ")\n") unless $current_release == $wormbase->get_wormbase_version;
+	    $current_iteration = 0;
+	}
     }
     $previous_iteration = $iterations->{$previous_release} unless $previous_iteration;
 }
