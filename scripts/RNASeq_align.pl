@@ -186,7 +186,7 @@ sub analyse {
   }
   # If there are uncompleted jobs, restart with check parameter, if -restart flag was used 
   if ($restart and $uncompleted_jobs>0 ) {
-	$command=~/\-restart//g;
+	$command=~s/\-restart//g;
   	print "RESTART COMMAND: perl $ENV{CVS_DIR}/$command -check\n";
   }
 
