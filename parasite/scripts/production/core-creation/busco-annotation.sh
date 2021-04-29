@@ -44,8 +44,8 @@ mkdir -p $BUSCO_TMP
 cd $BUSCO_TMP
 
 
-run_log_dpl=$BUSCO_TMP/run-dump-proteins.take2.$(date "+%Y-%m-%d").out
-perl $WORM_CODE/scripts/ENSEMBL/scripts/dump_proteins.pl --host=$DBHOSTNAME --port=$DBPORT --user=$DBUSER --dbname=$core_db --outfile=$species.take2.prot.fa \
+run_log_dpl=$BUSCO_TMP/run-dump-proteins.$(date "+%Y-%m-%d").out
+perl $WORM_CODE/scripts/ENSEMBL/scripts/dump_proteins.pl --host=$DBHOSTNAME --port=$DBPORT --user=$DBUSER --dbname=$core_db --outfile=$species.prot.fa \
   | tee $run_log_dpl
 
 ## Check if we got the expected number of protein sequences we thought we would get
