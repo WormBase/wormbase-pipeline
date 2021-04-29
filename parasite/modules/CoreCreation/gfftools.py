@@ -154,7 +154,7 @@ def transcript_names_from_gene_names(genes, transcripts, format = "e"):
 
 def transcript_names_from_ncbi_ids(transcripts):
   for transcript in transcripts:
-    a = re.search("rna-gnl\|WGS:NIRI\|(.*)_mrna", transcripts[transcript]["ID"])
+    a = re.match("rna-gnl\|WGS:.*\|(.*)_mrna", transcripts[transcript]["ID"])
     if a:
       transcripts[transcript]["Name"] = a.group(1)
     else:
