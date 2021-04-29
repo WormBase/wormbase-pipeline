@@ -53,9 +53,6 @@ if ( $store ) {
 # Establish log file
 my $log = Log_files->make_build_log($wormbase);
 
-# Restart automatically if some libs are missing
-my $command= $0 . " " . join(" ", @ARGV);
-
 
 ######################################
 # variables and command-line options # 
@@ -186,8 +183,7 @@ sub analyse {
   }
   # If there are uncompleted jobs, restart with check parameter, if -restart flag was used 
   if ($restart and $uncompleted_jobs>0 ) {
-	$command=~s/\-restart//g;
-  	print "RESTART COMMAND: perl $ENV{CVS_DIR}/$command -check\n";
+	print "RESTART COMMAND: perl $ENV{CVS_DIR}/RNASeq_align.pl -analyse -check\n";
   }
 
   # now check that all of the jobs ran successfully - we have had instances of jobs disappearing from the queue!
