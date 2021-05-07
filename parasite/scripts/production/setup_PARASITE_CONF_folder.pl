@@ -110,9 +110,9 @@ Bio::EnsEMBL::Registry->no_cache_warnings(1);
   Bio::EnsEMBL::Registry->load_registry_from_url('STAGINGURLRW/ENSEMBL_VERSION');
 
   Bio::EnsEMBL::Production::DBSQL::DBAdaptor->new(
-    -host    => 'PANHOST',
-    -port    => 'PANPORT',
-    -user    => 'PANUSERRO',
+    -host    => 'PRODHOST',
+    -port    => 'PRODPORT',
+    -user    => 'PRODUSERRO',
     -dbname  => 'ensembl_production_parasite',
     -species => 'multi',
     -group   => 'production'
@@ -131,20 +131,20 @@ Bio::EnsEMBL::Registry->load_registry_from_url('STAGINGURLRO/ENSEMBL_VERSION');
 Bio::EnsEMBL::Registry->load_registry_from_url('PRODURLRW/ENSEMBL_VERSION');
 
 Bio::EnsEMBL::Compara::DBSQL::DBAdaptor->new(
-    -host => 'PANHOST',
-    -port => 'PANPORT',
-    -user => 'PANUSERRW',
-    -pass => 'PANPASSRW',
+    -host => 'PRODHOST',
+    -port => 'PRODPORT',
+    -user => 'PRODUSERRW',
+    -pass => 'PRODPASSRW',
     -species => 'ensembl_compara_master_parasite',
     -dbname  => 'ensembl_compara_master_parasite',
 );
 
 Bio::EnsEMBL::Compara::DBSQL::DBAdaptor->new(
-    -host => 'PANHOST',
-    -user => 'PANUSERRO',
-    -port => 'PANPORT',             
-    -species => 'ncbi_taxonomy',
-    -dbname => 'ncbi_taxonomy',
+    -host => 'PRODHOST',
+    -user => 'PRODUSERRO',
+    -port => 'PRODPORT',             
+    -species => 'ncbi_taxonomy_parasite',
+    -dbname => 'ncbi_taxonomy_parasite',
 );
 END_COMPARA_REGISTRY_TEMPLATE
 
