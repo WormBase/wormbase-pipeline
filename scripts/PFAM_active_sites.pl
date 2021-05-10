@@ -21,6 +21,7 @@ my $server='ebiworm-db';
 my $dbname = "worm_pfam";
 my $tmpDir='/tmp';
 my ($user, $pass, $update);
+my $pfam_release = "current_release";
 
 GetOptions ('help'       => \$help,
             'debug=s'    => \$debug,
@@ -37,6 +38,7 @@ GetOptions ('help'       => \$help,
             'tmpdir=s'   => \$tmpDir,
             'acefile=s'  => \$acefile,
             "noload"     => \$noload,
+            "pfamrelease" => \$pfam_release,
            );
 
 if ( $store ) {
@@ -144,7 +146,9 @@ sub update_database {
     $ftp->login("anonymous",'-anonymous@')
         ||$log->log_and_die("Cannot login ${\$ftp->message}\n");
     
-    $ftp->cwd('/pub/databases/Pfam/current_release/database_files')
+    my $ftp_folder = "/pub/databases/Pfam/$pfam_release/database_files";
+
+    $ftp->cwd($ftp_folder)
         ||$log->log_and_die("Cannot change working directory ${\$ftp->message}\n");
     $ftp->binary()||$log->log_and_die("cannot change mode to binary ${\$ftp->message}\n");
     
