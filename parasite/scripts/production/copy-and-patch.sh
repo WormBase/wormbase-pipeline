@@ -3,12 +3,16 @@
 # - copies core databases from the previous release, upgrading them to the new schema
 
 perl -MProductionMysql -E '
-   say for ProductionMysql->previous_staging->core_databases(@ARGV ? @ARGV : "core_$ENV{PREVIOUS_PARASITE_VERSION}");
+   say for ProductionMysql->previous_staging->core_databases(@ARGV ? @ARGV : "core_$ENV{PREVIOUS_PARASITE_VERSION}_$ENV{PREVIOUS_ENSEMBL_VERSION}_");
+   say for ProductionMysql->previous_staging->variation_databases(@ARGV ? @ARGV : "variation_$ENV{PREVIOUS_PARASITE_VERSION}_$ENV{PREVIOUS_ENSEMBL_VERSION}_");
 ' "$@" | while read -r DB; do
   echo "Copying $DB"
-  NEWDB=$( sed "s/core_$PREVIOUS_PARASITE_VERSION\_$PREVIOUS_ENSEMBL_VERSION/core_$PARASITE_VERSION\_$ENSEMBL_VERSION/" <<< $DB )
+  NEWDB=$( sed "s/_$PREVIOUS_PARASITE_VERSION\_$PREVIOUS_ENSEMBL_VERSION/_$PARASITE_VERSION\_$ENSEMBL_VERSION/" <<< $DB )
   echo "Looking for previous versions of $NEWDB"
-  DB_PAT=$(echo $NEWDB | sed "s/core_.*/core%/")
+  DB_PAT=$(echo $NEWDB | grep 'core' |  sed "s/core_.*/core%/")
+  if [ -z $DB_PAT ]; then
+    DB_PAT=$(echo $NEWDB | grep 'variation' |  sed "s/variation_.*/variation%/")
+  fi
   ${PARASITE_STAGING_MYSQL} -Ne "show databases like \"$DB_PAT\"" | grep -v "$NEWDB" | while read -r OLD_DB ; do
     echo "Dropping database $OLD_DB"
     ${PARASITE_STAGING_MYSQL}-ensrw -e "DROP DATABASE $OLD_DB"
@@ -26,6 +30,3 @@ perl -MProductionMysql -E '
      --database "$NEWDB"
 done
 
-if [ $# -gt 0 ] ; then
-  echo "Ran in partial mode. Will not drop old stuff."
-fi

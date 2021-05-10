@@ -49,6 +49,30 @@ sub core_databases {
   }
   return @result;
 }
+
+sub variation_databases {
+  my $db_cmd= shift -> {db_cmd};
+  my @patterns = @_;
+  my @all_variation_dbs;
+  open(my $fh, " { $db_cmd  -Ne 'show databases like \"%variation%\" ' 2>&1 1>&3 | grep -v \"can be insecure\" 1>&2; } 3>&1 |") or Carp::croak "ProductionMysql: $db_cmd not in your PATH\n";
+  while(<$fh>) {
+   chomp;
+   push @all_variation_dbs, $_ if $_;
+  }
+  return @all_variation_dbs unless @patterns;
+
+  my @result;
+  for my $var_db (@all_variation_dbs){
+    my $include;
+    for my $pat (@patterns){
+      chomp $pat;
+      $include = 1 if $var_db =~ /$pat/;
+    }
+    push @result, $var_db if $include;
+  }
+  return @result;
+}
+
 sub core_db {
   my ($self, @patterns) = @_;
   my ($core_db, @others) = $self->core_databases(@patterns);
