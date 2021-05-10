@@ -38,7 +38,7 @@ GetOptions ('help'       => \$help,
             'tmpdir=s'   => \$tmpDir,
             'acefile=s'  => \$acefile,
             "noload"     => \$noload,
-            "pfamrelease" => \$pfam_release,
+            "pfamrelease=s" => \$pfam_release,
            );
 
 if ( $store ) {
