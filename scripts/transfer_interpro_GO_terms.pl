@@ -74,6 +74,9 @@ my $tace      = $wormbase->tace;      # tace executable path
 $database = $wormbase->autoace if not defined $database;
 $acefile = $wormbase->acefiles."/propagated_GO_terms.ace" if not defined $acefile;
 
+#The WS280 release contained duplicate data as this was run twice causing display issues, better to die here to be safe.
+if (-e $acefile) {$log->log_and_die("The output file $acefile already exists, this suggests that this script has already been run.....this script cannot be run twice without manual deleting of the data from the database if it got as far as loading. Something probably went wrong\n")}
+
 my %go_accs_to_terms = %{&get_GO_acc_to_term()};
 
 my @annots = &transfer_from_motif();
