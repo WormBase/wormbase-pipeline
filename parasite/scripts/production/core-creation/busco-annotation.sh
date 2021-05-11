@@ -88,7 +88,7 @@ echo "Parsing the result file: $result"
 perl -ne 'print "annotation.busco_complete\t$1\nannotation.busco_duplicated\t$2\nannotation.busco_fragmented\t$3\nannotation.busco_missing\t$4\nannotation.busco_number\t$5\n" if /C:(-?[0-9.]+).*D:(-?[0-9.]+).*F:(-?[0-9.]+).*M:(-?[0-9.]+).*n:(\d+)/' $result \
   | while read meta_key meta_value ; do
   printf "$meta_key\t$meta_value\n" >> $BUSCO_TMP/run_$species/to_be_written_in_the_db.txt
-  #${PARASITE_STAGING_MYSQL}-ensrw $core_db -e "insert into meta (meta_key, meta_value) values (\"$meta_key\", \"$meta_value\");"
+  ${PARASITE_STAGING_MYSQL}-ensrw $core_db -e "insert into meta (meta_key, meta_value) values (\"$meta_key\", \"$meta_value\");"
 done 
 
 echo "test done"
