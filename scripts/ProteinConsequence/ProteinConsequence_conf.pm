@@ -62,6 +62,7 @@ sub default_options {
 	lsf_queue             => $ENV{'LSF_DEFAULT_QUEUE'},
         default_lsf_options   => '-q' . $self->o('lsf_queue') . ' -R"select[mem>2000] rusage[mem=2000]" -M2000',    
         highmem_lsf_options   => '-q' . $self->o('lsf_queue') . ' -R"select[mem>5000] rusage[mem=5000]" -M5000',     
+	highermem_lsf_options => '-q' . $self->o('lsf_queue') . ' -R"select[mem>8000] rusage[mem=8000]" -M8000',     
         supermem_lsf_options  => '-q' . $self->o('lsf_queue') . ' -R"select[mem>16000] rusage[mem=16000]" -M16000',  
 
 	# batch size
@@ -77,8 +78,9 @@ sub default_options {
 sub resource_classes {
     my ($self) = @_;
     return {
-	'default'  => { 'LSF' => $self->o('default_lsf_options')  },
-	'highmem'  => { 'LSF' => $self->o('highmem_lsf_options')  },
+	'default'   => { 'LSF' => $self->o('default_lsf_options')  },
+	'highmem'   => { 'LSF' => $self->o('highmem_lsf_options')  },
+	'highermem' => { 'LSF' => $self->o('highermem_lsf_options')  },
 	'supermem'  => { 'LSF' => $self->o('supermem_lsf_options')  },
     };
 }
@@ -105,7 +107,7 @@ sub pipeline_analyses {
 		gff_dir    => $self->o('gff_dir'),
             },
 	    -input_ids => [{}],
-            -rc_name    => 'highmem',
+            -rc_name    => 'highermem',
             -max_retry_count => 0,
             -flow_into  => {
                 '2->A' => [ 'map_variation' ],
