@@ -319,18 +319,17 @@ sub check_if_actually_compressed {
 sub process_input_files {
     my $mod = shift;
     
-    #cleanup_intermediate_files($mod);
+    cleanup_intermediate_files($mod);
 
     my $chr_map;
     check_chromosome_map($mod);
     convert_fasta_headers($mod);
     convert_vcf_chromosomes($mod, 'VCF');
-    convert_vcf_chromosomes($mod, 'HTVCF');
   
     munge_gff($mod);
     run_system_cmd("bgzip -c ${mod}_FASTA.refseq.fa > ${mod}_FASTA.refseq.fa.gz", "Compressing $mod FASTA");
     run_system_cmd("sort -k1,1 -k4,4n -k5,5n -t\$'\\t' ${mod}_GFF.refseq.gff | bgzip -c > ${mod}_GFF.refseq.gff.gz",
-		   "Sorting and compressing $mod GFF");
+    	             "Sorting and compressing $mod GFF");
     run_system_cmd("tabix -p gff ${mod}_GFF.refseq.gff.gz", "Indexing $mod GFF");
     
     return;
@@ -412,11 +411,9 @@ sub run_vep_on_phenotypic_variations {
 sub run_vep_on_htp_variations{
     my ($mod, $password, $test) = @_;
     
-    return unless -e "${mod}_HTVCF.refseq.vcf";
-    
     my $lsf_queue = $test ? $ENV{'LSF_TEST_QUEUE'} : $ENV{'LSF_DEFAULT_QUEUE'};
     
-    my $init_cmd = "init_pipeline.pl ModVep::ModVep_conf -mod $mod -vcf ${mod}_HTVCF.refseq.vcf -gff ${mod}_GFF.refseq.gff.gz" .
+    my $init_cmd = "init_pipeline.pl ModVep::ModVep_conf -mod $mod -vcf ${mod}_HTVCF.vcf -gff ${mod}_GFF.refseq.gff.gz" .
 	" -fasta ${mod}_FASTA.refseq.fa.gz -bam ${mod}_BAM.bam -hive_root_dir " . $ENV{'HIVE_ROOT_DIR'} . ' -pipeline_base_dir ' .
 	$ENV{'HTP_VEP_WORKING_DIR'} . ' -pipeline_host ' . $ENV{'WORM_DBHOST'} . ' -pipeline_user ' . $ENV{'WORM_DBUSER'} .
 	' -pipeline_port ' . $ENV{'WORM_DBPORT'} . ' -lsf_queue ' . $lsf_queue . ' -vep_dir ' . $ENV{'VEP_DIR'} . 
@@ -428,32 +425,20 @@ sub run_vep_on_htp_variations{
     $ENV{EHIVE_URL} = $ehive_url;
  
     run_system_cmd("beekeeper.pl -url $ehive_url -loop", "Running $mod HTP variations VEP eHive pipeline");
-    
-    my $reverse_map = get_reverse_chromosome_map($mod);
-    print "Reverting to original $mod chromosome IDs in HTVCF\n";
-    open (IN, '<', $ENV{'HTP_VEP_WORKING_DIR'} . "/${mod}_vep/${mod}.vep.vcf");
-    open (OUT, '>', $ENV{'HTP_VEP_WORKING_DIR'} . "/${mod}_vep/${mod}.vep.vcf.tmp");
-    while (<IN>) {
-	if ($_ =~ /^#/) {
-	    print OUT $_;
-	}
-	else {
-	    my @columns = split("\t", $_);
-	    $columns[0] = $reverse_map->{$columns[0]};
-	    print OUT join("\t", @columns);
-	}
+
+    my $uncompressed_file = $ENV{'HTP_VEP_WORKING_DIR'} . "/${mod}_vep/${mod}.vep.vcf";
+    my $bsub_cmd = 'bsub -J ' . $mod . '_VEP_compress -o /dev/null -e /dev/null -n 20 -R "span[ptile=20]" ' .
+	'pigz -9 -p 20 ' . $uncompressed_file;
+    run_system_cmd($bsub_cmd, "Compressing $mod HTP variations VEP output");
+    while (-e $uncompressed_file) {
+	sleep(60);
     }
-    close (IN);
-    close (OUT);
-
-    run_system_cmd("mv " . $ENV{'HTP_VEP_WORKING_DIR'} . "/${mod}_vep/${mod}.vep.vcf.tmp " .
-		   $ENV{'HTP_VEP_WORKING_DIR'} . "/${mod}_vep/${mod}.vep.vcf",
-		   "Replacing $mod HTPOSTVEPVCF file with original chromosome ID version");
-
-    run_system_cmd('mv ' . $ENV{'HTP_VEP_WORKING_DIR'} . "/${mod}_vep/${mod}.vep.vcf ${mod}_HTPOSTVEPVCF.vcf",
+    
+    my $compressed_file = "${uncompressed_file}.gz";
+    run_system_cmd("mv ${compressed_file} ${mod}_HTPOSTVEPVCF.vcf.gz",
 		   "Moving $mod HTP variations VEP output");
 
-    run_system_cmd("gzip -9 ${mod}_HTPOSTVEPVCF.vcf", "Compressing $mod HTP variations VEP output");
+
     my $curl_cmd = 'curl -H "Authorization: Bearer ' . $ENV{'TOKEN'} . 
 	'" -X POST "https://fms.alliancegenome.org/api/data/submit" -F "' . $ENV{'AGR_RELEASE'} .
 	'_HTPOSTVEPVCF' . '_' . $mod . '=@' . $mod . '_HTPOSTVEPVCF.vcf.gz"';
@@ -508,13 +493,71 @@ sub sort_vcf_files {
 }
 
 
+sub remove_mirna_primary_transcripts {
+    my (%mirna_parents, %parents);
+
+    print "Getting RefSeq HUMAN miRNA details from GFF\n";
+
+    # Do first pass to get parents
+    open (GFF, "grep -v '^#' HUMAN_GFF.gff |") or die "Could not open HUMAN_GFF.gff for reading\n";
+    while (<GFF>) {
+	my $line = $_;
+	next unless $line =~ /BestRefSeq/;
+	chomp $line;
+	
+	my @columns = split("\t", $line);
+	my %attr = split(/[=;]/, $columns[8]);
+	$parents{$attr{'ID'}} = $attr{'Parent'} if exists $attr{'Parent'};
+	if ($columns[2] eq 'miRNA') {
+	    $mirna_parents{$attr{'Parent'}} = 1 ;
+	}
+    }
+    close (GFF);
+
+    open (IN, '< HUMAN_GFF.gff') or die "Could not open HUMAN_GFF.gff for reading\n";
+    open (OUT, '> HUMAN_GFF.tmp.gff') or die "Could not open HUMAN_GFF.tmp.gff for writing\n";
+    while (<IN>) {
+	my $line = $_;
+	if ($line =~ /BestRefSeq/) {
+	    chomp $line;
+	    my @columns = split("\t", $line);
+	    my %attr = split(/[=;]/, $columns[8]);
+	    next if exists $mirna_parents{$attr{'ID'}}; # Skip primary_transcript miRNA parents
+	    if ($columns[2] eq 'miRNA') {
+		$attr{'Parent'} = $parents{$attr{'Parent'}}; # Replace parent of miRNA is miRNA gene ID
+		my @key_values;
+		for my $key (keys %attr) {
+		    push @key_values, $key . '=' . $attr{$key};
+		}
+		$columns[8] = join(';', @key_values);
+		print OUT join("\t", @columns) . "\n";
+	    }
+	    else {
+		print OUT $line . "\n";
+	    }
+	}
+	else {
+	    print OUT $line;
+	}
+    }
+    close (IN);
+    close (OUT);
+
+    run_system_cmd("mv HUMAN_GFF.tmp.gff HUMAN_GFF.gff", "Replacing GFF with version without pre-miRNA lines");
+
+    return;
+}
+
+
 sub munge_gff {
     my ($mod) = @_;
     
     run_system_cmd("rm ${mod}_GFF.refseq.gff", "Deleting old munged GFF file") if -e "${mod}_GFF.refseq.gff";
 
     my $reverse_map = get_reverse_chromosome_map($mod);
-    
+
+    remove_mirna_primary_transcripts() if $mod eq 'HUMAN';
+
     print "Munging $mod GFF\n";
     open(IN, "grep -v '^#' ${mod}_GFF.gff |") or die "Could not open ${mod}_GFF.gff for reading\n";
     open(OUT, "> ${mod}_GFF.refseq.gff") or die "Could not open ${mod}_GFF.refseq.gff for writing\n";
