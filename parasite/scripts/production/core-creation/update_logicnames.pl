@@ -5,7 +5,7 @@ use warnings;
 use Getopt::Long;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 
-my ($host, $user, $port, $pass, $genome, $source, $logicname);
+my ($host, $user, $port, $pass, $genome, $source, $biotype, $logicname);
 
 GetOptions(
   'host=s'      =>   \$host,
@@ -67,9 +67,10 @@ foreach my $gene (@$genes){
     $gene->analysis($analysis);
     $gene_adaptor->update($gene);
     $updated_genes++;
+  }
 }
 
-print "Updated $updated_genes genes to new logic name $logic_name\n";
+print "Updated $updated_genes genes to new logic name $logicname\n";
 
 my $transcripts = $transcript_adaptor->fetch_all_by_source($source);
 my $updated_transcripts = 0;
@@ -78,8 +79,9 @@ foreach my $transcript(@$transcripts){
     $transcript->analysis($analysis);
     $transcript_adaptor->update($transcript);
     $updated_transcripts++;
+  }
 }
 
-print "Updated $updated_transcripts transcripts to new logic name $logic_name\n";
+print "Updated $updated_transcripts transcripts to new logic name $logicname\n";
 
 print "Done.\n";
