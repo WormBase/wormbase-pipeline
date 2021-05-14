@@ -14,6 +14,7 @@ GetOptions(
   'user=s'      =>   \$user,
   'genome=s'    =>   \$genome,
   'source=s'    =>   \$source,
+  'biotype=s'   =>   \$biotype,
   'logicname=s' =>   \$logicname
 ) || die ("check command line parameters\n") ;
 
@@ -23,9 +24,10 @@ my $usage = "$0 -host <host> \
 		-pass <password> \
 		-genome <genus_species_bioproject> \
 		-source <source of genes/transcripts to be updated (as in gene/transcript table of core db)> 
+                -biotype <biotype of genes/transcripts to be updated (as in gene/transcript table of core db)> 
 		-logicname <new logic name>";
 
-foreach my $param ($host, $user, $port, $pass, $genome, $source, $logicname){
+foreach my $param ($host, $user, $port, $pass, $genome, $source, $biotype, $logicname){
   die "Parameters not defined:\n$usage" if not defined $param;
 }
 
@@ -55,24 +57,29 @@ $analysis_adaptor->store($analysis);
 # or update it
 $analysis_adaptor->update($analysis);
 
-# fetch all genes and transcript of our source of interest
+# fetch all genes and transcripts of our source and biotype of interest
+# update their analysis IDs
 
 my $genes = $gene_adaptor->fetch_all_by_source($source);
-die "No genes found with source $source" if scalar(@$genes) == 0;
-my $transcripts = $transcript_adaptor->fetch_all_by_source($source);
-die "No transcripts found with source $source" if scalar(@$transcripts) == 0;
-
-print "Found ".scalar(@$genes)." genes and ".scalar(@$transcripts)." transcripts to update\n";
-
-# update analysis descs
+my $updated_genes = 0;
 foreach my $gene (@$genes){
-  $gene->analysis($analysis);
-  $gene_adaptor->update($gene);
+  if ($gene->biotype() eq $biotype){
+    $gene->analysis($analysis);
+    $gene_adaptor->update($gene);
+    $updated_genes++;
 }
 
+print "Updated $updated_genes genes to new logic name $logic_name\n";
+
+my $transcripts = $transcript_adaptor->fetch_all_by_source($source);
+my $updated_transcripts = 0;
 foreach my $transcript(@$transcripts){
-  $transcript->analysis($analysis);
-  $transcript_adaptor->update($transcript);
+  if ($transcript->biotype() eq $biotype){
+    $transcript->analysis($analysis);
+    $transcript_adaptor->update($transcript);
+    $updated_transcripts++;
 }
+
+print "Updated $updated_transcripts transcripts to new logic name $logic_name\n";
 
 print "Done.\n";
