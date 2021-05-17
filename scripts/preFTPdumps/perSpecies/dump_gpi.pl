@@ -50,7 +50,7 @@ $log->write_to("creating a GPI file at $output for ${\$wormbase->long_name}\n");
 my $db = Ace->connect(-path => ($database ||$wormbase->autoace));
 
 my $genesh = $db->fetch_many(-query => 'Find Gene;Species="'.$wormbase->long_name.
-            '";Live;SMap;Corresponding_transcript OR Corresponding_CDS')
+            '";Live')
             or $log->log_and_die(Ace->error);
 
 print $outfile "!gpi-version: 1.2\n";
@@ -59,6 +59,7 @@ print $outfile "!namespace: WB\n";
 my (%genes, %coding_trans, %nc_trans, %proteins);
 
 while (my $g = $genesh->next){
+    next unless $g->name =~ /^WBGene\d+$/;
   # Gene block
   my ($desc) = $g->Gene_class ? $g->Gene_class->Description : "";
   
