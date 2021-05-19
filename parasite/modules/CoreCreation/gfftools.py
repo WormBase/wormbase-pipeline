@@ -152,6 +152,17 @@ def transcript_names_from_gene_names(genes, transcripts, format = "e"):
 
 ##
 
+def transcript_names_from_ncbi_ids(transcripts):
+  for transcript in transcripts:
+    a = re.match("rna-gnl\|WGS:.*\|(.*)_mrna", transcripts[transcript]["ID"])
+    if a:
+      transcripts[transcript]["Name"] = a.group(1)
+    else:
+      sys.exit("Can't extract transcript name\n" + transcripts[transcript]["ID"])
+  return transcripts
+
+##
+
 def transcripts_from_cds(transcripts, CDS):
   for ID in CDS:
     if len(CDS[ID]) == 1:
