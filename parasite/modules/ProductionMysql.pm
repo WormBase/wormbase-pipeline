@@ -25,7 +25,7 @@ sub previous_staging {
 }
 sub staging_writable {
   my $v = $ENV{PARASITE_STAGING_MYSQL} or die "PARASITE_STAGING_MYSQL not in env. You need to module load parasite_prod_relx";
-  return new(shift,"$v-ensrw"); 
+  return new(shift,"$v-w"); 
 }
 sub core_databases {
   my $db_cmd= shift -> {db_cmd};
