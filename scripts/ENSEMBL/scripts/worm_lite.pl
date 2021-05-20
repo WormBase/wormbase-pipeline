@@ -18,7 +18,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 use WormBase2Ensembl;
 
-my ( $debug, @species, @notspecies, $allspecies, $setup, $dna, $genes, $rules, $inputids, $meta, $pipeline_setup, $test, $yfile, $multiple_sources );
+my ( $debug, @species, @notspecies, $allspecies, $setup, $dna, $genes, $rules, $inputids, $meta, $pipeline_setup, $test, $yfile, $recognise_sources );
 
 GetOptions(
   'species=s@'       => \@species,
