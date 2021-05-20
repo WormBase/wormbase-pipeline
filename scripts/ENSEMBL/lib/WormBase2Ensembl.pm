@@ -48,6 +48,9 @@ sub new {
   if (exists $args{"-debug"}) {
     $self->debug($args{"-debug"});
   }
+  if (exists $args{"-recognise_sources"}) {
+    $self->recognise_sources($args{"-recognise_sources"});
+  }
   if (exists $args{"-verbose"}) {
     $self->verbose($args{"-verbose"});
   }
@@ -261,11 +264,11 @@ sub parse_genes_gff3_fh {
       my $gff_type = $tran->{type};
       my $strand = $tran->{strand};
       my ($tsid, $gff_source);
-      if ($tran->{source} eq "WormBase_imported") {
-        $gff_source = "WormBase"; # to maintain previous behaviour (source of either WormBase or WormBase_imported in the GFF should be WormBase in the db)
+      if ($self->recognise_sources){
+        $gff_source = $tran->{source};
       }
-      else {
-	$gff_source = $tran->{source};
+      else{
+        $gff_source = "WormBase"; # to maintain previous behaviour
       }
       if ($tran->{name}) {
         $tsid = $tran->{name};

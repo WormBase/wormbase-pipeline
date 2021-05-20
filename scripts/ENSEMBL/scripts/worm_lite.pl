@@ -18,22 +18,23 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 use WormBase2Ensembl;
 
-my ( $debug, @species, @notspecies, $allspecies, $setup, $dna, $genes, $rules, $inputids, $meta, $pipeline_setup, $test, $yfile );
+my ( $debug, @species, @notspecies, $allspecies, $setup, $dna, $genes, $rules, $inputids, $meta, $pipeline_setup, $test, $yfile, $multiple_sources );
 
 GetOptions(
-  'species=s@'    => \@species,
-  'notspecies=s@' => \@notspecies,
-  'allspecies'    => \$allspecies,
-  'setup'         => \$setup,
-  'load_meta'     => \$meta,
-  'load_dna'      => \$dna,
-  'load_genes'    => \$genes,
-  'load_pipeline' => \$pipeline_setup,
-  'load_rules'    => \$rules,
-  'load_iids'     => \$inputids,
-  'debug'         => \$debug,
-  'test'          => \$test,
-  'yfile=s'       => \$yfile,
+  'species=s@'       => \@species,
+  'notspecies=s@'    => \@notspecies,
+  'allspecies'       => \$allspecies,
+  'setup'            => \$setup,
+  'load_meta'        => \$meta,
+  'load_dna'         => \$dna,
+  'load_genes'       => \$genes,
+  'load_pipeline'    => \$pipeline_setup,
+  'load_rules'       => \$rules,
+  'load_iids'        => \$inputids,
+  'debug'            => \$debug,
+  'test'             => \$test,
+  'yfile=s'          => \$yfile,
+  'recognise_sources' => \$recognise_sources
 
 ) || die("bad commandline parameter\n");
 
@@ -428,6 +429,7 @@ sub load_genes {
   my $wb2ens = WormBase2Ensembl->new(-species => $species,
                                      -dbh     => $dba,
                                      -debug   => ($debug) ? 1 : 0,
+				     -recognise_sources => ($recognise_sources) ? 1 : 0,
                                      -verbose => 1,
                                      -ignoregffphases => (exists $config->{gff_ignore_phases}) 
                                        ? $config->{gff_ignore_phases} 
