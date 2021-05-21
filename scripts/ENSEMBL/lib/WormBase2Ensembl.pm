@@ -1093,6 +1093,22 @@ sub debug {
 }
 
 #####################################
+sub recognise_sources {
+  my ($self, $val) = @_;
+
+  if (defined $val) {
+    $self->{_recognise_sources} = $val;
+  }
+  if (not exists $self->{_recognise_sources}) {
+    return 0;
+  } else {
+    return $self->{_recognise_sources};
+  }
+}
+
+
+
+#####################################
 sub verbose {
   my ($self, $val) = @_;
 
