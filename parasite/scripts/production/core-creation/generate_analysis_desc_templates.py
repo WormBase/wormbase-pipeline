@@ -95,7 +95,7 @@ def parse_config_and_print_new(species, config, logic_names, new_fh):
       print("Found new name "+ ln + " for " + species)
       logic_names.append(ln)
       description = generate_description(config_data, species)
-      print_to_file(ln, ln_flavour, description, new_fh)
+      print_to_file(ln, description, new_fh)
 
   return(logic_names)
 
@@ -118,17 +118,9 @@ def generate_description(config_data, species):
   
 ##
 
-def print_to_file(ln, ln_flavour, description, new_fh):
-  if ln_flavour is "Noncoding":
-    ln_flavour = "Non coding" 
-    web_data_id = 11
-  elif ln_flavour is "Coding":
-    web_data_id = 103
-  elif ln_flavour is "Pseudogene":
-    web_data_id = 104
-  else:
-    sys.exit("Unexpected logic name type: " + ln_flavour )
-  vals = [ln, description, ln_flavour, 0, 1, web_data_id, "NULL"]
+def print_to_file(ln, description, new_fh):
+  web_data_id = 5115 
+  vals = [ln, description, "Genes", 0, 1, web_data_id, 1]
   print(*vals, sep = "\t", file = new_fh)
 
 
