@@ -1,3 +1,31 @@
+#!/usr/bin/env perl
+
+=pod
+
+=head1 NAME
+
+  populate_analysis_descriptions_in_cores_from_prod_db.pl
+
+=head1 SYNOPSIS
+
+  Populate a core database with analysis descriptions from a production database
+
+=head1 ARGUMENTS
+
+  perl populate_analysis_descriptions_in_cores_from_prod_db.pl
+         -prod_host
+         -prod_port
+         -prod_user
+         -prod_db
+         -host
+         -port
+         -user
+	 -pass
+	 -db
+
+=cut
+
+
 use strict;
 use warnings;
 use Getopt::Long;
