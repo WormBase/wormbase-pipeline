@@ -29,6 +29,8 @@ const my %ASSEMBLIES => ('GRCm38'   => 'MGI',
 			 'GRCz11'   => 'ZFIN',
     );
 const my $BASE_DIR => $ENV{'AGR_VEP_BASE_DIR'} . '/' . $ENV{'AGR_RELEASE'} . '/' . $ENV{'DOWNLOAD_DATE'};
+const my $HGNC_FILE_URL => 'http://ftp.ebi.ac.uk/pub/databases/genenames/hgnc/tsv/hgnc_complete_set.txt';
+const my @IDS_TO_MAP => ('symbol', 'entrez_id', 'ensembl_gene_id', 'vega_id', 'ucsc_id', 'refseq_accession', 'mgd_id', 'rgd_id', 'omim_id', 'agr');
 
 const my %REFSEQ_CHROMOSOMES => (
     'FB'   => {
@@ -514,6 +516,8 @@ sub remove_mirna_primary_transcripts {
     }
     close (GFF);
 
+    print "Removing miRNA primary transcripts from HUMAN GFF\n";
+
     open (IN, '< HUMAN_GFF.gff') or die "Could not open HUMAN_GFF.gff for reading\n";
     open (OUT, '> HUMAN_GFF.tmp.gff') or die "Could not open HUMAN_GFF.tmp.gff for writing\n";
     while (<IN>) {
@@ -556,16 +560,21 @@ sub munge_gff {
 
     my $reverse_map = get_reverse_chromosome_map($mod);
 
-    remove_mirna_primary_transcripts() if $mod eq 'HUMAN';
+    my $hgnc_id_map;
+    if ($mod eq 'HUMAN') {
+	remove_mirna_primary_transcripts();
+	$hgnc_id_map = get_hgnc_id_map();
+    }
 
     print "Munging $mod GFF\n";
     open(IN, "grep -v '^#' ${mod}_GFF.gff |") or die "Could not open ${mod}_GFF.gff for reading\n";
     open(OUT, "> ${mod}_GFF.refseq.gff") or die "Could not open ${mod}_GFF.refseq.gff for writing\n";
     while (<IN>) {
 	my $line = $_;
-	next if $line =~ /^\n$/;
+	chomp $line;
+	next if $line eq '';
 	
-	my @columns = split("\t", $_);
+	my @columns = split("\t", $line);
 	if (exists $REFSEQ_CHROMOSOMES{$mod}{$columns[0]}) {
 	    $columns[0] = $REFSEQ_CHROMOSOMES{$mod}{$columns[0]};
 	    $line = join("\t", @columns);
@@ -584,7 +593,7 @@ sub munge_gff {
 	elsif ($mod eq 'ZFIN') {
 	    $line = make_zfin_changes($line, \@columns);
 	}
-	
+   
 	if ($columns[2] eq 'guide_RNA' or $columns[2] eq 'scRNA') {
 	    $columns[2] = 'ncRNA';
 	    $line = join("\t", @columns);
@@ -614,8 +623,12 @@ sub munge_gff {
 		last;
 	    }
 	}
+
+	if ($mod eq 'HUMAN') {
+	    $line = convert_to_hgnc_gene_ids(\@columns, $hgnc_id_map);
+	}
 	
-	print OUT $line;
+	print OUT $line . "\n";
     }
     
     close(IN);
@@ -653,6 +666,28 @@ sub change_FB_transgene_exons {
     }
     
     return $line;
+}
+
+
+sub convert_to_hgnc_gene_ids {
+    my ($columns, $hgnc_id_map) = @_;
+
+    my %attr = split /[=;]/, $columns->[8];
+    my @pairs;
+    my %keys_to_map = map {$_ => 1} ('ID', 'Parent', 'gene_id', 'id');
+    for my $key (keys %attr) {
+	my $value = $attr{$key};
+	$value =~ s/^gene[:\-]//;
+	if (exists $keys_to_map{$key} and exists $hgnc_id_map->{$value}) {
+	    push @pairs, $key . '=' . $hgnc_id_map->{$value};
+	}
+	else {
+	    push @pairs, $key . '=' . $value;
+	}
+    }
+    $columns->[8] = join(';', @pairs);
+
+    return join("\t", @$columns);
 }
 
 
@@ -818,16 +853,44 @@ sub get_reverse_chromosome_map {
 }
 
 
-sub cleanup_intermediate_files{
+sub cleanup_intermediate_files {
     my $mod = shift;
 
     for my $file ("${mod}_GFF.refseq.gff", "${mod}_GFF.refseq.gff.gz", "${mod}_GFF.refseq.gff.gz.tbi", 
 		  "${mod}_FASTA.refseq.fa", "${mod}_FASTA.refseq.fa.gz", "${mod}_FASTA.refseq.fa.gz",
-		  "${mod}_FASTA.refseq.fa.gz.fai", "${mod}_FASTA.refseq.fa.gz.gzi", "${mod}_VCF.refseq.vcf",
-		  "${mod}_HTVCF.refseq.vcf") {
+		  "${mod}_FASTA.refseq.fa.gz.fai", "${mod}_FASTA.refseq.fa.gz.gzi",
+		  "${mod}_VCF.refseq.vcf") {
 	run_system_cmd("rm $file", "Deleting $file") if -e $file;
     }
 
     return;
 }
  
+
+sub get_hgnc_id_map {
+    my ($file) = $HGNC_FILE_URL =~ /\/([^\/]+)$/;
+    run_system_cmd("wget $HGNC_FILE_URL", 'Downloading HGNC gene ID map file') unless -e $file;
+
+    my $first_line = 1;
+    open (HGNC, '<', $file);
+    my %ids_to_store = map {$_ => 1} @IDS_TO_MAP;
+    my @ix_to_store;
+    my %id_map;
+    while (<HGNC>) {
+	chomp;
+	my @columns = split("\t", $_);
+	if ($first_line) {
+	    for my $ix (1 .. scalar @columns - 1) {
+		push @ix_to_store, $ix if exists $ids_to_store{$columns[$ix]};
+	    }
+	    $first_line = 0;
+	    next;
+	}
+	for my $ix (@ix_to_store) {
+	    $id_map{$columns[$ix]} = $columns[0] unless $columns[$ix] eq '';
+	}
+    }
+    close (HGNC);
+    
+    return \%id_map;
+}
