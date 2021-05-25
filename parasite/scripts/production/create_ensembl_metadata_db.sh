@@ -35,15 +35,15 @@ echo "Dumping up current ${db_name} to ${EM_backup_file}.gz"
 $PARASITE_STAGING_MYSQL mysqldump ${db_name} > ${EM_backup_file} && gzip ${EM_backup_file}
 
 echo "Dropping current ${db_name}"
-${PARASITE_STAGING_MYSQL}-ensrw -N -e "drop database if exists ${db_name};"
+${PARASITE_STAGING_MYSQL}-w -N -e "drop database if exists ${db_name};"
 
 echo "Creating new ${db_name} from ${EM_table_SQL}"
-${PARASITE_STAGING_MYSQL}-ensrw -N -e "create database ${db_name};"
-cat ${EM_table_SQL} | ${PARASITE_STAGING_MYSQL}-ensrw ${db_name}
+${PARASITE_STAGING_MYSQL}-w -N -e "create database ${db_name};"
+cat ${EM_table_SQL} | ${PARASITE_STAGING_MYSQL}-w ${db_name}
 for this_core_db in $(${PARASITE_STAGING_MYSQL} -N -e "SHOW DATABASES LIKE \"%core_${PARASITE_VERSION}_${ENSEMBL_VERSION}%\""); do
    echo "Updating ${db_name} with metadata from ${this_core_db}";
-   ${ENSEMBL_CVS_ROOT_DIR}/ensembl-metadata/misc_scripts/metadata_updater.pl  -metadata_uri     $($PARASITE_STAGING_MYSQL-ensrw details url)${db_name}      \
-                        -database_uri     $($PARASITE_STAGING_MYSQL-ensrw details url)${this_core_db} \
+   ${ENSEMBL_CVS_ROOT_DIR}/ensembl-metadata/misc_scripts/metadata_updater.pl  -metadata_uri     $($PARASITE_STAGING_MYSQL-w details url)${db_name}      \
+                        -database_uri     $($PARASITE_STAGING_MYSQL-w details url)${this_core_db} \
                         -e_release        ${ENSEMBL_VERSION}                                          \
                         -eg_release       ${PARASITE_VERSION}                                         \
                         -release_date     "${datestamp}"                                            \
