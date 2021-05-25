@@ -32,6 +32,7 @@ my (
   $sfile,
   $no_dnafrags,
   $locators,
+  $division
     ); 
     
 
@@ -47,6 +48,7 @@ GetOptions(
   "sfile=s"            => \$sfile,
   "nodnafrags"         => \$no_dnafrags,
   "locators"           => \$locators,
+  "division"	       => \$division
     );
 
 die("must specify registry conf file on commandline\n") unless($reg_conf);
@@ -54,10 +56,10 @@ die("must specify registry conf file on commandline\n") unless($reg_conf);
 
 eval { require($reg_conf) };
 $master_dbname = $Parasite::Compara::Registry::MASTER_DB_NAME if not defined $master_dbname;
-
 Bio::EnsEMBL::Registry->load_all($reg_conf);
 
 $collection_name = "wormbase" if not defined $collection_name;
+$division = "parasite" if not defined $division;
 
 #
 # 0. Get species data
@@ -109,10 +111,13 @@ if ($recreatedb) {
   my $compara_connect = "-u $master_user -p${master_pass} -h $master_host -P $master_port";
   my $cmd = "mysql $compara_connect -e 'DROP DATABASE IF EXISTS $master_dbname; CREATE DATABASE $master_dbname'";
   system($cmd) and die "Could not drop and re-create existing database\n";
-  
+ 
   $cmd = "cat $compara_code/sql/table.sql | mysql $compara_connect $master_dbname";
   system($cmd) and die "Could not populate new database with compara schema\n"; 
-  
+ 
+  my $cmd = "mysql $compara_connect $master_dbname -e 'INSERT INTO meta (meta_key, meta_value) VALUES (\"division\", \"$division\" )' ";
+  system($cmd) and die "Could not insert division meta key\n";
+ 
   $cmd = "mysqlimport --local $compara_connect $master_dbname  $compara_code/sql/method_link.txt";
   system($cmd) and die "Could not populate new database with method_link entries\n"; 
   
@@ -232,8 +237,6 @@ if ($create_tree_mlss) {
 
 print STDERR "Updated database\n";
 exit(0);
-
-
 
 #############################
 
