@@ -243,9 +243,13 @@ my $this_url = exists $urls{$conf->{SubmitterOrganization}}
                   :  CoreCreation::Config::Utils::MISSING_METADATA_PATTERN
                   );
 
-my $output_conf = {  taxon_id          => $conf->{SpeciesTaxid} // CoreCreation::Config::Utils::MISSING_METADATA_PATTERN,
-                     assembly_version  => $conf->{AssemblyName} // CoreCreation::Config::Utils::MISSING_METADATA_PATTERN,
-                     gff_sources       => "WormBase_imported",
+my $output_conf = {  taxon_id                => $conf->{SpeciesTaxid} // CoreCreation::Config::Utils::MISSING_METADATA_PATTERN,
+                     assembly_version        => $conf->{AssemblyName} // CoreCreation::Config::Utils::MISSING_METADATA_PATTERN,
+                     gff_sources             => "WormBase_imported",
+		     gff_codinggene_logic    => CoreCreation::Config::Utils::MISSING_METADATA_PATTERN,
+		     gff_noncodinggene_logic => CoreCreation::Config::Utils::MISSING_METADATA_PATTERN,
+	             PMID                    => CoreCreation::Config::Utils::MISSING_METADATA_PATTERN,
+                     PM_text		     => CoreCreation::Config::Utils::MISSING_METADATA_PATTERN, 
                      meta              => {  "assembly.accession"       => $conf->{AssemblyAccession} // CoreCreation::Config::Utils::MISSING_METADATA_PATTERN,
                                              "provider.name"            => $synonyms{$conf->{SubmitterOrganization}//""} // $conf->{SubmitterOrganization} // CoreCreation::Config::Utils::MISSING_METADATA_PATTERN,
                                              "provider.url"             => $this_url // CoreCreation::Config::Utils::MISSING_METADATA_PATTERN,

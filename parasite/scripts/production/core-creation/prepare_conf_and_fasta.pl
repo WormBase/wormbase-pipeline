@@ -212,7 +212,7 @@ if( $force or not -s $conf_path or $ENV{REDO_FASTA} ) {
       croak "Unable to validate GFF3:\n".$_;
    };
    # exit on GFF3 validation error
-   $valid_gff3 || croak "$this_assembly->{gff3} is not valid GFF3:\n".termcap_bold(join("\n",@validation_errors))."\n  ";
+   $valid_gff3 || print "$this_assembly->{gff3} is not valid GFF3:\n".termcap_bold(join("\n",@validation_errors))."\n  ";
    
    # my $check_sources_column = "grep -c $this_assembly->{gff_sources} $this_assembly->{gff3}";
    # die "Failed: $check_sources_column" unless 0 < `$check_sources_column`;
@@ -236,9 +236,12 @@ if( $force or not -s $conf_path or $ENV{REDO_FASTA} ) {
       };
 
       # sources: verify they match the config
-      foreach my $feature (@features){
-         die qq~incorrect GFF source "$feature->{source}" (expected "$this_assembly->{gff_sources}") at $this_assembly->{gff3} line $.\n~
-            if $feature->{source} ne $this_assembly->{gff_sources};
+      my @sources = split(/,/, $this_assembly->{gff_sources});
+      FEAT: foreach my $feature (@features){
+	foreach my $source (@sources){
+	   next FEAT if $feature->{source} eq $source;
+	}
+	die qq~incorrect GFF source "$feature->{source}" (expected values are : "@sources") at $this_assembly->{gff3} line $.\n~;
       }
 
       my %gff = (gene=>[], pseudogene=>[]);
@@ -302,10 +305,10 @@ if( $force or not -s $conf_path or $ENV{REDO_FASTA} ) {
          } elsif( 'exon' eq $feature->{type} ) {
             if( exists $RNAs{ $feature->{attribute}->{Parent} } ) {
                push( @{$RNAs{ $feature->{attribute}->{Parent} }->{ $feature->{type} }},
-                     $feature->{attribute}->{ID});
+                     'exon');
             } elsif( exists $pseudogenic_transcripts{ $feature->{attribute}->{Parent} } ) {
                push( @{$pseudogenic_transcripts{ $feature->{attribute}->{Parent} }->{ $feature->{type} }},
-                     $feature->{attribute}->{ID});
+                     'exon');
             } else {
                die "exon $feature->{attribute}->{ID} references a non-existent parent in $this_assembly->{gff3}"
             }

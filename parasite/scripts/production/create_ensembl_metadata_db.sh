@@ -46,8 +46,8 @@ for this_core_db in $(${PARASITE_STAGING_MYSQL} -N -e "SHOW DATABASES LIKE \"%co
                         -database_uri     $($PARASITE_STAGING_MYSQL-ensrw details url)${this_core_db} \
                         -e_release        ${ENSEMBL_VERSION}                                          \
                         -eg_release       ${PARASITE_VERSION}                                         \
-                        -release_date     "'${datestamp}'"                                            \
-                        -current_release  "'${RELEASE}'"                                              \
+                        -release_date     "${datestamp}"                                            \
+                        -current_release  "${RELEASE}"                                              \
                         -email            "'${EMAIL}'"                                                \
                         -comment          "'creating ${db_name} for WBPS ${PARASITE_VERSION}'"        \
                         -source           "'Manual'"
