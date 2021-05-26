@@ -11,10 +11,9 @@ use File::Slurp;
 
 const my $FMS_LATEST_PREFIX => 'https://fms.alliancegenome.org/api/datafile/by/';
 const my $FMS_LATEST_SUFFIX => '?latest=true';
-const my @FMS_DATATYPES => ('FASTA', 'GFF', 'VCF', 'HTVCF', 'MOD-GFF-BAM-KNOWN', 'MOD-GFF-BAM-MODEL', 'VARIATION');
+const my @FMS_DATATYPES => ('FASTA', 'GFF', 'HTVCF', 'MOD-GFF-BAM-KNOWN', 'MOD-GFF-BAM-MODEL', 'VARIATION');
 const my %DATATYPE_EXTENSIONS => ('FASTA'             => 'fa',
 				  'GFF'               => 'gff',
-				  'VCF'               => 'vcf',
 				  'HTVCF'             => 'vcf',
 				  'MOD-GFF-BAM-KNOWN' => 'bam',
 				  'MOD-GFF-BAM-MODEL' => 'bam',
@@ -166,7 +165,6 @@ const my %REFSEQ_CHROMOSOMES => (
 	'MT' => 'NC_002333.2',
     },
     'HUMAN' => {
-
 	'1'  => 'NC_000001.11',
 	'2'  => 'NC_000002.12',
 	'3'  => 'NC_000003.12',
@@ -250,6 +248,8 @@ sub download_from_agr {
 	    run_system_cmd("mv $filename ${mod}_${datatype}.${extension}", "Renaming $filename");
 	}
 	merge_bam_files($mod);
+	run_system_cmd('python3 ' . $ENV{'CVS_DIR'} . "/AGR/agr_variations_json2vcf.py -j ${mod}_VARIATION.json -m $mod -g ${mod}_GFF.gff " .
+		       "-f ${mod}_FASTA.fa -o ${mod}_VCF.vcf", "Converting $mod phenotypic variants JSON to VCF") if -e "${mod}_VARIATION.json";
 	sort_vcf_files($mod);
     }
     close (FILES);
@@ -483,13 +483,12 @@ sub merge_bam_files {
 sub sort_vcf_files {
     my $mod = shift;
     
-    for my $datatype ('VCF', 'HTVCF') {
-	next unless -e "${mod}_${datatype}.vcf";
-	run_system_cmd("vcf-sort ${mod}_${datatype}.vcf > ${mod}_${datatype}.sorted.vcf",
-		       "Sorting $mod $datatype file");
-	run_system_cmd("mv ${mod}_${datatype}.sorted.vcf ${mod}_${datatype}.vcf",
-		       "Replacing unsorted $mod $datatype file with sorted version");
-    }
+    my $datatype = 'HTVCF'; # not required for phenotypic variants VCF as JSON conversion script sorts output
+    next unless -e "${mod}_${datatype}.vcf";
+    run_system_cmd("vcf-sort ${mod}_${datatype}.vcf > ${mod}_${datatype}.sorted.vcf",
+		   "Sorting $mod $datatype file");
+    run_system_cmd("mv ${mod}_${datatype}.sorted.vcf ${mod}_${datatype}.vcf",
+		   "Replacing unsorted $mod $datatype file with sorted version");
     
     return;
 }
