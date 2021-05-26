@@ -49,8 +49,17 @@ def get_refseq_from_fasta(v, fasta):
     faidx_call = subprocess.run(["samtools", "faidx", fasta, str(v["chromosome"]) + ':' + str(v["start"]) + '-' + str(v["end"])], stdout=subprocess.PIPE, text=True)
     faidx_lines = faidx_call.stdout.split("\n");
     faidx_lines.pop(0)
-    return ''.join(faidx_lines)
+    return faidx_lines[0]
 
+def get_padbase_from_fasta(v, fasta):
+    if v["start"] == 1:
+        pos = int(v["end"]) + 1
+    else:
+        pos = int(v["start"]) - 1
+    faidx_call = subprocess.run(["samtools", "faidx", fasta, str(v["chromosome"]) + ':' + str(pos) + '-' + str(pos)], stdout=subprocess.PIPE, text=True)
+    faidx_lines = faidx_call.stdout.split("\n");
+    faidx_lines.pop(0)
+    return ''.join(faidx_lines)
 
 def get_strains(variations):
     strains = set()
@@ -269,14 +278,24 @@ with open(args.json, 'r') as read_file:
         pos = int(v["start"])
         zygosity = 'homozygous'
         
-        if 'paddedBase' in v.keys():
-            if pos == 1:
-                refSeq = refSeq+v["paddedBase"]
-                varSeq = varSeq+v["paddedBase"]
+        if refSeq == '' or varSeq == '':
+            if refSeq == '' and varSeq == '':
+                # FB has transgenes with insertions of unknown length
+                print("No reference or alternative allele specified for " + v["alleleId"] + ', skipping', file=sys.stderr)
+                continue
+
+            if 'paddedBase' in v.keys():
+                padBase = v["paddedBase"]
             else:
-                refSeq = v["paddedBase"]+refSeq
-                varSeq = v["paddedBase"]+varSeq
+                padBase = get_padbase_from_fasta(v, args.fasta)
+            if pos == 1:
+                refSeq = refSeq+padBase
+                varSeq = varSeq+padBase
+            else:
+                refSeq = padBase+refSeq
+                varSeq = padBase+varSeq
                 pos = pos-1  # include the padding base in POS
+
         vcf_data["chromosome"] = v["chromosome"]
         vcf_data["pos"] = pos
 
