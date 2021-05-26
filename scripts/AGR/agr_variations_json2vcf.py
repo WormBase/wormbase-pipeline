@@ -46,7 +46,7 @@ def get_refseq_from_fasta(v, fasta):
     faidx_call = subprocess.run(["samtools", "faidx", fasta, str(v["chromosome"]) + ':' + str(v["start"]) + '-' + str(v["end"])], stdout=subprocess.PIPE, text=True)
     faidx_lines = faidx_call.stdout.split("\n");
     faidx_lines.pop(0)
-    return faidx_lines[0]
+    return ''.join(faidx_lines).upper()
 
 def get_padbase_from_fasta(v, fasta):
     if v["start"] == 1:
@@ -56,7 +56,7 @@ def get_padbase_from_fasta(v, fasta):
     faidx_call = subprocess.run(["samtools", "faidx", fasta, str(v["chromosome"]) + ':' + str(pos) + '-' + str(pos)], stdout=subprocess.PIPE, text=True)
     faidx_lines = faidx_call.stdout.split("\n");
     faidx_lines.pop(0)
-    return ''.join(faidx_lines)
+    return faidx_lines[0].upper()
 
 def get_strains(variations):
     strains = set()
@@ -269,7 +269,14 @@ with open(args.json, 'r') as read_file:
                 continue
             refSeq = get_refseq_from_fasta(v, args.fasta)
         else:
-            refSeq = "" if v["genomicReferenceSequence"] == "N/A" else v["genomicReferenceSequence"]
+            if v["genomicReferenceSequence"] == "N/A":
+                refSeq = ""  
+            else:
+                refSeq = get_refseq_from_fasta(v, args.fasta)
+                if v["genomicReferenceSequence"].upper() != refSeq:
+                    print("Specified genomic reference allele (" + v["genomicReferenceSequence"] + ") doesn't match reference sequence ("
+                          + refSeq + ") at specified coordinates for " + v["alleleId"], file=sys.stderr)
+                    continue
 
     
         if 'genomicVariantSequence' not in v.keys():
