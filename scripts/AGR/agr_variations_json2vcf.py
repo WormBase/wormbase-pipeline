@@ -11,16 +11,13 @@ import re
 import sys
 import subprocess
 
-def genotype_string(variation, allStrains, zygosity):
+def genotype_string(variation, allStrains):
     variationStrains = set(variation["strains"])
     genotypes = []
 
     for s in allStrains:
         if s in variationStrains:
-            if zygosity == 'homozygous':
-                genotypes.append('1/1')
-            else:
-                genotypes.append('1/2')
+            genotypes.append('1/1')
         else:
             genotypes.append('./.')
 
@@ -213,6 +210,11 @@ expand_iupac = {
     'W': 'A,T',
     'K': 'G,T',
     'M': 'A,C',
+    'B': 'C,G,T',
+    'D': 'A,G,T',
+    'H': 'A,C,T',
+    'V': 'A,C,G',
+    'N': 'A,C,G,T'
 }
 
 parser = argparse.ArgumentParser()
@@ -276,7 +278,6 @@ with open(args.json, 'r') as read_file:
 
         varSeq = "" if v["genomicVariantSequence"] == "N/A" else v["genomicVariantSequence"]
         pos = int(v["start"])
-        zygosity = 'homozygous'
         
         if refSeq == '' or varSeq == '':
             if refSeq == '' and varSeq == '':
@@ -303,13 +304,15 @@ with open(args.json, 'r') as read_file:
             if nt_regex.match(varSeq) is None:
                 if varSeq in expand_iupac.keys():
                     varSeq = expand_iupac[varSeq]
-                    zygosity = 'heterozygous'
+                    if args.strains:
+                        # Don't know genotypes of strains where there are multiple alternative alleles, so skip
+                        continue
                 else:
                     print("Unrecognised alternative allele " + varSeq + " for " + v["alleleId"], file=sys.stderr)
                     continue
         
         if args.strains:
-            gtString = genotype_string(v, strains, zygosity)
+            gtString = genotype_string(v, strains)
         
             vcf_data["line"] = "\t".join([v["chromosome"], str(
                 pos), v["alleleId"], refSeq, varSeq, '.', 'PASS', '.', 'GT', gtString])
