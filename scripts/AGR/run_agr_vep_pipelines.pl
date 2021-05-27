@@ -8,6 +8,7 @@ use LWP::Simple;
 use File::Path qw(make_path);
 use Time::Piece;
 use File::Slurp;
+use Digest::MD5;
 
 const my $FMS_LATEST_PREFIX => 'https://fms.alliancegenome.org/api/datafile/by/';
 const my $FMS_LATEST_SUFFIX => '?latest=true';
@@ -19,6 +20,7 @@ const my %DATATYPE_EXTENSIONS => ('FASTA'             => 'fa',
 				  'MOD-GFF-BAM-MODEL' => 'bam',
 				  'VARIATION'         => 'json',
     );
+const my @CHECKSUM_SUFFIXES => ('FASTA.fa', 'GFF.gff', 'VCF.vcf', 'HTVCF.vcf', 'BAM.bam');
 const my %ASSEMBLIES => ('GRCm38'   => 'MGI',
 			 'R6'       => 'FB',
 			 'R627'     => 'FB',
@@ -30,6 +32,7 @@ const my %ASSEMBLIES => ('GRCm38'   => 'MGI',
 const my $BASE_DIR => $ENV{'AGR_VEP_BASE_DIR'} . '/' . $ENV{'AGR_RELEASE'} . '/' . $ENV{'DOWNLOAD_DATE'};
 const my $HGNC_FILE_URL => 'http://ftp.ebi.ac.uk/pub/databases/genenames/hgnc/tsv/hgnc_complete_set.txt';
 const my @IDS_TO_MAP => ('symbol', 'entrez_id', 'ensembl_gene_id', 'vega_id', 'ucsc_id', 'refseq_accession', 'mgd_id', 'rgd_id', 'omim_id', 'agr');
+const my $CHECKSUMS_FILE => $ENV{'AGR_VEP_BASE_DIR'} . '/mod_file_checksums.txt';
 
 const my %REFSEQ_CHROMOSOMES => (
     'FB'   => {
@@ -193,7 +196,7 @@ const my %REFSEQ_CHROMOSOMES => (
     },
     );
 
-my ($url, $test, $password, $cleanup, $help);
+my ($url, $test, $password, $cleanup, $nocheck, $help);
 my $stages = '1,2,3,4,5';
 my $mods_string = 'FB,MGI,RGD,SGD,WB,ZFIN,HUMAN';
 
@@ -204,6 +207,7 @@ GetOptions(
     "url|u=s"      => \$url,
     "test|t"       => \$test,
     "cleanup|c"    => \$cleanup,
+    "nocheck|n"    => \$nocheck,
     "help|h"       => \$help,
     ) or print_usage();
 
@@ -214,12 +218,144 @@ my @mods = split(',', $mods_string);
 download_from_agr(\@mods, $url) if $stages =~ /1/;
 
 for my $mod (@mods) {
+    my ($checksums, $run_stages) = check_for_new_data($mod, $nocheck);
     chdir "$BASE_DIR/$mod";
-    process_input_files($mod) if $stages =~ /2/;
-    calculate_pathogenicity_predictions($mod, $password, $test) if $stages =~ /3/;
-    run_vep_on_phenotypic_variations($mod, $password, $test) if $stages =~ /4/;
-    run_vep_on_htp_variations($mod, $password, $test) if $stages =~ /5/;
+    if ($stages =~ /2/) {
+	if ($run_stages->{2}) {
+	    process_input_files($mod);
+	}
+	else {
+	    system("echo Skipping processing of input files for $mod " .
+		   'as input files unchanged and no further analyses ' .
+		   "are being carried out\n");
+	}
+    }
+    if ($stages =~ /3/) {
+	if ($run_stages->{3}) {
+	    calculate_pathogenicity_predictions($mod, $password, $test);
+	}
+	else {
+	    system('echo Skipping pathogenicity prediction calculations ' .
+		   "for $mod as input files unchanged\n\n");
+	}
+    }
+    if ($stages =~ /4/) {
+	if ($run_stages->{4}) {
+	    run_vep_on_phenotypic_variations($mod, $password, $test);
+	    update_checksums($mod, 'VCF.vcf', $checksums) if !$test;
+	}
+	else {
+	    system('echo Skipping VEP analysis of phenotypic variants ' .
+		   "for $mod as input files unchanged\n\n");
+	}
+    }
+    if ($stages =~ /5/) {
+	if ($run_stages->{5}) {
+	    run_vep_on_htp_variations($mod, $password, $test);
+	    update_checksums($mod, 'HTVCF.vcf', $checksums) if !$test;
+	}
+	else {
+	    system('echo Skipping VEP analysis of HTP variants ' .
+		   "for $mod as input files unchanged\n\n");
+	}
+    }
+    if (!$test and $stages =~ /3/ and $stages =~ /4/ and $stages =~ /5/) {
+	update_checksums($mod, 'FASTA.fa', $checksums);
+	update_checksums($mod, 'GFF.gff', $checksums);
+	update_checksums($mod, 'BAM.bam', $checksums);
+    }
     cleanup_intermediate_files($mod) if $cleanup;
+}
+
+
+sub check_for_new_data {
+    my ($mod, $nocheck) = @_;
+
+    my $old_checksums = get_old_checksums($mod);
+    my $new_checksums = get_new_checksums($mod);
+    
+    my %run_stages;
+    if ($nocheck) {
+	%run_stages = map {$_ => 1} (2 .. 5);
+	return ($new_checksums, \%run_stages) if $nocheck;
+    }
+
+    %run_stages = map {$_ => 0} (2 .. 5);
+
+    if (!exists $old_checksums->{"${mod}_VCF.vcf"} or
+	$old_checksums->{"${mod}_VCF.vcf"} ne $new_checksums->{"${mod}_VCF.vcf"}) {
+	$run_stages{2} = 1;
+	$run_stages{4} = 1 ;
+    }
+    if (!exists $old_checksums->{"${mod}_HTVCF.vcf"} or
+	$old_checksums->{"${mod}_HTVCF.vcf"} ne $new_checksums->{"${mod}_HTVCF.vcf"}) {
+	$run_stages{2} = 1;
+	$run_stages{5} = 1;
+    }
+    if (!exists $old_checksums->{"${mod}_FASTA.fa"} or
+	!exists $old_checksums->{"${mod}_BAM.bam"} or
+	!exists $old_checksums->{"${mod}_GFF.gff"} or
+	$old_checksums->{"${mod}_FASTA.fa"} ne $new_checksums->{"${mod}_FASTA.fa"} or
+	$old_checksums->{"${mod}_BAM.bam"} ne $new_checksums->{"${mod}_BAM.bam"} or
+	$old_checksums->{"${mod}_GFF.gff"} ne $new_checksums->{"${mod}_GFF.gff"}) {
+	%run_stages = map {$_ => 1} (2 .. 5);
+    }
+    
+    return ($new_checksums, \%run_stages);
+}
+
+
+sub get_new_checksums {
+    my $mod = shift;
+
+    my %checksums;
+    for my $suffix (@CHECKSUM_SUFFIXES) {
+	my $file = "$BASE_DIR/$mod/${mod}_$suffix";
+	open (my $fh, '<', $file) or die ("Cannot open $file for reading'n");
+	my $md5 = Digest::MD5->new;
+	$md5->addfile($fh);
+	$checksums{"${mod}_${suffix}"} = $md5->hexdigest;
+	close ($fh);
+    }
+
+    return \%checksums;
+}
+
+
+sub get_old_checksums {
+    my $mod = shift;
+    my %checksums;
+    run_system_cmd("touch $CHECKSUMS_FILE", "Comparing checksums of new and old $mod files");
+    open (CHECKSUM, '<', $CHECKSUMS_FILE) or die "Couldn't open $CHECKSUMS_FILE for reading\n";
+    while (<CHECKSUM>) {
+	chomp;
+	next unless $_ =~ /^${mod}_/;
+	my ($file, $checksum) = /^([^\s]+)\s(.+)$/;
+	$checksums{$file} = $checksum;
+    }
+    close (CHECKSUM);
+
+    return \%checksums;
+}
+
+
+sub update_checksums {
+    my ($mod, $suffix, $checksums) = @_;
+
+    my $file_to_update = $mod . '_' . $suffix;
+    open (IN, '<', $CHECKSUMS_FILE) or die "Cannot open $CHECKSUMS_FILE for reading\n";
+    open (OUT, '>', $CHECKSUMS_FILE . '.tmp') or die "Cannot open $CHECKSUMS_FILE.tmp for writing\n";
+    while (<IN>) {
+	my ($file, $checksum) = split("\s", $_);
+	next if $file eq $file_to_update;
+	print OUT $_;
+    }
+    print OUT $file_to_update . ' ' . $checksums->{$file_to_update} . "\n";
+    close (IN);
+    close (OUT);
+    run_system_cmd("mv ${CHECKSUMS_FILE}.tmp ${CHECKSUMS_FILE}", "Updating ${mod}_${suffix} checksum");
+
+    return;
 }
 
 
@@ -444,7 +580,8 @@ sub run_vep_on_htp_variations{
     my $curl_cmd = 'curl -H "Authorization: Bearer ' . $ENV{'TOKEN'} . 
 	'" -X POST "https://fms.alliancegenome.org/api/data/submit" -F "' . $ENV{'AGR_RELEASE'} .
 	'_HTPOSTVEPVCF' . '_' . $mod . '=@' . $mod . '_HTPOSTVEPVCF.vcf.gz"';
-    run_system_cmd($curl_cmd, "Uploading $mod HTP VEP results to AGR") unless $test;
+    run_system_cmd($curl_cmd, "Uploading $mod HTP VEP results to AGR") unless $test
+	or $mod eq 'MGI' or $mod eq 'HUMAN'; # the MOD checks can be removed once it becomes possible to submit these files to the FMS
     
     return;
 }
@@ -736,7 +873,9 @@ run_agr_vep_pipelines.pl options:
 			    4 = run VEP on phenotypic variations
 			    5 = run VEP on HTP variations
     -test                   do not upload generated files to AGR
+    -url                    URL of FMS snapshot to use if latest files are not desired
     -cleanup                delete intermediate files generated by pipeline
+    -nocheck                run analyses even if no new data
     -help                   print this message
 USAGE
     
