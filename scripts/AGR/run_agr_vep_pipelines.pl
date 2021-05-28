@@ -395,7 +395,6 @@ sub download_from_agr {
 	merge_bam_files($mod, $log);
 	run_system_cmd('python3 ' . $ENV{'CVS_DIR'} . "/AGR/agr_variations_json2vcf.py -j ${mod}_VARIATION.json -m $mod -g ${mod}_GFF.gff " .
 		       "-f ${mod}_FASTA.fa -o ${mod}_VCF.vcf", "Converting $mod phenotypic variants JSON to VCF", $log) if -e "${mod}_VARIATION.json";
-	sort_vcf_files($mod, $log);
     }
     close (FILES);
     
@@ -467,6 +466,8 @@ sub process_input_files {
     my ($mod, $log) = @_;
     
     cleanup_intermediate_files($mod, $log);
+    
+    sort_vcf_files($mod, $log);
 
     my $chr_map;
     check_chromosome_map($mod, $log);
