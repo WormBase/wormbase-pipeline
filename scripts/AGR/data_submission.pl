@@ -264,7 +264,7 @@ if ($reference or $all) {
     my $datatype_processed = process_datatype('reference', \@cmds, $log);
     if ($datatype_processed and !$test) {
 	submit_data('REFERENCE', "${sub_dir}/WB_${agr_schema}_reference.json", $log);
-	submit_data('REF-EXCHANGE', "${sub_dir}/WB_${agr_schema}_reference_exchange.json");
+	submit_data('REF-EXCHANGE', "${sub_dir}/WB_${agr_schema}_reference_exchange.json", $log);
     }
 }
 
