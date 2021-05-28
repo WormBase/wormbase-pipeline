@@ -393,6 +393,7 @@ sub download_from_agr {
 	    run_system_cmd("mv $filename ${mod}_${datatype}.${extension}", "Renaming $filename", $log);
 	}
 	merge_bam_files($mod, $log);
+	unlink "${mod}_FASTA.fa.fai" if -e "${mod}_FASTA.fa.fai";
 	run_system_cmd('python3 ' . $ENV{'CVS_DIR'} . "/AGR/agr_variations_json2vcf.py -j ${mod}_VARIATION.json -m $mod -g ${mod}_GFF.gff " .
 		       "-f ${mod}_FASTA.fa -o ${mod}_VCF.vcf", "Converting $mod phenotypic variants JSON to VCF", $log) if -e "${mod}_VARIATION.json";
     }
