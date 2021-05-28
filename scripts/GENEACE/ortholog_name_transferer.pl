@@ -25,9 +25,9 @@ my $sanitycheck;
 my $explain_gene;
 my $explain_gene_output='';
 
-my $acefile = "/nfs/wormpub/DATABASES/geneace/CGC/orthos.ace";
-my $batchfile  = "/nfs/wormpub/DATABASES/geneace/CGC/batch_load";
-my $deletebatchfile  = "/nfs/wormpub/DATABASES/geneace/CGC/delete_batch_load";
+my $acefile = "/nfs/production/panda/ensemblgenomes/wormbase/DATABASES/geneace/CGC/orthos.ace";
+my $batchfile  = "/nfs/production/panda/ensemblgenomes/wormbase/DATABASES/geneace/CGC/batch_load";
+my $deletebatchfile  = "/nfs/production/panda/ensemblgenomes/wormbase/DATABASES/geneace/CGC/delete_batch_load";
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
@@ -79,16 +79,15 @@ open($deletenamedb, ">$deletebatchfile") || $log->log_and_die("cant write batch 
 
 my %person = (
 	      'pad' => 'WBPerson1983',
-	      'klh' => 'WBPerson3111',
-	      'gw3' => 'WBPerson4025',
-	      'mh6' => 'WBPerson4055',
+	      'skd' => 'WBPerson51134',
+	      'mz3' => 'WBPerson21950',
 	     );
 
 unless (defined $user) {
   print "\nERROR: please specify a user ID - e.g. pad\n\n[INPUT]:";
   my $tmp = <STDIN>;
   chomp $tmp;
-  if (($tmp ne 'pad') && ($tmp ne 'gw3') && ($tmp ne 'mh6')){
+  if (($tmp ne 'pad') && ($tmp ne 'skd') && ($tmp ne 'mz3')){
     $log->log_and_die("UNKNOWN USER.....TERMINATE\n\n");
     print "UNKNOWN USER.....TERMINATE\n\n" if $debug;
   }
@@ -208,14 +207,14 @@ close $deletenamedb;
 if (defined $explain_gene) {$log->write_to("\n==================================\n$explain_gene_output\n==================================\n\n")}
 
 
-$log->write_to("\nCreated orthos.ace and batch_load and delete_batch_load under /nfs/wormpub/DATABASES/geneace/CGC/\n\n
+$log->write_to("\nCreated orthos.ace and batch_load and delete_batch_load under /nfs/production/panda/ensemblgenomes/wormbase/DATABASES/geneace/CGC/\n\n
 Dont forget to load the ace file in to Geneace.(default is orthos.ace)\n
 \nDelete names from the Nameserver before creating new ones.\n
 Use batch_delName.pl -type CGC -user \$USER -pass pass -file delete_batch_load\n
 Use batch_pname_update.pl -newonly -cgc -domain Gene -user \$USER -pass pass -file batch_load\n
 \nFinished\n");
 $log->mail;
-print "\nCreated orthos.ace and batch_load and delete_batch_load under /nfs/wormpub/DATABASES/geneace/CGC/\n\n
+print "\nCreated orthos.ace and batch_load and delete_batch_load under /nfs/production/panda/ensemblgenomes/wormbase/DATABASES/geneace/CGC/\n\n
 Dont forget to load the ace file in to Geneace.(default is orthos.ace)\n
 \nDelete names from the Nameserver before creating new ones.\n
 Use batch_delName.pl -type CGC -user \$USER -pass pass -file delete_batch_load\n
