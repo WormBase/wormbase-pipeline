@@ -80,6 +80,7 @@ make_path($sub_dir);
 
 $logfile = "${sub_dir}/data_submission.log" unless $logfile;
 my $log = Log_files->make_log($logfile, $debug);
+$log->write_to("Starting AGR submission of $ws_release data\n");
 
 if ($fasta or $all) {
     my @cmds = (
