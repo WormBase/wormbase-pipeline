@@ -385,7 +385,7 @@ sub download_from_agr {
 	for my $datatype (keys %{$download_urls->{$mod}}){
 	    my ($filename) = $download_urls->{$mod}{$datatype} =~ /\/([^\/]+)$/;
 	    print FILES "\t${datatype}: ${filename}\n";
-	    run_system_cmd('wget ' . $download_urls->{$mod}{$datatype}, "Downloading $mod $datatype file", $log);
+	    run_system_cmd('curl -O ' . $download_urls->{$mod}{$datatype}, "Downloading $mod $datatype file", $log);
 	    $filename = check_if_actually_compressed($filename, $log) if $filename !~ /\.gz/; # temporary hack to get around gzipped files in FMS without .gz extension
 	    run_system_cmd("gunzip $filename", "Decompressing $filename", $log) if $filename =~ /\.gz$/; # if clause only required in interim while some FMS files not gzipped
 	    $filename =~ s/\.gz$//;
@@ -546,10 +546,7 @@ sub run_vep_on_phenotypic_variations {
 		       "Replacing $mod VEP${level} file with original chromosome ID version", $log);
 
 	run_system_cmd("gzip -9 ${mod}_VEP${level}.txt", 'Compressing ' . lc($level) . '-level VEP results', $log);
-	my $curl_cmd = 'curl -H "Authorization: Bearer ' . $ENV{'TOKEN'} . 
-	    '" -X POST "https://fms.alliancegenome.org/api/data/submit" -F "' . $ENV{'AGR_RELEASE'} .
-	    '_VEP' . $level . '_' . $mod . '=@' . $mod . '_VEP' . $level . '.txt.gz"';
-	run_system_cmd($curl_cmd, "Uploading $mod " . lc($level) . '-level VEP results to AGR', $log) unless $test;
+	submit_data($mod, 'VEP' . $level, $mod . '_VEP' . $level . '.txt.gz', $log) unless $test;
     }
     
     return;
@@ -586,15 +583,31 @@ sub run_vep_on_htp_variations{
     run_system_cmd("mv ${compressed_file} ${mod}_HTPOSTVEPVCF.vcf.gz",
 		   "Moving $mod HTP variations VEP output", $log);
 
-
-    my $curl_cmd = 'curl -H "Authorization: Bearer ' . $ENV{'TOKEN'} . 
-	'" -X POST "https://fms.alliancegenome.org/api/data/submit" -F "' . $ENV{'AGR_RELEASE'} .
-	'_HTPOSTVEPVCF' . '_' . $mod . '=@' . $mod . '_HTPOSTVEPVCF.vcf.gz"';
-    run_system_cmd($curl_cmd, "Uploading $mod HTP VEP results to AGR", $log) unless $test
+    submit_data($mod, 'HTPOSTVEPVCF', $mod . '_HTPOSTVEPVCF.vcf.gz', $log) unless $test
 	or $mod eq 'MGI' or $mod eq 'HUMAN'; # the MOD checks can be removed once it becomes possible to submit these files to the FMS
     
     return;
 }
+
+
+sub submit_data {
+    my ($mod, $fms_datatype, $file, $log) = @_;
+
+    my $cmd = 'curl -H "Authorization: Bearer ' . $ENV{'TOKEN'} . '" -X POST ' .
+	'"https://fms.alliancegenome.org/api/data/submit" -F "' . $ENV{'AGR_RELEASE'} . '_' .
+	$fms_datatype . '_' . $mod . '=@' . $file;
+
+    my $response_json = `$cmd`;
+    my $response = decode_json($response_json);
+    if ($response->{status} eq 'failed') {
+	$log->error("Upload of $mod $fms_datatype failed:\n$response_json\n\n");
+    }
+    else {
+	$log->write_to("Upload of $mod ${fms_datatype} succeeded\n\n");
+    }
+
+    return;
+}    
 
 
 sub merge_bam_files {
@@ -1019,7 +1032,7 @@ sub cleanup_intermediate_files {
 
 sub get_hgnc_id_map {
     my ($file, $log) = $HGNC_FILE_URL =~ /\/([^\/]+)$/;
-    run_system_cmd("wget $HGNC_FILE_URL", 'Downloading HGNC gene ID map file', $log) unless -e $file;
+    run_system_cmd("curl -O $HGNC_FILE_URL", 'Downloading HGNC gene ID map file', $log) unless -e $file;
 
     my $first_line = 1;
     open (HGNC, '<', $file) or $log->log_and_die("Cannot open $file for reading\n");
