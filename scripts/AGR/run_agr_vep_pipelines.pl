@@ -602,7 +602,7 @@ sub submit_data {
 
     my $cmd = 'curl -H "Authorization: Bearer ' . $ENV{'TOKEN'} . '" -X POST ' .
 	'"https://fms.alliancegenome.org/api/data/submit" -F "' . $ENV{'AGR_RELEASE'} . '_' .
-	$fms_datatype . '_' . $mod . '=@' . $file;
+	$fms_datatype . '_' . $mod . '=@' . $file . '"';
 
     my $response_json = `$cmd`;
     my $response = decode_json($response_json);
