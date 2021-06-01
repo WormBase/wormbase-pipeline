@@ -130,18 +130,23 @@ foreach my $g (sort keys %genes) {
   my @g = @{$genes{$g}};
   $log->log_and_die("ERROR: multiple gene entries with id $g\n") if scalar(@g) != 1;
 
+  check_for_missing_data($log, $g[0]);
   print $outfile join("\t", @{$g[0]}), "\n";
 }
 
 foreach my $ct (sort keys %coding_trans) {
   my @ct = @{$coding_trans{$ct}};
   $log->log_and_die("ERROR: multiple gene entries with id $ct\n") if scalar(@ct) != 1;
+
+  check_for_missing_data($log, $ct[0]);
   print $outfile join("\t", @{$ct[0]}), "\n";
 }
 
 foreach my $nct (sort keys %nc_trans) {
   my @nct = @{$nc_trans{$nct}};
   $log->log_and_die("ERROR: multiple gene entries with id $nct\n") if scalar(@nct) != 1;
+
+  check_for_missing_data($log, $nct[0]);
   print $outfile join("\t", @{$nct[0]}), "\n";
 }
 
@@ -155,6 +160,7 @@ foreach my $p (sort keys %proteins) {
     }
     $p[0]->[7] = join("|", @all_t);
   }
+  check_for_missing_data($log, $p[0]);
   print $outfile join("\t", @{$p[0]}), "\n";
 }
 
@@ -165,6 +171,20 @@ $outfile->close;
 $db->close;
 
 #############################################################
+sub check_for_missing_data {
+    my ($log, $columns) = @_;
+
+    for my $ix (0, 1, 4, 5) {
+	my $nr = $ix + 1;
+	$log->log_and_die("Required field missing in column $nr:\n\t" .
+			  join("\t", @$columns) . "\n")
+	    unless length $columns->[$ix] > 0;
+    }
+
+    return;
+}
+
+
 sub get_xrefs {
   my ($obj, $type) = @_;
 
