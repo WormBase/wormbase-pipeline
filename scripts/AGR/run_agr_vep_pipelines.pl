@@ -552,7 +552,7 @@ sub run_vep_on_phenotypic_variations {
 	run_system_cmd("mv ${mod}_VEP${level}.txt.tmp ${mod}_VEP${level}.txt",
 		       "Replacing $mod VEP${level} file with original chromosome ID version", $log);
 
-	run_system_cmd("gzip -9 ${mod}_VEP${level}.txt", 'Compressing ' . lc($level) . '-level VEP results', $log);
+	run_system_cmd("gzip -f -9 ${mod}_VEP${level}.txt", 'Compressing ' . lc($level) . '-level VEP results', $log);
 	submit_data($mod, 'VEP' . $level, $mod . '_VEP' . $level . '.txt.gz', $log) unless $test;
     }
     
@@ -819,7 +819,7 @@ sub backup_pathogenicity_prediction_db {
 	' -P ' . $ENV{'WORM_DBPORT'} . ' -p' . $password . ' ' .$ENV{'PATH_PRED_DB_PREFIX'} . 
 	$mod . ' > ' . $dump_dir . '/' . $dump_file;
     run_system_cmd($dump_cmd, "Dumping $mod pathogenicity predictions database to $dump_dir", $log);
-    run_system_cmd("gzip -9 $dump_dir/$dump_file",
+    run_system_cmd("gzip -f -9 $dump_dir/$dump_file",
 		   "Compressing $mod pathogenicity predictions database dump", $log);
     
     return;
