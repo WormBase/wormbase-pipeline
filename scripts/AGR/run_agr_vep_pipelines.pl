@@ -321,6 +321,7 @@ sub get_new_checksums {
     my %checksums;
     for my $suffix (@CHECKSUM_SUFFIXES) {
 	my $file = "$BASE_DIR/$mod/${mod}_$suffix";
+	next unless -e $file;
 	open (my $fh, '<', $file) or $log->log_and_die("Cannot open $file for reading\n");
 	my $md5 = Digest::MD5->new;
 	$md5->addfile($fh);
@@ -964,7 +965,7 @@ sub run_system_cmd {
 
 
 sub check_chromosome_map {
-    my ($mod, $log) = shift;
+    my ($mod, $log) = @_;
 
     unless (-e "${mod}_VARIATION.json") {
 	$log->write_to("WARNING: No variations file for $mod - cannot check RefSeq chromosome IDs are correct\n");
