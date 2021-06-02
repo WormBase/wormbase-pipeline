@@ -397,6 +397,7 @@ sub download_from_agr {
 	    $filename =~ s/\.gz$//;
 	    run_system_cmd("mv $filename ${mod}_${datatype}.${extension}", "Renaming $filename", $log);
 	}
+	fix_rgd_headers($log) if $mod eq 'RGD'; # Temporary hack
 	merge_bam_files($mod, $log);
 	unlink "${mod}_FASTA.fa.fai" if -e "${mod}_FASTA.fa.fai";
 	run_system_cmd('python3 ' . $ENV{'CVS_DIR'} . "/AGR/agr_variations_json2vcf.py -j ${mod}_VARIATION.json -m $mod -g ${mod}_GFF.gff " .
@@ -404,6 +405,33 @@ sub download_from_agr {
     }
     close (FILES);
     
+    return;
+}
+
+
+sub fix_rgd_headers {
+    # Temporary hack
+    my $log = shift;
+    open (IN, '<', 'RGD_HTVCF.vcf') or $log->log_and_die("Couldn't open RGD_HTVCF.vcf for reading\n");
+    open (OUT, '>', 'RGD_HTVCF.vcf.tmp') or $log->log_and_die("Couldn't open RGD_HTVCF.vcf.tmp for writing\n");
+    while (<IN>) {
+	if ($_ =~ /^##fileformat=VCF4.2/) {
+	    print OUT "##fileformat=VCFv4.2\n";
+	}
+	elsif ($_ =~ /^##INFO=<ID=VT,Number=0,Type=Integer/) {
+	    print OUT "##INFO=<ID=VT,Number=1,Type=String,Description=\"Variant type: SNP, INS, and DEL\">\n";
+	}
+	elsif ($_ =~ /^##FORMAT=<ID=DP,Number=2,Type=String/) {
+	    print OUT "##FORMAT=<ID=DP,Number=1,Type=Integer,Description=\"Depth\">\n";
+	}
+	else {
+	    print OUT $_;
+	}
+    }
+    close (IN);
+    close (OUT);
+    run_system_cmd('mv RGD_HTVCF.vcf.tmp RGD_HTVCF.vcf', 'Replacing RGD HTVCF file with fixed header version', $log);
+
     return;
 }
 
