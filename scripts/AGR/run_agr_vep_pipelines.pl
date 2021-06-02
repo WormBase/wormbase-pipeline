@@ -605,9 +605,14 @@ sub submit_data {
 	$fms_datatype . '_' . $mod . '=@' . $file . '"';
 
     my $response_json = `$cmd`;
-    my $response = decode_json($response_json);
-    if ($response->{status} eq 'failed') {
-	$log->error("Upload of $mod $fms_datatype failed:\n$response_json\n\n");
+    if ($file =~ /\.json/) {
+	my $response = decode_json($response_json);
+	if ($response->{status} eq 'failed') {
+	    $log->error("Upload of $mod $fms_datatype failed:\n$response_json\n\n");
+	} 
+	else {
+	    $log->write_to("Upload of $mod ${fms_datatype} succeeded\n\n");
+	}
     }
     else {
 	$log->write_to("Upload of $mod ${fms_datatype} succeeded\n\n");

@@ -305,6 +305,7 @@ sub process_datatype {
 
     my @cmd_output;
     for my $cmd(@$cmds) {
+	$log->write_to("Running $datatype command: $cmd\n\n");
 	my $output = `$cmd 2>&1`;
 	my $exit_code = $? >> 8;
 	if ($exit_code != 0) {
