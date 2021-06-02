@@ -111,12 +111,12 @@ sub process_genes_phenotype{
 	        foreach my $pt (@phenotypes){
         	  my $phen_id   = 'WB:'.$pt->name;
 	          my $phen_desc = $pt->Primary_name->name;
-        	  my @paper;
+        	  my %papers;
     
 	          foreach my $evi ($pt->col()) {
         	   if ($evi->name eq 'Paper_evidence') {
 	             foreach my $wb_paper ($evi->col ) {
-        	       push @paper, &get_paper_json($wb_paper);
+        	       $papers{$wb_paper} = &get_paper_json($wb_paper);
 	             }
         	   }
 	          }
@@ -126,16 +126,16 @@ sub process_genes_phenotype{
 		  #     push @paper, &get_paper_json($wb_paper);
 		  #  }
 
-        	 foreach my $pap (@paper) {
+        	 foreach my $paper (keys %papers) {
 	          my $json_obj = {
         	    objectId                 => "WB:$gen",
 	            primaryGeneticEntityIDs  => ["WB:$obj"],
         	    phenotypeTermIdentifiers => [ { termId => $phen_id, termOrder => 1 } ],
 	            phenotypeStatement       => $phen_desc,
         	    dateAssigned             => $date,
-	            evidence                 => $pap,
+	            evidence                 => $papers{$paper},
         	  }; 
-		  my @condition_relations = @{get_condition_relations($pt)};
+		  my @condition_relations = @{get_condition_relations($pt, $paper)};
 		  $json_obj->{conditionRelations} = \@condition_relations if @condition_relations;
 	          push @pheno_annots, $json_obj;
         	}
@@ -162,13 +162,13 @@ sub process {
         foreach my $pt (@phenotypes){
           my $phen_id   = 'WB:'.$pt->name;
           my $phen_desc = $pt->Primary_name->name;
-          my @paper;
+          my %papers;
 	  my @caused_by_genes;
     
           foreach my $evi ($pt->col()) {
            if ($evi->name eq 'Paper_evidence') {
              foreach my $wb_paper ($evi->col ) {
-               push @paper, &get_paper_json($wb_paper);
+               $papers{$wb_paper} = &get_paper_json($wb_paper);
              }
            } elsif($evi->name eq 'Caused_by_gene' && $obj->name =~ /WBTransgene/){
 		   foreach my $g ($evi->col){
@@ -177,16 +177,16 @@ sub process {
 	   }
           }
     
-         foreach my $pap (@paper) {
+         foreach my $paper (keys %papers) {
           my $json_obj = {
             objectId                 => "WB:$obj",
             primaryGeneticEntityIDs  => ["WB:$obj"],
             phenotypeTermIdentifiers => [ { termId => $phen_id, termOrder => 1 } ],
             phenotypeStatement       => $phen_desc,
             dateAssigned             => $date,
-            evidence                 => $pap,
+            evidence                 => $papers{$paper},
           }; 
-	  my @condition_relations = @{get_condition_relations($pt)};
+	  my @condition_relations = @{get_condition_relations($pt, $paper)};
 	  $json_obj->{conditionRelations} = \@condition_relations if @condition_relations;
           push @pheno_annots, $json_obj;
         
@@ -197,9 +197,9 @@ sub process {
               phenotypeTermIdentifiers => [ { termId => $phen_id, termOrder => 1 } ],
               phenotypeStatement       => $phen_desc,
               dateAssigned             => $date,
-              evidence                 => $pap,
+              evidence                 => $papers{$paper},
             };
-	    my @condition_relations = @{get_condition_relations($pt)};
+	    my @condition_relations = @{get_condition_relations($pt, $paper)};
 	    $json_obj->{conditionRelations} = \@condition_relations if @condition_relations;
             push @pheno_annots, $json_obj;
           }
@@ -223,36 +223,48 @@ sub get_chemical_ontology_id {
 
 
 sub get_condition_relations {
-    my $obj = shift;
+    my ($obj, $paper_id) = @_;
 
     my $condition_relation_type = 'has_condition';
 
         
-    my (@conditions, @assays, @molecules);
+    my @conditions;
     my $pa = $obj->at('Phenotype_assay');
     if (defined $pa){
-	my @temperatures = map {{
-            conditionStatement => 'temperature exposure:' . $_->name,
-            conditionClassId => $zeco{'temperature exposure'},
-            }} $pa->Temperature;
-        my @treatments = map {{
-            conditionStatement => 'experimental conditions:' . $_->name,
-            conditionClassId => $zeco{'experimental conditions'},
-            }} $pa->Treatment;
-        @assays = (@temperatures, @treatments);
+	my @assays;
+	for my $temp ($pa->at('Temperature')) {
+	    my $paper = $temp->at('Paper_evidence')->at() if $temp->at('Paper_evidence');
+	    next unless defined $paper;
+	    push @assays, {
+		conditionStatement => 'temperature exposure:' . $temp->name,
+		conditionClassId => $zeco{'temperature exposure'},
+	    } if $paper->name eq $paper_id;
+	}
+	for my $treatment ($pa->at('Treatment')) {
+	    my $paper = $treatment->at('Paper_evidence')->at() if $treatment->at('Paper_evidence');
+	    next unless defined $paper;
+	    push @assays, {
+		conditionStatement => 'experimental conditions:' . $treatment->name,
+		conditionClassId => $zeco{'experimental conditions'},
+            } if $paper->name eq $paper_id;
+	}
         push @conditions, {conditionRelationType => $condition_relation_type,
                            conditions            => \@assays} if @assays;
     }
 
     my $ab = $obj->at('Affected_by');
     if (defined $ab) {
-	my @molecules = map {{
-	    conditionStatement => 'chemical treatment:' . $_->Public_name->name,
-	    chemicalOntologyId => get_chemical_ontology_id($_),
-	    conditionClassId => $zeco{'chemical treatment'},
-	    conditionId => $zeco{'chemical treatment'}
-	    }} $ab->Molecule;
-	
+	my @molecules;
+	for my $mol ($ab->at('Molecule')) {
+	    my $paper = $mol->at('Paper_evidence')->at() if $mol->at('Paper_evidence');
+	    next unless defined $paper;
+	    push @molecules, {
+		conditionStatement => 'chemical treatment:' . $mol->Public_name->name,
+		chemicalOntologyId => get_chemical_ontology_id($mol),
+		conditionClassId => $zeco{'chemical treatment'},
+		conditionId => $zeco{'chemical treatment'},
+	    } if $paper eq $paper_id;
+	}
         push @conditions, {conditionRelationType => $condition_relation_type,
                            conditions            => \@molecules} if @molecules;
     }
