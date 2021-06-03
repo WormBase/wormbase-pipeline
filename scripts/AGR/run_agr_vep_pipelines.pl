@@ -566,14 +566,26 @@ sub run_vep_on_phenotypic_variations {
 	open (IN, '<', "${mod}_VEP${level}.txt") or die $log->log_and_die("Cannot open ${mod}_VEP${level}.txt for reading\n");
 	open (OUT, '>', "${mod}_VEP${level}.txt.tmp") or die $log->log_and_die("Cannot open ${mod}_VEP${level}.txt.tmp for writing\n");
 	while (<IN>) {
+	    chomp;
 	    if ($_ =~ /^#/) {
-		print OUT $_;
+		print OUT $_ . "\n";
 	    }
 	    else {
 		my @columns = split("\t", $_);
 		my ($chr, $pos) = split(':', $columns[1]);
+		my ($before, $hgvsg, $after) = $columns[13] =~ /(.*HGVSg=)([^;]+)(.*)/;
+		# Alt alleles with Ns in do not have HGVSg names
+		next unless defined $hgvsg; 
+		# Need to replace variant name from alleleId with HGVSg name
+		$columns[0] = $hgvsg;
+		# HGVSg in extras column needs to have chromosome name not RefSeq chr ID
+		my @hgvsg_parts = split(':', $hgvsg);
+		$hgvsg_parts[0] = $reverse_map->{$chr};
+		my $old_hgvsg = join(':', @hgvsg_parts);
+		$columns[13] = $before . $old_hgvsg . $after;
+		# Position should have chromosome name not RefSeq chr ID
 		$columns[1] = $reverse_map->{$chr} . ':' . $pos;
-		print OUT join("\t", @columns);
+		print OUT join("\t", @columns) . "\n";
 	    }
 	}
 	close (IN);
@@ -634,15 +646,10 @@ sub submit_data {
 	$fms_datatype . '_' . $mod . '=@' . $file . '"';
 
     my $response_json = `$cmd`;
-    if ($file =~ /\.json/) {
-	my $response = decode_json($response_json);
-	if ($response->{status} eq 'failed') {
-	    $log->error("Upload of $mod $fms_datatype failed:\n$response_json\n\n");
-	} 
-	else {
-	    $log->write_to("Upload of $mod ${fms_datatype} succeeded\n\n");
-	}
-    }
+    my $response = decode_json($response_json);
+    if ($response->{status} eq 'failed') {
+	$log->error("Upload of $mod $fms_datatype failed:\n$response_json\n\n");
+    } 
     else {
 	$log->write_to("Upload of $mod ${fms_datatype} succeeded\n\n");
     }
