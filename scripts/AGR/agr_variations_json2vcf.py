@@ -303,7 +303,7 @@ for v in (parsed["data"]):
     # Get alternative allele
     if v["type"] == 'SO:0000159':
         varSeq = ''
-    elif 'genomicVariantSequence' not in v:
+    elif 'genomicVariantSequence' not in v or v["genomicVariantSequence"] == '':
         print("Unknown alternative allele for " + v["alleleId"], file=sys.stderr)
         varSeq = '.'
     else:
@@ -323,8 +323,6 @@ for v in (parsed["data"]):
         else:
             refSeq = padBase + refSeq
             varSeq = padBase + varSeq
-        
-    if 
 
     vcf_data["chromosome"] = chrom
     vcf_data["pos"] = pos
