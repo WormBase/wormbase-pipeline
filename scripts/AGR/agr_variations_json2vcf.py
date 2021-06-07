@@ -11,6 +11,14 @@ import re
 import sys
 import subprocess
 
+def chromosome_from_refseq(v, chr_map):
+    parts = v["sequenceOfReferenceAccessionNumber"].split(':',1)
+    for chrom, refseq in chr_map.items():
+        if refseq == parts[1]:
+            return chrom
+
+    return
+
 def genotype_string(variation, allStrains):
     variationStrains = set(variation["strains"])
     genotypes = []
@@ -42,22 +50,21 @@ def get_header_info(gff):
     return assembly, chr_length
 
 
-def get_refseq_from_fasta(v, fasta):
-    faidx_call = subprocess.run(["samtools", "faidx", fasta, str(v["chromosome"]) + ':' + str(v["start"]) + '-' + str(v["end"])], stdout=subprocess.PIPE, text=True)
+def get_refseq_from_fasta(v, chrom, fasta):
+    faidx_call = subprocess.run(["samtools", "faidx", fasta, chrom + ':' + str(v["start"]) + '-' + str(v["end"])], stdout=subprocess.PIPE, text=True)
     faidx_lines = faidx_call.stdout.split("\n");
     faidx_lines.pop(0)
     return ''.join(faidx_lines).upper()
 
-def get_padbase_from_fasta(v, refSeq, fasta):
-    
-    if refSeq == '':
-        pos = int(v["start"])
+def get_padbase_from_fasta(v, chrom, fasta):
+    if v["type"] == 'SO:0000667':
+        pbpos = int(v["start"])
     else:
         if v["start"] == 1:
-            pos = int(v["end"]) + 1
+            pbpos = int(v["end"]) + 1
         else:
-            pos = int(v["start"]) - 1
-    faidx_call = subprocess.run(["samtools", "faidx", fasta, str(v["chromosome"]) + ':' + str(pos) + '-' + str(pos)], stdout=subprocess.PIPE, text=True)
+            pbpos = int(v["start"]) - 1
+    faidx_call = subprocess.run(["samtools", "faidx", fasta, chrom + ':' + str(pbpos) + '-' + str(pbpos)], stdout=subprocess.PIPE, text=True)
     faidx_lines = faidx_call.stdout.split("\n");
     faidx_lines.pop(0)
     return faidx_lines[0].upper()
@@ -228,6 +235,7 @@ parser.add_argument("-o", "--out", help="Output VCF file")
 parser.add_argument("-m", "--mod", help="Acronym for MOD")
 parser.add_argument("-f", "--fasta", help="FASTA file")
 parser.add_argument("-s", "--strains", default=False, help="Input includes strain data")
+parser.add_argument("-w", "--wbhtp", default=False, help="WB high throughput data")
 
 args = parser.parse_args()
 assembly, chr_lengths = get_header_info(args.gff)
@@ -239,8 +247,8 @@ vcf_file.write("##fileformat=VCFv4.2\n" +
                "##reference=" + assembly + "\n" +
                "##source=AllianceJSON\n")
 
-for chr in chrom2ncbi[args.mod].keys():
-    if chr in chr_lengths.keys():
+for chr in chrom2ncbi[args.mod]:
+    if chr in chr_lengths:
         vcf_file.write("##contig=<ID=" + chr + ",accession=\"" + chrom2ncbi[args.mod][chr] + "\",length=" + chr_lengths[chr] + ">\n")
     else:
         vcf_file.write("##contig=<ID=" + chr + ",accession=\"" + chrom2ncbi[args.mod][chr] + "\">\n")
@@ -255,88 +263,99 @@ nt_regex = re.compile('^[ACGT]$')
 with open(args.json, 'r') as read_file:
     parsed = json.load(read_file)
 
-    # get all strains for column headers
-    if args.strains:
-        strains = get_strains(parsed["data"])
-        for s in strains:
-            headers.append('WB:' + s)  # need curie form of strain
+# get all strains for column headers
+if args.strains:
+    strains = get_strains(parsed["data"])
+    for s in strains:
+        headers.append('WB:' + s)  # need curie form of strain
     
-    vcf_file.write("\t".join(headers) + "\n")
+vcf_file.write("\t".join(headers) + "\n")
 
-    vcf_lines = []
-    for v in (parsed["data"]):
-        vcf_data = {}
+vcf_lines = []
+added_entries = set()
+for v in (parsed["data"]):
+    vcf_data = {}
 
-        if 'genomicReferenceSequence' not in v.keys():
-            if 'chromosome' not in v.keys() or 'start' not in v.keys() or 'end' not in v.keys():
-                print("Neither genomicVariantSequence nor chr/start/end coordinates specified for " + v["alleleId"], file=sys.stderr)
-                continue
-            refSeq = get_refseq_from_fasta(v, args.fasta)
-        else:
-            if v["genomicReferenceSequence"] == "N/A":
-                refSeq = ""  
-            else:
-                if args.mod == 'WB':
-                    # don't need to check against reference for WB - makes it very slow for HTP variants
-                    refSeq = v["genomicReferenceSequence"]
-                else:
-                    refSeq = get_refseq_from_fasta(v, args.fasta)
-                    if v["genomicReferenceSequence"].upper() != refSeq:
-                        print("Specified genomic reference allele (" + v["genomicReferenceSequence"] + ") doesn't match reference sequence ("
-                              + refSeq + ") at specified coordinates for " + v["alleleId"], file=sys.stderr)
-
-    
-        if 'genomicVariantSequence' not in v.keys():
-            print("Missing reference allele for " + v["alleleId"], file=sys.stderr)
-            continue
-
-        varSeq = "" if v["genomicVariantSequence"] == "N/A" else v["genomicVariantSequence"]
-        pos = int(v["start"])
+    if 'chromosome' not in v:
+        chrom = chromosome_from_refseq(v, chrom2ncbi[args.mod])
+    else:
+        chrom = str(v["chromosome"])
         
-        if refSeq == '' or varSeq == '':
-            if refSeq == '' and varSeq == '':
-                # FB has transgenes with insertions of unknown length
-                print("No reference or alternative allele specified for " + v["alleleId"] + ', skipping', file=sys.stderr)
-                continue
+    # SO:0000159 - deletion
+    # SO:0000667 - insertion
+    # SO:0002007 - multiple nucleotide substitution
+    # SO:1000008 - point mutation
+    # SO:1000032 - deletion-insertion
 
-            if 'paddedBase' in v.keys():
-                padBase = v["paddedBase"]
-            else:
-                padBase = get_padbase_from_fasta(v, refSeq, args.fasta)
-            if pos == 1:
-                refSeq = refSeq+padBase
-                varSeq = varSeq+padBase
-            else:
-                refSeq = padBase+refSeq
-                varSeq = padBase+varSeq
-                if refSeq == '':
-                    pos = pos-1  # include the padding base in POS for deletions
+    pos = int(v["start"])
+        
+    # Get reference allele
+    if v["type"] == 'SO:0000667':
+        refSeq = ''
+    elif args.wbhtp:
+        refSeq = v["genomicReferenceSequence"]
+    else:
+        refSeq = get_refseq_from_fasta(v, chrom, args.fasta)
+        if 'genomicReferenceSequence' in v and v["genomicReferenceSequence"].upper() != refSeq:
+            print("Specified genomic reference allele (" + v["genomicReferenceSequence"] + ") doesn't match reference sequence ("
+                  + refSeq + ") at specified coordinates for " + v["alleleId"], file=sys.stderr)
 
-        vcf_data["chromosome"] = v["chromosome"]
-        vcf_data["pos"] = pos
+    # Get alternative allele
+    if v["type"] == 'SO:0000159':
+        varSeq = ''
+    elif 'genomicVariantSequence' not in v:
+        print("Unknown alternative allele for " + v["alleleId"], file=sys.stderr)
+        varSeq = '.'
+    else:
+        varSeq = v["genomicVariantSequence"]
+        
+    # Add padded base and adjust pos if required
+    if v["type"] == 'SO:0000159' or v["type"] == 'SO:0000667' or v["type"] == 'SO:1000032':
+        if v["type"] != 'SO:0000667' and pos != 1:
+            pos = pos - 1
+        padBase = get_padbase_from_fasta(v, chrom, args.fasta)
+        if 'paddedBase' in v and padBase != v["paddedBase"]:
+            print("Specified padded base(" + v["paddedBase"] + ") doesn't match reference sequence (" + padBase
+                  + ") at specified coordinates for " + v["alleleId"], file=sys.stderr)
+        if pos == 1:
+            refSeq = refSeq + padBase
+            varSeq = varSeq + padBase
+        else:
+            refSeq = padBase + refSeq
+            varSeq = padBase + varSeq
+        
+    if 
 
-        if len(varSeq) == 1:
-            if nt_regex.match(varSeq) is None:
-                if varSeq in expand_iupac.keys():
-                    varSeq = expand_iupac[varSeq]
-                    if args.strains:
-                        # Don't know genotypes of strains where there are multiple alternative alleles, so skip
-                        continue
-                else:
-                    print("Unrecognised alternative allele " + varSeq + " for " + v["alleleId"], file=sys.stderr)
+    vcf_data["chromosome"] = chrom
+    vcf_data["pos"] = pos
+
+    if len(varSeq) == 1:
+        if nt_regex.match(varSeq) is None:
+            if varSeq in expand_iupac:
+                varSeq = expand_iupac[varSeq]
+                if args.strains:
+                    # Don't know genotypes of strains where there are multiple alternative alleles, so skip
                     continue
-        
-        if args.strains:
-            gtString = genotype_string(v, strains)
-        
-            vcf_data["line"] = "\t".join([v["chromosome"], str(
-                pos), v["alleleId"], refSeq, varSeq, '.', 'PASS', '.', 'GT', gtString])
-        else:
-            vcf_data["line"] = "\t".join([v["chromosome"], str(pos), v["alleleId"], refSeq, varSeq, '.', '.' ,'.'])
+            else:
+                print("Unrecognised alternative allele " + varSeq + " for " + v["alleleId"] + " - skipping", file=sys.stderr)
+                continue
+    
+    # There are cases where the same genetic change has multiple variaton IDs
+    entry = '|'.join((chrom, str(pos), refSeq, varSeq))
+    if entry in added_entries:
+        continue
+    else:
+        added_entries.add(entry)
+                
+    if args.strains:
+        gtString = genotype_string(v, strains)
+        vcf_data["line"] = "\t".join([chrom, str(pos), v["alleleId"], refSeq, varSeq, '.', 'PASS', '.', 'GT', gtString])
+    else:
+        vcf_data["line"] = "\t".join([chrom, str(pos), v["alleleId"], refSeq, varSeq, '.', '.' ,'.'])
 
-        vcf_lines.append(vcf_data)
+    vcf_lines.append(vcf_data)
 
-    for v in sorted(vcf_lines, key=operator.itemgetter('chromosome', 'pos')):
-        vcf_file.write(v["line"] + "\n")
+for v in sorted(vcf_lines, key=operator.itemgetter('chromosome', 'pos')):
+    vcf_file.write(v["line"] + "\n")
 
-    vcf_file.close()
+vcf_file.close()
