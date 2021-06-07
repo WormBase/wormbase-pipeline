@@ -48,11 +48,15 @@ def get_refseq_from_fasta(v, fasta):
     faidx_lines.pop(0)
     return ''.join(faidx_lines).upper()
 
-def get_padbase_from_fasta(v, fasta):
-    if v["start"] == 1:
-        pos = int(v["end"]) + 1
+def get_padbase_from_fasta(v, refSeq, fasta):
+    
+    if refSeq == '':
+        pos = int(v["start"])
     else:
-        pos = int(v["start"]) - 1
+        if v["start"] == 1:
+            pos = int(v["end"]) + 1
+        else:
+            pos = int(v["start"]) - 1
     faidx_call = subprocess.run(["samtools", "faidx", fasta, str(v["chromosome"]) + ':' + str(pos) + '-' + str(pos)], stdout=subprocess.PIPE, text=True)
     faidx_lines = faidx_call.stdout.split("\n");
     faidx_lines.pop(0)
@@ -299,14 +303,15 @@ with open(args.json, 'r') as read_file:
             if 'paddedBase' in v.keys():
                 padBase = v["paddedBase"]
             else:
-                padBase = get_padbase_from_fasta(v, args.fasta)
+                padBase = get_padbase_from_fasta(v, refSeq, args.fasta)
             if pos == 1:
                 refSeq = refSeq+padBase
                 varSeq = varSeq+padBase
             else:
                 refSeq = padBase+refSeq
                 varSeq = padBase+varSeq
-                pos = pos-1  # include the padding base in POS
+                if refSeq == '':
+                    pos = pos-1  # include the padding base in POS for deletions
 
         vcf_data["chromosome"] = v["chromosome"]
         vcf_data["pos"] = pos
