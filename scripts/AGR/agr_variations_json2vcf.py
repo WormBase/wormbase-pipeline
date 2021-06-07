@@ -284,7 +284,6 @@ with open(args.json, 'r') as read_file:
                     if v["genomicReferenceSequence"].upper() != refSeq:
                         print("Specified genomic reference allele (" + v["genomicReferenceSequence"] + ") doesn't match reference sequence ("
                               + refSeq + ") at specified coordinates for " + v["alleleId"], file=sys.stderr)
-                        continue
 
     
         if 'genomicVariantSequence' not in v.keys():
