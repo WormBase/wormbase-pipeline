@@ -321,6 +321,7 @@ sub get_new_checksums {
     my %checksums;
     for my $suffix (@CHECKSUM_SUFFIXES) {
 	my $file = "$BASE_DIR/$mod/${mod}_$suffix";
+	next unless -e $file;
 	open (my $fh, '<', $file) or $log->log_and_die("Cannot open $file for reading\n");
 	my $md5 = Digest::MD5->new;
 	$md5->addfile($fh);
@@ -397,6 +398,7 @@ sub download_from_agr {
 	    $filename =~ s/\.gz$//;
 	    run_system_cmd("mv $filename ${mod}_${datatype}.${extension}", "Renaming $filename", $log);
 	}
+	fix_rgd_headers($log) if $mod eq 'RGD'; # Temporary hack
 	merge_bam_files($mod, $log);
 	unlink "${mod}_FASTA.fa.fai" if -e "${mod}_FASTA.fa.fai";
 	run_system_cmd('python3 ' . $ENV{'CVS_DIR'} . "/AGR/agr_variations_json2vcf.py -j ${mod}_VARIATION.json -m $mod -g ${mod}_GFF.gff " .
@@ -404,6 +406,33 @@ sub download_from_agr {
     }
     close (FILES);
     
+    return;
+}
+
+
+sub fix_rgd_headers {
+    # Temporary hack
+    my $log = shift;
+    open (IN, '<', 'RGD_HTVCF.vcf') or $log->log_and_die("Couldn't open RGD_HTVCF.vcf for reading\n");
+    open (OUT, '>', 'RGD_HTVCF.vcf.tmp') or $log->log_and_die("Couldn't open RGD_HTVCF.vcf.tmp for writing\n");
+    while (<IN>) {
+	if ($_ =~ /^##fileformat=VCF4.2/) {
+	    print OUT "##fileformat=VCFv4.2\n";
+	}
+	elsif ($_ =~ /^##INFO=<ID=VT,Number=0,Type=Integer/) {
+	    print OUT "##INFO=<ID=VT,Number=1,Type=String,Description=\"Variant type: SNP, INS, and DEL\">\n";
+	}
+	elsif ($_ =~ /^##FORMAT=<ID=DP,Number=2,Type=String/) {
+	    print OUT "##FORMAT=<ID=DP,Number=1,Type=Integer,Description=\"Depth\">\n";
+	}
+	else {
+	    print OUT $_;
+	}
+    }
+    close (IN);
+    close (OUT);
+    run_system_cmd('mv RGD_HTVCF.vcf.tmp RGD_HTVCF.vcf', 'Replacing RGD HTVCF file with fixed header version', $log);
+
     return;
 }
 
@@ -537,14 +566,26 @@ sub run_vep_on_phenotypic_variations {
 	open (IN, '<', "${mod}_VEP${level}.txt") or die $log->log_and_die("Cannot open ${mod}_VEP${level}.txt for reading\n");
 	open (OUT, '>', "${mod}_VEP${level}.txt.tmp") or die $log->log_and_die("Cannot open ${mod}_VEP${level}.txt.tmp for writing\n");
 	while (<IN>) {
+	    chomp;
 	    if ($_ =~ /^#/) {
-		print OUT $_;
+		print OUT $_ . "\n";
 	    }
 	    else {
 		my @columns = split("\t", $_);
 		my ($chr, $pos) = split(':', $columns[1]);
+		my ($before, $hgvsg, $after) = $columns[13] =~ /(.*HGVSg=)([^;]+)(.*)/;
+		# Alt alleles with Ns in do not have HGVSg names
+		next unless defined $hgvsg; 
+		# Need to replace variant name from alleleId with HGVSg name
+		$columns[0] = $hgvsg;
+		# HGVSg in extras column needs to have chromosome name not RefSeq chr ID
+		my @hgvsg_parts = split(':', $hgvsg);
+		$hgvsg_parts[0] = $reverse_map->{$chr};
+		my $old_hgvsg = join(':', @hgvsg_parts);
+		$columns[13] = $before . $old_hgvsg . $after;
+		# Position should have chromosome name not RefSeq chr ID
 		$columns[1] = $reverse_map->{$chr} . ':' . $pos;
-		print OUT join("\t", @columns);
+		print OUT join("\t", @columns) . "\n";
 	    }
 	}
 	close (IN);
@@ -552,7 +593,7 @@ sub run_vep_on_phenotypic_variations {
 	run_system_cmd("mv ${mod}_VEP${level}.txt.tmp ${mod}_VEP${level}.txt",
 		       "Replacing $mod VEP${level} file with original chromosome ID version", $log);
 
-	run_system_cmd("gzip -9 ${mod}_VEP${level}.txt", 'Compressing ' . lc($level) . '-level VEP results', $log);
+	run_system_cmd("gzip -f -9 ${mod}_VEP${level}.txt", 'Compressing ' . lc($level) . '-level VEP results', $log);
 	submit_data($mod, 'VEP' . $level, $mod . '_VEP' . $level . '.txt.gz', $log) unless $test;
     }
     
@@ -602,13 +643,13 @@ sub submit_data {
 
     my $cmd = 'curl -H "Authorization: Bearer ' . $ENV{'TOKEN'} . '" -X POST ' .
 	'"https://fms.alliancegenome.org/api/data/submit" -F "' . $ENV{'AGR_RELEASE'} . '_' .
-	$fms_datatype . '_' . $mod . '=@' . $file;
+	$fms_datatype . '_' . $mod . '=@' . $file . '"';
 
     my $response_json = `$cmd`;
     my $response = decode_json($response_json);
     if ($response->{status} eq 'failed') {
 	$log->error("Upload of $mod $fms_datatype failed:\n$response_json\n\n");
-    }
+    } 
     else {
 	$log->write_to("Upload of $mod ${fms_datatype} succeeded\n\n");
     }
@@ -814,7 +855,7 @@ sub backup_pathogenicity_prediction_db {
 	' -P ' . $ENV{'WORM_DBPORT'} . ' -p' . $password . ' ' .$ENV{'PATH_PRED_DB_PREFIX'} . 
 	$mod . ' > ' . $dump_dir . '/' . $dump_file;
     run_system_cmd($dump_cmd, "Dumping $mod pathogenicity predictions database to $dump_dir", $log);
-    run_system_cmd("gzip -9 $dump_dir/$dump_file",
+    run_system_cmd("gzip -f -9 $dump_dir/$dump_file",
 		   "Compressing $mod pathogenicity predictions database dump", $log);
     
     return;
@@ -931,7 +972,7 @@ sub run_system_cmd {
 
 
 sub check_chromosome_map {
-    my ($mod, $log) = shift;
+    my ($mod, $log) = @_;
 
     unless (-e "${mod}_VARIATION.json") {
 	$log->write_to("WARNING: No variations file for $mod - cannot check RefSeq chromosome IDs are correct\n");

@@ -184,7 +184,7 @@ if ($htp_variations or $all) {
 	"-g ${build_home}/DATABASES/${ws_release}/SEQUENCES/elegans.processed.gff3.gz -d ${build_home}/DATABASES/${ws_release} " .
 	"-w ${ws_release} -q ${cvs_dir}/AGR/agr_variations.def -o ${sub_dir}/WB_${agr_schema}_htp_variations.json",
 	"python3 ${cvs_dir}/AGR/agr_variations_json2vcf.py -j ${sub_dir}/WB_${agr_schema}_htp_variations.json -g ${gff_file} " .
-	"-m WB -o ${sub_dir}/WB_${agr_schema}_htp_variations.vcf"
+	"-m WB -o ${sub_dir}/WB_${agr_schema}_htp_variations.vcf -f ${fasta_file}"
 	);
     my $datatype_processed = process_datatype('HTP variation', \@cmds, $log);
     submit_data('HTVCF', "${sub_dir}/WB_${agr_schema}_htp_variations.vcf", $log)
@@ -281,9 +281,23 @@ if ($molecule or $all) {
 	if $datatype_processed and !$test;
 }
 
+cleanup_unzipped($sub_dir);
+
 $log->mail;
 
 exit(0);
+
+
+sub cleanup_unzipped {
+    my $sub_dir = shift;
+
+    my @files = glob($sub_dir . '/*');
+    for my $file (@files) {
+	unlink $file if -e $file . '.gz';
+    }
+
+    return;
+}
 
 
 sub process_datatype {
@@ -291,10 +305,11 @@ sub process_datatype {
 
     my @cmd_output;
     for my $cmd(@$cmds) {
+	$log->write_to("Running $datatype command: $cmd\n\n");
 	my $output = `$cmd 2>&1`;
 	my $exit_code = $? >> 8;
 	if ($exit_code != 0) {
-	    $log->error("Processing of $datatype data failed with exit code ${exit_code}:\n$cmd\n$output\n\n");
+	    $log->log_and_die("Processing of $datatype data failed with exit code ${exit_code}:\n$cmd\n$output\n\n");
 	    return 0;
 	}
 	push @cmd_output, $output unless $cmd =~ /agr_validate.py/;
@@ -308,7 +323,7 @@ sub process_datatype {
 sub submit_data {
     my ($fms_datatype, $file, $log, $fms_subtype) = @_;
 
-    my $exit_code = system("gzip -9 $file");
+    my $exit_code = system("gzip -9 -c $file > $file.gz");
     if ($exit_code != 0) {
 	$log->error("Compression of $file failed with exit code $exit_code, $fms_datatype submission not completed\n\n");
 	return;

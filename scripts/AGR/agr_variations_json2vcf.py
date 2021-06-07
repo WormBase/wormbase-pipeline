@@ -272,11 +272,15 @@ with open(args.json, 'r') as read_file:
             if v["genomicReferenceSequence"] == "N/A":
                 refSeq = ""  
             else:
-                refSeq = get_refseq_from_fasta(v, args.fasta)
-                if v["genomicReferenceSequence"].upper() != refSeq:
-                    print("Specified genomic reference allele (" + v["genomicReferenceSequence"] + ") doesn't match reference sequence ("
-                          + refSeq + ") at specified coordinates for " + v["alleleId"], file=sys.stderr)
-                    continue
+                if args.mod == 'WB':
+                    # don't need to check against reference for WB - makes it very slow for HTP variants
+                    refSeq = v["genomicReferenceSequence"]
+                else:
+                    refSeq = get_refseq_from_fasta(v, args.fasta)
+                    if v["genomicReferenceSequence"].upper() != refSeq:
+                        print("Specified genomic reference allele (" + v["genomicReferenceSequence"] + ") doesn't match reference sequence ("
+                              + refSeq + ") at specified coordinates for " + v["alleleId"], file=sys.stderr)
+                        continue
 
     
         if 'genomicVariantSequence' not in v.keys():
