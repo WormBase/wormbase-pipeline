@@ -19,6 +19,31 @@ def chromosome_from_refseq(v, chr_map):
 
     return
 
+
+def construct_hgvsg_id(v, refseq_chr, refSeq, varSeq):
+    stem = refseq_chr + ':g.'
+    if v["type"] == 'SO:0000159':
+        # deletion
+        hgvsg = stem + str(v["start"]) + '_' + str(v["end"]) + 'del'
+    elif v["type"] == 'SO:0000667':
+        # insertion
+        hgvsg = stem + str(v["start"]) + '_' + str(v["end"]) + 'ins'
+        if varSeq[1:] != '.':
+            hgvsg = hgvsg + varSeq[1:]
+    elif v["type"] == 'SO:1000032' or v["type"] == 'SO:0002007':
+        # deletion-insertion or multiple nucleotide substitution
+        hgvsg = stem + str(v["start"]) + '_' + str(v["end"]) + 'delins'
+        if varSeq[1:] != '.':
+            hgvsg = hgvsg + varSeq[1:]
+    elif v["type"] == 'SO:1000008':
+        # point mutation
+        hgvsg = stem + str(v["start"]) + refSeq + '>' + varSeq
+    else:
+        print("Unknown variation type " + v["type"] + " for " + v["alleleId"], file=sys.stderr)
+    
+    return hgvsg
+
+
 def genotype_string(variation, allStrains):
     variationStrains = set(variation["strains"])
     genotypes = []
@@ -277,9 +302,9 @@ for v in (parsed["data"]):
     vcf_data = {}
 
     if 'chromosome' not in v:
-        chrom = chromosome_from_refseq(v, chrom2ncbi[args.mod])
+        chr = chromosome_from_refseq(v, chrom2ncbi[args.mod])
     else:
-        chrom = str(v["chromosome"])
+        chr = str(v["chromosome"])
         
     # SO:0000159 - deletion
     # SO:0000667 - insertion
@@ -295,7 +320,7 @@ for v in (parsed["data"]):
     elif args.wbhtp:
         refSeq = v["genomicReferenceSequence"]
     else:
-        refSeq = get_refseq_from_fasta(v, chrom, args.fasta)
+        refSeq = get_refseq_from_fasta(v, chr, args.fasta)
         if 'genomicReferenceSequence' in v and v["genomicReferenceSequence"].upper() != refSeq:
             print("Specified genomic reference allele (" + v["genomicReferenceSequence"] + ") doesn't match reference sequence ("
                   + refSeq + ") at specified coordinates for " + v["alleleId"], file=sys.stderr)
@@ -313,7 +338,7 @@ for v in (parsed["data"]):
     if v["type"] == 'SO:0000159' or v["type"] == 'SO:0000667' or v["type"] == 'SO:1000032':
         if v["type"] != 'SO:0000667' and pos != 1:
             pos = pos - 1
-        padBase = get_padbase_from_fasta(v, chrom, args.fasta)
+        padBase = get_padbase_from_fasta(v, chr, args.fasta)
         if 'paddedBase' in v and padBase != v["paddedBase"]:
             print("Specified padded base(" + v["paddedBase"] + ") doesn't match reference sequence (" + padBase
                   + ") at specified coordinates for " + v["alleleId"], file=sys.stderr)
@@ -324,7 +349,7 @@ for v in (parsed["data"]):
             refSeq = padBase + refSeq
             varSeq = padBase + varSeq
 
-    vcf_data["chromosome"] = chrom
+    vcf_data["chromosome"] = chr
     vcf_data["pos"] = pos
 
     if len(varSeq) == 1:
@@ -339,17 +364,19 @@ for v in (parsed["data"]):
                 continue
     
     # There are cases where the same genetic change has multiple variaton IDs
-    entry = '|'.join((chrom, str(pos), refSeq, varSeq))
+    entry = '|'.join((chr, str(pos), refSeq, varSeq))
     if entry in added_entries:
         continue
     else:
         added_entries.add(entry)
                 
+    hgvsg = construct_hgvsg_id(v, chrom2ncbi[args.mod][chr], refSeq, varSeq)
+
     if args.strains:
         gtString = genotype_string(v, strains)
-        vcf_data["line"] = "\t".join([chrom, str(pos), v["alleleId"], refSeq, varSeq, '.', 'PASS', '.', 'GT', gtString])
+        vcf_data["line"] = "\t".join([chr, str(pos), hgvsg, refSeq, varSeq, '.', 'PASS', '.', 'GT', gtString])
     else:
-        vcf_data["line"] = "\t".join([chrom, str(pos), v["alleleId"], refSeq, varSeq, '.', '.' ,'.'])
+        vcf_data["line"] = "\t".join([chr, str(pos), hgvsg, refSeq, varSeq, '.', '.' ,'.'])
 
     vcf_lines.append(vcf_data)
 
