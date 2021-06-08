@@ -1113,6 +1113,15 @@ sub process_strain_class {
 
   my @strains = $db->fetch('Strain','*');
   foreach my $strain (@strains){
+    #N2 should not have Variants associated with it.
+    if ($strain eq "WBStrain00000001") {
+	  if (defined $strain->Contains) {
+	      print LOG "WARNING: The N2 Strain ($strain) has been connected to variants in error!!!!!!\n";
+	  }
+	  else {
+	      print LOG "RESULT: The N2 Strain ($strain) is clear of Variation data....which is good!\n" if ($debug);
+	  }
+    }
     if (!$strain->Location){
       print LOG "WARNING(a): Strain $strain has no location tag\n";
       if ($ace){

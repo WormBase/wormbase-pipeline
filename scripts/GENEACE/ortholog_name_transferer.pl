@@ -601,7 +601,7 @@ sub write_new_orthology {
 
     }
 
-    print $namedb "$ortholog\t$new_name\n";
+    print $namedb "$ortholog\tCGC\t$new_name\n";
     $log->write_to("\n");
 }
 
@@ -629,7 +629,7 @@ sub delete_incorrect_orthology {
     print $ace "Public_name \"$seqname\"\n";
     print $ace "Remark \"[$date $user] $remark\" Curator_confirmed $person{$user}\n" if ($remark);
 
-    print $deletenamedb "$ortholog\t$existing_CGC_name\n";
+    print $deletenamedb "$ortholog\tCGC\t$existing_CGC_name\n";
 }
 
 
