@@ -577,7 +577,7 @@ sub run_vep_on_phenotypic_variations {
 
 		my ($before, $hgvsg, $after) = $columns[13] =~ /(.*HGVSg=)([^;]+)(.*)/;
 		if (defined $hgvsg) {
-		    $log->error('WARNING: HGVSg in input VCF (' . $columns[0] . ") doesn't match VEP generated HGVSg ($hgvsg)\n")
+		    $log->write_to('WARNING: HGVSg in input VCF (' . $columns[0] . ") doesn't match VEP generated HGVSg ($hgvsg)\n")
 			unless $columns[0] eq $hgvsg;
 		    # HGVSg in extras column needs to have chromosome name not RefSeq chr ID
 		    my @hgvsg_parts = split(':', $hgvsg);
