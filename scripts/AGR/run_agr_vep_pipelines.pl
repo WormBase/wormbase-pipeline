@@ -573,17 +573,20 @@ sub run_vep_on_phenotypic_variations {
 	    else {
 		my @columns = split("\t", $_);
 		my ($chr, $pos) = split(':', $columns[1]);
+		
+
 		my ($before, $hgvsg, $after) = $columns[13] =~ /(.*HGVSg=)([^;]+)(.*)/;
-		# Alt alleles with Ns in do not have HGVSg names
-		next unless defined $hgvsg; 
-		# Need to replace variant name from alleleId with HGVSg name
-		$columns[0] = $hgvsg;
-		# HGVSg in extras column needs to have chromosome name not RefSeq chr ID
-		my @hgvsg_parts = split(':', $hgvsg);
-		$hgvsg_parts[0] = $reverse_map->{$chr};
-		my $old_hgvsg = join(':', @hgvsg_parts);
-		$columns[13] = $before . $old_hgvsg . $after;
-		# Position should have chromosome name not RefSeq chr ID
+		if (defined $hgvsg) {
+		    $log->error('WARNING: HGVSg in input VCF (' . $columns[0] . ") doesn't match VEP generated HGVSg ($hgvsg)\n")
+			unless $columns[0] eq $hgvsg;
+		    # HGVSg in extras column needs to have chromosome name not RefSeq chr ID
+		    my @hgvsg_parts = split(':', $hgvsg);
+		    $hgvsg_parts[0] = $reverse_map->{$chr};
+		    my $old_hgvsg = join(':', @hgvsg_parts);
+		    $columns[13] = $before . $old_hgvsg . $after;
+		}
+
+		#Position should have chromosome name not RefSeq chr ID
 		$columns[1] = $reverse_map->{$chr} . ':' . $pos;
 		print OUT join("\t", @columns) . "\n";
 	    }
@@ -691,12 +694,13 @@ sub merge_bam_files {
 sub sort_vcf_files {
     my ($mod, $log) = @_;
     
-    my $datatype = 'HTVCF'; # not required for phenotypic variants VCF as JSON conversion script sorts output
-    next unless -e "${mod}_${datatype}.vcf";
-    run_system_cmd("vcf-sort ${mod}_${datatype}.vcf > ${mod}_${datatype}.sorted.vcf",
-		   "Sorting $mod $datatype file", $log);
-    run_system_cmd("mv ${mod}_${datatype}.sorted.vcf ${mod}_${datatype}.vcf",
-		   "Replacing unsorted $mod $datatype file with sorted version", $log);
+    for my $datatype ('VCF', 'HTVCF') { # not required for phenotypic variants VCF as JSON conversion script sorts output
+	next unless -e "${mod}_${datatype}.vcf";
+	run_system_cmd("vcf-sort ${mod}_${datatype}.vcf > ${mod}_${datatype}.sorted.vcf",
+		       "Sorting $mod $datatype file", $log);
+	run_system_cmd("mv ${mod}_${datatype}.sorted.vcf ${mod}_${datatype}.vcf",
+		       "Replacing unsorted $mod $datatype file with sorted version", $log);
+    }
     
     return;
 }
