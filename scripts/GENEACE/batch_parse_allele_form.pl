@@ -369,16 +369,26 @@ while(<FILE>){
         if (defined $geno) {
             if (defined $strain) {
                 # Query geneace for a WBStrain name, if one exists return it, if one doesn't exist request a new one. (Not Implemented)
+		# Work out the Lab from the Strain_name
+		my $lab; 
+		if ($strain =~ /([A-Z]+)\d+/){
+		    $lab = $1;
+		}
+		else {undef $lab;}
                 my @strain_obj = $ace->fetch(-query=>'find Strain where Public_name = $strain');
                 if (@strain_obj){
                     my $strainID = $strain_obj[0]->name;
                     if (defined $strainID) {
-                        print ACE "Strain : \"$strainID\"\nGenotype \"$geno\"\n\n";
+                        print ACE "Strain : \"$strainID\"\nPublic_name $strain\nGenotype \"$geno\"\nSpecies \"Caenorhabditis elegans\"\n";
+			if (defined $lab){print ACE "Location $lab\n\n";}
+			else {print ACE "\n";}
                     }
                 }
                 else {
-                    print ACE "Strain : \"$strain\"\nGenotype \"$geno\"\n\n";
-                }
+                    print ACE "Strain : \"$strain\"\nPublic_name $strain\nGenotype \"$geno\"\nSpecies \"Caenorhabditis elegans\"\n";
+		    if (defined $lab){print ACE "Location $lab\n\n";}
+		    else {print ACE "\n";}
+                } 
             }
             else {
                 print "\n\n\\\\No Strain for genotype exit without printing\n\n";
