@@ -137,7 +137,7 @@ while(<FILE>){
         #print "Allele name = $1\n";
         $raw_name = $1;
         
-        if ($raw_name =~ /(\w+\d+)\s+\-\-\s+(WBVar\d+)/) {
+        if (($raw_name =~ /(\w+\d+)\s+\-\-\s+(WBVar\d+)/) || (/(\w+\d+)\s+(WBVar\d+)/)) {
             $public_name = $1;
             $varname = $2;
             next;
