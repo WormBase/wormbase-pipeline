@@ -43,7 +43,7 @@ sub transgene_ids {
   my ($this,$pgpasswd) = @_;
 
   use lib "/software/worm/lib/site_perl/5.14.1/"; # that will break at the EBI, but Mojolicious might be installed there
-#  use Mojo::DOM58;
+  use Mojo::DOM;
   use LWP::UserAgent;    
 
   print "----- Doing Transgene name <-> Transgene ID conversion based on CalTech PostGreSQL ... -----\n\n";
@@ -55,7 +55,7 @@ sub transgene_ids {
 
   my $response = $ua->post($url,{'pgcommand' =>'SELECT trp_publicname.trp_publicname, trp_name.trp_name FROM trp_name, trp_publicname WHERE trp_publicname.joinkey=trp_name.joinkey','perpage' => 'all','action' => 'Pg !'});
 
-  my $tree = Mojo::DOM58->new($response->content);
+  my $tree = Mojo::DOM->new($response->content);
 
   my %tgid_map;
 
