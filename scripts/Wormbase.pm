@@ -69,29 +69,18 @@ sub new {
 
 sub get_wormbase_version {
     my $self = shift;
-
-    my $WS_version;
-    # If the environmental variable is set, use it
-    # Overrides version if already set
-    if (defined $ENV{'WORMBASE_RELEASE'}) { 
-      print "Using version $ENV{'WORMBASE_RELEASE'}\n";
-      $WS_version = $ENV{'WORMBASE_RELEASE'};
-      $WS_version =~ s/.*WS//;
-    }
-    elsif (!$self->{'version'}) {
+    
+    unless ( $self->{'version'} ) {
         my $dir = $self->autoace;
         if ( -e ("$dir/wspec/database.wrm") ) {
-	    $WS_version = `grep "NAME WS" $dir/wspec/database.wrm`;
-	    chomp($WS_version);
-	    $WS_version =~ s/.*WS//;
+            my $WS_version = `grep "NAME WS" $dir/wspec/database.wrm`;
+            chomp($WS_version);
+            $WS_version =~ s/.*WS//;
+            $self->version($WS_version);
+        } else {
+            $self->version(666);
         }
-        else {
-	    $WS_version = '666';
-	}
     }
-    $self->version($WS_version);
-
-    return ($self->{'version'});
 }
 
 ###################################################################################
