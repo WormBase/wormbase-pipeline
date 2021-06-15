@@ -201,13 +201,13 @@ chrom2ncbi = {
 	'chrmt': 'NC_001224.1',
     },
     'WB': {
-        'I': 'RefSeq:NC_003279.8',
-        'II': 'RefSeq:NC_003280.10',
-        'III': 'RefSeq:NC_003281.10',
-        'IV': 'RefSeq:NC_003282.8',
-        'V': 'RefSeq:NC_003283.11',
-        'X': 'RefSeq:NC_003284.9',
-        'MtDNA': 'RefSeq:NC_001328.1',
+        'I': 'NC_003279.8',
+        'II': 'NC_003280.10',
+        'III': 'NC_003281.10',
+        'IV': 'NC_003282.8',
+        'V': 'NC_003283.11',
+        'X': 'NC_003284.9',
+        'MtDNA': 'NC_001328.1',
     },
     'ZFIN': {
 	'1': 'NC_007112.7',
@@ -324,6 +324,7 @@ for v in (parsed["data"]):
         if 'genomicReferenceSequence' in v and v["genomicReferenceSequence"].upper() != refSeq:
             print("Specified genomic reference allele (" + v["genomicReferenceSequence"] + ") doesn't match reference sequence ("
                   + refSeq + ") at specified coordinates for " + v["alleleId"], file=sys.stderr)
+            continue
 
     # Get alternative allele
     if v["type"] == 'SO:0000159':
