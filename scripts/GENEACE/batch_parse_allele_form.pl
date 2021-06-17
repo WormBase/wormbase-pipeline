@@ -279,7 +279,7 @@ while(<FILE>){
                 print ACE "Variation : \"$public_name\"\n";
             }
         }
-        if (defined $wbperson) {print ACE "Evidence Person_evidence $wbperson\nPerson $wbperson\n";}
+        if (defined $wbperson) {print ACE "Evidence Person_evidence $wbperson\n";}
         print ACE "Public_name \"$public_name\"\nSpecies \"Caenorhabditis elegans\"\n";
         if ($clone) {
             print ACE "Mapping_target $clone\n";
