@@ -47,7 +47,7 @@ use Wormbase;
   -test      use the test nameserver
   -ns        Kill's the gene in the nameserver as well as producing the .ace 
              file for geneace
-  -user      username                 <Manditory if using -ns>
+  -user      username                 <Manditory if using -ns or you want cutrator_confirmed evidences>
   -password  password                 <Manditory if using -ns>
 
 e.g. perl batch_parse_allele_form.pl -file deathrow.txt [simple example]
@@ -101,32 +101,44 @@ else {
     $output = $file.".out";
 }
 
+
+my $curator;
+if (defined $USER){ 
+    if ($USER eq 'pad') {
+	$curator = 'WBPerson1983';
+    } elsif ($USER eq 'skd') {
+	$curator = 'WBPerson51134';
+    } elsif ($USER eq 'mz3') {
+	$curator = 'WBPerson21950';
+    }
+}
+
 #open file and read
 open (FILE,"<$file") or $log->log_and_die("can't open $file : $!\n");
 open (ACE,">$output") or $log->log_and_die("cant write output: $!\n");
 my($person,$remark,$tflag,);
 my $count;
 
-my ($name, $wbperson, $public_name, $varname,$gene, $wbgene, $seq, $clone, $type_alt, $type_mut, $alt_det, $mut_det, $strain, $flank1, $flank2,$method,$geno,$mutagen,$forward,$comment,$pubmed,$obj_method,$raw_name);
+my ($name, $wbperson, $public_name, $varname,$gene, $wbgene, $seq, $clone, $type_alt, $type_mut, $alt_det, $mut_det, $strain, $strain_id, $flank1, $flank2,$method,$geno,$mutagen,$forward,$comment,$pubmed,$obj_method,$raw_name);
 while(<FILE>){
     chomp;
+    $_ =~ s/\r//g;
     
-    if (/Your Name<\/td><td>(.+)<\/td>$/) { 
-        $name = $1;
-        #print "Name = $name\n"; 
-        if ($name =~ /(WBPerson\d+)/) {
-            $wbperson = $1;
-        #    print "WBPerson ID = $wbperson\n";
-            next;
-        }
-        else {
-            next;
-        }
-    }
-    elsif (/Your E-mail Address<\/td><td>(.+)<\/td>/) {
-        #print "Email = $1\n";
-        next;
-    }
+    if (/Your Name/) {
+	if (/Your Name<\/td><td>(.+)<\/td>$/) {
+	    $name = $1;
+	    if ($name =~ /(WBPerson\d+)/) {
+		$wbperson = $1;
+		next;
+	    }
+	}
+        #Your Name</td><td>Takashi Murayama -- WBPerson1928
+	if (/Your Name<\/td><td>(.+)\s+\-\-\s+(WBPerson\d+)$/) {
+	    $name = $1;
+	    $wbperson = $2;
+	    next
+	}
+    } #if (/Your Name/) {
 
     elsif (/PubMed ID<\/td><td>(.+)<\/td>/) {
         #print "Pubmed_ID = $1\n";
@@ -195,14 +207,13 @@ while(<FILE>){
         next;
     }
     elsif (/Strain<\/td><td>(.+)<\/td>/) {
-        #print "Strain = $1\n";
+        $strain = $1;
         my @strain_id_obj = $ace->fetch(-query => "FIND Strain where Public_name = $strain");
         if (defined $strain_id_obj[0]) {
-            my $strain_id = $strain_id_obj[0]->name;
-            $strain = $strain_id;
+            $strain_id = $strain_id_obj[0]->name;
         }
         else {
-            $strain = $1;
+            $strain_id = $1;
         }
         next;
     }
@@ -227,7 +238,7 @@ while(<FILE>){
         $forward = $1;
         next;
     }
-    elsif (/Comment<\/td><td>(.+)/) {
+    elsif (/Comment<\/td><td>(.+)<\/td>/) {
         #print "Comment = $1\n";
         $comment = $1;
         next;
@@ -293,6 +304,11 @@ while(<FILE>){
             if ($type_alt =~ /Engineered Allele/){
                 #print "Ignoring type_alt Engineered Allele\'n" if ($debug);
             }
+#            Insertion + Deletion 
+	    elsif ($type_alt =~ /Insertion + Deletion/){
+		print ACE "Type_of_mutation Deletion\n";
+		print ACE "Type_of_mutation Insertion\n";
+	    }
             elsif ($type_alt =~ /Point Mutation/){
                 print ACE "Type_of_mutation Substitution $alt_det\n";
             }
@@ -303,15 +319,39 @@ while(<FILE>){
                 print ACE "Type_of_mutation Insertion\n";
             }
         }
-#            Insertion + Deletion
+
         if (defined $gene) {
             print ACE "Gene $gene\n" unless ($wbgene); 
         }
-        if (defined $strain) {
-            print ACE "Strain $strain\n";
+        if (defined $strain_id) {
+            print ACE "Strain $strain_id\n";
+        }
+	elsif (defined $strain) {
+	    print ACE "Strain $strain\n";
+	}
+	my $WBpaper;
+        if (defined $pubmed) {
+	    #try and find the WBPaper ID                                                                                                                                                                                                                 
+	    my @paper_obj = $ace->fetch(-query=>"find Paper where Database AND NEXT AND NEXT AND NEXT = $pubmed");
+            if (@paper_obj) {
+		$WBpaper = $paper_obj[0]->name;
+		print ACE "Reference $WBpaper\n";
+            }
+            else {
+                print "\/\/Reference $pubmed\n";
+            }
         }
         if (defined $comment) {
-            print ACE "Remark \"$comment\"\n";
+	    print ACE "Remark \"$comment\"\n";
+	    if (defined $wbperson){
+		print ACE "Remark \"$comment\" Person_evidence $wbperson\n";
+	    }
+	    if (defined $curator){
+		print ACE "Remark \"$comment\" Curator_confirmed $curator\n";
+	    }
+	    if (defined $WBpaper){
+		print ACE "Remark \"$comment\" Paper_evidence $WBpaper\n";
+	    }
         }
         if (defined $forward) {
             print ACE "Forward_genetics \"$forward\n";
@@ -323,17 +363,6 @@ while(<FILE>){
             print ACE "Production_method $method\n";
         }
 
-        if (defined $pubmed) {
-#try and find the WBPaper ID
-            my @paper_obj = $ace->fetch(-query=>"find Paper where Database AND NEXT AND NEXT AND NEXT = $pubmed");
-            if (@paper_obj) {
-            my $WBpaper = $paper_obj[0]->name;
-            print ACE "Reference $WBpaper\n";
-            }
-            else {
-                print "\/\/Reference $pubmed\n";
-            }
-        }
         #try and guess the method
         if ($method =~ /CRISPR_Cas9/) {
             $obj_method = "Engineered_allele";
@@ -359,11 +388,21 @@ while(<FILE>){
         else {
             $obj_method = "Allele"; 
         }
-        print ACE "Remark \"alt_det = $alt_det mut_det = $mut_det\"\n";
+	print ACE "Remark \"alt_det = $alt_det mut_det = $mut_det\"\n"; 
+	if (defined $wbperson){
+	    print ACE "Remark \"alt_det = $alt_det mut_det = $mut_det\" Person_evidence $wbperson\n";
+	}
+	if (defined $curator){
+	    print ACE "Remark \"alt_det = $alt_det mut_det = $mut_det\" Curator_confirmed $curator\n";
+	}
+	if (defined $WBpaper){
+	    print ACE "Remark \"alt_det = $alt_det mut_det = $mut_det\" Paper_evidence $WBpaper\n";
+	}
+
 #standard tags
         print ACE "Sequenced\nSpecies \"Caenorhabditis elegans\"\nLive\n";
         print ACE "Method $obj_method";
-        print ACE "\n\n";
+	print ACE "\n\n";
         
 
         if (defined $geno) {
@@ -375,28 +414,33 @@ while(<FILE>){
 		    $lab = $1;
 		}
 		else {undef $lab;}
-                my @strain_obj = $ace->fetch(-query=>'find Strain where Public_name = $strain');
-                if (@strain_obj){
-                    my $strainID = $strain_obj[0]->name;
-                    if (defined $strainID) {
-                        print ACE "Strain : \"$strainID\"\nPublic_name $strain\nGenotype \"$geno\"\nSpecies \"Caenorhabditis elegans\"\n";
-			if (defined $lab){print ACE "Location $lab\n\n";}
-			else {print ACE "\n";}
-                    }
-                }
+		unless (defined $strain_id) {
+		    my @strain_obj = $ace->fetch(-query=>'find Strain where Public_name = $strain');
+		    if (@strain_obj){
+			my $strain_id = $strain_obj[0]->name;
+		    }
+		}
+		if (defined $strain_id) {
+		    print ACE "Strain : \"$strain_id\"\nPublic_name $strain\nGenotype \"$geno\"\nSpecies \"Caenorhabditis elegans\"\n";
+		    if (defined $lab){print ACE "Location $lab\n\n";}
+		    else {print ACE "\n";}
+		}
                 else {
                     print ACE "Strain : \"$strain\"\nPublic_name $strain\nGenotype \"$geno\"\nSpecies \"Caenorhabditis elegans\"\n";
 		    if (defined $lab){print ACE "Location $lab\n\n";}
 		    else {print ACE "\n";}
-                } 
+                }
             }
-            else {
-                print "\n\n\\\\No Strain for genotype exit without printing\n\n";
-            }        
-        }
-        ($name, $wbperson, $public_name, $varname,$gene, $wbgene, $seq, $clone, $type_alt, $type_mut, $alt_det, $mut_det, $strain, $flank1, $flank2,$method,$geno,$mutagen,$forward,$comment,$pubmed,$obj_method,$raw_name) = ();
-    }
-}
+	    else {
+		print "\n\n\\\\No Strain for genotype exit without printing\n\n";
+	    }
+	}
+	# Query geneace for a WBStrain name, if one exists return it, if one doesn't exist request a new one. (Not Implemented)
+
+	#reset all variables for this record
+	($name, $wbperson, $public_name, $varname,$gene, $wbgene, $seq, $clone, $type_alt, $type_mut, $alt_det, $mut_det, $strain, $strain_id, $flank1, $flank2,$method,$geno,$mutagen,$forward,$comment,$pubmed,$obj_method,$raw_name) = ();
+    } #if (/<\/table>/) {
+} #while(<FILE>){
         
 &load_data if ($load);
 $log->write_to("5) Check $output file and load into geneace.\n") unless ($load);
