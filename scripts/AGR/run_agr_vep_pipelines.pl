@@ -525,7 +525,7 @@ sub calculate_pathogenicity_predictions {
     backup_pathogenicity_prediction_db($mod, $password, $log);
     
     #my $lsf_queue = $test ? $ENV{'LSF_TEST_QUEUE'} : $ENV{'LSF_DEFAULT_QUEUE'}; # Waiting for clarification of production queue usage for AGR work
-    my $lsf_queue = $ENV{'LSF_TEST_QUEUE'};
+    my $lsf_queue = $ENV{'LSF_DEFAULT_QUEUE'};
         
     my $init_cmd = "init_pipeline.pl VepProteinFunction::VepProteinFunction_conf -mod $mod" .
 	" -agr_fasta ${mod}_FASTA.refseq.fa -agr_gff ${mod}_GFF.refseq.gff -agr_bam ${mod}_BAM.bam" . 
