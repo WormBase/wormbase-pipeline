@@ -135,8 +135,8 @@ sub process_genes_phenotype{
         	    dateAssigned             => $date,
 	            evidence                 => $papers{$paper},
 		}; 
-		my @condition_relations = @{get_condition_relations($pt, $paper)};
-		$json_obj->{conditionRelations} = \@condition_relations if @condition_relations;
+		#my @condition_relations = @{get_condition_relations($pt, $paper)};
+		#$json_obj->{conditionRelations} = \@condition_relations if @condition_relations;
 		push @pheno_annots, $json_obj;
 	    }
 	}
@@ -199,8 +199,8 @@ sub process {
 			dateAssigned             => $date,
 			evidence                 => $papers{$paper},
 		    };
-		    my @condition_relations = @{get_condition_relations($pt, $paper)};
-		    $json_obj->{conditionRelations} = \@condition_relations if @condition_relations;
+		 #   my @condition_relations = @{get_condition_relations($pt, $paper)};
+		 #   $json_obj->{conditionRelations} = \@condition_relations if @condition_relations;
 		    push @pheno_annots, $json_obj;
 		}
 		
