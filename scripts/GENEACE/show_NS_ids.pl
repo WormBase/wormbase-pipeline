@@ -113,9 +113,9 @@ while (<IN>) {
         }
         
         
-        elsif ($DOMAIN =~ /Gene/){
-            my $gene_ref = $db->info_genes($entry);
-            unless (defined $gene_ref) {
+        if ($DOMAIN =~ /Gene/){
+            my $gene_ref = $db->find_genes($entry);
+            unless (defined $gene_ref->[0]{'id'}) {
                 print OUT "\/\/Cannot find $entry\n";
                 next;
             }
