@@ -113,13 +113,29 @@ if (defined $USER){
     }
 }
 
+my %map = (
+    'Jan' => '01', 
+    'Feb' => '02', 
+    'Mar' => '03', 
+    'Apr' => '04',
+    'May' => '05', 
+    'Jun' => '06', 
+    'Jul' => '07', 
+    'Aug' => '08',
+    'Sep' => '09', 
+    'Oct' => '10', 
+    'Nov' => '11', 
+    'Dec' => '12'
+    );
+
+
 #open file and read
 open (FILE,"<$file") or $log->log_and_die("can't open $file : $!\n");
 open (ACE,">$output") or $log->log_and_die("cant write output: $!\n");
 my($person,$remark,$tflag,);
 my $count;
 
-my ($name, $wbperson, $public_name, $varname,$gene, $wbgene, $seq, $clone, $type_alt, $type_mut, $alt_det, $mut_det, $strain, $strain_id, $flank1, $flank2,$method,$geno,$mutagen,$forward,$comment,$pubmed,$obj_method,$raw_name);
+my ($name, $wbperson, $public_name, $varname,$gene, $wbgene, $seq, $clone, $type_alt, $type_mut, $alt_det, $mut_det, $strain, $strain_id, $flank1, $flank2,$method,$geno,$mutagen,$forward,$comment,$pubmed,$obj_method,$raw_name,$datestamp,$day, $month, $year, $time, $monnum);
 while(<FILE>){
     chomp;
     $_ =~ s/\r//g;
@@ -139,7 +155,16 @@ while(<FILE>){
 	    next
 	}
     } #if (/Your Name/) {
-
+    # Date: Thu, 22 Apr 2021 19:21:33 -0700  2021-06-17_15:27:02
+    if (/Date:\s+\S+\,\s+(\d+)\s+(\S+)\s+(\S+)\s+(\S+)/){
+	$day = $1;
+	$month = $2;
+	$year = $3;
+	$time = $4;
+	$monnum = $map{$month};
+	$datestamp = "${year}-${monnum}-${day}_$time";
+	print "$datestamp\n";
+    }
     elsif (/PubMed ID<\/td><td>(.+)<\/td>/) {
         #print "Pubmed_ID = $1\n";
         $pubmed = $1;
@@ -160,7 +185,8 @@ while(<FILE>){
         }
         next;
     }
-    elsif (/Gene Name<\/td><td>(\S+)<\/td>/) {
+    #<tr><td>Gene Name</td><td>dot-1.1 -- WBGene00021474</td>
+    elsif ((/Gene Name<\/td><td>(\S+)<\/td>/) || (/Gene Name<\/td><td>\S+\s+\-\-\s+(WBGene\d+)<\/td>/)){
         #print "Gene name = $1\n";
         $gene = $1;
         if (/(WBGene{8})/) {
@@ -324,7 +350,7 @@ while(<FILE>){
             print ACE "Gene $gene\n" unless ($wbgene); 
         }
         if (defined $strain_id) {
-            print ACE "Strain $strain_id\n";
+            print ACE "Strain $strain_id\t\/\/$strain\n";
         }
 	elsif (defined $strain) {
 	    print ACE "Strain $strain\n";
@@ -335,7 +361,7 @@ while(<FILE>){
 	    my @paper_obj = $ace->fetch(-query=>"find Paper where Database AND NEXT AND NEXT AND NEXT = $pubmed");
             if (@paper_obj) {
 		$WBpaper = $paper_obj[0]->name;
-		print ACE "Reference $WBpaper\n";
+		print ACE "Reference $WBpaper\t \/\/$pubmed\n";
             }
             else {
                 print "\/\/Reference $pubmed\n";
@@ -352,6 +378,9 @@ while(<FILE>){
 	    if (defined $WBpaper){
 		print ACE "Remark \"$comment\" Paper_evidence $WBpaper\n";
 	    }
+	    if (defined $datestamp){
+		print ACE "Remark \"$comment\" Date_last_updated  $datestamp\n";
+	    } 
         }
         if (defined $forward) {
             print ACE "Forward_genetics \"$forward\n";
@@ -397,6 +426,9 @@ while(<FILE>){
 	}
 	if (defined $WBpaper){
 	    print ACE "Remark \"alt_det = $alt_det mut_det = $mut_det\" Paper_evidence $WBpaper\n";
+	}
+	if (defined $datestamp) {
+	    print ACE "Remark \"alt_det = $alt_det mut_det = $mut_det\" Date_last_updated $datestamp\n";
 	}
 
 #standard tags
