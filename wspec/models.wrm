@@ -2433,11 +2433,11 @@
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 ?Antibody Summary UNIQUE ?Text #Evidence
+          Public_name Text
           Other_name Text
           Gene ?Gene XREF Antibody #Evidence
           Isolation Original_publication UNIQUE ?Paper
                     No_original_reference Text //proposed by Wen
-                    Person ?Person
                     Location ?Laboratory
                     Clonality UNIQUE Polyclonal UNIQUE Text
                                      Monoclonal UNIQUE Text
@@ -2450,10 +2450,7 @@
                                   Guinea_pig
                                   Chicken
                                   Goat
-                                  Other_animal UNIQUE Text
           Historical_gene ?Gene Text
-          Possible_pseudonym ?Antibody XREF Possible_pseudonym_of
-          Possible_pseudonym_of ?Antibody XREF Possible_pseudonym
           Antibody_for_disease ?DO_term XREF Associated_antibody #Evidence
           Expr_pattern ?Expr_pattern XREF Antibody_info
           Interactor ?Interaction
