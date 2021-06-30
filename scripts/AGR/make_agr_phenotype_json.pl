@@ -180,7 +180,6 @@ sub process {
 	    foreach my $paper (keys %papers) {
 		my $json_obj = {
 		    objectId                 => "WB:$obj",
-		    primaryGeneticEntityIDs  => ["WB:$obj"],
 		    phenotypeTermIdentifiers => [ { termId => $phen_id, termOrder => 1 } ],
 		    phenotypeStatement       => $phen_desc,
 		    dateAssigned             => $date,
