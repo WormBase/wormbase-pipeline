@@ -308,7 +308,7 @@ while( my $obj = $it->next) {
     $annot->{experimentalConditions} = \@exp_conditions if @exp_conditions;
   }
 
-  my $secondary_base_annot = $annot; #Create copy to use for secondary annotations before conditionRelations added
+  my $secondary_base_annot = dclone($annot); #Create copy to use for secondary annotations before conditionRelations added
 
   my $conditions = get_condition_relations($obj);
   $annot->{conditionRelations} = $conditions if @$conditions;
