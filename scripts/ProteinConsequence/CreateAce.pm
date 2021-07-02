@@ -71,14 +71,20 @@ sub run {
     }
 
 
+    my %pseudogenes_printed;
     $self->write_to("Writing transcript details for $batch_id\n") if $self->required_param('debug');
     for my $var (keys %$transcripts) {
 	next unless $self->add_transcript_consequences_for_variation($var, $mapped_alleles->{$var}{allele});
 	print $fh "Variation : \"$var\"\n";
-	print $fh 'HGVSg "' . $hgvsg->{$var} . "\"\n";
+	print $fh 'HGVSg "' . $hgvsg->{$var} . "\"\n" if exists $hgvsg->{$var};
 	for my $transcript (keys %{$transcripts->{$var}}) {
+	    my $type = 'Transcript';
+	    if (exists $pseudogenes->{$var}{$transcript}) {
+		$type = 'Pseudogene';
+		$pseudogenes_printed{$var}{$transcript}++;
+	    }
 	    for my $tag (keys %{$transcripts->{$var}{$transcript}}) {
-		print $fh "Transcript $transcript $tag\n";
+		print $fh "$type $transcript $tag\n";
 	    }
 	}
 	print $fh "\n";
@@ -87,11 +93,15 @@ sub run {
     
     $self->write_to("Writing pseudogene details for $batch_id\n") if $self->required_param('debug');
     for my $var (keys %$pseudogenes) {
-	print $fh "Variation : \"$var\"\n";
-	for my $pseudogene (@{$pseudogenes->{$var}}) {
+	my $var_header = "Variation : \"$var\"\n";
+	my $var_header_printed = 0;
+	for my $pseudogene (keys %{$pseudogenes->{$var}}) {
+	    next if $pseudogenes_printed{$var}{$pseudogene};
+	    print $fh $var_header unless $var_header_printed;
+	    $var_header_printed = 1;
 	    print $fh "Pseudogene $pseudogene\n";
 	}
-	print $fh "\n";
+	print $fh "\n" if $var_header_printed;
     }
 
     close($fh) or $self->log_and_die("Could not close $ace_file after writing\n");
@@ -259,7 +269,7 @@ sub get_overlapping_features {
 	}
     }
 
-    return (restructure_hash(\%gene_alleles), restructure_hash(\%allele_genes), $transcripts, restructure_hash(\%pseudogenes));
+    return (restructure_hash(\%gene_alleles), restructure_hash(\%allele_genes), $transcripts, \%pseudogenes);
 }
 
 

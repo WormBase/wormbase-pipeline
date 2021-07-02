@@ -62,7 +62,7 @@ my $worm_group_name = $ENV{WORM_GROUP_NAME} || "worm";
 my $wu_blast_path   = $ENV{WU_BLAST_PATH} || "";
 my $ncbi_blast_path = $ENV{NCBI_BLAST_PATH} || "";
 
-$yfile_name   = "/nfs/production/panda/ensemblgenomes/wormbase/ENSEMBL/etc/ensembl_lite.conf" if not defined $yfile_name;
+$yfile_name   = $ENV{ENSEMBL_CVS_ROOT_DIR} . "/ensembl-conf/etc/ensembl_lite.conf" if not defined $yfile_name;
 
 if (not defined $wormpipe_dir or not -d $wormpipe_dir) {
   die "You must supply a valid path wormpipedir\n";

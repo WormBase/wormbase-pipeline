@@ -226,11 +226,11 @@ if ($keep_old_species_sets) {
     }
     
   } else {
-    $compara_dbh->get_SpeciesSetAdaptor->update_collection($collection_name, undef, \@genome_dbs);
+    $compara_dbh->get_SpeciesSetAdaptor->update_collection($collection_name, \@genome_dbs);
   }
 } else {
   &clean_out_mlss_data( $compara_dbh );
-  $compara_dbh->get_SpeciesSetAdaptor->update_collection($collection_name, undef, \@genome_dbs);
+  $compara_dbh->get_SpeciesSetAdaptor->update_collection($collection_name, \@genome_dbs);
 }
 unless($compara_dbh->get_SpeciesSetAdaptor->fetch_collection_by_name($collection_name)){
   die "Could not add collection for $collection_name";
@@ -249,7 +249,7 @@ if ($create_tree_mlss) {
       and die "Could not create MLSS for within-species paralogs\n"; 
   
 # For protein trees
-  system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara $master_dbname --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type PROTEIN_TREES --f --name protein_trees_${collection_name} --release ") 
+  system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara $master_dbname --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type PROTEIN_TREES --f --name protein_trees_${collection_name} --release") 
       and die "Could not create MLSS for protein trees\n";
 
 }

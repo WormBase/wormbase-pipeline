@@ -3,7 +3,6 @@
 #
 #         FILE:  get_all_elegans_orthologues.pl
 #
-#      CREATED:  03/08/06 13:26:19 BST (mh6@sanger.ac.uk)
 #===============================================================================
 
 use strict;
@@ -17,12 +16,13 @@ use lib $ENV{CVS_DIR};
 use Wormbase;
 use Log_files;
 
-my ($verbose,$new,$debug,$test,$store,$outfile,$other, $wormbase,%species,@species);
+my ($verbose,$new,$debug,$test,$store,$outfile,$other, $wormbase,%species,@species, $all_species);
 
 my $comparadb = 'worm_compara';
 my $dbhost    = $ENV{'WORM_DBHOST'};
 my $dbuser    = 'wormro';
 my $dbport    = $ENV{'WORM_DBPORT'};
+my $paralog_mode = 'all';
 
 GetOptions(
   'database=s'   => \$comparadb,
@@ -35,6 +35,7 @@ GetOptions(
   'store=s'      => \$store,
   'outfile=s'    => \$outfile,
   'species=s'    => \@species,
+  'allspecies'   => \$all_species,
 ) || die("cant parse the command line parameter\n");
 
 if ($store){
@@ -84,6 +85,9 @@ foreach my $gdb1 (sort { $a->name cmp $b->name } @genome_dbs) {
   if (@species and not grep { $gdb1->name eq $_ } @species) {
     $log->write_to("Skipping " . $gdb1->name . "\n") if $verbose;
     next;
+  } elsif (not $all_species and not exists $core_accessors{$gdb1->name}) {
+    $log->write_to("Skipping " . $gdb1->name . " - not a core species, and not running with -allspecies\n") if $verbose;
+    next;
   }
 
   $log->write_to("Processing " . $gdb1->name . "...\n") if $verbose;
@@ -94,14 +98,15 @@ foreach my $gdb1 (sort { $a->name cmp $b->name } @genome_dbs) {
     
     $log->write_to("   Comparing to " . $gdb2->name . "...\n") if $verbose;
     
-    my $mlss;
+    my ($mlss);
+
     if ($gdb1->dbID == $gdb2->dbID) {
-      $mlss = $compara_db->get_MethodLinkSpeciesSetAdaptor->fetch_by_method_link_type_GenomeDBs('ENSEMBL_PARALOGUES', [$gdb1]);      
+      $mlss = $compara_db->get_MethodLinkSpeciesSetAdaptor->fetch_by_method_link_type_GenomeDBs('ENSEMBL_PARALOGUES', [$gdb1]);
     } else {
       $mlss = $compara_db->get_MethodLinkSpeciesSetAdaptor->fetch_by_method_link_type_GenomeDBs('ENSEMBL_ORTHOLOGUES', [$gdb1, $gdb2]);
     }
-    
-    my @homologies = @{$homology_adaptor->fetch_all_by_MethodLinkSpeciesSet( $mlss )};
+
+    my  @homologies = @{$homology_adaptor->fetch_all_by_MethodLinkSpeciesSet( $mlss )};
     
     foreach my $homology (@homologies) {
       

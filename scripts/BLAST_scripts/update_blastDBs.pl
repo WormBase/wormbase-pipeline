@@ -99,33 +99,39 @@ if($uniprot or $swissprot or $trembl) {
 
 if ($yeast) {
     $log->write_to("Updating yeast\n");
+
+    my $update = 0;
     my $target = '/tmp/download.yeast.gz';
     my $source='http://downloads.yeastgenome.org/sequence/S288C_reference/orf_protein/orf_trans.fasta.gz';
+    
+    eval {
+      die "Could not fetch file" if $wormbase->run_command("wget -O $target $source",$log);
+      die "Could not unzip file" if $wormbase->run_command("gunzip -f $target",$log);
 
-    $wormbase->run_command("wget -O $target $source",$log);
-    
-    $wormbase->run_command("gunzip -f $target",$log);
-    $target =~ s/\.gz//; #no longer gzipped
-    
-    my $ver = &determine_last_vers('yeast');
-    #check if number of proteins has changed
-    $log->write_to("\tcomparing\n");
-    my $old_file = "$blastdir/yeast$ver.pep";
-    my $old_cnt = qx{grep -c '>' $old_file};
-    my $new_cnt = qx{grep -c '>' $target};
+      $target =~ s/\.gz//; #no longer gzipped
+      
+      my $ver = &determine_last_vers('yeast');
+      #check if number of proteins has changed
+      $log->write_to("\tcomparing\n");
+      my $old_file = "$blastdir/yeast$ver.pep";
+      my $old_cnt = qx{grep -c '>' $old_file};
+      my $new_cnt = qx{grep -c '>' $target};
+      
+      die "Could not work out protein counts\n" unless( $old_cnt =~ /^\d+$/ and $new_cnt =~ /^\d+$/);
+      
+      $update = 1 if $old_cnt != $new_cnt;
 
-    $log->log_and_die("cant work out protein counts\n") unless( $old_cnt =~ /^\d+$/ and $new_cnt =~ /^\d+$/);
-    
-    if( $old_cnt != $new_cnt){
-    	#update the file
-	$log->write_to("\tupdating yeast . . .\n");
-	&process_yeast($target);
+    };
+    if ($@) {
+      $log->write_to("Could not successfully fetch yeast file ($@) so defaulting to previous version\n");
+    } elsif (not $update) {
+      $log->write_to("yeast is up to date\n");
+    } else {
+      $log->write_to("\tupdating yeast . . .\n");
+      &process_yeast($target);
+      $log->write_to("\tremoving download\n");
+      $wormbase->run_command("rm -f $target", $log);
     }
-    else {
-    	$log->write_to("yeast is up to date\n");
-    }
-    $log->write_to("\tremoving download\n");
-    $wormbase->run_command("rm -f $target", $log);
 }	
 
 if ($fly) {
