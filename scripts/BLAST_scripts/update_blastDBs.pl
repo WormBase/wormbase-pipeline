@@ -136,37 +136,50 @@ if ($yeast) {
 
 if ($fly) {
     $log->write_to("Updating fly . . \n");
-    # find the release version
-    my $page_download = '/tmp/page_download';
-    my $fly_version;
-    $log->write_to("\tdownloading flybase listing\n");
-    $wormbase->run_command("wget -O $page_download ftp://ftp.flybase.net/genomes/Drosophila_melanogaster/current/fasta/md5sum.txt", $log);
-    open (PAGE, "<$page_download") || $log->log_and_die("Can't open $page_download\n");
-    while (my $line = <PAGE>) {
-      if ($line =~ /dmel-all-translation-r(\d+)\.(\d+)\.fasta.gz/) {
-	$fly_version = "$1.$2";
-	last;
-      }
-    }
-    close(PAGE);
-    $wormbase->run_command("rm -f $page_download", $log);
+    my $update = 0;
+    eval {
+       # find the release version
+	my $page_download = '/tmp/page_download';
+	my $fly_version;
+	$log->write_to("\tdownloading flybase listing\n");
+	die "Could not get FlyBase listing" if $wormbase->run_command("wget -O $page_download ftp://ftp.flybase.net/genomes/Drosophila_melanogaster/current/fasta/md5sum.txt", $log);
+	open (PAGE, "<$page_download") || $log->log_and_die("Can't open $page_download\n");
+	while (my $line = <PAGE>) {
+	    if ($line =~ /dmel-all-translation-r(\d+)\.(\d+)\.fasta.gz/) {
+		$fly_version = "$1.$2";
+		last;
+	    }
+	}
+	close(PAGE);
+	$wormbase->run_command("rm -f $page_download", $log);
 
-    #get the file
-    my $fly_download = '/tmp/flybase.gz';
-    $log->write_to("\tdownloading flybase file\n");
-    $wormbase->run_command("wget -O $fly_download ftp://ftp.flybase.net/genomes/Drosophila_melanogaster/current/fasta/dmel-all-translation-r${fly_version}.fasta.gz", $log);
-    $wormbase->run_command("gunzip -f $fly_download", $log);
-    $fly_download = '/tmp/flybase';
+	#get the file
+	my $fly_download = '/tmp/flybase.gz';
+	$log->write_to("\tdownloading flybase file\n");
+	die "Could not fetch file" if $wormbase->run_command("wget -O $fly_download ftp://ftp.flybase.net/genomes/Drosophila_melanogaster/current/fasta/dmel-all-translation-r${fly_version}.fasta.gz", $log);
+	die "Could not unzip file" if $wormbase->run_command("gunzip -f $fly_download", $log);
+	$fly_download = '/tmp/flybase';
     
-    #check if number of proteins has changed
-    $log->write_to("\tcomparing\n");
-    my $ver = &determine_last_vers('gadfly'); 
-    my $old_file = "$blastdir/gadfly$ver.pep";
-    my $old_cnt = qx{grep -c '>' $old_file};
-    my $new_cnt = qx{grep -c '>' $fly_download};
+	#check if number of proteins has changed
+	$log->write_to("\tcomparing\n");
+	my $ver = &determine_last_vers('gadfly'); 
+	my $old_file = "$blastdir/gadfly$ver.pep";
+	my $old_cnt = qx{grep -c '>' $old_file};
+	my $new_cnt = qx{grep -c '>' $fly_download};
+	die "Could not work out protein counts\n" unless( $old_cnt =~ /^\d+$/ and $new_cnt =~ /^\d+$/);
 
-    if( $old_cnt != $new_cnt){
-    	#update the file
+	$update = 1 if $old_cnt != $new_cnt;
+    };
+
+    if ($@) {
+	$log->write_to("Could not successfully fetch flybase file ($@) so defaulting to previous version\n");
+    }
+    elsif (!$update) {
+	$log->write_to("flybase is already up to date\n");
+	$wormbase->run_command("rm -f $fly_download", $log);
+    }
+    else {
+	#update the file
 	$log->write_to("\tupdating flybase . . .\n");
 	$ver++;
 	my $pepfile = "$blastdir/gadfly${ver}.pep";
@@ -244,13 +257,9 @@ if ($fly) {
 	
 	my $redundant = scalar keys %genes;
 	$log->write_to("\t$record_count ($redundant) proteins\nflybase updated\n\n");
+	$wormbase->run_command("rm -f $fly_download", $log);
     }
-    else {
-	$log->write_to("\nflybase already up to date\n");
-    }
-    
-    $wormbase->run_command("rm -f $fly_download", $log);
-  }
+}
 
 
 #
