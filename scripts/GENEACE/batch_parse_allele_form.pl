@@ -382,7 +382,7 @@ while(<FILE>){
 	    }
         }
         if (defined $forward) {
-            print ACE "Forward_genetics \"$forward\n";
+            print ACE "Forward_genetics \"$forward\"\n";
         }
         if (defined $mutagen){
             print ACE "Mutagen \"$mutagen\"\n";
