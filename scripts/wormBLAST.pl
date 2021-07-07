@@ -383,7 +383,14 @@ sub update_blast_dbs {
   while (<OLD_DB>) {
     chomp;
     if (/$regexp/) {
-      $_currentDBs{$1} = $_;
+
+	#  If there is a test DBin the mix and warn about that. Only disable this check if you are certain this is what you want. Fixes issue #178
+	if (($_=~/666/ || $_=~/665/ ) and not $test ) {
+		print "ERROR File $last_build_DBs contains DB name $_ containing 665 or 666 which may be test DBs\n";
+		print "Please go in and correct so that the file is pointing to all the right DBsi, or disable this check if you are convinced it is the right DB\n";
+		die;
+	}
+	$_currentDBs{$1} = $_;
     }
   }
   close OLD_DB;
