@@ -533,7 +533,8 @@ sub calculate_pathogenicity_predictions {
 	' -pipeline_host ' . $ENV{'WORM_DBHOST'} . ' -pipeline_user ' . $ENV{'WORM_DBUSER'} .
 	' -pipeline_port ' . $ENV{'WORM_DBPORT'} . ' -lsf_queue ' . $lsf_queue .
 	' -sift_dir ' . $ENV{'SIFT_DIR'} . ' -pph_dir ' . $ENV{'PPH_DIR'} . ' -pph_conf_dir ' . $ENV{'PPH_CONF_DIR'} . '/' . $mod .
-	' -ncbi_dir ' . $ENV{'NCBI_DIR'} . ' -blastdb ' . $ENV{'BLAST_DB'} . ' -password ' . $password;
+	' -ncbi_dir ' . $ENV{'NCBI_DIR'} . ' -blastdb ' . $ENV{'BLAST_DB'} . ' -pph_blast_db ' . $ENV{'PPH_BLAST_DB'} .
+	' -uniprot_dbs ' . $ENV{'UNIPROT_DBS'} . ' -password ' . $password;
     
     run_system_cmd($init_cmd, "Initialising $mod pathogenicity prediction eHive pipeline", $log);
     
