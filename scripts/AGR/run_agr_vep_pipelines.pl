@@ -218,6 +218,8 @@ GetOptions(
 
 print_usage() if $help;
 
+make_path($BASE_DIR) unless -d $BASE_DIR;
+    
 my @mods = split(',', $mods_string);
 $logfile = $BASE_DIR . '/submission.log' if !$logfile;;
 
@@ -375,7 +377,6 @@ sub download_from_agr {
     
     my $download_urls = defined $url ? get_urls_from_snapshot($url) : get_latest_urls();
     
-    make_path($BASE_DIR) unless -d $BASE_DIR;
     my $input_files_file = "${BASE_DIR}/VEP_input_files.txt";
     open (FILES, '>>', $input_files_file) or $log->lod_and_die("Couldn't open $input_files_file to append data\n");
     for my $mod (@$mods) {
