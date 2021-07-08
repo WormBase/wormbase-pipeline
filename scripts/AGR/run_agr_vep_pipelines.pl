@@ -525,7 +525,6 @@ sub calculate_pathogenicity_predictions {
     
     backup_pathogenicity_prediction_db($mod, $password, $log);
     
-    #my $lsf_queue = $test ? $ENV{'LSF_TEST_QUEUE'} : $ENV{'LSF_DEFAULT_QUEUE'}; # Waiting for clarification of production queue usage for AGR work
     my $lsf_queue = $ENV{'LSF_DEFAULT_QUEUE'};
         
     my $init_cmd = "init_pipeline.pl VepProteinFunction::VepProteinFunction_conf -mod $mod" .
@@ -608,7 +607,7 @@ sub run_vep_on_phenotypic_variations {
 sub run_vep_on_htp_variations{
     my ($mod, $password, $test, $log) = @_;
     
-    my $lsf_queue = $test ? $ENV{'LSF_TEST_QUEUE'} : $ENV{'LSF_DEFAULT_QUEUE'};
+    my $lsf_queue = $ENV{'LSF_DEFAULT_QUEUE'};
     
     my $init_cmd = "init_pipeline.pl ModVep::ModVep_conf -mod $mod -vcf ${mod}_HTVCF.vcf -gff ${mod}_GFF.refseq.gff.gz" .
 	" -fasta ${mod}_FASTA.refseq.fa.gz -bam ${mod}_BAM.bam -hive_root_dir " . $ENV{'HIVE_ROOT_DIR'} . ' -pipeline_base_dir ' .
