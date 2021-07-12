@@ -146,8 +146,9 @@ foreach $stableid (keys(%syns)) {
 	$synonym_store_sth->finish();
     }
 
-   # no existing display_xref so we make a new one
-   # where there are multiple synonyms, the display xref will just be the first one
+   # no existing display_xref so we make a new one to hang the synonyms off
+   # use the stableid as the xref's ID and display label- sorry Ensembl :(
+  
     else{
       my $new_display_xref = Bio::EnsEMBL::DBEntry -> new (
 	     -PRIMARY_ID  => $stableid,
