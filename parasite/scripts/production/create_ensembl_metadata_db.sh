@@ -42,7 +42,7 @@ ${PARASITE_STAGING_MYSQL}-w -N -e "create database ${db_name};"
 cat ${EM_table_SQL} | ${PARASITE_STAGING_MYSQL}-w ${db_name}
 for this_core_db in $(${PARASITE_STAGING_MYSQL} -N -e "SHOW DATABASES LIKE \"%core_${PARASITE_VERSION}_${ENSEMBL_VERSION}%\""); do
    echo "Updating ${db_name} with metadata from ${this_core_db}";
-   ${ENSEMBL_CVS_ROOT_DIR}/ensembl-metadata/misc_scripts/metadata_updater.pl  -metadata_uri     $($PARASITE_STAGING_MYSQL-w details url)${db_name}      \
+   perl ${ENSEMBL_CVS_ROOT_DIR}/ensembl-metadata/misc_scripts/metadata_updater.pl  -metadata_uri     $($PARASITE_STAGING_MYSQL-w details url)${db_name}      \
                         -database_uri     $($PARASITE_STAGING_MYSQL-w details url)${this_core_db} \
                         -e_release        ${ENSEMBL_VERSION}                                          \
                         -eg_release       ${PARASITE_VERSION}                                         \
