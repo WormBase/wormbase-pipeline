@@ -97,6 +97,7 @@ LINE: while ( my $line = <TSV> ) {
 }
 close(TSV);
 
+
 ## 3) Check that the external_db exists, and add it if not
 
 my $dbname = $opts->{'extdb'};
@@ -108,10 +109,11 @@ unless (scalar(@$dbRefs)>0){
   $dbRefs = $dea->get_external_db_ids($dbname, 'NULL', 1);
 }
 
+
 ## 4) create display_xrefs linked to synonyms
 
 foreach $stableid (keys(%syns)) {
-   
+  
     # check target gene exists 
         my $gene = $gene_adaptor->fetch_by_stable_id($stableid);
         if ( !$gene ) {
@@ -148,9 +150,9 @@ foreach $stableid (keys(%syns)) {
    # where there are multiple synonyms, the display xref will just be the first one
     else{
       my $new_display_xref = Bio::EnsEMBL::DBEntry -> new (
-	     -PRIMARY_ID  => ${$syns{$stableid}}[0],
+	     -PRIMARY_ID  => $stableid,
              -DBNAME      => $opts->{'extdb'},
-             -DISPLAY_ID  => ${$syns{$stableid}}[0],
+             -DISPLAY_ID  => $stableid,
              -INFO_TYPE   => 'SEQUENCE_MATCH',
          );
       # add all synonyms to the new xref  
