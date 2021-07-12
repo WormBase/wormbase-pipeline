@@ -198,6 +198,16 @@ const my %REFSEQ_CHROMOSOMES => (
     },
     );
 
+const my %BAM_REQUIRED => (
+    'FB'    => 0,
+    'MGI'   => 1,
+    'RGD'   => 1,
+    'SGD'   => 0,
+    'WB'    => 0,
+    'ZFIN'  => 1,
+    'HUMAN' => 1,
+    );
+
 my ($url, $test, $logfile, $debug, $password, $cleanup, $nocheck, $overwrite, $help);
 my $stages = '1,2,3,4,5';
 my $mods_string = 'FB,MGI,RGD,SGD,WB,ZFIN,HUMAN';
@@ -271,7 +281,7 @@ for my $mod (@mods) {
     if (!$test and $stages =~ /3/ and $stages =~ /4/ and $stages =~ /5/) {
 	update_checksums($mod, 'FASTA.fa', $checksums, $log);
 	update_checksums($mod, 'GFF.gff', $checksums, $log);
-	update_checksums($mod, 'BAM.bam', $checksums, $log);
+	update_checksums($mod, 'BAM.bam', $checksums, $log) if $BAM_REQUIRED{$mod};
     }
     cleanup_intermediate_files($mod, $log) if $cleanup;
 }
@@ -305,10 +315,10 @@ sub check_for_new_data {
 	$run_stages{5} = 1;
     }
     if (!exists $old_checksums->{"${mod}_FASTA.fa"} or
-	!exists $old_checksums->{"${mod}_BAM.bam"} or
+	($BAM_REQUIRED{$mod} and !exists $old_checksums->{"${mod}_BAM.bam"}) or
 	!exists $old_checksums->{"${mod}_GFF.gff"} or
 	$old_checksums->{"${mod}_FASTA.fa"} ne $new_checksums->{"${mod}_FASTA.fa"} or
-	$old_checksums->{"${mod}_BAM.bam"} ne $new_checksums->{"${mod}_BAM.bam"} or
+	($BAM_REQUIRED{$mod} and $old_checksums->{"${mod}_BAM.bam"} ne $new_checksums->{"${mod}_BAM.bam"}) or
 	$old_checksums->{"${mod}_GFF.gff"} ne $new_checksums->{"${mod}_GFF.gff"}) {
 	%run_stages = map {$_ => 1} (2 .. 5);
     }
@@ -400,7 +410,7 @@ sub download_from_agr {
 	    run_system_cmd("mv $filename ${mod}_${datatype}.${extension}", "Renaming $filename", $log);
 	}
 	fix_rgd_headers($log) if $mod eq 'RGD'; # Temporary hack
-	merge_bam_files($mod, $log);
+	merge_bam_files($mod, $log) if $BAM_REQUIRED{$mod};
 	unlink "${mod}_FASTA.fa.fai" if -e "${mod}_FASTA.fa.fai";
 	run_system_cmd('python3 ' . $ENV{'CVS_DIR'} . "/AGR/agr_variations_json2vcf.py -j ${mod}_VARIATION.json -m $mod -g ${mod}_GFF.gff " .
 		       "-f ${mod}_FASTA.fa -o ${mod}_VCF.vcf", "Converting $mod phenotypic variants JSON to VCF", $log) if -e "${mod}_VARIATION.json";
@@ -526,9 +536,10 @@ sub calculate_pathogenicity_predictions {
     backup_pathogenicity_prediction_db($mod, $password, $log);
     
     my $lsf_queue = $ENV{'LSF_DEFAULT_QUEUE'};
-        
+
+    my $bam = $BAM_REQUIRED{$mod} ? "${mod}_BAM.bam" : 0;
     my $init_cmd = "init_pipeline.pl VepProteinFunction::VepProteinFunction_conf -mod $mod" .
-	" -agr_fasta ${mod}_FASTA.refseq.fa -agr_gff ${mod}_GFF.refseq.gff -agr_bam ${mod}_BAM.bam" . 
+	" -agr_fasta ${mod}_FASTA.refseq.fa -agr_gff ${mod}_GFF.refseq.gff -agr_bam $bam" . 
 	' -hive_root_dir ' . $ENV{'HIVE_ROOT_DIR'} . ' -pipeline_base_dir ' . $ENV{'PATH_PRED_WORKING_DIR'} .
 	' -pipeline_host ' . $ENV{'WORM_DBHOST'} . ' -pipeline_user ' . $ENV{'WORM_DBUSER'} .
 	' -pipeline_port ' . $ENV{'WORM_DBPORT'} . ' -lsf_queue ' . $lsf_queue .
@@ -553,8 +564,8 @@ sub run_vep_on_phenotypic_variations {
     return unless -e "${mod}_VCF.refseq.vcf";
     
     my $base_vep_cmd = "vep -i ${mod}_VCF.refseq.vcf -gff ${mod}_GFF.refseq.gff.gz -fasta ${mod}_FASTA.refseq.fa.gz --force_overwrite " .
-	"--bam ${mod}_BAM.bam -hgvsg -hgvs -shift_hgvs=0 --symbol --distance 0 --plugin ProtFuncSeq,mod=$mod,pass=$password";
-   
+	"-hgvsg -hgvs -shift_hgvs=0 --symbol --distance 0 --plugin ProtFuncSeq,mod=$mod,pass=$password";
+    $base_vep_cmd .= " --bam ${mod}_BAM.bam" if $BAM_REQUIRED{$mod};
     my $gl_vep_cmd = $base_vep_cmd . " --per_gene --output_file ${mod}_VEPGENE.txt";
     my $tl_vep_cmd = $base_vep_cmd . " --output_file ${mod}_VEPTRANSCRIPT.txt";
     
@@ -609,9 +620,10 @@ sub run_vep_on_htp_variations{
     my ($mod, $password, $test, $log) = @_;
     
     my $lsf_queue = $ENV{'LSF_DEFAULT_QUEUE'};
-    
+
+    my $bam = $BAM_REQUIRED{$mod} ? "${mod}_BAM.bam" : 0;
     my $init_cmd = "init_pipeline.pl ModVep::ModVep_conf -mod $mod -vcf ${mod}_HTVCF.vcf -gff ${mod}_GFF.refseq.gff.gz" .
-	" -fasta ${mod}_FASTA.refseq.fa.gz -bam ${mod}_BAM.bam -hive_root_dir " . $ENV{'HIVE_ROOT_DIR'} . ' -pipeline_base_dir ' .
+	" -fasta ${mod}_FASTA.refseq.fa.gz -bam $bam -hive_root_dir " . $ENV{'HIVE_ROOT_DIR'} . ' -pipeline_base_dir ' .
 	$ENV{'HTP_VEP_WORKING_DIR'} . ' -pipeline_host ' . $ENV{'WORM_DBHOST'} . ' -pipeline_user ' . $ENV{'WORM_DBUSER'} .
 	' -pipeline_port ' . $ENV{'WORM_DBPORT'} . ' -lsf_queue ' . $lsf_queue . ' -vep_dir ' . $ENV{'VEP_DIR'} . 
 	" -debug_mode 0 -password $password";
@@ -676,12 +688,9 @@ sub merge_bam_files {
 	    run_system_cmd("mv ${mod}_MOD-GFF-BAM-KNOWN.bam ${mod}_BAM.bam", "Renaming $mod MOD-GFF-BAM-KNOWN file", $log);
 	}
     }
-    elsif (-e "${mod}_MOD-GFF-BAM-MODEL.bam") {
+    else{
+	$log->log_and_die("$mod BAM files could not be found\n") unless -e "${mod}_MOD-GFF-BAM-MODEL.bam";
 	run_system_cmd("mv ${mod}_MOD-GFF-BAM-MODEL.bam ${mod}_BAM.bam", "Renaming $mod MOD-GFF-BAM-MODEL file", $log); 
-    }
-    else {
-	run_system_cmd("touch ${mod}_BAM.bam", "Creating dummy BAM file", $log);
-	return;
     }
     
     run_system_cmd("samtools sort -o ${mod}_BAM.sorted.bam -T tmp ${mod}_BAM.bam", "Sorting $mod BAM file", $log);
