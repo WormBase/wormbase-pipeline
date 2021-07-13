@@ -1434,8 +1434,8 @@ sub establish_paths {
       $ftp_uploads,
       $ftp_site);
   
-  $self->{'wormpub'} = "/nfs/panda/ensemblgenomes/wormbase";
-  $self->{'scratch_area'} = '/nfs/nobackup/ensemblgenomes/wormbase/scratch';
+  $self->{'wormpub'} = '/nfs/production/flicek/wormbase/wb';
+  $self->{'scratch_area'} = '/hps/nobackup/flicek/wormbase/wb/scratch';
 
   # if a specified non-build database is being used
   
@@ -1485,10 +1485,10 @@ sub establish_paths {
   $self->{'blat'}        = $self->orgdb . "/BLAT";
   $self->{'checks'}      = $self->autoace . "/CHECKS";
   $self->{'ontology'}    = $self->autoace . "/ONTOLOGY";
-  $self->{'tace'}   = '/nfs/panda/ensemblgenomes/wormbase/software/packages/acedb/RHEL7/4.9.62/tace';
-  $self->{'giface'} = '/nfs/panda/ensemblgenomes/wormbase/software/packages/acedb/RHEL7/4.9.62/giface';
-  $self->{'giface_server'} = '/nfs/panda/ensemblgenomes/wormbase/software/packages/acedb/RHEL7/4.9.62/sgifaceserver';
-  $self->{'giface_client'} = '/nfs/panda/ensemblgenomes/wormbase/software/packages/acedb/RHEL7/4.9.62/saceclient';
+  $self->{'tace'}   = '/hps/software/users/wormbase/shared/bin/acedb/CENTOS8/4.9.62/tace';
+  $self->{'giface'} = '/hps/software/users/wormbase/shared/bin/acedb/CENTOS8/4.9.62/giface';
+  $self->{'giface_server'} = '/hps/software/users/wormbase/shared/bin/acedb/CENTOS8/4.9.62/sgifaceserver';
+  $self->{'giface_client'} = '/hps/software/users/wormbase/shared/bin/acedb/CENTOS8/4.9.62/saceclient';
   $self->{'databases'}->{'geneace'} = $self->wormpub . "/DATABASES/geneace";
   $self->{'databases'}->{'camace'}  = $self->wormpub . "/DATABASES/camace";
   $self->{'databases'}->{'current'} = $self->wormpub . "/DATABASES/current_DB";
