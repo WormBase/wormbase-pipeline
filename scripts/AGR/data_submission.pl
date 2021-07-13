@@ -41,6 +41,8 @@ GetOptions(
     "debug=s"              => \$debug
     );
 
+my $agr_resources   = $ENV{'AGR_DIR'} . '/resources';
+my $agr_uploads     = $ENV{'AGR_UPLOADS'};
 my $build_home      = $ENV{'BUILD_HOME'};
 my $agr_release     = $ENV{'AGR_RELEASE'};
 my $agr_schema      = $ENV{'AGR_SCHEMA'};
@@ -48,7 +50,7 @@ my $ws_release      = $ENV{'WS_RELEASE'};
 my $upload_date     = $ENV{'UPLOAD_DATE'};
 my $cvs_dir         = $ENV{'CVS_DIR'};
 my $agr_schema_repo = $ENV{'AGR_SCHEMA_REPO'};
-my $sub_dir = "${build_home}/AGR/uploads/${agr_release}/${upload_date}";
+my $sub_dir = "${agr_uploads}/${agr_release}/${upload_date}";
 
 $bgi_file = "${sub_dir}/WB_${agr_schema}_BGI.json" unless $bgi_file;
 if (!$bgi and ($gff or $allele or $phenotype or $expression)) {
@@ -155,7 +157,7 @@ if ($phenotype or $all) {
 if ($expression or $all) {
     my @cmds = (
 	"perl ${cvs_dir}/AGR/make_agr_expression_json.pl -database ${build_home}/DATABASES/${ws_release} " .
-	"-wsversion ${ws_release} -bgijson ${bgi_file}  -wb2uberon ${build_home}/AGR/resources/wormbase_to_uberon.agr_2_2.txt " .
+	"-wsversion ${ws_release} -bgijson ${bgi_file}  -wb2uberon ${agr_resources}/wormbase_to_uberon.agr_2_2.txt " .
 	"-outfile ${sub_dir}/WB_${agr_schema}_expression.json",
 	"${agr_schema_repo}/bin/agr_validate.py -s ${agr_schema_repo}/ingest/expression/wildtypeExpressionMetaDataDefinition.json " .
 	"-d ${sub_dir}/WB_${agr_schema}_expression.json"
