@@ -474,6 +474,9 @@ sub split_databases {
       print "Destroying $split_db\n" if ($debug);
       $wormbase->run_command("rm -rf $split_db/database/ACEDB.wrm", $log) && die "Failed to remove $split_db/database/ACEDB.wrm\n";
     }
+    elsif (-e $split_db."/database/wspec/models.wrm"){
+	print "It looks like you have had a failed run but the database dir structure is present so we will continue!!";
+    }
     else {
       $log->write_to ("Databases doesn't exist so creating $split_db\n");
       print "Databases doesn't exist so creating $split_db\n";
