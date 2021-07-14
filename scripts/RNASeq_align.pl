@@ -22,6 +22,9 @@ use List::Util qw(sum); # for mean()
 use Time::localtime;
 use File::stat;
 
+# Restart automatically if some libs are missing
+my $command= $0 . " " . join(" ", @ARGV);
+
 my ($help, $debug, $test, $verbose, $store, $wormbase, $species, $new_genome, $check, $runlocally, $notbuild, $analyse, $results, $restart);
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
@@ -35,7 +38,7 @@ GetOptions ("help"       => \$help,
 	    "notbuild"   => \$notbuild, # don't try to make GTF or run cufflinks (for when it is run before doing the Build) 
 	    "analyse"    => \$analyse,  # firstly, run the alignments, finding Introns and cufflinks for each Experiment under LSF
 	    "results"    => \$results,  # secondly, compile the results from all of the Experiments and write out the resulting files
-	    "restart"    => \$restart,  # secondly, compile the results from all of the Experiments and write out the resulting files
+	    "restart"    => \$restart,  # If you are doing -analyse, adding -restart will restart once with the -check flag
 	   );
 
 
@@ -52,9 +55,6 @@ if ( $store ) {
 
 # Establish log file
 my $log = Log_files->make_build_log($wormbase);
-
-# Restart automatically if some libs are missing
-my $command= $0 . " " . join(" ", @ARGV);
 
 
 ######################################
@@ -186,8 +186,11 @@ sub analyse {
   }
   # If there are uncompleted jobs, restart with check parameter, if -restart flag was used 
   if ($restart and $uncompleted_jobs>0 ) {
-	$command=~/\-restart//g;
-  	print "RESTART COMMAND: perl $ENV{CVS_DIR}/$command -check\n";
+	print "RESTART COMMAND: perl $ENV{CVS_DIR}/RNASeq_align.pl -analyse -check\n";
+	$command=~s/\-restart//g;
+	$command=~s/\-check//g;
+	print "RESTART COMMAND: perl $command -check\n";
+
   }
 
   # now check that all of the jobs ran successfully - we have had instances of jobs disappearing from the queue!

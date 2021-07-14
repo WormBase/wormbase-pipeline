@@ -54,7 +54,17 @@ unless ($current_release and $previous_release and $current_iteration and $previ
     
     $current_release = $wormbase->get_wormbase_version unless $current_release;
     $previous_release = $current_release - 1 unless $previous_release;
-    $current_iteration = $iterations->{$current_release} unless $current_iteration;
+    if (!$current_iteration) {
+	if (exists $iterations->{$current_release}) {
+	    $current_iteration = $iterations->{$current_release};
+	}
+	else{
+	    $log->log_and_die("No tag found for WS${current_release}, and WS${current_release} does not " .
+			      'match the expected current release (WS' . $wormbase->get_wormbase_version .
+			      ")\n") unless $current_release == $wormbase->get_wormbase_version;
+	    $current_iteration = 0;
+	}
+    }
     $previous_iteration = $iterations->{$previous_release} unless $previous_iteration;
 }
 
@@ -215,7 +225,7 @@ sub count_attribute_changes {
 sub compare_submissions {
     my ($file, $current_tag, $previous_tag, $new_genes, $removed_genes, $shared_genes, $log) = @_;
 
-    my $current_data = parse_file($file, $current_tag, $log);
+    my $current_data = parse_file($file, $current_tag, $log, 1);
     my $previous_data = parse_file($file, $previous_tag, $log);
 
     for my $current_gene (keys %$current_data) {
@@ -253,11 +263,16 @@ sub get_latest_release_iterations {
 
 
 sub parse_file {
-    my ($file, $tag, $log) = @_;
+    my ($file, $tag, $log, $is_current) = @_;
 
     my ($sn, $gene, $entry, $feature, $attr);
     my %data;
-    open (SUB, "git show $tag:$file |");
+    if ($is_current and $tag =~ /\.0$/) {
+	open (SUB, '<', $file);
+    }
+    else {
+	open (SUB, "git show $tag:$file |");
+    }
     while (<SUB>) {
 	chomp;
 	next unless $_ =~ /^FT/;

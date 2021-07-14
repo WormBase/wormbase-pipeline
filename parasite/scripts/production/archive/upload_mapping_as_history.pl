@@ -11,7 +11,7 @@ use Digest::MD5 qw/md5_hex/;
 use Getopt::Long;
 use ProductionMysql;
 use MysqlPair;
-my $db_command = "$ENV{PARASITE_STAGING_MYSQL}-ensrw";
+my $db_command = "$ENV{PARASITE_STAGING_MYSQL}-w";
 my $previous_db_command = "$ENV{PREVIOUS_PARASITE_STAGING_MYSQL}";
 my %args;
 GetOptions (

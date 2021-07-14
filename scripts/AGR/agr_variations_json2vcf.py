@@ -11,16 +11,46 @@ import re
 import sys
 import subprocess
 
-def genotype_string(variation, allStrains, zygosity):
+def chromosome_from_refseq(v, chr_map):
+    parts = v["sequenceOfReferenceAccessionNumber"].split(':',1)
+    for chrom, refseq in chr_map.items():
+        if refseq == parts[1]:
+            return chrom
+
+    return
+
+
+def construct_hgvsg_id(v, refseq_chr, refSeq, varSeq):
+    stem = refseq_chr + ':g.'
+    if v["type"] == 'SO:0000159':
+        # deletion
+        hgvsg = stem + str(v["start"]) + '_' + str(v["end"]) + 'del'
+    elif v["type"] == 'SO:0000667':
+        # insertion
+        hgvsg = stem + str(v["start"]) + '_' + str(v["end"]) + 'ins'
+        if varSeq[1:] != '.':
+            hgvsg = hgvsg + varSeq[1:]
+    elif v["type"] == 'SO:1000032' or v["type"] == 'SO:0002007':
+        # deletion-insertion or multiple nucleotide substitution
+        hgvsg = stem + str(v["start"]) + '_' + str(v["end"]) + 'delins'
+        if varSeq[1:] != '.':
+            hgvsg = hgvsg + varSeq[1:]
+    elif v["type"] == 'SO:1000008':
+        # point mutation
+        hgvsg = stem + str(v["start"]) + refSeq + '>' + varSeq
+    else:
+        print("Unknown variation type " + v["type"] + " for " + v["alleleId"], file=sys.stderr)
+    
+    return hgvsg
+
+
+def genotype_string(variation, allStrains):
     variationStrains = set(variation["strains"])
     genotypes = []
 
     for s in allStrains:
         if s in variationStrains:
-            if zygosity == 'homozygous':
-                genotypes.append('1/1')
-            else:
-                genotypes.append('1/2')
+            genotypes.append('1/1')
         else:
             genotypes.append('./.')
 
@@ -45,12 +75,24 @@ def get_header_info(gff):
     return assembly, chr_length
 
 
-def get_refseq_from_fasta(v, fasta):
-    faidx_call = subprocess.run(["samtools", "faidx", fasta, str(v["chromosome"]) + ':' + str(v["start"]) + '-' + str(v["end"])], stdout=subprocess.PIPE, text=True)
+def get_refseq_from_fasta(v, chrom, fasta):
+    faidx_call = subprocess.run(["samtools", "faidx", fasta, chrom + ':' + str(v["start"]) + '-' + str(v["end"])], stdout=subprocess.PIPE, text=True)
     faidx_lines = faidx_call.stdout.split("\n");
     faidx_lines.pop(0)
-    return ''.join(faidx_lines)
+    return ''.join(faidx_lines).upper()
 
+def get_padbase_from_fasta(v, chrom, fasta):
+    if v["type"] == 'SO:0000667':
+        pbpos = int(v["start"])
+    else:
+        if v["start"] == 1:
+            pbpos = int(v["end"]) + 1
+        else:
+            pbpos = int(v["start"]) - 1
+    faidx_call = subprocess.run(["samtools", "faidx", fasta, chrom + ':' + str(pbpos) + '-' + str(pbpos)], stdout=subprocess.PIPE, text=True)
+    faidx_lines = faidx_call.stdout.split("\n");
+    faidx_lines.pop(0)
+    return faidx_lines[0].upper()
 
 def get_strains(variations):
     strains = set()
@@ -159,13 +201,13 @@ chrom2ncbi = {
 	'chrmt': 'NC_001224.1',
     },
     'WB': {
-        'I': 'RefSeq:NC_003279.8',
-        'II': 'RefSeq:NC_003280.10',
-        'III': 'RefSeq:NC_003281.10',
-        'IV': 'RefSeq:NC_003282.8',
-        'V': 'RefSeq:NC_003283.11',
-        'X': 'RefSeq:NC_003284.9',
-        'MtDNA': 'RefSeq:NC_001328.1',
+        'I': 'NC_003279.8',
+        'II': 'NC_003280.10',
+        'III': 'NC_003281.10',
+        'IV': 'NC_003282.8',
+        'V': 'NC_003283.11',
+        'X': 'NC_003284.9',
+        'MtDNA': 'NC_001328.1',
     },
     'ZFIN': {
 	'1': 'NC_007112.7',
@@ -204,6 +246,11 @@ expand_iupac = {
     'W': 'A,T',
     'K': 'G,T',
     'M': 'A,C',
+    'B': 'C,G,T',
+    'D': 'A,G,T',
+    'H': 'A,C,T',
+    'V': 'A,C,G',
+    'N': 'A,C,G,T'
 }
 
 parser = argparse.ArgumentParser()
@@ -213,6 +260,7 @@ parser.add_argument("-o", "--out", help="Output VCF file")
 parser.add_argument("-m", "--mod", help="Acronym for MOD")
 parser.add_argument("-f", "--fasta", help="FASTA file")
 parser.add_argument("-s", "--strains", default=False, help="Input includes strain data")
+parser.add_argument("-w", "--wbhtp", default=False, help="WB high throughput data")
 
 args = parser.parse_args()
 assembly, chr_lengths = get_header_info(args.gff)
@@ -224,8 +272,8 @@ vcf_file.write("##fileformat=VCFv4.2\n" +
                "##reference=" + assembly + "\n" +
                "##source=AllianceJSON\n")
 
-for chr in chrom2ncbi[args.mod].keys():
-    if chr in chr_lengths.keys():
+for chr in chrom2ncbi[args.mod]:
+    if chr in chr_lengths:
         vcf_file.write("##contig=<ID=" + chr + ",accession=\"" + chrom2ncbi[args.mod][chr] + "\",length=" + chr_lengths[chr] + ">\n")
     else:
         vcf_file.write("##contig=<ID=" + chr + ",accession=\"" + chrom2ncbi[args.mod][chr] + "\">\n")
@@ -240,66 +288,100 @@ nt_regex = re.compile('^[ACGT]$')
 with open(args.json, 'r') as read_file:
     parsed = json.load(read_file)
 
-    # get all strains for column headers
-    if args.strains:
-        strains = get_strains(parsed["data"])
-        for s in strains:
-            headers.append('WB:' + s)  # need curie form of strain
+# get all strains for column headers
+if args.strains:
+    strains = get_strains(parsed["data"])
+    for s in strains:
+        headers.append('WB:' + s)  # need curie form of strain
     
-    vcf_file.write("\t".join(headers) + "\n")
+vcf_file.write("\t".join(headers) + "\n")
 
-    vcf_lines = []
-    for v in (parsed["data"]):
-        vcf_data = {}
+vcf_lines = []
+added_entries = set()
+for v in (parsed["data"]):
+    vcf_data = {}
 
-        if 'genomicReferenceSequence' not in v.keys():
-            if 'chromosome' not in v.keys() or 'start' not in v.keys() or 'end' not in v.keys():
-                print("Neither genomicVariantSequence nor chr/start/end coordinates specified for " + v["alleleId"], file=sys.stderr)
-                continue
-            refSeq = get_refseq_from_fasta(v, args.fasta)
-        else:
-            refSeq = "" if v["genomicReferenceSequence"] == "N/A" else v["genomicReferenceSequence"]
+    if 'chromosome' not in v:
+        chr = chromosome_from_refseq(v, chrom2ncbi[args.mod])
+    else:
+        chr = str(v["chromosome"])
+        
+    # SO:0000159 - deletion
+    # SO:0000667 - insertion
+    # SO:0002007 - multiple nucleotide substitution
+    # SO:1000008 - point mutation
+    # SO:1000032 - deletion-insertion
 
-    
-        if 'genomicVariantSequence' not in v.keys():
-            print("Missing reference allele for " + v["alleleId"], file=sys.stderr)
+    pos = int(v["start"])
+        
+    # Get reference allele
+    if v["type"] == 'SO:0000667':
+        refSeq = ''
+    elif args.wbhtp:
+        refSeq = v["genomicReferenceSequence"]
+    else:
+        refSeq = get_refseq_from_fasta(v, chr, args.fasta)
+        if 'genomicReferenceSequence' in v and v["genomicReferenceSequence"].upper() != refSeq:
+            print("Specified genomic reference allele (" + v["genomicReferenceSequence"] + ") doesn't match reference sequence ("
+                  + refSeq + ") at specified coordinates for " + v["alleleId"], file=sys.stderr)
             continue
 
-        varSeq = "" if v["genomicVariantSequence"] == "N/A" else v["genomicVariantSequence"]
-        pos = int(v["start"])
-        zygosity = 'homozygous'
+    # Get alternative allele
+    if v["type"] == 'SO:0000159':
+        varSeq = ''
+    elif 'genomicVariantSequence' not in v or v["genomicVariantSequence"] == '':
+        print("Unknown alternative allele for " + v["alleleId"], file=sys.stderr)
+        varSeq = '.'
+    else:
+        varSeq = v["genomicVariantSequence"]
         
-        if 'paddedBase' in v.keys():
-            if pos == 1:
-                refSeq = refSeq+v["paddedBase"]
-                varSeq = varSeq+v["paddedBase"]
-            else:
-                refSeq = v["paddedBase"]+refSeq
-                varSeq = v["paddedBase"]+varSeq
-                pos = pos-1  # include the padding base in POS
-        vcf_data["chromosome"] = v["chromosome"]
-        vcf_data["pos"] = pos
-
-        if len(varSeq) == 1:
-            if nt_regex.match(varSeq) is None:
-                if varSeq in expand_iupac.keys():
-                    varSeq = expand_iupac[varSeq]
-                    zygosity = 'heterozygous'
-                else:
-                    print("Unrecognised alternative allele " + varSeq + " for " + v["alleleId"], file=sys.stderr)
-                    continue
-        
-        if args.strains:
-            gtString = genotype_string(v, strains, zygosity)
-        
-            vcf_data["line"] = "\t".join([v["chromosome"], str(
-                pos), v["alleleId"], refSeq, varSeq, '.', 'PASS', '.', 'GT', gtString])
+    # Add padded base and adjust pos if required
+    if v["type"] == 'SO:0000159' or v["type"] == 'SO:0000667' or v["type"] == 'SO:1000032':
+        if v["type"] != 'SO:0000667' and pos != 1:
+            pos = pos - 1
+        padBase = get_padbase_from_fasta(v, chr, args.fasta)
+        if 'paddedBase' in v and padBase != v["paddedBase"]:
+            print("Specified padded base(" + v["paddedBase"] + ") doesn't match reference sequence (" + padBase
+                  + ") at specified coordinates for " + v["alleleId"], file=sys.stderr)
+        if pos == 1:
+            refSeq = refSeq + padBase
+            varSeq = varSeq + padBase
         else:
-            vcf_data["line"] = "\t".join([v["chromosome"], str(pos), v["alleleId"], refSeq, varSeq, '.', '.' ,'.'])
+            refSeq = padBase + refSeq
+            varSeq = padBase + varSeq
 
-        vcf_lines.append(vcf_data)
+    vcf_data["chromosome"] = chr
+    vcf_data["pos"] = pos
 
-    for v in sorted(vcf_lines, key=operator.itemgetter('chromosome', 'pos')):
-        vcf_file.write(v["line"] + "\n")
+    if len(varSeq) == 1:
+        if nt_regex.match(varSeq) is None:
+            if varSeq in expand_iupac:
+                varSeq = expand_iupac[varSeq]
+                if args.strains:
+                    # Don't know genotypes of strains where there are multiple alternative alleles, so skip
+                    continue
+            else:
+                print("Unrecognised alternative allele " + varSeq + " for " + v["alleleId"] + " - skipping", file=sys.stderr)
+                continue
+    
+    # There are cases where the same genetic change has multiple variaton IDs
+    entry = '|'.join((chr, str(pos), refSeq, varSeq))
+    if entry in added_entries:
+        continue
+    else:
+        added_entries.add(entry)
+                
+    hgvsg = construct_hgvsg_id(v, chrom2ncbi[args.mod][chr], refSeq, varSeq)
 
-    vcf_file.close()
+    if args.strains:
+        gtString = genotype_string(v, strains)
+        vcf_data["line"] = "\t".join([chr, str(pos), hgvsg, refSeq, varSeq, '.', 'PASS', '.', 'GT', gtString])
+    else:
+        vcf_data["line"] = "\t".join([chr, str(pos), hgvsg, refSeq, varSeq, '.', '.' ,'.'])
+
+    vcf_lines.append(vcf_data)
+
+for v in sorted(vcf_lines, key=operator.itemgetter('chromosome', 'pos')):
+    vcf_file.write(v["line"] + "\n")
+
+vcf_file.close()

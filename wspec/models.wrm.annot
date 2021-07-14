@@ -2461,11 +2461,11 @@
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 ?Antibody Summary UNIQUE ?Text #Evidence
+          Public_name Text
           Other_name Text
           Gene ?Gene OUTXREF Antibody #Evidence
           Isolation Original_publication UNIQUE ?Paper
                     No_original_reference // Text //proposed by Wen   -- never has text tad
-                    Person ?Person
                     Location ?Laboratory
                     Clonality UNIQUE Polyclonal // UNIQUE Text   turned into an enum by tad
                                      Monoclonal // UNIQUE Text
@@ -2478,10 +2478,7 @@
                                        Guinea_pig
                                        Chicken
                                        Goat
-                                       Other_animal UNIQUE Text
           Historical_gene ?Gene Text
-          Possible_pseudonym ?Antibody INXREF Possible_pseudonym_of
-          Possible_pseudonym_of ?Antibody OUTXREF Possible_pseudonym
           Antibody_for_disease ?DO_term OUTXREF Associated_antibody #Evidence
           Expr_pattern ?Expr_pattern INXREF Antibody_info
           Interactor ?Interaction INXREF Antibody

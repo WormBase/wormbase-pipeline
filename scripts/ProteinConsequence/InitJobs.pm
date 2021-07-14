@@ -205,7 +205,8 @@ sub convert_to_gff3 {
 				    "ID=$gene_id;Name=$gene_id;gene_id=$gene_id;biotype=$biotype") . "\n$transcript_line" .
 					";Parent=$gene_id";
 	    $feature_positions->{$F[0]}{$gene_start}{$gene_end}{$gene_id} = 'gene';
-	    $feature_positions->{$F[0]}{$F[3]}{$F[4]}{$transcript} = 'transcript';
+	    $feature_positions->{$F[0]}{$F[3]}{$F[4]}{$transcript} = 'transcript'
+		unless exists $feature_positions->{$F[0]}{$F[3]}{$F[4]}{$transcript};
 	    
 	}
 	return ($transcript_line, $feature_positions, $entries_printed);	

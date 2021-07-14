@@ -681,7 +681,7 @@ sub copy_ontology_files {
 	    my $new_filename = join('.', $suffix, $bioproj, $release, $filetype, $extension);
 	    my $species_dir = "$targetdir/species/$suffix/$bioproj";
 	    mkpath($species_dir,1,0775);
-	    $wormbase->run_command("cp -f $file ${species_dir}/${new_filename}", $log);
+	    $wormbase->run_command("gzip -9 -f -c $file > ${species_dir}/annotation/${new_filename}", $log);
 	}
 	else {
 	    $wormbase->run_command("cp -f $file $ftp_ontology_dir/", $log);
@@ -1413,26 +1413,29 @@ GSPECIES.BIOPROJ.WSREL.interactions.txt.gz
 GSPECIES.BIOPROJ.WSREL.swissprot.txt.gz
 GSPECIES.BIOPROJ.WSREL.molecules.ace.gz
 GSPECIES.BIOPROJ.WSREL.xrefs.txt.gz
+GSPECIES.BIOPROJ.WSREL.rnai_phenotypes.wb.gz
+GSPECIES.BIOPROJ.WSREL.rnai_phenotypes_quick.wb.gz
 
 [elegans]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.wormpep_package.tar.gz
 GSPECIES.BIOPROJ.WSREL.transposon_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.transposons.fa.gz
 GSPECIES.BIOPROJ.WSREL.transposon_cds.pep.gz
-GSPECIES.BIOPROJ.WSREL.rnai_phenotypes.wb
-GSPECIES.BIOPROJ.WSREL.rnai_phenotypes_quick.wb
-GSPECIES.BIOPROJ.WSREL.disease_association.daf.txt
 
 [CORE]species/GSPECIES/BIOPROJ/annotation
 GSPECIES.BIOPROJ.WSREL.functional_descriptions.txt.gz
 GSPECIES.BIOPROJ.WSREL.orthologs.txt.gz
 GSPECIES.BIOPROJ.WSREL.protein_domains.csv.gz
-GSPECIES.BIOPROJ.WSREL.go_annotations.gaf.gz
 GSPECIES.BIOPROJ.WSREL.repeats.fa.gz
 GSPECIES.BIOPROJ.WSREL.geneIDs.txt.gz
 GSPECIES.BIOPROJ.WSREL.geneOtherIDs.txt.gz
 GSPECIES.BIOPROJ.WSREL.gene_product_info.gpi.gz
 GSPECIES.BIOPROJ.WSREL.gene_product_info.gpi2.gz
+GSPECIES.BIOPROJ.WSREL.anatomy_association.wb.gz
+GSPECIES.BIOPROJ.WSREL.gene_association.wb.gz
+GSPECIES.BIOPROJ.WSREL.development_association.wb.gz
+GSPECIES.BIOPROJ.WSREL.phenotype_association.wb.gz
+GSPECIES.BIOPROJ.WSREL.disease_association.daf.txt.gz
 
 [CORE]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.best_blastp_hits.txt.gz
@@ -1442,10 +1445,6 @@ GSPECIES.BIOPROJ.WSREL.ncRNA_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.pseudogenic_transcripts.fa.gz
 GSPECIES.BIOPROJ.WSREL.intergenic_sequences.fa.gz
 GSPECIES.BIOPROJ.WSREL.upstream_sequences.fa.gz
-GSPECIES.BIOPROJ.WSREL.anatomy_association.wb
-GSPECIES.BIOPROJ.WSREL.gene_association.wb
-GSPECIES.BIOPROJ.WSREL.development_association.wb
-GSPECIES.BIOPROJ.WSREL.phenotype_association.wb
 
 [CORE:pristionchus]species/GSPECIES/BIOPROJ/annotation
 GSPECIES.BIOPROJ.WSREL.SRA_gene_expression.tar.gz

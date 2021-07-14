@@ -608,6 +608,54 @@ sub TSL {(
 #
 ######################################################
 
+package Elegans_hawaii;
+use Carp;
+our @ISA = qw(Species);
+
+sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/ELE/elegans.lib'}
+sub short_name {'C. elegans'}
+sub gspecies_name{'c_elegans'}
+sub long_name{'Caenorhabditis elegans'}
+sub ncbi_tax_id {'6239'};
+sub ncbi_bioproject {'PRJNA275000'};
+sub bioproject_description { 'University of Washington C. elegans CB4856 genome project' }
+sub assembly_type {'contig'};
+sub is_canonical { 0 };
+
+#######################################################
+
+package Elegans_vc2010;
+use Carp;
+our @ISA = qw(Species);
+
+sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/ELE/elegans.lib'}
+sub short_name {'C. elegans'}
+sub gspecies_name{'c_elegans'}
+sub long_name{'Caenorhabditis elegans'}
+sub ncbi_tax_id {'6239'};
+sub ncbi_bioproject {'PRJEB28388'};
+sub bioproject_description { 'Caenorhabditis elegans strain VC2010 genome sequencing project' }
+sub assembly_type {'chromosomes'};
+sub is_canonical { 0 };
+
+
+#######################################################
+package Remanei_px506;
+use Carp;
+our @ISA = qw(Species);
+
+sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/REM/remanei_ws200_filtered.fas'}
+sub short_name {'C. remanei'}
+sub gspecies_name{'c_remanei'}
+sub long_name{'Caenorhabditis remanei'}
+sub ncbi_tax_id {'31234'};
+sub ncbi_bioproject {'PRJNA577507'};
+sub bioproject_description { 'University of Oregon University C. remanei PX506 genome project' }
+sub assembly_type {'contig'};
+sub is_canonical { 0 };
+
+#######################################################
+
 package Cangaria;
 use Carp;
 
@@ -654,19 +702,7 @@ sub bioproject_description { 'University of Edinburgh Caenorhabditis sinica geno
 sub assembly_type {'contig'};
 
 ######################################################
-package Cafra;
-use Carp;
-our @ISA = qw(Species);
 
-sub short_name {'C. afra'}
-sub gspecies_name{'c_afra'}
-sub long_name{'Caenorhabditis afra'}
-sub ncbi_tax_id {'1094335'};
-sub ncbi_bioproject {'PRJNA51171'};
-sub bioproject_description { 'Genome Institute at Washington University Caenorhabditis afra genome project' }
-sub assembly_type {'contig'};
-
-######################################################
 package Ctropicalis;
 use Carp;
 our @ISA = qw(Species);
@@ -680,82 +716,6 @@ sub ncbi_bioproject {'PRJNA53597'};
 sub bioproject_description { 'Genome Institute at Washington University Caenorhabditis sp. 11 genome project' }
 sub assembly_type {'contig'};
 
-######################################################
-package Panagrellus;
-use Carp;
-our @ISA = qw(Species);
-
-sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/PRED/panagrellus_redivivus_RepeatModeller.fa.classified_marissa'}
-sub short_name {'P. redivivus'}
-sub gspecies_name{'p_redivivus'}
-sub long_name{'Panagrellus redivivus'}
-sub ncbi_tax_id {'6233'};
-sub ncbi_bioproject {'PRJNA186477'};
-sub bioproject_description { 'California Institute of Technology P. redivivus genome project'};
-sub assembly_type {'contig'};
-
-#######################################################
-
-package Remanei_px356;
-use Carp;
-our @ISA = qw(Species);
-
-sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/REM/remanei_ws200_filtered.fas'}
-sub short_name {'C. remanei'}
-sub gspecies_name{'c_remanei'}
-sub long_name{'Caenorhabditis remanei'}
-sub ncbi_tax_id {'31234'};
-sub ncbi_bioproject {'PRJNA248909'};
-sub bioproject_description { 'University of Oregon University C. remanei PX356 genome project' }
-sub assembly_type {'contig'};
-sub is_canonical { 0 };
-
-#######################################################
-package Remanei_px439;
-use Carp;
-our @ISA = qw(Species);
-
-sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/REM/remanei_ws200_filtered.fas'}
-sub short_name {'C. remanei'}
-sub gspecies_name{'c_remanei'}
-sub long_name{'Caenorhabditis remanei'}
-sub ncbi_tax_id {'31234'};
-sub ncbi_bioproject {'PRJNA248911'};
-sub bioproject_description { 'University of Oregon University C. remanei PX439 genome project' }
-sub assembly_type {'contig'};
-sub is_canonical { 0 };
-
-#######################################################
-
-package Elegans_hawaii;
-use Carp;
-our @ISA = qw(Species);
-
-sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/ELE/elegans.lib'}
-sub short_name {'C. elegans'}
-sub gspecies_name{'c_elegans'}
-sub long_name{'Caenorhabditis elegans'}
-sub ncbi_tax_id {'6239'};
-sub ncbi_bioproject {'PRJNA275000'};
-sub bioproject_description { 'University of Washington C. elegans CB4856 genome project' }
-sub assembly_type {'contig'};
-sub is_canonical { 0 };
-
-#######################################################
-
-package Elegans_vc2010;
-use Carp;
-our @ISA = qw(Species);
-
-sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/ELE/elegans.lib'}
-sub short_name {'C. elegans'}
-sub gspecies_name{'c_elegans'}
-sub long_name{'Caenorhabditis elegans'}
-sub ncbi_tax_id {'6239'};
-sub ncbi_bioproject {'PRJEB28388'};
-sub bioproject_description { 'Caenorhabditis elegans strain VC2010 genome sequencing project' }
-sub assembly_type {'chromosomes'};
-sub is_canonical { 0 };
 
 #######################################################
 
@@ -769,7 +729,7 @@ sub gspecies_name{'c_inopinata'}
 sub long_name{'Caenorhabditis inopinata'}
 sub ncbi_tax_id {'1978547'};
 sub ncbi_bioproject {'PRJDB5687'};
-sub bioproject_description { 'University of Miyazaki' }
+sub bioproject_description { 'University of Miyazaki C. inopinata genome project' }
 sub assembly_type {'contig'};
 sub is_canonical { 1 };
 
@@ -785,9 +745,180 @@ sub gspecies_name{'c_latens'}
 sub long_name{'Caenorhabditis latens'}
 sub ncbi_tax_id {'1503980'};
 sub ncbi_bioproject {'PRJNA248912'};
-sub bioproject_description { 'University of Oregon' }
+sub bioproject_description { 'University of Oregon C. latens genome project' }
 sub assembly_type {'contig'};
 sub is_canonical { 1 };
+
+
+#######################################################
+
+package Cbecei;
+use Carp;
+our @ISA = qw(Species);
+
+sub short_name {'C. becei'}
+sub gspecies_name{'c_becei'}
+sub long_name{'Caenorhabditis becei'}
+sub ncbi_tax_id {2301260};
+sub ncbi_bioproject {'PRJEB28243'};
+sub bioproject_description { 'University of Edinburgh C. becei genome project' }
+sub assembly_type {'contig'};
+sub is_canonical { 1 };
+
+#######################################################
+
+package Cbovis;
+use Carp;
+our @ISA = qw(Species);
+
+sub short_name {'C. bovis'}
+sub gspecies_name{'c_bovis'}
+sub long_name{'Caenorhabditis bovis'};
+sub ncbi_tax_id {2654633};
+sub ncbi_bioproject {'PRJEB34497'};
+sub bioproject_description { 'University of Edinburgh C. bovis genome project' }
+sub assembly_type {'contig'};
+sub is_canonical { 1 };
+
+#######################################################
+
+package Cpanamensis;
+use Carp;
+our @ISA = qw(Species);
+
+sub short_name {'C. panamensis'}
+sub gspecies_name{'c_panamensis'}
+sub long_name{'Caenorhabditis panamensis'};
+sub ncbi_tax_id {2301259};
+sub ncbi_bioproject {'PRJEB28259'};
+sub bioproject_description { 'University of Edinburgh C. panamensis genome project' }
+sub assembly_type {'contig'};
+sub is_canonical { 1 };
+
+#######################################################
+
+package Cparvicauda;
+use Carp;
+our @ISA = qw(Species);
+
+sub short_name {'C. parvicauda'}
+sub gspecies_name{'c_parvicauda'}
+sub long_name{'Caenorhabditis parvicauda'};
+sub ncbi_tax_id {1737332};
+sub ncbi_bioproject {'PRJEB12595'};
+sub bioproject_description { 'University of Edinburgh C. parvicauda genome project' }
+sub assembly_type {'contig'};
+sub is_canonical { 1 };
+
+#######################################################
+
+package Cquiockensis;
+use Carp;
+our @ISA = qw(Species);
+
+sub short_name {'C.quiockensis '}
+sub gspecies_name{'c_quiockensis'}
+sub long_name{'Caenorhabditis quiockensis'};
+sub ncbi_tax_id {1729975};
+sub ncbi_bioproject {'PRJEB11354'};
+sub bioproject_description { 'University of Edinburgh C. quiockensis genome project' }
+sub assembly_type {'contig'};
+sub is_canonical { 1 };
+
+#######################################################
+
+package Csulstoni;
+use Carp;
+our @ISA = qw(Species);
+
+sub short_name {'C. sulstoni'}
+sub gspecies_name{'c_sulstoni'}
+sub long_name{'Caenorhabditis sulstoni'};
+sub ncbi_tax_id {1737335};
+sub ncbi_bioproject {'PRJEB12601'};
+sub bioproject_description { 'University of Edinburgh C.sulstoni genome project' }
+sub assembly_type {'contig'};
+sub is_canonical { 1 };
+
+#######################################################
+
+package Ctribulationis;
+use Carp;
+our @ISA = qw(Species);
+
+sub short_name {'C. tribulationis'}
+sub gspecies_name{'c_tribulationis'}
+sub long_name{'Caenorhabditis tribulationis'};
+sub ncbi_tax_id {1737337};
+sub ncbi_bioproject {'PRJEB12608'};
+sub bioproject_description { 'University of Edinburgh C. tribulationis genome project' }
+sub assembly_type {'contig'};
+sub is_canonical { 1 };
+
+#######################################################
+
+package Cuteleia;
+use Carp;
+our @ISA = qw(Species);
+
+sub short_name {'C. uteleia'}
+sub gspecies_name{'c_uteleia'}
+sub long_name{'Caenorhabditis uteleia'};
+sub ncbi_tax_id {1737334};
+sub ncbi_bioproject {'PRJEB12600'};
+sub bioproject_description { 'University of Edinburgh C. uteleia genome project' }
+sub assembly_type {'contig'};
+sub is_canonical { 1 };
+
+#######################################################
+
+package Cwaitukubuli;
+use Carp;
+our @ISA = qw(Species);
+
+sub short_name {'C. waitukubuli'}
+sub gspecies_name{'c_waitukubuli'}
+sub long_name{'Caenorhabditis waitukubuli'};
+sub ncbi_tax_id {1737336};
+sub ncbi_bioproject {'PRJEB12602'};
+sub bioproject_description { 'University of Edinburgh C. waitukubuli genome project' }
+sub assembly_type {'contig'};
+sub is_canonical { 1 };
+
+#######################################################
+
+package Czanzibari;
+use Carp;
+our @ISA = qw(Species);
+
+sub short_name {'C. zanzibari'}
+sub gspecies_name{'c_zanzibari'}
+sub long_name{'Caenorhabditis zanzibari'};
+sub ncbi_tax_id {1737333};
+sub ncbi_bioproject {'PRJEB12596'};
+sub bioproject_description { 'University of Edinburgh C. zanzibari genome project' }
+sub assembly_type {'contig'};
+sub is_canonical { 1 };
+
+
+######################################################
+# non-Caenorhabditis free-living comparators
+######################################################
+
+#######################################################
+
+package Panagrellus;
+use Carp;
+our @ISA = qw(Species);
+
+sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/PRED/panagrellus_redivivus_RepeatModeller.fa.classified_marissa'}
+sub short_name {'P. redivivus'}
+sub gspecies_name{'p_redivivus'}
+sub long_name{'Panagrellus redivivus'}
+sub ncbi_tax_id {'6233'};
+sub ncbi_bioproject {'PRJNA186477'};
+sub bioproject_description { 'California Institute of Technology P. redivivus genome project'};
+sub assembly_type {'contig'};
 
 #######################################################
 
@@ -800,8 +931,9 @@ sub gspecies_name{'o_tipulae'}
 sub long_name{'Oscheius tipulae'}
 sub ncbi_tax_id {141969};
 sub ncbi_bioproject {'PRJEB15512'};
-sub bioproject_description { 'The genome of Oscheius tipulae' }
+sub bioproject_description { 'University of Edinburgh O. tipulae genome project' }
 sub assembly_type {'contig'};
 sub is_canonical { 1 };
+
 
 1;

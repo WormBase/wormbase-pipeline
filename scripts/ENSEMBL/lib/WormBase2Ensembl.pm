@@ -48,6 +48,9 @@ sub new {
   if (exists $args{"-debug"}) {
     $self->debug($args{"-debug"});
   }
+  if (exists $args{"-recognise_sources"}) {
+    $self->recognise_sources($args{"-recognise_sources"});
+  }
   if (exists $args{"-verbose"}) {
     $self->verbose($args{"-verbose"});
   }
@@ -258,10 +261,15 @@ sub parse_genes_gff3_fh {
     TRAN: foreach my $tid (sort @tids) {
 
       my $tran = $transcripts{$tid};
-      my $gff_source = $tran->{source};
       my $gff_type = $tran->{type};
       my $strand = $tran->{strand};
-      my $tsid;
+      my ($tsid, $gff_source);
+      if ($self->recognise_sources){
+        $gff_source = $tran->{source};
+      }
+      else{
+        $gff_source = "WormBase"; # to maintain previous behaviour
+      }
       if ($tran->{name}) {
         $tsid = $tran->{name};
       } elsif (scalar(@tids) > 1) {
@@ -401,7 +409,7 @@ sub parse_genes_gff3_fh {
       
       my $transcript = Bio::EnsEMBL::Transcript->new(
         -stable_id => $tsid,
-        -source => 'WormBase',
+        -source => $gff_source,
           );
       $transcript->version(undef);
 
@@ -510,6 +518,7 @@ sub parse_genes_gff3_fh {
 
     # propagate analysis for first transcript up to the gene
     $gene->analysis( $gene->get_all_Transcripts->[0]->analysis );
+    $gene->source( $gene->get_all_Transcripts->[0]->source );
 
     push @all_ens_genes, $gene;
   }
@@ -1082,6 +1091,22 @@ sub debug {
     return $self->{_debug};
   }
 }
+
+#####################################
+sub recognise_sources {
+  my ($self, $val) = @_;
+
+  if (defined $val) {
+    $self->{_recognise_sources} = $val;
+  }
+  if (not exists $self->{_recognise_sources}) {
+    return 0;
+  } else {
+    return $self->{_recognise_sources};
+  }
+}
+
+
 
 #####################################
 sub verbose {

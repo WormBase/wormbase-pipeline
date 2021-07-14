@@ -108,10 +108,15 @@ $db->close;
 
 sub read_disease_ids{
 	my ($file) = @_;
+
+	my %seen;
 	open IN, "<$file";
 	my @ids;
 	while (<IN>){
-		push @ids, "$1" if /(WBGenotype\d+)/
+	    if ((/(WBGenotype\d+)/ or /(WBStrain\d+)/) and !exists $seen{$1}) {
+		push @ids, "$1" ;
+		$seen{$1}++;
+	    }
 	}
 	return @ids;
 }

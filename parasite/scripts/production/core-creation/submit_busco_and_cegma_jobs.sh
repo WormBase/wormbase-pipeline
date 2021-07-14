@@ -18,7 +18,21 @@ submit_busco() {
       -n 8 -M${MEM_MB} -R "select[mem > ${MEM_MB}] rusage[mem=${MEM_MB}]" \
       bash -x $WORM_CODE/parasite/scripts/production/core-creation/busco.sh $PARASITE_DATA/$species/${species}.fa
 }
- 
+
+submit_busco_annotation() {
+   core_db=$1
+   species=$(echo $core_db | cut -d'_' -f1,2,3)
+   echo "Submitting BUSCO annotation job for $core_db"
+   MEM_MB=10000
+   log=$PARASITE_SCRATCH/busco-annotation/WBPS${PARASITE_VERSION}/log
+   mkdir -pv $log
+   bsub \
+      -o $log/$species.%J.out \
+      -e $log/$species.%J.err \
+      -n 8 -M${MEM_MB} -R "select[mem > ${MEM_MB}] rusage[mem=${MEM_MB}]" \
+      bash -x $WORM_CODE/parasite/scripts/production/core-creation/busco-annotation.sh $core_db
+}
+
 submit_cegma() {
    species=$1
    echo "Submitting CEGMA job for $species"
@@ -41,6 +55,7 @@ meta_table_has_key_pattern() {
     pattern=$1
     species=$2
     core_db=$(get_db_for_species $species)
+    echo $core_db
     [ "$core_db" ] && [ 0 -lt $($PARASITE_STAGING_MYSQL $core_db -Ne "select count(*) from meta where meta_key like \"$pattern\" " ) ]
 }
 
@@ -76,6 +91,8 @@ if [[ -z ${SPECIES} ]]; then
 fi
 
 for this_species in ${SPECIES} ; do
-   meta_table_has_key_pattern %busco% $this_species || submit_busco $this_species
+   core_db=$(get_db_for_species $species)
+   meta_table_has_key_pattern %assembly.busco% $this_species || submit_busco $this_species
    meta_table_has_key_pattern %cegma% $this_species || submit_cegma $this_species
+   meta_table_has_key_pattern %annotation.busco% $this_species || submit_busco_annotation $core_db
 done
