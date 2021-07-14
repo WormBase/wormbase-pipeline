@@ -88,7 +88,7 @@ sub archive_where_seq_changed {
         $insert_1_dbh->execute(md5_hex($seq), $seq),
         $insert_2_dbh->execute($gene, $transcript, $translation);
     }
-    $dbc->do('update gene_archive set transcript_version = null, translation_version = null;');
+    $dbc->do('update gene_archive set transcript_version = 0, translation_version = 0;');
 }
 sub add_link_events_for_mapped_genes {
   my ($dbc, $mapping_session_id, %args) = @_;
