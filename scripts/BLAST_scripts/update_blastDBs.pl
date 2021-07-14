@@ -138,6 +138,7 @@ if ($fly) {
     $log->write_to("Updating fly . . \n");
     my $update = 0;
     my $fly_download = '/tmp/flybase.gz';
+    my $ver;
     eval {
        # find the release version
 	my $page_download = '/tmp/page_download';
@@ -162,7 +163,7 @@ if ($fly) {
     
 	#check if number of proteins has changed
 	$log->write_to("\tcomparing\n");
-	my $ver = &determine_last_vers('gadfly'); 
+	$ver = &determine_last_vers('gadfly'); 
 	my $old_file = "$blastdir/gadfly$ver.pep";
 	my $old_cnt = qx{grep -c '>' $old_file};
 	my $new_cnt = qx{grep -c '>' $fly_download};
