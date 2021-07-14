@@ -137,6 +137,7 @@ if ($yeast) {
 if ($fly) {
     $log->write_to("Updating fly . . \n");
     my $update = 0;
+    my $fly_download = '/tmp/flybase.gz';
     eval {
        # find the release version
 	my $page_download = '/tmp/page_download';
@@ -153,8 +154,7 @@ if ($fly) {
 	close(PAGE);
 	$wormbase->run_command("rm -f $page_download", $log);
 
-	#get the file
-	my $fly_download = '/tmp/flybase.gz';
+	#get the file 
 	$log->write_to("\tdownloading flybase file\n");
 	die "Could not fetch file" if $wormbase->run_command("wget -O $fly_download ftp://ftp.flybase.net/genomes/Drosophila_melanogaster/current/fasta/dmel-all-translation-r${fly_version}.fasta.gz", $log);
 	die "Could not unzip file" if $wormbase->run_command("gunzip -f $fly_download", $log);
