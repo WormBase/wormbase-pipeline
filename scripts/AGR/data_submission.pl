@@ -186,7 +186,7 @@ if ($htp_variations or $all) {
 	"-g ${build_home}/DATABASES/${ws_release}/SEQUENCES/elegans.processed.gff3.gz -d ${build_home}/DATABASES/${ws_release} " .
 	"-w ${ws_release} -q ${cvs_dir}/AGR/agr_variations.def -o ${sub_dir}/WB_${agr_schema}_htp_variations.json",
 	"python3 ${cvs_dir}/AGR/agr_variations_json2vcf.py -j ${sub_dir}/WB_${agr_schema}_htp_variations.json -g ${gff_file} " .
-	"-m WB -o ${sub_dir}/WB_${agr_schema}_htp_variations.vcf -f ${fasta_file}"
+	"-m WB -o ${sub_dir}/WB_${agr_schema}_htp_variations.vcf -f ${fasta_file} -w"
 	);
     my $datatype_processed = process_datatype('HTP variation', \@cmds, $log);
     submit_data('HTVCF', "${sub_dir}/WB_${agr_schema}_htp_variations.vcf", $log)
