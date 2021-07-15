@@ -74,14 +74,37 @@ def get_header_info(gff):
             line = f.readline()
     return assembly, chr_length
 
+def get_chromosome_sequences(fasta):
+    chr_seqs = {}
+    with open(fasta, 'r') as f:
+        line = f.readline()
+        while line:
+            if line.startswith('>'):
+                chr_name = line[1:].split("\n")
+            else:
+                chr_seqs[chr_name] = chr_seqs[chr_name] + line.split("\n")
+    return chr_seqs
 
-def get_refseq_from_fasta(v, chrom, fasta):
-    faidx_call = subprocess.run(["samtools", "faidx", fasta, chrom + ':' + str(v["start"]) + '-' + str(v["end"])], stdout=subprocess.PIPE, text=True)
-    faidx_lines = faidx_call.stdout.split("\n");
-    faidx_lines.pop(0)
-    return ''.join(faidx_lines).upper()
+#def get_refseq_from_fasta(v, chrom, fasta):
+#    faidx_call = subprocess.run(["samtools", "faidx", fasta, chrom + ':' + str(v["start"]) + '-' + str(v["end"])], stdout=subprocess.PIPE, text=True)
+#    faidx_lines = faidx_call.stdout.split("\n");
+#    faidx_lines.pop(0)
+#    return ''.join(faidx_lines).upper()
 
-def get_padbase_from_fasta(v, chrom, fasta):
+#def get_padbase_from_fasta(v, chrom, fasta):
+#    if v["type"] == 'SO:0000667':
+#        pbpos = int(v["start"])
+#    else:
+#        if v["start"] == 1:
+#            pbpos = int(v["end"]) + 1
+#        else:
+#            pbpos = int(v["start"]) - 1
+#    faidx_call = subprocess.run(["samtools", "faidx", fasta, chrom + ':' + str(pbpos) + '-' + str(pbpos)], stdout=subprocess.PIPE, text=True)
+#    faidx_lines = faidx_call.stdout.split("\n");
+#    faidx_lines.pop(0)
+#    return faidx_lines[0].upper()
+
+def get_padbase(v, chrom, chr_seqs):
     if v["type"] == 'SO:0000667':
         pbpos = int(v["start"])
     else:
@@ -89,10 +112,7 @@ def get_padbase_from_fasta(v, chrom, fasta):
             pbpos = int(v["end"]) + 1
         else:
             pbpos = int(v["start"]) - 1
-    faidx_call = subprocess.run(["samtools", "faidx", fasta, chrom + ':' + str(pbpos) + '-' + str(pbpos)], stdout=subprocess.PIPE, text=True)
-    faidx_lines = faidx_call.stdout.split("\n");
-    faidx_lines.pop(0)
-    return faidx_lines[0].upper()
+    return chr_seqs[chrom][pbpos-1,pbpos]
 
 def get_strains(variations):
     strains = set()
@@ -259,11 +279,12 @@ parser.add_argument("-g", "--gff", help="Corresponding GFF file")
 parser.add_argument("-o", "--out", help="Output VCF file")
 parser.add_argument("-m", "--mod", help="Acronym for MOD")
 parser.add_argument("-f", "--fasta", help="FASTA file")
-parser.add_argument("-s", "--strains", default=False, help="Input includes strain data")
-parser.add_argument("-w", "--wbhtp", default=False, help="WB high throughput data")
+parser.add_argument("-s", "--strains", action='store_true', help="Input includes strain data")
+parser.add_argument("-w", "--wbhtp", action='store_true', help="WB high throughput data")
 
 args = parser.parse_args()
 assembly, chr_lengths = get_header_info(args.gff)
+chr_seqs = get_chromosome_sequences(args.fasta)
 
 vcf_file = open(args.out, 'w')
 
@@ -320,7 +341,8 @@ for v in (parsed["data"]):
     elif args.wbhtp:
         refSeq = v["genomicReferenceSequence"]
     else:
-        refSeq = get_refseq_from_fasta(v, chr, args.fasta)
+        #refSeq = get_refseq_from_fasta(v, chr, args.fasta)
+        refSeq = chr_seqs[chr][int(v["start"]) - 1:int(v["end"]) - 1]
         if 'genomicReferenceSequence' in v and v["genomicReferenceSequence"].upper() != refSeq:
             print("Specified genomic reference allele (" + v["genomicReferenceSequence"] + ") doesn't match reference sequence ("
                   + refSeq + ") at specified coordinates for " + v["alleleId"], file=sys.stderr)
@@ -339,7 +361,7 @@ for v in (parsed["data"]):
     if v["type"] == 'SO:0000159' or v["type"] == 'SO:0000667' or v["type"] == 'SO:1000032':
         if v["type"] != 'SO:0000667' and pos != 1:
             pos = pos - 1
-        padBase = get_padbase_from_fasta(v, chr, args.fasta)
+        padBase = get_padbase(v, chr, chr_seqs)
         if 'paddedBase' in v and padBase != v["paddedBase"]:
             print("Specified padded base(" + v["paddedBase"] + ") doesn't match reference sequence (" + padBase
                   + ") at specified coordinates for " + v["alleleId"], file=sys.stderr)
