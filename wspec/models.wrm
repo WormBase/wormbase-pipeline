@@ -3582,7 +3582,7 @@
                             Source_location UNIQUE Int UNIQUE ?Sequence UNIQUE Int UNIQUE Int UNIQUE #Evidence //source data, <WSversion> ?Sequence pos1 pos2 Evidence(Paper/person etc. remarks) ///Ingest:oneOf:start/end:transform
                             CGH_deleted_probes UNIQUE Text UNIQUE Text ///???
                             CGH_flanking_probes UNIQUE Text UNIQUE Text ///???
-                            Type_of_mutation Substitution UNIQUE Text UNIQUE Text #Evidence // wild type and mutant sequence
+                            Type_of_mutation Substitution UNIQUE Text UNIQUE Text #Evidence // wild type and mutant sequence ///LinkML Allele:molecular_mutation
                                              Insertion UNIQUE Text #Evidence
                                              Deletion UNIQUE Text #Evidence
                                              Tandem_duplication #Evidence
