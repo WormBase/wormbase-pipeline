@@ -284,7 +284,8 @@ parser.add_argument("-w", "--wbhtp", action='store_true', help="WB high throughp
 
 args = parser.parse_args()
 assembly, chr_lengths = get_header_info(args.gff)
-chr_seqs = get_chromosome_sequences(args.fasta)
+if not args.wbhtp:
+    chr_seqs = get_chromosome_sequences(args.fasta)
 
 vcf_file = open(args.out, 'w')
 
@@ -361,10 +362,12 @@ for v in (parsed["data"]):
     if v["type"] == 'SO:0000159' or v["type"] == 'SO:0000667' or v["type"] == 'SO:1000032':
         if v["type"] != 'SO:0000667' and pos != 1:
             pos = pos - 1
-        padBase = get_padbase(v, chr, chr_seqs)
-        if 'paddedBase' in v and padBase != v["paddedBase"]:
-            print("Specified padded base(" + v["paddedBase"] + ") doesn't match reference sequence (" + padBase
-                  + ") at specified coordinates for " + v["alleleId"], file=sys.stderr)
+            
+        if 'paddedBase' in v:
+            padBase = v["paddedBase"]
+        else:
+            padBase = get_padbase(v, chr, chr_seqs)
+                
         if pos == 1:
             refSeq = refSeq + padBase
             varSeq = varSeq + padBase
