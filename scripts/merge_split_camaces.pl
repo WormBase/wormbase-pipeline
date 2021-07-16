@@ -719,12 +719,14 @@ sub load_curation_data {
 		  "$blat_dir/virtual_objects.$species.ci.OST.$species.ace",
 		  "$blat_dir/virtual_objects.$species.ci.RST.$species.ace",
 		  "$blat_dir/virtual_objects.$species.ci.ncRNA.$species.ace",
+		  "$blat_dir/virtual_objects.$species.ci.elegans_Nanopore.ace",
 		  "$blat_dir/$species.blat.${species}_OST.ace",
 		  "$blat_dir/$species.blat.${species}_RST.ace",
 		  "$blat_dir/$species.blat.${species}_ncRNA.ace",
 		  "$blat_dir/$species.good_introns.OST.ace",
 		  "$blat_dir/$species.good_introns.RST.ace",
 		  "$blat_dir/$species.good_introns.ncRNA.ace",
+		  "$blat_dir/$species.good_introns.Nanopore.ace",
 		 );
 	  }
     push (@BLATfiles,
