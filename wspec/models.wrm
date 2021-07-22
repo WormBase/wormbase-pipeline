@@ -3631,7 +3631,7 @@
                                 Suppressed #Evidence
                                 Dead #Evidence
            Linked_to ?Variation XREF Linked_to  // for being able to specify paired substitutions which are part of the same allele
-           Affects Gene    ?Gene XREF Allele #Molecular_change      //#Molecular_change mh6 define precise changes [060217 ar2]
+           Affects Gene    ?Gene XREF Allele #Molecular_change      //#Molecular_change mh6 define precise changes [060217 ar2] ///LinkML Allele:affected_genes:direct 
                    Predicted_CDS ?CDS XREF Variation #Molecular_change
                    Transcript ?Transcript XREF Variation #Molecular_change
                    Pseudogene ?Pseudogene XREF Variation #Molecular_change
