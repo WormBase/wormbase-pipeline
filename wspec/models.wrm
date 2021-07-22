@@ -3589,15 +3589,15 @@
                                              Sequenced
                                              Pending_curation
                             Deletion_verification Text #Evidence //[14-Mar-06 ar2] Mark Edgely of KO_alleles has developed test to confirm deletion (mt3)
-           Variation_type Engineered_allele  //construct model addition
+           Variation_type Engineered_allele  //construct model addition 
                           Allele
                           SNP            // replaces the old 'Status Text' part of ?Locus model
-                          Confirmed_SNP
-                          Predicted_SNP
-                          RFLP Reference_strain_digest     Text Text Text // storing site, enzyme, and band size
-                               Polymorphic_strain_digest Text Text Text
-                          Transposon_insertion ?Transposon_family XREF In_variation
-                          Natural_variant
+                          Confirmed_SNP ///Cleanup
+                          Predicted_SNP ///Cleanup
+                          RFLP Reference_strain_digest     Text Text Text // storing site, enzyme, and band size ///LinkML Allele:generation_method:transform
+                               Polymorphic_strain_digest Text Text Text ///LinkML Allele:generation_method:transform
+                          Transposon_insertion ?Transposon_family XREF In_variation ///LinkML Allele:transposon_insertion:direct
+                          Natural_variant ///LinkML Allele:generation_method:transform
            Origin Species UNIQUE ?Species
                   Strain     ?Strain XREF Variation #Evidence
                   Component_of_genotype ?Genotype XREF Variation
@@ -3606,23 +3606,23 @@
                   Person ?Person //
                   Analysis ?Analysis
                   Corresponding_transgene UNIQUE ?Transgene XREF Corresponding_variation
-                  Production_method CRISPR_Cas9
-                                    Homologous_recombination //Homologous_recombination
-                                    MosSci
-                                    MosDEL
-                                    NHEJ //Non-homologous DNA end-joining, imprecise DNA repair
-                                    TALENs
-                                    ZFNNHEJ_repair //Zinc-finger nuclease
-                                    ZFNHR_repair
+                  Production_method CRISPR_Cas9 ///LinkML Allele:generation_method:transform
+                                    Homologous_recombination //Homologous_recombination ///LinkML Allele:generation_method:transform
+                                    MosSci ///LinkML Allele:generation_method:transform
+                                    MosDEL ///LinkML Allele:generation_method:transform
+                                    NHEJ //Non-homologous DNA end-joining, imprecise DNA repair ///LinkML Allele:generation_method:transform
+                                    TALENs ///LinkML Allele:generation_method:transform
+                                    ZFNNHEJ_repair //Zinc-finger nuclease ///LinkML Allele:generation_method:transform
+                                    ZFNHR_repair ///LinkML Allele:generation_method:transform
                   Expr_pattern ?Expr_pattern XREF Variation #Evidence
-                  DB_info Database ?Database ?Database_field UNIQUE ?Text //to link out to KO pages ar2 02-DEC-05
-                  KO_consortium_allele   // North American knockout consortium
-                  NBP_allele  // Japanese knockout consortium
-                  NemaGENETAG_consortium_allele //NemaGENETAG consortium allele - Nektarios et al
+                  DB_info Database ?Database ?Database_field UNIQUE ?Text //to link out to KO pages ar2 02-DEC-05 
+                  KO_consortium_allele   // North American knockout consortium ///Cleanup LinkML Allele:in_collection:transform
+                  NBP_allele  // Japanese knockout consortium ///Cleanup LinkML Allele:in_collection:transform
+                  NemaGENETAG_consortium_allele //NemaGENETAG consortium allele - Nektarios et al ///Cleanup LinkML Allele:in_collection:transform
                   Detection_method Text
                   Positive_clone ?Clone XREF Positive_variation #Evidence
-                  Nature_of_variation UNIQUE Polymorphic
-                                             Synthetic
+                  Nature_of_variation UNIQUE Polymorphic        ///LinkML Allele:generation_method:transform
+                                             Synthetic          ///LinkML Allele:generation_method:transform
                   History Merged_into UNIQUE ?Variation XREF Acquires_merge
                           Acquires_merge ?Variation XREF Merged_into
                           Split_from UNIQUE ?Variation XREF Split_into
@@ -3638,14 +3638,14 @@
                    Feature ?Feature XREF Associated_with_variation
                    Interactor ?Interaction XREF Variation_interactor
            Possibly_affects ?Gene XREF Possibly_affected_by #Evidence
-           Isolation Date DateType
-                     Mutagen UNIQUE Text #Evidence
-                     Forward_genetics Text #Evidence  // Capture the basis of the experiment that isolated
-                     Reverse_genetics Text #Evidence  // the allele. [040206 krb]
-                     Transposon_excision ?Transposon_family
-                     Derived_from_variation ?Variation XREF Derivative
+           Isolation Date DateType ///LinkML Allele:generation_method:transform
+                     Mutagen UNIQUE Text #Evidence ///LinkML Allele:generation_method:transform
+                     Forward_genetics Text #Evidence  // Capture the basis of the experiment that isolated ///LinkML Allele:generation_method:transform
+                     Reverse_genetics Text #Evidence  // the allele. [040206 krb] ///LinkML Allele:generation_method:transform
+                     Transposon_excision ?Transposon_family ///LinkML Allele:generation_method:transform
+                     Derived_from_variation ?Variation XREF Derivative ///LinkML Variation
                      Derivative ?Variation XREF Derived_from_variation
-                     Derived_from_construct ?Construct XREF Engineered_variation
+                     Derived_from_construct ?Construct XREF Engineered_variation ///LinkML Allele:contains_construct:direct 
            Genetics Gene_class ?Gene_class XREF Variation
                     Mating_efficiency Male UNIQUE ME0_Mating_not_successful #Evidence
                                                   ME1_Mating_rarely_successful #Evidence
@@ -3675,7 +3675,7 @@
                         Modifies_disease_in_annotation ?Disease_model_annotation XREF Modifier_variation //New tag
            Reference ?Paper XREF Allele
            Remark ?Text #Evidence
-           Method UNIQUE ?Method
+           Method UNIQUE ?Method ///LinkML Allele:in_collection:transform
            Supporting_data Movie ?Movie XREF Variation #Evidence  //Carol [060421 ar2]
 
 
