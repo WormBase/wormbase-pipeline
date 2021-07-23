@@ -2,11 +2,21 @@
 use strict;
 use warnings;
 
+use Const::Fast;
 use Log_files;
 use Getopt::Long;
 use File::Path 'make_path';
 use JSON;
 use Wormbase;
+use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
+use LSF::JobManager;
+
+const my @DATATYPES => ('FASTA', 'BGI', 'DAF', 'GFF', 'ALLELE', 'PHENOTYPE', 'EXPRESSION',
+			'VARIATION', 'HTVCF', 'AGM', 'CONSTRUCT', 'INTERACTION-SOURCE_MOL',
+			'INTERACTION-SOURCE_GEN', 'HTPDATASAMPLE', 'HTPDATASET', 'REFERENCE',
+			'REF-EXCHANGE', 'MOLECULE');
+const my $DEFAULT_MEM => 6; # Default amount of memory in Gb for LSF jobs
+const my $HIGH_MEM => 12;    # Amount of memory in Gb for jobs requiring extra
 
 my ($fasta, $gff, $bgi, $disease, $allele, $phenotype, $expression, $ltp_variations, $htp_variations, $agm,
     $construct, $interactions, $genetic_interactions, $hts, $reference, $molecule);
@@ -52,6 +62,25 @@ my $cvs_dir         = $ENV{'CVS_DIR'};
 my $agr_schema_repo = $ENV{'AGR_SCHEMA_REPO'};
 my $sub_dir = "${agr_uploads}/${agr_release}/${upload_date}";
 
+# FASTA                               1
+# BGI                                 1
+# DISEASE                             1
+# GFF - BGI                           1  
+# ALLELE - BGI                        1
+# PHENOTYPE - BGI                     1
+# EXPRESSION - BGI                    1
+# LTP VARIATIONS - FASTA              1
+# HTP VARIATIONS - GFF, FASTA .. BGI  1
+# AGM - DISEASE, ALLELE .. BGI        1
+# CONSTRUCT                           2
+# INTERACTIONS                        3
+# GENETIC INTERACTIONS                4
+# HTS                                 5
+# REFERENCE                           6
+# MOLECULE
+
+my %datatypes_processed = map {$_ => 0} @DATATYPES;
+
 $bgi_file = "${sub_dir}/WB_${agr_schema}_BGI.json" unless $bgi_file;
 if (!$bgi and ($gff or $allele or $phenotype or $expression)) {
     die "BGI file ${bgi_file} doesn't exist, please specify using --bgi_file\n" unless -e $bgi_file;
@@ -64,7 +93,7 @@ if (!$allele and $agm) {
 }
 
 $disease_file = "${sub_dir}/WB_${agr_schema}_disease.json" unless $disease_file;
-if ($disease and $agm) {
+if (!$disease and $agm) {
     die "Disease file ${disease_file} doesn't exist, please specify using --disease_file\n" unless -e $disease_file;
 }
 
@@ -78,7 +107,32 @@ if (!$gff and $htp_variations) {
     die "GFF file ${gff_file} doesn't exist, please specify using --gff_file\n" unless -e $gff_file;
 }
 
-make_path($sub_dir);    
+make_path("${sub_dir}/lsf_logs");
+
+my %files_to_submit = (
+	'FASTA'                  => $fasta_file,
+	'BGI'                    => $bgi_file,
+	'DAF'                    => $disease_file,
+	'GFF'                    => $gff_file,
+	'ALLELE'                 => $allele_file,
+	'PHENOTYPE'              => "${sub_dir}/WB_${agr_schema}_phenotype.json",
+	'EXPRESSION'             => "${sub_dir}/WB_${agr_schema}_expression.json",
+	'VARIATION'              => "${sub_dir}/WB_${agr_schema}_variations.json",
+	'HTVCF'                  => "${sub_dir}/WB_${agr_schema}_htp_variations.json",
+	'AGM'                    => "${sub_dir}/WB_${agr_schema}_AGM.json",
+	'CONSTRUCT'              => "${sub_dir}/WB_${agr_schema}_construct.json",
+	'INTERACTION-SOURCE_MOL' => "${sub_dir}/WB_${agr_schema}_interactions.psi-mi-tab",
+	'INTERACTION-SOURCE_GEN' => "${sub_dir}/WB_${agr_schema}_genetic_interactions.psi-mi-tab",
+	'HTPDATASAMPLE'          => "${sub_dir}/WB_${agr_schema}_sample.json",
+	'HTPDATASET'             => "${sub_dir}/WB_${agr_schema}_dataset.json",
+	'REFERENCE'              => "${sub_dir}/WB_${agr_schema}_reference.json",
+	'REF-EXCHANGE'           => "${sub_dir}/WB_${agr_schema}_reference_exchange.json",
+	'MOLECULE'               => "${sub_dir}/WB_${agr_schema}_molecule.json" 
+    );
+
+my ($fasta_id, $bgi_id, $disease_id, $gff_id, $allele_id, $pheno_id, $exp_id, $ltp_id, $htp_id, $agm_id,
+    $construct_id, $int_id, $gen_int_id, $hts_id, $ref_id, $mol_id);
+my $lsf_manager = LSF::JobManager->new(-q => 'production');
 
 $logfile = "${sub_dir}/data_submission.log" unless $logfile;
 my $log = Log_files->make_log($logfile, $debug);
@@ -89,9 +143,7 @@ if ($fasta or $all) {
 	"cp ${build_home}/DATABASES/${ws_release}/SEQUENCES/elegans.genome.fa ${sub_dir}/WB_${agr_schema}_FASTA.fa",
 	"perl -i -pne 's/CHROMOSOME_//' ${fasta_file}"
 	);
-    my $datatype_processed = process_datatype('FASTA', \@cmds, $log);
-    submit_data('FASTA', $fasta_file, $log)
-	if $datatype_processed and !$test;
+    $datatypes_processed{'FASTA'} = process_datatype('FASTA', \@cmds, $sub_dir, $log, $lsf_manager, $DEFAULT_MEM);
 }
 
 if ($bgi or $all) {
@@ -102,9 +154,7 @@ if ($bgi or $all) {
 	"${agr_schema_repo}/bin/agr_validate.py -s ${agr_schema_repo}/ingest/gene/geneMetaData.json " .
 	"-d ${bgi_file}"
 	);
-    my $datatype_processed = process_datatype('BGI', \@cmds, $log);
-    submit_data('BGI', $bgi_file, $log)
-	if $datatype_processed and !$test;
+    $datatypes_processed{'BGI'} = process_datatype('BGI', \@cmds, $sub_dir, $log, $lsf_manager, $DEFAULT_MEM);
 }
 
 if ($disease or $all) {
@@ -114,9 +164,7 @@ if ($disease or $all) {
 	"${agr_schema_repo}/bin/agr_validate.py -s ${agr_schema_repo}/ingest/disease/diseaseMetaDataDefinition.json " .
 	"-d ${disease_file}"
 	);
-    my $datatype_processed = process_datatype('disease', \@cmds, $log);
-    submit_data('DAF', $disease_file, $log)
-	if $datatype_processed and !$test;
+    $datatypes_processed{'DAF'} = process_datatype('disease', \@cmds, $sub_dir, $log, $lsf_manager, $DEFAULT_MEM);
 }
 
 if ($gff or $all) {
@@ -125,9 +173,7 @@ if ($gff or $all) {
 	"-gffin ${build_home}/DATABASES/${ws_release}/SEQUENCES/elegans.processed.gff3.gz " .
 	"-gffout ${gff_file}"
 	);
-    my $datatype_processed = process_datatype('GFF', \@cmds, $log);
-    submit_data('GFF', $gff_file, $log)
-	if $datatype_processed and !$test;
+    $datatypes_processed{'GFF'} = process_datatype('GFF', \@cmds, $sub_dir, $log, $lsf_manager, $DEFAULT_MEM, $datatypes_processed{'BGI'});
 }
 
 if ($allele or $all) {
@@ -137,9 +183,7 @@ if ($allele or $all) {
 	"${agr_schema_repo}/bin/agr_validate.py -s ${agr_schema_repo}/ingest/allele/alleleMetaData.json " .
 	"-d ${allele_file}"
 	);
-    my $datatype_processed = process_datatype('allele', \@cmds, $log);
-    submit_data('ALLELE', $allele_file, $log)
-	if $datatype_processed and !$test;
+    $datatypes_processed{'ALLELE'} = process_datatype('allele', \@cmds, $sub_dir, $log, $lsf_manager, $DEFAULT_MEM, $datatypes_processed{'BGI'});
 }
 
 if ($phenotype or $all) {
@@ -149,9 +193,7 @@ if ($phenotype or $all) {
 	"${agr_schema_repo}/bin/agr_validate.py -s ${agr_schema_repo}/ingest/phenotype/phenotypeMetaDataDefinition.json " .
 	"-d ${sub_dir}/WB_${agr_schema}_phenotype.json"
 	);
-    my $datatype_processed = process_datatype('phenotype', \@cmds, $log);
-    submit_data('PHENOTYPE', "${sub_dir}/WB_${agr_schema}_phenotype.json", $log)
-	if $datatype_processed and !$test;
+    $datatypes_processed{'PHENOTYPE'} = process_datatype('phenotype', \@cmds, $sub_dir, $log, $lsf_manager, $DEFAULT_MEM, $datatypes_processed{'BGI'});
 }
 
 if ($expression or $all) {
@@ -162,9 +204,7 @@ if ($expression or $all) {
 	"${agr_schema_repo}/bin/agr_validate.py -s ${agr_schema_repo}/ingest/expression/wildtypeExpressionMetaDataDefinition.json " .
 	"-d ${sub_dir}/WB_${agr_schema}_expression.json"
 	);
-    my $datatype_processed = process_datatype('expression', \@cmds, $log);
-    submit_data('EXPRESSION', "${sub_dir}/WB_${agr_schema}_expression.json", $log)
-	if $datatype_processed and !$test;
+    $datatypes_processed{'EXPRESSION'} = process_datatype('expression', \@cmds, $sub_dir, $log, $lsf_manager, $DEFAULT_MEM, $datatypes_processed{'BGI'});
 }
 
 if ($ltp_variations or $all) {
@@ -175,9 +215,7 @@ if ($ltp_variations or $all) {
 	"${agr_schema_repo}/bin/agr_validate.py -s ${agr_schema_repo}/ingest/allele/variantMetaData.json " .
 	"-d ${sub_dir}/WB_${agr_schema}_variations.json" 
 	);
-    my $datatype_processed = process_datatype('LTP variation', \@cmds, $log);
-    submit_data('VARIATION', "${sub_dir}/WB_${agr_schema}_variations.json", $log)
-	if $datatype_processed and !$test;
+    $datatypes_processed{'VARIATION'} = process_datatype('LTP variation', \@cmds, $sub_dir, $log, $lsf_manager, $DEFAULT_MEM, $datatypes_processed{'FASTA'});
 }
 
 if ($htp_variations or $all) {
@@ -188,9 +226,9 @@ if ($htp_variations or $all) {
 	"python3 ${cvs_dir}/AGR/agr_variations_json2vcf.py -j ${sub_dir}/WB_${agr_schema}_htp_variations.json -g ${gff_file} " .
 	"-m WB -o ${sub_dir}/WB_${agr_schema}_htp_variations.vcf -f ${fasta_file} -w"
 	);
-    my $datatype_processed = process_datatype('HTP variation', \@cmds, $log);
-    submit_data('HTVCF', "${sub_dir}/WB_${agr_schema}_htp_variations.vcf", $log)
-	if $datatype_processed and !$test;
+    $datatypes_processed{'HTVCF'} = process_datatype('HTP variation', \@cmds, $sub_dir, $log, $lsf_manager, $HIGH_MEM,
+						    $datatypes_processed{'BGI'}, $datatypes_processed{'GFF'},
+						    $datatypes_processed{'FASTA'});
 }
 
 if ($agm or $all) {
@@ -200,9 +238,8 @@ if ($agm or $all) {
 	"${agr_schema_repo}/bin/agr_validate.py -s ${agr_schema_repo}/ingest/affectedGenomicModel/affectedGenomicModelMetaData.json " .
 	"-d ${sub_dir}/WB_${agr_schema}_AGM.json"
 	);
-    my $datatype_processed = process_datatype('AGM', \@cmds, $log);
-    submit_data('AGM', "${sub_dir}/WB_${agr_schema}_AGM.json", $log)
-	if $datatype_processed and !$test;
+    $datatypes_processed{'AGM'} = process_datatype('AGM', \@cmds, $sub_dir, $log, $lsf_manager, $DEFAULT_MEM, $datatypes_processed{'BGI'},
+						   $datatypes_processed{'DISEASE'}, $datatypes_processed{'ALLELE'});
 }
 
 if ($construct or $all) {
@@ -212,9 +249,7 @@ if ($construct or $all) {
 	"${agr_schema_repo}/bin/agr_validate.py -s ${agr_schema_repo}/ingest/construct/constructMetaData.json " .
 	"-d ${sub_dir}/WB_${agr_schema}_construct.json"
 	);
-    my $datatype_processed = process_datatype('construct', \@cmds, $log);
-    submit_data('CONSTRUCT', "${sub_dir}/WB_${agr_schema}_construct.json", $log)
-	if $datatype_processed and !$test;
+    $datatypes_processed{'CONSTRUCT'} = process_datatype('construct', \@cmds, $sub_dir, $log, $lsf_manager, $DEFAULT_MEM);
 }
 
 if ($interactions or $all) {
@@ -222,9 +257,8 @@ if ($interactions or $all) {
 	"perl ${cvs_dir}/AGR/make_agr_interactions_psimitab.pl  -database ${build_home}/DATABASES/${ws_release} " .
 	"-outfile ${sub_dir}/WB_${agr_schema}_interactions.psi-mi-tab"
 	);
-    my $datatype_processed = process_datatype('molecular interactions', \@cmds, $log);
-    submit_data('INTERACTION-SOURCE', "${sub_dir}/WB_${agr_schema}_interactions.psi-mi-tab", $log, 'MOL')
-	if $datatype_processed and !$test;
+    $datatypes_processed{'INTERACTION-SOURCE_MOL'} = process_datatype('molecular interactions', \@cmds, $sub_dir, $log,
+								      $lsf_manager, $DEFAULT_MEM);
 }
 
 if ($genetic_interactions or $all) {
@@ -232,26 +266,22 @@ if ($genetic_interactions or $all) {
 	"perl  ${cvs_dir}/AGR/make_agr_genetic_interaction_psimitab.pl -database ${build_home}/DATABASES/${ws_release} " . 
 	"-outfile ${sub_dir}/WB_${agr_schema}_genetic_interactions.psi-mi-tab"
 	);
-    my $datatype_processed = process_datatype('genetic interactions', \@cmds, $log);
-    submit_data('INTERACTION-SOURCE', "${sub_dir}/WB_${agr_schema}_genetic_interactions.psi-mi-tab", $log, 'GEN')
-	if $datatype_processed and !$test;
+    $datatypes_processed{'INTERACTION-SOURCE_GEN'} = process_datatype('genetic interactions', \@cmds, $sub_dir, $log,
+								      $lsf_manager, $DEFAULT_MEM);
 }
 
 if ($hts or $all) {
     my @cmds = (
 	"perl ${cvs_dir}/AGR/make_agr_HTS.pl  -database ${build_home}/DATABASES/${ws_release} " .
 	"-sample ${sub_dir}/WB_${agr_schema}_sample.json -dataset ${sub_dir}/WB_${agr_schema}_dataset.json " .
-	"-wsversion ${ws_release} -wb2uberon ${build_home}/AGR/resources/wormbase_to_uberon.agr_2_2.txt",
+	"-wsversion ${ws_release} -wb2uberon ${agr_resources}/wormbase_to_uberon.agr_2_2.txt",
 	"${agr_schema_repo}/bin/agr_validate.py -s ${agr_schema_repo}/ingest/htp/datasetSample/datasetSampleMetaDataDefinition.json " .
 	"-d ${sub_dir}/WB_${agr_schema}_sample.json",
 	"${agr_schema_repo}/bin/agr_validate.py -s ${agr_schema_repo}/ingest/htp/dataset/datasetMetaDataDefinition.json " .
-	"-d ${build_home}/AGR/uploads/${agr_release}/${upload_date}/WB_${agr_schema}_dataset.json"
+	"-d ${agr_uploads}/${agr_release}/${upload_date}/WB_${agr_schema}_dataset.json"
 	);
-    my $datatype_processed = process_datatype('HTS dataset and sample', \@cmds, $log);
-    if ($datatype_processed and !$test) {
-	submit_data('HTPDATASAMPLE', "${sub_dir}/WB_${agr_schema}_sample.json", $log);
-	submit_data('HTPDATASET', "${sub_dir}/WB_${agr_schema}_dataset.json", $log);
-    }
+    $datatypes_processed{'HTPDATASAMPLE'} = $datatypes_processed{'HTPDATASET'}  = process_datatype('HTS dataset and sample', \@cmds,
+												   $sub_dir, $log, $lsf_manager, $DEFAULT_MEM);
 }
 
 if ($reference or $all) {
@@ -264,11 +294,8 @@ if ($reference or $all) {
 	"${agr_schema_repo}/bin/agr_validate.py -s ${agr_schema_repo}/ingest/resourcesAndReferences/referenceExchangeMetaData.json " .
 	"-d ${sub_dir}/WB_${agr_schema}_reference_exchange.json"
 	);
-    my $datatype_processed = process_datatype('reference', \@cmds, $log);
-    if ($datatype_processed and !$test) {
-	submit_data('REFERENCE', "${sub_dir}/WB_${agr_schema}_reference.json", $log);
-	submit_data('REF-EXCHANGE', "${sub_dir}/WB_${agr_schema}_reference_exchange.json", $log);
-    }
+    $datatypes_processed{'REFERENCE'} = $datatypes_processed{'REF-EXCHANGE'} = process_datatype('reference', \@cmds, $sub_dir, $log,
+												$lsf_manager, $HIGH_MEM);
 }
 
 if ($molecule or $all) {
@@ -278,16 +305,58 @@ if ($molecule or $all) {
 	"${agr_schema_repo}/bin/agr_validate.py -s ${agr_schema_repo}/ingest/molecules/moleculeMetaData.json " .
 	"-d ${sub_dir}/WB_${agr_schema}_molecule.json"
 	);
-    my $datatype_processed = process_datatype('molecule', \@cmds, $log);
-    submit_data('MOLECULE', "${sub_dir}/WB_${agr_schema}_molecule.json", $log)
-	if $datatype_processed and !$test;
+    $datatypes_processed{'MOLECULE'} = process_datatype('molecule', \@cmds, $sub_dir, $log, $lsf_manager, $DEFAULT_MEM);
 }
 
+$lsf_manager->wait_all_children();
+check_exit_statuses($sub_dir, $log);
+
+submit_data(\%datatypes_processed, \%files_to_submit, $log) if !$test;
 cleanup_unzipped($sub_dir);
 
 $log->mail;
 
 exit(0);
+
+
+sub check_exit_statuses{
+    my ($sub_dir, $log) = @_;
+
+    my @files = glob($sub_dir . '/lsf_logs/*.out');
+    for my $file (@files) {
+	my $exit_code = 999;
+	open (LSF_LOG, '<', $file) or $log->error("ERROR: Could not open $file to check exit status\n");
+	while (<LSF_LOG>) {
+	    if (/Exited with exit code (\d+)/) {
+		$exit_code = $1;
+		last;
+	    }
+	    elsif (/^Exited/) {
+		$exit_code = 998;
+		last;
+	    }
+	    elsif (/Successfully completed/) {
+		$exit_code = 0;
+		last;
+	    }
+	}
+	close (LSF_LOG);
+	if ($exit_code == 0) {
+	    $log->write_to("Successful job completion seen in $file\n");
+	}
+	elsif ($exit_code == 998) {
+	    $log->error("ERROR: Abnormal exit seen in $file\n");
+	}
+	elsif ($exit_code == 999) {
+	    $log->error("ERROR: Job exit status could not be determined from $file\n");
+	}
+	else {
+	    $log->error("ERROR: Exit code $exit_code seen in $file\n");
+	}
+    }
+
+    return;
+}
 
 
 sub cleanup_unzipped {
@@ -303,47 +372,80 @@ sub cleanup_unzipped {
 
 
 sub process_datatype {
-    my ($datatype, $cmds, $log) = @_;
+    my ($datatype, $cmds, $sub_dir, $log, $lsf_manager, $mem, @wait_for_jobs) = @_;
 
+    $mem = $mem * 1000;
     my @cmd_output;
-    for my $cmd(@$cmds) {
-	$log->write_to("Running $datatype command: $cmd\n\n");
-	my $output = `$cmd 2>&1`;
-	my $exit_code = $? >> 8;
-	if ($exit_code != 0) {
-	    $log->log_and_die("Processing of $datatype data failed with exit code ${exit_code}:\n$cmd\n$output\n\n");
-	    return 0;
+    my $datatype_cmd_nr = 0;
+    my @dependencies;
+    if (@wait_for_jobs) {
+	for my $job_id (@wait_for_jobs) {
+	    push @dependencies, "done(${job_id})" unless $job_id == 0;
 	}
-	push @cmd_output, $output unless $cmd =~ /agr_validate.py/;
     }
+
+    my $last_job_id;
+    for my $cmd(@$cmds) {
+	$datatype_cmd_nr++;
+	my $job_name = $datatype . '_' . $datatype_cmd_nr;
+	$job_name =~ s/\s/_/g;
+	my @bsub_options = (-o => "${sub_dir}/lsf_logs/${job_name}.out",
+			    -e => "${sub_dir}/lsf_logs/${job_name}.err",
+			    -M => $mem,
+			    -R => sprintf("select[mem>%d] rusage[mem=%d]", $mem, $mem),
+			    -J => $job_name);
+	push @bsub_options, (-w => join('&&', @dependencies)) if @dependencies;
+					   
+	my $lsf_job = $lsf_manager->submit(@bsub_options, $cmd);
+	if ($lsf_job) {
+	    $log->write_to("$cmd submitted to LSF with job ID " . $lsf_job->id . "\n\n");
+	}
+	else {
+	    $log->log_and_die("LSF submission of $datatype data failed: $?, $@\n");
+	}
+	$last_job_id = $lsf_job->id;
+	@dependencies = ("done(${last_job_id})");
+    }
+    
     my $all_output = join("\n", @cmd_output);
-    $log->write_to("Processing of $datatype data succeeded\n${all_output}\n\n");
-    return 1;
+    
+    return $last_job_id;
 }
 
 
 sub submit_data {
-    my ($fms_datatype, $file, $log, $fms_subtype) = @_;
+    my ($datatypes_processed, $files_to_submit, $log) = @_;
 
-    my $exit_code = system("gzip -9 -c $file > $file.gz");
-    if ($exit_code != 0) {
-	$log->error("Compression of $file failed with exit code $exit_code, $fms_datatype submission not completed\n\n");
-	return;
-    }
 
-    my $fms_file_link = $fms_subtype ? '_WB-' . $fms_subtype . '=@' : '_WB=@';
+    for my $fms_datatype (@DATATYPES) {
+	next unless $datatypes_processed->{$fms_datatype};
+	my $file = $files_to_submit->{$fms_datatype};
+	
+	my $fms_subtype = '';
+	if ($fms_datatype =~ /^(.+)_(.+)$/) {
+	    $fms_datatype = $1;
+	    $fms_subtype = $2;
+	}
+	my $exit_code = system("gzip -9 -c $file > $file.gz");
+	if ($exit_code != 0) {
+	    $log->error("Compression of $file failed with exit code $exit_code, $fms_datatype submission not completed\n\n");
+	    return;
+	}
 
-    my $cmd = 'curl -H "Authorization: Bearer ' . $ENV{'TOKEN'} . '" -X POST ' .
-	'"https://fms.alliancegenome.org/api/data/submit" -F "' . $ENV{'AGR_RELEASE'} . '_' .
-	$fms_datatype . $fms_file_link . $file . '.gz"';
+	my $fms_file_link = $fms_subtype ? '_WB-' . $fms_subtype . '=@' : '_WB=@';
 
-    my $response_json = `$cmd`;
-    my $response = decode_json($response_json);
-    if ($response->{status} eq 'failed') {
-	$log->error("Upload of $fms_datatype failed:\n$response_json\n\n");
-    }
-    else {
-	$log->write_to("Upload of ${fms_datatype} succeeded\n\n");
+	my $cmd = 'curl -H "Authorization: Bearer ' . $ENV{'TOKEN'} . '" -X POST ' .
+	    '"https://fms.alliancegenome.org/api/data/submit" -F "' . $ENV{'AGR_RELEASE'} . '_' .
+            $fms_datatype . $fms_file_link . $file . '.gz"';
+    
+	my $response_json = `$cmd`;
+	my $response = decode_json($response_json);
+	if ($response->{status} eq 'failed') {
+	    $log->error("Upload of $fms_datatype failed:\n$response_json\n\n");
+	}
+	else {
+	    $log->write_to("Upload of ${fms_datatype} succeeded\n\n");
+	}
     }
 
     return;
