@@ -59,13 +59,13 @@ const my %VCF_INFO => (
     other_name => {
 	id          => 'ON',
 	type        => 'String',
-	number      => 1,
+	number      => '.',
 	description => 'Other name',
     },
     strain => {
 	id          => 'SN',
 	type        => 'String',
-	number      => 1,
+	number      => '.',
 	description => 'Strain',
     },
     rflp => {
@@ -80,6 +80,19 @@ const my %VCF_INFO => (
 	number      => 1,
 	description => 'HGVSg identifier',
     },
+    );
+
+const my %IUPAC_CODES => (
+    'R' => 'A/G',
+    'Y' => 'C/T',
+    'S' => 'G/C',
+    'W' => 'A/T',
+    'K' => 'G/T',
+    'M' => 'A/C',
+    'B' => 'C/G/T',
+    'D' => 'A/G/T',
+    'H' => 'A/C/T',
+    'V' => 'A/C/G'
     );
     
 ######################################
@@ -517,7 +530,10 @@ sub print_vcf_header {
 		       $VCF_INFO{$field}{'number'} . ',Type=' . $VCF_INFO{$field}{'type'} .
 		       ',Description="' . $VCF_INFO{$field}{'description'} . '">');
     }
-    $out_fh->print("\n" . join("\t", qw(#CHROM POS ID REF ALT QUAL FILTER INFO FORMAT)));
+    for my $iupac_code (keys %IUPAC_CODES) {
+	$out_fh->print("\n##ALT=<ID=" . $iupac_code . ',Description="IUPAC code ' . $iupac_code . ' = ' . $IUPAC_CODES{$iupac_code} . '">');
+    }
+    $out_fh->print("\n" . join("\t", qw(#CHROM POS ID REF ALT QUAL FILTER INFO)));
 
     return;
 }
