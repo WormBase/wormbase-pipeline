@@ -88,7 +88,7 @@ const my %VCF_INFO => (
     
 my ($debug, $test, $store, $wormbase, $database, $chromosomes);
 my ($species, $gff3, $infile, $outfile, %var, $changed_lines, $added_lines, $no_vcf);
-my ($fasta_file, $vcf_file);
+my ($fasta_file, $vcf_file, $vcf_only);
 
 GetOptions (
   "debug=s"    => \$debug,
@@ -98,6 +98,7 @@ GetOptions (
   "database:s" => \$database,
   "gff3"       => \$gff3,
   "no_vcf"     => \$no_vcf,
+  "vcf_only"   => \$vcf_only,
   "infile:s"   => \$infile,
   "outfile:s"  => \$outfile,
   "vcffile:s"  => \$vcf_file,
@@ -120,7 +121,7 @@ my $sp_full_name = $wormbase->full_name;
 my $log = Log_files->make_build_log($wormbase);
 
 if (not defined $infile or not defined $outfile) { 
-  $log->log_and_die("You must define -infile and -outfile\n");
+  $log->log_and_die("You must define -infile and -outfile\n") unless $vcf_only;
 }
 
 my $vcf = $gff3 and !$no_vcf ? 1 : 0;
@@ -137,14 +138,26 @@ if ($vcf) {
     print_vcf_header($vcf_out_fh, $chromosomes, $sp_full_name);
 }
 
-    my $transcript_parents = get_transcript_parents($infile);
+my $transcript_parents = get_transcript_parents($infile);
 my $var_consequences = get_molecular_consequences($transcript_parents);
 
 my $db = Ace->connect(-path => $database);
 
-open(my $gff_in_fh, $infile) or $log->log_and_die("Could not open $infile for reading\n");
-open(my $gff_out_fh, ">$outfile") or $log->log_and_die("Could not open $outfile for writing\n");  
+my $gff_in_fh;
+if ($vcf_only and $infile =~ /\.gz$/) {
+    # May want to run VCF only mode on final gzipped GFF, otherwise will always be in unzipped form
+    open ($gff_in_fh, "gunzip -c $infile |") or $log->log_and_die("Could not open $infile for reading\n");
+}
+else {
+    open($gff_in_fh, $infile) or $log->log_and_die("Could not open $infile for reading\n");
+}
 
+my $gff_out_fh;
+if (!$vcf_only) {
+    open($gff_out_fh, ">$outfile") or $log->log_and_die("Could not open $outfile for writing\n");  
+}
+
+my %vcf_lines_printed;
 while (<$gff_in_fh>) {
   if (/Variation \"(WBVar\d+)\"/ or 
       /Variation:(WBVar\d+)/ or 
@@ -317,16 +330,18 @@ while (<$gff_in_fh>) {
     
     my $join_str = ($gff3) ? ";" : " ; ";
     my $group = join($join_str, @new_el_strings); 
-    print $gff_out_fh join("\t", @current_els, $group), "\n";
+    print $gff_out_fh join("\t", @current_els, $group), "\n" unless $vcf_only;
 
     if ($vcf and $current_els[2] ne 'tandem_duplication'
 	and $current_els[2] ne 'transposable_element_insertion_site'
 	and $current_els[2] ne 'sequence_alteration') {
+	next if exists $vcf_lines_printed{$allele};
 	my ($vcf_pos, $vcf_ref, $vcf_alt) = vcf_values($allele, \@current_els, $group, $chromosomes);
 	if ($vcf_pos) {
 	    my $vcf_info_str = vcf_info(\%allele_vcf_values);
 	    $vcf_out_fh->print("\n" . join("\t", $current_els[0], $vcf_pos, $allele, $vcf_ref,
 					   $vcf_alt, '.', '.', $vcf_info_str));
+	    $vcf_lines_printed{$allele} = 1;
 	}
     }
 
@@ -336,7 +351,7 @@ while (<$gff_in_fh>) {
     # can be drawn in a separate track
     if ($is_putative_change_of_function_allele) {
       $current_els[1] = "PCoF_" . $current_els[1];
-      print $gff_out_fh join("\t", @current_els, $group), "\n";
+      print $gff_out_fh join("\t", @current_els, $group), "\n" unless $vcf_only;
       $added_lines++;
     }
     
@@ -345,16 +360,16 @@ while (<$gff_in_fh>) {
       $db = Ace->connect(-path => $database);
     }
   } else {
-    print $gff_out_fh "$_";
+    print $gff_out_fh "$_" unless $vcf_only;
   }
 }
-close($gff_out_fh) or $log->log_and_die("Could not close $outfile after writing\n");
+close($gff_out_fh) or $log->log_and_die("Could not close $outfile after writing\n") unless $vcf_only;
 if ($vcf) {
     close($vcf_out_fh) or $log->log_and_die("Could not close $vcf_file after writing\n");
 }
 $db->close();
 
-$log->write_to("Finished processing : $changed_lines lines modified, $added_lines added\n");
+$log->write_to("Finished processing : $changed_lines lines modified, $added_lines added\n") unless $vcf_only;
 $log->mail();
 exit(0);
 
@@ -373,6 +388,7 @@ sub get_chromosome_sequences {
     while (my $seq = $fasta->next_seq) {
 	my $chr = $seq->display_id;
 	$chr =~ s/CHROMOSOME_//;
+	$chr =~ s/^chr//;
 	$chromosomes{$chr} = $seq->seq;
     }
 
@@ -537,6 +553,8 @@ sub vcf_values {
     my $start = $gff_columns->[3];
     my $end = $gff_columns->[4];
     my $type = $gff_columns->[2];
+
+    $chr =~ s/CHROMOSOME_//;
 
     my ($ref, $alt, $pos, $substitution);
     if ($attributes =~ /insertion=([^;]+)/) {
