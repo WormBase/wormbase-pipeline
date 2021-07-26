@@ -555,6 +555,7 @@ sub vcf_values {
     my $type = $gff_columns->[2];
 
     $chr =~ s/CHROMOSOME_//;
+    $chr =~ s/^chr//;
 
     my ($ref, $alt, $pos, $substitution);
     if ($attributes =~ /insertion=([^;]+)/) {
