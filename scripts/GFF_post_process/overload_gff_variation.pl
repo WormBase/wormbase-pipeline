@@ -581,6 +581,11 @@ sub vcf_values {
 	$substitution = $1;
     }
 
+    if ($type eq 'insertion_site' and $attributes !~ /insertion=/) {
+	$log->write_to("INFO: Inserted sequence unknown for $allele, not including in VCF\n");
+	return;
+    }
+
     unless ($type eq 'insertion_site') {
 	$ref = substr($chromosomes->{$chr}, $start - 1, ($end - $start) + 1);
     }
