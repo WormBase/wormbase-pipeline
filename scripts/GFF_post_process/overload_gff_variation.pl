@@ -379,6 +379,10 @@ while (<$gff_in_fh>) {
 close($gff_out_fh) or $log->log_and_die("Could not close $outfile after writing\n") unless $vcf_only;
 if ($vcf) {
     close($vcf_out_fh) or $log->log_and_die("Could not close $vcf_file after writing\n");
+    my $exit_code = system("vcf-sort ${vcf_file} > ${vcf_file}.sorted");
+    $log->log_and_die("Could not sort VCF file $vcf_file\n") if $exit_code;
+    $exit_code = system("mv -f ${vcf_file}.sorted ${vcf_file}");
+    $log->log_and_die("Could not replace VCF file $vcf_file with sorted version\n") if $exit_code;
 }
 $db->close();
 
