@@ -624,6 +624,12 @@ sub vcf_values {
 	}
     }
 
+    if ($ref eq $alt) {
+	$log->write_to("INFO: Reference and alternative alleles are identical ($ref) for " .
+		       "$allele, not including in VCF\n");
+	return;
+    }
+
     return ($pos, $ref, $alt);
 }
 
