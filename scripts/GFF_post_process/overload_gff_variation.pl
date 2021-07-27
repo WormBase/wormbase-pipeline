@@ -351,6 +351,7 @@ while (<$gff_in_fh>) {
 	next if exists $vcf_lines_printed{$allele};
 	my ($vcf_pos, $vcf_ref, $vcf_alt) = vcf_values($allele, \@current_els, $group, $chromosomes);
 	if ($vcf_pos) {
+	    $vcf_out_fh->print("\n" . join("\t", qw(#CHROM POS ID REF ALT QUAL FILTER INFO))) unless %vcf_lines_printed;
 	    my $vcf_info_str = vcf_info(\%allele_vcf_values);
 	    $vcf_out_fh->print("\n" . join("\t", $current_els[0], $vcf_pos, $allele, $vcf_ref,
 					   $vcf_alt, '.', '.', $vcf_info_str));
@@ -378,11 +379,17 @@ while (<$gff_in_fh>) {
 }
 close($gff_out_fh) or $log->log_and_die("Could not close $outfile after writing\n") unless $vcf_only;
 if ($vcf) {
+    if (!%vcf_lines_printed) {
+	$vcf_out_fh->print("\n##Comment=WormBase currently has no variation data for this species" . 
+			   "\n" . join("\t", qw(#CHROM POS ID REF ALT QUAL FILTER INFO)));
+    }
     close($vcf_out_fh) or $log->log_and_die("Could not close $vcf_file after writing\n");
-    my $exit_code = system("vcf-sort ${vcf_file} > ${vcf_file}.sorted");
-    $log->log_and_die("Could not sort VCF file $vcf_file\n") if $exit_code;
-    $exit_code = system("mv -f ${vcf_file}.sorted ${vcf_file}");
-    $log->log_and_die("Could not replace VCF file $vcf_file with sorted version\n") if $exit_code;
+    if (%vcf_lines_printed) {
+	my $exit_code = system("vcf-sort ${vcf_file} > ${vcf_file}.sorted");
+	$log->log_and_die("Could not sort VCF file $vcf_file\n") if $exit_code;
+	$exit_code = system("mv -f ${vcf_file}.sorted ${vcf_file}");
+	$log->log_and_die("Could not replace VCF file $vcf_file with sorted version\n") if $exit_code;
+    }
 }
 $db->close();
 
@@ -537,7 +544,6 @@ sub print_vcf_header {
     for my $iupac_code (keys %IUPAC_CODES) {
 	$out_fh->print("\n##ALT=<ID=" . $iupac_code . ',Description="IUPAC code ' . $iupac_code . ' = ' . $IUPAC_CODES{$iupac_code} . '">');
     }
-    $out_fh->print("\n" . join("\t", qw(#CHROM POS ID REF ALT QUAL FILTER INFO)));
 
     return;
 }
