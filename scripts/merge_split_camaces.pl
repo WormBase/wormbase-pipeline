@@ -192,7 +192,9 @@ if ($merge) {
   # run acediff on the files tidy up and reformat the diff files ready to be loaded
   #my $script_path = glob("~pad/wormbase/scripts");
   foreach my $database (@databases) {
+      print "Dumping Data from $database\n";
     foreach my $class (@classes) {
+	print "Dumping $class ...........\n";
       my $path_new = $directory . "/${class}_${database}.ace";
       my $path_ref = $directory . "/${class}_orig.ace";
       # Sequence class has hit acediff file line limit so stripping out RNASeq CDS_child lines from 
@@ -235,7 +237,9 @@ if ($merge) {
 	  $wormbase->run_script("acediff.pl -reference $path_ref -new $path_new -output $directory/update_${class}_${database}.ace -debug pad", $log) && die "acediff.pl Failed for ${path_new}\n";
 	}
       }
+	print "Finished Processing $class\n";
     }
+      print "Finished Processing $database\n";
   }
   $log->write_to ("Phase 1 finished and all files can be found in $directory\n");
 }
