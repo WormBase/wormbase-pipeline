@@ -592,10 +592,20 @@ sub vcf_values {
 
     unless ($type eq 'insertion_site') {
 	$ref = substr($chromosomes->{$chr}, $start - 1, ($end - $start) + 1);
+	unless ($ref) {
+	    $log->write_to("INFO: Couldn't retrieve reference sequence for $allele at $chr:" .
+			   "${start}-${end}, not including in VCF\n");
+	    return;
+	}
     }
 
     if ($type eq 'insertion_site' or $type eq 'deletion' or $type eq 'complex_substitution') {
 	my $padding_base = substr($chromosomes->{$chr}, $start - 2, 1);
+	unless ($padding_base) {
+	    $log->write_to("INFO: Couldn't retrieve padding base for $allele at $chr:" . $start - 1 .
+			   ", not including in VCF\n");
+	    return;
+	}
 	$pos = $start - 1;
 	$ref = $padding_base . $ref;
 	$alt = $padding_base . $alt;
