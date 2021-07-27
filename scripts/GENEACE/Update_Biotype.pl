@@ -206,22 +206,22 @@ foreach my $SeqGene(@SeqGenes) {
   }
   else {
       if ($SeqGene->Corresponding_CDS_history) { 
-	  #$log->write_to("$SeqGene: No live annotation");
-	  #$log->write_to(" - CHECK: Has History CDS\n");
+	  $log->write_to("$SeqGene: No live annotation") if $verbose;
+	  $log->write_to(" - CHECK: OK Has History CDS\n") if $verbose;
       }
       elsif ($SeqGene->Corresponding_transcript_history) { 
-	  #$log->write_to("$SeqGene: No live annotation");
-	  #$log->write_to(" - CHECK: Has History Transcript\n");
+	  $log->write_to("$SeqGene: No live annotation") if $verbose;
+	  $log->write_to(" - CHECK: OK Has History Transcript\n") if $verbose;
       }
       elsif ($SeqGene->Corresponding_pseudogene_history) { 
-	  #$log->write_to("$SeqGene: No live annotation");
-	  #$log->write_to(" - CHECK: Has History Pseudogene\n");
+	  $log->write_to("$SeqGene: No live annotation") if $verbose;
+	  $log->write_to(" - CHECK: OK Has History Pseudogene\n") if $verbose;
       }
       else {
-	  $log->write_to("$SeqGene: No live annotation");
-	  $log->write_to(" - WARNING: Dangling annotation, please check the database $db?\n");
+	  $log->write_to("WARNING: $SeqGene No live annotation");
+	  $log->write_to(" - CHECK: If there are features on this gene they need connecting to the correct WBGene\n");  
+	  print REP "FIX: $SeqGene No live annotation - CHECK: If there are features on this gene as they need connecting to the correct WBGene\n" if ($report);
       }
-      print REP "$SeqGene - WARNING: Dangling annotation, please check the database $db for feature data\n" if ($report);
       next;
   }
 }

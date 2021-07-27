@@ -549,7 +549,7 @@ sub main_gene_checks {
   $log->write_to("\nMain structure checks\n");
 
 
-  my @Models = $db->fetch (-query => 'Find All_genes where (Species = "'.$speciesfn.'")'); # CDS, Transcripts, Pseudogenes, etc
+  my @Models = $db->fetch (-query => 'Find All_genes where (Species = "'.$speciesfn.'") AND (Method != non_coding_transcript_isoformer)'); # CDS, Transcripts, Pseudogenes, etc
 ###  my @Models = $db->fetch(CDS  => 'CBG02690');
 
   my $model_count = scalar @Models;

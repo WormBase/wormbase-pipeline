@@ -46,7 +46,7 @@ my $analysis_adaptor = $registry->get_adaptor($genome, "core", "Analysis");
 # add the new analysis, if it doesn't already exist
 my $analysis = Bio::EnsEMBL::Analysis->new(
   -logic_name => $logicname,
-  -gff_source => $source,
+  -gff_source => "WormBase_imported",   # so that all genes and transcripts have the same source in GFF dumps
   -module     => "WormBase"
    );
 

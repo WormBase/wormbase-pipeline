@@ -474,6 +474,9 @@ sub split_databases {
       print "Destroying $split_db\n" if ($debug);
       $wormbase->run_command("rm -rf $split_db/database/ACEDB.wrm", $log) && die "Failed to remove $split_db/database/ACEDB.wrm\n";
     }
+    elsif (-e $split_db."/database/wspec/models.wrm"){
+	print "It looks like you have had a failed run but the database dir structure is present so we will continue!!";
+    }
     else {
       $log->write_to ("Databases doesn't exist so creating $split_db\n");
       print "Databases doesn't exist so creating $split_db\n";
@@ -716,12 +719,14 @@ sub load_curation_data {
 		  "$blat_dir/virtual_objects.$species.ci.OST.$species.ace",
 		  "$blat_dir/virtual_objects.$species.ci.RST.$species.ace",
 		  "$blat_dir/virtual_objects.$species.ci.ncRNA.$species.ace",
+		  "$blat_dir/virtual_objects.$species.ci.elegans_Nanopore.ace",
 		  "$blat_dir/$species.blat.${species}_OST.ace",
 		  "$blat_dir/$species.blat.${species}_RST.ace",
 		  "$blat_dir/$species.blat.${species}_ncRNA.ace",
 		  "$blat_dir/$species.good_introns.OST.ace",
 		  "$blat_dir/$species.good_introns.RST.ace",
 		  "$blat_dir/$species.good_introns.ncRNA.ace",
+		  "$blat_dir/$species.good_introns.Nanopore.ace",
 		 );
 	  }
     push (@BLATfiles,

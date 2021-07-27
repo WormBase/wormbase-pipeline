@@ -341,10 +341,10 @@ sub split_databases {
       print "Databases doesn't exist so creating $split_db\n";
       $wormbase->run_command("mkdir $split_db", $log) && die "Failed to create $split_db dir\n" unless (-e $split_db);
       $wormbase->run_command("mkdir $split_db/database", $log) && die "Failed to create a database dir\n" unless (-e $split_db."/database");
-      $wormbase->run_command("cp -r $wormpub/wormbase/wspec $split_db/", $log) && die "Failed to copy the wspec dir\n" unless (-e $split_db."/wspec");
-      $wormbase->run_command("cp -rf $wormpub/wormbase/wspec/models.wrm $split_db/wspec/models.wrm", $log) && die "Failed to force copy the models fileir\n";
-      $wormbase->run_command("chmod g+w $split_db/wspec/*", $log);
-      $wormbase->run_command("cp -r $wormpub/wormbase/wgf $split_db/", $log) && die "Failed to copy the wgf dir\n" unless (-e $split_db."/wgf");
+      $wormbase->run_command("cp -r ${wormpub}/wormbase-pipeline/wspec ${split_db}/", $log) && die "Failed to copy the wspec dir\n" unless (-e $split_db."/wspec");
+      $wormbase->run_command("cp -rf ${wormpub}/wormbase-pipeline/wspec/models.wrm ${split_db}/wspec/", $log) && die "Failed to force copy the models file\n" unless (-e $split_db."/wspec/models.wrm");;
+      $wormbase->run_command("chmod g+w ${split_db}/wspec/*", $log);
+      $wormbase->run_command("cp -r $wormpub/wormbase-pipeline/wgf $split_db/", $log) && die "Failed to copy the wgf dir\n" unless (-e $split_db."/wgf");
     }
     my $command = "y\nsave\nquit\n";
     print "Opening $split_db for edits\n" if ($verbose);
