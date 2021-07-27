@@ -50,8 +50,6 @@ my $def_dir = "${database}/wquery";                          # where lots of tab
 my $rundate = $wb->rundate;                                # Used by various parts of script for filename creation
 my $maintainers = join (', ', 
                         'paul.davis\@wormbase.org',
-                        'gary.williams\@wormbase.org',
-                        'kevin.howe\@wormbase.org',
                         );
 
 my $log_dir = "$database/logs";                            # some of the many output files are put here (ar2)
@@ -110,21 +108,40 @@ my $ga = init Geneace($wb);
 my $Gene_info = $ga -> gene_info($database, "seq2id");
 my %Gene_info = %{$Gene_info};
 
+#basic checks to always run
+#bad WBPaper_IDs
+foreach my $bpaper ($db->fetch(-query=>'Find Paper WHERE !WBPaper0*')) {
+    unless ($bpaper =~ /^WBPaper\d{8}/){
+	print LOG "ERROR: $bpaper is not valid\n";
+	print "ERROR: $bpaper is not valid\n";
+    }
+}
+
+
+#bad WBPerson_IDs
+foreach my $bperson ($db->fetch(-query=>'Find Person !WBPerson*')){
+    unless ($bperson =~ /WBPerson\d+/){
+        print LOG "ERROR: $bperson is not valid\n";
+	print "ERROR: $bperson is not valid\n";
+    }
+}
+
+
 
 # Process separate classes if specified on the command line else process all classes, 
 @classes = ("gene", "laboratory", "evidence", "allele", "strain", "rearrangement", "feature") if (!@classes);
-
 foreach $class (@classes){
   if ($class =~ m/gene/i)          {&process_gene_class}
-  if ($class =~ m/laboratory/i)    {&process_laboratory_class}
-  if ($class =~ m/evidence/i)      {&check_evidence}
-  if ($class =~ m/allele/i)        {&process_allele_class}
-  if ($class =~ m/strain/i)        {&process_strain_class}
-  if ($class =~ m/rearrangement/i) {&process_rearrangement}
-  if ($class =~ m/paper/i)         {&process_paper_class}
-  if ($class =~ m/feature/i)       {&process_feature_class}
+  elsif ($class =~ m/laboratory/i)    {&process_laboratory_class}
+  elsif ($class =~ m/evidence/i)      {&check_evidence}
+  elsif ($class =~ m/allele/i)        {&process_allele_class}
+  elsif ($class =~ m/strain/i)        {&process_strain_class}
+  elsif ($class =~ m/rearrangement/i) {&process_rearrangement}
+  elsif ($class =~ m/paper/i)         {&process_paper_class}
+  elsif ($class =~ m/feature/i)       {&process_feature_class}
 #  if ($class =~ m/mapping/i)       {&check_genetics_coords_mapping}
 #  if ($class =~ m/multipoint/i)    {&check_dubious_multipt_gene_connections}
+  else {print LOG "\nNo valid class has been specified CLASS:$class\n";}
 }
 
 
@@ -979,6 +996,11 @@ sub process_allele_class{
       print LOG "ERROR: $allele has no Status tag\n";
     }
 
+    # Check for Variation_type
+    if (!defined($allele->Variation_type )) {
+	print LOG "ERROR: $allele has no Variation_type tag\n";
+    }
+
     # Check for SeqStatus tag missing
     if (!defined($allele->SeqStatus)) {
 	print LOG "ERROR: $allele has no SeqStatus tag\n" if ($allele->Status eq "Live");
@@ -1110,9 +1132,13 @@ sub process_strain_class {
   print LOG "\n\nChecking Strain class for errors:\n";
   print LOG "---------------------------------\n";
   print LOG "Loads of alleles are still connected to lin-15\n";
-
+  my $strain;
   my @strains = $db->fetch('Strain','*');
-  foreach my $strain (@strains){
+  my $straincount = scalar(@strains);
+  my $laststrain = $strains[-1]->name;
+  unless ($laststrain =~ "WBStrain000$straincount") {print LOG "The last WBStrain ID $laststrain is not equal the strain class count $straincount (assuming 3x0 padding).\n";}
+  
+  foreach $strain (@strains){
     #N2 should not have Variants associated with it.
     if ($strain eq "WBStrain00000001") {
 	  if (defined $strain->Contains) {
@@ -1121,6 +1147,9 @@ sub process_strain_class {
 	  else {
 	      print LOG "RESULT: The N2 Strain ($strain) is clear of Variation data....which is good!\n" if ($debug);
 	  }
+    }
+    unless ($strain =~ /WBStrain\d{8}/){
+	print LOG "WARNING: $strain has not been accessioned or merged into the WBStrain record.\n";
     }
     if (!$strain->Location){
       print LOG "WARNING(a): Strain $strain has no location tag\n";
@@ -1154,11 +1183,10 @@ sub process_strain_class {
 	    }
 	  }
 	}
-	
       }
     }
   }
-  
+ 
 
 
   my ($locus, %allele_locus, %strain_genotype, $cds, %locus_cds, $main, $allele);
@@ -1326,7 +1354,7 @@ sub create_log_files{
 
   open (LOG, ">$log") or warn "cant open $log";
   print LOG "geneace_check\n";
-  print LOG "started at ",`date`,"\n";
+  print LOG "Started at ",`date`,"\n";
   print LOG "=============================================\n";
   print LOG "\n";
 

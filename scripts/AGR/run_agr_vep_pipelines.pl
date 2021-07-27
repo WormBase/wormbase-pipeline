@@ -717,7 +717,8 @@ sub sort_vcf_files {
 
 
 sub remove_mirna_primary_transcripts {
-    my (%mirna_parents, %parents, $log);
+    my $log = shift;
+    my (%mirna_parents, %parents);
 
     $log->write_to("Getting RefSeq HUMAN miRNA details from GFF\n");
 
@@ -783,7 +784,7 @@ sub munge_gff {
 
     my $hgnc_id_map;
     if ($mod eq 'HUMAN') {
-	remove_mirna_primary_transcripts();
+	remove_mirna_primary_transcripts($log);
 	$hgnc_id_map = get_hgnc_id_map($log);
     }
 
@@ -1094,7 +1095,9 @@ sub cleanup_intermediate_files {
  
 
 sub get_hgnc_id_map {
-    my ($file, $log) = $HGNC_FILE_URL =~ /\/([^\/]+)$/;
+    my $log = shift;
+
+    my ($file) = $HGNC_FILE_URL =~ /\/([^\/]+)$/;
     run_system_cmd("curl -O $HGNC_FILE_URL", 'Downloading HGNC gene ID map file', $log) unless -e $file;
 
     my $first_line = 1;
