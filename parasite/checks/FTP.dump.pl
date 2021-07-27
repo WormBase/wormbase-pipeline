@@ -2,7 +2,7 @@
 # core _${PARASITE_VERSION}_ | while read -r i ; 
 # do perl FTP.dump.pl $($PARASITE_STAGING_MYSQL details script) 
 #  -dumpPath /hps/nobackup/production/ensemblgenomes/parasite/production/dumps/WBPS15/FTP
-# -dbname $i ; done
+# -dbname $i -wbps_version $PARASITE_VERSION ; done
 
 
 #!/usr/bin/env perl
@@ -14,7 +14,7 @@ use File::Find;
 
 
 #my $input = shift or die ; 
-my ($host, $user, $db, $pass, $port,$dp, $dump_file);
+my ($host, $user, $db, $pass, $port,$dp, $dump_file, $wbps_version);
 GetOptions
 (
 'host=s'       => \$host,
@@ -24,6 +24,7 @@ GetOptions
 'user=s'       => \$user,
 'db=s'       => \$db,
 'dumpPath=s'   => \$dp,
+'wbps_version=i' => \$wbps_version,
 #'dump_file=s'  => \$dump_file,
 )|| die ("check command line params\n");
 
@@ -37,7 +38,7 @@ my $dba = new Bio::EnsEMBL::DBSQL::DBAdaptor
 );
 
 my $dbh = $dba->dbc->db_handle;
-my $sql_dna = "SELECT COUNT(distinct(name)) FROM seq_region;";# count number of dna in database
+my $sql_dna = "SELECT COUNT(distinct(name)) FROM seq_region WHERE coord_system_id = 1;";# count number of dna in database
 my $sql_pep = "SELECT COUNT(translation_id) FROM translation;";# count number of protein in database
 my $sql_trans = "SELECT COUNT(stable_id) FROM transcript;"; # count number of transcript in database
 my $sql_1 = "SELECT meta_value FROM meta WHERE meta_key = 'species.url';";
@@ -100,19 +101,19 @@ my $spe_name = lc("$val[0]_$val[1]");
 
 # Getting path for different files in dump in variable for both ziped and unzipped file as I have mix of them
 my ( $pepgz,$dna_genomicgz, $dna_genomicSMgz, $dna_genomicMgz,$transgz, $pep,$dna_genomic, $dna_genomicSM, $dna_genomicM,$trans);
-$pepgz = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.protein.fa.gz" ;
-$dna_genomicgz = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.genomic.fa.gz" ;
-$dna_genomicMgz = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.genomic_masked.fa.gz" ;
-$dna_genomicSMgz = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.genomic_softmasked.fa.gz" ;
-$transgz = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.mRNA_transcripts.fa.gz" ;
+$pepgz = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS$wbps_version.protein.fa.gz" ;
+$dna_genomicgz = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS$wbps_version.genomic.fa.gz" ;
+$dna_genomicMgz = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS$wbps_version.genomic_masked.fa.gz" ;
+$dna_genomicSMgz = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS$wbps_version.genomic_softmasked.fa.gz" ;
+$transgz = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS$wbps_version.mRNA_transcripts.fa.gz" ;
 
 #path for files 
 
-my $pep_path = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.protein.fa";
-my $genomic_path = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.genomic.fa";
-my $genomicM_path = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.genomic_masked.fa";
-my $genomicSM_path = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.genomic_softmasked.fa";
-my $trans_path = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS15.mRNA_transcripts.fa";
+my $pep_path = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS$wbps_version.protein.fa";
+my $genomic_path = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS$wbps_version.genomic.fa";
+my $genomicM_path = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS$wbps_version.genomic_masked.fa";
+my $genomicSM_path = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS$wbps_version.genomic_softmasked.fa";
+my $trans_path = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS$wbps_version.mRNA_transcripts.fa";
 
 
 print "working on: $db\n";
