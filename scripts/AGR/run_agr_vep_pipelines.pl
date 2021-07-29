@@ -1,4 +1,4 @@
-#!/bin/env perl
+x#!/bin/env perl
 use strict;
 use Getopt::Long;
 use Compress::Zlib;
@@ -198,22 +198,23 @@ const my %REFSEQ_CHROMOSOMES => (
     },
     );
 
-my ($url, $test, $logfile, $debug, $password, $cleanup, $nocheck, $overwrite, $help);
+my ($url, $test, $logfile, $debug, $password, $cleanup, $nocheck, $overwrite, $external_human_gff, $help);
 my $stages = '1,2,3,4,5';
 my $mods_string = 'FB,MGI,RGD,SGD,WB,ZFIN,HUMAN';
 
 GetOptions(
-    "mods|m=s"     => \$mods_string,
-    "stages|s=s"   => \$stages,
-    "password|p=s" => \$password,
-    "logfile|l=s"  => \$logfile,
-    "debug|d=s"    => \$debug,
-    "url|u=s"      => \$url,
-    "test|t"       => \$test,
-    "cleanup|c"    => \$cleanup,
-    "overwrite|o"  => \$overwrite,
-    "nocheck|n"    => \$nocheck,
-    "help|h"       => \$help,
+    "mods|m=s"              => \$mods_string,
+    "stages|s=s"            => \$stages,
+    "password|p=s"          => \$password,
+    "logfile|l=s"           => \$logfile,
+    "debug|d=s"             => \$debug,
+    "url|u=s"               => \$url,
+    "test|t"                => \$test,
+    "cleanup|c"             => \$cleanup,
+    "overwrite|o"           => \$overwrite,
+    "nocheck|n"             => \$nocheck,
+    "external_human_gff|e"  => \$external_human_gff,
+    "help|h"                => \$help,
     ) or print_usage();
 
 print_usage() if $help;
@@ -229,7 +230,7 @@ for my $mod (@mods) {
     chdir "$BASE_DIR/$mod";
     if ($stages =~ /2/) {
 	if ($run_stages->{2}) {
-	    process_input_files($mod, $log);
+	    process_input_files($mod, $external_human_gff, $log);
 	}
 	else {
 	    $log->write_to("Skipping processing of input files for $mod " .
@@ -498,7 +499,7 @@ sub check_if_actually_compressed {
 
 
 sub process_input_files {
-    my ($mod, $log) = @_;
+    my ($mod, $external_human_gff, $log) = @_;
     
     cleanup_intermediate_files($mod, $log);
     
@@ -509,7 +510,7 @@ sub process_input_files {
     convert_fasta_headers($mod, $log);
     convert_vcf_chromosomes($mod, 'VCF', $log);
   
-    munge_gff($mod, $log);
+    munge_gff($mod, $external_human_gff, $log);
     run_system_cmd("bgzip -c ${mod}_FASTA.refseq.fa > ${mod}_FASTA.refseq.fa.gz", "Compressing $mod FASTA", $log);
     run_system_cmd("sort -k1,1 -k4,4n -k5,5n -t\$'\\t' ${mod}_GFF.refseq.gff | bgzip -c > ${mod}_GFF.refseq.gff.gz",
     	             "Sorting and compressing $mod GFF", $log);
@@ -773,7 +774,7 @@ sub munge_gff {
     my $reverse_map = get_reverse_chromosome_map($mod);
 
     my $hgnc_id_map;
-    if ($mod eq 'HUMAN') {
+    if ($mod eq 'HUMAN' and $external_human_gff) {
 	remove_mirna_primary_transcripts($log);
 	$hgnc_id_map = get_hgnc_id_map($log);
     }
@@ -836,7 +837,7 @@ sub munge_gff {
 	    }
 	}
 
-	if ($mod eq 'HUMAN') {
+	if ($mod eq 'HUMAN' and $external_human_gff) {
 	    $line = convert_to_hgnc_gene_ids(\@columns, $hgnc_id_map);
 	}
 	
