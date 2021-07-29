@@ -38,11 +38,12 @@ my $dba = new Bio::EnsEMBL::DBSQL::DBAdaptor
 );
 
 my $dbh = $dba->dbc->db_handle;
-my $sql_dna = "SELECT COUNT(distinct(name)) FROM seq_region WHERE coord_system_id = 1;";# count number of dna in database
+my $sql_dna = "SELECT COUNT(*) FROM coord_system LEFT JOIN seq_region
+               ON coord_system.coord_system_id = seq_region.coord_system_id 
+               WHERE coord_system.rank = 1;";# count number of dna in database
 my $sql_pep = "SELECT COUNT(translation_id) FROM translation;";# count number of protein in database
 my $sql_trans = "SELECT COUNT(stable_id) FROM transcript;"; # count number of transcript in database
 my $sql_1 = "SELECT meta_value FROM meta WHERE meta_key = 'species.url';";
-my $sql_2 = "SELECT meta_value FROM meta WHERE meta_key = 'species.bioproject_id';"; 
 
 # sub routine to count the sequence in dump
 sub mycount 
@@ -74,10 +75,7 @@ $sth_dna->execute();                        # execute the query
 my $sth_1 = $dbh->prepare($sql_1);          # prepare the query
 $sth_1->execute();                        # execute the query
 
-my $sth_2 = $dbh->prepare($sql_2);          # prepare the query
-$sth_2->execute();                        # execute the query
 
-#my @row;
 # parse the query to variable 
 my $value_trans; 
 $value_trans = $sth_trans->fetchrow_array; 
@@ -91,29 +89,29 @@ $value_dna = $sth_dna->fetchrow_array;
 my $value1; 
 $value1 = $sth_1->fetchrow_array; 
 
-my $value2; 
-$value2 = $sth_2->fetchrow_array; 
-
-
 
 my @val = split (/_/, $value1);
 my $spe_name = lc("$val[0]_$val[1]");
+my $bioproject = uc($val[2]);
+$bioproject =~ s/(.)PRJ/$1_PRJ/;
 
 # Getting path for different files in dump in variable for both ziped and unzipped file as I have mix of them
 my ( $pepgz,$dna_genomicgz, $dna_genomicSMgz, $dna_genomicMgz,$transgz, $pep,$dna_genomic, $dna_genomicSM, $dna_genomicM,$trans);
-$pepgz = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS$wbps_version.protein.fa.gz" ;
-$dna_genomicgz = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS$wbps_version.genomic.fa.gz" ;
-$dna_genomicMgz = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS$wbps_version.genomic_masked.fa.gz" ;
-$dna_genomicSMgz = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS$wbps_version.genomic_softmasked.fa.gz" ;
-$transgz = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS$wbps_version.mRNA_transcripts.fa.gz" ;
+my $path = "$dp/$spe_name/$bioproject/$spe_name.$bioproject.WBPS$wbps_version";
+
+$pepgz = "$path.protein.fa.gz" ;
+$dna_genomicgz = "$path.genomic.fa.gz" ;
+$dna_genomicMgz = "$path.genomic_masked.fa.gz" ;
+$dna_genomicSMgz = "$path.genomic_softmasked.fa.gz" ;
+$transgz = "$path.mRNA_transcripts.fa.gz" ;
 
 #path for files 
 
-my $pep_path = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS$wbps_version.protein.fa";
-my $genomic_path = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS$wbps_version.genomic.fa";
-my $genomicM_path = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS$wbps_version.genomic_masked.fa";
-my $genomicSM_path = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS$wbps_version.genomic_softmasked.fa";
-my $trans_path = "$dp/$spe_name/$value2/$spe_name\.$value2\.WBPS$wbps_version.mRNA_transcripts.fa";
+my $pep_path = "$path.protein.fa";
+my $genomic_path = "$path.genomic.fa";
+my $genomicM_path = "$path.genomic_masked.fa";
+my $genomicSM_path = "$path.genomic_softmasked.fa";
+my $trans_path = "$path.mRNA_transcripts.fa";
 
 
 print "working on: $db\n";
