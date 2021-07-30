@@ -1,4 +1,4 @@
-x#!/bin/env perl
+#!/bin/env perl
 use strict;
 use Getopt::Long;
 use Compress::Zlib;
@@ -767,7 +767,7 @@ sub remove_mirna_primary_transcripts {
 
 
 sub munge_gff {
-    my ($mod, $log) = @_;
+    my ($mod, $external_human_gff, $log) = @_;
     
     run_system_cmd("rm ${mod}_GFF.refseq.gff", "Deleting old munged GFF file", $log) if -e "${mod}_GFF.refseq.gff";
 
@@ -888,8 +888,18 @@ sub convert_to_hgnc_gene_ids {
     my %attr = split /[=;]/, $columns->[8];
     my @pairs;
     my %keys_to_map = map {$_ => 1} ('ID', 'Parent', 'gene_id', 'id');
+    # Dbxref=GeneID:100996442,Genbank:XR_001737578.2
     for my $key (keys %attr) {
 	my $value = $attr{$key};
+	if ($key eq 'Dbxref') {
+	    my @dbxrefs = split ',', $value;
+	    my @dbxrefs_to_keep;
+	    for my $dbxref (@dbxrefs) {
+		push @dbxrefs_to_keep, $dbxref unless $dbxref =~ /^GeneID:/
+	    }
+	    push @pairs, 'Dbxref=' . join(',', @dbxrefs_to_keep) if @dbxrefs_to_keep;
+	    next;
+	}
 	$value =~ s/^gene[:\-]//;
 	if (exists $keys_to_map{$key} and exists $hgnc_id_map->{$value}) {
 	    push @pairs, $key . '=' . $hgnc_id_map->{$value};
