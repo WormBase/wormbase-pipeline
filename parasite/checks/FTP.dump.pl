@@ -38,9 +38,11 @@ my $dba = new Bio::EnsEMBL::DBSQL::DBAdaptor
 );
 
 my $dbh = $dba->dbc->db_handle;
-my $sql_dna = "SELECT COUNT(*) FROM coord_system LEFT JOIN seq_region
-               ON coord_system.coord_system_id = seq_region.coord_system_id 
-               WHERE coord_system.rank = 1;";# count number of dna in database
+my $sql_dna = "SELECT COUNT(*) FROM seq_region LEFT JOIN seq_region_attrib
+               ON seq_region.seq_region_id = seq_region_attrib.seq_region_id 
+	       LEFT JOIN attrib_type
+	       ON attrib_type.attrib_type_id = seq_region_attrib.attrib_type_id
+               WHERE attrib_type.code = 'toplevel';"; # count number of dna in database
 my $sql_pep = "SELECT COUNT(translation_id) FROM translation;";# count number of protein in database
 my $sql_trans = "SELECT COUNT(stable_id) FROM transcript;"; # count number of transcript in database
 my $sql_1 = "SELECT meta_value FROM meta WHERE meta_key = 'species.url';";
