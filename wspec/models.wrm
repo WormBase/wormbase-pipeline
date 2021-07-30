@@ -3569,12 +3569,12 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-?Variation Evidence #Evidence
-           Name Public_name UNIQUE ?Variation_name XREF Public_name_for
-                Other_name ?Variation_name XREF Other_name_for #Evidence
+?Variation Evidence #Evidence  ///LinkML Allele:name:direct
+           Name Public_name UNIQUE ?Variation_name XREF Public_name_for  ///LinkML Allele:symbol:direct
+                Other_name ?Variation_name XREF Other_name_for #Evidence  ///LinkML Allele:synonyms:direct
                 Rearrangement ?Rearrangement XREF Variation // some alleles are really rearrangements
                 HGVSg UNIQUE Text #Evidence
-           Sequence_details SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Allele
+           Sequence_details SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Allele 
                             Flanking_sequences UNIQUE Text UNIQUE Text
                             Mapping_target UNIQUE ?Sequence
                             Source_location UNIQUE Int UNIQUE ?Sequence UNIQUE Int UNIQUE Int UNIQUE #Evidence //source data, <WSversion> ?Sequence pos1 pos2 Evidence(Paper/person etc. remarks)
