@@ -104,18 +104,19 @@ foreach my $species (@species) {
 
   # Finally, write the Ace
   foreach my $cds_name (sort keys %cds) {
-    next if not exists $cds{$cds_name}->{sequence};
 
-    my $cds_seq = $cds{$cds_name}->{sequence};
     my $gene_name = $cds{$cds_name}->{gene};
     
-    printf($acefh "\nProtein : \"%s\"\n", $cds_name);
-    printf($acefh "Species \"%s\"\n", $wb->full_name);
-    printf($acefh "Corresponding_CDS \"%s\"\n", $cds_name);
-    print $acefh "Live\n";
+    if (exists $cds{$cds_name}->{sequence}) {
+	printf($acefh "\nProtein : \"%s\"\n", $cds_name);
+	printf($acefh "Species \"%s\"\n", $wb->full_name);
+	printf($acefh "Corresponding_CDS \"%s\"\n", $cds_name);
+	print $acefh "Live\n";
     
-    printf($acefh "\nPeptide : \"%s\"\n", $cds_name);
-    printf($acefh "%s\n", $cds_seq);
+	my $cds_seq = $cds{$cds_name}->{sequence};
+	printf($acefh "\nPeptide : \"%s\"\n", $cds_name);
+	printf($acefh "%s\n", $cds_seq);
+    }
     
     printf($acefh "\nCDS : \"%s\"\n", $cds_name);
     printf($acefh "Species \"%s\"\n", $wb->full_name);
