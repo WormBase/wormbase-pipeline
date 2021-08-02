@@ -11,6 +11,7 @@ use File::Slurp;
 use Digest::MD5;
 use Log_files;
 use Wormbase;
+use DateTime;
 
 const my $FMS_LATEST_PREFIX => 'https://fms.alliancegenome.org/api/datafile/by/';
 const my $FMS_LATEST_SUFFIX => '?latest=true';
@@ -30,11 +31,13 @@ const my %ASSEMBLIES => ('GRCm38'   => 'MGI',
 			 'SGDr64'   => 'SGD',
 			 'WBcel235' => 'WB',
 			 'GRCz11'   => 'ZFIN',
+			 'HUMAN'    => 'HUMAN'
     );
 const my $BASE_DIR => $ENV{'AGR_VEP_BASE_DIR'} . '/' . $ENV{'AGR_RELEASE'} . '/' . $ENV{'DOWNLOAD_DATE'};
 const my $HGNC_FILE_URL => 'http://ftp.ebi.ac.uk/pub/databases/genenames/hgnc/tsv/hgnc_complete_set.txt';
 const my @IDS_TO_MAP => ('symbol', 'entrez_id', 'ensembl_gene_id', 'vega_id', 'ucsc_id', 'refseq_accession', 'mgd_id', 'rgd_id', 'omim_id', 'agr');
 const my $CHECKSUMS_FILE => $ENV{'AGR_VEP_BASE_DIR'} . '/mod_file_checksums.txt';
+const my $HUMAN_FILES_DIR => $ENV{'AGR_VEP_BASE_DIR'} . '/human_vep_input_files';
 
 const my %REFSEQ_CHROMOSOMES => (
     'FB'   => {
@@ -219,11 +222,13 @@ GetOptions(
 
 print_usage() if $help;
 
+my $start_time = DateTime->now->strftime('%Y%m%d%H%M%S');
+
 my @mods = split(',', $mods_string);
-$logfile = $BASE_DIR . '/submission.log' if !$logfile;;
+$logfile = "${BASE_DIR}/submission.${start_time}.log" if !$logfile;;
 
 my $log = Log_files->make_log($logfile, $debug);
-download_from_agr(\@mods, $url, $overwrite, $log) if $stages =~ /1/;
+download_from_agr(\@mods, $start_time, $url, $overwrite, $external_human_gff, $log) if $stages =~ /1/;
 
 for my $mod (@mods) {
     my ($checksums, $run_stages) = check_for_new_data($mod, $nocheck, $log);
@@ -372,13 +377,13 @@ sub update_checksums {
 
 
 sub download_from_agr {
-    my ($mods, $url, $overwrite, $log) = @_;
+    my ($mods, $start_time, $url, $overwrite, $external_human_gff, $log) = @_;
     
     my $download_urls = defined $url ? get_urls_from_snapshot($url) : get_latest_urls();
     
     make_path($BASE_DIR) unless -d $BASE_DIR;
-    my $input_files_file = "${BASE_DIR}/VEP_input_files.txt";
-    open (FILES, '>>', $input_files_file) or $log->lod_and_die("Couldn't open $input_files_file to append data\n");
+    my $input_files_file = "${BASE_DIR}/VEP_input_files.${start_time}.txt";
+    open (FILES, '>>', $input_files_file) or $log->log_and_die("Couldn't open $input_files_file to append data\n");
     for my $mod (@$mods) {
 	my $time = localtime();
 	print FILES "${mod}: $time\n";
@@ -386,6 +391,7 @@ sub download_from_agr {
 	make_path($mod_dir) unless -d $mod_dir;
 	chdir $mod_dir;
 	for my $datatype (keys %{$download_urls->{$mod}}){
+	    next if $external_human_gff and $mod eq 'HUMAN' and $datatype eq 'GFF';
 	    my $extension = $DATATYPE_EXTENSIONS{$datatype};
 	    if (-e "${mod}_${datatype}.${extension}" and !$overwrite) {
 		$log->write_to("Using previously downloaded $mod $datatype\n");
@@ -404,8 +410,18 @@ sub download_from_agr {
 	unlink "${mod}_FASTA.fa.fai" if -e "${mod}_FASTA.fa.fai";
 	run_system_cmd('python3 ' . $ENV{'CVS_DIR'} . "/AGR/agr_variations_json2vcf.py -j ${mod}_VARIATION.json -m $mod -g ${mod}_GFF.gff " .
 		       "-f ${mod}_FASTA.fa -o ${mod}_VCF.vcf", "Converting $mod phenotypic variants JSON to VCF", $log) if -e "${mod}_VARIATION.json";
+	if ($mod eq 'HUMAN') {
+	    # Copy across files not on FMS from local directory
+	    my @files_to_copy = ('HUMAN_HTVCF.vcf');
+	    push @files_to_copy, 'HUMAN_GFF.gff' if $external_human_gff;
+	    for my $file (@files_to_copy) {
+	    run_system_cmd("cp ${HUMAN_FILES_DIR}/${file} $file", "Copying local $file file to working directory", $log);
+	}
+    }
+    
     }
     close (FILES);
+
     
     return;
 }
@@ -503,7 +519,7 @@ sub process_input_files {
     
     cleanup_intermediate_files($mod, $log);
     
-    sort_vcf_files($mod, $log);
+    sort_vcf_files($mod, $log) unless $mod eq 'HUMAN'; # No need for human as using local (sorted) file
 
     my $chr_map;
     check_chromosome_map($mod, $log);
@@ -525,7 +541,6 @@ sub calculate_pathogenicity_predictions {
     
     backup_pathogenicity_prediction_db($mod, $password, $log);
     
-    #my $lsf_queue = $test ? $ENV{'LSF_TEST_QUEUE'} : $ENV{'LSF_DEFAULT_QUEUE'}; # Waiting for clarification of production queue usage for AGR work
     my $lsf_queue = $ENV{'LSF_DEFAULT_QUEUE'};
         
     my $init_cmd = "init_pipeline.pl VepProteinFunction::VepProteinFunction_conf -mod $mod" .
