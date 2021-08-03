@@ -130,12 +130,14 @@ foreach my $species (@species) {
   
   foreach my $gene_id (sort keys %genes) {
     my $gene_name = $genes{$gene_id}->{name};
-    printf($acefh "\nGene : \"%s\"\n",  $gene_name);
-    printf($acefh "Public_name \"%s\"\n", $gene_name);
-    printf($acefh "Species \"%s\"\n", $wb->full_name);
-    print $acefh "Method \"Gene\"\n";
-    print $acefh "Remark \"Tier3 species gene\" Inferred_automatically \"tier3_stubs.pl\"\n";
-    print $acefh "Live\n";
+    unless ($gene_name =~ /WBGene\d{8}/){
+	printf($acefh "\nGene : \"%s\"\n",  $gene_name);
+	printf($acefh "Public_name \"%s\"\n", $gene_name);
+	printf($acefh "Species \"%s\"\n", $wb->full_name);
+	print $acefh "Method \"Gene\"\n";
+	print $acefh "Remark \"Tier3 species gene\" Inferred_automatically \"tier3_stubs.pl\"\n";
+	print $acefh "Live\n";
+    }
   } 
 }
 
