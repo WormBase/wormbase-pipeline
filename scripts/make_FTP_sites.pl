@@ -681,7 +681,7 @@ sub copy_ontology_files {
 	    my ($filetype, $release, $extension) = $filestem =~ /^([^\.]+)\.(WS\d+)\.(.+)$/; 
 	    my $wb = $accessors{$species_name_map{$suffix}};
 	    my $bioproj = $wb->ncbi_bioproject;
-	    my $new_filename = join('.', $suffix, $bioproj, $release, $filetype, $extension);
+	    my $new_filename = join('.', $suffix, $bioproj, $release, $filetype, $extension, 'gz');
 	    my $species_dir = "$targetdir/species/$suffix/$bioproj";
 	    mkpath($species_dir,1,0775);
 	    $wormbase->run_command("gzip -9 -f -c $file > ${species_dir}/annotation/${new_filename}", $log);
