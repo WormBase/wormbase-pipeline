@@ -48,7 +48,7 @@ if (not defined $infile or not defined $outfile) {
 }
 
 
-my ($tran_status, $tran_wormpep, $tran_locus, $tran_pid) = &get_data();
+my ($tran_status, $tran_wormpep, $tran_locus, $tran_pid, $uniprot_ids) = &get_data();
 
 open(my $gff_in_fh, $infile) or $log->log_and_die("Could not open $infile for reading\n");
 open(my $gff_out_fh, ">$outfile") or $log->log_and_die("Could not open $outfile for writing\n");  
@@ -81,21 +81,23 @@ while (<$gff_in_fh>) {
       # decorate all of the segments, so only do the first
       $attr .=  ";Name=CDS:$cds";
       $attr .=  ";prediction_status=$tran_status->{$cds}" if exists $tran_status->{$cds} and $tran_status->{$cds};
-      $attr .=  ";wormpep=$tran_wormpep->{$cds}"           if exists $tran_wormpep->{$cds} and $tran_wormpep->{$cds};
+      $attr .=  ";wormpep=$tran_wormpep->{$cds}"          if exists $tran_wormpep->{$cds} and $tran_wormpep->{$cds};
       $attr .=  ";protein_id=$tran_pid->{$cds}"           if exists $tran_pid->{$cds} and $tran_pid->{$cds};
       $attr .=  ";locus=$tran_locus->{$cds}"              if exists $tran_locus->{$cds} and $tran_locus->{$cds};
+      $attr .=  ";uniprot_id=$uniprot_ids->{$cds}"        if exists $uniprot_ids->{$cds} and $uniprot_ids->{$cds};
       $changed_lines++;
     } else {
       my $tr;
-      if (/ID=Transcript:([^;]+);/) {
+      if ($attr =~ /ID=Transcript:([^;]+);/) {
         $tr = $1; 
-      } elsif (/ID=Pseudogene:([^;]+);/) {
+      } elsif ($attr =~ /ID=Pseudogene:([^;]+);/) {
         $tr = $1;
       }
 
       if ($tr) {
         $attr .=  ";wormpep=$tran_wormpep->{$tr}"      if exists $tran_wormpep->{$tr} and $tran_wormpep->{$tr};
         $attr .=  ";locus=$tran_locus->{$tr}"          if exists $tran_locus->{$tr} and $tran_locus->{$tr};
+	$attr .=  ";uniprot_id=$uniprot_ids->{$tr}"   if exists $uniprot_ids->{$tr} and $uniprot_ids->{$tr};
         $changed_lines++;
       }
       elsif ($attr !~ /Name=Operon:/) {
@@ -151,7 +153,7 @@ sub get_data {
 
   my %rna2cgc = $wormbase->FetchData('rna2cgc');
   my %pseudo2cgc = $wormbase->FetchData('pseudo2cgc');
-  my %cds2pid;
+  my (%cds2pid, %uniprot_ids);
 
   $log->write_to("Fetching CDS info\n");
 
@@ -166,6 +168,16 @@ sub get_data {
       $protein_id = sprintf("%s.%d", $prot_id->name, $prot_ver->name);
       $cds2pid{$cds} = $protein_id;
     }
+    my $uniprot_id;
+    if ($cds->Database) {
+	my @databases = $cds->at('DB_info.Database');
+	for my $database (@databases) {
+	    next unless $database->name eq 'UniProt' and $database->right->name eq 'UniProtAcc';
+	    $uniprot_id = $database->right->right->name;
+	    last;
+	}
+	$uniprot_ids{$cds} = $uniprot_id if $uniprot_id;
+    }
 
     my $wormpep = $cds2wormpep{$cds};
 
@@ -176,7 +188,7 @@ sub get_data {
 
         $cds2wormpep{$ct->name} = $wormpep;
         $cds2pid{$ct->name} = $protein_id;
-
+	$uniprot_ids{$ct->name} = $uniprot_id if $uniprot_id;
         if (exists $cds2cgc{$cds->name}) {
           $rna2cgc{$ct->name} = $cds2cgc{$cds->name};
         }
@@ -215,7 +227,7 @@ sub get_data {
     $tran_pid{$cds_or_tran} = $cds2pid{$cds_or_tran};
   }
 
-  return (\%tran_status, \%tran_wormpep, \%tran_locus, \%tran_pid);
+  return (\%tran_status, \%tran_wormpep, \%tran_locus, \%tran_pid, \%uniprot_ids);
 }
 
 
