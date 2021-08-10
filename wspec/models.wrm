@@ -599,22 +599,22 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 ?Rearrangement Evidence #Evidence
-               Name Other_name ?Text
-                    Variation ?Variation XREF Rearrangement
-               Type Deletion
-                    Duplication Free_dup
-                    Translocation
-                    Inversion
-                    Compound Text
-                    Introgression
-               Phenotype ?Phenotype XREF Rearrangement #Phenotype_info
-               Phenotype_not_observed ?Phenotype XREF Not_in_Rearrangement #Phenotype_info  //added by Wen to separate Not phenotype from real phenotypes
+               Name Other_name ?Text ///LinkML Allele:synonym:direct
+                    Variation ?Variation XREF Rearrangement ///LinkML not_needed
+               Type Deletion  ///LinkML Allele:molecular_mutation:map
+                    Duplication Free_dup ///LinkML Allele:molecular_mutation:map
+                    Translocation ///LinkML Allele:molecular_mutation:map
+                    Inversion ///LinkML Allele:molecular_mutation:map  ///Redundant? no objects
+                    Compound Text ///LinkML Allele:molecular_mutation:complex_substitution:map
+                    Introgression ///LinkML Allele:molecular_mutation:map  ///Redundant? no objects
+               Phenotype ?Phenotype XREF Rearrangement #Phenotype_info ///LinkML 
+               Phenotype_not_observed ?Phenotype XREF Not_in_Rearrangement #Phenotype_info  //added by Wen to separate Not phenotype from real phenotypes ///LinkML 
                Balances ?Map #Balancer
                Interactor ?Interaction XREF Rearrangement
                Marked By_variation ?Variation XREF Marked_rearrangement
                       By_transgene ?Transgene XREF Marked_rearrangement
                       By_other ?Text
-               Component_of_genotype ?Genotype XREF Rearrangement
+               Component_of_genotype ?Genotype XREF Rearrangement ///Redundant? no objects
 //    possibility to refer to other Intervals to describe a complex rearrangement
 //    for the worm this is not too necessary, but important for fly and mouse
 //    or perhaps there should be another class Complex_Rear that refers to
@@ -3569,10 +3569,10 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-?Variation Evidence #Evidence  ///LinkML Allele:name:direct
+?Variation Evidence #Evidence  ///LinkML Allele:name:direct variantDetail.json:alleleId:direct
            Name Public_name UNIQUE ?Variation_name XREF Public_name_for  ///LinkML Allele:symbol:direct
                 Other_name ?Variation_name XREF Other_name_for #Evidence  ///LinkML Allele:synonyms:direct
-                Rearrangement ?Rearrangement XREF Variation // some alleles are really rearrangements
+                Rearrangement ?Rearrangement XREF Variation // some alleles are really rearrangements ///LinkML  Allele:molecular_mutation:SO-term:many21  ///Curate 
                 HGVSg UNIQUE Text #Evidence
            Sequence_details SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Allele 
                             Flanking_sequences UNIQUE Text UNIQUE Text
@@ -3598,7 +3598,7 @@
                                Polymorphic_strain_digest Text Text Text ///LinkML Allele:generation_method:transform
                           Transposon_insertion ?Transposon_family XREF In_variation ///LinkML Allele:transposon_insertion:direct
                           Natural_variant ///LinkML Allele:generation_method:transform
-           Origin Species UNIQUE ?Species
+           Origin Species UNIQUE ?Species ///LinkML Core:Species/GenomicEntity:mapped
                   Strain     ?Strain XREF Variation #Evidence
                   Component_of_genotype ?Genotype XREF Variation
                   Laboratory ?Laboratory
@@ -3679,45 +3679,45 @@
            Supporting_data Movie ?Movie XREF Variation #Evidence  //Carol [060421 ar2]
 
 
-?Variation_name Other_name_for ?Variation XREF Other_name // main reason for this class
-                Public_name_for ?Variation XREF Public_name // the main name for a gene
+?Variation_name Other_name_for ?Variation XREF Other_name // main reason for this class ///LinkML Allele:synonyms:direct
+                Public_name_for ?Variation XREF Public_name // the main name for a gene ///LinkML Allele:synonyms:direct
 
 
 // hash to contain detailed changes caused by mutations [2006-02-17 ar2]
-#Molecular_change Missense Int Text #Evidence // to be deprecated WS282
-                  Silent Text #Evidence // to be deprecated WS282
-                  Nonsense UNIQUE Amber_UAG Text #Evidence // to be deprecated WS282
-                                  Ochre_UAA Text #Evidence
-                                  Opal_UGA Text #Evidence
-                                  Ochre_UAA_or_Opal_UGA Text #Evidence
-                                  Amber_UAG_or_Ochre_UAA Text #Evidence
-                                  Amber_UAG_or_Opal_UGA Text #Evidence
-                  Splice_site UNIQUE  Donor Text #Evidence // to be deprecated WS282
-                                      Acceptor Text #Evidence // to be deprecated WS282
-                                      Region Text #Evidence // to be deprecated WS282
-                  Frameshift Text #Evidence // to be deprecated WS282
-                  Readthrough Text #Evidence //klh WS228 // to be deprecated WS282
-                  Intron #Evidence // to be deprecated WS282
-                  Coding_exon #Evidence // to be deprecated WS282
-                  Noncoding_exon #Evidence // to be deprecated WS282
-                  Promoter #Evidence // to be deprecated WS282
-                  UTR_3 #Evidence // to be deprecated WS282
-                  UTR_5 #Evidence // to be deprecated WS282
-                  Regulatory_feature #Evidence // to be deprecated WS282
-                  Genomic_neighbourhood #Evidence // to be deprecated WS282
-                  VEP_consequence Text // proposed addition as well as mapping to the WB tags. 
-                  VEP_impact Text #Evidence 
-                  SIFT Float Text #Evidence 
-                  PolyPhen Float Text #Evidence 
-                  HGVSc Text #Evidence 
-                  HGVSp Text #Evidence
-                  cDNA_position Text #Evidence
-                  CDS_position Text #Evidence
-                  Protein_position Text #Evidence
-                  Intron_number Text #Evidence
-                  Exon_number Text #Evidence
-                  Codon_change Text #Evidence
-                  Amino_acid_change Text #Evidence
+#Molecular_change Missense Int Text #Evidence // to be deprecated WS282 ///Deprecate
+                  Silent Text #Evidence // to be deprecated WS282 ///Deprecate
+                  Nonsense UNIQUE Amber_UAG Text #Evidence // to be deprecated WS282 ///Deprecate
+                                  Ochre_UAA Text #Evidence ///Deprecate
+                                  Opal_UGA Text #Evidence  ///Deprecate
+                                  Ochre_UAA_or_Opal_UGA Text #Evidence ///VEP
+                                  Amber_UAG_or_Ochre_UAA Text #Evidence ///VEP
+                                  Amber_UAG_or_Opal_UGA Text #Evidence ///VEP
+                  Splice_site UNIQUE  Donor Text #Evidence // to be deprecated WS282 ///Deprecate
+                                      Acceptor Text #Evidence // to be deprecated WS282 ///Deprecate
+                                      Region Text #Evidence // to be deprecated WS282 ///Deprecate
+                  Frameshift Text #Evidence // to be deprecated WS282 ///Deprecate
+                  Readthrough Text #Evidence //klh WS228 // to be deprecated WS282 ///Deprecate
+                  Intron #Evidence // to be deprecated WS282 ///Deprecate
+                  Coding_exon #Evidence // to be deprecated WS282 ///Deprecate
+                  Noncoding_exon #Evidence // to be deprecated WS282 ///Deprecate
+                  Promoter #Evidence // to be deprecated WS282 ///Deprecate
+                  UTR_3 #Evidence // to be deprecated WS282 ///Deprecate
+                  UTR_5 #Evidence // to be deprecated WS282 ///Deprecate
+                  Regulatory_feature #Evidence // to be deprecated WS282 ///Deprecate
+                  Genomic_neighbourhood #Evidence // to be deprecated WS282 ///Deprecate
+                  VEP_consequence Text // proposed addition as well as mapping to the WB tags.  ///VEP
+                  VEP_impact Text #Evidence ///VEP
+                  SIFT Float Text #Evidence ///VEP
+                  PolyPhen Float Text #Evidence  ///VEP
+                  HGVSc Text #Evidence ///VEP
+                  HGVSp Text #Evidence ///VEP
+                  cDNA_position Text #Evidence ///VEP
+                  CDS_position Text #Evidence ///VEP
+                  Protein_position Text #Evidence ///VEP
+                  Intron_number Text #Evidence ///VEP
+                  Exon_number Text #Evidence ///VEP
+                  Codon_change Text #Evidence ///VEP
+                  Amino_acid_change Text #Evidence ///VEP
 
 
 
