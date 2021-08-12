@@ -42,7 +42,7 @@ checkout_ensembl_branch ensembl-datacheck master
 checkout_ensembl_branch ensembl-hive version/2.5
 checkout_ensembl_branch eg-pipelines master EnsemblGenomes
 checkout_ensembl_branch parasite-static master EnsemblGenomes
-
+checkout_ensembl_branch eg-web-common master EnsemblGenomes
 
 
 

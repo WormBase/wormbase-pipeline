@@ -310,8 +310,10 @@ while( my $obj = $it->next) {
 
   my $secondary_base_annot = dclone($annot); #Create copy to use for secondary annotations before conditionRelations added
 
-  my $conditions = get_condition_relations($obj);
-  $annot->{conditionRelations} = $conditions if @$conditions;
+  if (!$build) {
+      my $conditions = get_condition_relations($obj);
+      $annot->{conditionRelations} = $conditions if @$conditions;
+  }
   
   push @annots, $annot;# unless ($obj_type eq 'transgene' && ! $build);
 
