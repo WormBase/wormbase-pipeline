@@ -564,7 +564,8 @@ sub run_vep_on_phenotypic_variations {
     return unless -e "${mod}_VCF.refseq.vcf";
     
     my $base_vep_cmd = "vep -i ${mod}_VCF.refseq.vcf -gff ${mod}_GFF.refseq.gff.gz -fasta ${mod}_FASTA.refseq.fa.gz --force_overwrite " .
-	"-hgvsg -hgvs -shift_hgvs=0 --symbol --distance 0 --plugin ProtFuncSeq,mod=$mod,pass=$password";
+	"-hgvsg -hgvs -shift_hgvs=0 --symbol --distance 0 --plugin ProtFuncSeq,mod=$mod,pass=$password " .
+	"--remove_hgvsp_version --safe";
     $base_vep_cmd .= " --bam ${mod}_BAM.bam" if $BAM_REQUIRED{$mod};
     my $gl_vep_cmd = $base_vep_cmd . " --per_gene --output_file ${mod}_VEPGENE.txt";
     my $tl_vep_cmd = $base_vep_cmd . " --output_file ${mod}_VEPTRANSCRIPT.txt";
