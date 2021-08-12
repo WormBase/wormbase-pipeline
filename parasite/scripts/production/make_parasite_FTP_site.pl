@@ -15,6 +15,7 @@ my (
   $wbps_version,
   $sync_files_skip,
   $checksums_skip,
+  $repeats_dir,
    );
 &GetOptions(
  'wormbase_release_ftp_dir=s' => \$wormbase_release_ftp_dir,
@@ -23,10 +24,12 @@ my (
  'wbps_version=i' => \$wbps_version,
  'sync_files_skip' => \$sync_files_skip,
  'checksums_skip' => \$checksums_skip,
+ 'repeats_dir=s' => \$repeats_dir,
 ) ;
-my $usage = " Usage: $0 --wbps_version=\$PARASITE_VERSION --source_dir=<where folders with individual species are> --wormbase_release_ftp_dir=<release tied to this WBPS version> --wbps_release_ftp_dir=<target directory>";
+my $usage = " Usage: $0 --wbps_version=\$PARASITE_VERSION --source_dir=<where folders with individual species are> --wormbase_release_ftp_dir=<release tied to this WBPS version> --wbps_release_ftp_dir=<target directory> --repeats_dir=<repeats directory>";
 die ("--source_dir not a directory: $source_dir . $usage") unless -d $source_dir;
 die ("--wormbase_release_ftp_dir not a directory: $wormbase_release_ftp_dir . $usage") unless -d $wormbase_release_ftp_dir;
+die ("--repeats_dir not a directory: $repeats_dir . $usage") unless -d $repeats_dir;
 die ($usage) unless $wbps_release_ftp_dir;
 die ($usage) unless $wbps_version;
 
@@ -54,6 +57,13 @@ for my $path_species (glob "$source_dir/*") {
         print localtime . " $species $cp_cmd\n";
         system($cp_cmd) and die("Failed: $cp_cmd");
      }
+    # find and copy repeat modeler2 files
+    (my $bioproject_no_underscore = $bioproject) =~ s/_//g;
+    my $repeats_file = $species."_".lc($bioproject_no_underscore)."-families.fa.gz";
+    my $target_file_name = $species.".".uc($bioproject).".WBPS".$wbps_version.".repeat-families.fa.gz";	
+    my $cp_repeats = "cp $repeats_dir/$repeats_file $this_target_dir/$target_file_name";
+    print localtime . " $species $cp_repeats\n";
+    system($cp_repeats) and die("Failed: $cp_repeats");
   }
 }
 unless ($checksums_skip){
