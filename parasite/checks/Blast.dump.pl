@@ -31,11 +31,17 @@ my $dba = new Bio::EnsEMBL::DBSQL::DBAdaptor
 );
 # connect to database
 my $dbh = $dba->dbc->db_handle;
-my $sql_dna = "SELECT COUNT(distinct(name)) FROM seq_region;";# count number of DNA in database
+my $sql_dna = "SELECT COUNT(*) FROM seq_region LEFT JOIN seq_region_attrib
+               ON seq_region.seq_region_id = seq_region_attrib.seq_region_id 
+               LEFT JOIN attrib_type
+               ON attrib_type.attrib_type_id = seq_region_attrib.attrib_type_id
+               WHERE attrib_type.code = 'toplevel';";
 my $sql_pep = "SELECT COUNT(translation_id) FROM translation;";# count number of protein in database
 my $sql_trans = "SELECT COUNT(stable_id) FROM transcript;"; # count number of transcript in database
 my $sql_1 = "SELECT meta_value FROM meta WHERE meta_key = 'species.url';"; # retreive the species.url from meta table
 my $sql_2 = "SELECT meta_value FROM meta WHERE meta_key = 'assembly.default';";
+
+print "working on $db\n";
 
 #my @row = $dbh->selectrow_array($sql)  ;
 #print "@row\n";
@@ -71,11 +77,8 @@ $value1 = $sth_1->fetchrow_array;
 
 my $value2; 
 $value2 = $sth_2->fetchrow_array; 
+$value2 =~ s/\s/_/g;
 
-#while (@row = $sth->fetchrow_array) 
-#{  
- #  print join(", ", @row), "\n";        # retrieve one row
-#}
 
 # preparing path for dump files
 my $cDNA ; 

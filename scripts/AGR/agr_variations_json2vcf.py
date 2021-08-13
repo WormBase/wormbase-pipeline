@@ -74,37 +74,24 @@ def get_header_info(gff):
             line = f.readline()
     return assembly, chr_length
 
-def get_chromosome_sequences(fasta):
-    chr_seqs = {}
-    with open(fasta, 'r') as f:
-        line = f.readline()
-        while line:
-            if line.startswith('>'):
-                chr_name = line[1:].split("\n")
-            else:
-                chr_seqs[chr_name] = chr_seqs[chr_name] + line.split("\n")
-    return chr_seqs
+#def get_chromosome_sequences(fasta):
+#    chr_seqs = {}
+#    with open(fasta, 'r') as f:
+#        line = f.readline()
+#        while line:
+#            if line.startswith('>'):
+#                chr_name = line[1:].split("\n")
+#            else:
+#                chr_seqs[chr_name] = chr_seqs[chr_name] + line.split("\n")
+#    return chr_seqs
 
-#def get_refseq_from_fasta(v, chrom, fasta):
-#    faidx_call = subprocess.run(["samtools", "faidx", fasta, chrom + ':' + str(v["start"]) + '-' + str(v["end"])], stdout=subprocess.PIPE, text=True)
-#    faidx_lines = faidx_call.stdout.split("\n");
-#    faidx_lines.pop(0)
-#    return ''.join(faidx_lines).upper()
+def get_refseq_from_fasta(v, chrom, fasta):
+    faidx_call = subprocess.run(["samtools", "faidx", fasta, chrom + ':' + str(v["start"]) + '-' + str(v["end"])], stdout=subprocess.PIPE, text=True)
+    faidx_lines = faidx_call.stdout.split("\n");
+    faidx_lines.pop(0)
+    return ''.join(faidx_lines).upper()
 
-#def get_padbase_from_fasta(v, chrom, fasta):
-#    if v["type"] == 'SO:0000667':
-#        pbpos = int(v["start"])
-#    else:
-#        if v["start"] == 1:
-#            pbpos = int(v["end"]) + 1
-#        else:
-#            pbpos = int(v["start"]) - 1
-#    faidx_call = subprocess.run(["samtools", "faidx", fasta, chrom + ':' + str(pbpos) + '-' + str(pbpos)], stdout=subprocess.PIPE, text=True)
-#    faidx_lines = faidx_call.stdout.split("\n");
-#    faidx_lines.pop(0)
-#    return faidx_lines[0].upper()
-
-def get_padbase(v, chrom, chr_seqs):
+def get_padbase_from_fasta(v, chrom, fasta):
     if v["type"] == 'SO:0000667':
         pbpos = int(v["start"])
     else:
@@ -112,7 +99,20 @@ def get_padbase(v, chrom, chr_seqs):
             pbpos = int(v["end"]) + 1
         else:
             pbpos = int(v["start"]) - 1
-    return chr_seqs[chrom][pbpos-1,pbpos]
+    faidx_call = subprocess.run(["samtools", "faidx", fasta, chrom + ':' + str(pbpos) + '-' + str(pbpos)], stdout=subprocess.PIPE, text=True)
+    faidx_lines = faidx_call.stdout.split("\n");
+    faidx_lines.pop(0)
+    return faidx_lines[0].upper()
+
+#def get_padbase(v, chrom, chr_seqs):
+#    if v["type"] == 'SO:0000667':
+#        pbpos = int(v["start"])
+#    else:
+#        if v["start"] == 1:
+#            pbpos = int(v["end"]) + 1
+#        else:
+#            pbpos = int(v["start"]) - 1
+#    return chr_seqs[chrom][pbpos-1,pbpos]
 
 def get_strains(variations):
     strains = set()
@@ -284,8 +284,9 @@ parser.add_argument("-w", "--wbhtp", action='store_true', help="WB high throughp
 
 args = parser.parse_args()
 assembly, chr_lengths = get_header_info(args.gff)
-if not args.wbhtp:
-    chr_seqs = get_chromosome_sequences(args.fasta)
+#if not args.wbhtp:
+#    print("Retrieving chromosome sequences for " + args.mod + "\n")
+#    chr_seqs = get_chromosome_sequences(args.fasta)
 
 vcf_file = open(args.out, 'w')
 
@@ -320,6 +321,7 @@ vcf_file.write("\t".join(headers) + "\n")
 
 vcf_lines = []
 added_entries = set()
+var_count = 0
 for v in (parsed["data"]):
     vcf_data = {}
 
@@ -342,8 +344,8 @@ for v in (parsed["data"]):
     elif args.wbhtp:
         refSeq = v["genomicReferenceSequence"]
     else:
-        #refSeq = get_refseq_from_fasta(v, chr, args.fasta)
-        refSeq = chr_seqs[chr][int(v["start"]) - 1:int(v["end"]) - 1]
+        refSeq = get_refseq_from_fasta(v, chr, args.fasta)
+#        refSeq = chr_seqs[chr][int(v["start"]) - 1:int(v["end"]) - 1]
         if 'genomicReferenceSequence' in v and v["genomicReferenceSequence"].upper() != refSeq:
             print("Specified genomic reference allele (" + v["genomicReferenceSequence"] + ") doesn't match reference sequence ("
                   + refSeq + ") at specified coordinates for " + v["alleleId"], file=sys.stderr)
@@ -352,7 +354,7 @@ for v in (parsed["data"]):
     # Get alternative allele
     if v["type"] == 'SO:0000159':
         varSeq = ''
-    elif 'genomicVariantSequence' not in v or v["genomicVariantSequence"] == '':
+    elif 'genomicVariantSequence' not in v or v["genomicVariantSequence"] == '' or v["genomicVariantSequence"] == "N/A":
         print("Unknown alternative allele for " + v["alleleId"], file=sys.stderr)
         varSeq = '.'
     else:
@@ -366,7 +368,7 @@ for v in (parsed["data"]):
         if 'paddedBase' in v:
             padBase = v["paddedBase"]
         else:
-            padBase = get_padbase(v, chr, chr_seqs)
+            padBase = get_padbase_from_fasta(v, chr, args.fasta)
                 
         if pos == 1:
             refSeq = refSeq + padBase
@@ -405,7 +407,12 @@ for v in (parsed["data"]):
         vcf_data["line"] = "\t".join([chr, str(pos), hgvsg, refSeq, varSeq, '.', '.' ,'.'])
 
     vcf_lines.append(vcf_data)
+    
+    var_count += 1
+    if var_count % 10000 == 0:
+        print(str(var_count) + " variations processed\n")
 
+print("Sorting VCF lines\n")
 for v in sorted(vcf_lines, key=operator.itemgetter('chromosome', 'pos')):
     vcf_file.write(v["line"] + "\n")
 
