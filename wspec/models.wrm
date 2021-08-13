@@ -3602,8 +3602,7 @@
                   Strain     ?Strain XREF Variation #Evidence  ///LinkML Allele:origins:direct
                   Component_of_genotype ?Genotype XREF Variation ///LinkML Allele:genotype?
                   Laboratory ?Laboratory
-                  Author ?Author // use Person when known, else u
-                  se Author
+                  Author ?Author // use Person when known, else use Author
                   Person ?Person //
                   Analysis ?Analysis
                   Corresponding_transgene UNIQUE ?Transgene XREF Corresponding_variation  ///LinkML Allele:contains_construct:transform
