@@ -7,19 +7,26 @@ set -x
 set -euo pipefail
 
 STAGING_DIR=${PARASITE_SCRATCH}/dumps/WBPS${PARASITE_VERSION}/biomart/WBPS${PARASITE_VERSION}
+#Might need to change the release directory as in CODON now:
 RELEASE_DIR=/nfs/ftp/pub/databases/wormbase/collaboration/UTE/WBPS${PARASITE_VERSION}
+#RELEASE_DIR=${PARASITE_SCRATCH}/dumps/WBPS${PARASITE_VERSION}/biomart/release
 
+if [ ! -d "$RELEASE_DIR" ] ; then
+  mkdir -pv $RELEASE_DIR
+  mkdir -pv ${RELEASE_DIR}/biomart/
+fi
 
 if [ ! -d "$STAGING_DIR" ] ; then
   TMP=${STAGING_DIR}.tmp
   mkdir -pv $TMP
   chmod 777 $TMP
 
-  mysqldump $( $PARASITE_STAGING_MYSQL-ensrw details mysql ) \
-    --quick --single-transaction \
-    -T $TMP \
-    parasite_mart_${PARASITE_VERSION}
-  mv -v $TMP $STAGING_DIR
+  SRV_URL=$($PARASITE_STAGING_MYSQL details url)
+  DBNAME=parasite_mart_${PARASITE_VERSION}
+  OUTPUT_DIR=$TMP
+
+  standaloneJob.pl Bio::EnsEMBL::Production::Pipeline::FileDump::MySQL_TXT  
+  -db_url ${SRV_URL}${DBNAME} -dbname ${DBNAME} -output_dir ${OUTPUT_DIR} -dump_dir ${OUTPUT_DIR}
 fi
 
 find $STAGING_DIR -type f -name '*.txt' | while read -r f; do
@@ -35,13 +42,13 @@ my $m = "^(trichinella_pseudospiralis)_(iss[0-9]+)(prjna257433)_core_$ENV{PARASI
 my %core_db_to_biomart_name;
 my %bps;
 for my $core_db (ProductionMysql->staging->core_databases) {
-  if ($core_db =~ /$m/) {
-    my ($spe, $cies, $bp) = split "_", $core_db;
-    push @{$bps{"${spe}_${cies}"}}, $bp;
-    $core_db_to_biomart_name{$core_db} = "$2$3$5$6$8$9";
-  } else {
-    die "$core_db <no match>\n"
-  }
+  #if ($core_db =~ /$m/) {
+  my ($spe, $cies, $bp) = split "_", $core_db;
+  push @{$bps{"${spe}_${cies}"}}, $bp;
+  $core_db_to_biomart_name{$core_db} = ProductionMysql::core_db_to_biomart_name($core_db);
+  #} else {
+  #die "$core_db <no match>\n"
+  #}
 }
 for my $core_db (sort keys %core_db_to_biomart_name){
   my ($species, $versions) = split "_core_", $core_db;
@@ -64,3 +71,15 @@ for my $core_db (sort keys %core_db_to_biomart_name){
 ' | sudo -u wormbase tee $RELEASE_DIR/core_db_to_species_name_to_biomart_name.tsv
 
 ls -latorhd $RELEASE_DIR/*
+
+
+
+
+
+
+#old mysqldump was like:
+#mysqldump $( $PARASITE_STAGING_MYSQL-w details mysql ) \
+#  --quick --single-transaction \
+#  -T $TMP \
+#  parasite_mart_${PARASITE_VERSION}
+#mv -v $TMP $STAGING_DIR
