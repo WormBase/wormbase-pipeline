@@ -285,7 +285,46 @@ sub get_overlapping_features {
 sub get_transcript_consequences {
     my ($self, $vep_output) = @_;
 
-    my (%transcripts, %hgvsg);
+    my %severity_ranking = ('intergenic_variant'                 => 1,
+			    'feature_truncation'                 => 2,
+			    'regulatory_region_variant'          => 3,
+			    'feature_elongation'                 => 4,
+			    'regulatory_region_amplification'    => 5,
+			    'regulatory_region_ablation'         => 6,
+			    'TF_binding_site_variant'            => 7,
+			    'TFBS_amplification'                 => 8,
+			    'TFBS_ablation'                      => 9,
+			    'downstream_gene_variant'            => 10,
+			    'upstream_gene_variant'              => 11,
+			    'non_coding_transcript_variant'      => 12,
+			    'NMD_transcript_variant'             => 13,
+			    'intron_variant'                     => 14,
+			    'non_coding_transcript_exon_variant' => 15,
+			    '3_prime_UTR_variant'                => 16,
+			    '5_prime_UTR_variant'                => 17,
+			    'mature_miRNA_variant'               => 18,
+			    'coding_sequence_variant'            => 19,
+			    'synonymous_variant'                 => 20,
+			    'stop_retained_variant'              => 21,
+			    'start_retained_variant'             => 22,
+			    'incomplete_terminal_codon_variant'  => 23,
+			    'splice_region_variant'              => 24,
+			    'protein_altering_variant'           => 25,
+			    'missense_variant'                   => 26,
+			    'inframe_deletion'                   => 27,
+			    'inframe_insertion'                  => 28,
+			    'transcript_amplification'           => 29,
+			    'start_lost'                         => 30,
+			    'stop_lost'                          => 31,
+			    'frameshift_variant'                 => 32,
+			    'stop_gained'                        => 33,
+			    'splice_donor_variant'               => 34,
+			    'splice_acceptor_variant'            => 35,
+			    'transcript_ablation'                => 36,
+	);
+    
+
+    my (%transcripts, %hgvsg, %worst_rankings);
     open (VEP, '<', $vep_output);
     while (<VEP>) {
 	next if $_ =~ /^#/;
@@ -294,6 +333,15 @@ sub get_transcript_consequences {
 	    $prot_pos, $aas, $codons, $existing_var, $attr) = split("\t", $_);
 
 	next unless $feature_type eq 'Transcript';
+
+	my @consequences = split(',', $consequence);
+	my $worst_consequence_rank = 0;
+	for my $single_consequence (@consequences) {
+	    $worst_consequence_rank = $severity_ranking{$single_consequence} if
+		$severity_ranking{$single_consequence} > $worst_consequence_rank;
+	}
+	next if exists $worst_rankings{$var}{$feature} and $worst_rankings{$var}{$feature} >= $worst_consequence_rank;
+	$worst_rankings{$var}{$feature} = $worst_consequence_rank;
 
 	my $types = $self->get_types_from_vep_consequence($consequence, $feature, $cds_pos,
 							  $prot_pos, $aas, $codons); # To be deprecated after WS282

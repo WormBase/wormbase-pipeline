@@ -297,13 +297,16 @@ while (<$gff_in_fh>) {
     
     if (exists $var_consequences->{$allele}) {
 	for my $attribute ('Consequence', 'VEP_impact', 'AAchange', 'Codon_change', 'HGVSg', 'HGVSc',
-			   'SIFT', 'PolyPhen', 'cDNA_position', 'CDS_position', 'AA_position',
+			   'HGVSp', 'SIFT', 'PolyPhen', 'cDNA_position', 'CDS_position', 'AA_position',
 			   'Intron_nr', 'Exon_nr') {
 	    push @new_els, [$attribute, $var_consequences->{$allele}{$attribute}]
 		if exists $var_consequences->{$allele}{$attribute};
 	}
-	$allele_vcf_values{'csq_string'} = join(',', @{$var_consequences->{$allele}{'csq'}})
-	    if exists $var_consequences->{$allele}{'csq'};
+	$allele_vcf_values{'csq_string'} = join(',', @{$var_consequences->{$allele}{'csq'}}) if
+	    exists $var_consequences->{$allele}{'csq'};
+	$allele_vcf_values{'hgvsg'} = $var_consequences->{$allele}{'HGVSg'} if
+	    exists $var_consequences->{$allele}{'HGVSg'};
+
 	
 	if ($var_consequences->{$allele}{'severity'} >= 23) {
 	    if ($current_els[2] ne 'transposable_element_insertion_site' and 
@@ -476,17 +479,17 @@ sub get_molecular_consequences {
 	    $sift_score, $sift_prediction, $polyphen_score, $polyphen_prediction, $hgvsg, $hgvsc,
 	    $hgvsp, $cdna_pos, $cds_pos, $prot_pos, $intron_nr, $exon_nr) = split(/\t/, $_);
 	my @consequences = split(',', $consequence_string);
-	
+	$consequence_string =~ s/,/&/g;
+	push @{$var_consequences{$var_name}{'csq'}}, join('|', $transcript,
+							  $transcript_parents->{$transcript},
+							  $consequence_string, $vep_impact, $sift_prediction,
+							  $sift_score, $polyphen_prediction,
+							  $polyphen_score, $codon_change, $hgvsp,
+							  $hgvsc, $prot_pos, $cds_pos, 
+							  $cdna_pos, $exon_nr, $intron_nr);
 	for my $consequence (@consequences) {
 	    my $severity = $severity_ranking{$consequence};
-	    push @{$var_consequences{$var_name}{'csq'}}, join('|', $transcript,
-							      $transcript_parents->{$transcript},
-							      $consequence, $vep_impact, $sift_prediction,
-							      $sift_score, $polyphen_prediction,
-							      $polyphen_score, $codon_change, $hgvsp,
-							      $hgvsc, $prot_pos, $cds_pos, 
-							      $cdna_pos, $exon_nr, $intron_nr);
-
+	    
 	    next if exists $var_consequences{$var_name} and $var_consequences{$var_name}{'severity'} > $severity;
 	    $var_consequences{$var_name}{'Consequence'} = $consequence;
 	    $var_consequences{$var_name}{'severity'} = $severity;
