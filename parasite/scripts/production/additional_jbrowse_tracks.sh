@@ -7,20 +7,20 @@ ISOSEQ_DIR="/nfs/panda/ensemblgenomes/wormbase/parasite/projects/isoseq"
 # on codon, this data is in /nfs/production/flicek/wormbase/parasite/data/isoseq
 
 # genomes in this list had their annotation updated in WBPS release 16
-# so we add WBPS15 as an additional track
+# so we add WBPS15 gene models as an additional track
 
 genomes_wbps16=(					\
-#dirofilaria_immitis_prjeb1797				\
-#haemonchus_contortus_prjeb506				\
-#micoletzkya_japonica_prjeb27334 			\
-#parapristionchus_giblindavisi_prjeb27334 		\
-#pristionchus_arcanus_prjeb27334 			\
-#pristionchus_entomophagus_prjeb27334 			\
-#pristionchus_exspectatus_prjeb24288 			\
-#pristionchus_fissidentatus_prjeb27334			\
-#pristionchus_japonicus_prjeb27334			\
-#pristionchus_maxplancki_prjeb27334			\
-#pristionchus_mayeri_prjeb27334				\
+dirofilaria_immitis_prjeb1797				\
+haemonchus_contortus_prjeb506				\
+micoletzkya_japonica_prjeb27334 			\
+parapristionchus_giblindavisi_prjeb27334 		\
+pristionchus_arcanus_prjeb27334 			\
+pristionchus_entomophagus_prjeb27334 			\
+pristionchus_exspectatus_prjeb24288 			\
+pristionchus_fissidentatus_prjeb27334			\
+pristionchus_japonicus_prjeb27334			\
+pristionchus_maxplancki_prjeb27334			\
+pristionchus_mayeri_prjeb27334				\
 strongyloides_stercoralis_prjeb528	
 )
 
@@ -53,7 +53,7 @@ for genome in ${genomes_wbps16[@]}; do
 			 { \\\"action\\\" : \\\"newWindow\\\" ,
 			   \\\"label\\\" : \\\"View gene on WormBase ParaSite Release ${VERSION} archive site\\\" , 
 			   \\\"url\\\" : \\\"https://archive-${VERSION}.parasite.wormbase.org/Gene/Summary?g={name}\\\"}]}\" 
-	--metadata \"{ \\\"Name\\\" : \\\"Alternative gene models (Logan et al., 2020)\\\",
+	--metadata \"{ \\\"Track\\\" : \\\"WBPS${VERSION} gene models\\\",
                        \\\"Category\\\" : \\\"Genome annotation\\\",
 		       \\\"Description\\\" : \\\"Gene models from release ${VERSION} of WormBase ParaSite\\\" }\" "
 
@@ -94,7 +94,7 @@ cmd="perl $JBROWSE_INSTALL_DIR/bin/flatfile-to-json.pl
         --out $JBROWSE_OUT_DIR/necator_americanus_prjna72135
         --trackType CanvasFeatures 
         --type gene
-        --metadata \"{ \\\"Name\\\" : \\\"Alternative gene models (Logan et al., 2020)\\\",
+        --metadata \"{ \\\"Track\\\" : \\\"Alternative gene models (Logan et al., 2020)\\\",
 		       \\\"Category\\\" : \\\"Genome annotation\\\", 
                        \\\"Study\\\" : \\\"<a href=\"https://pubmed.ncbi.nlm.nih.gov/32453752/\">Comprehensive analysis of the secreted proteome of adult Necator americanus hookworms (Logan et al., 2020)</a>\\\"}\" "
 
@@ -125,7 +125,7 @@ bam_cmd="perl $JBROWSE_INSTALL_DIR/bin/add-bam-track.pl
 	--bam_url bam/SRR12046914.sort.bam 
 	--label 'SRR12046914: Adult female'
 	--config \"{ \\\"metadata\\\" : [{
-			 \\\"Name\\\" : \\\"SRR12046915: Adult female\\\",
+			 \\\"Track\\\" : \\\"SRR12046915: Adult female\\\",
 			 \\\"Category\\\" : \\\"IsoSeq\\\", 
 			 \\\"Developmental stage\\\" : \\\"adult\\\",
 			 \\\"ENA BioProject\\\" : \\\"<a href=\"https://www.ebi.ac.uk/ena/browser/view/PRJNA640410\">Study page: PRJNA640410</a>\\\",
