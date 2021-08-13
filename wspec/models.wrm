@@ -3594,8 +3594,8 @@
                           SNP            // replaces the old 'Status Text' part of ?Locus model ///LinkML Allele:molecular_mutation:map
                           Confirmed_SNP ///Cleanup
                           Predicted_SNP ///Cleanup
-                          RFLP Reference_strain_digest     Text Text Text // storing site, enzyme, and band size ///LinkML Allele:generation_method:transform
-                               Polymorphic_strain_digest Text Text Text ///LinkML Allele:generation_method:transform
+                          RFLP Reference_strain_digest     Text Text Text // storing site, enzyme, and band size ///LinkML Allele:?
+                               Polymorphic_strain_digest Text Text Text ///LinkML Allele:?
                           Transposon_insertion ?Transposon_family XREF In_variation ///LinkML Allele:transposon_insertion:direct
                           Natural_variant ///LinkML Allele:generation_method:transform
            Origin Species UNIQUE ?Species   ///LinkML Core:Species
