@@ -3584,7 +3584,7 @@
                             CGH_flanking_probes UNIQUE Text UNIQUE Text ///???
                             Type_of_mutation Substitution UNIQUE Text UNIQUE Text #Evidence // wild type and mutant sequence ///LinkML Allele:molecular_mutation
                                              Insertion UNIQUE Text #Evidence
-                                             Deletion UNIQUE Text #Evidence
+                                             Deletion UNIQUE Text #Evidence 
                                              Tandem_duplication #Evidence
                             PCR_product ?PCR_product XREF Variation
                             SeqStatus UNIQUE Not_sequenced //[2006-02-17 ar2] to differentiate between mutations which have been sequenced and those which have not.
