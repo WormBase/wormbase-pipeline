@@ -598,54 +598,54 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-?Rearrangement Evidence #Evidence
-               Name Other_name ?Text
-                    Variation ?Variation XREF Rearrangement
-               Type Deletion
-                    Duplication Free_dup
-                    Translocation
-                    Inversion
-                    Compound Text
-                    Introgression
-               Phenotype ?Phenotype XREF Rearrangement #Phenotype_info
-               Phenotype_not_observed ?Phenotype XREF Not_in_Rearrangement #Phenotype_info  //added by Wen to separate Not phenotype from real phenotypes
+?Rearrangement Evidence #Evidence ///LinkML Allele:associated_references:direct
+               Name Other_name ?Text ///LinkML Allele:synonyms:direct
+                    Variation ?Variation XREF Rearrangement ///Cleanup - only very few rearrangements are linked to an allele
+               Type Deletion  ///LinkML Allele:molecular_mutation:map
+                    Duplication Free_dup  ///LinkML Allele:molecular_mutation:map
+                    Translocation  ///LinkML Allele:molecular_mutation:map
+                    Inversion  ///LinkML Allele:molecular_mutation:map
+                    Compound Text  ///LinkML Allele:molecular_mutation:map
+                    Introgression  ///LinkML Allele:molecular_mutation:map
+               Phenotype ?Phenotype XREF Rearrangement #Phenotype_info  ///LinkML Phenotype
+               Phenotype_not_observed ?Phenotype XREF Not_in_Rearrangement #Phenotype_info  //added by Wen to separate Not phenotype from real phenotypes ///LinkML Phenotype
                Balances ?Map #Balancer
-               Interactor ?Interaction XREF Rearrangement
-               Marked By_variation ?Variation XREF Marked_rearrangement
-                      By_transgene ?Transgene XREF Marked_rearrangement
-                      By_other ?Text
-               Component_of_genotype ?Genotype XREF Rearrangement
+               Interactor ?Interaction XREF Rearrangement ///LinkML Allele:?
+               Marked By_variation ?Variation XREF Marked_rearrangement ///LinkML Allele:?
+                      By_transgene ?Transgene XREF Marked_rearrangement ///LinkML Allele:?
+                      By_other ?Text ///LinkML Allele:?
+               Component_of_genotype ?Genotype XREF Rearrangement ///LinkML Allele:?
 //    possibility to refer to other Intervals to describe a complex rearrangement
 //    for the worm this is not too necessary, but important for fly and mouse
 //    or perhaps there should be another class Complex_Rear that refers to
 //    several intervals.
-               Reference_strain ?Strain
-               Species UNIQUE ?Species
-               Remark ?Text #Evidence
-               Isolation Author ?Author  // use Person where possible, else use Author
-                         Person ?Person
-                         Date UNIQUE DateType
-                         Mutagen UNIQUE Text UNIQUE Text // Text is dose
-                         Source_rearrangement UNIQUE ?Rearrangement XREF Derived_rearrangement
-                         Derived_rearrangement ?Rearrangement XREF Source_rearrangement
+               Reference_strain ?Strain ///LinkML Allele:strain:map
+               Species UNIQUE ?Species ///LinkML Allele:species:map
+               Remark ?Text #Evidence ///LinkML core:associated_notes:direct
+               Isolation Author ?Author  // use Person where possible, else use Author ///LinkML Allele:?
+                         Person ?Person ///LinkML Allele:?
+                         Date UNIQUE DateType ///LinkML Allele:?
+                         Mutagen UNIQUE Text UNIQUE Text // Text is dose  ///LinkML Allele:generation_method:map
+                         Source_rearrangement UNIQUE ?Rearrangement XREF Derived_rearrangement  ///LinkML Allele:?
+                         Derived_rearrangement ?Rearrangement XREF Source_rearrangement ///LinkML Allele:?
                Map ?Map XREF Rearrangement #Map_position
-               Positive Gene_inside ?Gene XREF Inside_rearr #Evidence
-                        Locus_inside ?Locus XREF Inside_rearr ?Author
-                        Clone_inside ?Clone XREF Inside_rearr ?Author
-                        Rearr_inside ?Rearrangement
-               Negative Gene_outside ?Gene XREF Outside_rearr #Evidence
-                        Locus_outside ?Locus XREF Outside_rearr ?Author
-                        Clone_outside ?Clone XREF Outside_rearr ?Author
-                        Rearr_outside ?Rearrangement
-               Mapping_data Pos_neg_data ?Pos_neg_data
-                            2_point ?2_point_data
-                            Multi_point ?Multi_pt_data
+               Positive Gene_inside ?Gene XREF Inside_rearr #Evidence ///LinkML Allele:AlleleToGeneRelations:map
+                        Locus_inside ?Locus XREF Inside_rearr ?Author ///LinkML Allele:AlleleToGeneRelations:map
+                        Clone_inside ?Clone XREF Inside_rearr ?Author ///LinkML Allele:AlleleToGeneRelations:map
+                        Rearr_inside ?Rearrangement ///LinkML Allele:AlleleToGeneRelations:map
+               Negative Gene_outside ?Gene XREF Outside_rearr #Evidence ///LinkML Allele:AlleleToGeneRelations:map
+                        Locus_outside ?Locus XREF Outside_rearr ?Author ///LinkML Allele:AlleleToGeneRelations:map
+                        Clone_outside ?Clone XREF Outside_rearr ?Author ///LinkML Allele:AlleleToGeneRelations:map
+                        Rearr_outside ?Rearrangement ///LinkML Allele:AlleleToGeneRelations:map
+               Mapping_data Pos_neg_data ?Pos_neg_data  ///LinkML Allele:AlleleToGeneRelations:map
+                            2_point ?2_point_data ///LinkML Allele:AlleleToGeneRelations:map
+                            Multi_point ?Multi_pt_data ///LinkML Allele:AlleleToGeneRelations:map
                Display Hide_under UNIQUE ?Rearrangement XREF Hides
                        Hides ?Rearrangement    // no XREF on purpose
-               Location ?Laboratory #Lab_Location
-               URL Text
-               Strain ?Strain XREF Rearrangement
-               Reference ?Paper XREF Rearrangement
+               Location ?Laboratory #Lab_Location ///Cleanup
+               URL Text ///Cleanup
+               Strain ?Strain XREF Rearrangement ///LinkML Allele:strain:map
+               Reference ?Paper XREF Rearrangement ///LinkML Allele:associated_references:direct
 
 ////////////////////////////////////////////////////////////////////////////////
 //
