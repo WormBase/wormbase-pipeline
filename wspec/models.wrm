@@ -3601,10 +3601,10 @@
            Origin Species UNIQUE ?Species   ///LinkML Core:Species
                   Strain     ?Strain XREF Variation #Evidence  ///LinkML Allele:origins:direct
                   Component_of_genotype ?Genotype XREF Variation ///LinkML Allele:genotype?
-                  Laboratory ?Laboratory
-                  Author ?Author // use Person when known, else use Author
-                  Person ?Person //
-                  Analysis ?Analysis
+                  Laboratory ?Laboratory ///LinkML Allele:Notes_on_origin?:transform
+                  Author ?Author // use Person when known, else use Author ///LinkML Allele:Notes_on_origin?:transform
+                  Person ?Person // ///LinkML Allele:Notes_on_origin?:transform
+                  Analysis ?Analysis ///LinkML Allele:Notes_on_origin?:transform
                   Corresponding_transgene UNIQUE ?Transgene XREF Corresponding_variation  ///LinkML Allele:contains_construct:transform
                   Production_method CRISPR_Cas9 ///LinkML Allele:generation_method:transform
                                     Homologous_recombination //Homologous_recombination ///LinkML Allele:generation_method:transform
@@ -3619,10 +3619,10 @@
                   KO_consortium_allele   // North American knockout consortium ///Cleanup LinkML Allele:in_collection:transform
                   NBP_allele  // Japanese knockout consortium ///Cleanup LinkML Allele:in_collection:transform
                   NemaGENETAG_consortium_allele //NemaGENETAG consortium allele - Nektarios et al ///Cleanup LinkML Allele:in_collection:transform
-                  Detection_method Text
+                  Detection_method Text ///Cleanup?
                   Positive_clone ?Clone XREF Positive_variation #Evidence
-                  Nature_of_variation UNIQUE Polymorphic        ///LinkML Allele:generation_method:transform
-                                             Synthetic          ///LinkML Allele:generation_method:transform
+                  Nature_of_variation UNIQUE Polymorphic     ///Deprecate - not used   
+                                             Synthetic      ///Deprecate - not used    
                   History Merged_into UNIQUE ?Variation XREF Acquires_merge
                           Acquires_merge ?Variation XREF Merged_into
                           Split_from UNIQUE ?Variation XREF Split_into
@@ -3632,13 +3632,13 @@
                                 Dead #Evidence ///LinkML Allele:database_status:map
            Linked_to ?Variation XREF Linked_to  // for being able to specify paired substitutions which are part of the same allele ///LinkML Allele/Variation
            Affects Gene    ?Gene XREF Allele #Molecular_change      //#Molecular_change mh6 define precise changes [060217 ar2] ///LinkML Allele:affected_genes:direct 
-                   Predicted_CDS ?CDS XREF Variation #Molecular_change ///LinkML Allele:affected_genes:direct
-                   Transcript ?Transcript XREF Variation #Molecular_change ///LinkML Allele:affected_genes:direct
-                   Pseudogene ?Pseudogene XREF Variation #Molecular_change ///LinkML Allele:affected_genes:direct
-                   Feature ?Feature XREF Associated_with_variation ///LinkML Allele:affected_genes:direct
-                   Interactor ?Interaction XREF Variation_interactor ///LinkML Allele:affected_genes:direct
-           Possibly_affects ?Gene XREF Possibly_affected_by #Evidence ///LinkML Allele:affected_genes:direct
-           Isolation Date DateType ///LinkML Allele:generation_method:transform
+                   Predicted_CDS ?CDS XREF Variation #Molecular_change ///Deprecate? not used ///LinkML Allele:affected_genes:direct
+                   Transcript ?Transcript XREF Variation #Molecular_change  ///Deprecate? not used  ///LinkML Allele:affected_genes:direct
+                   Pseudogene ?Pseudogene XREF Variation #Molecular_change   ///Deprecate? not used  ///LinkML Allele:affected_genes:direct
+                   Feature ?Feature XREF Associated_with_variation   ///Deprecate? not used  ///LinkML Allele:affected_genes:direct
+                   Interactor ?Interaction XREF Variation_interactor  ///Deprecate? not used  ///LinkML Allele:affected_genes:direct
+           Possibly_affects ?Gene XREF Possibly_affected_by #Evidence ///LinkML Allele:affected_genes:direct?
+           Isolation Date DateType ///Deprecate - only 4 ///LinkML Allele:generation_method:transform
                      Mutagen UNIQUE Text #Evidence ///LinkML Allele:generation_method:transform
                      Forward_genetics Text #Evidence  // Capture the basis of the experiment that isolated ///LinkML Allele:generation_method:transform
                      Reverse_genetics Text #Evidence  // the allele. [040206 krb] ///LinkML Allele:generation_method:transform
@@ -3666,9 +3666,9 @@
                                  In_pos_neg_data ?Pos_neg_data ///LinkML Allele:AlleleToGeneRelations:map
                                  // these are for when the locus is mapped
                     Marked_rearrangement ?Rearrangement XREF By_variation 
-           Description Phenotype ?Phenotype XREF Variation #Phenotype_info
-                       Phenotype_remark ?Text #Evidence
-                       Phenotype_not_observed ?Phenotype XREF Not_in_Variation #Phenotype_info  //added by Wen to separate Not phenotype from real phenotypes
+           Description Phenotype ?Phenotype XREF Variation #Phenotype_info ///LinkML Phenotype
+                       Phenotype_remark ?Text #Evidence ///LinkML Phenotype
+                       Phenotype_not_observed ?Phenotype XREF Not_in_Variation #Phenotype_info  //added by Wen to separate Not phenotype from real phenotypes ///LinkML Phenotype
            Disease_info Models_disease ?DO_term XREF Disease_model_variation ///LinkML Disease
                         Modifies_disease ?DO_term XREF Disease_modifier_variation //New tag ///LinkML Disease
                         Models_disease_in_annotation ?Disease_model_annotation XREF Variation //New tag ///LinkML Disease
@@ -3679,8 +3679,8 @@
            Supporting_data Movie ?Movie XREF Variation #Evidence  //Carol [060421 ar2]  ///LinkML Core:Video?
 
 
-?Variation_name Other_name_for ?Variation XREF Other_name // main reason for this class
-                Public_name_for ?Variation XREF Public_name // the main name for a gene
+?Variation_name Other_name_for ?Variation XREF Other_name // main reason for this class ///LinkML Allele:synonym:direct
+                Public_name_for ?Variation XREF Public_name // the main name for a gene ///LinkML Allele:symbol:direct
 
 
 // hash to contain detailed changes caused by mutations [2006-02-17 ar2]
@@ -3705,19 +3705,19 @@
                   UTR_5 #Evidence // to be deprecated WS282
                   Regulatory_feature #Evidence // to be deprecated WS282
                   Genomic_neighbourhood #Evidence // to be deprecated WS282
-                  VEP_consequence Text // proposed addition as well as mapping to the WB tags. 
-                  VEP_impact Text #Evidence 
-                  SIFT Float Text #Evidence 
-                  PolyPhen Float Text #Evidence 
-                  HGVSc Text #Evidence 
-                  HGVSp Text #Evidence
-                  cDNA_position Text #Evidence
-                  CDS_position Text #Evidence
-                  Protein_position Text #Evidence
-                  Intron_number Text #Evidence
-                  Exon_number Text #Evidence
-                  Codon_change Text #Evidence
-                  Amino_acid_change Text #Evidence
+                  VEP_consequence Text // proposed addition as well as mapping to the WB tags.  ///LinkML Variants
+                  VEP_impact Text #Evidence  ///LinkML Variants
+                  SIFT Float Text #Evidence ///LinkML Variants
+                  PolyPhen Float Text #Evidence  ///LinkML Variants
+                  HGVSc Text #Evidence ///LinkML Variants
+                  HGVSp Text #Evidence ///LinkML Variants
+                  cDNA_position Text #Evidence ///LinkML Variants
+                  CDS_position Text #Evidence ///LinkML Variants
+                  Protein_position Text #Evidence ///LinkML Variants
+                  Intron_number Text #Evidence ///LinkML Variants
+                  Exon_number Text #Evidence ///LinkML Variants
+                  Codon_change Text #Evidence ///LinkML Variants
+                  Amino_acid_change Text #Evidence ///LinkML Variants
 
 
 
