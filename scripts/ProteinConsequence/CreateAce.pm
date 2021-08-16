@@ -342,12 +342,6 @@ sub get_transcript_consequences {
 	}
 	next if exists $worst_rankings{$var}{$feature} and $worst_rankings{$var}{$feature} >= $worst_consequence_rank;
 	$worst_rankings{$var}{$feature} = $worst_consequence_rank;
-
-	my $types = $self->get_types_from_vep_consequence($consequence, $feature, $cds_pos,
-							  $prot_pos, $aas, $codons); # To be deprecated after WS282
-	for my $type (keys %$types) {                                                # 
-	    $transcripts{$var}{$feature}{$type}++;                                   #
-	}                                                                            #
 	
 	my %attributes = split /[;=]/, $attr;
 	$transcripts{$var}{$feature}{"VEP_consequence \"$consequence\""}++;
@@ -380,94 +374,6 @@ sub get_transcript_consequences {
     close (VEP);
 
     return (\%transcripts, \%hgvsg);
-}
-
-
-=head2 get_types_from_vep_consequence
-
-    Title:    get_types_from_vep_consequence
-    Function: determines appropriate #Molecular_consequence tags to populate according to VEP output,
-              to be deprecated after WS282 as will have switched to new tags
-    Args:     molecular consequence, feature ID, CDS position, protein position, amino acids string
-              (wt/alt), codons string (wt/alt)
-    Returns:  hashref of tag details
-
-=cut
-
-sub get_types_from_vep_consequence { # To be deprecated after WS282
-    my ($self, $consequence_string, $feature, $cds_pos, $prot_pos, $aas, $codons) = @_;
-
-    my %types;
-    my $aa_string = $aas;
-    $aa_string =~ s/\// to /;
-    my @consequences = split(',', $consequence_string);
-    for my $consequence (@consequences) {
-	$types{'Intron'} = 1 if $consequence eq 'splice_donor_variant' or $consequence eq 'splice_acceptor_variant'
-	     or $consequence eq 'non_coding_transcript_variant';
-	$types{'Donor'} = 1 if $consequence eq 'splice_donor_variant';
-	$types{'Acceptor'} = 1 if $consequence eq 'splice_acceptor_variant';
-	$types{"Readthrough \"$aa_string\""} = 1 if $consequence eq 'stop_lost'; 
-	$types{'Coding_exon'} = 1 if $consequence eq 'stop_gained' or $consequence eq 'stop_lost' or $consequence eq 'frameshift_variant'
-	    or $consequence eq 'start_lost' or $consequence eq 'inframe_insertion' or $consequence eq 'inframe_deletion'
-	    or $consequence eq 'protein_altering_variant' or $consequence eq 'coding_sequence_variant';
-	$types{"Silent \"$aas ($prot_pos)\""} = 1 if $consequence eq 'synonymous_variant';
-	$types{'UTR_5'} = 1 if $consequence eq '5_prime_UTR_variant';
-	$types{'UTR_3'} = 1 if $consequence eq '3_prime_UTR_variant';
-	$types{'Noncoding_exon'} = 1 if $consequence eq 'non_coding_transcript_exon_variant';
-
-	if ($consequence eq 'missense_variant' ){
-	    $prot_pos = substr($prot_pos, 0, index($prot_pos,'-')) if $prot_pos =~ /\-/;
-	    $types{"Missense $prot_pos \"$aa_string\""} = 1;
-	}
-	elsif ($consequence eq 'stop_gained') {
-	    my $var_codon = substr($codons, index($codons, '/') + 1);
-	    my ($original_aa, $var_aa) = $aas =~ /^([^\.]+)\/(.+)$/;
-	    my $stop_ix = index($var_aa, '*');
-	    my $stop_codon = substr($var_codon, 3 * $stop_ix, 3);
-	    my ($stop_tag, $stop_colour);
-	    if (uc($stop_codon) eq 'TAR') {
-		$stop_tag = 'Amber_UAG_or_Ochre_UAA';
-		$stop_colour = 'amber or ochre';
-	    }
-	    elsif (uc($stop_codon) eq 'TRA') {
-		$stop_tag = 'Ochre_UAA_or_Opal_UGA';
-		$stop_colour = 'ochre or opal';
-	    }
-	    elsif (uc($stop_codon) =~ /[TWYKHDB]AG/ ) {
-		$stop_tag = 'Amber_UAG';
-		$stop_colour = 'amber';
-	    }
-	    elsif (uc($stop_codon) =~ /[TWYKHDB]AA/) {
-		$stop_tag = 'Ochre_UAA';
-		$stop_colour = 'ochre';
-	    }
-	    elsif (uc($stop_codon) =~ /[TWYKHDB]GA/) {
-		$stop_tag = 'Opal_UGA';
-		$stop_colour = 'opal';
-	    }
-	    else {
-		$self->write_to("ERROR: $feature $stop_codon is not Amber/Opal/Ochre");
-	    }
-	    
-	    if (defined $stop_tag) {
-		my $text = length $original_aa < length $var_aa ? "$stop_colour stop inserted" :
-		    "$original_aa to $stop_colour stop";
-		$types{"Nonsense $stop_tag \"$text ($prot_pos)\""} = 1;
-	    }
-	}
-	elsif ($consequence eq 'frameshift_variant') {
-	    my ($wt, $allele) = split('/', $codons);
-	    my $bp_change = length $allele - length $wt;
-	    my $indel_type = $bp_change < 0 ? 'deletion' : 'insertion';
-	    $types{'Frameshift "' . abs($bp_change) . "bp $indel_type at CDS position $cds_pos\""} = 1;
-	}
-	elsif ($consequence eq 'start_lost') {
-	    $types{"Missense $prot_pos \"$aa_string\""} = 1 if $aas =~ /^M\/.$/;
-	}
-	
-    }
-    
-    return \%types;
 }
 
 
