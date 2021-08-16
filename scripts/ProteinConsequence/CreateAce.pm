@@ -354,7 +354,11 @@ sub get_transcript_consequences {
 	
 	$transcripts{$var}{$feature}{'VEP_impact "' . $attributes{'IMPACT'} . '"'} = 1 if exists $attributes{'IMPACT'};
 	$transcripts{$var}{$feature}{'HGVSc "' . $attributes{'HGVSc'} . '"'} = 1 if exists $attributes{'HGVSc'};
-	$transcripts{$var}{$feature}{'HGVSp "' . $attributes{'HGVSp'} . '"'} = 1 if exists $attributes{'HGVSp'};
+	if (exists $attributes{'HGVSp'}) {
+	    my $hgvsp = $attributes{'HGVSp'};
+	    $hgvsp =~ s/%3D/=/;
+	    $transcripts{$var}{$feature}{'HGVSp "' . $hgvsp . '"'} = 1;
+	}
 	$transcripts{$var}{$feature}{'Intron_number "' . $attributes{'INTRON'} . '"'} = 1 if exists $attributes{'INTRON'};
 	$transcripts{$var}{$feature}{'Exon_number "' . $attributes{'EXON'} . '"'} = 1 if exists $attributes{'EXON'};
 	
