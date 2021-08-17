@@ -95,6 +95,7 @@ sub new {
   $self->{'log'} = shift;
   $self->{'new_genome'} = shift; # true if the libraries should be mapped to the genome in this session (e.g. if the assembly changed)
   $self->{'check'} = shift;      # true if existing GTF file and cufflinks data should be left untouched (for checkpointing and restarting)
+  $self->{'test'} = shift;       # use files from the TEST build folder if true
   $self->{'test_set'} = shift;    # true if limited set of experiments in Studies_test.ini should be used
 
   # set up useful paths etc.
@@ -1904,6 +1905,7 @@ sub run_make_gtf_transcript {
     } else {
       
       my $cmd = "make_GTF_transcript.pl -database $database -out $gtf_file -species $species -noprefix"; # -noprefix to strip the chromosome prefix out
+      $cmd .= ' -test' if $self->{'test'};
       
       $log->write_to("run $cmd\n");
       
@@ -1999,6 +2001,7 @@ sub run_make_gtf_transcript {
       
       my $gtf_file = " $RNASeqGenomeDir/transcripts.gtf";
       my $cmd = "make_GTF_transcript.pl -database $database -out $gtf_file -species $species -noprefix"; # -noprefix to strip the chromosome prefix out
+      $cmd .= ' -test' if $self->{'test'};
       
       $log->write_to("run $cmd\n");
       

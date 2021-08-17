@@ -69,7 +69,7 @@ my $database = $wormbase->autoace;
 
 if ($results) {$check = 1} # don't want to remove the cufflinks results if writing results
 
-my $RNASeq = RNASeq->new($wormbase, $log, $new_genome, $check, $test_set);
+my $RNASeq = RNASeq->new($wormbase, $log, $new_genome, $check, $test, $test_set);
 
 if ($analyse && $results) {$log->log_and_die("Please run this script using '-analyse' and then the '-results' option.\n")}
 

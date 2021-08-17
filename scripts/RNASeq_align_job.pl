@@ -60,7 +60,7 @@ my $data;
 
 if (!defined $database) {$database = $wormbase->autoace}
 
-my $RNASeq = RNASeq->new($wormbase, $log, $new_genome, $check, $test_set);
+my $RNASeq = RNASeq->new($wormbase, $log, $new_genome, $check, $test, $test_set);
 
 $log->write_to("Get experiment details from config\n");
 my $data = $RNASeq->get_transcribed_long_experiments();
