@@ -97,11 +97,10 @@ sub new {
   $self->{'check'} = shift;      # true if existing GTF file and cufflinks data should be left untouched (for checkpointing and restarting)
 
   # set up useful paths etc.
-  $self->{'RNASeqBase'}      = "/hps/nobackup2/production/ensemblgenomes/wormbase/BUILD/RNASeq/" . $self->{wormbase}->{species};
+  $self->{'RNASeqBase'}      = $ENV{'RNASEQ'} . '/' . $self->{wormbase}->{species};
   $self->{'RNASeqSRADir'}    = $self->RNASeqBase . "/SRA"; # holds Experiment data and analysis results
   $self->{'RNASeqGenomeDir'} = $self->RNASeqBase . "/Genome"; # holds Genome and indexes
   $self->{'RNASeqTransferDir'} = $self->RNASeqBase . "/Transfer"; # holds symlinks to files to be transferred to the Sanger NGS server
-  $self->{'Software'}        = "/nfs/panda/ensemblgenomes/wormbase/software/packages";
 #  $self->{'alignmentDir'}    = "tophat_out"; # use this for tophat
   $self->{'alignmentDir'}    = "star_out"; # use this for STAR
   $self->{'Use_NGS_file_system'} = 1; # if 0 then store files in /hps/nobackup2; if 1 then store files in NGS file system and access then via http
@@ -1674,7 +1673,7 @@ sub sam_to_bam {
   
   my $failed = 0;
   my $result = system("rm -f $bamfile");
-  $result = system($self->{Software}."/samtools/samtools view -Sbh $samfile > $bamfile");
+  $result = system("samtools view -Sbh $samfile > $bamfile");
   if ( ( $result >> 8 ) != 0 )  {$failed=1} 
   $result = system("rm -f $samfile");
   return $failed;
@@ -1695,7 +1694,7 @@ sub sort_bam_file {
   my $log = $self->{log};
   
   my $failed = 0;
-  my $status = $self->{wormbase}->run_command($self->{Software}."/samtools/samtools sort -m 3500000000 $bamfile -o $bamfile.sorted", $log); # 3.5Gb
+  my $status = $self->{wormbase}->run_command("samtools sort -m 3500000000 $bamfile -o $bamfile.sorted", $log); # 3.5Gb
   $failed = $status;
   $status = $self->{wormbase}->run_command("mv $bamfile.sorted $bamfile", $log);
   return ($failed & $status);
@@ -1719,7 +1718,7 @@ sub merge_bam_files {
 
   if (scalar @SRR_ids > 1) {
     my $bam_files =  join ' ', map {$_ . "/Aligned.out.bam"} @SRR_ids; # join into one string
-    $self->{wormbase}->run_command($self->{Software}."/samtools/samtools merge $output_filename $bam_files", $log);
+    $self->{wormbase}->run_command("samtools merge $output_filename $bam_files", $log);
   } else {
     # have just the one bam file, so simply link to it
     my $file = $SRR_ids[0]."/Aligned.out.bam";
@@ -1742,7 +1741,7 @@ sub index_bam_file {
 
   my $log = $self->{log};
 
-  $self->{wormbase}->run_command($self->{Software}."/samtools/samtools index $filename", $log);
+  $self->{wormbase}->run_command("samtools index $filename", $log);
 }
 
 =head2 
@@ -2043,7 +2042,6 @@ sub run_cufflinks {
   my $RNASeqGenomeDir = $self->{RNASeqGenomeDir};
   my $log = $self->{log};
   my $done_file = "$RNASeqSRADir/$experiment_accession/cufflinks/genes.fpkm_tracking.done"; # made when cufflinks is run successfully
-  my $Software = $self->{Software};
   my $alignmentDir = $self->{'alignmentDir'};
   my $status;
   my $transcripts_store = $self->{wormbase}->misc_dynamic . "/SHORT_READS/CUFFLINKS_TRANSCRIPTS/" . $self->{wormbase}->{species} . "/" . $experiment_accession . ".gtf";
@@ -2075,7 +2073,7 @@ sub run_cufflinks {
 	}
 	
 	my $gtf = "--GTF $RNASeqGenomeDir/transcripts.gtf"; # NB there are two 'transcripts.gtf' files - this one is the WormBase GTF of gene locations used as input by cufflinks
-	$status = $self->{wormbase}->run_command("$Software/cufflinks/cufflinks $gtf $strand_option ../$alignmentDir/accepted_hits.bam", $log);
+	$status = $self->{wormbase}->run_command("cufflinks $gtf $strand_option ../$alignmentDir/accepted_hits.bam", $log);
 	if ($status != 0) {  $log->log_and_die("Didn't run cufflinks to get the isoform/gene expression successfully\n"); }
 	if (-s "genes.fpkm_tracking" > 10000 && -s "isoforms.fpkm_tracking" > 10000) {
 	  $self->{wormbase}->run_command("touch $done_file", $log); # set flag to indicate we have finished this
@@ -2094,7 +2092,7 @@ sub run_cufflinks {
 	my $strand_option='';
 	if (defined $strandedness && $strandedness eq 'stranded' && defined $library_type && $library_type eq 'fr') {$strand_option = '--library-type fr-firststrand'}
 	my $gtf = "--GTF $RNASeqGenomeDir/transcripts.gtf"; # NB there are two 'transcripts.gtf' files - this one is the WormBase GTF of gene locations used as input by cufflinks
-	$status = $self->{wormbase}->run_command("$Software/cufflinks/cufflinks $gtf $strand_option $experiment_accession.bam", $log);
+	$status = $self->{wormbase}->run_command("cufflinks $gtf $strand_option $experiment_accession.bam", $log);
 	if ($status != 0) {  $log->log_and_die("Didn't run cufflinks to get the isoform/gene expression successfully\n"); }
 	
 	# update a copy of the old transcripts.gtf file with changed genes and new FPKM values
@@ -2133,7 +2131,7 @@ sub run_cufflinks {
       }
       
       my $gtf = "--GTF $RNASeqGenomeDir/transcripts.gtf";
-      $status = $self->{wormbase}->run_command("$Software/cufflinks/cufflinks $gtf $strand_option ../$alignmentDir/accepted_hits.bam", $log);
+      $status = $self->{wormbase}->run_command("cufflinks $gtf $strand_option ../$alignmentDir/accepted_hits.bam", $log);
       if ($status != 0) {  $log->log_and_die("Didn't run cufflinks to get the isoform/gene expression successfully\n"); }
       if (-s "genes.fpkm_tracking" > 10000 && -s "isoforms.fpkm_tracking" > 10000) {
 	$self->{wormbase}->run_command("touch $done_file", $log); # set flag to indicate we have finished this
@@ -2150,7 +2148,7 @@ sub run_cufflinks {
 #      my $strand_option = "--min-intron-length 25 --max-intron-length 30000";
 #      my $BAMfile = "../../$alignmentDir/accepted_hits.bam";
 #      if (-e $experiment_accession.bam) {$BAMfile = "../../cufflinks/$experiment_accession.bam"}
-#      $status = $self->{wormbase}->run_command("$Software/cufflinks/cufflinks $strand_option $BAMfile", $log);
+#      $status = $self->{wormbase}->run_command("cufflinks $strand_option $BAMfile", $log);
 #      if ($status != 0) {  $log->log_and_die("Didn't run cufflinks to get the cufflinks gene structures successfully\n"); }    
 #    }
 
@@ -2168,7 +2166,6 @@ sub get_subset_of_BAM {
   my $RNASeqGenomeDir = $self->{RNASeqGenomeDir};
   my $differences_file = "$RNASeqGenomeDir/transcripts.$version.differences";
   my $bed_file = "$RNASeqGenomeDir/differences.bed";
-  my $Software = $self->{Software};
   my $log = $self->{log};
   
   my $species = $self->{wormbase}->{species};
@@ -2177,7 +2174,7 @@ sub get_subset_of_BAM {
   my $species_dir = $NGS_species_dir{$species};
 
 
-  my $cmd = "$Software/samtools/samtools view -bh -M -L $bed_file ftp://ngs.sanger.ac.uk/production/parasites/wormbase/RNASeq_alignments/$species_dir/${experiment_accession}.bam > ${experiment_accession}.bam";
+  my $cmd = "samtools view -bh -M -L $bed_file ftp://ngs.sanger.ac.uk/production/parasites/wormbase/RNASeq_alignments/$species_dir/${experiment_accession}.bam > ${experiment_accession}.bam";
 
   $self->{wormbase}->run_command($cmd, $log); 
  
@@ -2409,7 +2406,6 @@ sub get_introns {
   my $RNASeqGenomeDir = $self->{RNASeqGenomeDir};
   my $log = $self->{log};
   my $done_file = "$RNASeqSRADir/$experiment_accession/Introns/Intron.ace.done";
-  my $Software = $self->{Software};
   my $alignmentDir = $self->{'alignmentDir'};
   my $status;
   my $database = $self->{wormbase}->{autoace};
@@ -2652,13 +2648,12 @@ sub make_coverage {
   my $exptDir = "$RNASeqSRADir/$experiment_accession/$alignmentDir";
   my $bamfile = "$exptDir/accepted_hits.bam";
   my $coveragefile = "$exptDir/coverage";
-  my $Software = $self->{Software};
   
   if (-e $bamfile) {
     # get the hits with a count
     print "writing $coveragefile\n";
     unlink "$coveragefile";
-    system(qq#/$Software/BEDTools/bin/bamToBed -split -i $bamfile | awk '{OFS=\"\t\"; print \$1,\$2,\$3,\$6 }' | sort -k1,1 -k2,3n | uniq -c > $coveragefile#);
+    system(qq#bamToBed -split -i $bamfile | awk '{OFS=\"\t\"; print \$1,\$2,\$3,\$6 }' | sort -k1,1 -k2,3n | uniq -c > $coveragefile#);
   }
 }
 
@@ -2686,10 +2681,9 @@ sub make_stranded_coverage {
   my $exptDir = "$RNASeqSRADir/$experiment_accession/$alignmentDir";
   my $bamfile = "$exptDir/accepted_hits.bam";
   my $stranded_coveragefile = "$exptDir/stranded_coverage";
-  my $Software = $self->{Software};
 
 # currently make a file like:
-# $Software/BEDTools/bin/bamToBed -split -i $bamfile 
+# bamToBed -split -i $bamfile 
 # and then adjust the sense depending one whether it is the first mate or second mate of the pair.
 # and then do:
 # sort -k1,1 -k2,3n ${stranded_coveragefile}.tmp | uniq -c > $stranded_coveragefile
@@ -2711,7 +2705,7 @@ sub make_stranded_coverage {
 
     if (-e $bamfile) {
       print "writing $stranded_coveragefile\n";
-      my $bamtobed = "$Software/BEDTools/bin/bamToBed -split -i $bamfile";
+      my $bamtobed = "bamToBed -split -i $bamfile";
       open (COVERAGE, ">${stranded_coveragefile}.tmp") || $log->log_and_die("Can't open ${stranded_coveragefile}.tmp in make_stranded_coverage()\n");
       open (BED, "$bamtobed |") || $log->log_and_die("Can't run $bamtobed in make_stranded_coverage()\n");
       while (my $line = <BED>) {
@@ -2774,10 +2768,8 @@ sub bam2bigwig {
   my $alignmentDir = $self->{'alignmentDir'};
   my $exptDir = "$RNASeqSRADir/$experiment_accession/$alignmentDir";
   my $bamfile = "$exptDir/accepted_hits.bam";
-  my $Software = $self->{Software};
   my $bedGraph_file = "$exptDir/accepted_hits.bedGraph";
   my $chromosome_size_file = "$RNASeqGenomeDir/STAR/chrNameLength.txt";
-  my $UCSC_Dir = "$Software/ucsc_tools";
   my $log = $self->{log};
 
   chdir "$RNASeqSRADir/$experiment_accession/$alignmentDir";
@@ -2788,11 +2780,11 @@ sub bam2bigwig {
   } else {
     # See nice diagrams in: http://quinlanlab.org/tutorials/bedtools/bedtools.html
     # the -split makes it report no hits within introns
-    system("$Software/BEDTools/bin/bedtools genomecov -bg -split -ibam $bamfile  > $bedGraph_file");
+    system("bedtools genomecov -bg -split -ibam $bamfile  > $bedGraph_file");
     
-    system("$ENV{WORM_PACKAGES}/BEDTools/bin/bedtools sort -i $bedGraph_file > ${bedGraph_file}.sort");
+    system("bedtools sort -i $bedGraph_file > ${bedGraph_file}.sort");
     
-    system("$UCSC_Dir/bedGraphToBigWig ${bedGraph_file}.sort $chromosome_size_file ${experiment_accession}.bw");
+    system("bedGraphToBigWig ${bedGraph_file}.sort $chromosome_size_file ${experiment_accession}.bw");
     
     system("rm $bedGraph_file");
     
@@ -3153,7 +3145,7 @@ sub setup_genome_for_star {
     # this will give you access to the most number of machines. Tell
     # LSF how many CPUs you want with -n, and tell the software the
     # same number.
-    my $star_cmd = $self->{Software}."/star/STAR --runMode genomeGenerate --genomeDir ./ --genomeFastaFiles ${species_genome} --runThreadN 4";
+    my $star_cmd = "STAR --runMode genomeGenerate --genomeDir ./ --genomeFastaFiles ${species_genome} --runThreadN 4";
       $status = $self->{'wormbase'}->run_command($star_cmd, $log);
     if ($status != 0) {  $log->log_and_die("RNASeq: Didn't create the STAR indexes $RNASeqGenomeDir/STAR\n"); }
     $self->{wormbase}->run_command("touch $done_file", $log); # set flag to indicate we have finished this
@@ -3257,7 +3249,7 @@ sub align_star {
 	foreach my $file (@files) {
 	  my $cmd = "mv $file $file.solid";
 	  $self->{wormbase}->run_command($cmd, $log);
-	  $cmd = "perl ".$self->{Software}."/SOLID2std/SOLID2std.pl -fastq $file.solid -o $file";
+	  $cmd = "perl " . $ENV{'WORM_SCRIPTS'} . "/SOLID2std/SOLID2std.pl -fastq $file.solid -o $file";
 	  $self->{wormbase}->run_command($cmd, $log);
 	  $cmd = "rm -f $file.solid";
 	  $self->{wormbase}->run_command($cmd, $log);
@@ -3334,7 +3326,7 @@ sub fresh_complete_alignment_and_analysis {
       foreach my $file (@files) {
 	my $cmd = "mv $file $file.solid";
 	$self->{wormbase}->run_command($cmd, $log);
-	$cmd = "perl ".$self->{Software}."/SOLID2std/SOLID2std.pl -fastq $file.solid -o $file";
+	$cmd = "perl " . $ENV{'WORM_SCRIPTS'} . "/SOLID2std/SOLID2std.pl -fastq $file.solid -o $file";
 	$self->{wormbase}->run_command($cmd, $log);
 	$cmd = "rm -f $file.solid";
 	$self->{wormbase}->run_command($cmd, $log);
@@ -3466,7 +3458,7 @@ sub run_star_alignment {
       $options .= " --outSAMstrandField intronMotif";
     ##}
     
-    my $STARcmd = $self->{Software}."/star/STAR --genomeDir $genomeDir --readFilesIn $fastq_file $options --runThreadN $threads";
+    my $STARcmd = "STAR --genomeDir $genomeDir --readFilesIn $fastq_file $options --runThreadN $threads";
     $log->write_to("Running STAR command:\n$STARcmd\n\n");
     $status = $self->{wormbase}->run_command($STARcmd, $log);
     if ($status != 0) {$log->log_and_die("Didn't run STAR to do the alignment successfully for $srr_name in $experiment_accession\n");}
