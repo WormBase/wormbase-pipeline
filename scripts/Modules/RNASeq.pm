@@ -95,6 +95,7 @@ sub new {
   $self->{'log'} = shift;
   $self->{'new_genome'} = shift; # true if the libraries should be mapped to the genome in this session (e.g. if the assembly changed)
   $self->{'check'} = shift;      # true if existing GTF file and cufflinks data should be left untouched (for checkpointing and restarting)
+  $self->{'test_set'} = shift    # true if limited set of experiments in Studies_test.ini should be used
 
   # set up useful paths etc.
   $self->{'RNASeqBase'}      = $ENV{'RNASEQ'} . '/' . $self->{wormbase}->{species};
@@ -660,7 +661,8 @@ sub find_experiments_search {
 sub read_all_studies_config {
   my ($self) = @_;
 
-  my $path = $self->{wormbase}->misc_dynamic . "/SHORT_READS/" . $self->{wormbase}->{species} . "/Studies.ini";
+  my $path = $self->{test_set} ? $self->{wormbase}->misc_dynamic . "/SHORT_READS/" . $self->{wormbase}->{species} . "/Studies_test.ini" :
+      $self->{wormbase}->misc_dynamic . "/SHORT_READS/" . $self->{wormbase}->{species} . "/Studies.ini";
   if (!-e $path) {system("touch $path")}
   my $ini = Config::IniFiles->new( -file => $path, -allowempty => 1);
   return $ini;
