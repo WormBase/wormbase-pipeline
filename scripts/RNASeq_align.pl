@@ -144,7 +144,7 @@ sub analyse {
     my $out = "$scratch_dir/RNASeq_align.pl.lsf.${experiment_accession}.out";
     my @bsub_options = (-e => "$err", -o => "$out");
     push @bsub_options, (
-			 -q => 'production-rh74',
+			 -q => 'production',
 			 -M => $memory, # in EBI both -M and -R are in Mb
 			 -R => "select[mem>$memory] rusage[mem=$memory]",
 			 -J => $job_name,
