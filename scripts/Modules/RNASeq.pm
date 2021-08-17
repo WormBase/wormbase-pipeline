@@ -1532,7 +1532,7 @@ sub get_SRX_file {
 	$address = "ftp://ftp-trace.ncbi.nih.gov/sra/sra-instant/reads/ByRun/sra/SRR/$dirbit/${run_accession}/${run_accession}.sra";
 	$status = $self->{wormbase}->run_command("/sw/arch/bin/wget -q $address", $log);
 	if ($status != 0) {$error=1; $log->write_to("FTP fetch of fastq file $file from NCBI failed for ${experiment_accession}:\n/sw/arch/bin/wget -q $address\n");}
-	my $cmd = "$ENV{WORM_PACKAGES}/sratoolkit/bin/fastq-dump --origfmt ${run_accession}.sra --outdir .";
+	my $cmd = "fastq-dump --origfmt ${run_accession}.sra --outdir .";
 	my $status = $self->{wormbase}->run_command($cmd, $log);
 	if ($status != 0) {$log->log_and_die("unpack of .sra file ${run_accession}.sra from NCBI failed for ${experiment_accession}:\n/sw/arch/bin/wget -q $address\n");}
 	if (-s "${run_accession}.fastq") {
@@ -1574,7 +1574,7 @@ sub get_SRX_file {
 #    my $return_status = system($cmd);
 #    if ( ( $return_status >> 8 ) == 0 )  {
 #       $failed=0;
-#       $cmd = "$WORM_PACKAGES/sratoolkit/bin/fastq-dump --origfmt SRR304976.sra --outdir /tmp"
+#       $cmd = "fastq-dump --origfmt SRR304976.sra --outdir /tmp"
 #       my $return_status = system($cmd);
 #    }
 #  }
