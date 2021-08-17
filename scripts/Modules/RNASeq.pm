@@ -95,7 +95,7 @@ sub new {
   $self->{'log'} = shift;
   $self->{'new_genome'} = shift; # true if the libraries should be mapped to the genome in this session (e.g. if the assembly changed)
   $self->{'check'} = shift;      # true if existing GTF file and cufflinks data should be left untouched (for checkpointing and restarting)
-  $self->{'test_set'} = shift    # true if limited set of experiments in Studies_test.ini should be used
+  $self->{'test_set'} = shift;    # true if limited set of experiments in Studies_test.ini should be used
 
   # set up useful paths etc.
   $self->{'RNASeqBase'}      = $ENV{'RNASEQ'} . '/' . $self->{wormbase}->{species};
@@ -104,7 +104,7 @@ sub new {
   $self->{'RNASeqTransferDir'} = $self->RNASeqBase . "/Transfer"; # holds symlinks to files to be transferred to the Sanger NGS server
 #  $self->{'alignmentDir'}    = "tophat_out"; # use this for tophat
   $self->{'alignmentDir'}    = "star_out"; # use this for STAR
-  $self->{'Use_NGS_file_system'} = 1; # if 0 then store files in /hps/nobackup2; if 1 then store files in NGS file system and access then via http
+  $self->{'Use_NGS_file_system'} = 0; # if 0 then store files in /hps/nobackup2; if 1 then store files in NGS file system and access then via http
 #  $self->{'Use_changed_part_of_BAM'} = 0; # if 0 then copy complete BAM file from NGS server; if 1 then work out which genes changed and pull across onto reads aligning near those genes then update the cufflinks ouput from last Build
 
   # get the name of the directory for this species at the NGS site
