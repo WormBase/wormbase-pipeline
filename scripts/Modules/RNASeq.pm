@@ -213,7 +213,7 @@ sub read_accession {
       my $run_accession = $f[0];
       my @working_fields;
       foreach my $test_field (@fields) {
-	my $test_query = "http://www.ebi.ac.uk/ena/data/warehouse/filereport?accession=$run_accession&result=read_run&fields=$test_field";    
+	my $test_query = "http://www.ebi.ac.uk/ena/portal/api/filereport?accession=$run_accession&result=read_run&fields=$test_field";    
 	open (TEST_DATA, "wget -q -O - '$test_query' |") || die("RNASeq: Can't get test_query information on SRA entry $accession in read_accession()\n");	
 	my $test_line_count=0;
 	my $field_ok = 1;
@@ -232,7 +232,7 @@ sub read_accession {
       }
       # now do the query again with the fields that worked
       $fields = join ',', @working_fields;
-      $query = "http://www.ebi.ac.uk/ena/data/warehouse/filereport?accession=$run_accession&result=read_run&fields=$fields";
+      $query = "http://www.ebi.ac.uk/ena/portal/api/filereport?accession=$run_accession&result=read_run&fields=$fields";
       open (WORKING_DATA, "wget -q -O - '$query' |") || die("RNASeq: Can't get information on SRA entry $accession in read_accession()\n");
       my $working_line_count=0;
       while(my $working_line = <WORKING_DATA>) {
@@ -483,7 +483,7 @@ sub find_studies {
 sub find_studies_search {
   my ($self, $taxon_id, $data) = @_;
 
-  my $query = 'http://www.ebi.ac.uk/ena/data/warehouse/search?query=%22tax_eq%28TAXON%29%22&result=read_study&display=XML';
+  my $query = 'http://www.ebi.ac.uk/ena/portal/api/search?query=%22tax_eq%28TAXON%29%22&result=read_study&display=XML';
   $query =~ s/TAXON/$taxon_id/;
 
   my $ua = LWP::UserAgent->new();
@@ -582,7 +582,7 @@ sub find_experiments {
 sub find_experiments_search {
   my ($self, $taxon_id, $data) = @_;
   
-  my $query = 'http://www.ebi.ac.uk/ena/data/warehouse/search?query=%22tax_eq%28TAXON%29%22&result=read_experiment&display=XML';
+  my $query = 'http://www.ebi.ac.uk/ena/portal/api/search?query=%22tax_eq%28TAXON%29%22&result=read_experiment&display=XML';
   $query =~ s/TAXON/$taxon_id/;
   
   open (DATA, "wget -q -O - '$query' |") || die("RNASeq: Can't get information on SRA entries in find_experiments_search()\n");
@@ -1489,7 +1489,7 @@ sub get_SRX_file {
   chdir "SRR";
 
   my $count;
-  open(ENTRY, "/sw/arch/bin/wget -q -O - 'http://www.ebi.ac.uk/ena/data/warehouse/filereport?accession=$experiment_accession&result=read_run&fields=experiment_accession,run_accession,fastq_ftp' |") || $log->log_and_die("Can't get information on SRA entry $experiment_accession\n");
+  open(ENTRY, "wget -q -O - 'http://www.ebi.ac.uk/ena/portal/api/filereport?accession=$experiment_accession&result=read_run&fields=experiment_accession,run_accession,fastq_ftp' |") || $log->log_and_die("Can't get information on SRA entry $experiment_accession\n");
   while (my $line = <ENTRY>) {
     chomp $line;
     if ($line =~ /^experiment_accession/) {next}
@@ -1516,25 +1516,29 @@ sub get_SRX_file {
       }
 
       # use FTP to fetch the file
-      $status = $self->{wormbase}->run_command("/sw/arch/bin/wget -q $address", $log);
+      $log->write_to("fetching file from $address\n");
+      $status = $self->{wormbase}->run_command("wget -q $address", $log);
       if ($status == 0) {
-	if (-s $file) {
-	  $count++;
-	  $status = $self->{wormbase}->run_command("gunzip -f $file", $log);
-	  if ($status != 0) {$log->log_and_die("gunzip of fastq file $file failed for $experiment_accession\n");}
-	}
+	  if (-s $file) {
+	      $count++;
+	      $status = $self->{wormbase}->run_command("gunzip -f $file", $log);
+	      if ($status != 0) {$log->log_and_die("gunzip of fastq file $file failed for $experiment_accession\n");}
+	  }
+	  else {
+	      $log->log_and_die("file retrieved from $address was not saved or is empty\n");
+	  }
       } else {
-	$log->write_to("FTP fetch of fastq file $file failed for $experiment_accession:\n/sw/arch/bin/wget -q $address\n");
+	$log->write_to("FTP fetch of fastq file $file failed for $experiment_accession:\nwget -q $address\n");
 	
 	# Attempt to get it from the NCBI
       	$log->write_to("Trying FTP from NCBI...\n");
 	my ($dirbit) = ($run_accession =~ /^(\S\S\S\d\d\d)/);
 	$address = "ftp://ftp-trace.ncbi.nih.gov/sra/sra-instant/reads/ByRun/sra/SRR/$dirbit/${run_accession}/${run_accession}.sra";
-	$status = $self->{wormbase}->run_command("/sw/arch/bin/wget -q $address", $log);
-	if ($status != 0) {$error=1; $log->write_to("FTP fetch of fastq file $file from NCBI failed for ${experiment_accession}:\n/sw/arch/bin/wget -q $address\n");}
+	$status = $self->{wormbase}->run_command("wget -q $address", $log);
+	if ($status != 0) {$error=1; $log->write_to("FTP fetch of fastq file $file from NCBI failed for ${experiment_accession}:\nwget -q $address\n");}
 	my $cmd = "fastq-dump --origfmt ${run_accession}.sra --outdir .";
 	my $status = $self->{wormbase}->run_command($cmd, $log);
-	if ($status != 0) {$log->log_and_die("unpack of .sra file ${run_accession}.sra from NCBI failed for ${experiment_accession}:\n/sw/arch/bin/wget -q $address\n");}
+	if ($status != 0) {$log->log_and_die("unpack of .sra file ${run_accession}.sra from NCBI failed for ${experiment_accession}:\nwget -q $address\n");}
 	if (-s "${run_accession}.fastq") {
 	  $status = $self->{wormbase}->run_command("rm -rf ${run_accession}.sra", $log);
 	  $count++;
