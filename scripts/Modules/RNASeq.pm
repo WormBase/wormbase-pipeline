@@ -1885,29 +1885,26 @@ sub run_make_gtf_transcript {
 
   if ($self->new_genome) {system("rm -f $gtf_file")}
 
-  if ($self->Use_NGS_file_system) {
-
-    my $version = $self->{wormbase}->get_wormbase_version;
-    my $prev_version = $version - 1;
-    my $gtf_file = "$RNASeqGenomeDir/transcripts.gtf";
-    my $old_gtf_file = "$RNASeqGenomeDir/transcripts.${prev_version}.gtf";
-    my $differences_file = "$RNASeqGenomeDir/transcripts.$version.differences";
-    my $bed_file = "$RNASeqGenomeDir/differences.bed";
+  my $version = $self->{wormbase}->get_wormbase_version;
+  my $prev_version = $version - 1;
+  my $gtf_file = "$RNASeqGenomeDir/transcripts.gtf";
+  my $old_gtf_file = "$RNASeqGenomeDir/transcripts.${prev_version}.gtf";
+  my $differences_file = "$RNASeqGenomeDir/transcripts.$version.differences";
+  my $bed_file = "$RNASeqGenomeDir/differences.bed";
     
-    if (-e $gtf_file && !-e $old_gtf_file) {
+  if (-e $gtf_file && !-e $old_gtf_file) {
       $status = $self->{wormbase}->run_command("mv $gtf_file $old_gtf_file", $log);
-    }
+  }
     
-    if ($self->new_genome) {
+  if ($self->new_genome) {
       system("rm -f $old_gtf_file");
       system("touch $old_gtf_file");
-    }
+  }
     
-    if ($self->check && -s $gtf_file) {
+  if ($self->check && -s $gtf_file) {
       $log->write_to("GTF file already exists - not making them again\n");
       $status = 0;
-    } else {
-      
+  } else {     
       my $cmd = "make_GTF_transcript.pl -database $database -out $gtf_file -species $species -noprefix"; # -noprefix to strip the chromosome prefix out
       $cmd .= ' -test' if $self->{'test'};
       
@@ -1922,15 +1919,15 @@ sub run_make_gtf_transcript {
       my %old_gene;
       open (OLD, "<$old_gtf_file") || $log->log_and_die("Couldn't open $old_gtf_file\n");
       while (my $line = <OLD>) {
-	chomp $line;
-	my @f = split /\t/, $line;
-	my ($gene_id, $transcript_id) = ($f[8] =~ /gene_id \"(\S+)\"; transcript_id \"(\S+)\"/);
-	if ($f[2] eq 'transcript') {
-	  $old_gene{$transcript_id} = $gene_id;
-	} else {
-	  my $location = $f[0] . '.' . $f[3] . '.' . $f[4] . '.' . $f[6]; # chr start end sense
-	  $old_transcripts{$transcript_id} .= $location;
-	}
+	  chomp $line;
+	  my @f = split /\t/, $line;
+	  my ($gene_id, $transcript_id) = ($f[8] =~ /gene_id \"(\S+)\"; transcript_id \"(\S+)\"/);
+	  if ($f[2] eq 'transcript') {
+	      $old_gene{$transcript_id} = $gene_id;
+	  } else {
+	      my $location = $f[0] . '.' . $f[3] . '.' . $f[4] . '.' . $f[6]; # chr start end sense
+	      $old_transcripts{$transcript_id} .= $location;
+	  }
       }
       close(OLD);
       
@@ -1941,20 +1938,20 @@ sub run_make_gtf_transcript {
       my %new_end;
       open (NEW, "<$gtf_file") || $log->log_and_die("Couldn't open $gtf_file\n");
       while (my $line = <NEW>) {
-	chomp $line;
-	my @f = split /\t/, $line;
-	my ($gene_id, $transcript_id) = ($f[8] =~ /gene_id \"(\S+)\"; transcript_id \"(\S+)\"/);
-	if ($f[2] eq 'transcript') {
-	  # get span of genes
-	  $new_gene{$transcript_id} = $gene_id;
-	  if (!exists $new_chrom{$gene_id}) {$new_chrom{$gene_id} = $f[0]}
-	  if (!exists $new_start{$gene_id} || $f[3] <  $new_start{$gene_id}) {$new_start{$gene_id} = $f[3]}
-	  if (!exists $new_end{$gene_id} || $f[4] >  $new_end{$gene_id}) {$new_end{$gene_id} = $f[4]}
-	  
-	} else { # $f[2] eq 'exon'
-	  my $location = $f[0] . '.' . $f[3] . '.' . $f[4] . '.' . $f[6]; # chr start end sense
-	  $new_transcripts{$transcript_id} .= $location;
-	}
+	  chomp $line;
+	  my @f = split /\t/, $line;
+	  my ($gene_id, $transcript_id) = ($f[8] =~ /gene_id \"(\S+)\"; transcript_id \"(\S+)\"/);
+	  if ($f[2] eq 'transcript') {
+	      # get span of genes
+	      $new_gene{$transcript_id} = $gene_id;
+	      if (!exists $new_chrom{$gene_id}) {$new_chrom{$gene_id} = $f[0]}
+	      if (!exists $new_start{$gene_id} || $f[3] <  $new_start{$gene_id}) {$new_start{$gene_id} = $f[3]}
+	      if (!exists $new_end{$gene_id} || $f[4] >  $new_end{$gene_id}) {$new_end{$gene_id} = $f[4]}
+	      
+	  } else { # $f[2] eq 'exon'
+	      my $location = $f[0] . '.' . $f[3] . '.' . $f[4] . '.' . $f[6]; # chr start end sense
+	      $new_transcripts{$transcript_id} .= $location;
+	  }
       }
       close(OLD);
       
@@ -1967,55 +1964,35 @@ sub run_make_gtf_transcript {
       open(BED, ">$bed_file") || $log->log_and_die("Couldn't open $bed_file\n");
       open (DIFF, ">$differences_file") || $log->log_and_die("Couldn't open $differences_file\n");
       foreach my $transcript_id (keys %new_transcripts) {
-	my $gene_id = $new_gene{$transcript_id};
-	if (exists $old_transcripts{$transcript_id}) {
-	  if ($old_transcripts{$transcript_id} ne $new_transcripts{$transcript_id}) {
-	    print DIFF "changed_structure\tgene_id $gene_id; transcript_id $transcript_id\n";
+	  my $gene_id = $new_gene{$transcript_id};
+	  if (exists $old_transcripts{$transcript_id}) {
+	      if ($old_transcripts{$transcript_id} ne $new_transcripts{$transcript_id}) {
+		  print DIFF "changed_structure\tgene_id $gene_id; transcript_id $transcript_id\n";
+	      }
+	      if ($old_gene{$transcript_id} ne $new_gene{$transcript_id}) {
+		  print DIFF "changed_gene_id\tgene_id $gene_id; transcript_id $transcript_id\n";
+	      }
+	      delete $old_transcripts{$transcript_id};
+	  } else {
+	      print DIFF "new\tgene_id $gene_id; transcript_id $transcript_id\n";	
 	  }
-	  if ($old_gene{$transcript_id} ne $new_gene{$transcript_id}) {
-	    print DIFF "changed_gene_id\tgene_id $gene_id; transcript_id $transcript_id\n";
-	  }
-	  delete $old_transcripts{$transcript_id};
-	} else {
-	  print DIFF "new\tgene_id $gene_id; transcript_id $transcript_id\n";	
-	}
-	my $bed_start = $new_start{$gene_id} - 10000; # get a region of 10kb before and after the span of the gene that has been altered
-	if ($bed_start < 0) {$bed_start = 0}
-	my $bed_end = $new_end{$gene_id} + 10000;
-	print BED "$new_chrom{$gene_id}\t$bed_start\t$bed_end\n";
+	  my $bed_start = $new_start{$gene_id} - 10000; # get a region of 10kb before and after the span of the gene that has been altered
+	  if ($bed_start < 0) {$bed_start = 0}
+	  my $bed_end = $new_end{$gene_id} + 10000;
+	  print BED "$new_chrom{$gene_id}\t$bed_start\t$bed_end\n";
       }
       
       foreach my $transcript_id (keys %old_transcripts) {
-	my $gene_id = $old_gene{$transcript_id};
-	print DIFF "dead\tgene_id $gene_id; transcript_id $transcript_id\n";	      
+	  my $gene_id = $old_gene{$transcript_id};
+	  print DIFF "dead\tgene_id $gene_id; transcript_id $transcript_id\n";	      
       }
       close(DIFF);
       close(BED);
       system("sort $bed_file | uniq > ${bed_file}.tmp");
       system("mv ${bed_file}.tmp $bed_file");
       
-    }
-
-  } else { # not using NGS file system
-
-    if ($self->check && -s $gtf_file) {
-      $log->write_to("GTF file already exists - not making them again\n");
-      $status = 0;
-    } else {
-      
-      my $gtf_file = " $RNASeqGenomeDir/transcripts.gtf";
-      my $cmd = "make_GTF_transcript.pl -database $database -out $gtf_file -species $species -noprefix"; # -noprefix to strip the chromosome prefix out
-      $cmd .= ' -test' if $self->{'test'};
-      
-      $log->write_to("run $cmd\n");
-      
-      $status = $self->{wormbase}->run_script($cmd, $log);
-      if ($status != 0) { $log->log_and_die("Didn't run make_GTF_transcript.pl successfully\n"); }
-      sleep(60); # wait a minute to let the NFS system catch up with all the LSF nodes
-      #if (!-e $gtf_file || -z $gtf_file) { $log->log_and_die("Didn't run make_GTF_transcript.pl successfully\n"); }
-    }
-
   }
+  
   return $status;
 }
 
