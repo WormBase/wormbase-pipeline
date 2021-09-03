@@ -52,7 +52,7 @@ for genome in ${genomes_wbps16[@]}; do
 	--config \"{ \\\"menuTemplate\\\" : [
 			 { \\\"action\\\" : \\\"newWindow\\\" ,
 			   \\\"label\\\" : \\\"View gene on WormBase ParaSite Release ${VERSION} archive site\\\" , 
-			   \\\"url\\\" : \\\"https://archive-${VERSION}.parasite.wormbase.org/Gene/Summary?g={name}\\\"}]}\" 
+			   \\\"url\\\" : \\\"https://release-${VERSION}.parasite.wormbase.org/Gene/Summary?g={name}\\\"}]}\" 
 	--metadata \"{ \\\"Track\\\" : \\\"WBPS${VERSION} gene models\\\",
                        \\\"Category\\\" : \\\"Genome annotation\\\",
 		       \\\"Description\\\" : \\\"Gene models from release ${VERSION} of WormBase ParaSite\\\" }\" "
@@ -124,19 +124,34 @@ bam_cmd="perl $JBROWSE_INSTALL_DIR/bin/add-bam-track.pl
 	--out $JBROWSE_OUT_DIR/dirofilaria_immitis_prjeb1797/trackList.json
 	--bam_url bam/SRR12046914.sort.bam 
 	--label 'SRR12046914: Adult female'
-	--config \"{ \\\"metadata\\\" : [{
+	--config \"{ \\\"metadata\\\" : {
 			 \\\"Track\\\" : \\\"SRR12046915: Adult female\\\",
 			 \\\"Category\\\" : \\\"IsoSeq\\\", 
 			 \\\"Developmental stage\\\" : \\\"adult\\\",
 			 \\\"ENA BioProject\\\" : \\\"<a href=\"https://www.ebi.ac.uk/ena/browser/view/PRJNA640410\">Study page: PRJNA640410</a>\\\",
 			 \\\"ENA study\\\" : \\\"<a href=\"https://www.ebi.ac.uk/ena/data/view/SRP267883\">Study page: SRP267883</a>\\\",
 			 \\\"Sex\\\" : \\\"female\\\",
-			 \\\"Study\\\" : \\\"<a href=\"https://www.ebi.ac.uk/ena/data/view/SRP267883\">Study page: SRP267883</a>\\\",
-			 \\\"Submitting centre\\\" : \\\"University of Wisconsin-Madison\\\" }]} \" "
+			 \\\"Submitting centre\\\" : \\\"University of Wisconsin-Madison\\\" }} \" "
 
 echo "Running $bam_cmd"
 
 eval $bam_cmd
 
+bam_cmd="perl $JBROWSE_INSTALL_DIR/bin/add-bam-track.pl 
+        --in $JBROWSE_OUT_DIR/dirofilaria_immitis_prjeb1797/trackList.json
+        --out $JBROWSE_OUT_DIR/dirofilaria_immitis_prjeb1797/trackList.json
+        --bam_url bam/SRR12046915.sort.bam 
+        --label 'SRR12046915: Adult male'
+        --config \"{ \\\"metadata\\\" : {
+                         \\\"Track\\\" : \\\"SRR12046915: Adult male\\\",
+                         \\\"Category\\\" : \\\"IsoSeq\\\", 
+                         \\\"Developmental stage\\\" : \\\"adult\\\",
+                         \\\"ENA BioProject\\\" : \\\"<a href=\"https://www.ebi.ac.uk/ena/browser/view/PRJNA640410\">Study page: PRJNA640410</a>\\\",
+                         \\\"ENA study\\\" : \\\"<a href=\"https://www.ebi.ac.uk/ena/data/view/SRP267883\">Study page: SRP267883</a>\\\",
+                         \\\"Sex\\\" : \\\"male\\\",
+                         \\\"Submitting centre\\\" : \\\"University of Wisconsin-Madison\\\" }} \" "
 
+echo "Running $bam_cmd"
+
+eval $bam_cmd
 
