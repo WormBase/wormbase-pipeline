@@ -245,7 +245,7 @@ sub dumpace {
   my $class    = shift;
   my $filepath = shift;
   my $ddb = shift;
-  my $command = "nosave\nquery find $class\nshow -a -f $filepath\nquit\n";
+  my $command = "nosave\nquery find $class\nshow -a -T -f $filepath\nquit\n";
   $log->write_to ("\nFilename: $filepath -> ${ddb}\n");
   print "Opening $ddb for edits\n" if ($verbose);
   open (TACE, "echo '$command' | $tace $ddb |" ) || die "Failed to open database connection to $ddb\n" ;
@@ -383,7 +383,7 @@ sub create_dump_files {
     print "\nUsing $Gene_data as source of gene data\n";
   }
   else {
-    my $gcommand = "\nnosave\nquery find Gene\nshow -a -f $Gene_data\nquit\n";
+    my $gcommand = "\nnosave\nquery find Gene\nshow -a -T -f $Gene_data\nquit\n";
     # dump out from ACEDB
     $log->write_to ("\nDumped gene data\n");
     print "Opening $refdb for edits\n" if ($verbose);
@@ -397,7 +397,7 @@ sub create_dump_files {
     print "\nUsing $Var_data\n";
   }
   else {
-    my $vcommand = "\nnosave\nquery Find Variation WHERE method != \"WGS*\" AND method != \"SNP*\" AND method != \"Million_mutation\" AND method != \"NBP_knockout_allele\" AND method != \"KO_consortium_allele\" AND method != \"NemaGENETAG_consortium_allele\"\nshow -a -f $Var_data\nquit\n";
+    my $vcommand = "\nnosave\nquery Find Variation WHERE method != \"WGS*\" AND method != \"SNP*\" AND method != \"Million_mutation\" AND method != \"NBP_knockout_allele\" AND method != \"KO_consortium_allele\" AND method != \"NemaGENETAG_consortium_allele\"\nshow -a -T -f $Var_data\nquit\n";
     # dump out from ACEDB                                                                                                                                                          
     $log->write_to ("\nDumped Var data\n");
     print "Opening $refdb for edits\n" if ($verbose);
@@ -410,7 +410,7 @@ sub create_dump_files {
 	print "\nUsing $Strain_data\n";
     }
     else {
-	my $scommand = "\nnosave\nquery find Strain\nshow -a -f $Strain_data\nquit\n";
+	my $scommand = "\nnosave\nquery find Strain\nshow -a -T -f $Strain_data\nquit\n";
     # dump out from ACEDB                                                                                                                                                          
 	$log->write_to ("\nDumped strain data\n");
 	print "Opening $refdb for edits\n" if ($verbose);
@@ -424,7 +424,7 @@ sub create_dump_files {
         print "\nUsing $Feature_data\n";
     }
     else {
-        my $fcommand = "\nnosave\nquery find Feature\nshow -a -f $Feature_data\nquit\n";
+        my $fcommand = "\nnosave\nquery find Feature\nshow -a -T -f $Feature_data\nquit\n";
     # dump out from ACEDB                                                                                                                                                         \
                                                                                                                                                                                    
         $log->write_to ("\nDumped strain data\n");
