@@ -355,9 +355,9 @@ sub process_human {
     } else {
       my $login = "anonymous";
       my $passw = 'wormbase@sanger.ac.uk';
-      $ftp = Net::FTP->new("ftp.ebi.ac.uk");
+      $ftp = Net::FTP->new("ftp.ebi.ac.uk", Debug => 0) or $log->log_and_die("Cannot connect to ftp.ebi.ac.uk: $@");
       $ftp->login("anonymous",'wormbase@sanger.ac.uk');
-      $ftp->cwd('pub/databases/IPI/current');
+      $ftp->cwd('pub/databases/IPI/last_release/current/');
       $filename = 'ipi.HUMAN.fasta.gz';
       my $ls = $ftp->dir("$filename");
       my @a = parse_dir($ls);
