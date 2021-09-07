@@ -391,17 +391,26 @@ sub process_uniprot {
   my ($target1, $target2, $target3); 
 
   if ($do_swiss) {
-    $target1 = $ENV{'PIPELINE'}."/blastdb/Supported/uniprot_sprot.fasta.gz";
-    my $filename = "/ebi/ftp/pub/databases/uniprot/knowledgebase/uniprot_sprot.fasta.gz";
-    if (!-e $filename) {$log->log_and_die("Can't find file $filename\n");}
-    $wormbase->run_command("cp $filename $target1",$log);
+      $target1 = $ENV{'PIPELINE'}."/blastdb/Supported/uniprot_sprot.fasta.gz";
+      my $filename = "pub/databases/uniprot/knowledgebase/uniprot_sprot.fasta.gz";
+      if (-e "/ebi/ftp/${filename}") {
+	  $wormbase->run_command("cp /ebi/ftp/$filename $target1", $log);
+      }
+      else {
+	  $log->log_and_die("Can't find file $filename\n") if $wormbase->run_command("wget -O $target1 ftp://ftp.ebi.ac.uk/$filename");
+      }
   }
   
   if ($do_trembl) {
-    $target2 = $ENV{'PIPELINE'}."/blastdb/Supported/uniprot_trembl.fasta.gz";
-    my $filename = "/ebi/ftp/pub/databases/uniprot/knowledgebase/uniprot_trembl.fasta.gz";
-    if (!-e $filename) {$log->log_and_die("Can't find file $filename\n");}
-    $wormbase->run_command("cp $filename $target2",$log);
+      $target2 = $ENV{'PIPELINE'}."/blastdb/Supported/uniprot_trembl.fasta.gz";
+      my $filename = "pub/databases/uniprot/knowledgebase/uniprot_trembl.fasta.gz";
+      if (-e "/ebi/ftp/${filename}") {
+	  $wormbase->run_command("cp /ebi/ftp/$filename $target2", $log);
+      }
+      else {
+	  $log->log_and_die("Can't find file $filename\n") if $wormbase->run_command("wget -O $target2 ftp://ftp.ebi.ac.uk/$filename");
+      }
+      $wormbase->run_command("cp $filename $target2",$log);
   }
   
   $target3 = $ENV{'PIPELINE'}."/blastdb/Supported/uniprot";
