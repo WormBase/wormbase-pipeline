@@ -137,6 +137,8 @@ if ($yeast) {
 if ($fly) {
     $log->write_to("Updating fly . . \n");
     my $update = 0;
+    my $fly_download = '/tmp/flybase.gz';
+    my $ver;
     eval {
        # find the release version
 	my $page_download = '/tmp/page_download';
@@ -154,7 +156,6 @@ if ($fly) {
 	$wormbase->run_command("rm -f $page_download", $log);
 
 	#get the file
-	my $fly_download = '/tmp/flybase.gz';
 	$log->write_to("\tdownloading flybase file\n");
 	die "Could not fetch file" if $wormbase->run_command("wget -O $fly_download ftp://ftp.flybase.net/genomes/Drosophila_melanogaster/current/fasta/dmel-all-translation-r${fly_version}.fasta.gz", $log);
 	die "Could not unzip file" if $wormbase->run_command("gunzip -f $fly_download", $log);
@@ -162,7 +163,7 @@ if ($fly) {
     
 	#check if number of proteins has changed
 	$log->write_to("\tcomparing\n");
-	my $ver = &determine_last_vers('gadfly'); 
+	$ver = &determine_last_vers('gadfly'); 
 	my $old_file = "$blastdir/gadfly$ver.pep";
 	my $old_cnt = qx{grep -c '>' $old_file};
 	my $new_cnt = qx{grep -c '>' $fly_download};
