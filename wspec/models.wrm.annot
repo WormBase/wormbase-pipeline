@@ -1337,8 +1337,7 @@
                       Chemical_inducer ?Molecule INXREF Induces_disease
                       Other_inducer ?Text                                      //New tag
                       Molecule_modifier ?Molecule INXREF Modifies_disease
-         Reagent_info Associated_antibody ?Antibody INXREF Antibody_for_disease
-                      Associated_construct ?Construct INXREF Construct_for_disease
+         Reagent_info Associated_construct ?Construct INXREF Construct_for_disease
                       Associated_transgene ?Transgene INXREF Transgene_for_disease
          Version UNIQUE Text
 
@@ -2479,7 +2478,6 @@
                                        Chicken
                                        Goat
           Historical_gene ?Gene Text
-          Antibody_for_disease ?DO_term OUTXREF Associated_antibody #Evidence
           Expr_pattern ?Expr_pattern INXREF Antibody_info
           Interactor ?Interaction INXREF Antibody
           Reference ?Paper OUTXREF Antibody
