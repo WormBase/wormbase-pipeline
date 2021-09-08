@@ -133,9 +133,8 @@ my $sp_full_name = $wormbase->full_name;
 
 my $log = Log_files->make_build_log($wormbase);
 
-if (not defined $infile or not defined $outfile) { 
-  $log->log_and_die("You must define -infile and -outfile\n") unless $vcf_only;
-}
+$log->log_and_die("You must define -infile\n") unless defined $infile;
+$log->log_and_die("You must define -outfile unless running in -vcf_only mode\n") unless defined $outfile or $vcf_only;
 
 my $vcf = $gff3 and !$no_vcf ? 1 : 0;
 
