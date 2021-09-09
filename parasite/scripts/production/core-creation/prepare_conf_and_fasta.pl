@@ -271,8 +271,7 @@ if( $force or not -s $conf_path or $ENV{REDO_FASTA} ) {
       my %pseudogenic_transcripts = ();
       foreach my $feature (@features){
          my $hash = {ID=>$feature->{attribute}->{ID}, type=>$feature->{type}, Parent=>$feature->{attribute}->{Parent}, CDS=>[], exon=>[] };
-         if( 'mRNA' eq $feature->{type} || 'transcript' eq $feature->{type} ||
-             $feature->{type} =~ m/^..?RNA$/ || $feature->{type} =~ m/^..?RNA_\S+$/ ) {
+         if( 'mRNA' eq $feature->{type} || 'transcript' eq $feature->{type} || $feature->{type} =~ m/^..?RNA$/ ) {
             die "$feature->{type} ID $feature->{attribute}->{ID} is not unique at $this_assembly->{gff3} line $.\n"
                if exists $RNAs{ $feature->{attribute}->{ID} };
             # parent must exists *and* must be a gene
@@ -311,8 +310,7 @@ if( $force or not -s $conf_path or $ENV{REDO_FASTA} ) {
                push( @{$pseudogenic_transcripts{ $feature->{attribute}->{Parent} }->{ $feature->{type} }},
                      'exon');
             } else {
-	       die $feature->{scaffold};
-	       #die "exon $feature->{attribute}->{ID} references a non-existent parent in $this_assembly->{gff3}";
+               die "exon $feature->{attribute}->{ID} references a non-existent parent in $this_assembly->{gff3}"
             }
          }
       }

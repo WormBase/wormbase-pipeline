@@ -23,10 +23,6 @@ sub previous_staging {
   my $v = $ENV{PREVIOUS_PARASITE_STAGING_MYSQL} or die "PREVIOUS_PARASITE_STAGING_MYSQL not in env. You need to module load parasite_prod_relx";
   return new(shift, $v);
 }
-sub handover_staging {
-  my $v = $ENV{HANDOVER_STAGING_MYSQL} or die "HANDOVER_STAGING_MYSQL not in env. You need to module load parasite_handover_relx";   
-    return new(shift, $v);
-    }
 sub staging_writable {
   my $v = $ENV{PARASITE_STAGING_MYSQL} or die "PARASITE_STAGING_MYSQL not in env. You need to module load parasite_prod_relx";
   return new(shift,"$v-w"); 
