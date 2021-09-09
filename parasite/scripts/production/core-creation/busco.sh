@@ -5,7 +5,7 @@ set -e
 if [ ! -f "$1" ] ; then echo "Usage: $0 species/species.fa [roundworm/flatworm]" ; exit 1 ; fi 
  
 module load busco
-if [ ! -d "$BUSCO" ] ; then echo "Importing BUSCO didn't work!" ; exit 1 ; fi
+if [ ! -d "$BUSCO_CONTAINER" ] ; then echo "Importing BUSCO didn't work!" ; exit 1 ; fi
 
 fasta=$1
 species=$(basename $(dirname $fasta) )
