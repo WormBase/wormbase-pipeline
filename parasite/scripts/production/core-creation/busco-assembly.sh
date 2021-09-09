@@ -2,7 +2,7 @@
 set -e
 
 # USAGE
-if [ ! "$1" ] ; then echo "Usage: $0 core_db [roundworm/flatworm]" ; exit 1 ; fi
+if [ ! "$1" ] || [ ! "$2" ] ; then echo "Usage: $0 species fasta [roundworm/flatworm]" ; exit 1 ; fi
 
 #Set up DB credentials
 DBHOSTNAME=$($PARASITE_STAGING_MYSQL details script | grep -Po "^--host \K(\S+)")
@@ -10,10 +10,12 @@ DBUSER=$($PARASITE_STAGING_MYSQL details script | grep -Po "\s+--user \K(\S+)")
 DBPORT=$($PARASITE_STAGING_MYSQL details script | grep -Po "\s+--port \K(\S+)")
 
 #Input
-core_db=$1
-phylum=${2}
-
-species=$(echo $core_db | cut -d'_' -f1,2,3)
+species=$1
+fasta=$2
+core_db=$3
+echo "fasta: ${fasta}"
+phylum=${4}
+echo "core_db: ${core_db}"
 
 #Check if core_db in current db
 CORE_DBS=$($PARASITE_STAGING_MYSQL -Ne "SHOW DATABASES LIKE \"%_core_${PARASITE_VERSION}_${ENSEMBL_VERSION}%\"")
@@ -39,32 +41,32 @@ else
 fi
 
 
-#Dump proteins Run
-BUSCO_TMP=$PARASITE_SCRATCH/busco-annotation/WBPS${PARASITE_VERSION}/$species
+# BUSCO Run
+BUSCO_TMP=$PARASITE_SCRATCH/busco/WBPS${PARASITE_VERSION}/$species
 mkdir -p $BUSCO_TMP
+echo "Working directory: ${BUSCO_TMP}"
 cd $BUSCO_TMP
-
-
-run_log_dpl=$BUSCO_TMP/run-dump-proteins.$(date "+%Y-%m-%d").out
-perl $WORM_CODE/scripts/ENSEMBL/scripts/dump_proteins.pl -canonical_only --host=$DBHOSTNAME --port=$DBPORT --user=$DBUSER --dbname=$core_db --outfile=$species.prot.fa \
-  | tee $run_log_dpl
-
-## Check if we got the expected number of protein sequences we thought we would get
-EXPECTED_PROTEIN_SEQ_NUMBER=$($PARASITE_STAGING_MYSQL $core_db --column-names=FALSE -e 'select count(*) from transcript where biotype="protein_coding" AND canonical_translation_id IS NOT NULL;')
-DUMPED_PROTEIN_SEQ_NUMBER=$(grep -c ">" $species.prot.fa)
-if [[ ! "$EXPECTED_PROTEIN_SEQ_NUMBER" -eq "$DUMPED_PROTEIN_SEQ_NUMBER" ]]; then
-  printf "\n\nERROR: Did not get the expected amount of sequences dumped:\nExpected protein sequences: %s\nDumped protein sequences: %s.\n" "$EXPECTED_PROTEIN_SEQ_NUMBER" "$DUMPED_PROTEIN_SEQ_NUMBER" \
-  | tee -a $run_log_dpl; fi
-printf "Expected protein sequences: %s\nDumped protein sequences: %s.\n" "$EXPECTED_PROTEIN_SEQ_NUMBER" "$DUMPED_PROTEIN_SEQ_NUMBER" >> $run_log_dpl
-
-
-
-# BUSCO Protein Run
 run_log=$BUSCO_TMP/run-busco.$(date "+%Y-%m-%d").out
 
-singularity exec $BUSCO3_CONTAINER run_BUSCO.py -sp $species_parameter_for_augustus -l $busco_library -o $species -i $species.prot.fa -c 8 -m proteins -f \
+FILE_TEST=$(file $fasta)
+
+final_fasta=$fasta
+if [[ $FILE_TEST == *"gzip compressed data"* ]]; then
+  echo "${fasta} file is zipped. Unzipping..."
+  final_fasta=${BUSCO_TMP}/${species}.genome.fa
+  gzip -d -c ${fasta} > $final_fasta
+fi
+
+AUGPATH=/hps/software/users/wormbase/parasite/software/Augustus/config
+echo "Running BUSCO:"
+SINGULARITYENV_AUGUSTUS_CONFIG_PATH=$AUGPATH singularity exec $BUSCO3_CONTAINER run_BUSCO.py -sp $species_parameter_for_augustus -l $busco_library -o $species -i $final_fasta -c 8 -m genome -f -r \
   | tee $run_log
 
+#SINGULARITYENV_AUGUSTUS_CONFIG_PATH=$AUGPATH singularity exec $BUSCO4_CONTAINER busco --augustus_species $species_parameter_for_augustus -l $busco_library -o $species -i $final_fasta -c 8 -m genome -f -r \
+#  | tee $run_log
+
+#SINGULARITYENV_AUGUSTUS_CONFIG_PATH=$AUGPATH singularity exec $BUSCO5_CONTAINER busco --augustus --augustus_species $species_parameter_for_augustus --datasets_version odb9 -l $busco_library -o $species -i $final_fasta -c 8 -m genome -f -r \
+#  | tee $run_log
 
 # Output Handling
 ## BUSCO doesn't reliably use status codes
@@ -79,20 +81,22 @@ result=${BUSCO_TMP}/run_${species}/short_summary_${species}.txt
 if [ ! -f "$result" ] ; then >&2 echo "Could not find the result file $result - did BUSCO succeed? " ; exit 1 ; fi
 if [ ! "$core_db" ] ; then  >&2 echo "No core db - go read $result. Finishing " ; exit; fi
 
+
+
 #Update the DB
-${PARASITE_STAGING_MYSQL}-w $core_db -e 'delete from meta where meta_key like "annotation.busco%"'
-${PARASITE_STAGING_MYSQL}-w $core_db -e 'delete from meta where meta_key like "annotation.busco3%"'
+
+${PARASITE_STAGING_MYSQL}-w $core_db -e 'delete from meta where meta_key like "assembly.busco3%"'
 echo "Parsing the result file: $result"
-perl -ne 'print "annotation.busco3_complete\t$1\nannotation.busco3_duplicated\t$2\nannotation.busco3_fragmented\t$3\nannotation.busco3_missing\t$4\nannotation.busco3_number\t$5\n" if /C:(-?[0-9.]+).*D:(-?[0-9.]+).*F:(-?[0-9.]+).*M:(-?[0-9.]+).*n:(\d+)/' $result \
+perl -ne 'print "assembly.busco3_complete\t$1\nassembly.busco3_duplicated\t$2\nassembly.busco3_fragmented\t$3\nassembly.busco3_missing\t$4\nassembly.busco3_number\t$5\n" if /C:(-?[0-9.]+).*D:(-?[0-9.]+).*F:(-?[0-9.]+).*M:(-?[0-9.]+).*n:(\d+)/' $result \
   | while read meta_key meta_value ; do
   ${PARASITE_STAGING_MYSQL}-w $core_db -e "insert into meta (meta_key, meta_value) values (\"$meta_key\", \"$meta_value\");"
 done
 
-#Delete the protein fasta
-rm ${BUSCO_TMP}/${species}.prot.fa
+if [[ $FILE_TEST == *"gzip compressed data"* ]]; then
+  rm $final_fasta
+fi
 
-echo "test done"
-#echo "Parsed the results and inserted into the meta table. DONE"
+echo "Parsed the results and inserted into the meta table. DONE"
 
 sleep 2
 exit
