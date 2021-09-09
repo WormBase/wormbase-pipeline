@@ -22,11 +22,12 @@ sub read_templates {
 my $templates = &read_templates;
 
 my @core_dbs = ProductionMysql->staging->core_databases(@ARGV);
+
 die "Usage: $0 <core_dbs_pattern>" unless @core_dbs;
 
-print $templates->{ENSEMBL_INSDC_PARSERS};
-print $templates->{ENSEMBL_OTHER_PARSERS};
-print $templates->{ENSEMBL_FAKE_SOURCES};
+print($templates->{ENSEMBL_INSDC_PARSERS});
+print($templates->{ENSEMBL_OTHER_PARSERS});
+print($templates->{ENSEMBL_FAKE_SOURCES});
 my %core_dbs_per_species;
 for my $core_db (@core_dbs){
    my ($spe, $cies, $bioproject) = split "_", $core_db;
@@ -505,6 +506,13 @@ priority        = 1
 prio_descr      =
 parser          = UniProtParser
 release_uri     =
+
+[source Uniprot_isoform]
+name            = Uniprot_isoform
+download        = N
+order           = 30
+priority        = 1
+parser          = UniProtParser
 
 [source UniProt::PDB]
 name            = PDB

@@ -155,6 +155,7 @@ sub parse_genes_gff3_fh {
       $l[2] ne 'pseudogenic_rRNA' and
       $l[2] ne 'pseudogenic_tRNA' and
       $l[2] ne 'nontranslating_transcript' and 
+      $l[2] ne 'tRNA_pseudogene' and
       $l[2] ne 'CDS' and 
       $l[2] ne 'exon');
 
@@ -222,6 +223,7 @@ sub parse_genes_gff3_fh {
 	     $l[2] eq 'nontranslating_transcript' or
              $l[2] eq 'pseudogenic_rRNA' or
              $l[2] eq 'pseudogenic_tRNA' or
+             $l[2] eq 'tRNA_pseudogene' or
              $l[2] eq 'nc_primary_transcript' or 
              $l[2] eq 'protein_coding_primary_transcript') {
       $transcripts{$id}->{source} = $l[1];
@@ -472,6 +474,10 @@ sub parse_genes_gff3_fh {
 	  $transcript->analysis($coding_ana); # analysis description to match the protein coding genes.
 	  $transcript->biotype('nontranslating_CDS');
 	  $gene_biotypes{nontranslating_CDS}++;
+	} elsif ($gff_type =~ /tRNA_pseudogene/){
+	  $transcript->analysis($coding_ana); # analysis description to match the protein coding genes.
+	  $transcript->biotype('tRNA_pseudogene');
+	  $gene_biotypes{tRNA_pseudogene}++;
 	} elsif ( $gff_type eq 'mRNA'){
           # mRNA feature with no corresponding CDS. Barf
           die "Transcript $tid is an mRNA, but could not get a valid CDS for it. Aborting\n";
