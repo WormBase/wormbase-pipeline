@@ -1163,6 +1163,7 @@
                 ECO_term UNIQUE ?ECO_term
                 GO_term UNIQUE ?GO_term OUTXREF GO_annotation
                 GO_code UNIQUE ?GO_code
+                Noctua_model_id ?Text
                 Annotation_relation UNIQUE ?RO_term XREF GO_annotation
                 Annotation_relation_not UNIQUE ?RO_term XREF Not_GO_annotation
                 Annotation_made_with Interacting_gene ?Gene

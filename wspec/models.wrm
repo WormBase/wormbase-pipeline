@@ -1141,6 +1141,7 @@
                ECO_term UNIQUE ?ECO_term
                GO_term UNIQUE ?GO_term XREF GO_annotation
                GO_code UNIQUE ?GO_code
+               Noctua_model_id ?Text
                Annotation_relation UNIQUE ?RO_term XREF GO_annotation
                Annotation_relation_not UNIQUE ?RO_term XREF Not_GO_annotation
                Annotation_made_with Interacting_gene ?Gene
@@ -1321,8 +1322,7 @@
                       Chemical_inducer ?Molecule XREF Induces_disease          //To associate inducing chemicals to a disease
                       Other_inducer ?Text                                      //New tag
                       Molecule_modifier ?Molecule XREF Modifies_disease        //To associate modifying chemicals to a disease
-         Reagent_info Associated_antibody ?Antibody XREF Antibody_for_disease
-                      Associated_construct ?Construct XREF Construct_for_disease
+         Reagent_info Associated_construct ?Construct XREF Construct_for_disease
                       Associated_transgene ?Transgene XREF Transgene_for_disease
          Version UNIQUE Text
 
@@ -2451,7 +2451,6 @@
                                   Chicken
                                   Goat
           Historical_gene ?Gene Text
-          Antibody_for_disease ?DO_term XREF Associated_antibody #Evidence
           Expr_pattern ?Expr_pattern XREF Antibody_info
           Interactor ?Interaction
           Reference ?Paper XREF Antibody
