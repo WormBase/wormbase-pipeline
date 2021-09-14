@@ -92,7 +92,7 @@ my $tace            = $wormbase->tace;        # TACE PATH
 ##############################
 if (!defined$load) {$log->write_to("You have decided not to automatically load the output of this script\n\n");}
 elsif (defined$load) { $log->write_to("Output has been scheduled for auto-loading.\n\n");}
-
+print "Processing\n------------------------------\n";
 my $ace = Ace->connect (-path => $database,
                        -program => $tace) || die "cannot connect to database at $database\n";
 my $output;
@@ -149,6 +149,9 @@ while(<FILE>){
 		$wbperson = $1;
 		next;
 	    }
+	    else {
+		print "WARNING - $name does not seem to have supplied their WBPerson ID\n";
+	    }
 	}
         #Your Name</td><td>Takashi Murayama -- WBPerson1928
 	if (/Your Name<\/td><td>(.+)\s+\-\-\s+(WBPerson\d+)$/) {
@@ -185,6 +188,9 @@ while(<FILE>){
             $public_name = $1;
             next;
         }
+	else {
+	    $log->log_and_die("There are errors in the Allele Name provided $raw_name\n");
+	}
         next;
     }
     #<tr><td>Gene Name</td><td>dot-1.1 -- WBGene00021474</td>
@@ -196,12 +202,25 @@ while(<FILE>){
         }
         next;
     }
-    elsif (/Sequence Name<\/td><td>(\S+)<\/td>/) {
-        #print "Seq name = $1\n";
-        $seq = $1;
-        if ($seq =~ /(\S+)\.\d+/) {
-            $clone = $1;
+    elsif (/Sequence Name/) {
+	#remove whitespace from the table cells
+	if (/<td> /) {
+	    s/<td> /<td>/;
+	}
+	if ( < \/td>){
+	    s/ <\/td>/<\/td>/;
         }
+	if (/Sequence Name<\/td><td>(\S+)<\/td>/) {
+	    $seq = $1;
+	    if ($seq =~ /(\S+)\.\d+/) {
+		$clone = $1;
+		$seq = "Check:".$seq;
+	    }
+	    else { #We should check what's in here 
+		print "WARNING - $seq doesn't seem like one of our sequences\n";
+		$seq = "Check:".$seq;
+	    }
+	}
         next;
     }
     elsif (/Type of Alteration<\/td><td>(.+)<\/td>/) {
@@ -312,7 +331,7 @@ while(<FILE>){
         if ($clone) {
             print ACE "Mapping_target $clone\n";
         }
-        else {
+        elsif ($seq) {
             print ACE "Mapping_target $seq\n";
         }
         if (defined $flank1){
@@ -338,7 +357,12 @@ while(<FILE>){
 		print ACE "Type_of_mutation Insertion\n";
 	    }
             elsif ($type_alt =~ /Point Mutation/){
+		if ($alt_det){
                 print ACE "Type_of_mutation Substitution $alt_det\n";
+		}
+		else {
+		    print ACE "Type_of_mutation Substitution\n";
+		}
             }
             elsif ($type_alt =~ /Deletion/){
                 print ACE "Type_of_mutation Deletion\n";
@@ -366,7 +390,8 @@ while(<FILE>){
 		print ACE "Reference $WBpaper\t \/\/ Supplied PMID:$pubmed\n";
             }
             else {
-                print "\/\/Reference $pubmed\n";
+                print ACE "\/\/Reference PMID:$pubmed";
+		print "WARNING - Reference PMID:$pubmed Cannot find a valid WBPaperID this needs to be resolved in the output file\n";
             }
         }
         if (defined $comment) {
@@ -444,7 +469,12 @@ while(<FILE>){
 	}
 
 #standard tags
-	print ACE "Remark \"Variation information submitted by $wbperson on $datestamp via the Allele submission form.\"";
+	if (defined $wbperson){
+	    print ACE "Remark \"Variation information submitted by $wbperson on $datestamp via the Allele submission form.\"";
+	}
+	else {
+	    print ACE "Remark \"Variation information submitted by $name on $datestamp via the Allele submission form.\"";
+	}
 	if (defined $curator) {
 	    print ACE " Curator_confirmed $curator\n";
 	}
@@ -485,7 +515,12 @@ while(<FILE>){
 	    }
 	}
 	else {
-	    print "\n\n\\\\No Strain for genotype exit without printing\n\n";
+	    if ($geno){
+		print "COMMENT - No Strain for genotype [$geno] exit without printing\n" if ($debug);
+	    }
+	    else {
+		print "COMMENT - No Strain information provided exit without printing\n" if ($debug);
+	    }
 	}
 	
 	
@@ -497,7 +532,7 @@ while(<FILE>){
 } #while(<FILE>){
 
 &load_data if ($load);
-$log->write_to("5) Check $output file and load into geneace.\n") unless ($load);
+$log->write_to("\nFinished processing\n------------------------------\nCheck $output file and load into geneace.\n") unless ($load);
 $log->mail();
 
 sub load_data {
