@@ -81,7 +81,6 @@ unless (defined $USER){print "WARNING: you have not used -user option so Curator
 my $DB;
 my $db;
 my $ecount;
-
 $wormbase = Wormbase->new("-organism" =>$species, -debug => $debug, -test => $test);
 my $database = "/nfs/production/panda/ensemblgenomes/wormbase/DATABASES/geneace";
 $log->write_to("TEST mode is ON!\n\n") if $test;
@@ -92,7 +91,7 @@ my $tace            = $wormbase->tace;        # TACE PATH
 ##############################
 if (!defined$load) {$log->write_to("You have decided not to automatically load the output of this script\n\n");}
 elsif (defined$load) { $log->write_to("Output has been scheduled for auto-loading.\n\n");}
-print "Processing\n------------------------------\n";
+$log->write_to("Processing\n------------------------------\n");
 my $ace = Ace->connect (-path => $database,
                        -program => $tace) || die "cannot connect to database at $database\n";
 my $output;
@@ -150,7 +149,8 @@ while(<FILE>){
 		next;
 	    }
 	    else {
-		print "WARNING - $name does not seem to have supplied their WBPerson ID\n";
+		$log->write_to("WARNING - $name does not seem to have supplied their WBPerson ID\n");
+		
 	    }
 	}
         #Your Name</td><td>Takashi Murayama -- WBPerson1928
@@ -217,7 +217,7 @@ while(<FILE>){
 		$seq = "Check:".$seq;
 	    }
 	    else { #We should check what's in here 
-		print "WARNING - $seq doesn't seem like one of our sequences\n";
+		$log->write_to("WARNING - $seq doesn't seem like one of our sequences\n");
 		$seq = "Check:".$seq;
 	    }
 	}
@@ -310,7 +310,7 @@ while(<FILE>){
             my $status_obj = $ace->fetch(Variation=>$varname);
             my $seqstatus = $status_obj->SeqStatus->name;
             if ($seqstatus =~ /Sequenced/) {
-                print "WARNING - $varname is already curated\n";
+                $log->write_to("WARNING - $varname is already curated\n");
             }
         }
         else {
@@ -391,7 +391,7 @@ while(<FILE>){
             }
             else {
                 print ACE "\/\/Reference PMID:$pubmed";
-		print "WARNING - Reference PMID:$pubmed Cannot find a valid WBPaperID this needs to be resolved in the output file\n";
+		$log->write_to("WARNING - Reference PMID:$pubmed Cannot find a valid WBPaperID this needs to be resolved in the output file\n");
             }
         }
         if (defined $comment) {
@@ -481,7 +481,7 @@ while(<FILE>){
 	else {
 	    print ACE "\n";
 	}
-        print ACE "Sequenced\nSpecies \"Caenorhabditis elegans\"\nLive\n";
+        print ACE "Species \"Caenorhabditis elegans\"\nLive\n";
         print ACE "Method $obj_method";
 	print ACE "\n\n";
         
