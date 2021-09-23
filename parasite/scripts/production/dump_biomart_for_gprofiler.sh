@@ -7,14 +7,8 @@ set -x
 set -euo pipefail
 
 STAGING_DIR=${PARASITE_SCRATCH}/dumps/WBPS${PARASITE_VERSION}/biomart/WBPS${PARASITE_VERSION}
-#Might need to change the release directory as in CODON now:
 RELEASE_DIR=/nfs/ftp/pub/databases/wormbase/collaboration/UTE/WBPS${PARASITE_VERSION}
-#RELEASE_DIR=${PARASITE_SCRATCH}/dumps/WBPS${PARASITE_VERSION}/biomart/release
 
-if [ ! -d "$RELEASE_DIR" ] ; then
-  mkdir -pv $RELEASE_DIR
-  mkdir -pv ${RELEASE_DIR}/biomart/
-fi
 
 if [ ! -d "$STAGING_DIR" ] ; then
   TMP=${STAGING_DIR}.tmp
@@ -23,11 +17,23 @@ if [ ! -d "$STAGING_DIR" ] ; then
 
   SRV_URL=$($PARASITE_STAGING_MYSQL details url)
   DBNAME=parasite_mart_${PARASITE_VERSION}
-  OUTPUT_DIR=$TMP
+  OUTPUT_DIR=/homes/digri/test
 
-  standaloneJob.pl Bio::EnsEMBL::Production::Pipeline::FileDump::MySQL_TXT  
-  -db_url ${SRV_URL}${DBNAME} -dbname ${DBNAME} -output_dir ${OUTPUT_DIR} -dump_dir ${OUTPUT_DIR}
-fi
+  #Outputing txt files
+  standaloneJob.pl Bio::EnsEMBL::Production::Pipeline::FileDump::MySQL_TXT \
+    -db_url ${SRV_URL}${DBNAME} \
+    -dbname ${DBNAME} \
+    -output_dir ${TMP} \
+    -dump_dir ${TMP}
+
+  #Outputting sql files
+  for table in $( $PARASITE_STAGING_MYSQL ${DBNAME} -Ne "SHOW TABLES" ); do
+    mysqldump $( $PARASITE_STAGING_MYSQL-w details mysql ) \
+    --quick --single-transaction \
+    parasite_mart_${PARASITE_VERSION} $table > ${TMP}/$table.sql;
+  done
+    mv -v $TMP $STAGING_DIR
+  fi
 
 find $STAGING_DIR -type f -name '*.txt' | while read -r f; do
   gzip -v $f
