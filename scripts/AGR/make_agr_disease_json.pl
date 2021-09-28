@@ -1,4 +1,5 @@
 #!/usr/bin/env perl
+# Note! This script is used both by the WormBase build (autoace.pl -ontologies), and the AGR data dump, so if you make changes test on both workflows.
 
 use strict;
 use Storable;	

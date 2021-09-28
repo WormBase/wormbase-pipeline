@@ -59,13 +59,13 @@ const my %VCF_INFO => (
     other_name => {
 	id          => 'ON',
 	type        => 'String',
-	number      => 1,
+	number      => '.',
 	description => 'Other name',
     },
     strain => {
 	id          => 'SN',
 	type        => 'String',
-	number      => 1,
+	number      => '.',
 	description => 'Strain',
     },
     rflp => {
@@ -81,6 +81,19 @@ const my %VCF_INFO => (
 	description => 'HGVSg identifier',
     },
     );
+
+const my %IUPAC_CODES => (
+    'R' => 'A/G',
+    'Y' => 'C/T',
+    'S' => 'G/C',
+    'W' => 'A/T',
+    'K' => 'G/T',
+    'M' => 'A/C',
+    'B' => 'C/G/T',
+    'D' => 'A/G/T',
+    'H' => 'A/C/T',
+    'V' => 'A/C/G'
+    );
     
 ######################################
 # variables and command-line options # 
@@ -88,7 +101,7 @@ const my %VCF_INFO => (
     
 my ($debug, $test, $store, $wormbase, $database, $chromosomes);
 my ($species, $gff3, $infile, $outfile, %var, $changed_lines, $added_lines, $no_vcf);
-my ($fasta_file, $vcf_file);
+my ($fasta_file, $vcf_file, $vcf_only);
 
 GetOptions (
   "debug=s"    => \$debug,
@@ -98,6 +111,7 @@ GetOptions (
   "database:s" => \$database,
   "gff3"       => \$gff3,
   "no_vcf"     => \$no_vcf,
+  "vcf_only"   => \$vcf_only,
   "infile:s"   => \$infile,
   "outfile:s"  => \$outfile,
   "vcffile:s"  => \$vcf_file,
@@ -119,9 +133,8 @@ my $sp_full_name = $wormbase->full_name;
 
 my $log = Log_files->make_build_log($wormbase);
 
-if (not defined $infile or not defined $outfile) { 
-  $log->log_and_die("You must define -infile and -outfile\n");
-}
+$log->log_and_die("You must define -infile\n") unless defined $infile;
+$log->log_and_die("You must define -outfile unless running in -vcf_only mode\n") unless defined $outfile or $vcf_only;
 
 my $vcf = $gff3 and !$no_vcf ? 1 : 0;
 
@@ -137,14 +150,26 @@ if ($vcf) {
     print_vcf_header($vcf_out_fh, $chromosomes, $sp_full_name);
 }
 
-    my $transcript_parents = get_transcript_parents($infile);
+my $transcript_parents = get_transcript_parents($infile);
 my $var_consequences = get_molecular_consequences($transcript_parents);
 
 my $db = Ace->connect(-path => $database);
 
-open(my $gff_in_fh, $infile) or $log->log_and_die("Could not open $infile for reading\n");
-open(my $gff_out_fh, ">$outfile") or $log->log_and_die("Could not open $outfile for writing\n");  
+my $gff_in_fh;
+if ($vcf_only and $infile =~ /\.gz$/) {
+    # May want to run VCF only mode on final gzipped GFF, otherwise will always be in unzipped form
+    open ($gff_in_fh, "gunzip -c $infile |") or $log->log_and_die("Could not open $infile for reading\n");
+}
+else {
+    open($gff_in_fh, $infile) or $log->log_and_die("Could not open $infile for reading\n");
+}
 
+my $gff_out_fh;
+if (!$vcf_only) {
+    open($gff_out_fh, ">$outfile") or $log->log_and_die("Could not open $outfile for writing\n");  
+}
+
+my %vcf_lines_printed;
 while (<$gff_in_fh>) {
   if (/Variation \"(WBVar\d+)\"/ or 
       /Variation:(WBVar\d+)/ or 
@@ -271,13 +296,16 @@ while (<$gff_in_fh>) {
     
     if (exists $var_consequences->{$allele}) {
 	for my $attribute ('Consequence', 'VEP_impact', 'AAchange', 'Codon_change', 'HGVSg', 'HGVSc',
-			   'SIFT', 'PolyPhen', 'cDNA_position', 'CDS_position', 'AA_position',
+			   'HGVSp', 'SIFT', 'PolyPhen', 'cDNA_position', 'CDS_position', 'AA_position',
 			   'Intron_nr', 'Exon_nr') {
 	    push @new_els, [$attribute, $var_consequences->{$allele}{$attribute}]
 		if exists $var_consequences->{$allele}{$attribute};
 	}
-	$allele_vcf_values{'csq_string'} = join(',', @{$var_consequences->{$allele}{'csq'}})
-	    if exists $var_consequences->{$allele}{'csq'};
+	$allele_vcf_values{'csq_string'} = join(',', @{$var_consequences->{$allele}{'csq'}}) if
+	    exists $var_consequences->{$allele}{'csq'};
+	$allele_vcf_values{'hgvsg'} = $var_consequences->{$allele}{'HGVSg'} if
+	    exists $var_consequences->{$allele}{'HGVSg'};
+
 	
 	if ($var_consequences->{$allele}{'severity'} >= 23) {
 	    if ($current_els[2] ne 'transposable_element_insertion_site' and 
@@ -317,16 +345,19 @@ while (<$gff_in_fh>) {
     
     my $join_str = ($gff3) ? ";" : " ; ";
     my $group = join($join_str, @new_el_strings); 
-    print $gff_out_fh join("\t", @current_els, $group), "\n";
+    print $gff_out_fh join("\t", @current_els, $group), "\n" unless $vcf_only;
 
     if ($vcf and $current_els[2] ne 'tandem_duplication'
 	and $current_els[2] ne 'transposable_element_insertion_site'
 	and $current_els[2] ne 'sequence_alteration') {
+	next if exists $vcf_lines_printed{$allele};
 	my ($vcf_pos, $vcf_ref, $vcf_alt) = vcf_values($allele, \@current_els, $group, $chromosomes);
 	if ($vcf_pos) {
+	    $vcf_out_fh->print("\n" . join("\t", qw(#CHROM POS ID REF ALT QUAL FILTER INFO))) unless %vcf_lines_printed;
 	    my $vcf_info_str = vcf_info(\%allele_vcf_values);
 	    $vcf_out_fh->print("\n" . join("\t", $current_els[0], $vcf_pos, $allele, $vcf_ref,
 					   $vcf_alt, '.', '.', $vcf_info_str));
+	    $vcf_lines_printed{$allele} = 1;
 	}
     }
 
@@ -336,7 +367,7 @@ while (<$gff_in_fh>) {
     # can be drawn in a separate track
     if ($is_putative_change_of_function_allele) {
       $current_els[1] = "PCoF_" . $current_els[1];
-      print $gff_out_fh join("\t", @current_els, $group), "\n";
+      print $gff_out_fh join("\t", @current_els, $group), "\n" unless $vcf_only;
       $added_lines++;
     }
     
@@ -345,16 +376,26 @@ while (<$gff_in_fh>) {
       $db = Ace->connect(-path => $database);
     }
   } else {
-    print $gff_out_fh "$_";
+    print $gff_out_fh "$_" unless $vcf_only;
   }
 }
-close($gff_out_fh) or $log->log_and_die("Could not close $outfile after writing\n");
+close($gff_out_fh) or $log->log_and_die("Could not close $outfile after writing\n") unless $vcf_only;
 if ($vcf) {
+    if (!%vcf_lines_printed) {
+	$vcf_out_fh->print("\n##Comment=WormBase currently has no variation data for this species" . 
+			   "\n" . join("\t", qw(#CHROM POS ID REF ALT QUAL FILTER INFO)));
+    }
     close($vcf_out_fh) or $log->log_and_die("Could not close $vcf_file after writing\n");
+    if (%vcf_lines_printed) {
+	my $exit_code = system("vcf-sort ${vcf_file} > ${vcf_file}.sorted");
+	$log->log_and_die("Could not sort VCF file $vcf_file\n") if $exit_code;
+	$exit_code = system("mv -f ${vcf_file}.sorted ${vcf_file}");
+	$log->log_and_die("Could not replace VCF file $vcf_file with sorted version\n") if $exit_code;
+    }
 }
 $db->close();
 
-$log->write_to("Finished processing : $changed_lines lines modified, $added_lines added\n");
+$log->write_to("Finished processing : $changed_lines lines modified, $added_lines added\n") unless $vcf_only;
 $log->mail();
 exit(0);
 
@@ -373,6 +414,7 @@ sub get_chromosome_sequences {
     while (my $seq = $fasta->next_seq) {
 	my $chr = $seq->display_id;
 	$chr =~ s/CHROMOSOME_//;
+	$chr =~ s/^chr//;
 	$chromosomes{$chr} = $seq->seq;
     }
 
@@ -436,17 +478,17 @@ sub get_molecular_consequences {
 	    $sift_score, $sift_prediction, $polyphen_score, $polyphen_prediction, $hgvsg, $hgvsc,
 	    $hgvsp, $cdna_pos, $cds_pos, $prot_pos, $intron_nr, $exon_nr) = split(/\t/, $_);
 	my @consequences = split(',', $consequence_string);
-	
+	$consequence_string =~ s/,/&/g;
+	push @{$var_consequences{$var_name}{'csq'}}, join('|', $transcript,
+							  $transcript_parents->{$transcript},
+							  $consequence_string, $vep_impact, $sift_prediction,
+							  $sift_score, $polyphen_prediction,
+							  $polyphen_score, $codon_change, $hgvsp,
+							  $hgvsc, $prot_pos, $cds_pos, 
+							  $cdna_pos, $exon_nr, $intron_nr);
 	for my $consequence (@consequences) {
 	    my $severity = $severity_ranking{$consequence};
-	    push @{$var_consequences{$var_name}{'csq'}}, join('|', $transcript,
-							      $transcript_parents->{$transcript},
-							      $consequence, $vep_impact, $sift_prediction,
-							      $sift_score, $polyphen_prediction,
-							      $polyphen_score, $codon_change, $hgvsp,
-							      $hgvsc, $prot_pos, $cds_pos, 
-							      $cdna_pos, $exon_nr, $intron_nr);
-
+	    
 	    next if exists $var_consequences{$var_name} and $var_consequences{$var_name}{'severity'} > $severity;
 	    $var_consequences{$var_name}{'Consequence'} = $consequence;
 	    $var_consequences{$var_name}{'severity'} = $severity;
@@ -501,7 +543,9 @@ sub print_vcf_header {
 		       $VCF_INFO{$field}{'number'} . ',Type=' . $VCF_INFO{$field}{'type'} .
 		       ',Description="' . $VCF_INFO{$field}{'description'} . '">');
     }
-    $out_fh->print("\n" . join("\t", qw(#CHROM POS ID REF ALT QUAL FILTER INFO FORMAT)));
+    for my $iupac_code (keys %IUPAC_CODES) {
+	$out_fh->print("\n##ALT=<ID=" . $iupac_code . ',Description="IUPAC code ' . $iupac_code . ' = ' . $IUPAC_CODES{$iupac_code} . '">');
+    }
 
     return;
 }
@@ -538,6 +582,9 @@ sub vcf_values {
     my $end = $gff_columns->[4];
     my $type = $gff_columns->[2];
 
+    $chr =~ s/CHROMOSOME_//;
+    $chr =~ s/^chr//;
+
     my ($ref, $alt, $pos, $substitution);
     if ($attributes =~ /insertion=([^;]+)/) {
 	$alt = $1;
@@ -546,12 +593,27 @@ sub vcf_values {
 	$substitution = $1;
     }
 
+    if ($type eq 'insertion_site' and $attributes !~ /insertion=/) {
+	$log->write_to("INFO: Inserted sequence unknown for $allele, not including in VCF\n");
+	return;
+    }
+
     unless ($type eq 'insertion_site') {
 	$ref = substr($chromosomes->{$chr}, $start - 1, ($end - $start) + 1);
+	unless ($ref) {
+	    $log->write_to("INFO: Couldn't retrieve reference sequence for $allele at $chr:" .
+			   "${start}-${end}, not including in VCF\n");
+	    return;
+	}
     }
 
     if ($type eq 'insertion_site' or $type eq 'deletion' or $type eq 'complex_substitution') {
 	my $padding_base = substr($chromosomes->{$chr}, $start - 2, 1);
+	unless ($padding_base) {
+	    $log->write_to("INFO: Couldn't retrieve padding base for $allele at $chr:" . $start - 1 .
+			   ", not including in VCF\n");
+	    return;
+	}
 	$pos = $start - 1;
 	$ref = $padding_base . $ref;
 	$alt = $padding_base . $alt;
@@ -578,6 +640,12 @@ sub vcf_values {
 		return;
 	    }
 	}
+    }
+
+    if ($ref eq $alt) {
+	$log->write_to("INFO: Reference and alternative alleles are identical ($ref) for " .
+		       "$allele, not including in VCF\n");
+	return;
     }
 
     return ($pos, $ref, $alt);

@@ -105,7 +105,7 @@ foreach my $species (@species) {
   # Finally, write the Ace
   foreach my $cds_name (sort keys %cds) {
     next if not exists $cds{$cds_name}->{sequence};
-
+    
     my $cds_seq = $cds{$cds_name}->{sequence};
     my $gene_name = $cds{$cds_name}->{gene};
     
