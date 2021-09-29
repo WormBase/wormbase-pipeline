@@ -77,6 +77,7 @@ if (not $job_id) {
     print STDERR "SUCCESSFULLY COMPLETE\n";
   }
 }
+exit(0);
 
 
 sub open_command_line {
