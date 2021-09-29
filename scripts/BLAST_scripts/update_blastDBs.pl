@@ -155,7 +155,7 @@ if ($fly) {
 	close(PAGE);
 	$wormbase->run_command("rm -f $page_download", $log);
 
-	#get the file
+	#get the file 
 	$log->write_to("\tdownloading flybase file\n");
 	die "Could not fetch file" if $wormbase->run_command("wget -O $fly_download ftp://ftp.flybase.net/genomes/Drosophila_melanogaster/current/fasta/dmel-all-translation-r${fly_version}.fasta.gz", $log);
 	die "Could not unzip file" if $wormbase->run_command("gunzip -f $fly_download", $log);

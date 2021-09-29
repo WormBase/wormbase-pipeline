@@ -392,6 +392,7 @@ sub copy_gff_files{
     my $source_gff3_file = $wb->processed_GFF_file(1);
     my $source_gtf_file = "${sequencesdir}/${species}.gtf";
     my $source_prot_file = "${sequencesdir}/${species}.protein_annotation.gff3";
+    my $source_vcf_file = "${sequencesdir}/${species}.vcf";
     
     my $gff_dir = "$targetdir/species/$gspecies/$bioproj";
     mkpath($gff_dir,1,0775);
@@ -401,11 +402,13 @@ sub copy_gff_files{
     my $target_gff3_file = "$gff_dir/${fname_prefix}.annotations.gff3.gz";
     my $target_gtf_file = "$gff_dir/${fname_prefix}.canonical_geneset.gtf.gz";
     my $target_prot_file = "$gff_dir/${fname_prefix}.protein_annotation.gff3.gz";
+    my $target_vcf_file = "$gff_dir/${fname_prefix}.variations.vcf.gz";
 
     foreach my $fname_pair ([$source_gff2_file,  $target_gff2_file],
                             [$source_gff3_file,  $target_gff3_file],
                             [$source_gtf_file,   $target_gtf_file], 
                             [$source_prot_file,  $target_prot_file], 
+			    [$source_vcf_file,   $target_vcf_file],
         ) {
       my ($source, $target) = @$fname_pair;
       unlink $target if -e $target;
@@ -678,7 +681,7 @@ sub copy_ontology_files {
 	    my ($filetype, $release, $extension) = $filestem =~ /^([^\.]+)\.(WS\d+)\.(.+)$/; 
 	    my $wb = $accessors{$species_name_map{$suffix}};
 	    my $bioproj = $wb->ncbi_bioproject;
-	    my $new_filename = join('.', $suffix, $bioproj, $release, $filetype, $extension);
+	    my $new_filename = join('.', $suffix, $bioproj, $release, $filetype, $extension, 'gz');
 	    my $species_dir = "$targetdir/species/$suffix/$bioproj";
 	    mkpath($species_dir,1,0775);
 	    $wormbase->run_command("gzip -9 -f -c $file > ${species_dir}/annotation/${new_filename}", $log);
@@ -1439,6 +1442,7 @@ GSPECIES.BIOPROJ.WSREL.disease_association.daf.txt.gz
 
 [CORE]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.best_blastp_hits.txt.gz
+GSPECIES.BIOPROJ.WSREL.variations.vcf.gz
 GSPECIES.BIOPROJ.WSREL.annotations.gff2.gz
 GSPECIES.BIOPROJ.WSREL.protein_annotation.gff3.gz
 GSPECIES.BIOPROJ.WSREL.ncRNA_transcripts.fa.gz

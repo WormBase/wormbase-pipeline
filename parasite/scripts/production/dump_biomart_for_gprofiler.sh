@@ -15,12 +15,25 @@ if [ ! -d "$STAGING_DIR" ] ; then
   mkdir -pv $TMP
   chmod 777 $TMP
 
-  mysqldump $( $PARASITE_STAGING_MYSQL-ensrw details mysql ) \
+  SRV_URL=$($PARASITE_STAGING_MYSQL details url)
+  DBNAME=parasite_mart_${PARASITE_VERSION}
+  OUTPUT_DIR=/homes/digri/test
+
+  #Outputing txt files
+  standaloneJob.pl Bio::EnsEMBL::Production::Pipeline::FileDump::MySQL_TXT \
+    -db_url ${SRV_URL}${DBNAME} \
+    -dbname ${DBNAME} \
+    -output_dir ${TMP} \
+    -dump_dir ${TMP}
+
+  #Outputting sql files
+  for table in $( $PARASITE_STAGING_MYSQL ${DBNAME} -Ne "SHOW TABLES" ); do
+    mysqldump $( $PARASITE_STAGING_MYSQL-w details mysql ) \
     --quick --single-transaction \
-    -T $TMP \
-    parasite_mart_${PARASITE_VERSION}
-  mv -v $TMP $STAGING_DIR
-fi
+    parasite_mart_${PARASITE_VERSION} $table > ${TMP}/$table.sql;
+  done
+    mv -v $TMP $STAGING_DIR
+  fi
 
 find $STAGING_DIR -type f -name '*.txt' | while read -r f; do
   gzip -v $f
@@ -35,13 +48,13 @@ my $m = "^(trichinella_pseudospiralis)_(iss[0-9]+)(prjna257433)_core_$ENV{PARASI
 my %core_db_to_biomart_name;
 my %bps;
 for my $core_db (ProductionMysql->staging->core_databases) {
-  if ($core_db =~ /$m/) {
-    my ($spe, $cies, $bp) = split "_", $core_db;
-    push @{$bps{"${spe}_${cies}"}}, $bp;
-    $core_db_to_biomart_name{$core_db} = "$2$3$5$6$8$9";
-  } else {
-    die "$core_db <no match>\n"
-  }
+  #if ($core_db =~ /$m/) {
+  my ($spe, $cies, $bp) = split "_", $core_db;
+  push @{$bps{"${spe}_${cies}"}}, $bp;
+  $core_db_to_biomart_name{$core_db} = ProductionMysql::core_db_to_biomart_name($core_db);
+  #} else {
+  #die "$core_db <no match>\n"
+  #}
 }
 for my $core_db (sort keys %core_db_to_biomart_name){
   my ($species, $versions) = split "_core_", $core_db;
@@ -64,3 +77,15 @@ for my $core_db (sort keys %core_db_to_biomart_name){
 ' | sudo -u wormbase tee $RELEASE_DIR/core_db_to_species_name_to_biomart_name.tsv
 
 ls -latorhd $RELEASE_DIR/*
+
+
+
+
+
+
+#old mysqldump was like:
+#mysqldump $( $PARASITE_STAGING_MYSQL-w details mysql ) \
+#  --quick --single-transaction \
+#  -T $TMP \
+#  parasite_mart_${PARASITE_VERSION}
+#mv -v $TMP $STAGING_DIR

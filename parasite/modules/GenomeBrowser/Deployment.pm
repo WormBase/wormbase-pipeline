@@ -4,6 +4,7 @@ package GenomeBrowser::Deployment;
 use LWP;
 use File::Basename;
 use Log::Any qw($log);
+use Try::Tiny;
 
 # Be in EBI
 # Have tunnels enabled
@@ -35,7 +36,15 @@ sub sync_ebi_to_sanger {
   unless ($opts{sanger_deployment_skip} or LWP::UserAgent->new->head($target_url)->is_success){
     $log->info("Initiating remote download: $source_url -> $SANGER_HOST:$target_path");
     run_in_sanger("mkdir -p $target_dir");
-    run_in_sanger("wget --continue --no-verbose -O $target_path $source_url");
+    try {
+      run_in_sanger("wget --continue --no-verbose -O $target_path $source_url");
+    } catch {
+        (my $path = $source_url) =~ s/ftp:\/\/ftp\.ebi\.ac\.uk/\/nfs\/ftp/;
+        $log->info("Trying scp $path $SANGER_HOST:$target_path");
+        my $cp_cmd = "scp $path $SANGER_HOST:$target_path";
+        my $output = `$cp_cmd`;
+        die $log->fatal("Failed: $cp_cmd, output: $output") if $?;
+    }
   } 
   return $target_url;
 }

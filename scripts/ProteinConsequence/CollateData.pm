@@ -43,6 +43,8 @@ sub run {
 
     my $out_file = $ace_dir . '/mapped_alleles.' . $wb->get_wormbase_version_name . '.ace';
 
+    unlink $out_file if -e $out_file;
+
     my @files = <$output_dir/*/*>;
     for my $file (@files) {
 	next unless $file =~ /\.ace$/;
