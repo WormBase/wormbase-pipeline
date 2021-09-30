@@ -962,78 +962,210 @@ sub vep_output_present {
 }
 
 
-sub _add_blast_counts {
-    my ($self, $counts, $cmd, $set) = @_;
+sub _add_new_blast_counts {
+    my ($self, $counts, $blast_type) = @_;
 
-    open (COUNTS, $cmd);
-    while (<COUNTS>) {
+    my $pipeline_dir = $ENV{'PIPELINE'};
+    $pipeline_dir = '/nfs/nobackup/ensemblgenomes/wormbase/BUILD/pipeline' unless $pipeline_dir;
+    $pipeline_dir .= '/dumps';
+    my $ace_file = $self->{'wormbase'}->species . '_' . $blast_type . '.ace';
+   
+    my $grep_cmd = "grep '^Pep_homol'  ${pipeline_dir}/${ace_file} |";
+
+    open (ACE, $grep_cmd) or
+	$self->{'log'}->log_and_die("Cannot open ${pipeline_dir}/${ace_file}\n");
+    while (<ACE>) {
 	chomp;
-	my ($species, $count) = $_ =~ /"?wublast[x|p]_([^"\s]+)"?\s(\d+)$/;
-	$self->{'log'}->error("ERROR: could not parse species and count from $_\n")
-	    unless $species and $count;
-	$counts->{$species}{$set} = $count;
+	my @col = split("\t", $_);
+	my ($species) = $col[2] =~ /"?wublast[x|p]_([^"\s]+)"$/;
+	$self->{'log'}->error("ERROR: could not parse species from $col[2]\n")
+	    unless $species;
+	$counts->{'new'}{$species}{$col[1]} = 1;
     }
-    close (COUNTS);
+    close (ACE);
 
     return $counts;
 }	
 
 
+sub _add_old_blast_counts {
+    my ($self, $counts, $blast_type) = @_;
+    
+    my $tmdef = $blast_type eq 'blastx' ? $self->_blastx_count_table_maker_def() :
+	$self->_blastp_count_table_maker_def();
+    my $cmd = "Table-maker -p $tmdef\nquit\n";
+    my $db = $self->{'previous_wormbase'}->autoace;
+
+    open (TACE, "echo '$cmd' | tace $db | ") or $self-{'log'}->log_and_die("Cannot query acedb. $cmd tace\n");
+    while (<TACE>) {
+	next unless $_ =~ /wublast/;
+	chomp;
+	my @col = split("\t", $_);
+        my ($species) = $_ =~ /wublast[x|p]_([^"\s]+)"/;
+	$self->{'log'}->error("ERROR: could not parse species from $_\n")
+	    unless $species;
+	my $match_ix = $blast_type eq 'blastx' ? 3 : 2;
+	$counts->{'old'}{$species}{$col[$match_ix]} = 1;
+    }
+    close (TACE);
+    unlink $tmdef;
+
+    return $counts;
+}
+
+
 sub _blast_count_comparison {
     my ($self, $blast_type) = @_;
 
-    my $pipeline_dir = $ENV{'PIPELINE'};
-    $pipeline_dir = '/nfs/nobackup/ensemblgenomes/wormbase/BUILD/pipeline' unless $pipeline_dir;
-    $pipeline_dir .= '/dumps';
-    my $build_dir = $self->{'wormbase'}->acefiles;
-    my $ace_file = $self->{'wormbase'}->species . "_${blast_type}.ace";
+    my $ace_file = $self->{'wormbase'}->species . "_${blast_type}.ace";   
    
-    my $grep_term = $blast_type eq 'blastx' ? '^Pep' : '^Pep_homol';
-    my $process_cmd = 'perl -ne \'@l = split; $c{$l[2]}++; END { map { print "$_ $c{$_}\n"} sort keys %c }\' |';
-    my $old_count_cmd = "grep '${grep_term}'  ${build_dir}/${ace_file} | " . $process_cmd;
-    my $new_count_cmd = "grep '${grep_term}'  ${pipeline_dir}/${ace_file} | " . $process_cmd;
-
     my $errors;
-    my $old_size = (stat("${build_dir}/${ace_file}"))[7];
-    my $new_size = (stat("${pipeline_dir}/${ace_file}"))[7];
-    if ($new_size < (0.9 * $old_size) or $new_size > (1.1 * $old_size)) {
-	$self->{'log'}->write_to("POSSIBLE ERROR: >10% difference between size of new and old $blast_type" . 
-				 " files ${pipeline_dir}/${ace_file} and ${build_dir}/${ace_file}\n");
-	$errors++;
-    }
-    else {
-	$self->{'log'}->write_to("Sizes of new and old $blast_type files within 10% of each other\n");
-    }
-
     my $counts = {};
-    $counts = $self->_add_blast_counts($counts, $old_count_cmd, 'old');
-    $counts = $self->_add_blast_counts($counts, $new_count_cmd, 'new');
+    $counts = $self->_add_old_blast_counts($counts, $blast_type);
+    $counts = $self->_add_new_blast_counts($counts, $blast_type);
 
-    for my $species (keys %$counts) {
-	if (!exists $counts->{$species}{'old'}) {
-	    $self->{'log'}->write_to("POSSIBLE ERROR: no ${blast_type} entries for ${species} in ${build_dir}/${ace_file}\n");
-	    $errors++;
-	}
-	elsif (!exists $counts->{$species}{'new'}) {
-	    $self->{'log'}->write_to("POSSIBLE ERROR: no ${blast_type} entries for ${species} in ${pipeline_dir}/${ace_file}\n");
-	    $errors++;
-	}
-	elsif ($counts->{$species}{'new'} < (0.9 * $counts->{$species}{'old'}) or
-	       $counts->{$species}{'new'} > (1.1 * $counts->{$species}{'old'})) {
-	    $self->{'log'}->write_to("POSSIBLE ERROR: >10% difference between counts of $blast_type" .
-				     " entries for ${species}:\n    " . $counts->{$species}{'old'} .
-				     " ${build_dir}/${ace_file}\n    " . $counts->{$species}{'new'} .
-				     " ${pipeline_dir}/${ace_file}\n");
+    my @all_species = keys %{$counts->{'old'}};
+    push @all_species, keys %{$counts->{'new'}};
+    for my $species (@all_species) {
+	if (!exists $counts->{'new'}{$species}) {
+	    $self->{'log'}->write_to("POSSIBLE ERROR: no ${blast_type} entries for ${species} in ${ace_file}\n");
 	    $errors++;
 	}
 	else {
-	    $self->{'log'}->write_to("Counts of ${blast_type} entries within 10% for ${species}:\n    " .
-				     $counts->{$species}{'old'} . " ${build_dir}/${ace_file}\n    " . 
-				     $counts->{$species}{'new'} . " ${pipeline_dir}/${ace_file}\n");
-	}   
+	    $self->{'log'}->write_to(scalar (keys %{$counts->{'new'}{$species}}) . " ${blast_type} entries for ${species} in ${ace_file}\n");
+	}
+
+	if (!exists $counts->{'old'}{$species}) {
+	    $self->{'log'}->write_to("POSSIBLE ERROR: no ${blast_type} entries for ${species} in " .
+				     $self->{'previous_wormbase'}->get_wormbase_version_name . "\n");
+	    $errors++;
+	}
+	else {
+	    $self->{'log'}->write_to(scalar (keys %{$counts->{'old'}{$species}}) . " ${blast_type} entries for ${species} in " .
+				     $self->{'previous_wormbase'}->get_wormbase_version_name . "\n");
+	}
+
+	if (exists $counts->{'new'}{$species} and $counts->{'old'}{$species} and
+	    ((scalar keys %{$counts->{'new'}{$species}} < (0.9 * scalar keys %{$counts->{'old'}{$species}})) or
+	      (scalar keys %{$counts->{'new'}{$species}} > (1.1 * scalar keys %{$counts->{'old'}{$species}})))) {
+	    $self->{'log'}->write_to("POSSIBLE ERROR: >10% difference between counts of $blast_type" .
+				     " entries for ${species}:\n    " . scalar (keys %{$counts->{'old'}{$species}}) .
+				     ' ' . $self-{'wormbase'}->get_wormbase_version_name . "\n    " .
+				     scalar (keys %{$counts->{'new'}{$species}}) .
+				     " ${ace_file}\n");
+	    $errors++;
+	}
     }
 
     return $errors;
+}
+
+
+sub _blastp_count_table_maker_def {
+    my $self = shift;
+
+    my $species = $self->{'wormbase'}->long_name;
+    my $def = 'tmp_blastp.def';
+    open (TMP, ">$def") or $self->{'log'}->log_and_die("Can't write temporary file to $def\n");
+    my $txt = <<END;
+Sortcolumn 1
+
+Colonne 1 
+Width 40 
+Optional 
+Visible 
+Class 
+Class Protein 
+From 1 
+ 
+Colonne 2 
+Width 80 
+Mandatory 
+Visible 
+Class 
+Class Species 
+From 1 
+Tag Species
+Condition "$species"
+ 
+Colonne 3 
+Width 30 
+Mandatory 
+Visible 
+Class
+Class Sequence
+From 1 
+Tag Pep_homol
+ 
+Colonne 4 
+Width 30 
+Mandatory 
+Visible
+Class 
+Class Method
+Right_of 3 
+Tag HERE
+
+END
+    
+    print TMP $txt;
+    close (TMP);
+
+    return $def;
+}
+
+
+sub _blastx_count_table_maker_def {
+    my $self = shift;
+
+    my $species = $self->{'wormbase'}->long_name;
+    my $def = 'tmp_blastx.def';
+    open (TMP, ">$def") or $self->{'log'}->log_and_die("Can't write temporary file to $def\n");
+    my $txt = <<END;
+Sortcolumn 1
+
+Colonne 1 
+Width 40 
+Optional 
+Visible 
+Class 
+Class Sequence
+From 1 
+ 
+Colonne 2 
+Width 80 
+Mandatory
+Visible 
+Class 
+Class Species 
+From 1 
+Tag Species
+Condition "$species"
+ 
+Colonne 3 
+Width 30 
+Mandatory 
+Visible 
+Class
+Class Homol_data
+From 1 
+Tag Homol_data
+ 
+Colonne 4
+Width 30
+Mandatory
+Visible
+Class
+Class Protein
+From 3
+Tag Pep_homol
+
+END
+    
+    print TMP $txt;
+    close (TMP);
+
+    return $def;
 }
 
 
