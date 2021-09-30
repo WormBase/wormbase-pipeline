@@ -5,13 +5,14 @@ use lib -e $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
 
-my ($filein, $fileout, $wormbase, $USER, $species, $debug, $test);
+my ($filein, $fileout, $wormbase, $USER, $species, $debug, $test, $old);
 
 GetOptions (
     'filein=s'  => \$filein,
     'fileout=s' => \$fileout,
     'user:s'    => \$USER,
     'debug:s'   => \$debug,
+    'old'       => \$old,
     );
 
 $species = "elegans";
@@ -68,7 +69,13 @@ while (<IN>) {
     if (/Deletion Size/) {
 	next;
     }
-    my @f=split"\t";
+    my @f;
+    if ($old) {
+	@f=split",";
+    }
+    else {
+	@f=split"\t";
+    }
     if ($count =~ /0$/){
 	print "Processed $count\n";
     }
@@ -76,11 +83,78 @@ while (<IN>) {
 
     print "Processing : $f[0]\n" if ($debug);
     $count++;
-    if ($f[0] ne $f[8]) {
-	print "STRAIN Missmatch $f[0] $f[8]\n";
+    unless ($old){
+	if ($f[0] ne $f[8]) {
+	    print "STRAIN Missmatch $f[0] $f[8]\n";
+	}
     }
     #code currently only takes a single target gene, if there are large deletions these will currently not get connected to a Gene object.
     # Only a single example in the 240 data points we have.
+    
+    if ($old) {
+	my $ngene;
+	my $var;
+	my $wbvar_id;
+#	$f[3] = s/Please reference Au et al.; G3 9(1): 135-144 2019 in any work resulting from use of this mutation.//;
+	my $strain_name = $f[0];
+	my @strobj = $ace->fetch(-query => "FIND Strain where Public_name = $strain_name ");
+	if (defined $strobj[0]) {
+	    $wbstrain_id = $strobj[0]->name;
+	    print "Found Strain : \"$wbstrain_id\"\n" if ($debug);
+	}
+	else {
+	    print "\nCan't find Strain : \"$strain_name\"\n" if ($debug);
+	    $wbstrain_id = $strain_name;
+	}
+	    print OUT "\nStrain $wbstrain_id\nPublic_name $f[0]\nLive\nSpecies \"Caenorhabditis elegans\"\nLocation RG\nEvidence Curator_confirmed WBPerson1983\nGenotype \"$f[1]\"\nRemark $f[3]\n";
+#	if ($f[3] =~ /Deletion/){print OUT "Type_of_mutation Deletion\n";}
+	if ($f[3] =~ /135-144 2019/){print OUT "Reference WBPaper00055671\n";}
+	if ($f[1] =~ /(ve\d+)/){
+	    $var = $1;
+	    my @varobj = $ace->fetch(-query => "FIND Variation where Public_name = $var");
+	    if (defined $varobj[0]) {
+		$wbvar_id = $varobj[0]->name;
+		print "Found Variation : \"$wbvar_id\"\n" if ($debug);
+	    }
+	    else {
+		print "\nCan't find Variation : \"$var\"\n" if ($debug);
+		$wbvar_id = $var;
+	    }
+	    print OUT "\nVariation : $wbvar_id\nEvidence Curator_confirmed WBPerson1983\nPublic_name $var\n";}
+	if ($f[3] =~ /Left flanking Sequence: ([a-zA-Z]+)/){print OUT "Flanking_sequences $1"}
+	if ($f[3] =~ /Right flanking sequence: ([a-zA-Z]+)/){print OUT " $1\n";}
+	my $mapping_target;
+	if ($f[1] =~ /(\S+)\(/){$ngene = $1;
+				if ($ngene =~ /\S+\-\d+/) {
+				    $type = "Public_name";
+				}
+				elsif ($ngene =~ /(\S+)\.\d+/) {
+				    $type = "Sequence_name";
+				    $mapping_target = $1;
+				    print OUT "Mapping_target $mapping_target\n";
+				}
+				@obj = $ace->fetch(-query => "FIND Gene where $type = $ngene");
+				if (defined $obj[0]) {
+				    $wbgene_id = $obj[0]->name;
+				    print "Found Gene : \"$wbgene_id\"\n" if ($debug);
+				    print OUT "Gene $wbgene_id\n";
+				    unless (defined $mapping_target){
+					my $seq_name = $obj[0]->Sequence_name->name;
+					if ($seq_name =~ /(\S+)\.\d+/) {
+					    $mapping_target = $1;
+					    print OUT "Mapping_target $mapping_target\n";
+					}
+				    }
+				}
+				else {
+				    print OUT "Gene $ngene\n";
+				    print OUT "Mapping_target $ngene\n"; 
+				}
+	}
+	print OUT "Deletion\nSequenced\nEngineered_allele\nSpecies \"Caenorhabditis elegans\"\nStrain $f[0]\nCRISPR_Cas9\nLive\nRemark $f[3]\nMethod Engineered_allele\n\n";
+    }
+    
+    else {
     my $gene = $f[2];
     if ($gene =~ /,/){print "Multi gene deletion this will need manual curation\n";}
     if ($gene =~ /\S+\-\d+/) {
@@ -141,9 +215,21 @@ while (<IN>) {
     if ($f[0] =~ /([A-Z]+)/) {
 	$lab = $1;
     } 
+    my $wbvar_id;
+    my $var_name = $f[1];
+    my @varobj = $ace->fetch(-query => "FIND Variation where Public_name = $var_name ");
+    if (defined $varobj[0]) {
+        $wbvar_id = $varobj[0]->name;
+        print "Found Variation : \"$wbvar_id\"\n" if ($debug);
+    }
+    else {
+        print "\nCan't find Variation : \"$var_name\"\n" if ($debug);
+        $wbvar_id = $var_name;
+    }
 
+    
     #Print the Variation Information    
-    print OUT "\nVariation \: \"$f[1]\"\nPublic_name $f[1]\nStrain $wbstrain_id\n";
+    print OUT "\nVariation \: \"$wbvar_id\"\nPublic_name $var_name\nStrain $wbstrain_id\n";
     print OUT "Evidence Curator_confirmed $curator\n" if (defined $curator);
     my ($lflank, $rflank);
     if (defined $f[6]) {
@@ -162,8 +248,10 @@ while (<IN>) {
     #Print out the Strain information
     print OUT "\nStrain $wbstrain_id\nPublic_name $strain_name\n";
     print OUT "Evidence Curator_confirmed $curator\n" if (defined $curator);
-    print OUT "Genotype \"$f[9]\nLocation $lab\nLive\nSpecies \"Caenorhabditis elegans\"\nVariation $f[1]\nRemark \"$f[10]\"\n";   
+    print OUT "Genotype \"$f[9]\"\nLocation $lab\nLive\nSpecies \"Caenorhabditis elegans\"\nVariation $wbvar_id\nRemark \"$f[10]\"\n";   
+    }
 }
+print "Final Number $count\n";
 print "Diaskeda same Poli\n"; #we had alot of fun#
 close (IN);
 close (OUT);
