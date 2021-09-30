@@ -966,7 +966,7 @@ sub _add_new_blast_counts {
     my ($self, $counts, $blast_type) = @_;
 
     my $pipeline_dir = $ENV{'PIPELINE'};
-    $pipeline_dir = '/nfs/nobackup/ensemblgenomes/wormbase/BUILD/pipeline' unless $pipeline_dir;
+    $pipeline_dir = '/nfs/production/flicek/wormbase/wb/pipeline' unless $pipeline_dir;
     $pipeline_dir .= '/dumps';
     my $ace_file = $self->{'wormbase'}->species . '_' . $blast_type . '.ace';
    
