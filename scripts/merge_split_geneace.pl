@@ -167,10 +167,10 @@ if ($merge) {
 	  $path_ref = $directory . "/${class}_orig.ace";
       }
       if ($debug) {
-	  $wormbase->run_script("acediff.pl -debug $debug -test -reference $path_ref -new $path_new -output $directory/update_${class}_${database}.ace -debug pad", $log) && die "acediff.pl Failed for ${path_new}\n";
+	  $wormbase->run_script("acediff.pl -debug $debug -test -reference $path_ref -new $path_new -output $directory/update_${class}_${database}.ace", $log) && die "acediff.pl Failed for ${path_new}\n";
       }
       else {
-	  $wormbase->run_script("acediff.pl -reference $path_ref -new $path_new -output $directory/update_${class}_${database}.ace -debug pad", $log) && die "acediff.pl Failed for ${path_new}\n";
+	  $wormbase->run_script("acediff.pl -reference $path_ref -new $path_new -output $directory/update_${class}_${database}.ace", $log) && die "acediff.pl Failed for ${path_new}\n";
       }
     }
   }
@@ -314,9 +314,9 @@ sub update_canonical {
     # Gene structures
     $log->write_to ("\nRunning geneace checks\n");
     print "\nRunning geneace checks\n" if ($debug);
-	$wormbase->run_script("GENEACE/geneace_check.pl -class strain -database $canonical -debug pad", $log) && die "Failed to run Strain checks\n";
-	$wormbase->run_script("GENEACE/geneace_check.pl -class Allele -skipmethod Million_mutation -skipmethod SNP -skipmethod NemaGENETAG_consortium_allele -skipmethod KO_consortium_allele -skipmethod NBP_knockout_allele -skipmethod WGS_Hobert -skipmethod WGS_Rose -skipmethod WGS_Jarriault -skipmethod Mos_insertion -skipmethod Transposon_insertion -skipmethod WGS_McGrath -skipmethod CGH_allele -skipmethod WGS_Flibotte  -debug pad", $log) && die "Failed to run Allele checks\n";
-    $wormbase->run_script("GENEACE/geneace_check.pl -class gene -debug pad", $log) && die "Failed to run Gene checks\n";
+	$wormbase->run_script("GENEACE/geneace_check.pl -class strain -database $canonical", $log) && die "Failed to run Strain checks\n";
+	$wormbase->run_script("GENEACE/geneace_check.pl -class Allele -skipmethod Million_mutation -skipmethod SNP -skipmethod NemaGENETAG_consortium_allele -skipmethod KO_consortium_allele -skipmethod NBP_knockout_allele -skipmethod WGS_Hobert -skipmethod WGS_Rose -skipmethod WGS_Jarriault -skipmethod Mos_insertion -skipmethod Transposon_insertion -skipmethod WGS_McGrath -skipmethod CGH_allele -skipmethod WGS_Flibotte", $log) && die "Failed to run Allele checks\n";
+    $wormbase->run_script("GENEACE/geneace_check.pl -class gene", $log) && die "Failed to run Gene checks\n";
     $log->write_to ("Checks Finished, check the build log email for errors.\n");
   }
 }
