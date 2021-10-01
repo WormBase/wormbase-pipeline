@@ -245,7 +245,7 @@ sub dumpace {
   my $class    = shift;
   my $filepath = shift;
   my $ddb = shift;
-  my $command = "nosave\nquery find $class\nshow -a -T -f $filepath\nquit\n";
+  my $command = "nosave\nquery find $class\nshow -a -f $filepath\nquit\n";
   $log->write_to ("\nFilename: $filepath -> ${ddb}\n");
   print "Opening $ddb for edits\n" if ($verbose);
   open (TACE, "echo '$command' | $tace $ddb |" ) || die "Failed to open database connection to $ddb\n" ;
