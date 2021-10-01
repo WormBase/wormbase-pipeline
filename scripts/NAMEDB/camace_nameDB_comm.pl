@@ -92,6 +92,7 @@ while( <$TABLE> ){
 
 #Retrieve the data from the NS dump.
 unless ($old) {my ($dump_fh);
+	       $log->write_to("using $dump file for checking\n");
                open($dump_fh, "<$dump") or $log->log_and_die("Can't open $dump\n");
                my $gene;
                my $name;

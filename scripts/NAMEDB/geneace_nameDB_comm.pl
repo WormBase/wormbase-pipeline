@@ -104,6 +104,7 @@ while (my ( $gene, $live ) = $sth->fetchrow_array){
 
 # Datomic world section
     unless ($old) {
+	$log->write_to("Using $dump file for checking\n");
         my ( $gene, $name_type, $name);
         my ($dump_fh);
         open($dump_fh, "<$dump") or $log->log_and_die("Can't open $dump\n"); 
