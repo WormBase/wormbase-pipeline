@@ -42,11 +42,8 @@ sub run {
     # Run VEP on new file
     $self->dbc->disconnect_when_inactive(1);
     my $vep_dir = $self->required_param('vep_dir');
-    my $cmd = "$vep_dir/vep -i $input_file -gff $gff_file -fasta $fasta_file --hgvs --hgvsg -shift_hgvs=0 --symbol --distance 0 --output_file $output_file --numbers --force_overwrite --plugin $plugin_str";
-    if ($self->param('bam')) {
-	$cmd .= ' --bam ' . $self->param('bam');
-    }
-
+    my $cmd = "$vep_dir/vep -i $input_file -gff $gff_file -fasta $fasta_file --hgvs --hgvsg -shift_hgvs=0 --symbol --distance 0 --output_file $output_file --numbers --force_overwrite --plugin $plugin_str --remove_hgvsp_version";
+    
     my ($exit_code, $stderr, $flat_cmd) = $self->run_system_command($cmd);
     $self->dbc->disconnect_when_inactive(0);
 
