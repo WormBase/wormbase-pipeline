@@ -192,8 +192,10 @@ sub check_gene {
     my $err = 0;
 
     if (not $server_genes{$gene}->{name}) {
-      $log->error("ERROR: no name for $gene in nameserver\n");
-      $err = 1;
+	unless (($gene eq "WBGene00001147") || ($gene eq "WBGene00006756") || ($gene eq "WBGene00044083")) {
+	    $log->error("ERROR: no name for $gene in nameserver\n");
+	    $err = 1;
+	}
     } elsif (not $ace_genes{$gene}->{name}) {
       $log->error("ERROR: no name for $gene in acedb\n");
       $err = 1;
