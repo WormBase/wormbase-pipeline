@@ -1434,8 +1434,8 @@ sub establish_paths {
       $ftp_uploads,
       $ftp_site);
   
-  $self->{'wormpub'} = "/nfs/panda/ensemblgenomes/wormbase";
-  $self->{'scratch_area'} = '/nfs/nobackup/ensemblgenomes/wormbase/scratch';
+  $self->{'wormpub'} = $ENV{'WORMPUB'};
+  $self->{'scratch_area'} = $ENV{'WB_SCRATCH'};
 
   # if a specified non-build database is being used
   
@@ -1458,8 +1458,8 @@ sub establish_paths {
     $self->{'genome_diff'} = $self->wormpub . "/TEST/CHROMOSOME_DIFFERENCES";
   } else {
 #    $self->{'ftp_upload'} = "/nfs/ftp/private/worm-ftp/upload";
-    $self->{'ftp_upload'} = $self->wormpub . "/ftp_upload_tmp";
-    $self->{'ftp_site'}   = $self->wormpub . "/ftp_site_tmp";
+    $self->{'ftp_upload'} = $ENV{'FTP_UPLOAD'};
+    $self->{'ftp_site'}   = $ENV{'FTP_SITE'};
     $self->{'ftp_staging'} = $self->wormpub . "/FTP_STAGING";
     $self->{'build_data'} = $self->wormpub . "/BUILD_DATA";
     $self->{'genome_diff'} = $self->wormpub . "/CHROMOSOME_DIFFERENCES";
@@ -1486,10 +1486,10 @@ sub establish_paths {
   $self->{'blat'}        = $self->orgdb . "/BLAT";
   $self->{'checks'}      = $self->autoace . "/CHECKS";
   $self->{'ontology'}    = $self->autoace . "/ONTOLOGY";
-  $self->{'tace'}   = '/nfs/panda/ensemblgenomes/wormbase/software/packages/acedb/RHEL7/4.9.62/tace';
-  $self->{'giface'} = '/nfs/panda/ensemblgenomes/wormbase/software/packages/acedb/RHEL7/4.9.62/giface';
-  $self->{'giface_server'} = '/nfs/panda/ensemblgenomes/wormbase/software/packages/acedb/RHEL7/4.9.62/sgifaceserver';
-  $self->{'giface_client'} = '/nfs/panda/ensemblgenomes/wormbase/software/packages/acedb/RHEL7/4.9.62/saceclient';
+  $self->{'tace'}   = $ENV{'ACE_BIN'} . '/tace';
+  $self->{'giface'} = $ENV{'ACE_BIN'} . '/giface';
+  $self->{'giface_server'} = $ENV{'ACE_BIN'} . '/sgifaceserver';
+  $self->{'giface_client'} = $ENV{'ACE_BIN'} . '/saceclient';
   $self->{'databases'}->{'geneace'} = $self->wormpub . "/DATABASES/geneace";
   $self->{'databases'}->{'camace'}  = $self->wormpub . "/DATABASES/camace";
   $self->{'databases'}->{'current'} = $self->wormpub . "/DATABASES/current_DB";
