@@ -1434,8 +1434,8 @@ sub establish_paths {
       $ftp_uploads,
       $ftp_site);
   
-  $self->{'wormpub'} = '/nfs/production/flicek/wormbase/wb';
-  $self->{'scratch_area'} = '/hps/nobackup/flicek/wormbase/wb/scratch';
+  $self->{'wormpub'} = $ENV{'WORMPUB'};
+  $self->{'scratch_area'} = $ENV{'WB_SCRATCH'};
 
   # if a specified non-build database is being used
   
@@ -1457,9 +1457,9 @@ sub establish_paths {
     $self->{'build_data'} = $self->wormpub . "/TEST/BUILD_DATA";
     $self->{'genome_diff'} = $self->wormpub . "/TEST/CHROMOSOME_DIFFERENCES";
   } else {
-    $self->{'ftp_upload'} = "/nfs/ftp/private/worm-ftp/upload";
+    $self->{'ftp_upload'} = $ENV{'FTP_UPLOAD'};
+    $self->{'ftp_staging'} = $ENV{'/FTP_STAGING'};
     $self->{'ftp_site'}   = "/nfs/ftp/pub/databases/wormbase";
-    $self->{'ftp_staging'} = $self->wormpub . "/FTP_STAGING";
     $self->{'build_data'} = $self->wormpub . "/BUILD_DATA";
     $self->{'genome_diff'} = $self->wormpub . "/CHROMOSOME_DIFFERENCES";
   }    
