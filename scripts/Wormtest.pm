@@ -189,13 +189,13 @@ sub make_build_tester {
     # if the Wormbase object is connected to a test database).
     if (defined $prev_release) {
 	$prev_release = 'WS' . $prev_release if $prev_release =~ /^\d+$/;
-	$prev_release = '/nfs/production/panda/ensemblgenomes/wormbase/DATABASES/' . $prev_release 
+	$prev_release = $wormbase->wormpub . '/DATABASES/' . $prev_release 
 	    if $prev_release =~ /^WS\d+$/;
     }
     elsif (defined $ENV{'PREVREL'}) {
 	$prev_release = $ENV{'PREVREL'};
 	$prev_release =~ s/^WS//g;
-	$prev_release = '/nfs/production/panda/ensemblgenomes/wormbase/DATABASES/WS' . $prev_release;
+	$prev_release = $wormbase->wormpub . '/DATABASES/WS' . $prev_release;
     }
     elsif ($wormbase->test) {
 	$prev_release = $wormbase->database('current');
@@ -204,7 +204,7 @@ sub make_build_tester {
 	my $current_release = $ENV{'WORMBASE_RELEASE'};
 	$current_release =~ s/^WS//;
 	$prev_release = $current_release - 1;
-	$prev_release = '/nfs/production/panda/ensemblgenomes/wormbase/DATABASES/WS' . $prev_release;
+	$prev_release = $wormbase->wormpub . '/DATABASES/WS' . $prev_release;
     }
     
     my $self = {};
