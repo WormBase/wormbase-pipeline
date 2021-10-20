@@ -222,12 +222,44 @@ sub make_build_tester {
 }
 
 
+=head2 blastp_counts_comparison()
+
+    Function: counts the number of entries for each species in BLASTP ace files and compares against
+              previous counts
+    Args:     n/a
+    Returns:  Count of errors
+
+=cut
+
+sub blastp_counts_comparison {
+    my $self = shift;
+
+    return $self->_blast_count_comparison('blastp');
+}
+
+
+=head2 blastx_counts_comparison()
+
+    Function: counts the number of entries for each species in BLASTX ace files and compares against
+              previous counts
+    Args:     n/a
+    Returns:  Count of errors
+
+=cut
+
+sub blastx_counts_comparison {
+    my $self = shift;
+
+    return $self->_blast_count_comparison('blastx');
+}
+
+
 =head2 blat_files_present()
     
     Function: checks for presence of of BLAT results files corresponding to all shattered
               masked sequence files
     Args:     n/a
-    Returns:  n/a
+    Returns:  Count of errors
     
 =cut
     
@@ -271,7 +303,7 @@ sub blat_files_present {
     
     Function: checks for presence of expected files and subdirectories within the build directory
     Args:     n/a
-    Returns:  n/a
+    Returns:  Count of errors
 
 =cut
 
@@ -310,7 +342,7 @@ sub build_folder_contents_present {
 
     Function: ensures that cache2 size is sufficient for briggsae
     Args:     n/a
-    Returns:  n/a
+    Returns:  Count of errors
 
 =cut
 
@@ -341,12 +373,12 @@ sub cache_size_sufficient {
 }
 
 
-=head2 create_est_dat_files_if_required
+=head2 create_est_dat_files_if_required()
 
     Function: checks for the presence of EST files in the COMMON_DATA folder, and creates them if
               not present (after checking there are really no features in the database)
     Args:     n/a
-    Returns:  n/a
+    Returns:  Count of errors
 
 =cut
 
@@ -381,11 +413,11 @@ sub create_est_dat_files_if_required {
 }
 
 	
-=head2 dbxref_report_correctly_formatted
+=head2 dbxref_report_correctly_formatted()
 
     Function: checks that the DB Xrefs report is present and has the correct number of columns
     Args:     n/a
-    Returns:  n/a
+    Returns:  Count of errors
 
 =cut
 
@@ -420,7 +452,7 @@ sub dbxref_report_correctly_formatted {
 
     Function: checks that the DNA composition has not changed since the previous release (elegans only)
     Args:     n/a
-    Returns:  n/a
+    Returns:  Count of errors
 
 =cut
 
@@ -459,7 +491,7 @@ sub dna_composition_unchanged {
 
     Function: checks that header lines are present for all sequence files in the chromosome directory
     Args:     n/a
-    Returns:  n/a
+    Returns:  Count of errors
 
 =cut
   
@@ -513,7 +545,7 @@ sub dna_files_have_headers {
 
     Function: checks that primary database is loaded for elegans before any other species
     Args:     n/a
-    Returns:  n/a
+    Returns:  Count of errors
 
 =cut
   
@@ -538,11 +570,11 @@ sub elegans_loaded_first {
 }
 
 
-=head2 final_gff_dumps_present
+=head2 final_gff_dumps_present()
 
     Function: checks that the final GFF2 and GFF3 dumps are present
     Args:     n/a
-    Returns:  n/a
+    Returns:  Count of errors
 
 =cut
 
@@ -585,7 +617,7 @@ sub final_gff_dumps_present {
 
     Function: checks that homology data has been loaded onto Sequence objects in AceDB
     Args:     n/a
-    Returns:  n/a
+    Returns:  Count of errors
 
 =cut
 
@@ -633,7 +665,7 @@ sub homology_data_loaded {
 
     Function: checks for presence of unshattered masked sequence files
     Args:     n/a
-    Returns:  n/a
+    Returns:  Count of errors
 
 =cut
     
@@ -665,7 +697,7 @@ sub masked_files_present {
 
     Function: checks for presence of cDNA dumps for all expected molecule types
     Args:     n/a
-    Returns:  n/a
+    Returns:  Count of errors
 
 =cut
 
@@ -691,7 +723,7 @@ sub primary_seq_dumps_present {
 
     Function: checks for presence of recent citace dump in the FTP directory
     Args:     n/a
-    Returns:  n/a
+    Returns:  Count of errors
 
 =cut
   
@@ -735,7 +767,7 @@ sub recent_citace_dump {
 
     Function: checks for recent dump of geneace
     Args:     n/a
-    Returns:  n/a
+    Returns:  Count of errors
 
 =cut
   
@@ -764,7 +796,7 @@ sub recent_genace_dump {
     Function: checks non-elegans core species have been successfully merged by checking for
               the presence of a selection of genes from the previous release
     Args:     n/a
-    Returns:  n/a
+    Returns:  Count of errors
 
 =cut
 
@@ -803,8 +835,8 @@ sub species_merge_successful {
 =head2 split_gffs_present()
     
     Function: checks that the expected number of GFF files are present
-    Args:     expected number of GFFs per chromosome/species
-    Returns:  n/a
+    Args:     Stage string (init/blat/homol/variation)
+    Returns:  Count of errors
 
 =cut
 
@@ -840,7 +872,7 @@ sub split_gffs_present {
               Sequence_collection AceDB object for the species
     Args:     Partial filename string (optional) - only filenames containing this substring
               will be checked
-    Returns:  n/a
+    Returns:  Count of errors
 
 =cut
 
@@ -871,7 +903,7 @@ sub tier2_contigs_dumped {
 
     Function: checks that wormpep file and table file contain Uniprot IDs
     Args:     n/a
-    Returns:  n/a
+    Returns:  Count of errors
     
 =cut
 
@@ -913,7 +945,7 @@ sub uniprot_ids_in_wormpep {
 
     Function: checks for presence of .ace file generated by VEP pipeline
     Args:     n/a
-    Returns:  n/a
+    Returns:  Count of errors
     
 =cut
 
@@ -927,6 +959,213 @@ sub vep_output_present {
     $errors = $self->_file_exists($vep_ace_file, $errors);
     
     return;
+}
+
+
+sub _add_new_blast_counts {
+    my ($self, $counts, $blast_type) = @_;
+
+    my $pipeline_dir = $ENV{'PIPELINE'};
+    $pipeline_dir = '/nfs/nobackup/ensemblgenomes/wormbase/BUILD/pipeline' unless $pipeline_dir;
+    $pipeline_dir .= '/dumps';
+    my $ace_file = $self->{'wormbase'}->species . '_' . $blast_type . '.ace';
+   
+    my $grep_cmd = "grep '^Pep_homol'  ${pipeline_dir}/${ace_file} |";
+
+    open (ACE, $grep_cmd) or
+	$self->{'log'}->log_and_die("Cannot open ${pipeline_dir}/${ace_file}\n");
+    while (<ACE>) {
+	chomp;
+	my @col = split("\t", $_);
+	my ($species) = $col[2] =~ /"?wublast[x|p]_([^"\s]+)"$/;
+	$self->{'log'}->error("ERROR: could not parse species from $col[2]\n")
+	    unless $species;
+	$counts->{'new'}{$species}{$col[1]} = 1;
+    }
+    close (ACE);
+
+    return $counts;
+}	
+
+
+sub _add_old_blast_counts {
+    my ($self, $counts, $blast_type) = @_;
+    
+    my $tmdef = $blast_type eq 'blastx' ? $self->_blastx_count_table_maker_def() :
+	$self->_blastp_count_table_maker_def();
+    my $cmd = "Table-maker -p $tmdef\nquit\n";
+    my $db = $self->{'previous_wormbase'}->autoace;
+
+    open (TACE, "echo '$cmd' | tace $db | ") or $self-{'log'}->log_and_die("Cannot query acedb. $cmd tace\n");
+    while (<TACE>) {
+	next unless $_ =~ /wublast/;
+	chomp;
+	my @col = split("\t", $_);
+        my ($species) = $_ =~ /wublast[x|p]_([^"\s]+)"/;
+	$self->{'log'}->error("ERROR: could not parse species from $_\n")
+	    unless $species;
+	my $match_ix = $blast_type eq 'blastx' ? 3 : 2;
+	$counts->{'old'}{$species}{$col[$match_ix]} = 1;
+    }
+    close (TACE);
+    unlink $tmdef;
+
+    return $counts;
+}
+
+
+sub _blast_count_comparison {
+    my ($self, $blast_type) = @_;
+
+    my $ace_file = $self->{'wormbase'}->species . "_${blast_type}.ace";   
+   
+    my $errors;
+    my $counts = {};
+    $counts = $self->_add_old_blast_counts($counts, $blast_type);
+    $counts = $self->_add_new_blast_counts($counts, $blast_type);
+
+    my @all_species = keys %{$counts->{'old'}};
+    push @all_species, keys %{$counts->{'new'}};
+    for my $species (@all_species) {
+	if (!exists $counts->{'new'}{$species}) {
+	    $self->{'log'}->write_to("POSSIBLE ERROR: no ${blast_type} entries for ${species} in ${ace_file}\n");
+	    $errors++;
+	}
+	else {
+	    $self->{'log'}->write_to(scalar (keys %{$counts->{'new'}{$species}}) . " ${blast_type} entries for ${species} in ${ace_file}\n");
+	}
+
+	if (!exists $counts->{'old'}{$species}) {
+	    $self->{'log'}->write_to("POSSIBLE ERROR: no ${blast_type} entries for ${species} in " .
+				     $self->{'previous_wormbase'}->get_wormbase_version_name . "\n");
+	    $errors++;
+	}
+	else {
+	    $self->{'log'}->write_to(scalar (keys %{$counts->{'old'}{$species}}) . " ${blast_type} entries for ${species} in " .
+				     $self->{'previous_wormbase'}->get_wormbase_version_name . "\n");
+	}
+
+	if (exists $counts->{'new'}{$species} and $counts->{'old'}{$species} and
+	    ((scalar keys %{$counts->{'new'}{$species}} < (0.9 * scalar keys %{$counts->{'old'}{$species}})) or
+	      (scalar keys %{$counts->{'new'}{$species}} > (1.1 * scalar keys %{$counts->{'old'}{$species}})))) {
+	    $self->{'log'}->write_to("POSSIBLE ERROR: >10% difference between counts of $blast_type" .
+				     " entries for ${species}:\n    " . scalar (keys %{$counts->{'old'}{$species}}) .
+				     ' ' . $self-{'wormbase'}->get_wormbase_version_name . "\n    " .
+				     scalar (keys %{$counts->{'new'}{$species}}) .
+				     " ${ace_file}\n");
+	    $errors++;
+	}
+    }
+
+    return $errors;
+}
+
+
+sub _blastp_count_table_maker_def {
+    my $self = shift;
+
+    my $species = $self->{'wormbase'}->long_name;
+    my $def = 'tmp_blastp.def';
+    open (TMP, ">$def") or $self->{'log'}->log_and_die("Can't write temporary file to $def\n");
+    my $txt = <<END;
+Sortcolumn 1
+
+Colonne 1 
+Width 40 
+Optional 
+Visible 
+Class 
+Class Protein 
+From 1 
+ 
+Colonne 2 
+Width 80 
+Mandatory 
+Visible 
+Class 
+Class Species 
+From 1 
+Tag Species
+Condition "$species"
+ 
+Colonne 3 
+Width 30 
+Mandatory 
+Visible 
+Class
+Class Sequence
+From 1 
+Tag Pep_homol
+ 
+Colonne 4 
+Width 30 
+Mandatory 
+Visible
+Class 
+Class Method
+Right_of 3 
+Tag HERE
+
+END
+    
+    print TMP $txt;
+    close (TMP);
+
+    return $def;
+}
+
+
+sub _blastx_count_table_maker_def {
+    my $self = shift;
+
+    my $species = $self->{'wormbase'}->long_name;
+    my $def = 'tmp_blastx.def';
+    open (TMP, ">$def") or $self->{'log'}->log_and_die("Can't write temporary file to $def\n");
+    my $txt = <<END;
+Sortcolumn 1
+
+Colonne 1 
+Width 40 
+Optional 
+Visible 
+Class 
+Class Sequence
+From 1 
+ 
+Colonne 2 
+Width 80 
+Mandatory
+Visible 
+Class 
+Class Species 
+From 1 
+Tag Species
+Condition "$species"
+ 
+Colonne 3 
+Width 30 
+Mandatory 
+Visible 
+Class
+Class Homol_data
+From 1 
+Tag Homol_data
+ 
+Colonne 4
+Width 30
+Mandatory
+Visible
+Class
+Class Protein
+From 3
+Tag Pep_homol
+
+END
+    
+    print TMP $txt;
+    close (TMP);
+
+    return $def;
 }
 
 

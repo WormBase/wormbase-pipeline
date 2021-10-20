@@ -114,12 +114,12 @@ $wormbase->run_script("dump_primary_seq_data.pl -organism $species", $log)
 and $log->log_and_die("Failed to successfully dump primary sequence data; stopping\n");
 print "STEP 2: dump_primary_seq_data.pl -organism $species completed\n";
 
-#__END__
 # Mask the sequences ready for BLATting
 $log->write_to("Masking sequence data for ".$wormbase->species."\n");
-$wormbase->run_script("BLAT_controller.pl -mask -qspecies $species", $log)
-and $log->log_and_die("Failed to successfully mask sequence data; stopping\n");
-print "STEP 3: BLAT_controller.pl -mask -qspecies $species completed\n";
+
+$wormbase->run_script("BLAT_controller.pl -mask -qspecies $species -species $species", $log)
+    and $log->log_and_die("Failed to successfully mask sequence data; stopping\n");
+
 
 # add lines to the logfile
 my $msg = "Updated ".$wormbase->species." version number to WS".$wormbase->version."\n";

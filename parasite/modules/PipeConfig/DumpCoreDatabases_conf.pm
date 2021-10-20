@@ -120,7 +120,7 @@ sub pipeline_analyses {
                               suffix    => "dna.toplevel.fa",
                               params    => "-ebiblastheader WBPS",
                             },
-      -rc_name           => '2Gb_job',
+      -rc_name           => '4Gb_job',
     },
     {
       -logic_name        => 'DumpGenomeMaskedBlast',
@@ -133,7 +133,7 @@ sub pipeline_analyses {
                               suffix    => "dna_rm.toplevel.fa",
                               params    => "-mask -ebiblastheader WBPS",
                             },
-      -rc_name           => '2Gb_job',
+      -rc_name           => '4Gb_job',
     },
     {
       -logic_name        => 'DumpTranscriptsBlast',
@@ -197,7 +197,7 @@ sub pipeline_analyses {
       -flow_into         => { 
 				4 => ['Gzip'],
 				},
-      -rc_name           => '2Gb_job',
+      -rc_name           => '4Gb_job',
     },
     {
       -logic_name        => 'DumpGenomeMasked',
@@ -214,7 +214,7 @@ sub pipeline_analyses {
       -flow_into         => { 
                                 4 => ['Gzip'],
                                 },
-      -rc_name           => '2Gb_job',
+      -rc_name           => '4Gb_job',
     },
     {
       -logic_name        => 'DumpGenomeSoftMasked',
@@ -231,7 +231,7 @@ sub pipeline_analyses {
       -flow_into         => { 
                                 4 => ['Gzip'],
                                 },
-      -rc_name           => '2Gb_job',
+      -rc_name           => '4Gb_job',
     },
     {
       -logic_name        => 'DumpTranscriptsCDS',
@@ -335,9 +335,9 @@ sub pipeline_analyses {
 
 sub resource_classes {
     return {
-         'default'      => {'LSF' => '-q production-rh74 -C0 -M1000   -R"select[mem>1000]   rusage[mem=1000]"' },
-         '2Gb_job'      => {'LSF' => '-q production-rh74 -C0 -M2000   -R"select[mem>2000]   rusage[mem=2000]"' },
-         '4Gb_job'      => {'LSF' => '-q production-rh74 -C0 -M4000   -R"select[mem>4000]   rusage[mem=4000]"' },
+         'default'      => {'LSF' => '-q production -C0 -M1000   -R"select[mem>1000]   rusage[mem=1000]"' },
+         '2Gb_job'      => {'LSF' => '-q production -C0 -M2000   -R"select[mem>2000]   rusage[mem=2000]"' },
+         '4Gb_job'      => {'LSF' => '-q production -C0 -M4000   -R"select[mem>4000]   rusage[mem=4000]"' },
     };
 }
 

@@ -22,7 +22,7 @@ use Storable;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $single, $build, $species, $outfile, $report);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $single, $build, $species, $outfile, $report, $logfile);
 
 
 GetOptions ("help"       => \$help,
@@ -35,6 +35,7 @@ GetOptions ("help"       => \$help,
 	    "build"      => \$build,
 	    "outfile:s"  => \$outfile, #full path to output file
 	    "report:s"   => \$report,
+	    "logfile:s"  => \$logfile,
 	    );
 
 if ( $store ) {
@@ -49,7 +50,7 @@ if ( $store ) {
 my $output;
 
 # establish log file.
-my $log = Log_files->make_build_log($wormbase);
+my $log = $logfile ? Log_files->make_log($logfile, $debug) : Log_files->make_build_associated_log($wormbase);
 
 if ($outfile) {
   $output = $outfile;
@@ -205,22 +206,22 @@ foreach my $SeqGene(@SeqGenes) {
   }
   else {
       if ($SeqGene->Corresponding_CDS_history) { 
-	  #$log->write_to("$SeqGene: No live annotation");
-	  #$log->write_to(" - CHECK: Has History CDS\n");
+	  $log->write_to("$SeqGene: No live annotation") if $verbose;
+	  $log->write_to(" - CHECK: OK Has History CDS\n") if $verbose;
       }
       elsif ($SeqGene->Corresponding_transcript_history) { 
-	  #$log->write_to("$SeqGene: No live annotation");
-	  #$log->write_to(" - CHECK: Has History Transcript\n");
+	  $log->write_to("$SeqGene: No live annotation") if $verbose;
+	  $log->write_to(" - CHECK: OK Has History Transcript\n") if $verbose;
       }
       elsif ($SeqGene->Corresponding_pseudogene_history) { 
-	  #$log->write_to("$SeqGene: No live annotation");
-	  #$log->write_to(" - CHECK: Has History Pseudogene\n");
+	  $log->write_to("$SeqGene: No live annotation") if $verbose;
+	  $log->write_to(" - CHECK: OK Has History Pseudogene\n") if $verbose;
       }
       else {
-	  $log->write_to("$SeqGene: No live annotation");
-	  $log->write_to(" - WARNING: Dangling annotation, please check the database $db?\n");
+	  $log->write_to("WARNING: $SeqGene No live annotation");
+	  $log->write_to(" - CHECK: If there are features on this gene they need connecting to the correct WBGene\n");  
+	  print REP "FIX: $SeqGene No live annotation - CHECK: If there are features on this gene as they need connecting to the correct WBGene\n" if ($report);
       }
-      print REP "$SeqGene - WARNING: Dangling annotation, please check the database $db for feature data\n" if ($report);
       next;
   }
 }

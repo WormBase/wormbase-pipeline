@@ -1,4 +1,4 @@
-//
+///
 // models.wrm - main file defining tree class structures for the WormBase database
 // This file is read only when starting a new database or when you select
 // "Read Models" or "Add Update File" from the main menus.
@@ -27,7 +27,7 @@
 //
 // Tags that shouldn't be used:
 // -----------------------------------------------------------------------------
-//  "Name" this should always be implemented as Public_name or Similar
+//  "Name" this should always be implemented as Public_name or Similar 
 //
 
 
@@ -1141,6 +1141,7 @@
                ECO_term UNIQUE ?ECO_term
                GO_term UNIQUE ?GO_term XREF GO_annotation
                GO_code UNIQUE ?GO_code
+               Noctua_model_id ?Text
                Annotation_relation UNIQUE ?RO_term XREF GO_annotation
                Annotation_relation_not UNIQUE ?RO_term XREF Not_GO_annotation
                Annotation_made_with Interacting_gene ?Gene
@@ -1321,8 +1322,7 @@
                       Chemical_inducer ?Molecule XREF Induces_disease          //To associate inducing chemicals to a disease
                       Other_inducer ?Text                                      //New tag
                       Molecule_modifier ?Molecule XREF Modifies_disease        //To associate modifying chemicals to a disease
-         Reagent_info Associated_antibody ?Antibody XREF Antibody_for_disease
-                      Associated_construct ?Construct XREF Construct_for_disease
+         Reagent_info Associated_construct ?Construct XREF Construct_for_disease
                       Associated_transgene ?Transgene XREF Transgene_for_disease
          Version UNIQUE Text
 
@@ -2368,10 +2368,9 @@
               Remark ?Text #Evidence
               DB_info ?Database ?Database_field Text
               Experiment Laboratory ?Laboratory
-                         Author ?Author
-                         Date UNIQUE DateType
                          Strain UNIQUE ?Strain
               Reference ?Paper XREF Expr_pattern
+              Person UNIQUE ?Person 
               Transgene ?Transgene XREF Expr_pattern
               Variation ?Variation XREF Expr_pattern
               Construct ?Construct XREF Expression_pattern
@@ -2434,11 +2433,11 @@
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 ?Antibody Summary UNIQUE ?Text #Evidence
+          Public_name Text
           Other_name Text
           Gene ?Gene XREF Antibody #Evidence
           Isolation Original_publication UNIQUE ?Paper
                     No_original_reference Text //proposed by Wen
-                    Person ?Person
                     Location ?Laboratory
                     Clonality UNIQUE Polyclonal UNIQUE Text
                                      Monoclonal UNIQUE Text
@@ -2451,11 +2450,7 @@
                                   Guinea_pig
                                   Chicken
                                   Goat
-                                  Other_animal UNIQUE Text
           Historical_gene ?Gene Text
-          Possible_pseudonym ?Antibody XREF Possible_pseudonym_of
-          Possible_pseudonym_of ?Antibody XREF Possible_pseudonym
-          Antibody_for_disease ?DO_term XREF Associated_antibody #Evidence
           Expr_pattern ?Expr_pattern XREF Antibody_info
           Interactor ?Interaction
           Reference ?Paper XREF Antibody
@@ -2477,11 +2472,16 @@
               Cropped_from ?Picture XREF Crop_picture
          Pick_me_to_call Text Text
          Remark ?Text #Evidence
+         Type Expr_graph ?Text                              // #161 added by Wen for HTP expression graphs
          Depict Expr_pattern ?Expr_pattern XREF Picture
+                Microarray ?Microarray_experiment           // #161 added by Wen for HTP expression graphs
+                RNASeq ?Analysis                            // #161 added by Wen for HTP expression graphs
+                Tiling_array ?Analysis                      // #161 added by Wen for HTP expression graphs
                 Anatomy ?Anatomy_term XREF Picture
                 Cellular_component ?GO_term XREF Picture
                 WBProcess ?WBProcess XREF Picture
                 Gene ?Gene XREF Picture
+                Microarray_results ?Microarray_results      // #161 added by Wen for HTP expression graphs
                 Life_stage ?Life_stage XREF Picture
          Acknowledgment Template UNIQUE Text
                         Publication_year UNIQUE Text
@@ -3685,28 +3685,7 @@
 
 
 // hash to contain detailed changes caused by mutations [2006-02-17 ar2]
-#Molecular_change Missense Int Text #Evidence // to be deprecated WS282
-                  Silent Text #Evidence // to be deprecated WS282
-                  Nonsense UNIQUE Amber_UAG Text #Evidence // to be deprecated WS282
-                                  Ochre_UAA Text #Evidence
-                                  Opal_UGA Text #Evidence
-                                  Ochre_UAA_or_Opal_UGA Text #Evidence
-                                  Amber_UAG_or_Ochre_UAA Text #Evidence
-                                  Amber_UAG_or_Opal_UGA Text #Evidence
-                  Splice_site UNIQUE  Donor Text #Evidence // to be deprecated WS282
-                                      Acceptor Text #Evidence // to be deprecated WS282
-                                      Region Text #Evidence // to be deprecated WS282
-                  Frameshift Text #Evidence // to be deprecated WS282
-                  Readthrough Text #Evidence //klh WS228 // to be deprecated WS282
-                  Intron #Evidence // to be deprecated WS282
-                  Coding_exon #Evidence // to be deprecated WS282
-                  Noncoding_exon #Evidence // to be deprecated WS282
-                  Promoter #Evidence // to be deprecated WS282
-                  UTR_3 #Evidence // to be deprecated WS282
-                  UTR_5 #Evidence // to be deprecated WS282
-                  Regulatory_feature #Evidence // to be deprecated WS282
-                  Genomic_neighbourhood #Evidence // to be deprecated WS282
-                  VEP_consequence Text // proposed addition as well as mapping to the WB tags. 
+#Molecular_change VEP_consequence Text // proposed addition as well as mapping to the WB tags. 
                   VEP_impact Text #Evidence 
                   SIFT Float Text #Evidence 
                   PolyPhen Float Text #Evidence 

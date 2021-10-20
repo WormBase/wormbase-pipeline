@@ -7,7 +7,7 @@
 # Last edited by: $Author: pad $
 # Last edited on: $Date: 2015-07-02 10:23:29 $
 #====================
-#perl ~/wormbase/scripts/merge_split_camaces.pl -update -gw3 -pad -species elegans -test -version $MVERSION > /nfs/wormpub/camace_orig/WSXXX -WSXXY/load_data.txt
+#perl ~/wormbase/scripts/merge_split_camaces.pl -update -skd -pad -species elegans -test -version $MVERSION > /nfs/wormpub/camace_orig/WSXXX -WSXXY/load_data.txt
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -22,8 +22,7 @@ use Storable;
 
 my $all;                   # All
 my $pad;                   # Use Paul's split
-my $gw3;                   # Use Gary's split
-my $mh6;                   # Use MH6 split
+my $skd;                   # Use Stavros' split
 my $curation;              # create a single curation database.
 my $merge;                 # Merging databases
 my $split;                 # Splitting databases
@@ -47,17 +46,18 @@ my $verbose;               # Additional printout
 my $names;                 # option to just dump Public_name data for given species.
 my $altacefiles;           # alternative location for acefiles
 my $altblat;               # alternative location for blat data
+my $logfile;
   GetOptions (
 	      "all"           => \$all,
 	      "pad"           => \$pad,
-	      "gw3"           => \$gw3,
-	      "mh6"           => \$mh6,
+	      "skd"           => \$skd,
 	      "curation"      => \$curation,
 	      "merge"         => \$merge,
 	      "split"         => \$split,
 	      "update"        => \$update,
 	      "help"          => \$help,
 	      "debug:s"       => \$debug,
+              "logfile:s"     => \$logfile,
 	      "version:s"     => \$WS_version,
 	      "store"         => \$store,
 	      "species:s"     => \$species,
@@ -91,7 +91,7 @@ else {
 			   );
 }
 
-my $log = Log_files->make_build_log($wormbase);
+my $log = $logfile ? Log_files->make_log($logfile, $debug) : Log_files->make_build_associated_log($wormbase);
 my $tace = $wormbase->tace;
 
 if (!defined($WS_version)) {
@@ -138,8 +138,7 @@ if ($test) {
 else {
   push(@databases,"orig");
   push(@databases,"pad") if ($pad || $all);
-  push(@databases,"gw3") if ($gw3 || $all);
-  push(@databases,"mh6") if ($mh6);
+  push(@databases,"skd") if ($skd || $all);
   push(@databases,"curation") if ($curation);
 }
 
@@ -193,7 +192,9 @@ if ($merge) {
   # run acediff on the files tidy up and reformat the diff files ready to be loaded
   #my $script_path = glob("~pad/wormbase/scripts");
   foreach my $database (@databases) {
+      print "Dumping Data from $database\n";
     foreach my $class (@classes) {
+	print "Dumping $class ...........\n";
       my $path_new = $directory . "/${class}_${database}.ace";
       my $path_ref = $directory . "/${class}_orig.ace";
       # Sequence class has hit acediff file line limit so stripping out RNASeq CDS_child lines from 
@@ -236,7 +237,9 @@ if ($merge) {
 	  $wormbase->run_script("acediff.pl -reference $path_ref -new $path_new -output $directory/update_${class}_${database}.ace -debug pad", $log) && die "acediff.pl Failed for ${path_new}\n";
 	}
       }
+	print "Finished Processing $class\n";
     }
+      print "Finished Processing $database\n";
   }
   $log->write_to ("Phase 1 finished and all files can be found in $directory\n");
 }
@@ -470,6 +473,9 @@ sub split_databases {
       $log->write_to ("Destroying $split_db\n");
       print "Destroying $split_db\n" if ($debug);
       $wormbase->run_command("rm -rf $split_db/database/ACEDB.wrm", $log) && die "Failed to remove $split_db/database/ACEDB.wrm\n";
+    }
+    elsif (-e $split_db."/database/wspec/models.wrm"){
+	print "It looks like you have had a failed run but the database dir structure is present so we will continue!!";
     }
     else {
       $log->write_to ("Databases doesn't exist so creating $split_db\n");
@@ -713,12 +719,14 @@ sub load_curation_data {
 		  "$blat_dir/virtual_objects.$species.ci.OST.$species.ace",
 		  "$blat_dir/virtual_objects.$species.ci.RST.$species.ace",
 		  "$blat_dir/virtual_objects.$species.ci.ncRNA.$species.ace",
+		  "$blat_dir/virtual_objects.$species.ci.elegans_Nanopore.ace",
 		  "$blat_dir/$species.blat.${species}_OST.ace",
 		  "$blat_dir/$species.blat.${species}_RST.ace",
 		  "$blat_dir/$species.blat.${species}_ncRNA.ace",
 		  "$blat_dir/$species.good_introns.OST.ace",
 		  "$blat_dir/$species.good_introns.RST.ace",
 		  "$blat_dir/$species.good_introns.ncRNA.ace",
+		  "$blat_dir/$species.good_introns.Nanopore.ace",
 		 );
 	  }
     push (@BLATfiles,

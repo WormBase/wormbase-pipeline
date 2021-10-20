@@ -20,7 +20,7 @@ use Modules::Remap_Sequence_Change;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $logfile);
 my ($input, $output, $species);
 
 GetOptions ("help"       => \$help,
@@ -31,6 +31,7 @@ GetOptions ("help"       => \$help,
 	    "input:s"    => \$input,
 	    "output:s"   => \$output,
 	    "species:s"  => \$species,
+	    "logfile:s"  => \$logfile,
 	    );
 
 
@@ -53,7 +54,7 @@ if ($test) {
 }
 
 # establish log file.
-my $log = Log_files->make_build_log($wormbase);
+my $log = $logfile ? Log_files->make_log($logfile, $debug) : Log_files->make_build_associated_log($wormbase);
 
 #################################
 # check input arguments

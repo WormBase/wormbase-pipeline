@@ -95,7 +95,6 @@ my $dna;
 my $rna;
 my $xrefs;
 my $gff;
-my $gaf;
 my $reports;
 my $ests;
 my $blastx;
@@ -117,7 +116,6 @@ GetOptions ("help"          => \$help,
 	    "rna"           => \$rna,
 	    "wormpep"       => \$wormpep,
 	    "gff"           => \$gff,
-	    "gaf"           => \$gaf,
             "reports"       => \$reports,
 	    "annots"        => \$annots,
             "ests"          => \$ests,
@@ -174,7 +172,6 @@ $log->write_to("WRITING TO $targetdir\n");
 &copy_rna_files          if $rna or $all;
 &copy_wormpep_files      if $wormpep or $all;
 &copy_gff_files          if $gff or $all;
-&copy_gaf_files          if $gaf or $all;
 &copy_report_files       if $reports or $all;
 &copy_est_files          if $ests or $all;
 &copy_annotations_files  if $annots or $all;
@@ -395,6 +392,7 @@ sub copy_gff_files{
     my $source_gff3_file = $wb->processed_GFF_file(1);
     my $source_gtf_file = "${sequencesdir}/${species}.gtf";
     my $source_prot_file = "${sequencesdir}/${species}.protein_annotation.gff3";
+    my $source_vcf_file = "${sequencesdir}/${species}.vcf";
     
     my $gff_dir = "$targetdir/species/$gspecies/$bioproj";
     mkpath($gff_dir,1,0775);
@@ -404,11 +402,13 @@ sub copy_gff_files{
     my $target_gff3_file = "$gff_dir/${fname_prefix}.annotations.gff3.gz";
     my $target_gtf_file = "$gff_dir/${fname_prefix}.canonical_geneset.gtf.gz";
     my $target_prot_file = "$gff_dir/${fname_prefix}.protein_annotation.gff3.gz";
+    my $target_vcf_file = "$gff_dir/${fname_prefix}.variations.vcf.gz";
 
     foreach my $fname_pair ([$source_gff2_file,  $target_gff2_file],
                             [$source_gff3_file,  $target_gff3_file],
                             [$source_gtf_file,   $target_gtf_file], 
                             [$source_prot_file,  $target_prot_file], 
+			    [$source_vcf_file,   $target_vcf_file],
         ) {
       my ($source, $target) = @$fname_pair;
       unlink $target if -e $target;
@@ -667,131 +667,32 @@ sub copy_ontology_files {
   mkpath($ace_ontology_dir,1,0775);
   mkpath($ftp_ontology_dir,1,0775);
   
-  $wormbase->run_command("cp -f $obo_dir/*.obo $ace_ontology_dir/", $log);
-  foreach my $file (glob("$ace_ontology_dir/*.obo")) {
-    $wormbase->run_command("cp -f $file $ftp_ontology_dir/", $log);
-  }
-  
-  $runtime = $wormbase->runtime;
-  $log->write_to("$runtime: Finished copying ontology files\n\n");
-}
-
-
-############################################
-# copy across gaf files
-############################################
-sub copy_gaf_files {
- 
-  print "Copy ontology innit\n";
-
-  my $runtime = $wormbase->runtime;
-  $log->write_to("$runtime: Copying ontology files\n");
-
-  my $ace_dir = $wormbase->autoace;  
-  #my $obo_dir = $wormbase->primaries . "/citace/temp_unpack_dir/home/citace/Data_for_${WS_version_name}/Data_for_Ontology/";
-  my $ace_ontology_dir = "$ace_dir/ONTOLOGY";
-  my $ftp_ontology_dir = "$targetdir/ONTOLOGY";
-  #print "$ace_dir $obo_dir $ace_ontology_dir $ftp_ontology_dir\n";
-
- 
-  mkpath($ace_ontology_dir,1,0775);
-  mkpath($ftp_ontology_dir,1,0775);
-
-  #print "$runtime\tStart WB\n";
-    # run through all possible organisms
   my %accessors = ($wormbase->species_accessors);
-  $accessors{elegans} = $wormbase;
-  #print "$runtime\tEnd WB\n";
+    $accessors{$wormbase->species} = $wormbase;
+    my %species_name_map;
+    while(my ($species, $wb) = each %accessors) {
+	$species_name_map{$wb->full_name('-g_species' => 1)} = $species;
+    }
 
-  my %copied;
-
-  foreach my $wb (values %accessors) {
-    next if exists $skip_species{$wb->species};
-    next if @only_species and not exists $only_species{$wb->species};
-
-    my $gspecies = $wb->full_name('-g_species' => 1);
-    my $bioproj = $wb->ncbi_bioproject;
-    my $prefix = $wb->pepdir_prefix;
-
-    #print "$gspecies $bioproj $prefix  \n";
-   
-
-    # Copy to species folders
+    $wormbase->run_command("cp -f $obo_dir/*.obo $ace_ontology_dir/", $log);
     foreach my $file (glob("$ace_ontology_dir/*.*")) {
-	my @a = split(/\./, $file);
-	my @b = split(/\//, $a[0]);
-	# If is daf file
-	if ($file=~/$gspecies/ and $file=~/daf.txt/) {
-		my $species_dir = "$targetdir/species/$gspecies/$bioproj";
-		#print "cp -f $file $targetdir/species/$gspecies/$bioproj/annotation/$gspecies\.$bioproj\.$WS_version_name\.$b[-1]\.daf\n ";
-		$wormbase->run_command("cat $file | gzip -n -9 > $targetdir/species/$gspecies/$bioproj/annotation/$gspecies\.$bioproj\.$WS_version_name\.$b[-1]\.daf.gz", $log);
-		$wormbase->run_command("cp -f $file $targetdir/ONTOLOGY/", $log); # Remove before WS281
-		$copied{$file}=1;
-	}
-	# wierdly renames the output files
-	elsif ($file=~/$gspecies/ and $file=~/gene_association/) {
-		my $species_dir = "$targetdir/species/$gspecies/$bioproj";
-		#print "cp -f $file $targetdir/species/$gspecies/$bioproj/annotation/$gspecies\.$bioproj\.$WS_version_name\.$b[-1]\.wb\n ";
-		$wormbase->run_command("cat $file | gzip -n -9 > $targetdir/species/$gspecies/$bioproj/annotation/$gspecies\.$bioproj\.$WS_version_name\.go_annotations.gaf.gz", $log);
-		$wormbase->run_command("cp -f $file $targetdir/ONTOLOGY/", $log); # Remove before WS281
-		$copied{$file}=1;
-	}	
-	elsif ($file=~/$gspecies/ and $file=~/rnai_phenotypes/) {
-		my $species_dir = "$targetdir/species/$gspecies/$bioproj";
-		#print "cp -f $file $targetdir/species/$gspecies/$bioproj/annotation/$gspecies\.$bioproj\.$WS_version_name\.$b[-1]\.wb\n ";
-		$wormbase->run_command("cat $file | gzip -n -9 > $targetdir/species/$gspecies/$bioproj/annotation/$gspecies\.$bioproj\.$WS_version_name\.$b[-1]\.wb.gz", $log);
-		$wormbase->run_command("cp -f $file $targetdir/ONTOLOGY/", $log); # Remove before WS281
-		$copied{$file}=1;
-	}
-	elsif ($file=~/$gspecies/) {
-		my $species_dir = "$targetdir/species/$gspecies/$bioproj";
-		#print "cp -f $file $targetdir/species/$gspecies/$bioproj/annotation/$gspecies\.$bioproj\.$WS_version_name\.$b[-1]\.gaf\n ";
-		$wormbase->run_command("cat $file | gzip -n -9 > $targetdir/species/$gspecies/$bioproj/annotation/$gspecies\.$bioproj\.$WS_version_name\.$b[-1]\.gaf.gz", $log);
-		$wormbase->run_command("cp -f $file $targetdir/ONTOLOGY/", $log); # Remove before WS281         
-		$copied{$file}=1;
+	my ($filestem, $suffix) = $file =~ /\/([^\/]+)\.([^\.\/]+)$/;
+	if (exists $species_name_map{$suffix}) {
+	    my ($filetype, $release, $extension) = $filestem =~ /^([^\.]+)\.(WS\d+)\.(.+)$/; 
+	    my $wb = $accessors{$species_name_map{$suffix}};
+	    my $bioproj = $wb->ncbi_bioproject;
+	    my $new_filename = join('.', $suffix, $bioproj, $release, $filetype, $extension, 'gz');
+	    my $species_dir = "$targetdir/species/$suffix/$bioproj";
+	    mkpath($species_dir,1,0775);
+	    $wormbase->run_command("gzip -9 -f -c $file > ${species_dir}/annotation/${new_filename}", $log);
 	}
 	else {
+	    $wormbase->run_command("cp -f $file $ftp_ontology_dir/", $log);
 	}
     }
-}
- 
-# Copy the rest of the files without species name to the ontology folder
-   foreach my $file (glob("$ace_ontology_dir/*.*")) {
-	my @a = split(/\./, $file);
-	my @b = split(/\//, $a[0]);
-	if (exists $copied{$file}) {
-		#print "Copied $file\n";
-	}
-	else {
-		if ($file=~/daf.txt/) {
-			#print "cp -f $file $targetdir/ONTOLOGY/$b[-1]\.$WS_version_name\.daf\n ";
-			$wormbase->run_command("cp -f $file $targetdir/ONTOLOGY/$b[-1]\.$WS_version_name\.daf", $log);
-			$wormbase->run_command("cp -f $file $targetdir/ONTOLOGY/", $log); # Remove before WS281
-		}
-		elsif ($file=~/gene_association/) {
-			#print "cp -f $file $targetdir/ONTOLOGY/$b[-1]\.$WS_version_name\.wb\n ";
-			$wormbase->run_command("cp -f $file $targetdir/ONTOLOGY/$b[-1]\.$WS_version_name\.wb", $log);
-			$wormbase->run_command("cp -f $file $targetdir/ONTOLOGY/", $log); # Remove before WS281
-		}
-		elsif ($file=~/rnai_phenotypes/) {
-			#print "cp -f $file $targetdir/ONTOLOGY/$b[-1]\.$WS_version_name\.wb\n ";
-			$wormbase->run_command("cp -f $file $targetdir/ONTOLOGY/$b[-1]\.$WS_version_name\.wb", $log);
-			$wormbase->run_command("cp -f $file $targetdir/ONTOLOGY/", $log); # Remove before WS281
-		}
-		else {
-			#print "cp -f $file $targetdir/ONTOLOGY/$b[-1]\.$WS_version_name\.gaf\n ";
-			$wormbase->run_command("cp -f $file $targetdir/ONTOLOGY/$b[-1]\.$WS_version_name\.gaf", $log);
-			$wormbase->run_command("cp -f $file $targetdir/ONTOLOGY/", $log); # Remove before WS281
-		}
-
-	}
-
-    }
-    
   
-   $runtime = $wormbase->runtime;
-   $log->write_to("$runtime: Finished copying ontology files!\n\n");
-
+    $runtime = $wormbase->runtime;
+    $log->write_to("$runtime: Finished copying ontology files\n\n");
 }
 
 
@@ -1515,6 +1416,8 @@ GSPECIES.BIOPROJ.WSREL.interactions.txt.gz
 GSPECIES.BIOPROJ.WSREL.swissprot.txt.gz
 GSPECIES.BIOPROJ.WSREL.molecules.ace.gz
 GSPECIES.BIOPROJ.WSREL.xrefs.txt.gz
+GSPECIES.BIOPROJ.WSREL.rnai_phenotypes.wb.gz
+GSPECIES.BIOPROJ.WSREL.rnai_phenotypes_quick.wb.gz
 
 [elegans]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.wormpep_package.tar.gz
@@ -1526,15 +1429,20 @@ GSPECIES.BIOPROJ.WSREL.transposon_cds.pep.gz
 GSPECIES.BIOPROJ.WSREL.functional_descriptions.txt.gz
 GSPECIES.BIOPROJ.WSREL.orthologs.txt.gz
 GSPECIES.BIOPROJ.WSREL.protein_domains.csv.gz
-GSPECIES.BIOPROJ.WSREL.go_annotations.gaf.gz
 GSPECIES.BIOPROJ.WSREL.repeats.fa.gz
 GSPECIES.BIOPROJ.WSREL.geneIDs.txt.gz
 GSPECIES.BIOPROJ.WSREL.geneOtherIDs.txt.gz
 GSPECIES.BIOPROJ.WSREL.gene_product_info.gpi.gz
 GSPECIES.BIOPROJ.WSREL.gene_product_info.gpi2.gz
+GSPECIES.BIOPROJ.WSREL.anatomy_association.wb.gz
+GSPECIES.BIOPROJ.WSREL.gene_association.wb.gz
+GSPECIES.BIOPROJ.WSREL.development_association.wb.gz
+GSPECIES.BIOPROJ.WSREL.phenotype_association.wb.gz
+GSPECIES.BIOPROJ.WSREL.disease_association.daf.txt.gz
 
 [CORE]species/GSPECIES/BIOPROJ
 GSPECIES.BIOPROJ.WSREL.best_blastp_hits.txt.gz
+GSPECIES.BIOPROJ.WSREL.variations.vcf.gz
 GSPECIES.BIOPROJ.WSREL.annotations.gff2.gz
 GSPECIES.BIOPROJ.WSREL.protein_annotation.gff3.gz
 GSPECIES.BIOPROJ.WSREL.ncRNA_transcripts.fa.gz
@@ -1569,15 +1477,6 @@ ASSEMBLIES.WSREL.json
 []ONTOLOGY
 anatomy_association.WSREL.wb
 anatomy_ontology.WSREL.obo
-gene_association.WSREL.wb.c_briggsae
-gene_association.WSREL.wb.c_elegans
-gene_association.WSREL.wb.c_remanei
-gene_association.WSREL.wb.c_japonica
-gene_association.WSREL.wb.c_brenneri
-gene_association.WSREL.wb.b_malayi
-gene_association.WSREL.wb.p_pacificus
-gene_association.WSREL.wb.o_volvulus
-gene_association.WSREL.wb.s_ratti
 gene_association.WSREL.wb
 gene_ontology.WSREL.obo
 phenotype_association.WSREL.wb

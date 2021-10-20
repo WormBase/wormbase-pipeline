@@ -22,7 +22,7 @@ use Storable;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $build, $species);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $build, $species, $logfile);
 
 
 GetOptions ("help"       => \$help,
@@ -32,6 +32,7 @@ GetOptions ("help"       => \$help,
 	    "store:s"    => \$store,
 	    "species:s"  => \$species,
 	    "build"      => \$build,
+	    "logfile"    => \$logfile,
 	    );
 
 if ( $store ) {
@@ -44,7 +45,7 @@ if ( $store ) {
 }
 
 # establish log file.
-my $log = Log_files->make_build_log($wormbase);
+my $log = $logfile ? Log_files->make_log($logfile, $debug) : Log_files->make_build_associated_log($wormbase);
 
 # Check options and usage
 $log->log_and_die("-species is mandetory...sorry\n") unless ($species);

@@ -84,8 +84,6 @@ foreach my $sub_query (
   while (my $obj=$it->next) {
     $i++;
 
-    print STDERR $obj->name,"\n";
-    
     next unless $obj->isObject();
     next unless $obj->Species;
     next unless $obj->Species->name eq $full_name;

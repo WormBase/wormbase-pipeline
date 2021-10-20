@@ -10,6 +10,7 @@ use lib $ENV{'CVS_DIR'};
 
 use strict;
 use DBI;
+use Ace;
 use Getopt::Long;
 use Wormbase;
 use Storable;
@@ -103,9 +104,8 @@ if (defined $testcds) {
 }
 
 
-
 #
-# Get Ensembl data...
+# Get Wormbase feature data...
 #
 $log->write_to("Fetching WormBase feature data...\n");
 
@@ -132,33 +132,42 @@ if ($outfile) {
 $log->write_to("Dumping data...\n");
 &write_gff_header();
 
+my $db = Ace->connect(-path => $acedb, -program => $wormbase->tace) or die ('Connection failure: ' . Ace->error);
+
 while (my $transl = shift @transls) {
   my $wormpep = $cds2wp{$transl->stable_id};
   my $gene = $cds2gene{$transl->stable_id};
   my $gname = $transl->stable_id;
+  my $uniprot_id = get_uniprot_id($wormpep, $db);
   $gname =~ s/[a-z]$//; 
   $gname = $cds2cgc{$transl->stable_id} if exists $cds2cgc{$transl->stable_id};
 
   #
   # get the exon structure and turn it into peptide coords
   #
+  my %pep_attr = (ID => $transl->stable_id, wormbase_protein => $wormpep, wormbase_geneid => $gene, wormbase_genename => $gname);
+  $pep_attr{uniprot_id} = $uniprot_id if $uniprot_id;
   &write_pep_gff(
-    $transl->stable_id,
-    "WormBase",
-    "polypeptide", 
-    1, 
-    $transl->length,
-    ".", 
-    { ID => $transl->stable_id, wormbase_protein => $wormpep, wormbase_geneid => $gene, wormbase_genename => $gname });
+      $transl->stable_id,
+      "WormBase",
+      "polypeptide", 
+      1, 
+      $transl->length,
+      ".", 
+      \%pep_attr
+      );
 
+  my %cds_attr = (ID => $transl->stable_id . "_exon_boundaries", wormbase_protein => $wormpep, wormbase_geneid => $gene, wormbase_genename => $gname);
+  $cds_attr{uniprot_id} = $uniprot_id if $uniprot_id;
   &write_pep_gff(
-    $transl->stable_id,
-    "WormBase",
-    "CDS", 
-    1, 
-    $transl->length,
-    ".", 
-    { ID => $transl->stable_id . "_exon_boundaries", wormbase_protein => $wormpep, wormbase_geneid => $gene, wormbase_genename => $gname  });
+      $transl->stable_id,
+      "WormBase",
+      "CDS", 
+      1, 
+      $transl->length,
+      ".",
+      \%cds_attr
+    );
 
   my $tran = $transl->transcript;
   foreach my $seg ($transl->transcript->genomic2pep($tran->seq_region_start, $tran->seq_region_end, $tran->strand)) {
@@ -262,6 +271,7 @@ while (my $transl = shift @transls) {
 }
 
 close($out_fh) or $log->log_and_die("Could not cleanly close output file $outfile\n");
+$db->close();
 $log->mail();
 
 exit(0);
@@ -588,3 +598,17 @@ END
 
 }
 
+
+sub get_uniprot_id {
+    my ($wormpep, $db) = @_;
+
+    my $obj = $db->fetch(Protein => $wormpep);
+    return unless $obj->Database;
+    my @databases = $obj->at('DB_info.Database');
+    for my $database (@databases) {
+	next unless $database->name eq 'UniProt' and $database->right->name eq 'UniProtAcc';
+	return $database->right->right->name;
+    }
+
+    return;
+}

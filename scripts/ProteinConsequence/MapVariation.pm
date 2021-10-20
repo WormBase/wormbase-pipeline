@@ -219,6 +219,9 @@ sub extract_vcf_data {
 		$alt = $inserted_sequence . $right_pad_base;
 	    }
 	}
+	if ($alt =~ /[^ACGT\-acgt]/) {
+	    $alt = $self->get_possible_alleles($alt);
+	}
 	$vcf_count++;
 	$vcf_data{$chr}{$start}{$allele->name}{'ref'} = $ref;
 	$vcf_data{$chr}{$start}{$allele->name}{'alt'} = $alt;
@@ -253,6 +256,54 @@ sub fetch_region {
     close (FAIDX);
 
     return $seq;
+}
+
+
+=head2 get_possible_alleles
+
+    Title:    get_possible_alleles
+    Function: expand all IUPAC codes in alternative allele to give alternative alleles in
+              a string as alt1,alt2,alt3...
+    Args:     alternative allele string
+    Returns:  reformatted alternative allele string
+
+=cut
+
+sub get_possible_alleles {
+    my ($self, $iupac_alt) = @_;
+
+    my %iupac_codes = (R => ['A', 'G'],
+		       Y => ['C', 'T'],
+		       S => ['G', 'C'],
+		       W => ['A', 'T'],
+		       K => ['G', 'T'],
+		       M => ['A', 'C'],
+		       B => ['C', 'G', 'T'],
+		       D => ['A', 'G', 'T'],
+		       H => ['A', 'C', 'T'],
+		       V => ['A', 'C', 'G'],
+	);
+
+    my @possible_alleles = ('');
+    for my $base_ix (0 .. length($iupac_alt) - 1) {
+	my $base = uc(substr($iupac_alt, $base_ix, 1));
+	if (exists $iupac_codes{$base}) {
+	    my @new_possible_alleles = ();
+	    for my $pa (@possible_alleles) {
+		for my $pb (@{$iupac_codes{$base}}) {
+		    push @new_possible_alleles, $pa . $pb;
+		}
+	    }
+	    @possible_alleles = @new_possible_alleles;
+	}
+	else {
+	    for my $ix (0 .. @possible_alleles - 1) {
+		$possible_alleles[$ix] .= $base;
+	    }
+	}
+    }
+
+    return join(',', @possible_alleles);
 }
 
 

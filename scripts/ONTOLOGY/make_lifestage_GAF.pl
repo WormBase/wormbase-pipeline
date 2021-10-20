@@ -80,7 +80,14 @@ while ( my $obj = $it->next ) {
 
   # Take first reference only
   my ($ref) = $obj->Reference;
-  
+  my $ref_prefix = 'WB_REF';
+
+  # User person if no reference
+  if (!$ref and $obj->Person) {
+      $ref = $obj->Person->name;
+      $ref_prefix = 'WB';
+  }
+
   foreach my $g ( keys %genes ) {
     foreach my $ls ( keys %ls ) {
       my $qual = $ls{$ls};
@@ -89,7 +96,7 @@ while ( my $obj = $it->next ) {
                                $gene_info->{$g}->{public_name}, 
                                $qual, 
                                $ls, 
-                               "WB_REF:$ref",
+                               "${ref_prefix}:$ref",
                                "IDA", 
                                "WB:".$obj->name, 
                                "L",  

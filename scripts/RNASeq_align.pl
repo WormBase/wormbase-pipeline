@@ -22,7 +22,10 @@ use List::Util qw(sum); # for mean()
 use Time::localtime;
 use File::stat;
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $species, $new_genome, $check, $runlocally, $notbuild, $analyse, $results);
+# Restart automatically if some libs are missing
+my $command= $0 . " " . join(" ", @ARGV);
+
+my ($help, $debug, $test, $verbose, $store, $wormbase, $species, $new_genome, $check, $runlocally, $notbuild, $analyse, $results, $restart);
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
             "test"       => \$test,
@@ -35,6 +38,7 @@ GetOptions ("help"       => \$help,
 	    "notbuild"   => \$notbuild, # don't try to make GTF or run cufflinks (for when it is run before doing the Build) 
 	    "analyse"    => \$analyse,  # firstly, run the alignments, finding Introns and cufflinks for each Experiment under LSF
 	    "results"    => \$results,  # secondly, compile the results from all of the Experiments and write out the resulting files
+	    "restart"    => \$restart,  # If you are doing -analyse, adding -restart will restart once with the -check flag
 	   );
 
 
@@ -49,7 +53,7 @@ if ( $store ) {
 			   );
 }
 
-# establish log file.
+# Establish log file
 my $log = Log_files->make_build_log($wormbase);
 
 
@@ -90,6 +94,7 @@ exit(0);
 
 sub analyse {
 
+   
   # if -new_genome is set remove all the existing data so it must be aligned again
   # otherwise, unless -check is set, remove only the cufflinks data
   $log->write_to("Remove old experiment files\n");
@@ -112,7 +117,8 @@ sub analyse {
   my $total = keys %{$data};
   my $count_done = 0;
   my @jobs_to_be_run;
-  
+  my $uncompleted_jobs=0;
+
   foreach my $experiment_accession (keys %{$data}) {
     
     $count_done++;
@@ -167,11 +173,25 @@ sub analyse {
     for my $job ( $lsf->jobs ) {
       if ($job->history->exit_status != 0) {
 	$log->write_to("Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . "\n");
+	$uncompleted_jobs++;
       }
     }
   }
   $lsf->clear;
+  if ($uncompleted_jobs>0 ) {
+  	$log->write_to("In total $uncompleted_jobs out of $count_done exited non zero: exited non zero: please run again with the -check parameter\n");
+  }
+  else {
+    print "All $count_done jobs have completed\n";
+  }
+  # If there are uncompleted jobs, restart with check parameter, if -restart flag was used 
+  if ($restart and $uncompleted_jobs>0 ) {
+	print "RESTART COMMAND: perl $ENV{CVS_DIR}/RNASeq_align.pl -analyse -check\n";
+	$command=~s/\-restart//g;
+	$command=~s/\-check//g;
+	print "RESTART COMMAND: perl $command -check\n";
 
+  }
 
   # now check that all of the jobs ran successfully - we have had instances of jobs disappearing from the queue!
   sanity_check(@jobs_to_be_run);
@@ -204,7 +224,8 @@ sub results {
 
   # make the ace file of RNASeq spanned introns to load into acedb
   print "Running Intron analyses ...\n";
-  my $splice_file = $wormbase->acefiles."/RNASeq_splice_${species}.ace";
+  my $splice_file = $wormbase->acefiles."/RNASeq_splice_${species}.ace.tmp";
+  my $final_splice_file = $wormbase->acefiles."/RNASeq_splice_${species}.ace";
   print "Writing splicefile $splice_file\n";
 
   # get old splice_file size
@@ -217,18 +238,19 @@ sub results {
   my $old_splice_file_size = -s $old_splice_file;
 
   chdir $RNASeq->{RNASeqSRADir};
-  $rnadir=  $RNASeq->{RNASeqSRADir};
-  print "Going to folder  $rnadir\n";
+  my $rnadir=  $RNASeq->{RNASeqSRADir};
+  print "Going to folder $rnadir\n";
   $status = $wormbase->run_command("rm -f $splice_file", $log);
-  print "Running command1: cat */Introns/virtual_objects.${species}.RNASeq.ace > $splice_file\n";
+  print "$status\nRunning command 1(5): cat */Introns/virtual_objects.${species}.RNASeq.ace > $splice_file\n";
   $status = $wormbase->run_command("cat */Introns/virtual_objects.${species}.RNASeq.ace > $splice_file", $log);
-  print "Running command2: acezip.pl -file $splice_file\n";
+  print "$status\nRunning command 2(5): acezip.pl -file $splice_file\n";
   $status = $wormbase->run_script("acezip.pl -file $splice_file", $log);
-  print "Running command3: cat */Introns/Intron.ace > ${splice_file}.tmp\n";
+  print "$status\nRunning command 3(5): cat */Introns/Intron.ace > ${splice_file}.tmp\n";
   $status = $wormbase->run_command("cat */Introns/Intron.ace > ${splice_file}.tmp", $log);
-  print "Running command4: acezip.pl -file ${splice_file}.tmp\n";
+  print "$status\nRunning command 4(5): acezip.pl -file ${splice_file}.tmp\n";
   $status = $wormbase->run_script("acezip.pl -file ${splice_file}.tmp", $log);
   # flatten the results of all libraries at a position into one entry
+  print "$status\nRunning command 5(5): rm -f ${splice_file}.tmp leaving output file $splice_file\n";
   open (FEAT, "< ${splice_file}.tmp") || $log->log_and_die("Can't open file ${splice_file}.tmp\n");
   open (FLAT, ">> $splice_file") || $log->log_and_die("Can't open file $splice_file\n");
   my %splice;
@@ -263,8 +285,9 @@ sub results {
   
   my $splice_file_size = -s $splice_file;
   if ($old_splice_file_size < $splice_file_size * 0.9 || $old_splice_file_size > $splice_file_size * 1.1) {
-    $log->error("WARNING: old splice file size: $old_splice_file_size, new splice file size: $splice_file_size\n");
+    $log->error("WARNING: new file size suspicious: Old splice file size: $old_splice_file_size, New splice file size: $splice_file_size\n");
   }
+  system("mv $splice_file $final_splice_file");
 }
 
 ############################################################################

@@ -104,6 +104,7 @@ while (my ( $gene, $live ) = $sth->fetchrow_array){
 
 # Datomic world section
     unless ($old) {
+	$log->write_to("Using $dump file for checking\n");
         my ( $gene, $name_type, $name);
         my ($dump_fh);
         open($dump_fh, "<$dump") or $log->log_and_die("Can't open $dump\n"); 
@@ -137,8 +138,9 @@ foreach my $gene (keys %server_genes) {
 }
 
 # any genes left in the acedb list are absent from the nameserver
+# Exception list
 foreach (keys %ace_genes ){
-    if (($_ =~ /ENS/) || ($_ =~ /YMR133W/)) {
+    if (($_ =~ /ENS/) || ($_ =~ /YMR133W/) || ($_ =~ /WBGene00306085/) || ($_ =~ /WBGene00306089/) || ($_ =~ /WBGene00306091/) || ($_ =~ /WBGene00306084/) || ($_ =~ /WBGene00306087/) || ($_ =~ /WBGene00306082/)|| ($_ =~ /WBGene00306090/) || ($_ =~ /WBGene00306086/) || ($_ =~ /WBGene00306088/) || ($_ =~ /WBGene00306083/)) {
 	print "Skipping ENSEMBL ID:$_\n" if $debug;
     }
     else {

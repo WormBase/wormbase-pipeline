@@ -27,7 +27,7 @@ GetOptions ('help'          => \$help,
             'debug=s'       => \$debug,
 	    'class=s'       => \@classes,
 	    'database=s'    => \$database,
-            'ace'           => \$ace,
+            'ace=s'           => \$ace,
 	    'verbose'       => \$verbose,
             'test'          => \$test,
             'skipmethod=s@' =>  \@skip_methods,
@@ -48,11 +48,9 @@ my $curr_db = '/nfs/production/panda/ensemblgenomes/wormbase/DATABASES/current_D
 my $def_dir = "${database}/wquery";                          # where lots of table-maker definitions are kept
 
 my $rundate = $wb->rundate;                                # Used by various parts of script for filename creation
-my $maintainers = join (', ', 
-                        'paul.davis\@wormbase.org',
-                        'gary.williams\@wormbase.org',
-                        'kevin.howe\@wormbase.org',
-                        );
+my $maintainers = join (
+    'hinxton\@wormbase.org',
+    );
 
 my $log_dir = "$database/logs";                            # some of the many output files are put here (ar2)
 my $log;                                                   # main log file for most output
@@ -69,16 +67,21 @@ if ($help){&usage('Help')}
 # Use debug mode?
 if($debug){
   print "\nDEBUG = \"$debug\"\n";
-  ($maintainers = "$debug" . '\@sanger.ac.uk');
+  ($maintainers = "$debug" . '\@ebi.ac.uk');
 }
 
 # Open file for acefile output?
 my $acefile;
 if ($ace){
-  mkdir "$database/CHECKS" unless ( -e "$database/CHECKS");
-  $acefile = "$database/CHECKS/geneace_check.$rundate.$$.ace";
-  open(ACE, ">>$acefile") || croak $!;
-  system("chmod 777 $acefile");
+    $acefile = $ace;
+    open(ACE, ">>$acefile") || croak $!;
+    system("chmod 777 $acefile");
+}
+else {
+    mkdir "$database/CHECKS" unless ( -e "$database/CHECKS");
+    $acefile = "$database/CHECKS/geneace_check.$rundate.$$.ace";  
+    open(ACE, ">>$acefile") || croak $!;
+    system("chmod 777 $acefile");
 }
 
 my $next_build_ver = $wb->get_wormbase_version() + 1 ; # next build number
@@ -105,21 +108,40 @@ my $ga = init Geneace($wb);
 my $Gene_info = $ga -> gene_info($database, "seq2id");
 my %Gene_info = %{$Gene_info};
 
+#basic checks to always run
+#bad WBPaper_IDs
+foreach my $bpaper ($db->fetch(-query=>'Find Paper WHERE !WBPaper0*')) {
+    unless ($bpaper =~ /^WBPaper\d{8}/){
+	print LOG "ERROR: $bpaper is not valid\n";
+	print "ERROR: $bpaper is not valid\n";
+    }
+}
+
+
+#bad WBPerson_IDs
+foreach my $bperson ($db->fetch(-query=>'Find Person !WBPerson*')){
+    unless ($bperson =~ /WBPerson\d+/){
+        print LOG "ERROR: $bperson is not valid\n";
+	print "ERROR: $bperson is not valid\n";
+    }
+}
+
+
 
 # Process separate classes if specified on the command line else process all classes, 
 @classes = ("gene", "laboratory", "evidence", "allele", "strain", "rearrangement", "feature") if (!@classes);
-
 foreach $class (@classes){
   if ($class =~ m/gene/i)          {&process_gene_class}
-  if ($class =~ m/laboratory/i)    {&process_laboratory_class}
-  if ($class =~ m/evidence/i)      {&check_evidence}
-  if ($class =~ m/allele/i)        {&process_allele_class}
-  if ($class =~ m/strain/i)        {&process_strain_class}
-  if ($class =~ m/rearrangement/i) {&process_rearrangement}
-  if ($class =~ m/paper/i)         {&process_paper_class}
-  if ($class =~ m/feature/i)       {&process_feature_class}
+  elsif ($class =~ m/laboratory/i)    {&process_laboratory_class}
+  elsif ($class =~ m/evidence/i)      {&check_evidence}
+  elsif ($class =~ m/allele/i)        {&process_allele_class}
+  elsif ($class =~ m/strain/i)        {&process_strain_class}
+  elsif ($class =~ m/rearrangement/i) {&process_rearrangement}
+  elsif ($class =~ m/paper/i)         {&process_paper_class}
+  elsif ($class =~ m/feature/i)       {&process_feature_class}
 #  if ($class =~ m/mapping/i)       {&check_genetics_coords_mapping}
 #  if ($class =~ m/multipoint/i)    {&check_dubious_multipt_gene_connections}
+  else {print LOG "\nNo valid class has been specified CLASS:$class\n";}
 }
 
 
@@ -137,7 +159,7 @@ print "Exit status $? log close\n\n" if ($debug);
 
 close(ACE) if ($ace);
 # email everyone specified by $maintainers
-$wb->mail_maintainer('geneace_check: SANGER',$maintainers,$log);
+$wb->mail_maintainer('geneace_check:',$maintainers,$log);
 
 exit(0);
 #--------------------------------------------------------------------------------------------------------------------
@@ -173,6 +195,17 @@ sub process_gene_class{
   foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Other_name AND NOT NEXT')){
     print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has 'Other_name' tag without value\n";
   }
+
+  # test for Public_name tag but no value          
+  foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Public_name AND NOT NEXT')){
+      print LOG "ERROR: $gene ($gene) has 'Public_name' tag without value\n";
+  }
+
+  # test for Public_name tag in live WB genes 
+  foreach my $gene ($db->fetch(-query=>'Find Gene "WBGene*" WHERE !Public_name AND Live')){
+      print LOG "ERROR: $gene ($gene) is live but has no 'Public_name'\n";
+  }
+
 
   # checks that when a Gene belongs to a Gene_class, it should have a CGC_name
   foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Gene_class AND NOT CGC_name')){
@@ -887,11 +920,11 @@ sub process_allele_class{
 
   open (FH, "echo '$def' | $tace $database | ") || warn "Couldn't access $db\n";
   while (<FH>) {
-    print;
-    chomp;
-    if ($_ =~ /^\"(.+)\"\s+\"(.+)\"/) {
-      $allele2lab{$2} = $1	# $2 is allele_designation $1 is lab designation	
-    }
+      print if ($debug);
+      chomp;
+      if ($_ =~ /^\"(.+)\"\s+\"(.+)\"/) {
+	  %allele2lab->{$2}=$1;	# $2 is allele_designation $1 is lab designation	
+      }
   }
 
   my $query = "find Variation Allele";
@@ -913,25 +946,34 @@ sub process_allele_class{
 
     # check allele has no laboratory tag
     if (!defined $allele->Laboratory ) {
-      
       if (!$ace) {
 	print LOG "ERROR: $allele has no Laboratory tag\n";
       } else {
 	print LOG "ERROR(a): $allele has no Laboratory tag\n";
-
+	if ($allele->Public_name->name =~ /^WBVar/) {
+	    print LOG "\tWARNING: WBVar named allele cannot fix Laboratory\n";
+	    next;
+	}
 	# try to find lab designation for alleles with CGC-names (1 or 2 letters and then numbers)
-	if ($allele =~ /^([a-z]{1,2})\d+$/) {
+	if ($allele->Public_name->name =~ /^([a-z]+)\d+$/) {
 	  my $allele_name = $1;	  
-
-	  print ACE "\nVariation : \"$allele\"\n";
-	  print ACE "-D Laboratory\n";
-	  print ACE "\nVariation : \"$allele\"\n";
-	  print ACE "Laboratory \"$allele2lab{$allele_name}\"\n";
-	  next;
+	  my $allele_ID = $allele->name;
+	  if (defined $allele2lab{$allele_name}){
+	      print ACE "\nVariation : \"$allele_ID\"\n";
+	      print ACE "-D Laboratory\n";
+	      print ACE "\nVariation : \"$allele_ID\"\n";
+	      print ACE "Laboratory \"$allele2lab{$allele_name}\"\n";
+	      print LOG "\tSUCCESS: $allele2lab{$allele_name} found for $allele_ID\n";
+	      next;
+	  }
+	  else {
+	      print LOG "\tCHECK: $allele_name is not a recognised allele designation ($allele_ID), cannot fix Laboratory\n";
+	      next;
+	  }
 	}	
       }
     }
-  
+    
 
     # check that Lab designation (when present) is correct (for CGC named alleles)
     if (defined $allele->Laboratory) {
@@ -952,6 +994,11 @@ sub process_allele_class{
     # Check for Status tag missing
     if (!defined($allele->Status)) {
       print LOG "ERROR: $allele has no Status tag\n";
+    }
+
+    # Check for Variation_type
+    if (!defined($allele->Variation_type )) {
+	print LOG "ERROR: $allele has no Variation_type tag\n";
     }
 
     # Check for SeqStatus tag missing
@@ -1085,9 +1132,25 @@ sub process_strain_class {
   print LOG "\n\nChecking Strain class for errors:\n";
   print LOG "---------------------------------\n";
   print LOG "Loads of alleles are still connected to lin-15\n";
-
+  my $strain;
   my @strains = $db->fetch('Strain','*');
-  foreach my $strain (@strains){
+  my $straincount = scalar(@strains);
+  my $laststrain = $strains[-1]->name;
+  unless ($laststrain =~ "WBStrain000$straincount") {print LOG "The last WBStrain ID $laststrain is not equal the strain class count $straincount (assuming 3x0 padding).\n";}
+  
+  foreach $strain (@strains){
+    #N2 should not have Variants associated with it.
+    if ($strain eq "WBStrain00000001") {
+	  if (defined $strain->Contains) {
+	      print LOG "WARNING: The N2 Strain ($strain) has been connected to variants in error!!!!!!\n";
+	  }
+	  else {
+	      print LOG "RESULT: The N2 Strain ($strain) is clear of Variation data....which is good!\n" if ($debug);
+	  }
+    }
+    unless ($strain =~ /WBStrain\d{8}/){
+	print LOG "WARNING: $strain has not been accessioned or merged into the WBStrain record.\n";
+    }
     if (!$strain->Location){
       print LOG "WARNING(a): Strain $strain has no location tag\n";
       if ($ace){
@@ -1120,11 +1183,10 @@ sub process_strain_class {
 	    }
 	  }
 	}
-	
       }
     }
   }
-  
+ 
 
 
   my ($locus, %allele_locus, %strain_genotype, $cds, %locus_cds, $main, $allele);
@@ -1292,7 +1354,7 @@ sub create_log_files{
 
   open (LOG, ">$log") or warn "cant open $log";
   print LOG "geneace_check\n";
-  print LOG "started at ",`date`,"\n";
+  print LOG "Started at ",`date`,"\n";
   print LOG "=============================================\n";
   print LOG "\n";
 

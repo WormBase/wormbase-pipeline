@@ -19,9 +19,10 @@ use Storable;
 use Digest::MD5 qw(md5_hex);
 use Species;
 
+
 our @core_organisms=qw(Elegans Briggsae Remanei Brenneri Japonica Pristionchus Brugia Ovolvulus Sratti Tmuris Smelegans);
-#our @tier3_organisms=qw(Mhapla Mincognita Heterorhabditis Hcontortus Hcontortus_gasser Cangaria Tspiralis Ctropicalis Asuum Bxylophilus Csinica Loaloa Asuum_davis Panagrellus Dimmitis Namericanus Acey Tsuis_male Tsuis_female Pexspectatus);
-our @tier3_organisms=qw(Cangaria Ctropicalis Csinica Panagrellus Elegans_hawaii Elegans_vc2010 Remanei_px356 Cnigoni Clatens Cinopinata Otipulae Remanei_px439);
+our @tier3_organisms=qw(Elegans_hawaii Elegans_vc2010 Remanei_px506 Otipulae Panagrellus Cangaria Ctropicalis Csinica Cnigoni Clatens Cinopinata Cbecei Cbovis Cpanamensis Cparvicauda Cquiockensis Csulstoni Ctribulationis Cuteleia Cwaitukubuli Czanzibari);
+
 
 our @provisional_organisms = qw();
 
@@ -68,20 +69,19 @@ sub new {
 #######################################################################
 
 sub get_wormbase_version {
-  my $self = shift;
-  unless ( $self->{'version'} ) {
-    my $dir = $self->autoace;
-    if ( -e ("$dir/wspec/database.wrm") ) {
-      my $WS_version = `grep "NAME WS" $dir/wspec/database.wrm`;
-      chomp($WS_version);
-      $WS_version =~ s/.*WS//;
-      $self->version($WS_version);
-    } else {
-      $self->version(666);
+    my $self = shift;
+    
+    unless ( $self->{'version'} ) {
+        my $dir = $self->autoace;
+        if ( -e ("$dir/wspec/database.wrm") ) {
+            my $WS_version = `grep "NAME WS" $dir/wspec/database.wrm`;
+            chomp($WS_version);
+            $WS_version =~ s/.*WS//;
+            $self->version($WS_version);
+        } else {
+            $self->version(666);
+        }
     }
-  }
-
-  return ( $self->{'version'} );
 }
 
 ###################################################################################
@@ -993,9 +993,10 @@ sub load_to_database {
   my $active = 0;		# counts of objects
 
 
+  my @entries_not_loaded;
   # split the ace file if it is large as it loads more efficiently
   my @files_to_load;
-  if ($st->size > 5000000) {
+  if ($st->size > 1000000000) {
     # change input separator to paragraph mode;
     my $oldlinesep = $/;
     $/ = "";
@@ -1008,21 +1009,35 @@ sub load_to_database {
     # split ace file
     my $file_count = 0;
     my $entries = 0;
+    my $total_entries = 0;
     my $writing = 0;
     my $split_file;
+    my $contains_longtext = 0;
 
     open (WBTMPIN, "<$file") || $log->log_and_die ("cant open $file\n"); # open original ace file
     while (my $entry = <WBTMPIN>) {
       $entries++;
+      $total_entries++;
 
       # LongText enties are not formed by contiguous lines of text separated by a blank line
       # they can contain blank lines.
       # So, if we find a LongText class entry, stop splitting the file and simply read in the original file.
       if ($entry =~ /LongText\s+\:\s+/) {
-	@files_to_load = ($file);
-	last;
+	  @files_to_load = ($file);
+	  $contains_longtext = 1;
+	  last;
       }
       
+      # Check for even number of unescaped quotes, write entries with odd number to separate file
+      # for manual checking before loading.  Throw error if any such entries found.
+      my $nr_quotes = $entry =~ tr/"//;
+      my $nr_escaped_quotes = () = $entry =~ /\\"/g;
+      if (($nr_quotes - $nr_escaped_quotes) % 2 == 1) {
+	  $entries--;
+	  push @entries_not_loaded, $entry;
+	  next;
+      }
+
       if (!$writing) {
 	$file_count++;
 	$writing = 1;
@@ -1032,20 +1047,23 @@ sub load_to_database {
 	push @files_to_load, $split_file;
       }
 
-      print WBTMPACE "\n\n$entry";
+      print WBTMPACE $entry;
       
-      if ($entries > 5000) {
-	close(WBTMPACE);
+      if ($entries == 5000) {
+	close(WBTMPACE) or $log->write_to("WARNING: Could not close file handle to $file\n");
 	$writing = 0;
 	$entries = 0;
       }
     }
-
+    
     close(WBTMPIN);
     if ($writing) {
-      close (WBTMPACE);
+	close (WBTMPACE) or $log->write_to("WARNING: Could not close file handle to $file\n");
     }
-
+    
+    @files_to_load = @{remove_partial_files($total_entries, \@files_to_load, scalar @entries_not_loaded, $log)}
+        unless $contains_longtext;
+    
     # reset input line separator
     $/ = $oldlinesep;
   } else {
@@ -1099,6 +1117,14 @@ EOF
     }
   }
   
+  if (@entries_not_loaded) {
+      my ($filestem) = $file =~ /^(.+)\.ace$/;
+      open (UNLOADED, ">${filestem}_unloaded.ace");
+      print UNLOADED join('', @entries_not_loaded);
+      close (UNLOADED);
+      $log->error('ERROR: ' . @entries_not_loaded . " entries not loaded - written to ${filestem}_unloaded.ace\n");
+  }
+
   if (! $error) {
     # check against previous loads of this file
     my $last_parsed;		# objects parsed on the previous build
@@ -1195,6 +1221,55 @@ EOF
     }
   }
 }
+
+
+sub remove_partial_files {
+    my ($nr_entries, $split_files, $nr_unloaded, $log) = @_;
+
+    my @files_to_load;
+    my $file_nr = 0;
+    for my $file (@$split_files) {
+	$file_nr++;
+	my $partial = 0;
+	my $split_entries = 0;
+	open (SPLIT, "<$file") || $log->log_and_die ("can't open $file for completeness checking\n");
+	while (my $entry = <SPLIT>) {
+	    $split_entries++;
+	    my $nr_quotes = $entry =~ tr/"//;
+	    my $nr_escaped_quotes = () = $entry =~ /\\"/g;
+	    if (($nr_quotes - $nr_escaped_quotes) % 2 == 1) {
+		$partial++;
+	    }
+	}
+	close (SPLIT);
+
+	if ($partial) {
+	    $log->error("ERROR: Partial entry detected in split file $file - split file not loaded\n");
+	    next;
+	}
+
+	if ($file_nr != scalar @$split_files) {
+	    if ($split_entries != 5000) {
+		$log->error("ERROR: Split file $file appears to be incomplete with < 5000 entries - split file not loaded\n");
+		next;
+	    }
+	}
+	else {
+	    my $expected_entries = $nr_entries % 5000;
+	    $expected_entries = 5000 if $expected_entries == 0;
+	    if ($split_entries !=  $expected_entries) {
+		$log->error("ERROR: Split file $file appears to be incomplete with " . ($expected_entries - $split_entries) .
+			    " entries less than the expected $expected_entries\n");
+		next;
+	    }		    
+	}
+	push @files_to_load, $file;
+    }
+
+
+    return \@files_to_load;
+}
+
 
 ####################################
 # remove any blank lines in a sequence file dumped by acedb
@@ -1375,9 +1450,7 @@ sub establish_paths {
     $self->{'orgdb'}      = $self->{'autoace'}; #."/".$self->{'organism'};
   }
  
- #$basedir = '/nfs/panda/ensemblgenomes/wormbase/BUILD';
   $self->{'basedir'}    = $basedir;
-#	print "BASE $basedir\n";
 
   if ($self->test) {
     $self->{'ftp_upload'} = $self->wormpub . "/TEST/ftp_uploads/wormbase";
@@ -1456,8 +1529,6 @@ sub establish_paths {
   $self->{'smasked_genome_seq'} = $self->sequences . "/" . $self->{species} . ".genome_softmasked.fa";
   
   # create dirs if missing
-  #my $wep = $self->wormpep;
-  #print "WORMPEP $wep\n";
   mkpath( $self->logs )        unless ( -e $self->logs );
   mkpath( $self->common_data ) unless ( -e $self->common_data );
   mkpath( $self->wormpep )     unless ( -e $self->wormpep );

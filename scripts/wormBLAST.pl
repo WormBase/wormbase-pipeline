@@ -62,7 +62,7 @@ my $worm_group_name = $ENV{WORM_GROUP_NAME} || "worm";
 my $wu_blast_path   = $ENV{WU_BLAST_PATH} || "";
 my $ncbi_blast_path = $ENV{NCBI_BLAST_PATH} || "";
 
-$yfile_name   = "/nfs/production/panda/ensemblgenomes/wormbase/ENSEMBL/etc/ensembl_lite.conf" if not defined $yfile_name;
+$yfile_name   = $ENV{ENSEMBL_CVS_ROOT_DIR} . "/ensembl-conf/etc/ensembl_lite.conf" if not defined $yfile_name;
 
 if (not defined $wormpipe_dir or not -d $wormpipe_dir) {
   die "You must supply a valid path wormpipedir\n";
@@ -383,7 +383,14 @@ sub update_blast_dbs {
   while (<OLD_DB>) {
     chomp;
     if (/$regexp/) {
-      $_currentDBs{$1} = $_;
+
+	#  If there is a test DBin the mix and warn about that. Only disable this check if you are certain this is what you want. Fixes issue #178
+	if (($_=~/666/ || $_=~/665/ ) and not $test ) {
+		print "ERROR: File $last_build_DBs contains DB name $_ containing 665 or 666 which may be test DBs, please correct and re-run this script\n";
+		print "Please go in and correct so that the file is pointing to all the right DBs, or disable this check if you are convinced it is the right DB\n";
+		$log->log_and_die ("ERROR: File $last_build_DBs contains DB name $_ containing 665 or 666 which may be test DBs, please correct and re-run this script\n");
+	}
+	$_currentDBs{$1} = $_;
     }
   }
   close OLD_DB;

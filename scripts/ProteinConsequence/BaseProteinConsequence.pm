@@ -69,9 +69,8 @@ sub required_param {
 =cut
 
 sub remove_header {
-    my $self = shift;
+    my ($self, $file) = @_;
 
-    my $file = $self->required_param('vep_input_file') . '.vep.txt';
     my @cmds = ("grep -v '^#' $file > $file.tmp", "mv $file.tmp $file");
     for my $cmd (@cmds) {
 	my ($exit_code, $stderr, $flat_cmd) = $self->run_system_command($cmd);

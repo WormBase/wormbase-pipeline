@@ -1,4 +1,5 @@
 #!/usr/bin/env perl
+# Note! This script is used both by the WormBase build (autoace.pl -ontologies), and the AGR data dump, so if you make changes test on both workflows.
 
 use strict;
 use Storable;	
@@ -308,10 +309,15 @@ while( my $obj = $it->next) {
     $annot->{experimentalConditions} = \@exp_conditions if @exp_conditions;
   }
 
-  my $conditions = get_condition_relations($obj);
-  $annot->{conditionRelations} = $conditions if @$conditions;
+  my $secondary_base_annot = dclone($annot); #Create copy to use for secondary annotations before conditionRelations added
+
+  if (!$build) {
+      my $conditions = get_condition_relations($obj);
+      $annot->{conditionRelations} = $conditions if @$conditions;
+  }
   
   push @annots, $annot;# unless ($obj_type eq 'transgene' && ! $build);
+
 
   # here needs to be a bit of logic that adds the secondary annotations
   foreach my $secondary ($strain,$allele,$transgene,$gene){
@@ -326,7 +332,7 @@ while( my $obj = $it->next) {
 	  next if $obj_id eq $sname; # skip the primary annotation
 	  $taxon_ids{$sname} = $taxon_ids{$obj_id};
 
-	  my $secondaryAnnotation = dclone($annot);
+	  my $secondaryAnnotation = dclone($secondary_base_annot);
  
           $secondaryAnnotation->{objectRelation}->{objectType} = $class;
           $secondaryAnnotation->{objectId} = $sname;

@@ -1163,6 +1163,7 @@
                 ECO_term UNIQUE ?ECO_term
                 GO_term UNIQUE ?GO_term OUTXREF GO_annotation
                 GO_code UNIQUE ?GO_code
+                Noctua_model_id ?Text
                 Annotation_relation UNIQUE ?RO_term XREF GO_annotation
                 Annotation_relation_not UNIQUE ?RO_term XREF Not_GO_annotation
                 Annotation_made_with Interacting_gene ?Gene
@@ -1337,8 +1338,7 @@
                       Chemical_inducer ?Molecule INXREF Induces_disease
                       Other_inducer ?Text                                      //New tag
                       Molecule_modifier ?Molecule INXREF Modifies_disease
-         Reagent_info Associated_antibody ?Antibody INXREF Antibody_for_disease
-                      Associated_construct ?Construct INXREF Construct_for_disease
+         Reagent_info Associated_construct ?Construct INXREF Construct_for_disease
                       Associated_transgene ?Transgene INXREF Transgene_for_disease
          Version UNIQUE Text
 
@@ -2394,9 +2394,8 @@
               Remark ?Text #Evidence
               DB_info ?Database ^database ?Database_field ^field Text ^accession
               Experiment Laboratory ?Laboratory
-                         Author ?Author
-                         Date UNIQUE DateType
                          Strain UNIQUE ?Strain
+              Person UNIQUE ?Person 
               Reference ?Paper OUTXREF Expr_pattern
               Transgene ?Transgene OUTXREF Expr_pattern
               Variation ?Variation INXREF Expr_pattern
@@ -2462,11 +2461,11 @@
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 ?Antibody Summary UNIQUE ?Text #Evidence
+          Public_name Text
           Other_name Text
           Gene ?Gene OUTXREF Antibody #Evidence
           Isolation Original_publication UNIQUE ?Paper
                     No_original_reference // Text //proposed by Wen   -- never has text tad
-                    Person ?Person
                     Location ?Laboratory
                     Clonality UNIQUE Polyclonal // UNIQUE Text   turned into an enum by tad
                                      Monoclonal // UNIQUE Text
@@ -2479,11 +2478,7 @@
                                        Guinea_pig
                                        Chicken
                                        Goat
-                                       Other_animal UNIQUE Text
           Historical_gene ?Gene Text
-          Possible_pseudonym ?Antibody INXREF Possible_pseudonym_of
-          Possible_pseudonym_of ?Antibody OUTXREF Possible_pseudonym
-          Antibody_for_disease ?DO_term OUTXREF Associated_antibody #Evidence
           Expr_pattern ?Expr_pattern INXREF Antibody_info
           Interactor ?Interaction INXREF Antibody
           Reference ?Paper OUTXREF Antibody
@@ -2505,11 +2500,16 @@
               Cropped_from ?Picture OUTXREF Crop_picture
 //         Pick_me_to_call Text Text
          Remark ?Text #Evidence
+         Type Expr_graph ?Text 
          Depict  Expr_pattern ?Expr_pattern OUTXREF Picture
+                 Microarray ?Microarray_experiment
+                 RNASeq ?Analysis
+                 Tiling_array ?Analysis
                  Anatomy ?Anatomy_term OUTXREF Picture
                  Cellular_component ?GO_term OUTXREF Picture
                  WBProcess ?WBProcess OUTXREF Picture
                  Gene ?Gene OUTXREF Picture
+                 Microarray_results ?Microarray_results
                  Life_stage ?Life_stage OUTXREF Picture
          Acknowledgment Template ^acknowledgement-template UNIQUE Text
                         Publication_year UNIQUE Text
@@ -3710,27 +3710,7 @@
 
 
 // hash to contain detailed changes caused by mutations [2006-02-17 ar2]
-#Molecular_change   Missense Int Text #Evidence  // to be deprecated WS282
-                    Silent Text #Evidence // to be deprecated WS282
-                    Nonsense UNIQUE ENUM Amber_UAG Text #Evidence // to be deprecated WS282
-                                         Ochre_UAA Text #Evidence
-                                         Opal_UGA Text #Evidence
-                                         Ochre_UAA_or_Opal_UGA Text #Evidence
-                                         Amber_UAG_or_Ochre_UAA Text #Evidence
-                                         Amber_UAG_or_Opal_UGA Text #Evidence
-                    Splice_site UNIQUE  ENUM Donor Text #Evidence // to be deprecated WS282
-                                             Acceptor Text #Evidence // to be deprecated WS282
-                    Frameshift Text #Evidence // to be deprecated WS282
-                    Readthrough Text #Evidence //klh WS228 // to be deprecated WS282
-                    Intron #Evidence // to be deprecated WS282
-                    Coding_exon #Evidence // to be deprecated WS282
-                    Noncoding_exon #Evidence // to be deprecated WS282
-                    Promoter #Evidence // to be deprecated WS282
-                    UTR_3 ^three-prime-utr #Evidence // to be deprecated WS282
-                    UTR_5 ^five-prime-utr #Evidence // to be deprecated WS282
-                    Regulatory_feature #Evidence // to be deprecated WS282
-                    Genomic_neighbourhood #Evidence // to be deprecated WS282
-                    VEP_consequence Text // proposed addition as well as mapping to the WB tags. 
+#Molecular_change   VEP_consequence Text // proposed addition as well as mapping to the WB tags. 
                     VEP_impact Text #Evidence 
                     SIFT Float Text #Evidence 
                     PolyPhen Float Text #Evidence 

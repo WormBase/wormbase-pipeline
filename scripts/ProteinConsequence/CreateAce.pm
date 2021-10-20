@@ -71,14 +71,20 @@ sub run {
     }
 
 
+    my %pseudogenes_printed;
     $self->write_to("Writing transcript details for $batch_id\n") if $self->required_param('debug');
     for my $var (keys %$transcripts) {
 	next unless $self->add_transcript_consequences_for_variation($var, $mapped_alleles->{$var}{allele});
 	print $fh "Variation : \"$var\"\n";
-	print $fh 'HGVSg "' . $hgvsg->{$var} . "\"\n";
+	print $fh 'HGVSg "' . $hgvsg->{$var} . "\"\n" if exists $hgvsg->{$var};
 	for my $transcript (keys %{$transcripts->{$var}}) {
+	    my $type = 'Transcript';
+	    if (exists $pseudogenes->{$var}{$transcript}) {
+		$type = 'Pseudogene';
+		$pseudogenes_printed{$var}{$transcript}++;
+	    }
 	    for my $tag (keys %{$transcripts->{$var}{$transcript}}) {
-		print $fh "Transcript $transcript $tag\n";
+		print $fh "$type $transcript $tag\n";
 	    }
 	}
 	print $fh "\n";
@@ -87,11 +93,15 @@ sub run {
     
     $self->write_to("Writing pseudogene details for $batch_id\n") if $self->required_param('debug');
     for my $var (keys %$pseudogenes) {
-	print $fh "Variation : \"$var\"\n";
-	for my $pseudogene (@{$pseudogenes->{$var}}) {
+	my $var_header = "Variation : \"$var\"\n";
+	my $var_header_printed = 0;
+	for my $pseudogene (keys %{$pseudogenes->{$var}}) {
+	    next if $pseudogenes_printed{$var}{$pseudogene};
+	    print $fh $var_header unless $var_header_printed;
+	    $var_header_printed = 1;
 	    print $fh "Pseudogene $pseudogene\n";
 	}
-	print $fh "\n";
+	print $fh "\n" if $var_header_printed;
     }
 
     close($fh) or $self->log_and_die("Could not close $ace_file after writing\n");
@@ -259,7 +269,7 @@ sub get_overlapping_features {
 	}
     }
 
-    return (restructure_hash(\%gene_alleles), restructure_hash(\%allele_genes), $transcripts, restructure_hash(\%pseudogenes));
+    return (restructure_hash(\%gene_alleles), restructure_hash(\%allele_genes), $transcripts, \%pseudogenes);
 }
 
 
@@ -275,7 +285,46 @@ sub get_overlapping_features {
 sub get_transcript_consequences {
     my ($self, $vep_output) = @_;
 
-    my (%transcripts, %hgvsg);
+    my %severity_ranking = ('intergenic_variant'                 => 1,
+			    'feature_truncation'                 => 2,
+			    'regulatory_region_variant'          => 3,
+			    'feature_elongation'                 => 4,
+			    'regulatory_region_amplification'    => 5,
+			    'regulatory_region_ablation'         => 6,
+			    'TF_binding_site_variant'            => 7,
+			    'TFBS_amplification'                 => 8,
+			    'TFBS_ablation'                      => 9,
+			    'downstream_gene_variant'            => 10,
+			    'upstream_gene_variant'              => 11,
+			    'non_coding_transcript_variant'      => 12,
+			    'NMD_transcript_variant'             => 13,
+			    'intron_variant'                     => 14,
+			    'non_coding_transcript_exon_variant' => 15,
+			    '3_prime_UTR_variant'                => 16,
+			    '5_prime_UTR_variant'                => 17,
+			    'mature_miRNA_variant'               => 18,
+			    'coding_sequence_variant'            => 19,
+			    'synonymous_variant'                 => 20,
+			    'stop_retained_variant'              => 21,
+			    'start_retained_variant'             => 22,
+			    'incomplete_terminal_codon_variant'  => 23,
+			    'splice_region_variant'              => 24,
+			    'protein_altering_variant'           => 25,
+			    'missense_variant'                   => 26,
+			    'inframe_deletion'                   => 27,
+			    'inframe_insertion'                  => 28,
+			    'transcript_amplification'           => 29,
+			    'start_lost'                         => 30,
+			    'stop_lost'                          => 31,
+			    'frameshift_variant'                 => 32,
+			    'stop_gained'                        => 33,
+			    'splice_donor_variant'               => 34,
+			    'splice_acceptor_variant'            => 35,
+			    'transcript_ablation'                => 36,
+	);
+    
+
+    my (%transcripts, %hgvsg, %worst_rankings);
     open (VEP, '<', $vep_output);
     while (<VEP>) {
 	next if $_ =~ /^#/;
@@ -285,18 +334,25 @@ sub get_transcript_consequences {
 
 	next unless $feature_type eq 'Transcript';
 
-	my $types = $self->get_types_from_vep_consequence($consequence, $feature, $cds_pos,
-							  $prot_pos, $aas, $codons); # To be deprecated after WS282
-	for my $type (keys %$types) {                                                # 
-	    $transcripts{$var}{$feature}{$type}++;                                   #
-	}                                                                            #
+	my @consequences = split(',', $consequence);
+	my $worst_consequence_rank = 0;
+	for my $single_consequence (@consequences) {
+	    $worst_consequence_rank = $severity_ranking{$single_consequence} if
+		$severity_ranking{$single_consequence} > $worst_consequence_rank;
+	}
+	next if exists $worst_rankings{$var}{$feature} and $worst_rankings{$var}{$feature} >= $worst_consequence_rank;
+	$worst_rankings{$var}{$feature} = $worst_consequence_rank;
 	
 	my %attributes = split /[;=]/, $attr;
 	$transcripts{$var}{$feature}{"VEP_consequence \"$consequence\""}++;
 	
 	$transcripts{$var}{$feature}{'VEP_impact "' . $attributes{'IMPACT'} . '"'} = 1 if exists $attributes{'IMPACT'};
 	$transcripts{$var}{$feature}{'HGVSc "' . $attributes{'HGVSc'} . '"'} = 1 if exists $attributes{'HGVSc'};
-	$transcripts{$var}{$feature}{'HGVSp "' . $attributes{'HGVSp'} . '"'} = 1 if exists $attributes{'HGVSp'};
+	if (exists $attributes{'HGVSp'}) {
+	    my $hgvsp = $attributes{'HGVSp'};
+	    $hgvsp =~ s/%3D/=/;
+	    $transcripts{$var}{$feature}{'HGVSp "' . $hgvsp . '"'} = 1;
+	}
 	$transcripts{$var}{$feature}{'Intron_number "' . $attributes{'INTRON'} . '"'} = 1 if exists $attributes{'INTRON'};
 	$transcripts{$var}{$feature}{'Exon_number "' . $attributes{'EXON'} . '"'} = 1 if exists $attributes{'EXON'};
 	
@@ -318,94 +374,6 @@ sub get_transcript_consequences {
     close (VEP);
 
     return (\%transcripts, \%hgvsg);
-}
-
-
-=head2 get_types_from_vep_consequence
-
-    Title:    get_types_from_vep_consequence
-    Function: determines appropriate #Molecular_consequence tags to populate according to VEP output,
-              to be deprecated after WS282 as will have switched to new tags
-    Args:     molecular consequence, feature ID, CDS position, protein position, amino acids string
-              (wt/alt), codons string (wt/alt)
-    Returns:  hashref of tag details
-
-=cut
-
-sub get_types_from_vep_consequence { # To be deprecated after WS282
-    my ($self, $consequence_string, $feature, $cds_pos, $prot_pos, $aas, $codons) = @_;
-
-    my %types;
-    my $aa_string = $aas;
-    $aa_string =~ s/\// to /;
-    my @consequences = split(',', $consequence_string);
-    for my $consequence (@consequences) {
-	$types{'Intron'} = 1 if $consequence eq 'splice_donor_variant' or $consequence eq 'splice_acceptor_variant'
-	     or $consequence eq 'non_coding_transcript_variant';
-	$types{'Donor'} = 1 if $consequence eq 'splice_donor_variant';
-	$types{'Acceptor'} = 1 if $consequence eq 'splice_acceptor_variant';
-	$types{"Readthrough \"$aa_string\""} = 1 if $consequence eq 'stop_lost'; 
-	$types{'Coding_exon'} = 1 if $consequence eq 'stop_gained' or $consequence eq 'stop_lost' or $consequence eq 'frameshift_variant'
-	    or $consequence eq 'start_lost' or $consequence eq 'inframe_insertion' or $consequence eq 'inframe_deletion'
-	    or $consequence eq 'protein_altering_variant' or $consequence eq 'coding_sequence_variant';
-	$types{"Silent \"$aas ($prot_pos)\""} = 1 if $consequence eq 'synonymous_variant';
-	$types{'UTR_5'} = 1 if $consequence eq '5_prime_UTR_variant';
-	$types{'UTR_3'} = 1 if $consequence eq '3_prime_UTR_variant';
-	$types{'Noncoding_exon'} = 1 if $consequence eq 'non_coding_transcript_exon_variant';
-
-	if ($consequence eq 'missense_variant' ){
-	    $prot_pos = substr($prot_pos, 0, index($prot_pos,'-')) if $prot_pos =~ /\-/;
-	    $types{"Missense $prot_pos \"$aa_string\""} = 1;
-	}
-	elsif ($consequence eq 'stop_gained') {
-	    my $var_codon = substr($codons, index($codons, '/') + 1);
-	    my ($original_aa, $var_aa) = $aas =~ /^([^\.]+)\/(.+)$/;
-	    my $stop_ix = index($var_aa, '*');
-	    my $stop_codon = substr($var_codon, 3 * $stop_ix, 3);
-	    my ($stop_tag, $stop_colour);
-	    if (uc($stop_codon) eq 'TAR') {
-		$stop_tag = 'Amber_UAG_or_Ochre_UAA';
-		$stop_colour = 'amber or ochre';
-	    }
-	    elsif (uc($stop_codon) eq 'TRA') {
-		$stop_tag = 'Ochre_UAA_or_Opal_UGA';
-		$stop_colour = 'ochre or opal';
-	    }
-	    elsif (uc($stop_codon) =~ /[TWYKHDB]AG/ ) {
-		$stop_tag = 'Amber_UAG';
-		$stop_colour = 'amber';
-	    }
-	    elsif (uc($stop_codon) =~ /[TWYKHDB]AA/) {
-		$stop_tag = 'Ochre_UAA';
-		$stop_colour = 'ochre';
-	    }
-	    elsif (uc($stop_codon) =~ /[TWYKHDB]GA/) {
-		$stop_tag = 'Opal_UGA';
-		$stop_colour = 'opal';
-	    }
-	    else {
-		$self->write_to("ERROR: $feature $stop_codon is not Amber/Opal/Ochre");
-	    }
-	    
-	    if (defined $stop_tag) {
-		my $text = length $original_aa < length $var_aa ? "$stop_colour stop inserted" :
-		    "$original_aa to $stop_colour stop";
-		$types{"Nonsense $stop_tag \"$text ($prot_pos)\""} = 1;
-	    }
-	}
-	elsif ($consequence eq 'frameshift_variant') {
-	    my ($wt, $allele) = split('/', $codons);
-	    my $bp_change = length $allele - length $wt;
-	    my $indel_type = $bp_change < 0 ? 'deletion' : 'insertion';
-	    $types{'Frameshift "' . abs($bp_change) . "bp $indel_type at CDS position $cds_pos\""} = 1;
-	}
-	elsif ($consequence eq 'start_lost') {
-	    $types{"Missense $prot_pos \"$aa_string\""} = 1 if $aas =~ /^M\/.$/;
-	}
-	
-    }
-    
-    return \%types;
 }
 
 

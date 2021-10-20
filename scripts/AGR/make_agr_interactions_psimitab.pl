@@ -3,14 +3,10 @@
 # probably from: https://github.com/HUPO-PSI/miTab/blob/master/PSI-MITAB27Format.md
 
 use strict;
-use Storable;	
 use Getopt::Long;
 use Ace;
 use JSON;
 
-use lib $ENV{CVS_DIR};
-use Wormbase;
-use Modules::AGR;
 
 
 my $DETECTION_METHOD_MAPPING =  {
@@ -308,9 +304,8 @@ INT: while (my $obj = $it->next) {
   print $out_fh join("\t", @l), "\n";
 }
 
-$db->close();
 close($out_fh);
-
+$db->close;
 exit(0);
 
 #####################################################################

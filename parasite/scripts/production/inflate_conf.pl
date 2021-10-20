@@ -6,9 +6,8 @@ use ProductionMysql;
 my $conf = Load(do { local $/; <> }) or die "Usage: $0 <conf file>";
 
 $conf->{generics} //= {
-  taxonomy_database => ProductionMysql->new("mysql-pan-prod")->conn("ncbi_taxonomy_parasite"),
-  production_database => ProductionMysql->new("mysql-pan-prod")->conn("ensembl_production_parasite"),
-  analysisconf => "/nfs/panda/ensemblgenomes/wormbase/parasite/config/ensembl-config/ParaSite/pipe_conf/analysis.conf",
+  taxonomy_database => ProductionMysql->new("mysql-ps-prod-1")->conn("ncbi_taxonomy_parasite"),
+  production_database => ProductionMysql->new("mysql-ps-prod-1")->conn("ensembl_production_parasite"),
   cvsdir => $ENV{ENSEMBL_CVS_ROOT_DIR} 
 };
 

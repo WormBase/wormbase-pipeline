@@ -52,6 +52,7 @@ while (my($k,$v)= each %strains){
 	my $strain={
 		primaryID => "WB:$k",
 		name      => ($s->Public_name ?"${\$s->Public_name}" :$k),
+		subtype   => 'strain',
 		taxonId   => 'NCBITaxon:6239',
 		crossReference => {id => "WB:$k", pages => ['strain']},
 		affectedGenomicModelComponents => [map {{alleleID => "WB:$_",zygosity => 'GENO:0000137'}} @$v],
@@ -65,6 +66,7 @@ foreach my $dId (@disease_ids){
 	my $disease_annotation = {
 		primaryID => "WB:$dId",
 		name      => ($d->Genotype_name ? "${\$d->Genotype_name}" : $dId),
+		subtype   => 'genotype',
 		taxonId   => 'NCBITaxon:6239',
 		crossReference => {id => "WB:$dId",pages => ['genotype']} # needs to be added to the resources file
 	};
@@ -79,6 +81,7 @@ foreach my $dId (@disease_ids){
 	my $strain = {
 	    primaryID => "WB:$dId",
             name      => ($s->Public_name ?"${\$s->Public_name}" :$dId),
+	    subtype   => 'strain',
             taxonId   => 'NCBITaxon:6239',
             crossReference => {id => "WB:$dId", pages => ['strain']},
         };
@@ -108,10 +111,15 @@ $db->close;
 
 sub read_disease_ids{
 	my ($file) = @_;
+
+	my %seen;
 	open IN, "<$file";
 	my @ids;
 	while (<IN>){
-		push @ids, "$1" if /(WBGenotype\d+)/
+	    if ((/(WBGenotype\d+)/ or /(WBStrain\d+)/) and !exists $seen{$1}) {
+		push @ids, "$1" ;
+		$seen{$1}++;
+	    }
 	}
 	return @ids;
 }

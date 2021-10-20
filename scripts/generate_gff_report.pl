@@ -138,49 +138,49 @@ if (not $identical) {
   }
   
   if (keys %only_in_previous) {
-    $report .= "\nThere are source/type present previously but now missing (*INVESTIGATE*):\n\n";
+    $report .= "\nWARNING: There are source/type present previously but now missing (*INVESTIGATE*):\n\n";
   
     foreach my $k (sort keys %only_in_previous) {
       $report .= sprintf(" %-20s (%d)\n", $k, $previous_data{$k});
     }
   } else {
-    $report .= "No source/type present previously but now missing\n";
+    $report .= "OK: No source/type present previously but now missing\n";
   }
 
   if (not $final) {
     # Not interested in the count differences in final model
     if (keys %data_loss) {  
-      $report .= "\nThere are source/types present in higher numbers previously than now (*INVESTIGATE*):\n\n";
+      $report .= "\nWARNING: There are source/types present in higher numbers previously than now (*INVESTIGATE*):\n\n";
       foreach my $k (sort keys %data_loss) {
         $report .= sprintf(" %-20s %d (%d)\n", $k, $current_data{$k}, $previous_data{$k});
       }
     } else {
-      $report .= "No source/type present in lower numbers now than previous\n";
+      $report .= "OK: No source/type present in lower numbers now than previous\n";
     }
   }
 
   if (keys %only_in_current) {
-    $report .= "\nThere are source/type present now but not present previously (probably okay):\n\n";
+    $report .= "\nWARNING: There are source/type present now but not present previously (probably okay):\n\n";
     foreach my $k (sort keys %only_in_current) {
       $report .= sprintf(" %-20s %d\n", $k, $current_data{$k});
     }
   } else {
-    $report .= "No source/type present now but not present previously\n";
+    $report .= "OK: No source/type present now but not present previously\n";
   }
 
   if (not $final) {
     if (keys %data_gain) {
-      $report .= "\nThere are source/type present in lower numbers previously than now (probably okay):\n\n";
+      $report .= "\nWARNING: There are source/type present in lower numbers previously than now (probably okay):\n\n";
       foreach my $k (sort keys %data_gain) {
         $report .= sprintf(" %-20s %d (%d)\n", $k, $current_data{$k}, $previous_data{$k});
       }
     } else {
-      $report .= "No source/type present in higher numbers now than previously\n";
+      $report .= "OK: No source/type present in higher numbers now than previously\n";
     }
   }
     
   if (not $final) {
-    $report .= sprintf("\nOther source/types (%d) have identical counts between previous and current\n", scalar(keys %identical));
+    $report .= sprintf("\nOK: Other source/types (%d) have identical counts between previous and current\n", scalar(keys %identical));
   } 
 
 }

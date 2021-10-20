@@ -69,17 +69,21 @@ else {
 	$fasta = "$database/SEQUENCES/" . lc($species) . '.genome.fa';
     }
 
+    my $pipeline_db = $test ? 'wb_vep_' . lc($species) . '_test_ehive' : 'wb_vep_' . lc($species) . '_ehive';
+
     my $url = 'mysql://' . $ENV{'WORM_DBUSER'} . ':' . $password . '@' . $ENV{'WORM_DBHOST'} . ':' . 
-    $ENV{'WORM_DBPORT'} . '/wb_vep_' . lc($species) . '_ehive';
+    $ENV{'WORM_DBPORT'} . '/' . $pipeline_db;
 
     $ENV{EHIVE_URL} = $url;
 
     my $init_cmd = "init_pipeline.pl ProteinConsequence::ProteinConsequence_conf -password $password " . 
 	"-species $species -database $database -fasta $fasta -gff_dir $gff_splits " . 
-	"-test $test_run -log_dir $log_dir -ace_dir $ace_dir -debug $debug_mode";
+	"-test $test_run -log_dir $log_dir -ace_dir $ace_dir -debug $debug_mode -pipeline_database $pipeline_db";
     system($init_cmd);
     system("beekeeper.pl -url $url -loop");
 }
+
+exit(0);
 
 
 sub print_usage{

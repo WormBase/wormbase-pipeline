@@ -92,6 +92,7 @@ while( <$TABLE> ){
 
 #Retrieve the data from the NS dump.
 unless ($old) {my ($dump_fh);
+	       $log->write_to("using $dump file for checking\n");
                open($dump_fh, "<$dump") or $log->log_and_die("Can't open $dump\n");
                my $gene;
                my $name;
@@ -191,8 +192,10 @@ sub check_gene {
     my $err = 0;
 
     if (not $server_genes{$gene}->{name}) {
-      $log->error("ERROR: no name for $gene in nameserver\n");
-      $err = 1;
+	unless (($gene eq "WBGene00001147") || ($gene eq "WBGene00006756") || ($gene eq "WBGene00044083")) {
+	    $log->error("ERROR: no name for $gene in nameserver\n");
+	    $err = 1;
+	}
     } elsif (not $ace_genes{$gene}->{name}) {
       $log->error("ERROR: no name for $gene in acedb\n");
       $err = 1;

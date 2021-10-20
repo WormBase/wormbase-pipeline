@@ -5,6 +5,7 @@ use Storable;
 use Getopt::Long;
 use Ace;
 use JSON;
+use lib $ENV{CVS_DIR};
 use Wormbase;
 use Modules::AGR;
 
@@ -73,7 +74,7 @@ my $it = $db->fetch_many(-query => 'find Paper WHERE Valid');
 my @references;
 my @exchange_refs;
 while (my $obj = $it->next) {
-    next unless $obj->Species eq 'Caenorhabditis elegans';
+    #next unless $obj->Species eq 'Caenorhabditis elegans';
 
     my $ref_id = "WB:$obj";
     if ($obj->Database) {
@@ -139,6 +140,13 @@ while (my $obj = $it->next) {
     $reference->{volume}    = $obj->Volume->name if $obj->Volume;
     $reference->{pages}     = $obj->Page->name if $obj->Page;
     $reference->{publisher} = $obj->Publisher->name if $obj->Publisher;
+    if ($obj->Abstract) {
+	my $abstract = $obj->Abstract->right->name;
+	$abstract =~ s/^\n+//;
+	$abstract =~ s/\n+$//;
+	$abstract =~ s/\n/ /g;
+	$reference->{abstract}  = $abstract;
+    }
     
     my @xrefs;
     push @xrefs, {id => "WB:$obj", pages => ['reference']};
@@ -156,6 +164,7 @@ while (my $obj = $it->next) {
 }
 
 open (OUT, '>', $outfile) or die "Cannot open $outfile to write: $!\n";
+
 my $data = {
     metaData => AGR::get_file_metadata_json($ws_version),
     data     => \@references,
@@ -163,7 +172,8 @@ my $data = {
 
 my $json_obj = JSON->new;
 print OUT $json_obj->allow_nonref->canonical->pretty->encode($data);
-close(OUT);
+close(OUT) or die "Could not close $outfile: $!";
+
 
 open (RE_OUT, '>', $re_outfile) or die "Cannot open $outfile to write: $!\n";
 my $re_data = {
@@ -173,11 +183,10 @@ my $re_data = {
 
 my $re_json_obj = JSON->new;
 print RE_OUT $re_json_obj->allow_nonref->canonical->pretty->encode($re_data);
-close(RE_OUT);
+close(RE_OUT) or die "Could not close $re_outfile: $!";;
 
-
+$db->close;
 exit(0);
-
 
 sub get_author_list {
     my ($obj, $ref_id) = @_;

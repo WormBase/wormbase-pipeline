@@ -16,15 +16,16 @@ use Storable;
 use Wormbase;
 use Log_files;
 
-my ($test, $debug, $store, $file1, $file2, $output);
+my ($test, $debug, $store, $file1, $file2, $output, $logfile);
 
 GetOptions (
-	    "test"     => \$test,
-	    "store:s"  => \$store,
-	    "debug:s"  => \$debug,
-	    "reference:s"    => \$file1,
-	    "new:s"    => \$file2,
-	    "output:s" => \$output,
+	    "test"        => \$test,
+	    "store:s"     => \$store,
+	    "debug:s"     => \$debug,
+	    "reference:s" => \$file1,
+	    "new:s"       => \$file2,
+	    "output:s"    => \$output,
+            "logfile:s"   => \$logfile,
 	    )
 		    or die("invalid commandline option\n");
 	    ;
@@ -47,7 +48,7 @@ else {
 			   );
 }
 
-my $log = Log_files->make_build_log($wormbase);
+my $log = $logfile ? Log_files->make_log($logfile, $debug) : Log_files->make_build_associated_log($wormbase);
 
 # Change input separator to paragraph mode, but store old mode in $oldlinesep
 my $oldlinesep = $/;
