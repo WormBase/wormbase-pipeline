@@ -822,8 +822,8 @@ sub cds_regex{qr/^[A-Z0-9_cel]+\.[1-9]\d{0,3}[A-Za-z]?$/};  #the cel is for telo
 sub seq_name_regex{qr/^[A-Z0-9_cel]+\.[1-9]\d{0,3}/};  #to get just the Sequence_name part
 sub cds_regex_noend{qr/^[A-Z0-9_cel]+\.[1-9]\d{0,3}[A-Za-z]?/};  # for getting the CDS part of a Transcript name
 
-sub ncbi_tax_id {'6239'};
-sub ncbi_bioproject {'PRJNA13758'};
+sub ncbi_tax_id {'0000'};
+sub ncbi_bioproject {'PRJNA00000'};
 sub bioproject_description {'Small C.elegans test project'};
 sub short_name {'S. melegans'}
 sub gspecies_name {'s_melegans'}
