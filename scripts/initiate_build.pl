@@ -107,7 +107,7 @@ $wormbase->run_script("dump_primary_seq_data.pl -organism $species", $log)
 
 # Mask the sequences ready for BLATting
 $log->write_to("Masking sequence data for ".$wormbase->species."\n");
-$wormbase->run_script("BLAT_controller.pl -mask -qspecies $species", $log)
+$wormbase->run_script("BLAT_controller.pl -mask -qspecies $species -species $species", $log)
     and $log->log_and_die("Failed to successfully mask sequence data; stopping\n");
 
 # add lines to the logfile
