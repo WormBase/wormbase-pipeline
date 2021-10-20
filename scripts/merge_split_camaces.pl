@@ -11,11 +11,13 @@
 
 use strict;
 use lib $ENV{'CVS_DIR'};
+#use lib $ENV{'WORM_GIT'};
 use Wormbase;
 use Getopt::Long;
 use Log_files;
 use Storable;
 
+my $WORM_GIT = $ENV{'WORM_GIT'};
 ##############################
 # command-line options       #
 ##############################
@@ -219,7 +221,8 @@ if ($merge) {
       if (defined $oldskool) {
 	print "running.... old acediff code!!\n\n";
 	print "running.... acediff $path_ref $path_new > $directory/${class}_diff_${database}.ace\n";
-	$wormbase->run_command("csh -c \"/nfs/users/nfs_a/acedb/RELEASE.2011_01_13.BUILD/bin.LINUX_64/acediff $path_ref $path_new >! $directory/${class}_diff_${database}.ace\"", $log) && die "acediff Failed for ${path_new}\n";
+#	$wormbase->run_command("csh -c \"/hps/software/users/wormbase/shared/bin/acedb/CENTOS8/4.9.62/acediff $path_ref $path_new >! $directory/${class}_diff_${database}.ace\"", $log) && die "acediff Failed for ${path_new}\n";
+	$wormbase->run_script("acediff.pl -reference $path_ref -new $path_new -output $directory/${class}_diff_${database}.ace", $log) && die "acediff Failed for ${path_new}\n";
 	print "running.... reformat_acediff -file $directory/${class}_diff_${database}.ace -fileout $directory/update_${class}_${database}.ace\n";
 	if ($debug) {
 	  $wormbase->run_script("reformat_acediff -debug $debug -test -file $directory/${class}_diff_${database}.ace -fileout $directory/update_${class}_${database}.ace -debug pad", $log) && die "reformat Failed for ${class}_diff_${database}.ace\n";
@@ -478,12 +481,13 @@ sub split_databases {
 	print "It looks like you have had a failed run but the database dir structure is present so we will continue!!";
     }
     else {
+	my $wspec = "$WORM_GIT/wormbase-pipeline/wspec";
       $log->write_to ("Databases doesn't exist so creating $split_db\n");
       print "Databases doesn't exist so creating $split_db\n";
       $wormbase->run_command("mkdir $split_db", $log) && die "Failed to create $split_db dir\n" unless (-e $split_db);
       $wormbase->run_command("mkdir $split_db/database", $log) && die "Failed to create a database dir\n" unless (-e $split_db."/database");
-      $wormbase->run_command("cp -r $wormpub/wormbase/wspec $split_db/", $log) && die "Failed to copy the wspec dir\n" unless (-e $split_db."/wspec");
-      $wormbase->run_command("cp -rf $wormpub/wormbase/wspec/models.wrm $split_db/wspec/models.wrm", $log) && die "Failed to force copy the models fileir\n";
+      $wormbase->run_command("cp -r $wspec $split_db/", $log) && die "Failed to copy the wspec dir\n" unless (-e $split_db."/wspec");
+      $wormbase->run_command("cp -rf $wspec/models.wrm $split_db/wspec/models.wrm", $log) && die "Failed to force copy the models fileir\n";
       $wormbase->run_command("chmod g+w $split_db/wspec/*", $log);
       $wormbase->run_command("cp -r $wormpub/wormbase/wgf $split_db/", $log) && die "Failed to copy the wgf dir\n" unless (-e $split_db."/wgf");
     }
@@ -578,7 +582,7 @@ sub load_curation_data {
     }
     push (@files,
 	  "$acefiles/sorted_exons.ace",
-	  "$wormpub/wormbase/autoace_config/misc_autoace_methods.ace",
+	  "$WORM_GIT/wormbase-pipeline/autoace_config/misc_autoace_methods.ace",
 	  "$acefiles/feature_SL1.ace",
 	  "$acefiles/feature_SL2.ace",
 	  "$acefiles/feature_polyA_signal_sequence.ace",
@@ -606,9 +610,8 @@ sub load_curation_data {
           push (@files,
 		"$wormpub/CURATION_DATA/Tiling_array_data/tiling_array.ace",
 		"$wormpub/CURATION_DATA/PCCR.ace",
-		"$wormpub/BUILD_DATA/MISC_DYNAMIC/RNASeq_splice_elegans_high_qual.ace_WS${WS_version}",
 		"$wormpub/BUILD_DATA/MISC_DYNAMIC/Gu_TSS_data.ace",
-		"$wormpub/CURATION_DATA/assign_orientation.WS${WS_version}.ace",
+		"$wormpub/CURATION_DATA/assign_orientation.WS${WS_version}.ace", #version
 		"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_TEC_RED_homol.ace",
 		"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_21urna_homol.ace",
 		"$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_twinscan.ace",
@@ -636,8 +639,8 @@ sub load_curation_data {
 	  "$acefiles/RNASeq_splice_${species}.ace",
 	  "$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_RNASeq_hits_${species}.ace",
 	  "$acefiles/RNASeq_expression_levels_${species}.ace",
-	  "$wormpub/BUILD_DATA/MISC_DYNAMIC/RNASeq_splice_${species}_high_qual.ace_WS${WS_version}",
-	  "$wormpub/wormbase/autoace_config/misc_autoace_methods.ace",
+	  "$wormpub/BUILD_DATA/MISC_DYNAMIC/RNASeq_splice_${species}_high_qual.ace_WS${WS_version}", #version
+	  "$WORM_GIT/wormbase_pipeline/autoace_config/misc_autoace_methods.ace",
 	  "$acefiles/misc_DB_remark.ace",
 	  "$acefiles/${species}_blastx.ace",
 	  "$acefiles/${species}_blastp.ace",
@@ -655,7 +658,7 @@ sub load_curation_data {
 	  "$acefiles/feature_transcription_start_site.ace",
 	  "$acefiles/feature_three_prime_UTR.ace",
 	  "$acefiles/pepace.ace",
-	  "$wormpub/CURATION_DATA/PAD_DATA/elegans.public_names_ws${WS_version}.ace",
+	  "$wormpub/CURATION_DATA/PAD_DATA/elegans.public_names_ws${WS_version}.ace", #version
 	  "$wormpub/CURATION_DATA/${species}_isoformer.ace",
 	  "$acefiles/mass-spec-data.ace",
 	 );
@@ -703,7 +706,7 @@ sub load_curation_data {
     $log->write_to ("\n\nUpdate BLAT results in $database_path\n");
 
     my $blat_dir; 
-    $blat_dir = "/nfs/wormpub/BUILD/${species}/BLAT" unless ($altblat); 
+    $blat_dir = "$wormpub/BUILD/${species}/BLAT" unless ($altblat); 
     if ($altblat) {
       $blat_dir = $altblat;
       $log->write_to ("Using $altblat for the BLAT data as you defined it ;)\n");
@@ -957,72 +960,41 @@ sub usage {
   }
 }
 __END__
-
 =pod
-
 =head2 NAME - merge_split_camaces.pl
-
 =head1 USAGE:
-
 =over 4
-
 =item merge_split_camaces.pl [-options]
-
 =back
-
 merge_split_camaces.pl is a wrapper with options to automate the merging of the
 working split copies of any given core species, load the updates into the canonical version
 of species database (with some additional housekeeping), and finally running the
 TransferDB.pl jobs to (re)generate the working split copies.
-
 merge_split_camaces.pl mandatory arguments:
-
 =over 4
-
 =item none
-
 =back
-
 merge_split_camaces.pl optional arguments:
-
 =over 4
-
 =item -merge, Generate diff files from split databases
  
 =item -update, Upload diff files to ~wormpub/DATABASES/(species/camace) and add BLAT, Locus data
-
 =item -split, Transfer ~wormpub/DATABASES/canonicals into split databases
-
 =item -help, Help page
-
 =item -debug, Verbose/Debug mode
-
 =back
-
 =head1 RUN REQUIREMENTS:
-
 =back
-
 merge_split_camaces.pl has been divorced from the /wormsrv2 disk
-
 =head1 RUN OUTPUT:
-
 =back
-
 =head1 EXAMPLES:
-
 =over 4
-
 =item merge_split_camaces.pl -merge -all 
-
 =back
-
 Dumps the relevant classes from species_orig and the split databases, runs an
 acediff to calculate the changes. This acediff file is then reformated to take
 account of the acediff bug.
-
 =head1 AUTHOR - Daniel Lawson
-
 Email dl1@sanger.ac.uk
-
 =cut
