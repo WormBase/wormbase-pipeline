@@ -1067,11 +1067,10 @@ sub _blast_counts_from_file {
 	$self->{'log'}->log_and_die("Cannot open $file\n");
     while (<ACE>) {
 	chomp;
-	my @col = split("\t", $_);
-	my ($species) = $col[2] =~ /"?wublast[x|p]_([^"\s]+)"$/;
-	$self->{'log'}->error("ERROR: could not parse species from $col[2]\n")
-	    unless $species;
-	$counts->{$new_or_old}{$species}{$col[1]} = 1;
+	my ($target, $species) = $_ =~ /^[^"]+"([^"]+)".+wublast[x|p]_([^"\s]+)/;
+	$self->{'log'}->error("ERROR: could not parse target and species from $_\n")
+	    unless $species and $target;
+	$counts->{$new_or_old}{$species}{$target} = 1;
     }
     close (ACE);
     
