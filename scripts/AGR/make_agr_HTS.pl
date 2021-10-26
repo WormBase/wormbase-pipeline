@@ -16,6 +16,23 @@ use lib $ENV{CVS_DIR};
 use Wormbase;
 use Modules::AGR;
 
+# MMO:0000659 - RNA-seq assay
+# MMO:0000649 - microarray
+# MMO:0000648 - transcript array
+# MMO:0000664 - proteomic profiling
+# MMO:0000666 - high throughput proteomic profiling
+# MMO:0000000 - measurement method
+
+
+
+# OBI:0000895 - total RNA extract
+# OBI:0000869 - polyA RNA extract
+# OBI:0000880 - RNA extract
+# OBI:0000862 - nuclear RNA extract
+# OBI:0000423 - extract
+# OBI:0000876 - cytoplasmic RNA extract
+# OBI:0002573 - polyA depleted RNA extract
+
 my ($debug, $test, $verbose, $store, $acedbpath, $outfile,$ws_version,$outFdata,$wb_to_uberon_file);
 GetOptions (
   'debug=s'     => \$debug,
@@ -52,195 +69,138 @@ my @htpd; # high thruput datasets
 my $assembly = fetch_assembly($db,$wormbase);
 
 
-my %htp; # to uniqueify it
 my %uberon=%{read_uberron($wb_to_uberon_file)};
 
-# RNASeq
-my $it = $db->fetch_many(-query => 'find Analysis RNASeq_Study*;Species_in_analysis="Caenorhabditis elegans"')||die(Ace->error);
-while (my $analysis = $it->next){
-
+my $it = $db->fetch_many(-query => 'find Analysis;Species_in_analysis="Caenorhabditis elegans"') || die (Ace->error);
+while (my $analysis = $it->next) {    
+    if ($analysis->name =~ /^RNASeq_Study/ or $analysis->Microarray_experiment) {
+	my $datasetId = 'WB:' . $analysis->name;
+       
 	my @p = $analysis->Reference;
 	my @papers = map {get_paper($_)} @p;
+	
+	$db->timestamps(1);
+	my $timestamp = $analysis->timestamp;
+	$timestamp=~s/_/T/;
+	$timestamp=~s/_\w+/\+01:00/;
+	$db->timestamps(0);
 
-	# sample
-	foreach my $subproject ($analysis->Subproject){
-	        next unless $subproject->Species_in_analysis eq 'Caenorhabditis elegans';
-		my %json_obj;
+	my %dataset_json;
+	$dataset_json{datasetId}= {primaryId => $datasetId,
+				   preferredCrossReference => ,{id =>$datasetId,pages => ['htp/dataset']}
+	}; # required
+	$dataset_json{publications} = \@papers if @papers;
+	$dataset_json{dateAssigned} = $timestamp; #required
+	$dataset_json{title} = $analysis->Title ? $analysis->Title->name : "$analysis"; #required
+	$dataset_json{summary} = $analysis->Description->name if $analysis->Description;
+	if ($analysis->Category) {
+	    $dataset_json{categoryTags} = [$analysis->Category->name];
+	}
+	else {
+	    $dataset_json{categoryTags} = ['unclassified'];
+	}
+
+	my %num_channels;
+	if ($analysis->name =~ /^RNASeq_Study/) {
+	    foreach my $subproject ($analysis->Subproject){
+		# RNASeq sample
+		next unless $subproject->Species_in_analysis eq 'Caenorhabditis elegans';
+		my %sample_json;
 		my $sample=$subproject->Sample;
-        	my $datasetId="WB:${\$subproject->Project->name}";
-
-		$json_obj{sampleId} = {
-			primaryId => "WB:$subproject",
-		}; # required
-		$json_obj{sampleTitle} = $subproject->Title->name;
-		$json_obj{sampleType} = 'OBI:0000895'; # total RNA extract
-		$json_obj{assayType} = 'MMO:0000659'; # RNA-seq assay
-		$json_obj{taxonId} = 'NCBITaxon:' . $wormbase->ncbi_tax_id;
-		$json_obj{datasetIds} = [$datasetId];
-		$json_obj{sex}=lc($sample->Sex->name) if $sample->Sex;
-
-		sampleAge(\%json_obj,$sample) if $sample->Life_stage;
-		sampleLocation(\%json_obj,$sample) if $sample->Tissue;
-
-		$json_obj{assayType}='MMO:0000659'; # RNA-seq assay
-		$json_obj{assemblyVersions}=[$assembly];
-		push @htps,\%json_obj;
-
-		# dataset
 		
-		# that will need more timeformat fiddling
-		$db->timestamps(1);
-                my $timestamp = $subproject->Project->timestamp;
-		$timestamp=~s/_/T/;
-		$timestamp=~s/_\w+/\+01:00/;
-		$db->timestamps(0);
-	
-		my %json2_obj;
-		$json2_obj{datasetId}= {primaryId => $datasetId,
-					preferredCrossReference => ,{id =>$datasetId,pages => ['htp/dataset']}
+		$sample_json{sampleId} = {
+		    primaryId => "WB:$subproject",
 		}; # required
-		$json2_obj{publications} = \@papers if @papers;
-		$json2_obj{dateAssigned} = $timestamp; #required
-		$json2_obj{title} = ($analysis->Title->name ||"$analysis"); #required
-		$json2_obj{summary} = $analysis->Description->name if $analysis->Description;
-		$json2_obj{categoryTags}=['unclassified'];
-		push @htpd,\%json2_obj unless $htp{$datasetId};
-		$htp{$datasetId}=1;
+		$sample_json{sampleTitle} = $subproject->Title->name;
+		$sample_json{sampleType} = 'OBI:0000895'; # total RNA extract
+		$sample_json{assayType} = 'MMO:0000659'; # RNA-seq assay
+		$sample_json{taxonId} = 'NCBITaxon:' . $wormbase->ncbi_tax_id;
+		$sample_json{datasetIds} = [$datasetId];
+		$sample_json{sex}=lc($sample->Sex->name) if $sample->Sex;
+
+		sampleAge(\%sample_json,$sample) if $sample->Life_stage;
+		sampleLocation(\%sample_json,$sample) if $sample->Tissue;
+
+		$sample_json{assayType} = 'MMO:0000659'; # RNA-seq assay
+		$sample_json{assemblyVersions} = [$assembly];
+		push @htps,\%sample_json;
+	    }
 	}
-}
+	else {
+	    # Microarray sample
+	    for my $array ($analysis->Microarray_experiment) {
+		if ($array->Microarray_sample) {
+		    # 1-channel microarray samples
+		    $num_channels{1} = 1;
+		    
+		    my %sample_json;
+		    my $sample=$array->Microarray_sample;
+		    $sample_json{sampleId} = {
+			primaryId => "WB:$sample",
+			secondaryId => ["WB:${\$array->name}"],
+		    };
+		    $sample_json{sampleTitle} = "WB:$sample";
+		    $sample_json{sampleType} = 'OBI:0000880'; # RNA extract
+		    
+		    
+		    $sample_json{taxonId} = 'NCBITaxon:' . $wormbase->ncbi_tax_id;
+		    $sample_json{datasetIds} = ['WB:' . $analysis->name];
+		    $sample_json{sex}=lc($sample->Sex->name) if $sample->Sex;
+		    
+		    sampleAge(\%sample_json,$sample) if ($sample->Life_stage);
+		    sampleLocation(\%sample_json,$sample) if ($sample->Tissue);
+		    
+		    $sample_json{assayType}='MMO:0000649'; # micro array
+		    $sample_json{assemblyVersions}=[$assembly];
+		    $sample_json{microarraySampleDetails} = {channelId => "WB:$sample", channelNum => 1};
+		    push @htps,\%sample_json;
+		}
+		elsif ($array->Sample_A and $array->Sample_B) {
+		    # 2-channel microarray samples
+		    $num_channels{2} = 1;
 
-# MMO:0000659 - RNA-seq assay
-# MMO:0000649 - microarray
-# MMO:0000648 - transcript array
-# MMO:0000664 - proteomic profiling
-# MMO:0000666 - high throughput proteomic profiling
-# MMO:0000000 - measurement method
+		    my $n=1;
+		    foreach my $s($array->Sample_A , $array->Sample_B){
+			my %sample_json;
+			my $suffix = ($n == 1) ? 'A' : 'B'; # for the datasets
 
+			$sample_json{sampleTitle} = "WB:$s:$suffix";
+			$sample_json{sampleType} = 'OBI:0000880'; # RNA extract
+			$sample_json{sampleId} = {
+			    primaryId => "WB:$s",
+			    secondaryId => ["WB:${\$array->name}"],
+			};
 
+			$sample_json{taxonId} = 'NCBITaxon:' . $wormbase->ncbi_tax_id;
+			$sample_json{datasetIds} = ['WB:' . $analysis->name];
+			$sample_json{sex}=$s->Sex->name if $s->Sex;
 
-# OBI:0000895 - total RNA extract
-# OBI:0000869 - polyA RNA extract
-# OBI:0000880 - RNA extract
-# OBI:0000862 - nuclear RNA extract
-# OBI:0000423 - extract
-# OBI:0000876 - cytoplasmic RNA extract
-# OBI:0002573 - polyA depleted RNA extract
+			sampleAge(\%sample_json,$s) if $s->Life_stage;
+			sampleLocation(\%sample_json,$s) if $s->Tissue;
 
-# we can't submit microarrays without dataset, as the datasetId is required
-
-# micro arrays - single channel
-
-$it = $db->fetch_many(-query => 'find Microarray_experiment;Microarray_sample')||die(Ace->error);
-while (my $array = $it->next){
-
-	# dataset
-	my %json2_obj;
-
-	my @p = $array->Reference;
-	my @papers = map {get_paper($_)} @p;
-
-#        my $datasetId= 'WB:'.$p[0].'.ce.mr.csv';
-	my $datasetId = {primaryId => 'WB:' . $array->name};
-
-	my @papers = map {get_paper($_)} @p;
-	$json2_obj{datasetId} = $datasetId; # required
-	$json2_obj{publications} = \@papers if @papers;;
-	$json2_obj{categoryTags}=['unclassified'];
-	$json2_obj{numChannels}=1;
-	$json2_obj{title} = $array->name;
-
-	$db->timestamps(1);
-	my $timestamp = $array->timestamp;
-	$timestamp=~s/_/T/;
-	$timestamp=~s/_\w+/\+01:00/;
-	$db->timestamps(0);
-	$json2_obj{dateAssigned} = $timestamp;
-	
-
-	push @htpd,\%json2_obj unless $htp{$datasetId};
-	$htp{$datasetId}=1;
-
-	# sample
-	my %json_obj;
-	my $sample=$array->Microarray_sample;
-	$json_obj{sampleId} = {
-		primaryId => "WB:$sample",
-		secondaryId => ["WB:${\$array->name}"],
-	};
-	$json_obj{sampleTitle} = "WB:$sample";
-	$json_obj{sampleType} = 'OBI:0000880'; # RNA extract
-	
-
-	$json_obj{taxonId} = 'NCBITaxon:' . $wormbase->ncbi_tax_id;
-	$json_obj{datasetIds} = ['WB:' . $array->name];
-	$json_obj{sex}=lc($sample->Sex->name) if $sample->Sex;
-
-	sampleAge(\%json_obj,$sample) if ($sample->Life_stage);
-	sampleLocation(\%json_obj,$sample) if ($sample->Tissue);
-
-	$json_obj{assayType}='MMO:0000649'; # micro array
-	$json_obj{assemblyVersions}=[$assembly];
-	$json_obj{microarraySampleDetails} = {channelId => "WB:$sample", channelNum => 1};
-	push @htps,\%json_obj;
-
-}
-
-# micro arrays - dual channel
-$it = $db->fetch_many(-query => 'find Microarray_experiment;Sample_A;Sample_B')||die(Ace->error);
-while (my $array = $it->next){
-
-	# dataset
-	my %json2_obj;
-	my @p = $array->Reference;
-	my @papers = map {get_paper($_)} @p;
-#       my $datasetId= 'WB:'.$p[0].'.ce.mr.csv';
-	my $datasetId = {primaryId => 'WB:' . $array->name};
-	my @papers = map {get_paper($_)} @p;
-	$json2_obj{datasetId} = $datasetId; # required
-	$json2_obj{publications} = \@papers if @papers;;
-	$json2_obj{categoryTags}=['unclassified'];
-	$json2_obj{numChannels}=2;
-	$json2_obj{title} = $array->name;
-
-	$db->timestamps(1);
-	my $timestamp = $array->timestamp;
-	$timestamp=~s/_/T/;
-	$timestamp=~s/_\w+/\+01:00/;
-	$db->timestamps(0);
-	$json2_obj{dateAssigned} = $timestamp;
-
-	push @htpd,\%json2_obj unless $htp{$datasetId};
-	$htp{$datasetId}=1;
-
-	# sample
-	my @samples=($array->Sample_A , $array->Sample_B);
-	my $n=1;
-	foreach my $s(@samples){
-		my %json_obj;
-		my $suffix = ($n==1) ? 'A' : 'B'; # for the datasets
-
-		$json_obj{sampleTitle} = "WB:$s:$suffix";
-		$json_obj{sampleType} = 'OBI:0000880'; # RNA extract
-		$json_obj{sampleId} = {
-		    primaryId => "WB:$s",
-		    secondaryId => ["WB:${\$array->name}"],
-		};
-
-		$json_obj{taxonId} = 'NCBITaxon:' . $wormbase->ncbi_tax_id;
-		$json_obj{datasetIds} = ['WB:' . $array->name];
-		$json_obj{sex}=$s->Sex->name if $s->Sex;
-
-                sampleAge(\%json_obj,$s) if $s->Life_stage;
-		sampleLocation(\%json_obj,$s) if $s->Tissue;
-
-		$json_obj{assayType}='MMO:0000649'; # micro array
-		$json_obj{assemblyVersions}=[$assembly];
-		$json_obj{microarraySampleDetails} = {channelId => "WB:$s:$suffix", channelNum => $n};
-		push @htps,\%json_obj;
-
-		$n++;
+			$sample_json{assayType}='MMO:0000649'; # micro array
+			$sample_json{assemblyVersions}=[$assembly];
+			$sample_json{microarraySampleDetails} = {channelId => "WB:$s:$suffix", channelNum => $n};
+			push @htps,\%sample_json;
+			
+			$n++;
+		    }
+		}
+		else {
+		    # Unknown microarray details
+		    $num_channels{'?'} = 1;
+		}
+	    }
 	}
+
+	my @channels = keys %num_channels;
+	if (scalar @channels == 1 and $channels[0] ne '?') {
+	    $dataset_json{numChannels} = int($channels[0]);
+	}
+	push @htpd,\%dataset_json;
+    }
 }
+
 
 
 ################################################
@@ -312,8 +272,8 @@ sub print_json{
 	  $fh = \*STDOUT;
 	}
 
-	my $json_obj = JSON->new;
-	print $fh $json_obj->allow_nonref->canonical->pretty->encode($completeData);
+	my $sample_json = JSON->new;
+	print $fh $sample_json->allow_nonref->canonical->pretty->encode($completeData);
 }
 
 ###########
