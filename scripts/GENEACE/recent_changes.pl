@@ -50,7 +50,7 @@ e.g. perl recent_changes.pl -outfile results_file.ace -load
 # variables and command-line options # 
 ######################################
 
-my ($test, $help, $debug, $verbose, $store, $wormbase, $geneace);
+my ($test, $help, $debug, $verbose, $store, $wormbase, $geneace, $genotype);
 my ($outfile, $load, $from, $until);
 
 GetOptions (
@@ -62,6 +62,7 @@ GetOptions (
 	    "outfile:s"  => \$outfile,
 	    "load"       => \$load,
 	    "from:s"     => \$from,
+            'genotype'   => \$genotype,
 	    "until:s"    => \$until,
 	    );
 
@@ -244,30 +245,30 @@ sub process_gene_data {
 	$data{$attr} = $value;
       }
     }
-    print "gene what = $what ",%data,"\n";
-    if ($what eq 'new-gene') { # was  'event/new-gene'
-      new_gene($id, $when, $why, $who, \%data);
-    } elsif ($what eq 'new-unnamed-gene') { # was 'event/new-unnamed-gene'
-      new_unnamed_gene($id, $when, $why, $who, \%data);
-    } elsif ($what eq 'kill-gene') { # was 'event/kill-gene'
-      kill_gene($id, $when, $why, $who, \%data); # requires testing - do we have to allow for Pseudogenes/Transposons to be Suppressed instead of Dieing?
-    } elsif ($what eq 'update-gene') { # was 'event/update-gene'
-      update_gene($id, $when, $why, $who, \%data);
-    } elsif ($what eq 'resurrect-gene') { # was 'event/resurrect-gene'
-      resurrect_gene($id, $when, $why, $who, \%data);
-    } elsif ($what eq 'merge-genes') { # was 'event/merge-genes'
-      merge_genes($id, $when, $why, $who, \%data);
-    } elsif ($what eq 'undo-merge-genes') { # was 'event/undo-merge-genes'
-      undo_merge_genes($id, $when, $why, $who, \%data);
-    } elsif ($what eq 'split-gene') { # was 'event/split-gene'
-      split_gene($id, $when, $why, $who, \%data);
-    } elsif ($what eq 'undo-split-gene') { # was 'event/undo-split-gene'
-      undo_split_genes($id, $when, $why, $who, \%data);
-    } elsif ($what eq 'suppress-gene') { # was 'event/suppress-gene'
-      suppress_gene($id, $when, $why, $who, \%data);
-    } elsif ($what eq 'remove-cgc-names') { # was 'event/remove-cgc-names'
-      remove_cgc_names($id, $when, $why, $who, \%data);
-    }
+    print OUT "gene what = $what ",%data,"\n";
+    #if ($what eq 'new-gene') { # was  'event/new-gene'
+    #  new_gene($id, $when, $why, $who, \%data);
+    #} elsif ($what eq 'new-unnamed-gene') { # was 'event/new-unnamed-gene'
+    #  new_unnamed_gene($id, $when, $why, $who, \%data);
+    #} elsif ($what eq 'kill-gene') { # was 'event/kill-gene'
+    #  kill_gene($id, $when, $why, $who, \%data); # requires testing - do we have to allow for Pseudogenes/Transposons to be Suppressed instead of Dieing?
+    #} elsif ($what eq 'update-gene') { # was 'event/update-gene'
+    #  update_gene($id, $when, $why, $who, \%data);
+    #} elsif ($what eq 'resurrect-gene') { # was 'event/resurrect-gene'
+    #  resurrect_gene($id, $when, $why, $who, \%data);
+    #} elsif ($what eq 'merge-genes') { # was 'event/merge-genes'
+    #  merge_genes($id, $when, $why, $who, \%data);
+    #} elsif ($what eq 'undo-merge-genes') { # was 'event/undo-merge-genes'
+    #  undo_merge_genes($id, $when, $why, $who, \%data);
+    #} elsif ($what eq 'split-gene') { # was 'event/split-gene'
+    #  split_gene($id, $when, $why, $who, \%data);
+    #} elsif ($what eq 'undo-split-gene') { # was 'event/undo-split-gene'
+    #  undo_split_genes($id, $when, $why, $who, \%data);
+    #} elsif ($what eq 'suppress-gene') { # was 'event/suppress-gene'
+    #  suppress_gene($id, $when, $why, $who, \%data);
+    #} elsif ($what eq 'remove-cgc-names') { # was 'event/remove-cgc-names'
+    #  remove_cgc_names($id, $when, $why, $who, \%data);
+    #}
   }
   
   
@@ -496,7 +497,7 @@ sub merge_genes {
   my $status = $livegene_obj->Status->name;
   if ($debug) {print "LIVE GENE: $livegene_obj :  ".$livegene_obj->Status->name."\n";}
   if ($status ne 'Live') {
-    $log->log_and_die("ERROR merge-genes: $id is not a Live gene\n");
+    print "ERROR merge-genes: $id is not a Live gene\n";
   }
   # get the last acquires_merge
   my $acquires_merge;
@@ -516,7 +517,7 @@ sub merge_genes {
   if ($debug) {print "DEAD GENE:$ deadgene :  ".$deadgene_obj->Status->name."\n";}
   $status = $deadgene_obj->Status->name;
   if ($status ne 'Live') {
-    $log->log_and_die("ERROR merge-genes: $deadgene is not a Live gene\n");
+    print "ERROR merge-genes: $deadgene is not a Live gene\n";
   }
   # get the last Merged_into tag
   my $merged_into;
@@ -675,7 +676,7 @@ sub split_gene {
     # is this a Live gene with no splits to the new gene in the last Split_into?
     my $status = $oldgene_obj->Status->name;
     if ($status ne 'Live') {
-      $log->log_and_die("ERROR split-gene: $oldgene is not a Live gene\n");
+      print "ERROR split-gene: $oldgene is not a Live gene\n";
     }
     # get the last acquires_merge
     my $split_into;
@@ -847,6 +848,10 @@ sub new_strain {
   print OUT "Public_name $data->{'name'}\n"; # was 'strain/name'
   print OUT "Live\n";
   print OUT "Remark \"[$when $who] New Strain: $why\" Curator_confirmed $who\n";
+  if ($why =~ /(WBPaper\d+)/){
+      print OUT "Reference $1\n";
+  }
+  print OUT "Genotype \"$why\"\n" if ($genotype); 
   print OUT "\n";
 }
 

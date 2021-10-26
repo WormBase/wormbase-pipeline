@@ -48,9 +48,9 @@ my $curr_db = '/nfs/production/panda/ensemblgenomes/wormbase/DATABASES/current_D
 my $def_dir = "${database}/wquery";                          # where lots of table-maker definitions are kept
 
 my $rundate = $wb->rundate;                                # Used by various parts of script for filename creation
-my $maintainers = join (', ', 
-                        'paul.davis\@wormbase.org',
-                        );
+my $maintainers = join (
+    'hinxton\@wormbase.org',
+    );
 
 my $log_dir = "$database/logs";                            # some of the many output files are put here (ar2)
 my $log;                                                   # main log file for most output
@@ -159,7 +159,7 @@ print "Exit status $? log close\n\n" if ($debug);
 
 close(ACE) if ($ace);
 # email everyone specified by $maintainers
-$wb->mail_maintainer('geneace_check: SANGER',$maintainers,$log);
+$wb->mail_maintainer('geneace_check:',$maintainers,$log);
 
 exit(0);
 #--------------------------------------------------------------------------------------------------------------------
