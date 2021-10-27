@@ -49,10 +49,10 @@ GetOptions (
 
 
 &usage if ($help);
-my $user = `whoami`; chomp $user;
-if ($user ne "wormpub"){
-  die("You have to be wormpub to run this script!\n");
-}
+#my $user = `whoami`; chomp $user;
+#if ($user ne "wormpub"){
+#  die("You have to be wormpub to run this script!\n");
+#}
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
