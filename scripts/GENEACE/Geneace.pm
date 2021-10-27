@@ -12,7 +12,7 @@ use strict;
 use Data::Dumper;
 
 # constant stuff (hopefully not modified anywhere)
-my $root        = '/nfs/production/panda/ensemblgenomes/wormbase/DATABASES';
+my $root        = '/nfs/production/flicek/wormbase/wb/DATABASES';
 my $def_dir     = ${root}.'/geneace/wquery'; # location of table-maker definitions
 my $curr_db     = ${root}.'/current_DB';
 my $geneace_dir = ${root}.'/geneace';
