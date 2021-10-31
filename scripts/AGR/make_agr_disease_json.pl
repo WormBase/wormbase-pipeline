@@ -289,8 +289,10 @@ while( my $obj = $it->next) {
     my @genetic  = (@mod_strain, @mod_transgene, @mod_var, @mod_gene);
     my @exp_cond = (@mod_molecule, @mod_other);
 
-    die "$obj: Genetic or Experimental modifier info must be supplied when Modifier_association_type is supplied\n"
-        if not @genetic and not @exp_cond;
+    if (not @genetic and not @exp_cond) {
+	warn "$obj: Genetic or Experimental modifier info must be supplied when Modifier_association_type is supplied - skipping this annotation\n";
+        next;
+    }
 
     $mod_annot->{genetic} = \@genetic if @genetic;
     $mod_annot->{experimentalConditionsText} = \@exp_cond if @exp_cond;
