@@ -43,7 +43,7 @@ GetOptions (
 	    "post_gff"      => \$post_gff,
 	    "pre_rel"       => \$pre_rel,
             "hinxton"       => \$hinxton,
-    "hxcurated" => \$hxcurated,
+            "hxcurated"     => \$hxcurated,
             "caltech"       => \$caltech,
 	    );
 
@@ -361,8 +361,9 @@ sub hxcurated {
 	"Gene_class",
 	"Strain",
 	"Operon",
-	
-	}
+	);
+return @classes;	
+}
 
 sub hinxton {
   my @classes = (
