@@ -23,6 +23,6 @@ mysql --host=${EHIVE_PROD2_DBHOST} --port=${EHIVE_PROD2_DBPORT} --user=${EHIVE_P
 sleep 1
 # setup the new pipelines
 
-init_pipeline.pl Bio::EnsEMBL::Production::Pipeline::PipeConfig::ProteinFeatures_conf -registry ${ENSEMBL_REGISTRY} --host ${EHIVE_PROD2_DBHOST} --port ${EHIVE_PROD2_DBPORT} --user ${EHIVE_PROD2_DBUSER} --password ${EHIVE_PROD2_DBPASS} -pipeline_dir ${PIPELINE_DIR} -pipeline_name ${IPR_PIPELINE_NAME} -production_lookup 0 -delete_existing=1 $*
+init_pipeline.pl Bio::EnsEMBL::Production::Pipeline::PipeConfig::ProteinFeatures_conf -registry ${ENSEMBL_REGISTRY} --host ${EHIVE_PROD2_DBHOST} --port ${EHIVE_PROD2_DBPORT} --user ${EHIVE_PROD2_DBUSER} --password ${EHIVE_PROD2_DBPASS} -pipeline_dir ${PIPELINE_DIR} -pipeline_name ${IPR_PIPELINE_NAME} -production_lookup 0 --datacheck_failures_fatal 0 -delete_existing=1 $*
 
 
