@@ -269,7 +269,6 @@ while( my $obj = $it->next) {
   $annot->{objectId} = $obj_id;
   $annot->{objectName} = $obj_name;
   $annot->{with} = \@with_list if (@with_list && $build);
-  $annot->{negation} = 'not' if $obj->at('Qualifier_not');
 
   # modifiers
   
@@ -289,15 +288,16 @@ while( my $obj = $it->next) {
     my @genetic  = (@mod_strain, @mod_transgene, @mod_var, @mod_gene);
     my @exp_cond = (@mod_molecule, @mod_other);
 
-    die "$obj: Genetic or Experimental modifier info must be supplied when Modifier_association_type is supplied\n"
-        if not @genetic and not @exp_cond;
+    if (not @genetic and not @exp_cond) {
+	warn "$obj: Genetic or Experimental modifier info must be supplied when Modifier_association_type is supplied - skipping\n";
+        next;
+    }
 
     $mod_annot->{genetic} = \@genetic if @genetic;
     $mod_annot->{experimentalConditionsText} = \@exp_cond if @exp_cond;
 
     # WB/CalTech specific changes
     $annot->{modifier} = $mod_annot if $build;
-    # $annot->{negation} = 'not' if $obj->at('Modifier_qualifier_not'); # according to Ranjana, it should not be included
   }
 
   if ($build && $obj->Experimental_condition){
@@ -531,6 +531,9 @@ sub get_chemical_ontology_id {
 sub get_condition_relations {
     my $obj = shift;
 
+    my @conditions;
+    return \@conditions if $obj->at('Modifier_qualifier_not'); # AGR does not currently deal with negated modifiers
+    
     my $condition_relation_type = 'has_condition';
     if ($obj->Modifier_association_type) {
         if ($obj->Modifier_association_type->name eq 'condition_ameliorated_by') {
@@ -541,7 +544,7 @@ sub get_condition_relations {
         }
     }
 
-    my (@modifiers, @inducers, @conditions);
+    my (@modifiers, @inducers);
     if ($obj->Experimental_condition){
         $condition_relation_type = 'induces';
         my @inducing_chemicals = map {{
