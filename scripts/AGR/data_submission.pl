@@ -284,19 +284,21 @@ if ($hts or $all) {
 												   $sub_dir, $log, $lsf_manager, $DEFAULT_MEM);
 }
 
-if ($reference or $all) {
-    my @cmds = (
-	"perl ${cvs_dir}/AGR/make_agr_reference_json.pl -database ${build_home}/DATABASES/${ws_release} " .
-	"-wsversion ${ws_release} -ref ${sub_dir}/WB_${agr_schema}_reference.json " .
-	"-refex ${sub_dir}/WB_${agr_schema}_reference_exchange.json",
-	"${agr_schema_repo}/bin/agr_validate.py -s ${agr_schema_repo}/ingest/resourcesAndReferences/referenceMetaData.json " .
-	"-d ${sub_dir}/WB_${agr_schema}_reference.json",
-	"${agr_schema_repo}/bin/agr_validate.py -s ${agr_schema_repo}/ingest/resourcesAndReferences/referenceExchangeMetaData.json " .
-	"-d ${sub_dir}/WB_${agr_schema}_reference_exchange.json"
-	);
-    $datatypes_processed{'REFERENCE'} = $datatypes_processed{'REF-EXCHANGE'} = process_datatype('reference', \@cmds, $sub_dir, $log,
-												$lsf_manager, $HIGH_MEM);
-}
+# Reference files now submitted directly by Caltech
+
+#if ($reference or $all) {
+#    my @cmds = (
+#	"perl ${cvs_dir}/AGR/make_agr_reference_json.pl -database ${build_home}/DATABASES/${ws_release} " .
+#	"-wsversion ${ws_release} -ref ${sub_dir}/WB_${agr_schema}_reference.json " .
+#	"-refex ${sub_dir}/WB_${agr_schema}_reference_exchange.json",
+#	"${agr_schema_repo}/bin/agr_validate.py -s ${agr_schema_repo}/ingest/resourcesAndReferences/referenceMetaData.json " .
+#	"-d ${sub_dir}/WB_${agr_schema}_reference.json",
+#	"${agr_schema_repo}/bin/agr_validate.py -s ${agr_schema_repo}/ingest/resourcesAndReferences/referenceExchangeMetaData.json " .
+#	"-d ${sub_dir}/WB_${agr_schema}_reference_exchange.json"
+#	);
+ #   $datatypes_processed{'REFERENCE'} = $datatypes_processed{'REF-EXCHANGE'} = process_datatype('reference', \@cmds, $sub_dir, $log,
+#												$lsf_manager, $HIGH_MEM);
+#}
 
 if ($molecule or $all) {
     my @cmds = (
@@ -380,7 +382,7 @@ sub process_datatype {
     my @dependencies;
     if (@wait_for_jobs) {
 	for my $job_id (@wait_for_jobs) {
-	    push @dependencies, "done(${job_id})" unless $job_id == 0;
+	    push @dependencies, "done(${job_id})" if defined $job_id and $job_id != 0;
 	}
     }
 
@@ -417,12 +419,13 @@ sub submit_data {
     my ($datatypes_processed, $files_to_submit, $log) = @_;
 
 
-    for my $fms_datatype (@DATATYPES) {
+    for my $type (@DATATYPES) {
 	next unless $datatypes_processed->{$fms_datatype};
 	my $file = $files_to_submit->{$fms_datatype};
 	
 	my $fms_subtype = '';
-	if ($fms_datatype =~ /^(.+)_(.+)$/) {
+	my $fms_datatype = $type;
+	if ($type =~ /^(.+)_(.+)$/) {
 	    $fms_datatype = $1;
 	    $fms_subtype = $2;
 	}
