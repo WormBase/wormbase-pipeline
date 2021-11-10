@@ -38,6 +38,7 @@ const my $HGNC_FILE_URL => 'http://ftp.ebi.ac.uk/pub/databases/genenames/hgnc/ts
 const my @IDS_TO_MAP => ('symbol', 'entrez_id', 'ensembl_gene_id', 'vega_id', 'ucsc_id', 'refseq_accession', 'mgd_id', 'rgd_id', 'omim_id', 'agr');
 const my $CHECKSUMS_FILE => $ENV{'AGR_VEP_BASE_DIR'} . '/mod_file_checksums.txt';
 const my $HUMAN_FILES_DIR => $ENV{'AGR_VEP_BASE_DIR'} . '/human_vep_input_files';
+const my $MOUSE_FILES_DIR => $ENV{'AGR_VEP_BASE_DIR'} . '/mouse_vep_input_files';
 
 const my %REFSEQ_CHROMOSOMES => (
     'FB'   => {
@@ -235,7 +236,7 @@ const my %BAM_REQUIRED => (
     'HUMAN' => 1,
     );
 
-my ($url, $test, $logfile, $debug, $password, $cleanup, $nocheck, $overwrite, $external_human_gff, $help);
+my ($url, $test, $logfile, $debug, $password, $cleanup, $nocheck, $overwrite, $external_human_gff, $external_mouse_fasta, $help);
 
 my $stages = '1,2,3,4,5';
 my $mods_string = 'FB,MGI,RGD,SGD,WB,ZFIN,HUMAN';
@@ -252,6 +253,7 @@ GetOptions(
     "overwrite|o"           => \$overwrite,
     "nocheck|n"             => \$nocheck,
     "external_human_gff|e"  => \$external_human_gff,
+    "external_mouse_fasta|m" => \$external_mouse_fasta,
     "help|h"                => \$help,
     ) or print_usage();
 
@@ -265,7 +267,7 @@ my @mods = split(',', $mods_string);
 $logfile = "${BASE_DIR}/submission.${start_time}.log" if !$logfile;;
 
 my $log = Log_files->make_log($logfile, $debug);
-download_from_agr(\@mods, $start_time, $url, $overwrite, $external_human_gff, $log) if $stages =~ /1/;
+download_from_agr(\@mods, $start_time, $url, $overwrite, $external_human_gff, $external_mouse_fasta, $log) if $stages =~ /1/;
 
 for my $mod (@mods) {
     my ($checksums, $run_stages) = check_for_new_data($mod, $nocheck, $log);
@@ -414,7 +416,7 @@ sub update_checksums {
 
 
 sub download_from_agr {
-    my ($mods, $start_time, $url, $overwrite, $external_human_gff, $log) = @_;
+    my ($mods, $start_time, $url, $overwrite, $external_human_gff, $external_mouse_fasta, $log) = @_;
     
     my $download_urls = defined $url ? get_urls_from_snapshot($url) : get_latest_urls();
     
@@ -428,6 +430,10 @@ sub download_from_agr {
 	chdir $mod_dir;
 	for my $datatype (keys %{$download_urls->{$mod}}){
 	    next if $external_human_gff and $mod eq 'HUMAN' and $datatype eq 'GFF';
+	    if ($external_mouse_fasta and $mod eq 'MGI' and $datatype eq 'FASTA') {
+		run_system_cmd("gunzip -c ${MOUSE_FILES_DIR}/Mus_musculus.GRCm39.dna.toplevel.fa.gz > MGI_FASTA.fa", "Unzipping local MGI FASTA", $log);
+		next;
+	    }
 	    my $extension = $DATATYPE_EXTENSIONS{$datatype};
 	    if (-e "${mod}_${datatype}.${extension}" and !$overwrite) {
 		$log->write_to("Using previously downloaded $mod $datatype\n");
@@ -451,9 +457,12 @@ sub download_from_agr {
 	    my @files_to_copy = ('HUMAN_HTVCF.vcf');
 	    push @files_to_copy, 'HUMAN_GFF.gff' if $external_human_gff;
 	    for my $file (@files_to_copy) {
-	    run_system_cmd("cp ${HUMAN_FILES_DIR}/${file} $file", "Copying local $file file to working directory", $log);
+		run_system_cmd("cp ${HUMAN_FILES_DIR}/${file} $file", "Copying local $file file to working directory", $log);
+	    }   
 	}
-    }
+	elsif ($mod eq 'MGI') {
+
+	}
     
     }
     close (FILES);
