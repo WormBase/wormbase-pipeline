@@ -1065,9 +1065,9 @@ sub check_chromosome_map {
 	next unless $refseq_chr =~ /^RefSeq:(.+)$/;
 	if ($1 ne $REFSEQ_CHROMOSOMES{$mod}{$variation->{chromosome}}) {
 	   $log->log_and_die("RefSeq chromosome ID does not match version submitted in variation JSON for $mod: " .
-			     $variation->{chromosome} . " should be $1 but found " . 
-			     $REFSEQ_CHROMOSOMES{$mod}{$variation->{chromosome}} . ' for variation at position ' .
-			     $variation->{start} . "\n");
+			     $variation->{chromosome} . " found $1 but should be " . 
+			     $REFSEQ_CHROMOSOMES{$mod}{$variation->{chromosome}} . ' for variation ' .
+			     $variation->{alleleId} . "\n");
 	}
     }
 	
