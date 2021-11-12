@@ -382,7 +382,7 @@ for v in (parsed["data"]):
         print("Unknown alternative allele for " + v["alleleId"], file=sys.stderr)
         varSeq = '.'
     else:
-        varSeq = v["genomicVariantSequence"]
+        varSeq = v["genomicVariantSequence"].upper()
         
     # Add padded base and adjust pos if required
     if v["type"] == 'SO:0000159' or v["type"] == 'SO:0000667' or v["type"] == 'SO:1000032':
