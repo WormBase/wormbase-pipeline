@@ -970,19 +970,7 @@ sub _add_new_blast_counts {
     $pipeline_dir .= '/dumps';
     my $ace_file = $self->{'wormbase'}->species . '_' . $blast_type . '.ace';
    
-    my $grep_cmd = "grep '^Pep_homol'  ${pipeline_dir}/${ace_file} |";
-
-    open (ACE, $grep_cmd) or
-	$self->{'log'}->log_and_die("Cannot open ${pipeline_dir}/${ace_file}\n");
-    while (<ACE>) {
-	chomp;
-	my @col = split("\t", $_);
-	my ($species) = $col[2] =~ /"?wublast[x|p]_([^"\s]+)"$/;
-	$self->{'log'}->error("ERROR: could not parse species from $col[2]\n")
-	    unless $species;
-	$counts->{'new'}{$species}{$col[1]} = 1;
-    }
-    close (ACE);
+    $counts =  $self->_blast_counts_from_file("${pipeline_dir}/${ace_file}", $counts, 'new');
 
     return $counts;
 }	
@@ -991,6 +979,15 @@ sub _add_new_blast_counts {
 sub _add_old_blast_counts {
     my ($self, $counts, $blast_type) = @_;
     
+
+    my $last_build_file = $ENV{'BUILD_HOME'} . '/BUILD/' . $self->{'wormbase'}->species . '/acefiles/' .
+	$self->{'wormbase'}->species . '_' . $blast_type . '.ace';
+
+    if (-e $last_build_file) {
+	$counts = $self->_blast_counts_from_file($last_build_file, $counts, 'old');
+	return $counts;
+    }
+
     my $tmdef = $blast_type eq 'blastx' ? $self->_blastx_count_table_maker_def() :
 	$self->_blastp_count_table_maker_def();
     my $cmd = "Table-maker -p $tmdef\nquit\n";
@@ -1058,6 +1055,26 @@ sub _blast_count_comparison {
     }
 
     return $errors;
+}
+
+
+sub _blast_counts_from_file {
+    my ($self, $file, $counts, $new_or_old) = @_;
+
+    my $grep_cmd = "grep '^Pep_homol' $file |";
+
+    open (ACE, $grep_cmd) or
+	$self->{'log'}->log_and_die("Cannot open $file\n");
+    while (<ACE>) {
+	chomp;
+	my ($target, $species) = $_ =~ /^[^"]+"([^"]+)".+wublast[x|p]_([^"\s]+)/;
+	$self->{'log'}->error("ERROR: could not parse target and species from $_\n")
+	    unless $species and $target;
+	$counts->{$new_or_old}{$species}{$target} = 1;
+    }
+    close (ACE);
+    
+    return $counts;
 }
 
 

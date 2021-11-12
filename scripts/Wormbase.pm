@@ -1457,9 +1457,10 @@ sub establish_paths {
     $self->{'build_data'} = $self->wormpub . "/TEST/BUILD_DATA";
     $self->{'genome_diff'} = $self->wormpub . "/TEST/CHROMOSOME_DIFFERENCES";
   } else {
+#    $self->{'ftp_upload'} = "/nfs/ftp/private/worm-ftp/upload";
     $self->{'ftp_upload'} = $ENV{'FTP_UPLOAD'};
-    $self->{'ftp_staging'} = $ENV{'/FTP_STAGING'};
-    $self->{'ftp_site'}   = "/nfs/ftp/pub/databases/wormbase";
+    $self->{'ftp_site'}   = $ENV{'FTP_SITE'};
+    $self->{'ftp_staging'} = $self->wormpub . "/FTP_STAGING";
     $self->{'build_data'} = $self->wormpub . "/BUILD_DATA";
     $self->{'genome_diff'} = $self->wormpub . "/CHROMOSOME_DIFFERENCES";
   }    
@@ -1485,10 +1486,10 @@ sub establish_paths {
   $self->{'blat'}        = $self->orgdb . "/BLAT";
   $self->{'checks'}      = $self->autoace . "/CHECKS";
   $self->{'ontology'}    = $self->autoace . "/ONTOLOGY";
-  $self->{'tace'}   = '/hps/software/users/wormbase/shared/bin/acedb/CENTOS8/4.9.62/tace';
-  $self->{'giface'} = '/hps/software/users/wormbase/shared/bin/acedb/CENTOS8/4.9.62/giface';
-  $self->{'giface_server'} = '/hps/software/users/wormbase/shared/bin/acedb/CENTOS8/4.9.62/sgifaceserver';
-  $self->{'giface_client'} = '/hps/software/users/wormbase/shared/bin/acedb/CENTOS8/4.9.62/saceclient';
+  $self->{'tace'}   = $ENV{'ACE_BIN'} . '/tace';
+  $self->{'giface'} = $ENV{'ACE_BIN'} . '/giface';
+  $self->{'giface_server'} = $ENV{'ACE_BIN'} . '/sgifaceserver';
+  $self->{'giface_client'} = $ENV{'ACE_BIN'} . '/saceclient';
   $self->{'databases'}->{'geneace'} = $self->wormpub . "/DATABASES/geneace";
   $self->{'databases'}->{'camace'}  = $self->wormpub . "/DATABASES/camace";
   $self->{'databases'}->{'current'} = $self->wormpub . "/DATABASES/current_DB";

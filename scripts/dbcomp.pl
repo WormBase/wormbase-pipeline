@@ -27,7 +27,7 @@ $|=1;
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($database, $database2, $mail_paulsternberg, $post_gff, $pre_rel);
+my ($database, $database2, $mail_paulsternberg, $post_gff, $pre_rel, $hinxton, $caltech, $hxcurated);
 our ($errfile,$outfile); 
 our ($db_1, $db_2, $dbname_1, $dbname_2);
 
@@ -42,6 +42,9 @@ GetOptions (
 	    "mail_paulsternberg" => \$mail_paulsternberg,
 	    "post_gff"      => \$post_gff,
 	    "pre_rel"       => \$pre_rel,
+            "hinxton"       => \$hinxton,
+            "hxcurated"     => \$hxcurated,
+            "caltech"       => \$caltech,
 	    );
 
 if ( $store ) {
@@ -127,9 +130,19 @@ print OUT  " +------------------------+---------+---------+---------+---------+-
 #########################################################################
 
 my @all_classes;
-push @all_classes, &hinxton();
-push @all_classes, &caltech();
-
+if ($hinxton) {
+    push @all_classes, &hinxton();
+}
+elsif ($caltech) {
+    push @all_classes, &caltech();
+}
+elsif ($hxcurated) {
+    push @all_classes, &hxcurated();
+}
+else {
+    push @all_classes, &hinxton();
+    push @all_classes, &caltech();
+}
 &class_summary( sort @all_classes );
 
 #########################################################################
@@ -334,6 +347,24 @@ sub diff {
 
 ###############################################
 
+sub hxcurated {
+    my @classes = (
+	"elegans_CDS",
+	"elegans_pseudogenes",
+	"elegans_RNA_genes",
+	"Transposon",
+	"Transposon_CDS",
+	"Transposon_family",
+	"Variation",
+	"Feature",
+	"Gene",
+	"Gene_class",
+	"Strain",
+	"Operon",
+	);
+return @classes;	
+}
+
 sub hinxton {
   my @classes = (
     "Sequence",
@@ -361,7 +392,6 @@ sub hinxton {
     "Gene",
     "Gene_class",
     "Gene_name",
-    "Gene_regulation",
     "Genome_Sequence",
     "Map",
     "Multi_pt_data",
@@ -388,7 +418,6 @@ sub hinxton {
     "nematode_ESTs",
     "SO_term",
     "Table",
-    "Mass_spec_data",
     "Mass_spec_experiment",
     "Mass_spec_peptide",
     "Structure_data",
@@ -408,7 +437,6 @@ sub caltech {
     "Cell",
     "Cell_group",
     "Paper",
-    "Paper_name",
     "Author",
     "Person",
     "Person_name",
@@ -432,10 +460,8 @@ sub caltech {
     "RNAi",
     "SAGE_tag",
     "SAGE_experiment",
-    "Gene_regulation",
     "GO_term",
     "Interaction",
-    "YH",
     "Position_matrix",
       );
   return @classes;
