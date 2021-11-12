@@ -126,21 +126,23 @@ my $wormpipe_dir  = $ENV{'PIPELINE'};
 my $db_files_dir  = "$wormpipe_dir/swall_data";
 my $dbm_files_dir = "$wormpipe_dir/dumps";
 
+my $scratch_dir = $ENV{'SCRATCH'};
+
 my %file_mapping = ( 
-	"$db_files_dir/swissprot2org" => "/tmp/${species}_dir/swissprot2org",
-	"$db_files_dir/trembl2org"    => "/tmp/${species}_dir/trembl2org",
-	"$dbm_files_dir/acc2db.dbm" => "/tmp/${species}_dir/acc2db.dbm",
+	"$db_files_dir/swissprot2org" => "${scratch_dir}/${species}_dir/swissprot2org",
+	"$db_files_dir/trembl2org"    => "${scratch_dir}/${species}_dir/trembl2org",
+	"$dbm_files_dir/acc2db.dbm" => "${scratch_dir}/${species}_dir/acc2db.dbm",
 );
-mkdir "/tmp/${species}_dir", 0777; 
+mkdir "${scratch_dir}/${species}_dir", 0777; 
 while (my($from,$to)=each %file_mapping ){
   unlink $to if -e $to;
   copy $from,$to or $log->log_and_die("Copy of $from to $to failed: $!");
 }
 
 my (%SWISSORG, %TREMBLORG);
-tie (%SWISSORG, 'DB_File', "/tmp/${species}_dir/swissprot2org", O_RDWR|O_CREAT, 0666, $DB_HASH) or $log->log_and_die("cannot open swissprot2org DBM file /tmp/${species}_dir/swissprot2org\n");
+tie (%SWISSORG, 'DB_File', "${scratch_dir}/${species}_dir/swissprot2org", O_RDWR|O_CREAT, 0666, $DB_HASH) or $log->log_and_die("cannot open swissprot2org DBM file ${scratch_dir}/${species}_dir/swissprot2org\n");
 unless (-s "$db_files_dir/swissprot2org") { $log->log_and_die("swissprot2org not found or empty");}
-tie (%TREMBLORG, 'DB_File', "/tmp/${species}_dir/trembl2org", O_RDWR|O_CREAT, 0666, $DB_HASH) or $log->log_and_die("cannot open /tmp/${species}_dir/trembl2org DBM file\n");
+tie (%TREMBLORG, 'DB_File', "${scratch_dir}/${species}_dir/trembl2org", O_RDWR|O_CREAT, 0666, $DB_HASH) or $log->log_and_die("cannot open ${scratch_dir}/${species}_dir/trembl2org DBM file\n");
 unless (-s "$db_files_dir/trembl2org") { $log->log_and_die("trembl2org not found or empty");}
 
 # gene CE info from COMMON_DATA files
@@ -173,7 +175,7 @@ print "opening $recip_file";
 open (RECIP,">$recip_file") or $log->log_and_die("cant open recip file $recip_file: $!\n");
 
 our %ACC2DB;
-tie (%ACC2DB, 'DB_File', "/tmp/${species}_dir/acc2db.dbm", O_RDWR|O_CREAT, 0666, $DB_HASH) or warn "cannot open /tmp/${species}_dir/acc2db.dbm \n";
+tie (%ACC2DB, 'DB_File', "${scratch_dir}/${species}_dir/acc2db.dbm", O_RDWR|O_CREAT, 0666, $DB_HASH) or warn "cannot open ${scratch_dir}/${species}_dir/acc2db.dbm \n";
 
 
 my $count;
