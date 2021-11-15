@@ -340,7 +340,7 @@ with open(args.json, 'r') as read_file:
 if args.strains:
     headers.append('FORMAT')
     strains = get_strains(parsed["data"])
-    for s in strains
+    for s in strains:
         headers.append('WB:' + s)  # need curie form of strain
     
 vcf_file.write("\t".join(headers) + "\n")
