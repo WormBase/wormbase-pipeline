@@ -385,6 +385,10 @@ for v in (parsed["data"]):
         varSeq = '.'
     else:
         varSeq = v["genomicVariantSequence"].upper()
+
+    # Remove any whitespace from sequences
+    varSeq = ''.join(varSeq.split())
+    refSeq = ''.join(refSeq.split())
         
     # Add padded base and adjust pos if required
     if v["type"] == 'SO:0000159' or v["type"] == 'SO:0000667' or v["type"] == 'SO:1000032':
