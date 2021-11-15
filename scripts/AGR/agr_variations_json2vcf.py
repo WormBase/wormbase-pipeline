@@ -325,10 +325,11 @@ for chr in chrom2ncbi[args.mod]:
     else:
         vcf_file.write("##contig=<ID=" + chr + ",accession=\"" + chrom2ncbi[args.mod][chr] + "\">\n")
 
-vcf_file.write("##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n")
+if args.strains:
+    vcf_file.write("##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n")
 
 headers = ['#CHROM', 'POS', 'ID', 'REF',
-           'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT']
+           'ALT', 'QUAL', 'FILTER', 'INFO']
 
 nt_regex = re.compile('^[ACGT]$')
 
@@ -337,8 +338,9 @@ with open(args.json, 'r') as read_file:
 
 # get all strains for column headers
 if args.strains:
+    headers.append('FORMAT')
     strains = get_strains(parsed["data"])
-    for s in strains:
+    for s in strains
         headers.append('WB:' + s)  # need curie form of strain
     
 vcf_file.write("\t".join(headers) + "\n")
