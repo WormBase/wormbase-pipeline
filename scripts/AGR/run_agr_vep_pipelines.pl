@@ -24,7 +24,7 @@ const my %DATATYPE_EXTENSIONS => ('FASTA'             => 'fa',
 				  'VARIATION'         => 'json',
     );
 const my @CHECKSUM_SUFFIXES => ('FASTA.fa', 'GFF.gff', 'VCF.vcf', 'HTVCF.vcf', 'BAM.bam');
-const my %ASSEMBLIES => ('GRCm38'   => 'MGI',
+const my %ASSEMBLIES => ('GRCm39'   => 'MGI',
 			 'R6'       => 'FB',
 			 'R627'     => 'FB',
 			 'Rnor60'   => 'RGD',
