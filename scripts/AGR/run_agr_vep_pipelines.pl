@@ -39,6 +39,7 @@ const my @IDS_TO_MAP => ('symbol', 'entrez_id', 'ensembl_gene_id', 'vega_id', 'u
 const my $CHECKSUMS_FILE => $ENV{'AGR_VEP_BASE_DIR'} . '/mod_file_checksums.txt';
 const my $HUMAN_FILES_DIR => $ENV{'AGR_VEP_BASE_DIR'} . '/human_vep_input_files';
 const my $MOUSE_FILES_DIR => $ENV{'AGR_VEP_BASE_DIR'} . '/mouse_vep_input_files';
+const my $RESOURCES_DIR => $ENV{'AGR_BASE_DIR'} . '/resources';
 
 const my %REFSEQ_CHROMOSOMES => (
     'FB'   => {
@@ -448,7 +449,15 @@ sub download_from_agr {
 	    run_system_cmd("mv $filename ${mod}_${datatype}.${extension}", "Renaming $filename", $log);
 	}
 	fix_rgd_headers($log) if $mod eq 'RGD'; # Temporary hack
-	merge_bam_files($mod, $log) if $BAM_REQUIRED{$mod};
+
+	if ($BAM_REQUIRED{$mod}) {
+	    merge_bam_files($mod, $log);
+	}
+	else {
+	    run_system_cmd('cp ' . $RESOURCES_DIR . '/dummy.bam ' . $mod . '_BAM.bam', "Copying dummy BAM file", $log);
+	}
+	run_system_cmd("samtools index ${mod}_BAM.bam", "Indexing $mod BAM file", $log);
+	
 	unlink "${mod}_FASTA.fa.fai" if -e "${mod}_FASTA.fa.fai";
 	run_system_cmd('python3 ' . $ENV{'CVS_DIR'} . "/AGR/agr_variations_json2vcf.py -j ${mod}_VARIATION.json -m $mod -g ${mod}_GFF.gff " .
 		       "-f ${mod}_FASTA.fa -o ${mod}_VCF.vcf", "Converting $mod phenotypic variants JSON to VCF", $log) if -e "${mod}_VARIATION.json";
@@ -588,9 +597,8 @@ sub calculate_pathogenicity_predictions {
     
     my $lsf_queue = $ENV{'LSF_DEFAULT_QUEUE'};
 
-    my $bam = $BAM_REQUIRED{$mod} ? "${mod}_BAM.bam" : 0;
     my $init_cmd = "init_pipeline.pl VepProteinFunction::VepProteinFunction_conf -mod $mod" .
-	" -agr_fasta ${mod}_FASTA.refseq.fa -agr_gff ${mod}_GFF.refseq.gff -agr_bam $bam" . 
+	" -agr_fasta ${mod}_FASTA.refseq.fa -agr_gff ${mod}_GFF.refseq.gff -agr_bam ${mod}_BAM.bam" . 
 	' -hive_root_dir ' . $ENV{'HIVE_ROOT_DIR'} . ' -pipeline_base_dir ' . $ENV{'PATH_PRED_WORKING_DIR'} .
 	' -pipeline_host ' . $ENV{'WORM_DBHOST'} . ' -pipeline_user ' . $ENV{'WORM_DBUSER'} .
 	' -pipeline_port ' . $ENV{'WORM_DBPORT'} . ' -lsf_queue ' . $lsf_queue .
@@ -616,8 +624,7 @@ sub run_vep_on_phenotypic_variations {
     
     my $base_vep_cmd = "vep -i ${mod}_VCF.refseq.vcf -gff ${mod}_GFF.refseq.gff.gz -fasta ${mod}_FASTA.refseq.fa.gz --force_overwrite " .
 	"-hgvsg -hgvs -shift_hgvs=0 --symbol --distance 0 --plugin ProtFuncSeq,mod=$mod,pass=$password " .
-	"--remove_hgvsp_version --safe";
-    $base_vep_cmd .= " --bam ${mod}_BAM.bam" if $BAM_REQUIRED{$mod};
+	"--remove_hgvsp_version --safe --bam ${mod}_BAM.bam";
     my $gl_vep_cmd = $base_vep_cmd . " --per_gene --output_file ${mod}_VEPGENE.txt";
     my $tl_vep_cmd = $base_vep_cmd . " --output_file ${mod}_VEPTRANSCRIPT.txt";
     
@@ -673,9 +680,8 @@ sub run_vep_on_htp_variations{
     
     my $lsf_queue = $ENV{'LSF_DEFAULT_QUEUE'};
 
-    my $bam = $BAM_REQUIRED{$mod} ? "${mod}_BAM.bam" : 0;
     my $init_cmd = "init_pipeline.pl ModVep::ModVep_conf -mod $mod -vcf ${mod}_HTVCF.vcf -gff ${mod}_GFF.refseq.gff.gz" .
-	" -fasta ${mod}_FASTA.refseq.fa.gz -bam $bam -hive_root_dir " . $ENV{'HIVE_ROOT_DIR'} . ' -pipeline_base_dir ' .
+	" -fasta ${mod}_FASTA.refseq.fa.gz -bam ${mod}_BAM.bam -hive_root_dir " . $ENV{'HIVE_ROOT_DIR'} . ' -pipeline_base_dir ' .
 	$ENV{'HTP_VEP_WORKING_DIR'} . ' -pipeline_host ' . $ENV{'WORM_DBHOST'} . ' -pipeline_user ' . $ENV{'WORM_DBUSER'} .
 	' -pipeline_port ' . $ENV{'WORM_DBPORT'} . ' -lsf_queue ' . $lsf_queue . ' -vep_dir ' . $ENV{'VEP_DIR'} . 
 	" -debug_mode 0 -password $password";
@@ -747,7 +753,6 @@ sub merge_bam_files {
     
     run_system_cmd("samtools sort -o ${mod}_BAM.sorted.bam -T tmp ${mod}_BAM.bam", "Sorting $mod BAM file", $log);
     run_system_cmd("mv ${mod}_BAM.sorted.bam ${mod}_BAM.bam", "Replacing $mod BAM file with sorted version", $log);
-    run_system_cmd("samtools index ${mod}_BAM.bam", "Indexing $mod BAM file", $log);
     
     return;
 }
