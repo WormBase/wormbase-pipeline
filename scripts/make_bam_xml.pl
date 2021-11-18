@@ -241,8 +241,8 @@ sub get_SRA_details {
 sub add_RG_header_to_BAM_file {
   my ($srx, $bamfile) = @_;
 
-  my $Software = "/nfs/panda/ensemblgenomes/wormbase/software/packages";
-  my $samtools = "$Software/samtools/samtools";
+  my $Software = $ENV{'E_PACKAGES'};
+  my $samtools = "$Software/bin/samtools/samtools";
   my $status;
   my $outfile = "RG_$srx.bam";
 
