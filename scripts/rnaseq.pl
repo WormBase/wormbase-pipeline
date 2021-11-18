@@ -85,8 +85,6 @@ my $chromosome_prefix = $wormbase->chromosome_prefix;
 
 my $RNASeq = RNASeq->new($wormbase, $log, 0, 0);
 
-my $Software = "/nfs/panda/ensemblgenomes/wormbase/software/packages";
-
 my $FEATURE = "RNASeq";
 
 my $RNASeqSRADir    = $RNASeq->{RNASeqSRADir};
