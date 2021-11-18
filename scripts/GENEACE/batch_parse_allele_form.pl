@@ -82,7 +82,7 @@ my $DB;
 my $db;
 my $ecount;
 $wormbase = Wormbase->new("-organism" =>$species, -debug => $debug, -test => $test);
-my $database = "/nfs/production/panda/ensemblgenomes/wormbase/DATABASES/geneace";
+my $database = $wormbase->database('geneace');
 $log->write_to("TEST mode is ON!\n\n") if $test;
 my $tace            = $wormbase->tace;        # TACE PATH
 
