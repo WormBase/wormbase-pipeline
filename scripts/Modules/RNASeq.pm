@@ -1878,7 +1878,6 @@ sub run_make_gtf_transcript {
 
   my $RNASeqSRADir = $self->{RNASeqSRADir};
   my $RNASeqGenomeDir = $self->{RNASeqGenomeDir};
-  my $gtf_file = "$RNASeqGenomeDir/transcripts.gtf";
   my $species = $self->{wormbase}->{species};
   my $log = $self->{log};
   my $status;
