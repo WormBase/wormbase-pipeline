@@ -489,7 +489,7 @@ Width    2.000000
 Show_text       
 Show_up_strand  
 GFF_source       "circRNA"
-GFF_feature      "circRNA"
+GFF_feature      "circular_ncRNA"
 GFF_SO   "SO:0002291" "nc_transcript_ace2so" // circRNA
 
 ////////////////////////////
