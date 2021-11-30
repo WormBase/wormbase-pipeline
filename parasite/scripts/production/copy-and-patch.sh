@@ -5,7 +5,7 @@
 perl -MProductionMysql -E '
    say for ProductionMysql->previous_staging->core_databases(@ARGV ? @ARGV : "core_$ENV{PREVIOUS_PARASITE_VERSION}_$ENV{PREVIOUS_ENSEMBL_VERSION}_");
    say for ProductionMysql->previous_staging->variation_databases(@ARGV ? @ARGV : "variation_$ENV{PREVIOUS_PARASITE_VERSION}_$ENV{PREVIOUS_ENSEMBL_VERSION}_");
-' "$@" | while read -r DB; do
+' "$@" | tail -n 139 | while read -r DB; do
   echo "Copying $DB"
   NEWDB=$( sed "s/_$PREVIOUS_PARASITE_VERSION\_$PREVIOUS_ENSEMBL_VERSION/_$PARASITE_VERSION\_$ENSEMBL_VERSION/" <<< $DB )
   echo "Looking for previous versions of $NEWDB"

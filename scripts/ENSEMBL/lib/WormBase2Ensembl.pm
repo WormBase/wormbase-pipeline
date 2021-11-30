@@ -154,6 +154,7 @@ sub parse_genes_gff3_fh {
       $l[2] ne 'pseudogenic_transcript' and 
       $l[2] ne 'pseudogenic_rRNA' and
       $l[2] ne 'pseudogenic_tRNA' and
+      $l[2] ne 'tRNA_pseudogene' and
       $l[2] ne 'nontranslating_transcript' and 
       $l[2] ne 'CDS' and 
       $l[2] ne 'exon');
@@ -222,6 +223,7 @@ sub parse_genes_gff3_fh {
 	     $l[2] eq 'nontranslating_transcript' or
              $l[2] eq 'pseudogenic_rRNA' or
              $l[2] eq 'pseudogenic_tRNA' or
+             $l[2] eq 'tRNA_pseudogene' or
              $l[2] eq 'nc_primary_transcript' or 
              $l[2] eq 'protein_coding_primary_transcript') {
       $transcripts{$id}->{source} = $l[1];
@@ -343,8 +345,7 @@ sub parse_genes_gff3_fh {
         # make sense. In this case, we clip off the 5' UTR
         my $phase_5prime;
         map { $phase_5prime = $_->{cds_seg}->{gff_phase} if exists $_->{cds_seg} and not defined $phase_5prime } @exons;
-
-        if ($phase_5prime != 0) {
+        if ($phase_5prime != '0') {
           my @keep_exons;
           while(my $exon = shift @exons) {
             # skip 5' exons that are wholly UTR

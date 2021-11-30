@@ -6,7 +6,7 @@ sub new {
 }
 
 sub current_staging {
-  return new(shift, join( "/", $ENV{PARASITE_SCRATCH},"dumps", "WBPS$ENV{PARASITE_VERSION}", "FTP"), $ENV{PARASITE_VERSION}); 
+  return new(shift, join( "/", $ENV{PARASITE_SCRATCH},"dumps", "WBPS$ENV{PARASITE_VERSION}"."_postrelease", "FTP"), $ENV{PARASITE_VERSION}); 
 }
 sub previous_staging {
   return new(shift, join( "/", $ENV{PARASITE_SCRATCH},"dumps", "WBPS$ENV{PREVIOUS_PARASITE_VERSION}", "FTP"), $ENV{PREVIOUS_PARASITE_VERSION}); 
@@ -14,7 +14,7 @@ sub previous_staging {
 sub release {
   my ($class, $parasite_version, $release_folder) = @_;
   $release_folder //= "WBPS$parasite_version";
-  return new($class, join( "/", "/nfs/ftp/pub/databases/wormbase/parasite/releases", $release_folder, "species"), $parasite_version);
+  return new($class, join( "/", "/nfs/ftp/public/databases/wormbase/parasite/releases", $release_folder, "species"), $parasite_version);
 }
 sub dot_next {
   return release(shift, $ENV{PARASITE_VERSION}, ".next");
@@ -31,6 +31,8 @@ sub path_to {
   $bp =~ s/ISS([0-9]+)PRJNA([0-9]+)/ISS$1_PRJNA$2/;
   # fix for special bioproject names assigned to old S. carpocapsae genome versions
   $bp =~ s/V([0-9]+)PRJNA([0-9]+)/V$1_PRJNA$2/;
+  # fix for special bioproject names assigned to globodera rhostochiensis genome versions l22 and l19
+  $bp =~ s/L([0-9]+)PRJNA([0-9]+)/L$1_PRJNA$2/; 
   $zipped //= 1;
 
   my $dir = join("/", $self->{root}, "${spe}_${cies}", $bp);
