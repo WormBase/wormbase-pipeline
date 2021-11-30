@@ -450,6 +450,7 @@ sub load_genes {
     foreach my $source_biotype_pair (['rRNA', 'rRNA'],
                                      ['ncRNA', 'ncRNA'],
                                      ['snRNA', 'snRNA'],
+                                     ['tRNA_pseudogene', 'tRNA_pseudogene'],
                                      ['snoRNA', 'snoRNA'],
                                      ['scRNA', 'scRNA'],
                                      ['piRNA', 'piRNA'],

@@ -2,6 +2,7 @@
 use strict;
 use File::Path qw(mkpath);
 use ProductionMysql;
+use Try::Tiny;
 
 foreach my $var (qw(WORMBASE_VERSION PARASITE_VERSION ENSEMBL_VERSION ENSEMBL_CVS_ROOT_DIR PARASITE_CONF PARASITE_SCRATCH WORM_CODE)) {
   if (not exists $ENV{$var}) {
@@ -26,6 +27,17 @@ mkpath($PARASITE_CONF, { verbose => 0, mode => 0775 }) if not -e $PARASITE_CONF;
 &write_config($templates->{COMPARA_REGISTRY}, "$PARASITE_CONF/compara.registry.pm" );
 
 #####################################################
+sub find_ensrw_db {
+  my ($db) = @_;
+  try {
+    ProductionMysql->new("${db}-w")->conn;
+    return "${db}-w";
+  }
+  catch {
+    return "${db}-ensrw";
+  }
+}
+
 sub read_templates {
   my (%templates, $current);
   while(<DATA>) {
@@ -50,8 +62,8 @@ sub write_config {
   my ($template, $file, @replacements) = @_;
   
   my %vhosts = ( STAGING => $PARASITE_STAGING, 
-                 PROD    => "mysql-ps-prod",
-                 PAN     => "mysql-pan-1" );
+                 PROD    => "mysql-ps-prod-1",
+                 PAN     => "mysql-eg-pan-prod" );
   
   push @replacements,  ( { before => "ENSEMBL_VERSION", 
                            after => $ENSEMBL_VERSION },
@@ -63,10 +75,10 @@ sub write_config {
     my $vhost_name = $vhosts{$vhost_key};
 
     my $con_ro = ProductionMysql->new($vhost_name)->conn;
-    my $con_rw = ProductionMysql->new("${vhost_name}-ensrw")->conn;
+    my $con_rw = ProductionMysql->new(find_ensrw_db(${vhost_name}))->conn;
 
     my $url_ro = ProductionMysql->new($vhost_name)->url;
-    my $url_rw = ProductionMysql->new("${vhost_name}-ensrw")->url;
+    my $url_rw = ProductionMysql->new(find_ensrw_db(${vhost_name}))->url;
 
     push @replacements, { before => "${vhost_key}HOST", 
                           after  => $con_ro->{host} };

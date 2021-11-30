@@ -19,21 +19,21 @@ saccharomyces_cerevisiae	\
 schizosaccharomyces_pombe	\
 trichoplax_adhaerens	)
 
-mkdir -p ${PARASITE_SCRATCH2}/comparators_TMP
+mkdir -p ${PARASITE_SCRATCH}/comparators_TMP
 
 for comparator in ${comparators[@]}; do 
-	mkdir -p ${PARASITE_SCRATCH2}/comparators_TMP/${comparator}
+	mkdir -p ${PARASITE_SCRATCH}/comparators_TMP/${comparator}
 	
 	# try ensembl first	
 
-	ftp=$(rsync -av rsync://ftp.ensembl.org/ensembl/pub/release-${ENSEMBL_VERSION}/mysql/${comparator}_core_${ENSEMBL_VERSION}_*/ ${PARASITE_SCRATCH2}/comparators_TMP/${comparator}/ )
+	ftp=$(rsync -av rsync://ftp.ensembl.org/ensembl/pub/release-${ENSEMBL_VERSION}/mysql/${comparator}_core_${ENSEMBL_VERSION}_*/ ${PARASITE_SCRATCH}/comparators_TMP/${comparator}/ )
 	if [ $? -eq 0 ]; then 
 		echo "Found ${comparator}_core_${ENSEMBL_VERSION}"
 		continue	
 	fi
 	# then ensembl metazoa
 
-	ftp=$(rsync -av rsync://ftp.ensemblgenomes.org/all/pub/metazoa/release-${EG_VERSION}/mysql/${comparator}_core_${EG_VERSION}_${ENSEMBL_VERSION}_*/ ${PARASITE_SCRATCH2}/comparators_TMP/${comparator}/ )
+	ftp=$(rsync -av rsync://ftp.ensemblgenomes.org/all/pub/metazoa/release-${EG_VERSION}/mysql/${comparator}_core_${EG_VERSION}_${ENSEMBL_VERSION}_*/ ${PARASITE_SCRATCH}/comparators_TMP/${comparator}/ )
 
         if [ $? -eq 0 ]; then
                 echo "Found ${comparator}_core_${EG_VERSION}_${ENSEMBL_VERSION}"
@@ -41,7 +41,7 @@ for comparator in ${comparators[@]}; do
 	fi
 	# finally ensembl fungi
 
-        ftp=$(rsync -av rsync://ftp.ensemblgenomes.org/all/pub/fungi/release-${EG_VERSION}/mysql/${comparator}_core_${EG_VERSION}_${ENSEMBL_VERSION}_*/ ${PARASITE_SCRATCH2}/comparators_TMP/${comparator}/ )
+        ftp=$(rsync -av rsync://ftp.ensemblgenomes.org/all/pub/fungi/release-${EG_VERSION}/mysql/${comparator}_core_${EG_VERSION}_${ENSEMBL_VERSION}_*/ ${PARASITE_SCRATCH}/comparators_TMP/${comparator}/ )
 
         if [ $? -eq 0 ]; then
                 echo "Found ${comparator}_core_${EG_VERSION}_${ENSEMBL_VERSION}"
@@ -54,7 +54,7 @@ done
 
 for comparator in ${comparators[@]}; do
 	
-	sql=$(ls ${PARASITE_SCRATCH2}/comparators_TMP/${comparator}/*.sql.gz)
+	sql=$(ls ${PARASITE_SCRATCH}/comparators_TMP/${comparator}/*.sql.gz)
 	regex="([^\/]*)\.sql.gz"
 	if [[ $sql =~ $regex ]]; then
 		db=${BASH_REMATCH[1]}
@@ -73,19 +73,19 @@ for comparator in ${comparators[@]}; do
 
 	echo "Unzipping ${comparator} files.."
 
-	gunzip ${PARASITE_SCRATCH2}/comparators_TMP/${comparator}/*.gz
+	gunzip ${PARASITE_SCRATCH}/comparators_TMP/${comparator}/*.gz
 
-	$PARASITE_STAGING_MYSQL-ensrw -Ne "CREATE DATABASE $db"
+	$PARASITE_STAGING_MYSQL-w -Ne "CREATE DATABASE $db"
 
-	$PARASITE_STAGING_MYSQL-ensrw $db <  ${PARASITE_SCRATCH2}/comparators_TMP/${comparator}/${db}.sql
+	$PARASITE_STAGING_MYSQL-w $db <  ${PARASITE_SCRATCH}/comparators_TMP/${comparator}/${db}.sql
 
 	echo "Populating ${db}.."
 
-	$PARASITE_STAGING_MYSQL-ensrw mysqlimport -L ${db} ${PARASITE_SCRATCH2}/comparators_TMP/${comparator}/*.txt
+	$PARASITE_STAGING_MYSQL-w mysqlimport -L ${db} ${PARASITE_SCRATCH}/comparators_TMP/${comparator}/*.txt
 
 	echo "deleting tmp directory.."
 
-	rm -r ${PARASITE_SCRATCH2}/comparators_TMP/${comparator}/
+	rm -r ${PARASITE_SCRATCH}/comparators_TMP/${comparator}/
 	
 	echo "Finished populating $db"
 done
