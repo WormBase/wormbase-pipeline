@@ -312,7 +312,7 @@ Colour DARKGRAY
 Show_up_strand	
 Width 1.500000
 Show_text
-EMBL_feature "rRNA_Pseudogene"
+EMBL_feature "rRNA_Pseudo" //This has been truncated to work on the new Codon cluster as something in the white space encoding is off, all EMBL_features have to be less than 15 characters.
 EMBL_qualifier "\/note=\"\%s\"" "note"
 GFF_source "rRNA_Pseudogene"
 GFF_SO "SO:0000777" "nc_transcript_ace2so" // pseudogenic_rRNA
@@ -356,7 +356,7 @@ Colour DARKGRAY
 Show_up_strand	
 Width 1.500000
 Show_text
-EMBL_feature "tRNA_Pseudogene"
+EMBL_feature "tRNA_Pseudo" //This has been truncated to	work on	the new	Codon cluster
 EMBL_qualifier "\/note=\"\%s\"" "note"
 GFF_source "tRNA_Pseudogene"
 GFF_SO "SO:0000778" "nc_transcript_ace2so" // pseudogenic_tRNA
@@ -421,7 +421,7 @@ Colour GREEN
 Show_up_strand 
 Width 2.000000
 Show_text 
-EMBL_feature "prim_transcript"
+EMBL_feature "prim_trans" //This has been truncated to	work on	the new	Codon cluster
 Remark "A primary transcript encoding a micro RNA (SO:0000647)"
 GFF_source "miRNA_primary_transcript"
 GFF_feature "miRNA_primary_transcript"
