@@ -390,7 +390,7 @@ while(<FILE>){
 		print ACE "Reference $WBpaper\t \/\/ Supplied PMID:$pubmed\n";
             }
             else {
-                print ACE "\/\/Reference PMID:$pubmed";
+                print ACE "\/\/Reference PMID:$pubmed\n";
 		$log->write_to("WARNING - Reference PMID:$pubmed Cannot find a valid WBPaperID this needs to be resolved in the output file\n");
             }
         }
