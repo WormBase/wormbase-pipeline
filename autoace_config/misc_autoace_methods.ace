@@ -9,7 +9,11 @@
 //
 // E.g. a tRNA gene predicted by the program tRNA-scan would be GFF_source = 'tRNA-scan'
 // and GFF_feature = 'tRNA'
-
+//
+// Since migrating the acedb code to the codon compute cluster it is necessary to limit the EMBL_feature
+// keys/tokens to be less than 15 characters in length. Example:rRNA_Pseudogene -  EMBL_feature "rRNA_Pseudo"
+// This token is then converted to rRNA_Pseudogene by the EMBLdump.pl script to make valid for ENA submission.
+//
 
 ///////////////////////////////////////////////////////////////////////////
 //									 //
