@@ -502,7 +502,7 @@ while(<FILE>){
 		}
 	    }
 	    if (defined $strain_id) {
-		print ACE "Strain : \"$strain_id\"\nPublic_name $strain\nSpecies \"Caenorhabditis elegans\"\n";
+		print ACE "\nStrain : \"$strain_id\"\nPublic_name $strain\nSpecies \"Caenorhabditis elegans\"\n";
 		if (defined $lab){print ACE "Location $lab\n";}
 		if (defined $geno) {print ACE "Genotype \"$geno\"\n";}
 		else {print ACE "\n";}
