@@ -9,7 +9,7 @@ use Storable;
 
 my ($debug, $test, $database, $species, $log_file, $prev_release, $store);
 my ($recent_citace, $primary_seq_dumps, $elegans_first, $build_contents, $dna_headers, $split_gffs,
-    $tier2_contigs, $masked_files, $blat_files, $homology_loaded, $tier2_blat_contigs, $est_dat,
+    $tier2_contigs, $masked_files, $blat_files, $cdnafiles, $homology_loaded, $tier2_blat_contigs, $est_dat,
     $cache_size, $uniprot_ids, $vep, $blastx, $blastp, $dbxref, $final_gff, $species_merge, $composition);
 GetOptions(
     'debug=s'            => \$debug,
@@ -29,6 +29,7 @@ GetOptions(
     'tier2_contigs:s'    => \$tier2_contigs, # checks that non-elegans GFF files have the required number of sequence-regions
     'masked_files'       => \$masked_files, # checks for presence of masked cDNA files
     'blat_files'         => \$blat_files, # checks for presence of BLAT files
+    'cdnafiles'          => \$cdnafiles, # checks that all files exist in the autoace acefile dir for cdnafiles step.
     'homology_loaded'    => \$homology_loaded, # checks that homology data has been loaded 
     'est_dat'            => \$est_dat, # checks for presence of EST feature files, creating dummy files if appropriate
     'cache_size'         => \$cache_size, # checks cache2 size for briggsae
@@ -94,6 +95,9 @@ if ($masked_files) {
 }
 if ($blat_files) {
     $errors += $wormtest->blat_files_present;
+}
+if ($cdnafiles) {
+    $errors += $wormtest->cdnafiles_present;
 }
 if ($homology_loaded) {
     $errors += $wormtest->homology_data_loaded;
