@@ -34,7 +34,7 @@ my ( $load, $big_load, $tsuser );
 my ($map_features, $remap_misc_dynamic, $map, $map_alleles, $transcripts, $cdna_files, $misc_data_sets, $homol_data_sets, $nem_contigs);
 my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $treefam, $ncbi_xrefs, $load_interpro, $RRID, $omim);
 my ( $utr, $agp, $gff_munge, $gff3_munge, $extras , $ontologies, $interpolate, $check, $enaseqxrefs, $enagenexrefs, $enaprotxrefs, $xrefs);
-my ( $data_check, $buildrelease, $public,$finish_build, $gffdb, $autoace, $user, $kegg, $prepare_gff_munge, $post_merge, $gtf);
+my ( $data_check, $buildrelease, $public,$finish_build, $gffdb, $autoace, $user, $kegg, $prepare_gff_munge, $post_merge, $gtf, $noupload);
 my $skip_tests;
 
 my @all_tests = ('recent_citace', 'primary_seq_dumps', 'elegans_first', 'homology_loaded', 'split_gffs_blat', 'tier2_contigs_blat',
@@ -107,7 +107,8 @@ GetOptions(
 	   'user:s'         => \$user,
            'kegg'           => \$kegg,
            'postmerge'      => \$post_merge,
-           'skip_tests'     => \$skip_tests
+           'skip_tests'     => \$skip_tests,
+           'noupload'       => \$noupload,
 	  )||die(@!);
 
 $skip_tests = 'all'; # Comment out this line to enable testing with Wormtest.pm
@@ -268,8 +269,14 @@ if ($enaprotxrefs and $errors == 0) {
   $wormbase->run_script( "get_ena_submission_xrefs.pl -proteinxrefs", $log);
   $wormbase->run_script( "propagate_cds_xrefs_to_protein.pl", $log );
   if ($wormbase->species eq 'elegans') {
-    $wormbase->run_script( 'load_panther_xrefs.pl', $log);
-    $wormbase->run_script( 'generate_dbxref_file.pl -nocodingtrans -ebiupload', $log);  
+      $wormbase->run_script( 'load_panther_xrefs.pl', $log);
+      if ($noupload) {
+	  #noupload test remove -ebiupload
+	  $wormbase->run_script( 'generate_dbxref_file.pl -nocodingtrans', $log);
+      }
+      else {
+	  $wormbase->run_script( 'generate_dbxref_file.pl -nocodingtrans -ebiupload', $log);
+      }
   }
 }
 
