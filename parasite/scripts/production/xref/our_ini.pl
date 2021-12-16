@@ -50,7 +50,7 @@ for my $species (keys %core_dbs_per_species){
       $taxons{ProductionMysql->staging->meta_value($core_db, "species.taxonomy_id")}++;
       my $possible_wormbase_annotation_path = 
        join ("/",
-         "/ebi/ftp/pub/databases/wormbase/releases",
+         "/nfs/ftp/public/databases/wormbase/releases",
          "WS$ENV{WORMBASE_VERSION}",
          "species",
          $wormbase_species,
@@ -97,7 +97,7 @@ for my $species (keys %core_dbs_per_species){
        my ($wormbase_annotation_path, @other_wormbase_annotation_paths) = keys %wormbase_annotation_paths;
        die %wormbase_annotation_paths if @other_wormbase_annotation_paths;
        $has_wormbase_parsers++;
-       (my $ftp_path = $wormbase_annotation_path) =~ s/\/ebi\/ftp/ftp:\/\/ftp.ebi.ac.uk/;
+       (my $ftp_path = $wormbase_annotation_path) =~ s/\/nfs\/ftp/ftp:\/\/ftp.ebi.ac.uk/;
        my $spe_1 = substr ($spe, 0, 1 );
        my $source =  "wormbase::$spe_1$cies";
        print "source = $source\n";

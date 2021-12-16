@@ -53,7 +53,20 @@ function gff_flagsq {
   perl -snle 'print for /(?:^|.+)$attrname=([^;]+)/;' -- -attrname=$1;
 }
 
+function rename_fasta_headers_with_mapping {
+  input_fasta = $1
+  mapping_file = $2
+  while read p;
+    do
+      old=$(echo $p | cut -d' ' -f1);
+      new=$(echo $p | cut -d' ' -f2);
+      sed -i "s/^>${old}/>${new}/" ${input_fasta};
+    done < ${mapping_file}
+}
 
-
-
-
+function rename_seq_region_file_with_mapping {
+  seq_region_file=$1
+  mapping_file=$2
+  join -t $'\t' $seq_region_file $mapping_file -a1 -1 2 -2 1 \
+    | awk '{print $2"\t"$5"\t"$3"\t"$4}'
+}
