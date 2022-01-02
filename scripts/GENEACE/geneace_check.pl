@@ -48,10 +48,7 @@ my $curr_db = $wb->database('current'); # Used for some cross checking with gene
 my $def_dir = "${database}/wquery";                          # where lots of table-maker definitions are kept
 
 my $rundate = $wb->rundate;                                # Used by various parts of script for filename creation
-my $maintainers = join (
-    'hinxton\@wormbase.org',
-    );
-
+my $maintainers = "hinxton\@wormbase.org";
 my $log_dir = "$database/logs";                            # some of the many output files are put here (ar2)
 my $log;                                                   # main log file for most output
 my (%L_name_F_WBP, %L_name_F_M_WBP);                       # hashes for checking Person and Author merging?
