@@ -419,16 +419,17 @@ sub submit_data {
     my ($datatypes_processed, $files_to_submit, $log) = @_;
 
 
-    for my $type (@DATATYPES) {
-	next unless $datatypes_processed->{$fms_datatype};
-	my $file = $files_to_submit->{$fms_datatype};
-	
+    for my $type (@DATATYPES) {	
 	my $fms_subtype = '';
 	my $fms_datatype = $type;
 	if ($type =~ /^(.+)_(.+)$/) {
 	    $fms_datatype = $1;
 	    $fms_subtype = $2;
 	}
+
+	next unless $datatypes_processed->{$fms_datatype};
+	my $file = $files_to_submit->{$fms_datatype};
+	
 	my $exit_code = system("gzip -9 -c $file > $file.gz");
 	if ($exit_code != 0) {
 	    $log->error("Compression of $file failed with exit code $exit_code, $fms_datatype submission not completed\n\n");
