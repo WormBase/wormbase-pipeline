@@ -261,7 +261,7 @@ sub get_condition_relations {
 		conditionStatement => 'chemical treatment:' . $mol->Public_name->name,
 		chemicalOntologyId => get_chemical_ontology_id($mol),
 		conditionClassId => $zeco{'chemical treatment'},
-		conditionId => $zeco{'chemical treatment'},
+		#conditionId => $zeco{'chemical treatment'},
 	    } if $paper eq $paper_id;
 	}
         push @conditions, {conditionRelationType => $condition_relation_type,
