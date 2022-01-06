@@ -692,21 +692,9 @@ sub run_vep_on_htp_variations{
     $ENV{EHIVE_URL} = $ehive_url;
  
     run_system_cmd("beekeeper.pl -url $ehive_url -loop", "Running $mod HTP variations VEP eHive pipeline", $log);
-
-    my $uncompressed_file = $ENV{'HTP_VEP_WORKING_DIR'} . "/${mod}_vep/${mod}.vep.vcf";
-    my $bsub_cmd = 'bsub -J ' . $mod . '_VEP_compress -o /dev/null -e /dev/null -n 20 -R "span[ptile=20]" ' .
-	'pigz -9 -p 20 ' . $uncompressed_file;
-    run_system_cmd($bsub_cmd, "Compressing $mod HTP variations VEP output", $log);
-    while (-e $uncompressed_file) {
-	sleep(60);
-    }
-    
-    my $compressed_file = "${uncompressed_file}.gz";
-    run_system_cmd("mv ${compressed_file} ${mod}_HTPOSTVEPVCF.vcf.gz",
+    run_system_cmd("mkdir HTPVEP", "Creating folder for $mod HTP VEP output", $log);
+    run_system_cmd("mv " . $ENV{'HTP_VEP_WORKING_DIR'} . "/${mod}_vep/${mod}.* HTPVEP/",
 		   "Moving $mod HTP variations VEP output", $log);
-
-    submit_data($mod, 'HTPOSTVEPVCF', $mod . '_HTPOSTVEPVCF.vcf.gz', $log) unless $test
-	or $mod eq 'MGI' or $mod eq 'HUMAN'; # the MOD checks can be removed once it becomes possible to submit these files to the FMS
     
     return;
 }
