@@ -19,8 +19,8 @@ const my $DEFAULT_MEM => 6; # Default amount of memory in Gb for LSF jobs
 const my $HIGH_MEM => 12;    # Amount of memory in Gb for jobs requiring extra
 
 my ($fasta, $gff, $bgi, $disease, $allele, $phenotype, $expression, $ltp_variations, $htp_variations, $agm,
-    $construct, $interactions, $genetic_interactions, $hts, $reference, $molecule);
-my ($all, $test, $logfile, $bgi_file, $allele_file, $disease_file, $fasta_file, $gff_file, $debug);
+    $construct, $interactions, $genetic_interactions, $hts, $reference, $molecule, $all, $test, $logfile,
+    $bgi_file, $allele_file, $disease_file, $fasta_file, $gff_file, $chebi_map_file, $debug);
 
 
 GetOptions(
@@ -48,6 +48,7 @@ GetOptions(
     "disease_file=s"       => \$disease_file,
     "fasta_file=s"         => \$fasta_file,
     "gff_file=s"           => \$gff_file,
+    "chebi_map_file=s"     => \$chebi_map_file,
     "debug=s"              => \$debug
     );
 
@@ -107,6 +108,8 @@ if (!$gff and $htp_variations) {
     die "GFF file ${gff_file} doesn't exist, please specify using --gff_file\n" unless -e $gff_file;
 }
 
+$chebi_map_file = "${sub_dir}/chebi_id_to_name_map.txt" unless $chebi_map_file;
+
 make_path("${sub_dir}/lsf_logs");
 
 my %files_to_submit = (
@@ -157,14 +160,20 @@ if ($bgi or $all) {
     $datatypes_processed{'BGI'} = process_datatype('BGI', \@cmds, $sub_dir, $log, $lsf_manager, $DEFAULT_MEM);
 }
 
+if ($disease or $phenotype or $all) {
+    my @cmds = ("perl ${cvs_dir}/AGR/get_chebi_name_map.pl -o $chebi_map_file") unless -e $chebi_map_file;
+    $datatypes_processed{'CHEBI'} = process_datatype('chebi_map', \@cmds, $sub_dir, $log, $lsf_manager, $DEFAULT_MEM);
+}
+    
+
 if ($disease or $all) {
     my @cmds = (
 	"perl ${cvs_dir}/AGR/make_agr_disease_json.pl -database ${build_home}/DATABASES/${ws_release} " . 
-	"-wsversion ${ws_release} -outfile ${disease_file} -AGRwhitelist",
+	"-wsversion ${ws_release} -outfile ${disease_file} -AGRwhitelist -chebi ${chebi_map_file}",
 	"${agr_schema_repo}/bin/agr_validate.py -s ${agr_schema_repo}/ingest/disease/diseaseMetaDataDefinition.json " .
 	"-d ${disease_file}"
 	);
-    $datatypes_processed{'DAF'} = process_datatype('disease', \@cmds, $sub_dir, $log, $lsf_manager, $DEFAULT_MEM);
+    $datatypes_processed{'DAF'} = process_datatype('disease', \@cmds, $sub_dir, $log, $lsf_manager, $DEFAULT_MEM, $datatypes_processed{'CHEBI'});
 }
 
 if ($gff or $all) {
@@ -187,13 +196,15 @@ if ($allele or $all) {
 }
 
 if ($phenotype or $all) {
-    my @cmds = (
+    my @cmds = ("perl ${cvs_dir}/AGR/get_chebi_name_map.pl -o $chebi_map_file") unless -e $chebi_map_file;
+    push @cmds, (
 	"perl ${cvs_dir}/AGR/make_agr_phenotype_json.pl -database ${build_home}/DATABASES/${ws_release} " .
-	"-wsversion ${ws_release} -bgijson ${bgi_file} -outfile ${sub_dir}/WB_${agr_schema}_phenotype.json",
+	"-wsversion ${ws_release} -bgijson ${bgi_file} -outfile ${sub_dir}/WB_${agr_schema}_phenotype.json -chebi ${chebi_map_file}",
 	"${agr_schema_repo}/bin/agr_validate.py -s ${agr_schema_repo}/ingest/phenotype/phenotypeMetaDataDefinition.json " .
 	"-d ${sub_dir}/WB_${agr_schema}_phenotype.json"
 	);
-    $datatypes_processed{'PHENOTYPE'} = process_datatype('phenotype', \@cmds, $sub_dir, $log, $lsf_manager, $DEFAULT_MEM, $datatypes_processed{'BGI'});
+    $datatypes_processed{'PHENOTYPE'} = process_datatype('phenotype', \@cmds, $sub_dir, $log, $lsf_manager, $DEFAULT_MEM,
+							 $datatypes_processed{'CHEBI'}, $datatypes_processed{'BGI'});
 }
 
 if ($expression or $all) {
