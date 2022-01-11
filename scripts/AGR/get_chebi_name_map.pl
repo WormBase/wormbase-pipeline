@@ -8,19 +8,18 @@ use Path::Class;
 use XML::LibXML;
 
 const my $PURL => 'http://purl.obolibrary.org/obo/chebi.owl';
-const my $MAP_FILE => 'chebi_id_to_name_map.txt';
 
-my ($outdir);
+my ($outfile);
 
 GetOptions (
-    "outdir=s" => \$outdir
+    "outfile|o=s" => \$outfile
     ) || die ("Unknown comand line option: $@\n");
 
-if (!$outdir) {
-    $outdir = '.';
+if (!$outfile) {
+    $outfile = './chebi_id_to_name_map.txt';
 }
 
-my $out_fh = file($outdir. '/' . $MAP_FILE)->openw;
+my $out_fh = file($outfile)->openw;
 
 
 my $chebi_dom = XML::LibXML->load_xml(location => $PURL);
