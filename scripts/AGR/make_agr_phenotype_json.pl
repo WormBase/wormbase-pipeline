@@ -11,7 +11,7 @@ use Wormbase;
 use Modules::AGR;
 
 my ($debug, $test, $verbose, $store, $wormbase);
-my ($outfile, $acedbpath, $ws_version, $out_fh, $bgi_json);
+my ($outfile, $acedbpath, $ws_version, $out_fh, $bgi_json, $chebi_map_file);
 
 GetOptions (
     'debug=s'     => \$debug,
@@ -22,6 +22,7 @@ GetOptions (
     'outfile:s'   => \$outfile,
     'wsversion=s' => \$ws_version,
     'bgijson=s'   => \$bgi_json,
+    'chebi=s'     => \$chebi_map_file
     )||die(@!);
 
 if ($store) {
@@ -38,6 +39,11 @@ my $full_name = $wormbase->full_name;
 
 $acedbpath  = $wormbase->autoace unless $acedbpath;
 $ws_version = $wormbase->get_wormbase_version_name unless $ws_version;
+
+my $chebi_map;
+if ($chebi_map_file) {
+    $chebi_map = get_chebi_map($chebi_map_file);
+}
 
 if (not defined $outfile) {
     $outfile = "./wormbase.agr_phenotype.${ws_version}.json";
@@ -185,7 +191,7 @@ sub process {
 		    dateAssigned             => $date,
 		    evidence                 => $papers{$paper},
 		}; 
-		my @condition_relations = @{get_condition_relations($pt, $paper)};
+		my @condition_relations = @{get_condition_relations($pt, $paper, $chebi_map)};
 		$json_obj->{conditionRelations} = \@condition_relations if @condition_relations;
 		push @pheno_annots, $json_obj;
 		
@@ -221,8 +227,20 @@ sub get_chemical_ontology_id {
 }
 
 
+
+sub get_chemical_name {
+    my ($obj, $chebi_map) = @_;
+
+    my $id = get_chemical_ontology_id($obj);
+    if (exists $chebi_map->{$id}) {
+	return $chebi_map->{$id};
+    }
+    return $obj->Public_name->name;
+}
+
+
 sub get_condition_relations {
-    my ($obj, $paper_id) = @_;
+    my ($obj, $paper_id, $chebi_map) = @_;
     
     my $condition_relation_type = 'has_condition';
     
@@ -258,7 +276,7 @@ sub get_condition_relations {
 	    my $paper = $mol->at('Paper_evidence')->at() if $mol->at('Paper_evidence');
 	    next unless defined $paper;
 	    push @molecules, {
-		conditionStatement => 'chemical treatment:' . $mol->Public_name->name,
+		conditionStatement => 'chemical treatment:' . get_chemical_name($mol, $chebi_map),
 		chemicalOntologyId => get_chemical_ontology_id($mol),
 		conditionClassId => $zeco{'chemical treatment'},
 		#conditionId => $zeco{'chemical treatment'},
@@ -287,4 +305,20 @@ sub get_paper_json {
     $json_paper->{crossReference} = {id =>"WB:$wb_paper",pages => ['reference']};
     
     return $json_paper;
+}
+
+
+sub get_chebi_map {
+    my $file = shift;
+
+    my %map;
+    open ('CHEBI', '<', $file) or die $!;
+    while (<CHEBI>) {
+	chomp;
+	my ($id, $name) = split("\t", $_);
+	$map{$id} = $name;
+    }
+    close (CHEBI);
+
+    return \%map;
 }

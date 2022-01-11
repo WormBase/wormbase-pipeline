@@ -15,7 +15,7 @@ use lib "$ENV{CVS_DIR}/ONTOLOGY";
 use GAF;
 
 my ($debug, $test, $verbose, $store, $wormbase, $build);
-my ($outfile, $acedbpath, $ws_version, $outfh, $daf,$white);
+my ($outfile, $acedbpath, $ws_version, $outfh, $daf, $white, $chebi_map_file);
 
 GetOptions (
   'debug=s'     => \$debug,
@@ -28,6 +28,7 @@ GetOptions (
   'writedaf'    => \$daf,
   'build'       => \$build, # to enable WB/CalTech build specific changes
   'AGRwhitelist'=> \$white,
+  'chebi=s'     => \$chebi_map_file  
 )||die("unknown command line option: $@\n");
 
 if ( $store ) {
@@ -41,6 +42,11 @@ if ( $store ) {
 my $tace = $wormbase->tace;
 my $date = AGR::get_rfc_date();
 my $alt_date = join("/", $date =~ /^(\d{4})(\d{2})(\d{2})/);
+
+my $chebi_map;
+if ($chebi_map_file) {
+    $chebi_map = get_chebi_map($chebi_map_file);
+}
 
 $acedbpath = $wormbase->autoace unless $acedbpath;
 $ws_version = $wormbase->get_wormbase_version_name unless $ws_version;
@@ -312,7 +318,7 @@ while( my $obj = $it->next) {
   my $secondary_base_annot = dclone($annot); #Create copy to use for secondary annotations before conditionRelations added
 
   if (!$build) {
-      my $conditions = get_condition_relations($obj);
+      my $conditions = get_condition_relations($obj, $chebi_map);
       $annot->{conditionRelations} = $conditions if @$conditions;
   }
   
@@ -528,8 +534,19 @@ sub get_chemical_ontology_id {
 }
 
 
+sub get_chemical_name {
+    my ($obj, $chebi_map) = @_;
+
+    my $id = get_chemical_ontology_id($obj);
+    if (exists $chebi_map->{$id}) {
+	return $chebi_map->{$id};
+    }
+    return $obj->Public_name->name;
+}
+
+
 sub get_condition_relations {
-    my $obj = shift;
+    my ($obj, $chebi_map) = @_;
 
     my @conditions;
     return \@conditions if $obj->at('Modifier_qualifier_not'); # AGR does not currently deal with negated modifiers
@@ -547,8 +564,8 @@ sub get_condition_relations {
     my (@modifiers, @inducers);
     if ($obj->Experimental_condition){
         $condition_relation_type = 'induces';
-        my @inducing_chemicals = map {{
-            conditionStatement => 'chemical treatment:' . $_->Public_name->name,
+	my @inducing_chemicals = map {{
+            conditionStatement => 'chemical treatment:' . get_chemical_name($_, $chebi_map),
             chemicalOntologyId => get_chemical_ontology_id($_),
             conditionClassId => $zeco{'chemical treatment'}
             }} $obj->Inducing_chemical;
@@ -573,7 +590,7 @@ sub get_condition_relations {
             }
         }
         my @modifying_molecules = map {{
-            conditionStatement => 'chemical treatment:' . $_->Public_name->name,
+            conditionStatement => 'chemical treatment:' . get_chemical_name($_, $chebi_map),
             chemicalOntologyId => get_chemical_ontology_id($_),
             conditionClassId => $zeco{'chemical treatment'}
             }} $obj->Modifier_molecule;
@@ -587,4 +604,20 @@ sub get_condition_relations {
     }
 
     return \@conditions;
+}
+
+
+sub get_chebi_map {
+    my $file = shift;
+
+    my %map;
+    open ('CHEBI', '<', $file) or die $!;
+    while (<CHEBI>) {
+	chomp;
+	my ($id, $name) = split("\t", $_);
+	$map{$id} = $name;
+    }
+    close (CHEBI);
+
+    return \%map;
 }
