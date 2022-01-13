@@ -28,7 +28,7 @@ my $seleno_proteins = {
 sub wormbase_ftp_dir {
   my ($species, $wormbase_version) = @_;
   my ($spe, $cies, $bioproject) = split /_/, $species;
-  return join("/", "/nfs/ftp/pub/databases/wormbase/releases", "WS$wormbase_version","species", lc((substr $spe, 0, 1 ) . "_" . $cies) , uc($bioproject));
+  return join("/", "/nfs/ftp/public/databases/wormbase/releases", "WS$wormbase_version","species", lc((substr $spe, 0, 1 ) . "_" . $cies) , uc($bioproject));
 }
 sub wormbase_gff3 {
   my ($species, $wormbase_version) = @_;

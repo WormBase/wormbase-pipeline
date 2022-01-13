@@ -4,10 +4,34 @@ import glob
 import datetime
 import sysrsync
 import gzip
+from optparse import OptionParser
 from pathlib import Path
 import dependencies
 from dependencies import *
 from diotools import *
+
+class ui:
+    def __init__(self, parser_object):
+        (options, args) = parser_object.parse_args()
+        if options.SPECIES:
+            self.species = options.SPECIES
+        else:
+            parser.error('species not given')
+        self.explore = options.explore
+        self.cpext = options.cpext
+        self.extdest = options.extdest
+        if options.selected_studies != []:
+            self.selected_studies = [x.strip() for x in options.selected_studies.split(",")]
+            if len(self.selected_studies)<1:
+                exit_with_error("Wrong select_studies (-t) input given. Please review and try again.")
+        if self.explore or options.selected_studies==[]:
+            self.selected_studies = []
+    def print_user_input(self):
+        print_info("User Specified input:")
+        for uo in self.__dict__.keys():
+            actual_value = self.__dict__[uo]
+            print_w_indent(uo + ": " + actual_value)
+
 
 def check_dependent_dirs():
     dep_dirs_names=[item for item in dir(dependencies) if item.endswith('dir')]
@@ -29,6 +53,9 @@ class Species:
         self.se_dir = expression_dir+"/"+species_name
         self.reference_dir = os.path.join(self.apollo_dir,"reference")
         self.log_dir = os.path.join(self.apollo_dir,"log")
+    def check_if_studies(self):
+        if not os.path.exists(self.se_dir):
+            exit_with_error("No expression data found for "+self.species+" in "+self.se_dir+".\n No more work to do. Exiting.")
     def create_dirs(self):
         run_once=0
         for dir in self.__dict__.keys():
@@ -48,9 +75,27 @@ class Species:
             if depdir.endswith("dir"):
                 print_w_indent(depdir + ": " + pot_path)
     def studies(self):
+        self.check_if_studies()
         study_ids = [x for x in next(os.walk(self.se_dir))[1]
                       if os.path.isfile(self.se_dir + "/" + x + "/" + x + ".design.tsv")]
         return study_ids
+    def samples(self):
+        return_samples = []
+        study_ids = self.studies()
+        for study_id in study_ids:
+            sst = Study(self.species, study_id)
+            return_samples += list(set(sst.design_dict().values()))
+        return(return_samples)
+    def studies_to_samples(self):
+        stu2sam_dict = {}
+        study_ids = self.studies()
+        for study_id in study_ids:
+            sst = Study(self.species, study_id)
+            stu2sam_dict[study_id] = list(set(sst.design_dict().values()))
+        return(stu2sam_dict)
+
+
+
 
 
 class Study(Species):
@@ -144,7 +189,7 @@ class Study(Species):
                             jobprefix=self.study_id+"_01_merge_bams",
                             to_wait_id=to_wait_id,
                             cpu=4,
-                            mem="12gb",
+                            mem="24gb",
                             cwd=self.log_dir,
                             queue="production")
         return(job_id)
@@ -248,14 +293,48 @@ class Sample(Study):
                             jobprefix=self.sample_name+"_02_bam_processing",
                             to_wait_id=to_wait_id,
                             cpu=1,
-                            mem="4gb",
+                            mem="12gb",
                             cwd=self.log_dir,
                             queue="production")
         return(job_id)
 
 
 
+def explore_print(species):
+    print("Species" + "\t" + "Study_id" + "\t" + "Sample_id" + "\t" + "sample_id_condition")
+    for spec_study in species.studies():
+        sst = Study(species.species, spec_study)
+        for dek in sst.design_keys():
+            ssa = Sample(sst.species, spec_study, dek)
+            print(ssa.species + "\t" + ssa.study_id + "\t" + ssa.sample_id + "\t" + ssa.sample_name)
 
+
+def studies_needed(selected_studies, species):
+    if selected_studies == []:
+        return(species.studies())
+    else:
+        studies_needed = []
+        for selected_study in selected_studies:
+            if selected_study in species.studies():
+                studies_needed.append(selected_study)
+                continue
+            for study in species.studies_to_samples():
+                if selected_study in species.studies_to_samples()[study]:
+                    studies_needed.append(study)
+    return(list(set(studies_needed)))
+
+def samples_needed(selected_samples, species):
+     if selected_samples == []:
+         return(species.samples())
+     else:
+         samples_needed = []
+         for selected_sample in selected_samples:
+             if selected_sample in species.samples():
+                 samples_needed.append(selected_sample)
+                 continue
+             if selected_sample in species.studies():
+                 samples_needed+=species.studies_to_samples()[selected_sample]
+     return(list(set(samples_needed)))
 
 
 

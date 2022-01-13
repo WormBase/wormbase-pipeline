@@ -1,5 +1,3 @@
-
-
 get_core_db_and_taxon_list () { 
   for db in $(  $PARASITE_STAGING_MYSQL -Ne "show databases like \"%core_${PARASITE_VERSION}%\"") ; do 
     echo -n "$db" "" 
@@ -66,4 +64,4 @@ if [ "$num_files" -ne "$num_core_dbs" ] ; then
   exit 1
 else
   rm -v $DIR/.tmp/**
-fi
+
