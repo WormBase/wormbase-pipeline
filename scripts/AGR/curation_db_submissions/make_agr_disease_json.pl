@@ -34,7 +34,7 @@ if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
-                             -test    => $test,
+                             -test    => $test
       );
 }
 
@@ -86,8 +86,6 @@ my %zeco = (
 my $db = Ace->connect(-path => $acedbpath, -program => $tace) or die('Connection failure: '. Ace->error);
 
 my (@agm_annots, @gene_annots, @allele_annots);
-my $condition_relations = {};
-my $experimental_conditions = {};
 
 my $it = $db->fetch_many(-query => 'Find Disease_model_annotation');
 
@@ -153,13 +151,18 @@ while( my $obj = $it->next) {
 	# [200507 mh6]
 	# the crossReference should be annotation specific, but as the id changes every release the 
 	# linking is not possible due to the lag
+
+	unless (@evi_codes) {
+	    push @evi_codes, $go2eco{'IMP'};
+	}
 	
 	my $annot = {
-	    object         => $obj->Disease_term->name,
-	    data_provider => ['WB'],
-	    date_last_modified => $evi_date,
-	    evidence_codes => (@evi_codes) ? \@evi_codes : [$go2eco{'IMP'}],
-	    annotation_reference => $paper,
+	    mod_id               => $obj->name,
+	    object               => $obj->Disease_term->name,
+	    data_provider        => 'WB',
+	    date_last_modified   => $evi_date,
+	    evidence_codes       => \@evi_codes,
+	    reference            => $paper,
 	};
 	$annot->{modified_by} = 'WB:' . $obj->Curator_confirmed->name if $obj->Curator_confirmed;
 	$annot->{genetic_sex} = $obj->Genetic_sex->name if $obj->Genetic_sex;
@@ -234,9 +237,8 @@ while( my $obj = $it->next) {
 	$annot->{negated} = 'true' if $obj->at('Qualifier_not');
 	
 
-	my $cr_curie;
-	($cr_curie, $condition_relations, $experimental_conditions) = get_condition_relations($obj, $condition_relations, $experimental_conditions);
-	$annot->{conditionRelations} = [$cr_curie] if $cr_curie;
+	my $condition_relations = get_condition_relations($obj);
+	$annot->{conditionRelations} = $condition_relations if @$condition_relations;
 
 	
 	if ($obj_type eq 'gene') {
@@ -257,10 +259,6 @@ $db->close;
 print_json($agm_out, \@agm_annots);
 print_json($gene_out, \@gene_annots);
 print_json($allele_out, \@allele_annots);
-my @cr_annots = values %{$condition_relations};
-my @exp_annots = values %{$experimental_conditions};
-print_json($cr_out, \@cr_annots);
-print_json($exp_out, \@exp_annots);
     
 exit(0);
 
@@ -271,7 +269,7 @@ sub print_json {
 
     open(my $out_fh, ">$outfile") or die("cannot open $outfile : $!\n");  
     my $json_obj = JSON->new;
-    my $string = $json_obj->allow_nonref->canonical->pretty->encode({data => $data});
+    my $string = $json_obj->allow_nonref->canonical->pretty->encode([$data]);
     print $out_fh $string;
     close $out_fh;
 
@@ -308,22 +306,22 @@ sub get_chemical_ontology_id {
 
 
 sub get_condition_relations {
-    my ($obj, $condition_relations, $experimental_conditions) = @_;
+    my ($obj) = @_;
 
-    my $condition_relation_type; 
-    
+    my $condition_relation_type;
     my (@modifiers, @inducers);
     my $conditions = [];
+    my $condition_relations = [];
     if ($obj->Experimental_condition){
         $condition_relation_type = 'induced_by';
         my @inducing_chemicals = map {{
             condition_statement => 'chemical treatment:' . $_->Public_name->name,
-            condition_chemical => get_chemical_ontology_id($_),
-            condition_class => $zeco{'chemical treatment'},
+            condition_chemical => {curie => get_chemical_ontology_id($_)},
+            condition_class => {curie => $zeco{'chemical treatment'}},
             }} $obj->Inducing_chemical;
         my @inducing_agents     = map {{
             condition_statement => 'experimental conditions:' . $_->name,
-            condition_class => $zeco{'experimental conditions'}
+            condition_class => {curie => $zeco{'experimental conditions'}}
             }} $obj->Inducing_agent;
         @inducers = (@inducing_chemicals, @inducing_agents);
         push @$conditions, @inducers;
@@ -340,58 +338,29 @@ sub get_condition_relations {
 	}
         my @modifying_molecules = map {{
             condition_statement => 'chemical treatment:' . $_->Public_name->name,
-            condition_chemical => get_chemical_ontology_id($_),
-            condition_class => $zeco{'chemical treatment'}
+            condition_chemical => {curie => get_chemical_ontology_id($_)},
+            condition_class => {curie => $zeco{'chemical treatment'}}
             }} $obj->Modifier_molecule;
         my @other_modifiers = map {{
 	    condition_statement => 'experimental conditions:' . $_->name,
-	    condition_class => $zeco{'experimental conditions'}
+	    condition_class => {curie => $zeco{'experimental conditions'}}
 	    }} $obj->Other_modifier;
         @modifiers = (@modifying_molecules, @other_modifiers);
         push @$conditions, @modifiers;
     }
     
-    my ($conditions, $exp_cond_curies) = generate_experimental_condition_curies($conditions);
-
     unless ($condition_relation_type eq 'has_condition'){
 	$condition_relation_type = 'not_' . $condition_relation_type if $obj->at('Modifier_qualifier_not');
     }
 
-    my $cr_curie;
     if ($condition_relation_type) {
-	$cr_curie = join('|', $condition_relation_type, @{$exp_cond_curies});
 	my $cr_json = {
 	    condition_relation_type => $condition_relation_type,
-	    conditions => $exp_cond_curies,
-	    curie => $cr_curie
+	    conditions => $conditions
 	};
-	$condition_relations->{$cr_curie} = $cr_json;
-
+        push @$condition_relations, $cr_json;
     }
 
-    for my $condition (@$conditions) {
-	$experimental_conditions->{$condition->{curie}} = $condition;
-    }
-    
-    return ($cr_curie, $condition_relations, $experimental_conditions);
+    return ($condition_relations);
 }
 
-
-sub generate_experimental_condition_curies {
-    my ($conditions) = @_;
-
-    my (@conditions_with_curies, @exp_cond_curies);
-    for my $condition (@$conditions) {
-	my @curie_components;
-	push @curie_components, $condition->{condition_chemical} if exists $condition->{condition_chemical};
-	push @curie_components, $condition->{condition_class} if exists $condition->{condition_class};
-	push @curie_components, $condition->{condition_statement} if exists $condition->{condition_statement};
-	my $curie = join('|', @curie_components);
-	$condition->{curie} = $curie;
-	push @conditions_with_curies, $condition;
-	push @exp_cond_curies, $curie;
-    }
-    @exp_cond_curies = sort @exp_cond_curies;
-    
-    return (\@conditions_with_curies, \@exp_cond_curies);
-}
