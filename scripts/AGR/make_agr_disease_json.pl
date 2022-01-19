@@ -43,6 +43,10 @@ my $tace = $wormbase->tace;
 my $date = AGR::get_rfc_date();
 my $alt_date = join("/", $date =~ /^(\d{4})(\d{2})(\d{2})/);
 
+if (!$chebi_map_file and !$build) {
+    die "Need to specify ChEBI OWL file location using --chebi <file>\n";
+}
+
 my $chebi_map;
 if ($chebi_map_file) {
     $chebi_map = get_chebi_map($chebi_map_file);
