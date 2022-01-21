@@ -1882,7 +1882,6 @@ sub run_make_gtf_transcript {
   my $log = $self->{log};
   my $status;
 
-  if ($self->new_genome) {system("rm -f $gtf_file")}
 
   my $version = $self->{wormbase}->get_wormbase_version;
   my $prev_version = $version - 1;
@@ -1890,7 +1889,10 @@ sub run_make_gtf_transcript {
   my $old_gtf_file = "$RNASeqGenomeDir/transcripts.${prev_version}.gtf";
   my $differences_file = "$RNASeqGenomeDir/transcripts.$version.differences";
   my $bed_file = "$RNASeqGenomeDir/differences.bed";
-    
+
+  if ($self->new_genome) {system("rm -f $gtf_file")}
+
+  
   if (-e $gtf_file && !-e $old_gtf_file) {
       $status = $self->{wormbase}->run_command("mv $gtf_file $old_gtf_file", $log);
   }
