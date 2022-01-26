@@ -176,7 +176,7 @@ while (my $int = $it->next) {
   if ($variation){
           map{$intVar{"$int"}{"$_"}++}$int->Variation_interactor;
   }
-  map {$intPhen{"$int"}{"$_"}++} $int->Interaction_phenotype;
+  map {$intPhen{"$int"}{"\"$_\""}++} $int->Interaction_phenotype;
   map { 
 	  if($intGeneType{"$int"}{"$_"}){ 
 		  $intSuppress{"$int"}++ 
