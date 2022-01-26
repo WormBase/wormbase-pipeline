@@ -176,7 +176,7 @@ while (my $int = $it->next) {
   if ($variation){
           map{$intVar{"$int"}{"$_"}++}$int->Variation_interactor;
   }
-  map {$intPhen{"$int"}{"\"$_\""}++} $int->Interaction_phenotype;
+  map {$intPhen{"$int"}{"$_"}++} $int->Interaction_phenotype;
   map { 
 	  if($intGeneType{"$int"}{"$_"}){ 
 		  $intSuppress{"$int"}++ 
@@ -334,7 +334,7 @@ while (my $int = $it->next) {
   $tab[26] ||= '-';
 
 
-  my (@phens) = map {"wormbase:$_"} sort keys %{ $intPhen{$int} };
+  my (@phens) = map {"wormbase:\"$_\""} sort keys %{ $intPhen{$int} };
 
   if(scalar @phens > 0){
 	  $tab[27] = join"|", @phens
