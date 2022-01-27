@@ -20,10 +20,6 @@ my $db = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
   -dbname => $dbname,
     ) or die "Can't connect to Database $dbname";
 
-my $seqio = (defined $outfile) 
-    ? Bio::SeqIO->new(-format => 'fasta', -file => ">$outfile")
-    : Bio::SeqIO->new(-format => 'fasta', -fh => \*STDOUT);
-
 my @scaffolds;
 foreach my $seq ( sort { $b->length <=> $a->length } @{$db->get_SliceAdaptor->fetch_all('toplevel')}) {
   my $seq_name = $seq->seq_region_name;
