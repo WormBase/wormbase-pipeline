@@ -41,6 +41,9 @@ trichinella_spiralis_prjna257433
 trichuris_suis_prjna208415
 trichuris_suis_prjna208416
 wuchereria_bancrofti_prjeb536
+test_test_test
+globodera_rostochiensis_l19prjna695196
+globodera_rostochiensis_l22prjna695196
 /;
 
 
