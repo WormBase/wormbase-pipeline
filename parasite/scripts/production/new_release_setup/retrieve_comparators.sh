@@ -9,9 +9,9 @@ capitella_teleta		\
 ciona_intestinalis		\
 crassostrea_gigas		\
 danio_rerio			\
-drosophila_melanogaster		\	
-homo_sapiens			\	
-ixodes_scapularis		\	
+drosophila_melanogaster		\
+homo_sapiens			\
+ixodes_scapularis		\
 mus_musculus			\
 nematostella_vectensis		\
 rattus_norvegicus		\

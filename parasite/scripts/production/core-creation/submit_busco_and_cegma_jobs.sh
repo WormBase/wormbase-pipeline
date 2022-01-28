@@ -9,25 +9,24 @@
 submit_busco() {
    core_db=$1
    species=$(echo $core_db | cut -d'_' -f1,2);
-   bioproject=$(echo $core_db | cut -d'_' -f3);
-   if [[ $bioproject =~ ^iss.* ]] || [[ $bioproject =~ ^v1.* ]] ;
-     then bioproject=$(echo $bioproject | cut -d'p' -f1)_$(echo p$(echo $bioproject | cut -d'p' -f2));
-   fi;
-   fasta=${PARASITE_SCRATCH}/dumps/WBPS${PARASITE_VERSION}/FTP/${species}/${bioproject^^}/${species}.${bioproject^^}.WBPS${PARASITE_VERSION}.genomic.fa.gz
+   full_bioproject=$(echo $core_db | cut -d'_' -f3);
+   bioproject=$(${WORM_CODE}/parasite/scripts/production/get_bioproject.py $core_db);
+   ftpbioproject=$(${WORM_CODE}/parasite/scripts/production/get_ftp_bioproject.py $core_db);
+   fasta=${PARASITE_FTP}/releases/WBPS${PARASITE_VERSION}/species/${species}/${ftpbioproject^^}/${species}.${ftpbioproject^^}.WBPS${PARASITE_VERSION}.genomic.fa.gz
    if [[ -f "$fasta" ]];
     then
       :
     else
-      fasta=$PARASITE_DATA/${species}_${bioproject}/${species}_${bioproject}.fa
+      fasta=$PARASITE_DATA/${species}_${full_bioproject}/${species}_${full_bioproject}.fa
       if [[ ! -f $fasta ]];
         then
-          echo "Could not found a fasta file. Exiting.";
+          echo "Could not find a fasta file. Exiting.";
       fi;
     fi;
-   echo "Submitting BUSCO job for $species"
+   #echo "Submitting BUSCO job for $species"
    MEM_MB=10000
    log=$PARASITE_SCRATCH/busco/WBPS${PARASITE_VERSION}/log
-   echo $fasta
+   #echo $fasta
    mkdir -pv $log
     bsub \
     -o $log/$species.%J.out \
@@ -39,20 +38,18 @@ submit_busco() {
 submit_busco_update_assembly() {
    core_db=$1
    species=$(echo $core_db | cut -d'_' -f1,2);
-   bioproject=$(echo $core_db | cut -d'_' -f3);
-   if [[ $bioproject =~ ^iss.* ]] || [[ $bioproject =~ ^v1.* ]] ;
-     then bioproject=$(echo $bioproject | cut -d'p' -f1)_$(echo p$(echo $bioproject | cut -d'p' -f2));
-   fi;
-   fasta=${PARASITE_SCRATCH}/dumps/WBPS${PARASITE_VERSION}/FTP/${species}/${bioproject^^}/${species}.${bioproject^^}.WBPS${PARASITE_VERSION}.genomic.fa.gz
-   echo "Submitting BUSCO job for ${species} with FASTA:${fasta}"
+   bioproject=$(${WORM_CODE}/parasite/scripts/production/get_bioproject.py $core_db);
+   ftpbioproject=$(${WORM_CODE}/parasite/scripts/production/get_ftp_bioproject.py $core_db);
+   fasta=${PARASITE_FTP}/releases/WBPS${PARASITE_VERSION}/species/${species}/${ftpbioproject^^}/${species}.${ftpbioproject^^}.WBPS${PARASITE_VERSION}.genomic.fa.gz
+   #echo "Submitting BUSCO job for ${species} with FASTA:${fasta}"
    MEM_MB=10000
    log=$PARASITE_SCRATCH/busco/WBPS${PARASITE_VERSION}/log
    mkdir -pv $log
-bsub \
-  -o $log/$species.%J.out \
-  -e $log/$species.%J.err \
-  -n 8 -M${MEM_MB} -R "select[mem > ${MEM_MB}] rusage[mem=${MEM_MB}]" \
-      bash -x $WORM_CODE/parasite/scripts/production/core-creation/busco-assembly.sh ${species}_${bioproject} $fasta $core_db
+   bsub \
+   -o $log/$species.%J.out \
+   -e $log/$species.%J.err \
+   -n 8 -M${MEM_MB} -R "select[mem > ${MEM_MB}] rusage[mem=${MEM_MB}]" \
+   bash -x $WORM_CODE/parasite/scripts/production/core-creation/busco-assembly.sh ${species}_${bioproject} $fasta $core_db
 }
 
 submit_busco_annotation() {
@@ -100,6 +97,16 @@ meta_table_has_key_pattern_core_db() {
     [ "$core_db" ] && [ 0 -lt $($PARASITE_STAGING_MYSQL $core_db -Ne "select count(*) from meta where meta_key like \"$pattern\";" ) ]
 }
 
+core_db_has_updated_annotation() {
+    core_db=$1
+    species=$(echo $core_db | cut -d'_' -f1,2);
+    full_bioproject=$(echo $core_db | cut -d'_' -f3);
+    bioproject=$(${WORM_CODE}/parasite/scripts/production/get_bioproject.py $core_db);
+    ftpbioproject=$(${WORM_CODE}/parasite/scripts/production/get_ftp_bioproject.py $core_db);
+    fasta=$PARASITE_DATA/${species}_${full_bioproject}/${species}_${full_bioproject}.fa
+    [[ -f $fasta ]]
+}
+
 if [[ $1 =~ ^\-\-?h ]]; then
    echo "Usage: $0 [species1 [species2..speciesN] ]"
    exit
@@ -131,7 +138,12 @@ if [[ -z ${ALL_CORE_DBS} ]]; then
 fi
 
 for this_core_db in ${ALL_CORE_DBS} ; do
-   core_db=$this_core_db
-   meta_table_has_key_pattern_core_db %annotation.busco3% $core_db || submit_busco_annotation $core_db
-   meta_table_has_key_pattern_core_db %assembly.busco3% $core_db || submit_busco $core_db
+  if core_db_has_updated_annotation $this_core_db;
+    then
+      submit_busco $this_core_db; echo "Running BUSCO Assembly for ${this_core_db}";
+      submit_busco_annotation $this_core_db; echo "Running BUSCO Annotation for ${this_core_db}";
+    else
+      meta_table_has_key_pattern_core_db %annotation.busco3% $this_core_db || { submit_busco_annotation $core_db; echo "Running BUSCO Annotation for $this_core_db"; }
+      meta_table_has_key_pattern_core_db %assembly.busco3% $this_core_db || { submit_busco $this_core_db; echo "Running BUSCO Assembly for $this_core_db"; }
+  fi
 done
