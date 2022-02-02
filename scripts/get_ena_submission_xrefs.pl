@@ -140,6 +140,23 @@ if ($protein_xrefs) {
   $wb->FetchData('accession2clone', \%accession2clone, $common_data_dir);
   $wb->FetchData('cds2wormpep', \%cds2wormpep, $common_data_dir);
 
+  #Add AlphaFold database lookup
+  # http://ftp.ebi.ac.uk/pub/databases/alphafold/accession_ids.txt
+  # get to disc in the build acefiles dir AlphaFold_accession_ids.txt
+  my $alphafold = $wb->acefiles . "/AlphaFold_accession_ids.txt";
+  $log->write_to("Attempting to FTP the AlphaFold data from ebi FTP\n");
+  `wget -O $alphafold ftp://ftp.ebi.ac.uk/pub/databases/alphafold/accession_ids.txt`;
+
+  # Process to an array for lookup.
+  # Use @alphafoldlu later in the script when printing out the UniProt accession and extra AlphaFold lines.                                                                                              
+  my @alphafoldlu;
+  open (my $alpha_fh, "<$alphafold") or $log->log_and_die("Could not open $alphafold for reading\n");
+  while (<$alpha_fh>) {
+      chomp;
+      my @data = split(",",$_);
+      push (@alphafoldlu,@data[0]);
+  }
+  
   open(my $table_fh, $pid_table_file)
       or $log->log_and_die("Could not open $pid_table_file for reading\n");
 
@@ -204,14 +221,18 @@ if ($protein_xrefs) {
       foreach my $db (sort keys %$h) {
         foreach my $attr_k (sort keys %{$h->{$db}}) {
           foreach my $attr_v (sort keys %{$h->{$db}->{$attr_k}}) {
-            print $acefh "Database $db $attr_k $attr_v\n";         
+	      print $acefh "Database $db $attr_k $attr_v\n";
+	      #Add the AlphaFold xref if the Uniprot accession is in the AlphaFold accessions tablke available on their FTP.
+	      if ($db =~ /UniProt/) {
+		  print $acefh "Database AlphaFold entry $attr_v\n" if (exists ($alphafoldlu[$attr_v]));
+	      }
           }
         }
       }
     }
     print $acefh "\n";
   }
-
+  
   if ($load_product_names) {
     foreach my $cds (sort keys %cds_product) {
       print $acefh "\nCDS : \"$cds\"\n";
