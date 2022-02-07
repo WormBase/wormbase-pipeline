@@ -44,6 +44,6 @@ checkout_ensembl_branch ensembl-hive version/2.6
 checkout_ensembl_branch eg-pipelines master EnsemblGenomes
 checkout_ensembl_branch parasite-static master EnsemblGenomes
 checkout_ensembl_branch eg-web-common master EnsemblGenomes
-
-
+checkout_ensembl_branch ensembl-production-imported trunk
+checkout_ensembl_branch ensembl-production-imported-private trunk
 
