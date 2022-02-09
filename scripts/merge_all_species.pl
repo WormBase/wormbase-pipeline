@@ -139,6 +139,10 @@ foreach my $spDB (values %accessors) {
     chomp $line;
     if ($line =~ /Parsing\s+file\s+(.+)/) {
       my $acefile = $1;
+      # Logs for species that haven't yet been buid on codon still contain old file paths
+      if ($ace_file =~ /^\/nfs\/panda\/ensemblgenomes\/wormbase(.+)$/) {
+	  $ace_file = $ENV{'BUILD_HOME'} . $1;
+      }
       # we only want the BLAT files and not duplicate files
       if ($acefile =~ /\/BLAT\// && !grep /$acefile/, @acelist) {
 	if (-e $acefile) {
