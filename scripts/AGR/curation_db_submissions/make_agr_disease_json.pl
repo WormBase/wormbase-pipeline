@@ -1,5 +1,4 @@
 #!/usr/bin/env perl
-# Note! This script is used both by the WormBase build (autoace.pl -ontologies), and the AGR data dump, so if you make changes test on both workflows.
 
 use strict;
 use Storable;	
@@ -14,7 +13,7 @@ use Modules::AGR;
 use lib "$ENV{CVS_DIR}/ONTOLOGY";
 use GAF;
 
-my ($debug, $test, $verbose, $store, $wormbase, $acedbpath, $ws_version, $agm_out, $allele_out, $gene_out, $cr_out, $exp_out);
+my ($debug, $test, $verbose, $store, $wormbase, $acedbpath, $ws_version, $outfile);
 
 GetOptions (
     'debug=s'      => \$debug,
@@ -22,11 +21,7 @@ GetOptions (
     'verbose'      => \$verbose,
     'store:s'      => \$store,
     'database:s'   => \$acedbpath,
-    'agm_out:s'    => \$agm_out,
-    'gene_out:s'   => \$gene_out,
-    'allele_out:s' => \$allele_out,
-    'cr_out:s'     => \$cr_out,
-    'exp_out:s'    => \$exp_out,
+    'outfile:s'    => \$outfile,
     'wsversion=s'  => \$ws_version,
 )||die("unknown command line option: $@\n");
 
@@ -45,11 +40,7 @@ my $alt_date = join("/", $date =~ /^(\d{4})(\d{2})(\d{2})/);
 $acedbpath = $wormbase->autoace unless $acedbpath;
 $ws_version = $wormbase->get_wormbase_version_name unless $ws_version;
 
-$agm_out = "./wormbase.agm_disease_association.${ws_version}.json" unless defined $agm_out;
-$gene_out = "./wormbase.gene_disease_association.${ws_version}.json" unless defined $gene_out;
-$allele_out = "./wormbase.allele_disease_association.${ws_version}.json" unless defined $allele_out;
-$cr_out = "./wormbase.condition_relations.${ws_version}.json" unless defined $cr_out;
-$exp_out = "./wormbase.experimental_conditions.${ws_version}.json" unless defined $exp_out;
+$outfile = "./wormbase.disease_association.${ws_version}.json" unless defined $outfile;
 
 
 my %go2eco = (
@@ -159,7 +150,7 @@ while( my $obj = $it->next) {
 	my $annot = {
 	    mod_id               => $obj->name,
 	    object               => $obj->Disease_term->name,
-	    data_provider        => 'WB',
+	    data_provider        => ['WB'],
 	    date_last_modified   => $evi_date,
 	    evidence_codes       => \@evi_codes,
 	    reference            => $paper,
@@ -256,9 +247,12 @@ while( my $obj = $it->next) {
 
 $db->close;
 
-print_json($agm_out, \@agm_annots);
-print_json($gene_out, \@gene_annots);
-print_json($allele_out, \@allele_annots);
+my $all_annots = {};
+$all_annots->{disease_allele_ingest_set} = \@allele_annots;
+$all_annots->{disease_gene_ingest_set} = \@gene_annots;
+$all_annots->{disease_agm_ingest_set} = \@agm_annots;
+
+print_json($outfile, $all_annots);
     
 exit(0);
 
@@ -316,12 +310,12 @@ sub get_condition_relations {
         $condition_relation_type = 'induced_by';
         my @inducing_chemicals = map {{
             condition_statement => 'chemical treatment:' . $_->Public_name->name,
-            condition_chemical => {curie => get_chemical_ontology_id($_)},
-            condition_class => {curie => $zeco{'chemical treatment'}},
+            condition_chemical => get_chemical_ontology_id($_),
+            condition_class => $zeco{'chemical treatment'},
             }} $obj->Inducing_chemical;
         my @inducing_agents     = map {{
             condition_statement => 'experimental conditions:' . $_->name,
-            condition_class => {curie => $zeco{'experimental conditions'}}
+            condition_class => $zeco{'experimental conditions'}
             }} $obj->Inducing_agent;
         @inducers = (@inducing_chemicals, @inducing_agents);
         push @$conditions, @inducers;
@@ -338,12 +332,12 @@ sub get_condition_relations {
 	}
         my @modifying_molecules = map {{
             condition_statement => 'chemical treatment:' . $_->Public_name->name,
-            condition_chemical => {curie => get_chemical_ontology_id($_)},
-            condition_class => {curie => $zeco{'chemical treatment'}}
+            condition_chemical => get_chemical_ontology_id($_),
+            condition_class => $zeco{'chemical treatment'}
             }} $obj->Modifier_molecule;
         my @other_modifiers = map {{
 	    condition_statement => 'experimental conditions:' . $_->name,
-	    condition_class => {curie => $zeco{'experimental conditions'}}
+	    condition_class => $zeco{'experimental conditions'}
 	    }} $obj->Other_modifier;
         @modifiers = (@modifying_molecules, @other_modifiers);
         push @$conditions, @modifiers;
