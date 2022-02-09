@@ -73,8 +73,8 @@ foreach my $spDB (values %accessors) {
 	    my $acefile = $1;
 	    # Logs for species that haven't yet been buid on codon still contain old file paths
 	    # We only want to load these files in this script for WS284 as all other files have been loaded
-	    if ($ace_file =~ /^\/nfs\/panda\/ensemblgenomes\/wormbase(.+)$/) {
-		$ace_file = $ENV{'BUILD_HOME'} . $1;
+	    if ($acefile =~ /^\/nfs\/panda\/ensemblgenomes\/wormbase(.+)$/) {
+		$acefile = $ENV{'BUILD_HOME'} . $1;
 		# we only want the BLAT files and not duplicate files
 		if ($acefile =~ /\/BLAT\// && !grep /$acefile/, @acelist) {
 		    if (-e $acefile) {
