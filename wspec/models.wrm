@@ -3643,44 +3643,44 @@
                      Forward_genetics Text #Evidence  // Capture the basis of the experiment that isolated ///LinkML Allele:generation_method:transform
                      Reverse_genetics Text #Evidence  // the allele. [040206 krb] ///LinkML Allele:generation_method:transform
                      Transposon_excision ?Transposon_family ///LinkML Allele:generation_method:transform
-                     Derived_from_variation ?Variation XREF Derivative ///LinkML Variation
-                     Derivative ?Variation XREF Derived_from_variation
+                     Derived_from_variation ?Variation XREF Derivative ///LinkML Variation # CONVERT TO PUBLIC NOTE
+                     Derivative ?Variation XREF Derived_from_variation # CONVERT TO PUBLIC NOTE
                      Derived_from_construct ?Construct XREF Engineered_variation ///LinkML Allele:contains_construct:direct 
-           Genetics Gene_class ?Gene_class XREF Variation  ///Cleanup?
-                    Mating_efficiency Male UNIQUE ME0_Mating_not_successful #Evidence ///Cleanup?
-                                                  ME1_Mating_rarely_successful #Evidence ///Cleanup?
-                                                  ME2_Mating_usually_successful #Evidence ///Cleanup?
-                                                  ME3_Mating_always_successful #Evidence ///Cleanup?
-                                      Hermaphrodite UNIQUE HME0_Mating_not_successful #Evidence ///Cleanup?
-                                                           HME1_Mating_rarely_successful #Evidence ///Cleanup?
-                                                           HME2_Mating_usually_successful #Evidence ///Cleanup?
-                                                           HME3_Mating_always_successful #Evidence ///Cleanup?
-                    Map ?Map XREF Variation #Map_position ///LinkML Allele:AlleleToGeneRelations:map
-                    Interpolated_map_position UNIQUE ?Map UNIQUE Float ///LinkML Allele:AlleleToGeneRelations:map
-                    Mapping_data 2_point ?2_point_data ///LinkML Allele:AlleleToGeneRelations:map
-                                 Multi_point ?Multi_pt_data ///LinkML Allele:AlleleToGeneRelations:map
-                                 Pos_neg_data ?Pos_neg_data ///LinkML Allele:AlleleToGeneRelations:map
+           Genetics Gene_class ?Gene_class XREF Variation  ///Cleanup # Email Chris about it
+                    Mating_efficiency Male UNIQUE ME0_Mating_not_successful #Evidence ///Cleanup # 0 objects #DONE
+                                                  ME1_Mating_rarely_successful #Evidence ///Cleanup # 0 objects #DONE
+                                                  ME2_Mating_usually_successful #Evidence ///Cleanup # 0 objects #DONE
+                                                  ME3_Mating_always_successful #Evidence ///Cleanup # 0 objects #DONE
+                                      Hermaphrodite UNIQUE HME0_Mating_not_successful #Evidence ///Cleanup # 0 objects #DONE
+                                                           HME1_Mating_rarely_successful #Evidence ///Cleanup # 0 objects #DONE
+                                                           HME2_Mating_usually_successful #Evidence ///Cleanup # 0 objects #DONE
+                                                           HME3_Mating_always_successful #Evidence ///Cleanup # 0 objects #DONE
+                    Map ?Map XREF Variation #Map_position ///LinkML Allele:AlleleToGeneRelations:map #CONSIDER
+                    Interpolated_map_position UNIQUE ?Map UNIQUE Float ///LinkML Allele:AlleleToGeneRelations:map #CONSIDER
+                    Mapping_data 2_point ?2_point_data ///LinkML Allele:AlleleToGeneRelations:map #CONSIDER
+                                 Multi_point ?Multi_pt_data ///LinkML Allele:AlleleToGeneRelations:map #CONSIDER
+                                 Pos_neg_data ?Pos_neg_data ///LinkML Allele:AlleleToGeneRelations:map #CONSIDER
                                  // above three are for mapping on its own behalf
-                                 In_2_point ?2_point_data ///LinkML Allele:AlleleToGeneRelations:map
-                                 In_multi_point ?Multi_pt_data ///LinkML Allele:AlleleToGeneRelations:map
-                                 In_pos_neg_data ?Pos_neg_data ///LinkML Allele:AlleleToGeneRelations:map
+                                 In_2_point ?2_point_data ///LinkML Allele:AlleleToGeneRelations:map #CONSIDER
+                                 In_multi_point ?Multi_pt_data ///LinkML Allele:AlleleToGeneRelations:map #CONSIDER
+                                 In_pos_neg_data ?Pos_neg_data ///LinkML Allele:AlleleToGeneRelations:map #CONSIDER
                                  // these are for when the locus is mapped
-                    Marked_rearrangement ?Rearrangement XREF By_variation 
-           Description Phenotype ?Phenotype XREF Variation #Phenotype_info ///LinkML Phenotype
-                       Phenotype_remark ?Text #Evidence ///LinkML Phenotype
-                       Phenotype_not_observed ?Phenotype XREF Not_in_Variation #Phenotype_info  //added by Wen to separate Not phenotype from real phenotypes ///LinkML Phenotype
-           Disease_info Models_disease ?DO_term XREF Disease_model_variation ///LinkML Disease
-                        Modifies_disease ?DO_term XREF Disease_modifier_variation //New tag ///LinkML Disease
-                        Models_disease_in_annotation ?Disease_model_annotation XREF Variation //New tag ///LinkML Disease
-                        Modifies_disease_in_annotation ?Disease_model_annotation XREF Modifier_variation //New tag ///LinkML Disease
-           Reference ?Paper XREF Allele  ///LinkML Allele:associated_references:direct
-           Remark ?Text #Evidence ///LinkML Allele:associated_notes:direct
-           Method UNIQUE ?Method ///LinkML Allele:in_collection:transform
-           Supporting_data Movie ?Movie XREF Variation #Evidence  //Carol [060421 ar2]  ///LinkML Core:Video?
+                    Marked_rearrangement ?Rearrangement XREF By_variation ///LinkML for variant- ignore it, do in rearrangement #DONE
+           Description Phenotype ?Phenotype XREF Variation #Phenotype_info ///LinkML Phenotype #DONE
+                       Phenotype_remark ?Text #Evidence ///LinkML Phenotype #DONE
+                       Phenotype_not_observed ?Phenotype XREF Not_in_Variation #Phenotype_info  //added by Wen to separate Not phenotype from real phenotypes ///LinkML Phenotype #DONE
+           Disease_info Models_disease ?DO_term XREF Disease_model_variation ///LinkML Disease #DONE
+                        Modifies_disease ?DO_term XREF Disease_modifier_variation //New tag ///LinkML Disease #DONE
+                        Models_disease_in_annotation ?Disease_model_annotation XREF Variation //New tag ///LinkML Disease #DONE
+                        Modifies_disease_in_annotation ?Disease_model_annotation XREF Modifier_variation //New tag ///LinkML Disease #DONE
+           Reference ?Paper XREF Allele  ///LinkML Allele:associated_references:direct #DONE
+           Remark ?Text #Evidence ///LinkML Allele:associated_notes:direct #DONE free-text, private
+           Method UNIQUE ?Method ///LinkML Allele:in_collection:transform #DONE 
+           Supporting_data Movie ?Movie XREF Variation #Evidence  //Carol [060421 ar2]  /// Deprecate - movies should be attached to phenotype? #DONE
 
 
-?Variation_name Other_name_for ?Variation XREF Other_name // main reason for this class ///LinkML Allele:synonym:direct
-                Public_name_for ?Variation XREF Public_name // the main name for a gene ///LinkML Allele:symbol:direct
+?Variation_name Other_name_for ?Variation XREF Other_name // main reason for this class ///LinkML Allele:synonym:direct #DONE
+                Public_name_for ?Variation XREF Public_name // the main name for a gene ///LinkML Allele:symbol:direct  #DONE 
 
 
 // hash to contain detailed changes caused by mutations [2006-02-17 ar2]
