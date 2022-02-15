@@ -148,7 +148,7 @@ while( my $obj = $it->next) {
 	}
 	
 	my $annot = {
-	    mod_id               => $obj->name,
+	    mod_entity_id        => $obj->name,
 	    object               => $obj->Disease_term->name,
 	    data_provider        => ['WB'],
 	    date_last_modified   => $evi_date,
@@ -157,7 +157,11 @@ while( my $obj = $it->next) {
 	};
 	$annot->{modified_by} = 'WB:' . $obj->Curator_confirmed->name if $obj->Curator_confirmed;
 	$annot->{genetic_sex} = $obj->Genetic_sex->name if $obj->Genetic_sex;
-	$annot->{disease_annotation_summary} = $obj->Disease_model_description->name if $obj->Disease_model_description; # or could be disease_annotation_note
+	$annot->{related_notes} = [{
+	    note_type => 'disease_summary',
+	    private   => JSON::false,
+	    free_text => $obj->Disease_model_description->name
+	}] if $obj->Disease_model_description;
 	
 	unless ($modifier eq 'no_modifier') {
 	    $annot->{disease_genetic_modifier} = $modifier;
@@ -230,7 +234,6 @@ while( my $obj = $it->next) {
 
 	my $condition_relations = get_condition_relations($obj);
 	$annot->{conditionRelations} = $condition_relations if @$condition_relations;
-
 	
 	if ($obj_type eq 'gene') {
 	    push @gene_annots, $annot;
@@ -263,7 +266,7 @@ sub print_json {
 
     open(my $out_fh, ">$outfile") or die("cannot open $outfile : $!\n");  
     my $json_obj = JSON->new;
-    my $string = $json_obj->allow_nonref->canonical->pretty->encode([$data]);
+    my $string = $json_obj->allow_nonref->canonical->pretty->encode($data);
     print $out_fh $string;
     close $out_fh;
 
