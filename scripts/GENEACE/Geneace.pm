@@ -298,7 +298,7 @@ sub gene_id_status {
 sub get_last_gene_id {
 
   my $db = get_geneace_db_handle();
-  my @gene_ids = $db->fetch('Gene'=>'*');
+  my @gene_ids = $db->fetch('Gene'=>'WBGene*');
   my $last_gene_id_num = $gene_ids[-1];
   $last_gene_id_num =~ s/WBGene0+//;
   return $last_gene_id_num;
