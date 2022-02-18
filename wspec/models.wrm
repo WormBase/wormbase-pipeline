@@ -3605,7 +3605,7 @@
                   Author ?Author // use Person when known, else use Author ///LinkML Allele:Notes_on_origin?:transform
                   Person ?Person // ///LinkML Allele:Notes_on_origin?:transform
                   Analysis ?Analysis ///LinkML Allele:Notes_on_origin?:transform
-                  Corresponding_transgene UNIQUE ?Transgene XREF Corresponding_variation  ///LinkML Allele:contains_construct:transform
+                  Corresponding_transgene UNIQUE ?Transgene XREF Corresponding_variation  ///LinkML Allele:contains_construct:transform //Not in geneace
                   Production_method CRISPR_Cas9 ///LinkML Allele:generation_method:transform
                                     Homologous_recombination //Homologous_recombination ///LinkML Allele:generation_method:transform
                                     MosSci ///LinkML Allele:generation_method:transform
@@ -3614,19 +3614,19 @@
                                     TALENs ///LinkML Allele:generation_method:transform
                                     ZFNNHEJ_repair //Zinc-finger nuclease ///LinkML Allele:generation_method:transform
                                     ZFNHR_repair ///LinkML Allele:generation_method:transform
-                  Expr_pattern ?Expr_pattern XREF Variation #Evidence
-                  DB_info Database ?Database ?Database_field UNIQUE ?Text //to link out to KO pages ar2 02-DEC-05 - convert to curie and fit to XREF
-                  KO_consortium_allele   // North American knockout consortium ///Cleanup LinkML Allele:in_collection:transform
-                  NBP_allele  // Japanese knockout consortium ///Cleanup LinkML Allele:in_collection:transform
-                  NemaGENETAG_consortium_allele //NemaGENETAG consortium allele - Nektarios et al ///Cleanup LinkML Allele:in_collection:transform 
-                  Detection_method Text ///Cleanup? # Convert to note
-                  Positive_clone ?Clone XREF Positive_variation #Evidence # allele mapped to a clone only Paul todo
+                  Expr_pattern ?Expr_pattern XREF Variation #Evidence ///Will be resolved by Expression working group
+                  DB_info Database ?Database ?Database_field UNIQUE ?Text ///Convert to curie and fits cross references.
+                  KO_consortium_allele   // North American knockout consortium ///Cleanup LinkML Allele:in_collection:transform - Redundant with Method
+                  NBP_allele  // Japanese knockout consortium ///Cleanup LinkML Allele:in_collection:transform  - Redundant with Method
+                  NemaGENETAG_consortium_allele //NemaGENETAG consortium allele - Nektarios et al ///Cleanup LinkML Allele:in_collection:transform  - Redundant with Method
+                  Detection_method Text ///Convert to General Note:
+                  Positive_clone ?Clone XREF Positive_variation #Evidence ///Deprecate or convert to remark.
                   Nature_of_variation UNIQUE Polymorphic     ///Deprecate - not used   
                                              Synthetic      ///Deprecate - not used    
-                  History Merged_into UNIQUE ?Variation XREF Acquires_merge #DONE ID minting
-                          Acquires_merge ?Variation XREF Merged_into #DONE ID minting
-                          Split_from UNIQUE ?Variation XREF Split_into #DONE ID minting
-                          Split_into ?Variation XREF Split_from #DONE ID minting
+                  History Merged_into UNIQUE ?Variation XREF Acquires_merge
+                          Acquires_merge ?Variation XREF Merged_into
+                          Split_from UNIQUE ?Variation XREF Split_into
+                          Split_into ?Variation XREF Split_from
                   Status UNIQUE Live #Evidence ///LinkML Allele:database_status:map #DONE
                                 Suppressed #Evidence ///LinkML Allele:database_status:map #DONE
                                 Dead #Evidence ///LinkML Allele:database_status:map #DONE
