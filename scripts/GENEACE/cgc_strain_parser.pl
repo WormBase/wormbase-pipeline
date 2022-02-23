@@ -11,8 +11,7 @@
 # Last updated on: $Date: 2015-05-05 11:38:21 $
 
 use strict;
-#use lib $ENV{'CVS_DIR'};
-use lib $ENV{'CVS_DIRP'}; 
+use lib $ENV{'CVS_DIR'};
 use lib "$ENV{'CVS_DIR'}/NAMEDB/lib";
 #use lib '/nfs/users/nfs_g/gw3/Nameserver-API';
 
