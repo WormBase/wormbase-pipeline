@@ -11,7 +11,8 @@
 # Last updated on: $Date: 2015-05-05 11:38:21 $
 
 use strict;
-use lib $ENV{'CVS_DIR'};
+#use lib $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIRP'}; 
 use lib "$ENV{'CVS_DIR'}/NAMEDB/lib";
 #use lib '/nfs/users/nfs_g/gw3/Nameserver-API';
 
@@ -51,7 +52,7 @@ GetOptions (
 &usage if ($help);
 my $user = `whoami`; chomp $user;
 if ($user ne "wormpub"){
-  die("You have to be wormpub to run this script!\n");
+    $user = "wormbase";
 }
 
 if ( $store ) {
@@ -100,7 +101,6 @@ my $allelefluff             = "$path/allele_public_name.$rundate.ace";
 my $transgene_report        = "$path/transgene_report.$rundate.txt";
 
 open(STRAIN,       ">$current_strain_ace") || die "cant create output file $current_strain_ace\n";
-open(DELETE_STRAIN,">$delete_strain_ace") || die "can't create $delete_strain_ace\n";
 open(GENE2ALLELE,  ">$gene_allele_connections") || die "\nCan't open $gene_allele_connections\n";
 open(NEWGENES,     ">$potential_new_genes") || die "\nCan't open $potential_new_genes\n";
 open(ALLELEFLUFF,  ">$allelefluff") || die "\nCan't open $allelefluff\n";
@@ -116,7 +116,7 @@ print NEWGENES "// Some of these gene names might already exist if they are from
 ############################################
 
 # use following record separator
-$/ = "--------------------";
+$/ = "-------------------------------------------------------------------";
 
 my $big_counter=0;
 
@@ -126,7 +126,7 @@ my $strain_count = `grep Strain: $input_file | wc -l`;
 open(INPUT, $input_file) || die "Can't open inputfile!"; 
 
 # setup the nameserver
-my $db = NameDB_handler->new($wormbase, $test);
+#my $db = NameDB_handler->new($wormbase, $test);
 my $geneAceDB = Ace->connect(-path => $geneace_dir) or die Ace->error;
 
 while(<INPUT>){
@@ -147,15 +147,25 @@ while(<INPUT>){
 
   $strain =~ s/\s+$//g;
   if ($strain){
-    print STRAIN "\n\nStrain : \"$strain\"\n";
-    print DELETE_STRAIN "\n\nStrain : \"$strain\"\n";
+      #need to reimplement a WBStrain lookup
+      # Strain : "WBStrain00000005"
+      # Public_name "AA1"
+      my @Strain_obj = $geneAceDB->fetch(-query => "FIND Strain where Public_name = $strain");
+      unless (defined $Strain_obj[0]) {
+	  print STRAIN "\n\nStrain : \"$strain\"\n";
+	  print STRAIN "Public_name \"$strain\"\n";
+      }
+      else {
+	  my $wbstrain = $Strain_obj[0]->name;
+	  print STRAIN "\n\nStrain : \"$wbstrain\"\n";
+	  print STRAIN "Public_name \"$strain\"\n";
+      }
   }
   m/\s+Species: (.+)Genotype:/;
   my $species = $1;
   $species =~ s/\s+$//g;
   if ($strain){
     print STRAIN "Species \"$species\"\n";
-    print DELETE_STRAIN  "Species \"$species\"\n";
   }
 
   m/Genotype: (.*?)Description:/;
@@ -164,7 +174,6 @@ while(<INPUT>){
   $genotype =~ s/\s{2,}/ /g; # condense whitespace to single gap between words
   $genotype =~ s/\s+$//g; # remove trailing whitespace
   print STRAIN "Genotype \"$genotype\"\n" unless ($genotype eq "");
-  print DELETE_STRAIN  "-D Genotype \n" unless ($genotype eq "");
 
   m/Description: (.*?)Mutagen:/;
   my $description = $1;
@@ -183,7 +192,6 @@ while(<INPUT>){
       $description =~ s/\s*Attribution: .* Paper_evidence WBPaper\d+//;
   }
   print STRAIN "Remark \"$description\" Inferred_automatically \"From CGC strain data\"\n" unless ($description eq '');
-  print DELETE_STRAIN  "-D Remark \n" unless ($description eq ""); 
 
   # find simple locus allele combinations e.g. spt-3(hc184)
   my $reg_exp=qr/^([Ca-z\-]{3,6}\-\d+\.{0,1}\d*)\(([a-z]{1,2}\d+)\)/;
@@ -208,7 +216,6 @@ while(<INPUT>){
   while($genotype =~ m/$reg_exp/){
     my $rearrangement = $1;
     print STRAIN "Rearrangement \"$rearrangement\"\n";
-    print DELETE_STRAIN  "-D Rearrangement \"$rearrangement\"\n";
     $genotype =~ s/$reg_exp//;
   }
 
@@ -219,8 +226,6 @@ while(<INPUT>){
 
     if (exists $Transgene_ids{$transgene}) {
       print STRAIN "Transgene \"$Transgene_ids{$transgene}\"\n";
-      # delete all transgene references next time round, for safety
-      print DELETE_STRAIN  "-D Transgene\n";
     } else {
       print TRANSGENEREPORT "\nTransgene : $transgene\n";
       print TRANSGENEREPORT "Strain : $strain\n";
@@ -275,7 +280,6 @@ while(<INPUT>){
     # can't use check_details subroutine as there is no allele name to pass so add Strain->Gene connections here
     if (exists $Gene_info{$gene}{'Gene'}){
       print STRAIN "Gene \"$Gene_info{$gene}{'Gene'}\"\n";
-      print DELETE_STRAIN  "-D Gene \"$Gene_info{$gene}{'Gene'}\"\n";
     }
     $genotype =~ s/[Ca-z\-]{3,6}\-\d+//;
   }
@@ -285,16 +289,17 @@ while(<INPUT>){
   $mutagen =~ s/\s{2,}/ /g;
   $mutagen =~ s/\s+$//g;
   print STRAIN "Mutagen \"$mutagen\"\n" unless ($mutagen eq '');
-  print DELETE_STRAIN  "-D Mutagen \"$mutagen\"\n" unless ($mutagen eq '');
 
-
-  m/Outcrossed: (.*?)Reference:/;
+  #Reference has been removed from the file??                                                                                        
+  #  m/Outcrossed: (.*?)Reference:/;
+  m/Outcrossed: (.*?)Made by:/;
   my $outcrossed = $1;
   $outcrossed =~ s/\s{2,}/ /g;
   $outcrossed =~ s/\s+$//g;
-  print STRAIN "Outcrossed\t\"$outcrossed\"\n" unless ($outcrossed eq "");
-  print DELETE_STRAIN  "-D Outcrossed\n" unless ($outcrossed eq "");
-
+  #exclude the 'x' only as it is ambiguous
+  unless  ($outcrossed =~ /^x$/){
+      print STRAIN "Outcrossed\t\"$outcrossed\"\n" unless ($outcrossed eq "");
+  }
   my $made_by;
   m/Made by: (.*?)Received:/;
   $made_by = $1;
@@ -305,7 +310,6 @@ while(<INPUT>){
 
   if ($wperson =~ (/WBPerson\d{1,5}/)) {    
     print STRAIN "Made_by $wperson\n";
-    print DELETE_STRAIN  "-D Made_by $wperson\n";
   }
   else {
     print STRAIN "Remark \"Made_by: $made_by\" CGC_data_submission\n" if $made_by;
@@ -317,27 +321,23 @@ while(<INPUT>){
     my @dates = split(/\//,$1);
     if($dates[2] > 60){
       print STRAIN "CGC_received \"19$dates[2]-$dates[0]-$dates[1]\"\n";
-      print DELETE_STRAIN  "-D CGC_received \"19$dates[2]-$dates[0]-$dates[1]\"\n";
     }
     else{
       print STRAIN "CGC_received \"20$dates[2]-$dates[0]-$dates[1]\"\n";
-      print DELETE_STRAIN  "-D CGC_received \"20$dates[2]-$dates[0]-$dates[1]\"\n";
     }
   }
 
   # always add CGC lab details
   if ($strain){
     print STRAIN "Location \"CGC\"\n";
-    print DELETE_STRAIN  "-D Location \"CGC\"\n";
   }
-
+  
 }
 
 $geneAceDB->close();
 
 close(INPUT);
 close(STRAIN);
-close(DELETE_STRAIN);
 close(GENE2ALLELE);
 close(NEWGENES);
 close(ALLELEFLUFF);
@@ -383,8 +383,12 @@ if($load){
 }
 
 print "\nThe script has run to completeion and is now going to end.  Goodnight\n\n";
-
-$log->mail('maryann.tuli@wormbase.org');
+if ($debug) {
+$log->mail('$debug@wormbase.org');
+}
+else {
+$log->mail('hinxton@wormbase.org');
+}
 $log->mail;
 exit(0);
 
@@ -409,21 +413,17 @@ sub _getVariation_byOtherName {
 sub _get_variationId {
     my ($id)=@_;
 
-    my $var;
-    my $var_ref = $db->find_variations($id);
-    foreach my $hash (@{$var}) {
-      if ($hash->{'variation/name'} eq '$id') {$var = $hash->{'variation/id'}}
+    my @var = $geneAceDB->fetch(-query => "Find Variation_name $id; follow Public_name_for");
+    if (defined @var[0]) {
+	my $var = @var[0]->name;
+	print STDERR "found: $id -> $var\n" if ($var && $verbose);
+	return $var if $var;
     }
-
-    print STDERR "found: $id -> $var\n" if ($var && $verbose);
-
-    return $var if $var;
-
-    my ($new_ids, $batch_id) = $db->new_variations([$id]);
-    my ($new_id) = keys %{$new_ids};
-    print STDERR "found: $id -> $new_id\n" if $verbose;
-
-    return $new_id;
+    else {
+	my $new_id = $id."_new}";
+	print STDERR "var not-found: $id -> $new_id\n" if $verbose;
+	return $new_id;
+    }
 }
 
 ######################################################################
@@ -452,7 +452,6 @@ sub check_details {
   # First thing is to make Strain->Allele connection (this assumes that the allele name
   # will link to a valid ?Allele object)
   print STRAIN "Variation \"$variationId\"\n";
-  print DELETE_STRAIN  "-D Variation \"$variationId\"\n";  
 
   # if the gene name corresponds to a valid Gene object, add a Gene->Allele and Strain->Gene connections
   if(defined $gene and defined($Gene_info{$gene}{'Gene'})){
@@ -460,7 +459,6 @@ sub check_details {
     print GENE2ALLELE "Allele $variationId Inferred_automatically \"From strain object: $strain\"\n\n";
 
     print STRAIN "Gene \"$Gene_info{$gene}{'Gene'}\"\n";
-    print DELETE_STRAIN "-D Gene \"$Gene_info{$gene}{'Gene'}\"\n";  
   }
 
   # otherwise we might need to make a new Gene object (to be checked by curator)
