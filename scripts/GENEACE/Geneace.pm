@@ -12,7 +12,7 @@ use strict;
 use Data::Dumper;
 
 # constant stuff (hopefully not modified anywhere)
-my $root        = '/nfs/production/panda/ensemblgenomes/wormbase/DATABASES';
+my $root        = '/nfs/production/flicek/wormbase/wb/DATABASES';
 my $def_dir     = ${root}.'/geneace/wquery'; # location of table-maker definitions
 my $curr_db     = ${root}.'/current_DB';
 my $geneace_dir = ${root}.'/geneace';
@@ -50,7 +50,7 @@ sub transgene_ids {
 
   my $url = 'http://tazendra.caltech.edu/~postgres/cgi-bin/referenceform.cgi';
   my $ua = LWP::UserAgent->new;
-  $ua->proxy('http','http://wwwcache.sanger.ac.uk:3128');
+#  $ua->proxy('http','http://wwwcache.sanger.ac.uk:3128');
   $ua->credentials('tazendra.caltech.edu:80','Restricted Files','wormbase', $pgpasswd);
 
   my $response = $ua->post($url,{'pgcommand' =>'SELECT trp_publicname.trp_publicname, trp_name.trp_name FROM trp_name, trp_publicname WHERE trp_publicname.joinkey=trp_name.joinkey','perpage' => 'all','action' => 'Pg !'});
@@ -298,7 +298,7 @@ sub gene_id_status {
 sub get_last_gene_id {
 
   my $db = get_geneace_db_handle();
-  my @gene_ids = $db->fetch('Gene'=>'*');
+  my @gene_ids = $db->fetch('Gene'=>'WBGene*');
   my $last_gene_id_num = $gene_ids[-1];
   $last_gene_id_num =~ s/WBGene0+//;
   return $last_gene_id_num;

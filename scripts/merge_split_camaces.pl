@@ -27,6 +27,7 @@ my $curation;              # create a single curation database.
 my $merge;                 # Merging databases
 my $split;                 # Splitting databases
 my $update;                # Update current database
+my $announce;              # Announce that you are happy that the process is complete
 my $debug;                 # Debug option
 my $help;                  # Help menu
 my $WS_version;            # Removes final wormsrv2 dependancy.
@@ -54,7 +55,8 @@ my $logfile;
 	      "curation"      => \$curation,
 	      "merge"         => \$merge,
 	      "split"         => \$split,
-	      "update"        => \$update,
+              "update"        => \$update,
+              "announce"      => \$announce,
 	      "help"          => \$help,
 	      "debug:s"       => \$debug,
               "logfile:s"     => \$logfile,
@@ -107,20 +109,22 @@ my @databases; #array to store what splits are to be merged.
 
 
 #Are you trying to do some work?
-unless ($split || $merge || $update || $names ) {
+unless ($split || $merge || $update || $names || $announce) {
     $log->log_and_die("ERROR you havent specified a main function split/merge/update!!!\n");
   }
 
 # Paths to the directories should not have a / at the end.
 if ($altblat) {
-  if ($altblat =~ /\/$/) {
-    $log->log_and_die("ERROR: your path names end in a / loading will fail silently!!!\n");
-  }
+    if ($altblat =~ /\/$/) {
+	$altblat =~	s/\/$//;
+	$log->log_and_die("ERROR: your path names end in a / so loading wound have failed silently!!!\n");
+    }
 }
 if ($altacefiles) {
-  if ($altacefiles =~ /\/$/) {
-    $log->log_and_die("ERROR: your path names end in a / loading will fail silently!!!\n");
-  }
+    if ($altacefiles =~ /\/$/) {
+	$altacefiles =~ s/\/$//;
+	$log->log_and_die("ERROR: your path names end in a / so loading wound have failed silently!!!\n");
+    }
 }
 
 # directory paths
@@ -266,6 +270,10 @@ if ($split) {
   print "Phase 3 finished. All ~wormpub split curation databases for $species can now be used\n\nCheck all TransferDB log files for \"ended SUCCESSFULLY\"\n" if ($debug);
 }
 
+if ($announce) {
+    $log->write_to ("\nAll Phases complete, you are free to use your databases\n");
+    print "All Phases complete, you are free to use your databases\n" if ($debug);
+}
 
 ############################################################################
 ## Create_public_name data only needed if not running a standard splitses ##
@@ -578,7 +586,7 @@ sub load_curation_data {
     }
     push (@files,
 	  "$acefiles/sorted_exons.ace",
-	  "$wormpub/wormbase/autoace_config/misc_autoace_methods.ace",
+	  $ENV{'WORM_GIT'}."/wormbase-pipeline/autoace_config/misc_autoace_methods.ace",
 	  "$acefiles/feature_SL1.ace",
 	  "$acefiles/feature_SL2.ace",
 	  "$acefiles/feature_polyA_signal_sequence.ace",
@@ -637,7 +645,7 @@ sub load_curation_data {
 	  "$wormpub/BUILD_DATA/MISC_DYNAMIC/misc_RNASeq_hits_${species}.ace",
 	  "$acefiles/RNASeq_expression_levels_${species}.ace",
 	  "$wormpub/BUILD_DATA/MISC_DYNAMIC/RNASeq_splice_${species}_high_qual.ace_WS${WS_version}",
-	  "$wormpub/wormbase/autoace_config/misc_autoace_methods.ace",
+	  $ENV{'WORM_GIT'}."/wormbase-pipeline/autoace_config/misc_autoace_methods.ace",
 	  "$acefiles/misc_DB_remark.ace",
 	  "$acefiles/${species}_blastx.ace",
 	  "$acefiles/${species}_blastp.ace",
@@ -719,7 +727,7 @@ sub load_curation_data {
 		  "$blat_dir/virtual_objects.$species.ci.OST.$species.ace",
 		  "$blat_dir/virtual_objects.$species.ci.RST.$species.ace",
 		  "$blat_dir/virtual_objects.$species.ci.ncRNA.$species.ace",
-		  "$blat_dir/virtual_objects.$species.ci.elegans_Nanopore.ace",
+		  "$blat_dir/virtual_objects.$species.ci.elegans.Nanopore.elegans.ace",
 		  "$blat_dir/$species.blat.${species}_OST.ace",
 		  "$blat_dir/$species.blat.${species}_RST.ace",
 		  "$blat_dir/$species.blat.${species}_ncRNA.ace",

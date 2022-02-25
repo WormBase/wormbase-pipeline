@@ -1137,6 +1137,57 @@ sub process_strain_class {
   my $straincount = scalar(@strains);
   my $laststrain = $strains[-1]->name;
   unless ($laststrain =~ "WBStrain000$straincount") {print LOG "The last WBStrain ID $laststrain is not equal the strain class count $straincount (assuming 3x0 padding).\n";}
+
+  # Accepted mutagen values
+  #HCHO | Formaldehyde
+  #ICR | Umbrell for these compounds?  ICR 191, 170, 292, 372, 191-OH, and 170-OH.
+  #DEO | 1,2:7,8-Diepoxyoctane
+  #DMH | 1,6-dimethoxyhexane (DMH)
+  #60Co Irradiation | 60Co Irradiation
+  #Acetaldehyde | Acetaldehyde
+  #CRE | Cre-mediated Mutagenesis
+  #CRISPR_Cas9 | CRISPR_Cas9
+  #Cs137 Irradiation | Cs137 Irradiation
+  #DEB | DiEpoxyButane
+  #Diethoxybutane | Diethoxybutane
+  #DES | DiEthyl Sulphate
+  #EMS | Ethyl MethaneSulfonate (EMS)
+  #Gamma Irradiation | gamma irradiation
+  #Heat shock | Heat shock
+  #IEF | Isoelectric focusing (IEF)
+  #MMS | MethylMethane Sulphonate (MMS)
+  #Microinjection | Microinjection
+  #Microparticle bombardment | Microparticle bombardment
+  #mini-Mos | mini-Mos
+  #Mos1 transposon | Mos1 transposon
+  #MosDel | MosDel
+  #MosSCI | MosSCI
+  #ENU | N-Ethyl-N-nitrosoUrea (ENU)
+  #Nitrosoguanidine | Nitrosoguanidine
+  #Phage transduction | Phage transduction
+  #32P Irradiation | Phosphorus-32
+  #Spontaneous | Spontaneous
+  #TALEN | Transcription activator-like effector nuclease
+  #Tc1 | Tc1
+  #Tc4 | Tc4
+  #Tc5 | Tc5
+  #TMP | trimethylpsoralen (TMP)
+  #UV | Ultra Violet
+  #X-ray | X-ray
+  #UNKNOWN | UNKNOWN
+  #EMS+ENU | Mix
+  #EMS+Formaldehyde | Mix
+  #EMS+Tc3 | Mix
+  #EMS+Tc4 | Mix
+  #IEF+EMS | Mix
+  #Microinjection+Gamma Irradiation | Mix
+  #Microparticle bombardment+MosSCI | Mix
+  #Microparticle bombardment+X-ray | Mix
+  #TMP+UV+Gamma Irradiation | Mix
+  #UV+Formaldehyde | Mix
+  #UV+TMP | Mix
+  my @mutagens = ('HCHO','ICR','DEO','DMH','60Co Irradiation','Acetaldehyde','CRE','CRISPR_Cas9','Cs137 Irradiation','DEB','Diethoxybutane','DES','EMS','Gamma Irradiation','Heat shock','IEF','MMS','Microinjection','Microparticle bombardment','mini-Mos','Mos1 transposon','MosDel','MosSCI','ENU','Nitrosoguanidine','Phage transduction','32P Irradiation','Spontaneous','TALEN','Tc1','Tc4','Tc5','TMP','UV','X-ray','UNKNOWN','EMS+ENU','EMS+Formaldehyde','EMS+Tc3','EMS+Tc4','IEF+EMS','Microinjection+Gamma Irradiation','Microparticle bombardment+MosSCI','Microparticle bombardment+X-ray','TMP+UV+Gamma Irradiation','UV+Formaldehyde','UV+TMP');
+  
   
   foreach $strain (@strains){
     #N2 should not have Variants associated with it.
@@ -1148,15 +1199,22 @@ sub process_strain_class {
 	      print LOG "RESULT: The N2 Strain ($strain) is clear of Variation data....which is good!\n" if ($debug);
 	  }
     }
+    if (defined $strain->Mutagen){
+	my $mutagen = $strain->Mutagen->name;
+	unless ($mutagen ~~ @mutagens){
+	    print LOG "WARNING: Mutagen $mutagen is not on the known mutagen list, please investigate $strain\n";
+	}
+    }
     unless ($strain =~ /WBStrain\d{8}/){
 	print LOG "WARNING: $strain has not been accessioned or merged into the WBStrain record.\n";
     }
     if (!$strain->Location){
       print LOG "WARNING(a): Strain $strain has no location tag\n";
       if ($ace){
-	$strain =~ /([A-Z]+)\d+/;
-	print ACE "\n\nStrain : \"$strain\"\n";
-	print ACE "Location \"$1\"\n";
+	  if ($strain->Public_name->name =~ /([A-Z]+)\d+/){
+	      print ACE "\n\nStrain : \"$strain\"\n";
+	      print ACE "Location \"$1\"\n";
+	  }
       }
     }
     else {
@@ -1238,8 +1296,11 @@ sub process_strain_class {
 
 
 	    unless ($LOci{$locus} ){
-	      print LOG "ERROR: Strain $strain has $locus($allele) in genotype: ";
-	      print LOG "change each $locus to @{$allele_locus{$allele}}\n";
+		my @obj;
+		@obj = $db->fetch(-query => "FIND Strain $strain");
+		my $public_name = $obj[0]->Public_name->name;
+		print LOG "ERROR: Strain $strain\($public_name\) has $locus($allele) in genotype: ";
+		print LOG "change each $locus to @{$allele_locus{$allele}}\n";
 	    }
 	  }
 	}

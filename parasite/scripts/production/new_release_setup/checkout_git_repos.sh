@@ -39,10 +39,11 @@ checkout_ensembl_branch ensembl-vep release/${ENSEMBL_VERSION}
 checkout_ensembl_branch ensembl-metadata release/${ENSEMBL_VERSION}
 checkout_ensembl_branch ensj-healthcheck release/${ENSEMBL_VERSION}
 checkout_ensembl_branch ensembl-datacheck master
-checkout_ensembl_branch ensembl-hive version/2.5
+checkout_ensembl_branch ensembl-py master
+checkout_ensembl_branch ensembl-hive version/2.6
 checkout_ensembl_branch eg-pipelines master EnsemblGenomes
 checkout_ensembl_branch parasite-static master EnsemblGenomes
 checkout_ensembl_branch eg-web-common master EnsemblGenomes
-
-
+checkout_ensembl_branch ensembl-production-imported trunk
+checkout_ensembl_branch ensembl-production-imported-private trunk
 
