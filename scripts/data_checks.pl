@@ -242,7 +242,7 @@ sub read_GFF_queries {
 
     $i++;
     $queries[$i]{'DESC'}  = "circRNAs";
-    $queries[$i]{'GFF'}   = "circRNA\tcircRNA";
+    $queries[$i]{'GFF'}   = "circRNA\tcircular_ncRNA";
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes ncRNA AND method = "circRNA"';
 
     $i++;

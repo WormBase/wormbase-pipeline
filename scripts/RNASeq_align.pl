@@ -25,10 +25,11 @@ use File::stat;
 # Restart automatically if some libs are missing
 my $command= $0 . " " . join(" ", @ARGV);
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $species, $new_genome, $check, $runlocally, $notbuild, $analyse, $results, $restart);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $species, $new_genome, $check, $runlocally, $notbuild, $analyse, $results, $restart, $test_set);
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
             "test"       => \$test,
+	    "test_set"   => \$test_set, # use the limited set of experiments in Studies_test.ini
             "verbose"    => \$verbose,
             "store:s"    => \$store,
             "species:s"  => \$species, # the default is elegans
@@ -68,7 +69,7 @@ my $database = $wormbase->autoace;
 
 if ($results) {$check = 1} # don't want to remove the cufflinks results if writing results
 
-my $RNASeq = RNASeq->new($wormbase, $log, $new_genome, $check);
+my $RNASeq = RNASeq->new($wormbase, $log, $new_genome, $check, $test, $test_set);
 
 if ($analyse && $results) {$log->log_and_die("Please run this script using '-analyse' and then the '-results' option.\n")}
 
@@ -143,7 +144,7 @@ sub analyse {
     my $out = "$scratch_dir/RNASeq_align.pl.lsf.${experiment_accession}.out";
     my @bsub_options = (-e => "$err", -o => "$out");
     push @bsub_options, (
-			 -q => 'production-rh74',
+			 -q => 'production',
 			 -M => $memory, # in EBI both -M and -R are in Mb
 			 -R => "select[mem>$memory] rusage[mem=$memory]",
 			 -J => $job_name,
@@ -155,6 +156,8 @@ sub analyse {
     if ($notbuild) {$cmd .= " -notbuild";}
     if ($database) {$cmd .= " -database $database";}
     if ($species) {$cmd .= " -species $species";}
+    if ($test) {$cmd .= " -test";}
+    if ($test_set) {$cmd .= " -test_set";}
     $log->write_to("$cmd\n");
     print "($count_done of $total) Running: $cmd\n";
     if ($runlocally) {

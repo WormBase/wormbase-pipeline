@@ -13,7 +13,7 @@ use Carp;
 use Getopt::Long;
 use Storable;
 
-my ($help, $debug, $test, $store, $database, $def, $dump,$old,);
+my ($help, $debug, $test, $store, $database, $def, $dump, $old,);
 
 my $ndb = 'nameserver_live';
 my $nhost = 'web-wwwdb-core-02';
@@ -32,8 +32,8 @@ GetOptions (	"help"       => \$help,
                 "nport:s"    => \$nport,
                 "nuser:s"    => \$nuser,
                 "npass:s"    => \$npass,
-                "old" => \$old,
-                'dumpfile=s' => \$dump,     # file dumped from the datomic Name service check the confluence guide on how to produce this
+                "old"        => \$old,
+                "dumpfile=s" => \$dump,     # file dumped from the datomic Name service check the confluence guide on how to produce this
 		);
 
 my $wormbase;
@@ -49,10 +49,10 @@ my (%ace_genes, %server_genes, %all_gene_ids);
 
 my %exceptions = ('C05G5.6'=>1, 'T22C1.13'=>1, 'F22D3.9'=>1, 'C54G10.6'=>1, 'C11H1.12'=>1, 'T01B6.12'=>1, 'C40A11.10'=>1);
 
-log->log_and_die("you need to specify -dumpfile and point it to a datomic nameservice dump file\n") unless ($dump);
-
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
+
+$log->log_and_die("you need to specify -dumpfile and point it to a datomic nameservice dump file\n") unless ($dump);
 
 #connect to database and read in data
 my $acedb = ($database or $wormbase->database('camace'));
@@ -93,7 +93,7 @@ while( <$TABLE> ){
 #Retrieve the data from the NS dump.
 unless ($old) {my ($dump_fh);
 	       $log->write_to("using $dump file for checking\n");
-               open($dump_fh, "<$dump") or $log->log_and_die("Can't open $dump\n");
+               open($dump_fh, "<$dump") or $log->log_and_die("Can't open $dump\n"); 
                my $gene;
                my $name;
                while ( my $line = <$dump_fh> ) {

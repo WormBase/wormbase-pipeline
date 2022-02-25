@@ -142,7 +142,7 @@ variations = Array.new
 chromosomes= Hash.new
 
 # hardcoded giface ... which is probably not needed
-tablemaker = TableMaker.new('/nfs/panda/ensemblgenomes/wormbase/software/packages/acedb/RHEL7/4.9.62/giface',options.db)
+tablemaker = TableMaker.new('/hps/software/users/wormbase/shared/bin/acedb/CENTOS8/4.9.62/giface',options.db)
 # filter = tablemaker.execute_wquery("query find Variation *;Reference;SMap",options.wquery)
 if options.all
   filter = tablemaker.execute_wquery('query find Variation WHERE Live AND (!Gene OR COUNT(Gene) < 3) AND SMap AND (Natural_variant OR Reference = WBPaper00042537)',options.wquery)

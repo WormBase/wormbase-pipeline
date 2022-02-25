@@ -24,7 +24,7 @@ sub default_options {
 
         # pipeline wide settings
         
-	hive_root_dir                  => $ENV{'WBVEP_DIR'} . '/ensembl-hive',
+	hive_root_dir                  => $ENV{'WORM_ENSEMBL'} . '/ensembl-hive',
         hive_force_init                => 1,
         hive_use_param_stack           => 0,
         hive_use_triggers              => 0,
@@ -42,7 +42,7 @@ sub default_options {
 	pipeline_database       => $self->o('pipeline_database'),
 
 	# folder locations
-	vep_dir                 => $ENV{'WBVEP_DIR'} . '/ensembl-vep',
+	vep_dir                 => $ENV{'VEP_DIR'},
 	pipeline_base_dir       => $ENV{'WBVEP_WORKING_DIR'},
         output_dir              => $self->o('pipeline_base_dir') . '/' . $self->o('pipeline_name'),  
         

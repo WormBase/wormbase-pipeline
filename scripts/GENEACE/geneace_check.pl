@@ -40,18 +40,15 @@ GetOptions ('help'          => \$help,
 ###################################################
 my $wb = Wormbase->new(-test => $test, -debug => $debug );
 # choose database to query: default is /nfs/wormpub/DATABASES/geneace
-$database = '/nfs/production/panda/ensemblgenomes/wormbase/DATABASES/geneace' unless $database;
+$database = $wb->database('geneace') unless $database;
 print "Using database $database.\n\n";
 
 my $tace = $wb->tace;          # tace executable path
-my $curr_db = '/nfs/production/panda/ensemblgenomes/wormbase/DATABASES/current_DB'; # Used for some cross checking with geneace
+my $curr_db = $wb->database('current'); # Used for some cross checking with geneace
 my $def_dir = "${database}/wquery";                          # where lots of table-maker definitions are kept
 
 my $rundate = $wb->rundate;                                # Used by various parts of script for filename creation
-my $maintainers = join (
-    'hinxton\@wormbase.org',
-    );
-
+my $maintainers = "hinxton\@wormbase.org";
 my $log_dir = "$database/logs";                            # some of the many output files are put here (ar2)
 my $log;                                                   # main log file for most output
 my (%L_name_F_WBP, %L_name_F_M_WBP);                       # hashes for checking Person and Author merging?

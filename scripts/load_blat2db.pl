@@ -16,19 +16,21 @@ use Carp;
 use Log_files;
 use Storable;
 
-my ($load,$delete,$dbdir,$help,$all,$wormbase,$test,$debug,$store,$species,$logfile);
+my ($load,$delete,$dbdir,$help,$all,$wormbase,$test,$debug,$store,$species,$logfile,$blatlocation,$acelocation);
 GetOptions (
-	    "load"    => \$load,
-	    "delete"  => \$delete,
-	    "all"     => \$all,
-	    "dbdir=s" => \$dbdir,
-	    "h"	      => \$help,
-	    "debug=s" => \$debug,
-            "logfile:s" => \$logfile,
-	    "test"    => \$test,
-	    "store:s" => \$store,
-	    "species:s" => \$species,
-	    );
+    "load"    => \$load,
+    "delete"  => \$delete,
+    "all"     => \$all,
+    "dbdir=s" => \$dbdir,
+    "h"	      => \$help,
+    "debug=s" => \$debug,
+    "logfile:s" => \$logfile,
+    "test"    => \$test,
+    "store:s" => \$store,
+    "species:s" => \$species,
+    "blatlocation:s" =>\$blatlocation,
+    "acelocation:s" => \$acelocation,
+    );
 
 
 if ( $store ) {
@@ -49,9 +51,21 @@ my $acefiles;
 my $test_file = $wormbase->blat."/virtual_objects.".$wormbase->species.".blat.EST.".$wormbase->species.".ace";
 $log->write_to("Loading BLAT data into $dbdir\n");
 # has the build finished?? script needs to look at ~wormpub/BUILD/autoace/BLAT, if it doesnt exist use current_db/BLAT!!
+
+if ($acelocation) {
+    $acefiles = $acelocation;
+    $log->write_to("Using defined acelocation $acelocation\n");
+    $log->write_to("Ignore further checks\n");
+}
+if ($blatlocation) {
+    $blat_dir = $blatlocation;
+    $log->write_to("Using defined blatlocation $blatlocation\n");
+    $log->write_to("Ignore further checks\n");
+}
+
 if (!-e $test_file){
-  $blat_dir = ($wormbase->basedir('elegans')."/elegans/BLAT");
-  $acefiles = ($wormbase->basedir('elegans')."/elegans/acefiles");
+  $blat_dir = ($wormbase->basedir('elegans')."/elegans/BLAT") unless ($blatlocation);
+  $acefiles = ($wormbase->basedir('elegans')."/elegans/acefiles") unless ($acelocation);
   $log->write_to("The build must have finished you are now going to use $blat_dir\n\n");
   my $test_file2 = $blat_dir."/virtual_objects.".$wormbase->species.".blat.EST.".$wormbase->species.".ace";
   unless (-e $test_file2) {
@@ -60,8 +74,8 @@ if (!-e $test_file){
 }  
 elsif (-e $test_file){
   $log->write_to("The build is still there..... \n\n");
-  $blat_dir = $wormbase->blat;
-  $acefiles = $wormbase->acefiles;
+  $blat_dir = $wormbase->blat unless ($blatlocation);
+  $acefiles = $wormbase->acefiles unless ($acelocation);
 }
 
 print STDERR "Give the full path for the database you want to modify!\n" unless ($dbdir);
@@ -83,8 +97,8 @@ print "$dbname\n";
 &delete($dbname) if ($delete || $all);
 &load($dbname)   if ($load   || $all);
 
-
-$log->mail();
+$log->write_to("Finished updating BLAT data in $dbname\n");
+$log->mail($wormbase);
 exit(0);
 
 
@@ -147,7 +161,6 @@ END
 
 else {
 $command=<<END;
-pparse $acefiles/chromlinks.ace
 pparse $blat_dir/virtual_objects.$species.blat.EST.$species.ace
 pparse $blat_dir/virtual_objects.$species.blat.OST.$species.ace
 pparse $blat_dir/virtual_objects.$species.blat.RST.$species.ace
@@ -158,6 +171,8 @@ pparse $blat_dir/virtual_objects.$species.ci.OST.$species.ace
 pparse $blat_dir/virtual_objects.$species.ci.RST.$species.ace
 pparse $blat_dir/virtual_objects.$species.ci.mRNA.$species.ace
 pparse $blat_dir/virtual_objects.$species.ci.ncRNA.$species.ace
+pparse $blat_dir/virtual_objects.$species.ci.Trinity.elegans.ace
+pparse $blat_dir/virtual_objects.$species.ci.Nanopore.elegans.ace
 save
 pparse $blat_dir/$species.blat.${species}_EST.ace
 pparse $blat_dir/$species.blat.${species}_OST.ace
@@ -169,6 +184,8 @@ pparse $blat_dir/$species.good_introns.OST.ace
 pparse $blat_dir/$species.good_introns.RST.ace
 pparse $blat_dir/$species.good_introns.mRNA.ace
 pparse $blat_dir/$species.good_introns.ncRNA.ace
+pparse $blat_dir/$species.blat.elegans_Nanopore.ace
+pparse $blat_dir/$species.blat.elegans_Trinity.ace
 save 
 quit
 END

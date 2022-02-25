@@ -82,7 +82,7 @@ my $DB;
 my $db;
 my $ecount;
 $wormbase = Wormbase->new("-organism" =>$species, -debug => $debug, -test => $test);
-my $database = "/nfs/production/panda/ensemblgenomes/wormbase/DATABASES/geneace";
+my $database = $wormbase->database('geneace');
 $log->write_to("TEST mode is ON!\n\n") if $test;
 my $tace            = $wormbase->tace;        # TACE PATH
 
@@ -390,7 +390,7 @@ while(<FILE>){
 		print ACE "Reference $WBpaper\t \/\/ Supplied PMID:$pubmed\n";
             }
             else {
-                print ACE "\/\/Reference PMID:$pubmed";
+                print ACE "\/\/Reference PMID:$pubmed\n";
 		$log->write_to("WARNING - Reference PMID:$pubmed Cannot find a valid WBPaperID this needs to be resolved in the output file\n");
             }
         }
@@ -502,7 +502,7 @@ while(<FILE>){
 		}
 	    }
 	    if (defined $strain_id) {
-		print ACE "Strain : \"$strain_id\"\nPublic_name $strain\nSpecies \"Caenorhabditis elegans\"\n";
+		print ACE "\nStrain : \"$strain_id\"\nPublic_name $strain\nSpecies \"Caenorhabditis elegans\"\n";
 		if (defined $lab){print ACE "Location $lab\n";}
 		if (defined $geno) {print ACE "Genotype \"$geno\"\n";}
 		else {print ACE "\n";}

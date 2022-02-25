@@ -321,7 +321,9 @@ if ($dump_modified) {
   my ($seqname, $seqlen, $idline_suffix, @accs, @features, %source_quals, $written_header, %written_version_tag);
   
   while (<$raw_fh>) {
-    
+      if (/prim_trans/) {s/prim_trans/prim_transcript/;}
+      if (/tRNA_Pseudo/){s/tRNA_Pseudo/tRNA_Pseudogene/;}
+      if (/rRNA_Pseudo/){s/rRNA_Pseudo/rRNA_Pseudogene/;}
     # Store the necessary default ID line elements ready for use in the new style EMBL ID lines.
     if(/^ID\s+(\S+)\s+\S+\s+\S+\s+\S+\s+(\d+)\s+\S+/){
       ($seqname, $seqlen) = ($1, $2);
@@ -636,7 +638,8 @@ sub process_feature_table {
                $mod_dir eq 'rRNA' or
                $mod_dir eq 'misc_RNA' or
                $mod_dir eq 'precursor_RNA' or
-               $mod_dir eq 'prim_transcript' or 
+               $mod_dir eq 'prim_transcript' or
+	       $mod_dir eq 'prim_trans' or
                $mod_dir eq 'mRNA') {
         # no class
       } else {
@@ -649,7 +652,7 @@ sub process_feature_table {
       } 
       $feat->{ftype} = $mod_dir;
 
-    } elsif ($feat->{ftype} =~ /(\S+)_Pseudogene/) {
+    } elsif (($feat->{ftype} =~ /(\S+)_Pseudogene/) || ($feat->{ftype} =~ /(\S+)_Pseudo/)) {
       my $new_dv = "$1";
 
       $feat->{ftype} = $new_dv;

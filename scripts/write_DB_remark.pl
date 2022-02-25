@@ -382,9 +382,8 @@ if ($do_transcript) {
     my $full_string = "";
     
     # grab Gene ID, and use this to look up Gene object to get CGC_name if present
-    
-    if(not defined($transcript->Gene) && $transcript->Method ne 'TIGR_BEST'){ # Brugia has a lot of 'TIGR_BEST' transcripts with no Gene tag - ignore these, else throw an error.
-      $log->write_to("ERROR: $transcript does not have a Gene tag.  This is bad!\n");
+    if(!defined $transcript->Gene){ # Brugia has a lot of 'TIGR_BEST' transcripts with no Gene tag - ignore these, else throw an error.
+      $log->write_to("ERROR: $transcript does not have a Gene tag.  This is bad!\n") unless ($transcript->Method eq 'TIGR_BEST');
       next; 
     } 
     

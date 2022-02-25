@@ -20,10 +20,11 @@ use Getopt::Long;
 use Log_files;
 use Storable;
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $species, $new_genome, $check, $experiment_acession, $database, $threads, $notbuild);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $species, $new_genome, $check, $experiment_acession, $database, $threads, $notbuild, $test_set);
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
             "test"       => \$test,
+	    "test_set"   => \$test_set, # use the limited set of experiments in Studies_test.ini
             "verbose"    => \$verbose,
             "store:s"    => \$store,
             "species:s"  => \$species, # the default is elegans
@@ -59,7 +60,7 @@ my $data;
 
 if (!defined $database) {$database = $wormbase->autoace}
 
-my $RNASeq = RNASeq->new($wormbase, $log, $new_genome, $check);
+my $RNASeq = RNASeq->new($wormbase, $log, $new_genome, $check, $test, $test_set);
 
 $log->write_to("Get experiment details from config\n");
 my $data = $RNASeq->get_transcribed_long_experiments();

@@ -102,7 +102,7 @@ while (<IN>) {
     my $id;
     foreach my $entry (@names) {
         my ($public_name) = $entry;
-        if ($DOMAIN =~ /Strain/){
+        if ($DOMAIN eq "Strain"){
             if (defined $public_name and not defined &_check_strain($public_name)) {
                 next;
             }
@@ -110,20 +110,23 @@ while (<IN>) {
             ($id) = keys %{$ids};
         }
         
-        if ($DOMAIN =~ /Variation/){
+        elsif ($DOMAIN eq "Variation"){
              next unless (defined &_check_var($public_name));
              my ($ids, $batch_id) = $db->new_variations([$public_name]);
              ($id) = keys %{$ids};
         }
         
         
-        elsif ($DOMAIN =~ /Gene/){
+        elsif ($DOMAIN eq "Gene"){
             if (defined $public_name and not defined &_check_gene($public_name)) {
                 next;
             }  
             my ($ids, $batch_id) = $db->new_genes([$public_name]);
             ($id) = keys %{$ids};
         }
+	else {
+	    $log->log_and_die("You haven't specified a valid domain!?");    
+	}
           print OUT "\n\/\/-R $DOMAIN $public_name $id\n";
           print OUT "\n$DOMAIN : \"$id\"\n";
           print OUT "Public_name \"$public_name\"\n";
