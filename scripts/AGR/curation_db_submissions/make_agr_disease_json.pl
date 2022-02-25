@@ -11,7 +11,11 @@ use lib $ENV{CVS_DIR};
 use Wormbase;
 use Modules::AGR;
 use lib "$ENV{CVS_DIR}/ONTOLOGY";
-use GAF;
+use Path::Class;
+use Const::Fast;
+use XML::LibXML;
+
+const my $CHEBI_PURL => 'http://purl.obolibrary.org/obo/chebi.owl';
 
 my ($debug, $test, $verbose, $store, $wormbase, $acedbpath, $ws_version, $outfile);
 
@@ -22,7 +26,7 @@ GetOptions (
     'store:s'      => \$store,
     'database:s'   => \$acedbpath,
     'outfile:s'    => \$outfile,
-    'wsversion=s'  => \$ws_version,
+    'wsversion=s'  => \$ws_version
 )||die("unknown command line option: $@\n");
 
 if ( $store ) {
@@ -36,6 +40,8 @@ if ( $store ) {
 my $tace = $wormbase->tace;
 my $date = AGR::get_rfc_date();
 my $alt_date = join("/", $date =~ /^(\d{4})(\d{2})(\d{2})/);
+
+my $chebi_name_map = get_chebi_name_map();
 
 $acedbpath = $wormbase->autoace unless $acedbpath;
 $ws_version = $wormbase->get_wormbase_version_name unless $ws_version;
@@ -150,7 +156,7 @@ while( my $obj = $it->next) {
 	my $annot = {
 	    mod_entity_id        => $obj->name,
 	    object               => $obj->Disease_term->name,
-	    data_provider        => ['WB'],
+	    data_provider        => 'WB',
 	    date_last_modified   => $evi_date,
 	    evidence_codes       => \@evi_codes,
 	    reference            => $paper,
@@ -159,7 +165,7 @@ while( my $obj = $it->next) {
 	$annot->{genetic_sex} = $obj->Genetic_sex->name if $obj->Genetic_sex;
 	$annot->{related_notes} = [{
 	    note_type => 'disease_summary',
-	    private   => JSON::false,
+	    internal  => JSON::false,
 	    free_text => $obj->Disease_model_description->name
 	}] if $obj->Disease_model_description;
 	
@@ -232,7 +238,7 @@ while( my $obj = $it->next) {
 	$annot->{negated} = 'true' if $obj->at('Qualifier_not');
 	
 
-	my $condition_relations = get_condition_relations($obj);
+	my $condition_relations = get_condition_relations($obj, $chebi_name_map);
 	$annot->{conditionRelations} = $condition_relations if @$condition_relations;
 	
 	if ($obj_type eq 'gene') {
@@ -303,7 +309,7 @@ sub get_chemical_ontology_id {
 
 
 sub get_condition_relations {
-    my ($obj) = @_;
+    my ($obj, $chebi_name_map) = @_;
 
     my $condition_relation_type;
     my (@modifiers, @inducers);
@@ -312,7 +318,7 @@ sub get_condition_relations {
     if ($obj->Experimental_condition){
         $condition_relation_type = 'induced_by';
         my @inducing_chemicals = map {{
-            condition_statement => 'chemical treatment:' . $_->Public_name->name,
+            condition_statement => 'chemical treatment:' . get_chemical_name($_, $chebi_name_map),
             condition_chemical => get_chemical_ontology_id($_),
             condition_class => $zeco{'chemical treatment'},
             }} $obj->Inducing_chemical;
@@ -334,7 +340,7 @@ sub get_condition_relations {
 	    }
 	}
         my @modifying_molecules = map {{
-            condition_statement => 'chemical treatment:' . $_->Public_name->name,
+            condition_statement => 'chemical treatment:' . get_chemical_name($_, $chebi_name_map),
             condition_chemical => get_chemical_ontology_id($_),
             condition_class => $zeco{'chemical treatment'}
             }} $obj->Modifier_molecule;
@@ -361,3 +367,37 @@ sub get_condition_relations {
     return ($condition_relations);
 }
 
+
+sub get_chebi_name_map {
+    my %chebi_name_map;
+    
+    my $chebi_dom = XML::LibXML->load_xml(location => $CHEBI_PURL);
+    for my $class ($chebi_dom->findnodes('//owl:Class')) {
+	my $id = $class->findvalue('./oboInOwl:id');
+	my $name = $class->findvalue('./rdfs:label');
+	my $deprecated = $class->findvalue('./owl:deprecated');
+	if ($deprecated ne 'true') {
+	    if (defined $id and defined $name) {
+		$chebi_name_map{$id} = $name;
+	    }
+	    else {
+		warn ("Could not parse ChEBI name corresponding to $id\n");
+	    }
+	}
+    }
+
+    return \%chebi_name_map;
+}
+
+
+sub get_chemical_name {
+    my ($obj, $chebi_name_map) = @_;
+
+    my $id = get_chemical_ontology_id($_);
+    if (exists $chebi_name_map->{$id}) {
+	return $chebi_name_map->{$id};
+    }
+    return $obj->Public_name->name;
+}
+
+1;
