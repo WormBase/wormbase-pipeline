@@ -25,18 +25,19 @@ use Storable;
 # variables and command-line options #
 ######################################
 
-my ( $help, $debug, $test, $verbose, $store, $wormbase, $database );
+my ( $help, $debug, $test, $verbose, $store, $wormbase, $database, $previous_release );
 my ( $ace,  $gff );
 
 GetOptions(
-    "help"       => \$help,
-    "debug=s"    => \$debug,
-    "test"       => \$test,
-    "verbose"    => \$verbose,
-    "store:s"    => \$store,
-    "database:s" => \$database,
-    "ace"        => \$ace,
-    "gff"        => \$gff
+    "help"               => \$help,
+    "debug=s"            => \$debug,
+    "test"               => \$test,
+    "verbose"            => \$verbose,
+    "store:s"            => \$store,
+    "database:s"         => \$database,
+    "ace"                => \$ace,
+    "gff"                => \$gff,
+    "previous_release:s" => \$previous_release
 );
 
 if ($store) {
@@ -48,6 +49,8 @@ else {
         -test  => $test,
     );
 }
+
+my $previous_build_database = get_previous_build_database($wormbase, $previous_release);
 
 # Display help if required
 &usage("Help") if ($help);
@@ -61,6 +64,7 @@ my $tace = $wormbase->tace;                        # TACE PATH
 ##########################
 $database ||= $wormbase->autoace;
 my $autoace = Ace->connect( -path => $database ) or $log->log_and_die( Ace->error . "\n" );
+my $previous_build_autoace = Ace->connect( -path => $previous_build_database ) or $log->log_and_die( Ace->error . "\n");
 my @queries;
 
 # acedb queries, where the results of specified queries are compared against expected values
@@ -68,9 +72,11 @@ if ($ace) {
     my @queries = &read_acedb_queries;
     foreach my $query (@queries) {
 	my($desc,$test,$expect) = @{$query};
-
+	if ($expect == -1) {
+	    $expect = $previous_build_autoace->count( -query => $test );
+	}
         $log->write_to( "\nTEST (tace query): $test  ($desc )");
-        my $count = $autoace->count( -query => $test );;
+        my $count = $autoace->count( -query => $test );
         $log->write_to(" . . . ok") if ( &pass_check( $expect, $count ) == 0 );
     }
 }
@@ -95,6 +101,32 @@ exit(0);
 # Subroutines
 #
 ##############################################################
+
+sub get_previous_build_database {
+    my ($wormbase, $previous_release) = @_;
+
+    if ($previous_release) {
+	$previous_release = 'WS' . $previous_release if $previous_release =~ /^\d+$/;
+	$previous_release = $wormbase->wormpub . '/DATABASES/' . $previous_release
+	    if $previous_release =~ /^WS\d+$/;
+    }
+    elsif (defined $ENV{'PREVREL'}) {
+	$previous_release = $ENV{'PREVREL'};
+	$previous_release =~ s/^WS//g;
+	$previous_release = $wormbase->wormpub . '/DATABASES/WS' . $previous_release;
+    }
+    elsif ($wormbase->test) {
+	$previous_release = $wormbase->database('current');
+    }
+    else {
+	my $current_release = $ENV{'WORMBASE_RELEASE'};
+	$current_release =~ s/^WS//;
+	$previous_release = $current_release - 1;
+	$previous_release = $wormbase->wormpub . '/DATABASES/WS' . $previous_release;
+    }
+
+    return $previous_release;
+}
 
 sub pass_check {
     my $expect = shift;
@@ -122,36 +154,36 @@ sub read_acedb_queries {
     my $species = $wormbase->species;
     if($species eq 'elegans'){    
 	@queries = (
-	    ["The number of RNAi experiments with more than one associated Gene", 'find rnai COUNT gene > 1', 15734],
-	    ["The number of RNAi results with connections to genes", 'find RNAi Gene', 104817],
-	    ["The number of microarray results with connections to genes", 'find microarray_results gene', 340041],
-	    ["PCR products overlapping CDS", "find PCR_product Overlaps_CDS", 62852],
-	    ["The number of wormpep without pep_homol", 'find wormpep !pep_homol', 957],
+	    ["The number of RNAi experiments with more than one associated Gene", 'find rnai COUNT gene > 1', -1],
+	    ["The number of RNAi results with connections to genes", 'find RNAi Gene', -1],
+	    ["The number of microarray results with connections to genes", 'find microarray_results gene', -1],
+	    ["PCR products overlapping CDS", "find PCR_product Overlaps_CDS", -1],
+	    ["The number of wormpep without pep_homol", 'find wormpep !pep_homol', -1],
 	    ["tRNAs not attached to parent properly", 'Transcript AND NEXT AND NOT NEXT', 0],
 	    ["Homol_data without waba", 'find Homol_data *waba !DNA_homol', 0],
 	    ["Homol_data without Pep_homol", 'find Homol_data *wublastx* !Pep_homol', 0],
 	    ["Inverted repeat Feature_data without features", 'find Feature_data *inverted !feature', 0],
 	    ["TRF repeat Feature_data without features", 'find Feature_data *TRF !Feature', 0],
-	    ["Oligo_sets with overlapping_CDS", 'find Oligo_Set Overlaps_CDS', 290113],
+	    ["Oligo_sets with overlapping_CDS", 'find Oligo_Set Overlaps_CDS', -1],
 	    ["operons without genes", 'find operon !contains Gene', 0],
-	    ["variation gene connection", 'find Variation Gene', 1205821],
-	    ["genes with structured description", 'find Gene Structured_description', 137137],
-	    ["genes with GO_annotation", 'find Gene GO_annotation', 12975],
+	    ["variation gene connection", 'find Variation Gene', -1],
+	    ["genes with structured description", 'find Gene Structured_description', -1],
+	    ["genes with GO_annotation", 'find Gene GO_annotation', -1],
 	    ["CDSs with no source_exons", 'find CDS !Source_exons, method', 0],
 	    ["Operons without parent ", 'find Operon CEO* !History AND !Canonical_parent',  0],
-	    ["GO_term without Name or Definition", 'find GO_term !(Name or Definition)',  7],
-	    ["Homol mapped Expression Patterns", 'find Expr_pattern where Homol_homol', 4506],
-	    ["Transposon Objects mapped in the database", 'find Transposon where Sequence', 11256],
+	    ["GO_term without Name or Definition", 'find GO_term !(Name or Definition)',  -1],
+	    ["Homol mapped Expression Patterns", 'find Expr_pattern where Homol_homol', -1],
+	    ["Transposon Objects mapped in the database", 'find Transposon where Sequence', -1],
 	    );
     }
     elsif( $species eq 'japonica'){  
 	@queries = (
-		   ["The number of wormpep without pep_homol", 'find protein JA* !pep_homol', 747],
+		   ["The number of wormpep without pep_homol", 'find protein JA* !pep_homol', -1],
 		   ["tRNAs not attached to parent properly", 'Transcript AND NEXT AND NOT NEXT', 0],
 		   ["Homol_data without Pep_homol", 'find Homol_data *wublastx* !Pep_homol', 0],
-		   ["Inverted repeat Feature_data without features", 'find Feature_data *inverted !feature', 437],
+		   ["Inverted repeat Feature_data without features", 'find Feature_data *inverted !feature', -1],
 		   ["TRF repeat Feature_data without features", 'find Feature_data *TRF !Feature', 0],
-		   ["genes with GO_term", 'find Gene GO_term', 7708],
+		   ["genes with GO_term", 'find Gene GO_term', -1],
 		   ["CDSs with no source_exons", 'find CDS CJA !Source_exons, method', 0],
 		   ["Operons without parent ", 'find Operon !History AND !Canonical_parent',  0],
 		   ["Proteins without peptides ", 'find Protein JA* !Peptide',  0],
@@ -160,12 +192,12 @@ sub read_acedb_queries {
     }    
     elsif( $species eq 'remanei'){  
 	@queries = (
-		   ["The number of wormpep without pep_homol", 'find protein RP* !pep_homol', 1362],
+		   ["The number of wormpep without pep_homol", 'find protein RP* !pep_homol', -1],
 		   ["tRNAs not attached to parent properly", 'Transcript AND NEXT AND NOT NEXT', 0],
 		   ["Homol_data without Pep_homol", 'find Homol_data *wublastx* !Pep_homol', 0],
-		   ["Inverted repeat Feature_data without features", 'find Feature_data *inverted !feature', 437],
+		   ["Inverted repeat Feature_data without features", 'find Feature_data *inverted !feature', -1],
 		   ["TRF repeat Feature_data without features", 'find Feature_data *TRF !Feature', 0],
-		   ["genes with GO_term", 'find Gene GO_term', 7708],
+		   ["genes with GO_term", 'find Gene GO_term', -1],
 		   ["CDSs with no source_exons", 'find CDS CRE !Source_exons, method', 0],
 		   ["Operons without parent ", 'find Operon !History AND !Canonical_parent',  0],
 		   ["Proteins without peptides ", 'find Protein RP*RP !Peptide',  0],
