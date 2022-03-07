@@ -47,17 +47,6 @@ GetOptions ("help"              => \$help,
 	    "force"             => \$force,             # force the command to succeed even if it would normally fail a warning or a sanity check
             ) || die(@!);
 
-
-if (!defined $database) {
-  if ($species eq 'elegans') {
-    $database = "/nfs/panda/ensemblgenomes/wormbase/camace_$ENV{USER}";
-  } else {
-    $database = "/nfs/panda/ensemblgenomes/wormbase/${species}_curation";
-  }
-}
-if (!-e $database || !-d $database) {die "Can't find database $database\n"}
-
-
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
@@ -67,6 +56,15 @@ if ( $store ) {
 			     -autoace  => $database,
                              );
 }
+
+if (!defined $database) {
+  if ($species eq 'elegans') {
+    $database = $wormbase->wormpub."/camace_$ENV{USER}";
+  } else {
+    $database = $wormbase->wormpub."/${species}_curation";
+  }
+}
+if (!-e $database || !-d $database) {die "Can't find database $database\n"}
 
 # Display help if required
 &usage("Help") if ($help);

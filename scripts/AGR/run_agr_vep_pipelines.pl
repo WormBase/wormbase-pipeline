@@ -24,20 +24,22 @@ const my %DATATYPE_EXTENSIONS => ('FASTA'             => 'fa',
 				  'VARIATION'         => 'json',
     );
 const my @CHECKSUM_SUFFIXES => ('FASTA.fa', 'GFF.gff', 'VCF.vcf', 'HTVCF.vcf', 'BAM.bam');
-const my %ASSEMBLIES => ('GRCm38'   => 'MGI',
-			 'R6'       => 'FB',
-			 'R627'     => 'FB',
-			 'Rnor60'   => 'RGD',
-			 'SGDr64'   => 'SGD',
-			 'WBcel235' => 'WB',
-			 'GRCz11'   => 'ZFIN',
-			 'HUMAN'    => 'HUMAN'
+const my %ASSEMBLIES => ('GRCm39'    => 'MGI',
+			 'R6'        => 'FB',
+			 'R627'      => 'FB',
+			 'mRatBN7.2' => 'RGD',
+			 'SGDr64'    => 'SGD',
+			 'WBcel235'  => 'WB',
+			 'GRCz11'    => 'ZFIN',
+			 'HUMAN'     => 'HUMAN'
     );
 const my $BASE_DIR => $ENV{'AGR_VEP_BASE_DIR'} . '/' . $ENV{'AGR_RELEASE'} . '/' . $ENV{'DOWNLOAD_DATE'};
 const my $HGNC_FILE_URL => 'http://ftp.ebi.ac.uk/pub/databases/genenames/hgnc/tsv/hgnc_complete_set.txt';
 const my @IDS_TO_MAP => ('symbol', 'entrez_id', 'ensembl_gene_id', 'vega_id', 'ucsc_id', 'refseq_accession', 'mgd_id', 'rgd_id', 'omim_id', 'agr');
 const my $CHECKSUMS_FILE => $ENV{'AGR_VEP_BASE_DIR'} . '/mod_file_checksums.txt';
 const my $HUMAN_FILES_DIR => $ENV{'AGR_VEP_BASE_DIR'} . '/human_vep_input_files';
+const my $MOUSE_FILES_DIR => $ENV{'AGR_VEP_BASE_DIR'} . '/mouse_vep_input_files';
+const my $RESOURCES_DIR => $ENV{'AGR_BASE_DIR'} . '/resources';
 
 const my %REFSEQ_CHROMOSOMES => (
     'FB'   => {
@@ -68,53 +70,102 @@ const my %REFSEQ_CHROMOSOMES => (
 	'rDNA' => 'NW_007931121.1',
     },
     'MGI'  => {
-	'1'  => 'NC_000067.6',
-	'2'  => 'NC_000068.7',
-	'3'  => 'NC_000069.6',
-	'4'  => 'NC_000070.6',
-	'5'  => 'NC_000071.6',
-	'6'  => 'NC_000072.6',
-	'7'  => 'NC_000073.6',
-	'8'  => 'NC_000074.6',
-	'9'  => 'NC_000075.6',
-	'10' => 'NC_000076.6',
-	'11' => 'NC_000077.6',
-	'12' => 'NC_000078.6',
-	'13' => 'NC_000079.6',
-	'14' => 'NC_000080.6',
-	'15' => 'NC_000081.6',
-	'16' => 'NC_000082.6',
-	'17' => 'NC_000083.6',
-	'18' => 'NC_000084.6',
-	'19' => 'NC_000085.6',
-	'X'  => 'NC_000086.7',
-	'Y'  => 'NC_000087.7',
+	# GRCm38
+	#'1'  => 'NC_000067.6',
+	#'2'  => 'NC_000068.7',
+	#'3'  => 'NC_000069.6',
+	#'4'  => 'NC_000070.6',
+	#'5'  => 'NC_000071.6',
+	#'6'  => 'NC_000072.6',
+	#'7'  => 'NC_000073.6',
+	#'8'  => 'NC_000074.6',
+	#'9'  => 'NC_000075.6',
+	#'10' => 'NC_000076.6',
+	#'11' => 'NC_000077.6',
+	#'12' => 'NC_000078.6',
+	#'13' => 'NC_000079.6',
+	#'14' => 'NC_000080.6',
+	#'15' => 'NC_000081.6',
+	#'16' => 'NC_000082.6',
+	#'17' => 'NC_000083.6',
+	#'18' => 'NC_000084.6',
+	#'19' => 'NC_000085.6',
+	#'X'  => 'NC_000086.7',
+	#'Y'  => 'NC_000087.7',
+	#'MT' => 'NC_005089.1',
+	# GRCm39
+	'1'  => 'NC_000067.7',
+	'2'  => 'NC_000068.8',
+	'3'  => 'NC_000069.7',
+	'4'  => 'NC_000070.7',
+	'5'  => 'NC_000071.7',
+	'6'  => 'NC_000072.7',
+	'7'  => 'NC_000073.7',
+	'8'  => 'NC_000074.7',
+	'9'  => 'NC_000075.7',
+	'10' => 'NC_000076.7',
+	'11' => 'NC_000077.7',
+	'12' => 'NC_000078.7',
+	'13' => 'NC_000079.7',
+	'14' => 'NC_000080.7',
+	'15' => 'NC_000081.7',
+	'16' => 'NC_000082.7',
+	'17' => 'NC_000083.7',
+	'18' => 'NC_000084.7',
+	'19' => 'NC_000085.7',
+	'X'  => 'NC_000086.8',
+	'Y'  => 'NC_000087.8',
 	'MT' => 'NC_005089.1',
     },
     'RGD'  => {
-	'1'  => 'NC_005100.4',
-	'2'  => 'NC_005101.4',
-	'3'  => 'NC_005102.4',
-	'4'  => 'NC_005103.4',
-	'5'  => 'NC_005104.4',
-	'6'  => 'NC_005105.4',
-	'7'  => 'NC_005106.4',
-	'8'  => 'NC_005107.4',
-	'9'  => 'NC_005108.4',
-	'10' => 'NC_005109.4',
-	'11' => 'NC_005110.4',
-	'12' => 'NC_005111.4',
-	'13' => 'NC_005112.4',
-	'14' => 'NC_005113.4',
-	'15' => 'NC_005114.4',
-	'16' => 'NC_005115.4',
-	'17' => 'NC_005116.4',
-	'18' => 'NC_005117.4',
-	'19' => 'NC_005118.4',
-	'20' => 'NC_005119.4',
-	'X'  => 'NC_005120.4',
-	'Y'  => 'NC_024475.1',
+	# mRatBN7.2
+	'1'  => 'NC_051336.1',
+	'2'  => 'NC_051337.1',
+	'3'  => 'NC_051338.1',
+	'4'  => 'NC_051339.1',
+	'5'  => 'NC_051340.1',
+	'6'  => 'NC_051341.1',
+	'7'  => 'NC_051342.1',
+	'8'  => 'NC_051343.1',
+	'9'  => 'NC_051344.1',
+	'10' => 'NC_051345.1',
+	'11' => 'NC_051346.1',
+	'12' => 'NC_051347.1',
+	'13' => 'NC_051348.1',
+	'14' => 'NC_051349.1',
+	'15' => 'NC_051350.1',
+	'16' => 'NC_051351.1',
+	'17' => 'NC_051352.1',
+	'18' => 'NC_051353.1',
+	'19' => 'NC_051354.1',
+	'20' => 'NC_051355.1',
+	'X'  => 'NC_051356.1',
+	'Y'  => 'NC_051357.1',
 	'MT' => 'NC_001665.2',
+	# Rnor60	    
+	#'1'  => 'NC_005100.4',
+	#'2'  => 'NC_005101.4',
+	#'3'  => 'NC_005102.4',
+	#'4'  => 'NC_005103.4',
+	#'5'  => 'NC_005104.4',
+	#'6'  => 'NC_005105.4',
+	#'7'  => 'NC_005106.4',
+	#'8'  => 'NC_005107.4',
+	#'9'  => 'NC_005108.4',
+	#'10' => 'NC_005109.4',
+	#'11' => 'NC_005110.4',
+	#'12' => 'NC_005111.4',
+	#'13' => 'NC_005112.4',
+	#'14' => 'NC_005113.4',
+	#'15' => 'NC_005114.4',
+	#'16' => 'NC_005115.4',
+	#'17' => 'NC_005116.4',
+	#'18' => 'NC_005117.4',
+	#'19' => 'NC_005118.4',
+	#'20' => 'NC_005119.4',
+	#'X'  => 'NC_005120.4',
+	#'Y'  => 'NC_024475.1',
+	#'MT' => 'NC_001665.2',
     },
     'SGD'  => {
 	'chrI'    => 'NC_001133.9',
@@ -201,7 +252,18 @@ const my %REFSEQ_CHROMOSOMES => (
     },
     );
 
-my ($url, $test, $logfile, $debug, $password, $cleanup, $nocheck, $overwrite, $external_human_gff, $help);
+const my %BAM_REQUIRED => (
+    'FB'    => 0,
+    'MGI'   => 1,
+    'RGD'   => 1,
+    'SGD'   => 0,
+    'WB'    => 0,
+    'ZFIN'  => 1,
+    'HUMAN' => 1,
+    );
+
+my ($url, $test, $logfile, $debug, $password, $cleanup, $nocheck, $overwrite, $external_human_gff, $external_mouse_fasta, $help);
+
 my $stages = '1,2,3,4,5';
 my $mods_string = 'FB,MGI,RGD,SGD,WB,ZFIN,HUMAN';
 
@@ -217,18 +279,21 @@ GetOptions(
     "overwrite|o"           => \$overwrite,
     "nocheck|n"             => \$nocheck,
     "external_human_gff|e"  => \$external_human_gff,
+    "external_mouse_fasta|m" => \$external_mouse_fasta,
     "help|h"                => \$help,
     ) or print_usage();
 
 print_usage() if $help;
 
+make_path($BASE_DIR) unless -d $BASE_DIR;
+    
 my $start_time = DateTime->now->strftime('%Y%m%d%H%M%S');
 
 my @mods = split(',', $mods_string);
 $logfile = "${BASE_DIR}/submission.${start_time}.log" if !$logfile;;
 
 my $log = Log_files->make_log($logfile, $debug);
-download_from_agr(\@mods, $start_time, $url, $overwrite, $external_human_gff, $log) if $stages =~ /1/;
+download_from_agr(\@mods, $start_time, $url, $overwrite, $external_human_gff, $external_mouse_fasta, $log) if $stages =~ /1/;
 
 for my $mod (@mods) {
     my ($checksums, $run_stages) = check_for_new_data($mod, $nocheck, $log);
@@ -275,7 +340,7 @@ for my $mod (@mods) {
     if (!$test and $stages =~ /3/ and $stages =~ /4/ and $stages =~ /5/) {
 	update_checksums($mod, 'FASTA.fa', $checksums, $log);
 	update_checksums($mod, 'GFF.gff', $checksums, $log);
-	update_checksums($mod, 'BAM.bam', $checksums, $log);
+	update_checksums($mod, 'BAM.bam', $checksums, $log) if $BAM_REQUIRED{$mod};
     }
     cleanup_intermediate_files($mod, $log) if $cleanup;
 }
@@ -309,10 +374,10 @@ sub check_for_new_data {
 	$run_stages{5} = 1;
     }
     if (!exists $old_checksums->{"${mod}_FASTA.fa"} or
-	!exists $old_checksums->{"${mod}_BAM.bam"} or
+	($BAM_REQUIRED{$mod} and !exists $old_checksums->{"${mod}_BAM.bam"}) or
 	!exists $old_checksums->{"${mod}_GFF.gff"} or
 	$old_checksums->{"${mod}_FASTA.fa"} ne $new_checksums->{"${mod}_FASTA.fa"} or
-	$old_checksums->{"${mod}_BAM.bam"} ne $new_checksums->{"${mod}_BAM.bam"} or
+	($BAM_REQUIRED{$mod} and $old_checksums->{"${mod}_BAM.bam"} ne $new_checksums->{"${mod}_BAM.bam"}) or
 	$old_checksums->{"${mod}_GFF.gff"} ne $new_checksums->{"${mod}_GFF.gff"}) {
 	%run_stages = map {$_ => 1} (2 .. 5);
     }
@@ -377,13 +442,12 @@ sub update_checksums {
 
 
 sub download_from_agr {
-    my ($mods, $start_time, $url, $overwrite, $external_human_gff, $log) = @_;
+    my ($mods, $start_time, $url, $overwrite, $external_human_gff, $external_mouse_fasta, $log) = @_;
     
     my $download_urls = defined $url ? get_urls_from_snapshot($url) : get_latest_urls();
     
-    make_path($BASE_DIR) unless -d $BASE_DIR;
-    my $input_files_file = "${BASE_DIR}/VEP_input_files.${start_time}.txt";
-    open (FILES, '>>', $input_files_file) or $log->log_and_die("Couldn't open $input_files_file to append data\n");
+    my $input_files_file = "${BASE_DIR}/VEP_input_files.txt";
+    open (FILES, '>>', $input_files_file) or $log->lod_and_die("Couldn't open $input_files_file to append data\n");
     for my $mod (@$mods) {
 	my $time = localtime();
 	print FILES "${mod}: $time\n";
@@ -392,6 +456,10 @@ sub download_from_agr {
 	chdir $mod_dir;
 	for my $datatype (keys %{$download_urls->{$mod}}){
 	    next if $external_human_gff and $mod eq 'HUMAN' and $datatype eq 'GFF';
+	    if ($external_mouse_fasta and $mod eq 'MGI' and $datatype eq 'FASTA') {
+		run_system_cmd("gunzip -c ${MOUSE_FILES_DIR}/Mus_musculus.GRCm39.dna.toplevel.fa.gz > MGI_FASTA.fa", "Unzipping local MGI FASTA", $log);
+		next;
+	    }
 	    my $extension = $DATATYPE_EXTENSIONS{$datatype};
 	    if (-e "${mod}_${datatype}.${extension}" and !$overwrite) {
 		$log->write_to("Using previously downloaded $mod $datatype\n");
@@ -406,7 +474,15 @@ sub download_from_agr {
 	    run_system_cmd("mv $filename ${mod}_${datatype}.${extension}", "Renaming $filename", $log);
 	}
 	fix_rgd_headers($log) if $mod eq 'RGD'; # Temporary hack
-	merge_bam_files($mod, $log);
+
+	if ($BAM_REQUIRED{$mod}) {
+	    merge_bam_files($mod, $log);
+	}
+	else {
+	    run_system_cmd('cp ' . $RESOURCES_DIR . '/dummy.bam ' . $mod . '_BAM.bam', "Copying dummy BAM file", $log);
+	}
+	run_system_cmd("samtools index ${mod}_BAM.bam", "Indexing $mod BAM file", $log);
+	
 	unlink "${mod}_FASTA.fa.fai" if -e "${mod}_FASTA.fa.fai";
 	run_system_cmd('python3 ' . $ENV{'CVS_DIR'} . "/AGR/agr_variations_json2vcf.py -j ${mod}_VARIATION.json -m $mod -g ${mod}_GFF.gff " .
 		       "-f ${mod}_FASTA.fa -o ${mod}_VCF.vcf", "Converting $mod phenotypic variants JSON to VCF", $log) if -e "${mod}_VARIATION.json";
@@ -415,9 +491,12 @@ sub download_from_agr {
 	    my @files_to_copy = ('HUMAN_HTVCF.vcf');
 	    push @files_to_copy, 'HUMAN_GFF.gff' if $external_human_gff;
 	    for my $file (@files_to_copy) {
-	    run_system_cmd("cp ${HUMAN_FILES_DIR}/${file} $file", "Copying local $file file to working directory", $log);
+		run_system_cmd("cp ${HUMAN_FILES_DIR}/${file} $file", "Copying local $file file to working directory", $log);
+	    }   
 	}
-    }
+	elsif ($mod eq 'MGI') {
+
+	}
     
     }
     close (FILES);
@@ -542,14 +621,15 @@ sub calculate_pathogenicity_predictions {
     backup_pathogenicity_prediction_db($mod, $password, $log);
     
     my $lsf_queue = $ENV{'LSF_DEFAULT_QUEUE'};
-        
+
     my $init_cmd = "init_pipeline.pl VepProteinFunction::VepProteinFunction_conf -mod $mod" .
 	" -agr_fasta ${mod}_FASTA.refseq.fa -agr_gff ${mod}_GFF.refseq.gff -agr_bam ${mod}_BAM.bam" . 
 	' -hive_root_dir ' . $ENV{'HIVE_ROOT_DIR'} . ' -pipeline_base_dir ' . $ENV{'PATH_PRED_WORKING_DIR'} .
 	' -pipeline_host ' . $ENV{'WORM_DBHOST'} . ' -pipeline_user ' . $ENV{'WORM_DBUSER'} .
 	' -pipeline_port ' . $ENV{'WORM_DBPORT'} . ' -lsf_queue ' . $lsf_queue .
 	' -sift_dir ' . $ENV{'SIFT_DIR'} . ' -pph_dir ' . $ENV{'PPH_DIR'} . ' -pph_conf_dir ' . $ENV{'PPH_CONF_DIR'} . '/' . $mod .
-	' -ncbi_dir ' . $ENV{'NCBI_DIR'} . ' -blastdb ' . $ENV{'BLAST_DB'} . ' -password ' . $password;
+	' -ncbi_dir ' . $ENV{'NCBI_DIR'} . ' -blastdb ' . $ENV{'BLAST_DB'} . ' -pph_blast_db ' . $ENV{'PPH_BLAST_DB'} .
+	' -uniprot_dbs ' . $ENV{'UNIPROT_DBS'} . ' -password ' . $password;
     
     run_system_cmd($init_cmd, "Initialising $mod pathogenicity prediction eHive pipeline", $log);
     
@@ -568,8 +648,8 @@ sub run_vep_on_phenotypic_variations {
     return unless -e "${mod}_VCF.refseq.vcf";
     
     my $base_vep_cmd = "vep -i ${mod}_VCF.refseq.vcf -gff ${mod}_GFF.refseq.gff.gz -fasta ${mod}_FASTA.refseq.fa.gz --force_overwrite " .
-	"--bam ${mod}_BAM.bam -hgvsg -hgvs -shift_hgvs=0 --symbol --distance 0 --plugin ProtFuncSeq,mod=$mod,pass=$password";
-   
+	"-hgvsg -hgvs -shift_hgvs=0 --symbol --distance 0 --plugin ProtFuncSeq,mod=$mod,pass=$password " .
+	"--remove_hgvsp_version --safe --bam ${mod}_BAM.bam";
     my $gl_vep_cmd = $base_vep_cmd . " --per_gene --output_file ${mod}_VEPGENE.txt";
     my $tl_vep_cmd = $base_vep_cmd . " --output_file ${mod}_VEPTRANSCRIPT.txt";
     
@@ -623,8 +703,8 @@ sub run_vep_on_phenotypic_variations {
 sub run_vep_on_htp_variations{
     my ($mod, $password, $test, $log) = @_;
     
-    my $lsf_queue = $test ? $ENV{'LSF_TEST_QUEUE'} : $ENV{'LSF_DEFAULT_QUEUE'};
-    
+    my $lsf_queue = $ENV{'LSF_DEFAULT_QUEUE'};
+
     my $init_cmd = "init_pipeline.pl ModVep::ModVep_conf -mod $mod -vcf ${mod}_HTVCF.vcf -gff ${mod}_GFF.refseq.gff.gz" .
 	" -fasta ${mod}_FASTA.refseq.fa.gz -bam ${mod}_BAM.bam -hive_root_dir " . $ENV{'HIVE_ROOT_DIR'} . ' -pipeline_base_dir ' .
 	$ENV{'HTP_VEP_WORKING_DIR'} . ' -pipeline_host ' . $ENV{'WORM_DBHOST'} . ' -pipeline_user ' . $ENV{'WORM_DBUSER'} .
@@ -637,21 +717,13 @@ sub run_vep_on_htp_variations{
     $ENV{EHIVE_URL} = $ehive_url;
  
     run_system_cmd("beekeeper.pl -url $ehive_url -loop", "Running $mod HTP variations VEP eHive pipeline", $log);
-
-    my $uncompressed_file = $ENV{'HTP_VEP_WORKING_DIR'} . "/${mod}_vep/${mod}.vep.vcf";
-    my $bsub_cmd = 'bsub -J ' . $mod . '_VEP_compress -o /dev/null -e /dev/null -n 20 -R "span[ptile=20]" ' .
-	'pigz -9 -p 20 ' . $uncompressed_file;
-    run_system_cmd($bsub_cmd, "Compressing $mod HTP variations VEP output", $log);
-    while (-e $uncompressed_file) {
-	sleep(60);
+    if ($mod eq 'RGD') {
+	run_system_cmd("mv " . $ENV{'HTP_VEP_WORKING_DIR'} . "/${mod}_vep/${mod}.all.vcf.gz .", "Moving $mod combined HTP variations VEP output", $log);
+	submit_data($mod, 'HTPOSTVEPVCF', "${mod}.vep.all.vcf.gz", $log) unless $test;
     }
-    
-    my $compressed_file = "${uncompressed_file}.gz";
-    run_system_cmd("mv ${compressed_file} ${mod}_HTPOSTVEPVCF.vcf.gz",
+    run_system_cmd("mkdir HTPVEP", "Creating folder for $mod HTP VEP output", $log);
+    run_system_cmd("mv " . $ENV{'HTP_VEP_WORKING_DIR'} . "/${mod}_vep/${mod}.* HTPVEP/",
 		   "Moving $mod HTP variations VEP output", $log);
-
-    submit_data($mod, 'HTPOSTVEPVCF', $mod . '_HTPOSTVEPVCF.vcf.gz', $log) unless $test
-	or $mod eq 'MGI' or $mod eq 'HUMAN'; # the MOD checks can be removed once it becomes possible to submit these files to the FMS
     
     return;
 }
@@ -691,17 +763,13 @@ sub merge_bam_files {
 	    run_system_cmd("mv ${mod}_MOD-GFF-BAM-KNOWN.bam ${mod}_BAM.bam", "Renaming $mod MOD-GFF-BAM-KNOWN file", $log);
 	}
     }
-    elsif (-e "${mod}_MOD-GFF-BAM-MODEL.bam") {
+    else{
+	$log->log_and_die("$mod BAM files could not be found\n") unless -e "${mod}_MOD-GFF-BAM-MODEL.bam";
 	run_system_cmd("mv ${mod}_MOD-GFF-BAM-MODEL.bam ${mod}_BAM.bam", "Renaming $mod MOD-GFF-BAM-MODEL file", $log); 
-    }
-    else {
-	run_system_cmd("touch ${mod}_BAM.bam", "Creating dummy BAM file", $log);
-	return;
     }
     
     run_system_cmd("samtools sort -o ${mod}_BAM.sorted.bam -T tmp ${mod}_BAM.bam", "Sorting $mod BAM file", $log);
     run_system_cmd("mv ${mod}_BAM.sorted.bam ${mod}_BAM.bam", "Replacing $mod BAM file with sorted version", $log);
-    run_system_cmd("samtools index ${mod}_BAM.bam", "Indexing $mod BAM file", $log);
     
     return;
 }
@@ -981,6 +1049,7 @@ run_agr_vep_pipelines.pl options:
     -cleanup                delete intermediate files generated by pipeline
     -overwrite              overwrite previously downloaded input files
     -nocheck                run analyses even if no new data
+    -external_human_gff     do not use the RGD-supplied GFF for human data
     -help                   print this message
 USAGE
     
@@ -1018,8 +1087,9 @@ sub check_chromosome_map {
 	next unless $refseq_chr =~ /^RefSeq:(.+)$/;
 	if ($1 ne $REFSEQ_CHROMOSOMES{$mod}{$variation->{chromosome}}) {
 	   $log->log_and_die("RefSeq chromosome ID does not match version submitted in variation JSON for $mod: " .
-		$variation->{chromosome} . " should be $1 but found " . 
-		$REFSEQ_CHROMOSOMES{$mod}{$variation->{chromosome}} . "\n");
+			     $variation->{chromosome} . " found $1 but should be " . 
+			     $REFSEQ_CHROMOSOMES{$mod}{$variation->{chromosome}} . ' for variation ' .
+			     $variation->{alleleId} . "\n");
 	}
     }
 	

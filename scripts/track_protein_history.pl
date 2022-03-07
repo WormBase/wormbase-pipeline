@@ -7,8 +7,7 @@
 # This gets information from the wormpep history data file
 #
 # Last updated by: $Author: klh $     
-# Last updated on: $Date: 2011-11-24 12:11:53 $      
-
+# Last updated on: $Date: 2011-11-24 12:11:53 $
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
@@ -45,21 +44,23 @@ if ( $store ) {
 # Display help if required
 &usage("Help") if ($help);
 
-# in test mode?
-if ($test) {
-  print "In test mode\n" if ($verbose);
-
-}
-
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
+
+# in test mode?                                                                                                                                                                                                          
+if ($test) {
+    print "In test mode\n";
+    $log->write_to("In test mode\n");
+}
+
 
 ##########################
 # MAIN BODY OF SCRIPT
 ##########################
-
+my $count = "0";
+my $wcount = "0";
 print "Finding changes in previous and current wormpep files\n\n";
-
+$log->write_to("Finding changes in previous and current wormpep files\n\n");
 my $database_version = $wormbase->get_wormbase_version;
 
 my %hash;
@@ -77,10 +78,17 @@ my $wormbase_history = get_wormpep_history($database_version);
 foreach my $CDS (keys %hash) {
   foreach my $pep (keys %{$hash{$CDS}}) {
     if ($hash{$CDS}{$pep} == 0)  {
-      print "$CDS $pep no change\n" if ($verbose);
+	print "$CDS $pep no change\n" if ($verbose);
+	$count++;
       my $status = has_current_history($wormbase_history, $CDS);
-      if ($status == 0) {print "$CDS/$pep is in 'wormpep${database_version}' as an unchanged CDS and protein, but the history file thinks $CDS is not live\n";}
-    } elsif ($hash{$CDS}{$pep} == 1)  {
+      if ($status == 0) {print "$CDS/$pep is in 'wormpep${database_version}' as an unchanged CDS and protein, but the history file thinks $CDS is not live\n";
+			 $log->write_to("$CDS/$pep is in 'wormpep${database_version}' as an unchanged CDS and protein, but the history file thinks $CDS is not live\n");
+			 $count--;
+			 $wcount++;
+      }
+	
+    }
+    elsif ($hash{$CDS}{$pep} == 1)  {
       print "$CDS $pep appeared\n" if ($verbose);
       my @cds_history = @{$wormbase_history->{$CDS}};
       foreach my $version (@cds_history) {
@@ -91,12 +99,18 @@ foreach my $CDS (keys %hash) {
 	  if ($version1 == $database_version) {
 	    $found = 2; # appeared in this version
 	  }
-	  if ($found == 0) {print "$CDS/$pep is in 'wormpep${database_version}' as newly appeared, but the history file has no record of it\n";}
-	  if ($found == 1) {print "$CDS/$pep is in 'wormpep${database_version}' as newly appeared, but the history file says it is not new in this Build\n";}
+	  if ($found == 0) {print "$CDS/$pep is in 'wormpep${database_version}' as newly appeared, but the history file has no record of it\n";
+			    $log->write_to("$CDS/$pep is in 'wormpep${database_version}' as newly appeared, but the history file has no record of it\n");
+			    $wcount++;
+	  }
+	  if ($found == 1) {print "$CDS/$pep is in 'wormpep${database_version}' as newly appeared, but the history file says it is not new in this Build\n";
+			    $log->write_to("$CDS/$pep is in 'wormpep${database_version}' as newly appeared, but the history file says it is not new in this Build\n");
+			    $wcount++;
+	  }
 	}
       }
-
-    } elsif ($hash{$CDS}{$pep} == -1) {
+    }
+    elsif ($hash{$CDS}{$pep} == -1) {
       print "$CDS $pep lost\n" if ($verbose);
       my @cds_history = @{$wormbase_history->{$CDS}};
       foreach my $version (@cds_history) {
@@ -107,11 +121,19 @@ foreach my $CDS (keys %hash) {
 	  if ($version2 == $database_version) {
 	    $found = 2; # lost in this version
 	  }
-	  if ($found == 0) {print "$CDS/$pep is in 'wormpep${database_version}' as lost, but the history file has no record of it\n";}
-	  if ($found == 1) {print "$CDS/$pep is in 'wormpep${database_version}' as lost, but the history file says it is still current\n";}
+	  if ($found == 0) {print "$CDS/$pep is in 'wormpep${database_version}' as lost, but the history file has no record of it\n";
+			    $log->write_to("$CDS/$pep is in 'wormpep${database_version}' as lost, but the history file has no record of it\n");
+			    $wcount++;
+	  }
+	  if ($found == 1) {print "$CDS/$pep is in 'wormpep${database_version}' as lost, but the history file says it is still current\n";
+			    $log->write_to("$CDS/$pep is in 'wormpep${database_version}' as lost, but the history file says it is still current\n");
+			    $wcount++;
+	  }
 	}
       }
-
+    }
+    else {
+	print "$CDS $pep not found at all??!"
     }
   }
 }
@@ -121,27 +143,55 @@ foreach my $CDS (keys %hash) {
 foreach my $CDS (keys %{$wormbase_history}) {
   my @cds_history = @{$wormbase_history->{$CDS}};
   foreach my $version (@cds_history) {
-    my ($pep, $version1, $version2) = @{$version};
+      my ($pep, $version1, $version2) = @{$version};
+      my $pep_tag = "wormpep=$pep";
     if ($version1 == $database_version) { # new in this version
-      if (!exists $hash{$CDS}{$pep}) {print "$CDS/$pep is in the history file as new but 'wormpep${database_version}' has no record of it even in the previous version\n";}
-      if ($hash{$CDS}{$pep} == -1)   {print "$CDS/$pep is in the history file as new but 'wormpep${database_version}' thinks it is lost\n";}
-      if ($hash{$CDS}{$pep} == 0)    {print "$CDS/$pep is in the history file as new but 'wormpep${database_version}' thinks it is unchanged\n";}
+	if (!exists $hash{$CDS}{$pep_tag}) {print "$CDS/$pep is in the history file as new but 'wormpep${database_version}' has no record of it even in the previous version\n";
+					$log->write_to("$CDS/$pep is in the history file as new but 'wormpep${database_version}' has no record of it even in the previous version\n");
+					$wcount++;
+	}
+	if ($hash{$CDS}{$pep_tag} == -1)   {print "$CDS/$pep is in the history file as new but 'wormpep${database_version}' thinks it is lost\n";
+					$log->write_to("$CDS/$pep is in the history file as new but 'wormpep${database_version}' thinks it is lost\n");
+					$wcount++;
+	}
+	if ($hash{$CDS}{$pep_tag} == 0)    {print "$CDS/$pep is in the history file as new but 'wormpep${database_version}' thinks it is unchanged\n";
+					$log->write_to("$CDS/$pep is in the history file as new but 'wormpep${database_version}' thinks it is unchanged\n");
+					$wcount++;
+	}
 
     } elsif (!defined $version2) { # still live
-      if (!exists $hash{$CDS}{$pep}) {print "$CDS/$pep is in the history file as unchanged but 'wormpep${database_version}' has no record of it even in the previous version\n";}
-      if ($hash{$CDS}{$pep} == -1)   {print "$CDS/$pep is in the history file as unchanged but 'wormpep${database_version}' thinks it is lost\n";}
-      if ($hash{$CDS}{$pep} == 1)    {print "$CDS/$pep is in the history file as unchanged but 'wormpep${database_version}' thinks it has just appeared\n";}
+	unless (defined $hash{$CDS}{$pep_tag}) {print "$CDS/$pep is in the history file as unchanged but 'wormpep${database_version}' has no record of it even in the previous version\n";
+					$log->write_to("$CDS/$pep is in the history file as unchanged but 'wormpep${database_version}' has no record of it even in the previous version\n");
+					$wcount++;
+	}
+	if ($hash{$CDS}{$pep_tag} == -1)   {print "$CDS/$pep is in the history file as unchanged but 'wormpep${database_version}' thinks it is lost\n";
+					$log->write_to("$CDS/$pep is in the history file as unchanged but 'wormpep${database_version}' thinks it is lost\n");
+					$wcount++;
+	}
+	if ($hash{$CDS}{$pep_tag} == 1)    {print "$CDS/$pep is in the history file as unchanged but 'wormpep${database_version}' thinks it has just appeared\n";
+					$log->write_to("$CDS/$pep is in the history file as unchanged but 'wormpep${database_version}' thinks it has just appeared\n");
+					$wcount++;
+	}
 
     } elsif ($version2 == $database_version) { # lost in this version
-      if (!exists $hash{$CDS}{$pep}) {print "$CDS/$pep is in the history file as lost but 'wormpep${database_version}' has no record of it even in the previous version\n";}
-      if ($hash{$CDS}{$pep} == 0)    {print "$CDS/$pep is in the history file as lost but 'wormpep${database_version}' thinks it is unchanged\n";}
-      if ($hash{$CDS}{$pep} == 1)    {print "$CDS/$pep is in the history file as lost but 'wormpep${database_version}' thinks it has just appeared\n";}
+	if (!exists $hash{$CDS}{$pep_tag}) {print "$CDS/$pep is in the history file as lost but 'wormpep${database_version}' has no record of it even in the previous version\n";
+					$log->write_to("$CDS/$pep is in the history file as lost but 'wormpep${database_version}' has no record of it even in the previous version\n");
+					$wcount++;
+	}
+	if ($hash{$CDS}{$pep_tag} == 0)    {print "$CDS/$pep is in the history file as lost but 'wormpep${database_version}' thinks it is unchanged\n";
+					$log->write_to("$CDS/$pep is in the history file as lost but 'wormpep${database_version}' thinks it is unchanged\n");
+					$wcount++;
+	}
+	if ($hash{$CDS}{$pep_tag} == 1)    {print "$CDS/$pep is in the history file as lost but 'wormpep${database_version}' thinks it has just appeared\n";
+					$log->write_to("$CDS/$pep is in the history file as lost but 'wormpep${database_version}' thinks it has just appeared\n");
+					$wcount++;
+	}
     }
   }
 }
-
+$log->write_to("$count entries unchanged\n");
+$log->write_to("$wcount entries have thrown a warning\n");
 $log->write_to("Finished.\n");
-
 $log->mail();
 print "Finished.\n" if ($verbose);
 exit(0);
@@ -162,7 +212,7 @@ sub get_wormpep {
   my ($version, $hashref, $diff) = @_;
 
   #get the  CDS and protein IDs in the wormpep sequence file
-  open( PEP, $wormbase->basedir."/WORMPEP/wormpep$version/wormpep$version" );
+  open( PEP, $wormbase->basedir."/WORMPEP/wormpep${version}_noah/wormpep$version" );
   my $CDS;
   my $pep;
   while (my $line = <PEP>) {
@@ -199,7 +249,7 @@ sub get_wormpep_history {
 
   # get database version file
   
-  my $data_file = $wormbase->basedir . "/WORMPEP/wormpep${database_version}/wormpep.history$database_version";
+  my $data_file = $wormbase->basedir . "/WORMPEP/wormpep${database_version}_noah/wormpep.history$database_version";
 
   my %wormpep_history;
 

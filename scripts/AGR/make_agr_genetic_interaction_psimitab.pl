@@ -334,7 +334,7 @@ while (my $int = $it->next) {
   $tab[26] ||= '-';
 
 
-  my (@phens) = map {"wormbase:$_"} sort keys %{ $intPhen{$int} };
+  my (@phens) = map {"wormbase:\"$_\""} sort keys %{ $intPhen{$int} };
 
   if(scalar @phens > 0){
 	  $tab[27] = join"|", @phens

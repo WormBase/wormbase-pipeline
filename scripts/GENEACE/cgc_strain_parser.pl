@@ -49,10 +49,6 @@ GetOptions (
 
 
 &usage if ($help);
-my $user = `whoami`; chomp $user;
-if ($user ne "wormpub"){
-    $user = "wormbase";
-}
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");

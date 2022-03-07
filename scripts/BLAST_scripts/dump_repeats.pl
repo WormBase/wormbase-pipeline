@@ -9,8 +9,6 @@ use Log_files;
 use Storable;
 use POSIX qw(ceil);
 
-use lib $ENV{'WORM_SW_ROOT'} . '/lib/bioperl-live';
-use lib $ENV{'WORM_PACKAGES'} . '/ensembl/ensembl/modules';
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 
 

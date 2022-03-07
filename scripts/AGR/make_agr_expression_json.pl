@@ -331,7 +331,7 @@ sub record_lifestage_term_name {
 sub record_go_term_name {
   my $go = shift;
 
-  if (not exists $go_term->{$go->name}) {
+  if (not exists $go_term->{$go->name} and $go->Name) {
     $go_term->{$go->name} = $go->Name->name;
   }
 

@@ -12,6 +12,7 @@ use JSON;
 use lib $ENV{CVS_DIR};
 use Modules::AGR;
 use strict;
+use HTML::Entities;
 
 my ($database,$alleles,$outfile,$ws_version,$diseases,$skipchebi,$once);
 GetOptions (
@@ -76,7 +77,7 @@ if ($outfile) {
 
 my $json_obj = JSON->new;
 my $string   = $json_obj->allow_nonref->canonical->pretty->encode($data);
-print $out_fh $string;
+print $out_fh decode_entities($string);
 
 sub get_chebi{
 	my ($obj)=@_;

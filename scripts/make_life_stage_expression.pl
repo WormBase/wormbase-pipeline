@@ -1,4 +1,4 @@
-#!/nfs/panda/ensemblgenomes/wormbase/software/bin/perl -w
+#!/usr/bin/env perl
 
 # 2017-06-28 Added output of CSV table of values
 

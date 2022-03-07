@@ -10,7 +10,6 @@ use Log_files;
 use Storable;
 
 use lib "$ENV{'CVS_DIR'}/NAMEDB/lib";
-#use lib '/nfs/users/nfs_g/gw3/Nameserver-API';
 
 use NameDB_handler;
 
@@ -19,15 +18,11 @@ use NameDB_handler;
 # variables and command-line options #
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $user);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $user, $acefile, $batchfile,$deletebatchfile);
 my $database;
 my $sanitycheck;
 my $explain_gene;
 my $explain_gene_output='';
-
-my $acefile = "/nfs/production/panda/ensemblgenomes/wormbase/DATABASES/geneace/CGC/orthos.ace";
-my $batchfile  = "/nfs/production/panda/ensemblgenomes/wormbase/DATABASES/geneace/CGC/batch_load";
-my $deletebatchfile  = "/nfs/production/panda/ensemblgenomes/wormbase/DATABASES/geneace/CGC/delete_batch_load";
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
@@ -53,7 +48,10 @@ else {
 }
 
 my $log = Log_files->make_build_log($wormbase);
-
+my $root = $wormbase->database('geneace');
+$acefile = $root."/CGC/orthos.ace";
+$batchfile  = $root."/CGC/batch_load";
+$deletebatchfile  = $root."/CGC/delete_batch_load";
 
 my %CGC_species = ('briggsae' => 'Cbr',
 		   'remanei'  => 'Cre',
@@ -207,14 +205,14 @@ close $deletenamedb;
 if (defined $explain_gene) {$log->write_to("\n==================================\n$explain_gene_output\n==================================\n\n")}
 
 
-$log->write_to("\nCreated orthos.ace and batch_load and delete_batch_load under /nfs/production/panda/ensemblgenomes/wormbase/DATABASES/geneace/CGC/\n\n
+$log->write_to("\nCreated orthos.ace and batch_load and delete_batch_load under /DATABASES/geneace/CGC/\n\n
 Dont forget to load the ace file in to Geneace.(default is orthos.ace)\n
 \nDelete names from the Nameserver before creating new ones.\n
 Use batch_delName.pl -type CGC -user \$USER -pass pass -file delete_batch_load\n
 Use batch_pname_update.pl -newonly -cgc -domain Gene -user \$USER -pass pass -file batch_load\n
 \nFinished\n");
 $log->mail;
-print "\nCreated orthos.ace and batch_load and delete_batch_load under /nfs/production/panda/ensemblgenomes/wormbase/DATABASES/geneace/CGC/\n\n
+print "\nCreated orthos.ace and batch_load and delete_batch_load under /DATABASES/geneace/CGC/\n\n
 Dont forget to load the ace file in to Geneace.(default is orthos.ace)\n
 \nDelete names from the Nameserver before creating new ones.\n
 Use batch_delName.pl -type CGC -user \$USER -pass pass -file delete_batch_load\n

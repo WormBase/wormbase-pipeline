@@ -84,7 +84,7 @@ my $check = 1; # don't want to remove anything until it is backed up.
 my $new_genome = 0; # this is not a new genome
 
 my $RNASeq = RNASeq->new($wormbase, $log, $new_genome, $check);
-my $cufflinks_transcripts = "/nfs/production/panda/ensemblgenomes/wormbase/BUILD_DATA/MISC_DYNAMIC/SHORT_READS/CUFFLINKS_TRANSCRIPTS/$species";
+my $cufflinks_transcripts = $wormbase->build_data."/BUILD_DATA/MISC_DYNAMIC/SHORT_READS/CUFFLINKS_TRANSCRIPTS/$species";
 my $cufflinks_done_file = "cufflinks/genes.fpkm_tracking.done";
 
 # foreach SRA Experiment directory, check to see if there are files to be copied to the NGS, move cufflinks transcripts.gtf to backup
