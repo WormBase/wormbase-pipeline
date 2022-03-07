@@ -1859,7 +1859,6 @@
                     Corresponding_transposon UNIQUE ?Transposon XREF Corresponding_pseudogene
                     RNAi_result ?RNAi XREF Pseudogene
                     Variation ?Variation XREF Pseudogene // for completeness of variation connecting to all gene types
-                    Expr_pattern ?Expr_pattern XREF Pseudogene
                     Provisional_description ?Text #Evidence
                     Detailed_description ?Text #Evidence
                     Concise_description ?Text #Evidence
@@ -2178,7 +2177,6 @@
                  History Int Text ?Text //history logging [020801 krb]
                  Live       // replace use of 'Inactive' krb 06/12/01
          Visible Corresponding_CDS ?CDS XREF Corresponding_protein
-                 Expr_pattern ?Expr_pattern XREF Protein
                  Homology_group ?Homology_group XREF Protein // added [031120 krb]
                  3d_data ?3d_data XREF Protein
                  Interaction ?Interaction XREF Interactor_overlapping_protein
@@ -2333,10 +2331,7 @@
                             Reflects_endogenous_expression_of ?Gene
                             CDS ?CDS XREF Expr_pattern               // for coding genes
                             Sequence ?Sequence XREF Expr_pattern     // for clones???
-                            Pseudogene ?Pseudogene XREF Expr_pattern // [030801 krb]
                             Clone ?Clone XREF Expr_pattern
-                            Protein ?Protein XREF Expr_pattern
-                            Protein_description Text   // information for Expr_patterns with unknown antigens [031105 krb]
               Homol Homol_homol ?Homol_data XREF Expr_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info //Expr_pattern mapping [060427 ar2]
               Expression_data Life_stage ?Life_stage XREF Expr_pattern #Qualifier
                               Anatomy_term ?Anatomy_term XREF Expr_pattern #Qualifier
@@ -2362,13 +2357,11 @@
               Microarray_results ?Microarray_results XREF Expr_Pattern
               Pattern ?Text
               Picture ?Picture XREF Expr_pattern
-              MovieURL Text //Added by wen for link to movie URLs.
               Movie ?Movie XREF Expr_pattern  //Added by Wen to curate Expr_pattern video
               Species UNIQUE ?Species
               Remark ?Text #Evidence
               DB_info ?Database ?Database_field Text
-              Experiment Laboratory ?Laboratory
-                         Strain UNIQUE ?Strain
+              Experiment Strain UNIQUE ?Strain
               Reference ?Paper XREF Expr_pattern
               Person UNIQUE ?Person 
               Transgene ?Transgene XREF Expr_pattern

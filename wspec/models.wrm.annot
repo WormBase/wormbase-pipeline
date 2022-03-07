@@ -1877,7 +1877,6 @@
                         Corresponding_transposon UNIQUE ?Transposon INXREF Corresponding_pseudogene
                         RNAi_result ?RNAi INXREF Pseudogene
                         Variation ?Variation INXREF Pseudogene // for completeness of variation connecting to all gene types
-                        Expr_pattern ?Expr_pattern INXREF Pseudogene
                         Provisional_description ?Text #Evidence
                         Detailed_description ?Text #Evidence
                         Concise_description ?Text #Evidence
@@ -2205,7 +2204,6 @@
                   History Int Text ?Text //history logging [020801 krb]
                   Live       // replace use of 'Inactive' krb 06/12/01
           Visible Corresponding_CDS ?CDS INXREF Corresponding_protein
-                  Expr_pattern ?Expr_pattern INXREF Protein
                   Homology_group ?Homology_group INXREF Protein // added [031120 krb]
                   // 3d_data ?3d_data XREF Protein
                   Interaction ?Interaction INXREF Interactor_overlapping_protein
@@ -2359,10 +2357,7 @@
                             Reflects_endogenous_expression_of ?Gene
 //                            CDS ?CDS OUTXREF Expr_pattern               // for coding genes
                             Sequence ?Sequence OUTXREF Expr_pattern     // for clones???
-//                            Pseudogene ?Pseudogene OUTXREF Expr_pattern // [030801 krb]
                             Clone ?Clone OUTXREF Expr_pattern
-                            Protein ?Protein OUTXREF Expr_pattern
-                            Protein_description Text   // information for Expr_patterns with unknown antigens [031105 krb]
 //              Homol Homol_homol ?Homol_data XREF Expr_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info //Expr_pattern mapping [060427 ar2]
               Expression_data Life_stage ?Life_stage OUTXREF Expr_pattern #Qualifier
                               Anatomy_term ?Anatomy_term OUTXREF Expr_pattern #Qualifier
@@ -2388,13 +2383,11 @@
               Microarray_results ?Microarray_results INXREF Expr_Pattern
               Pattern ?Text //Multi_value ordering issue in Datomic possibly
               Picture ?Picture INXREF Expr_pattern
-              MovieURL Text //Added by wen for link to movie URLs.
               Movie ?Movie INXREF Expr_pattern  //Added by Wen to curate Expr_pattern video
               Species UNIQUE ?Species
               Remark ?Text #Evidence
               DB_info ?Database ^database ?Database_field ^field Text ^accession
-              Experiment Laboratory ?Laboratory
-                         Strain UNIQUE ?Strain
+              Experiment Strain UNIQUE ?Strain
               Person UNIQUE ?Person 
               Reference ?Paper OUTXREF Expr_pattern
               Transgene ?Transgene OUTXREF Expr_pattern
