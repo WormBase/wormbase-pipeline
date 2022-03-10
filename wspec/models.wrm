@@ -1096,10 +1096,9 @@
                           Inferred_gene ?Gene // Indicate the gene in Variation or Strain, when submitted
                           Association_type UNIQUE is_model_of                  // Describe relationship between genetic entity and disease (condition)
                                                   is_implicated_in
-                                                  causes_or_contributes_to_condition
-                                                  causes_condition
-                                                  contributes_to_condition
                                                   is_marker_for
+                                                  is_ameliorated_model_of // new tag for WS285
+                                                  is_exacerbated_model_of // new tag for WS285
                           Evidence_code GO_code ?GO_code // will use ECO later on
                                         ECO_term ?ECO_term 
                           Qualifier_not          // to indicate that a disease is NOT modeled by X change tag WS262
