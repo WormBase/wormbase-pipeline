@@ -3197,6 +3197,7 @@
                      Attribute_of Microarray_experiment ?Microarray_experiment OUTXREF Expression_cluster // Wen
                                   Mass_spectrometry ?Mass_spec_experiment OUTXREF Expression_cluster      // Wen WS244
                                   RNAseq ?Analysis OUTXREF Expression_cluster_RNAseq
+                                  Single_Cell_RNASeq ?Analysis XREF Expression_cluster_scRNASeq //Wen WS285 for CenGen data
                                   Tiling_array ?Analysis OUTXREF Expression_cluster_tiling_array
                                   qPCR ?Analysis OUTXREF Expression_cluster_qPCR //added by Wen for qPCR curation
                                   Expr_pattern ?Expr_pattern OUTXREF Expression_cluster #Evidence          // Wen originally for Localizome
@@ -3839,6 +3840,7 @@
              Concentration ?Text
              Expression_cluster_RNAseq ?Expression_cluster INXREF RNAseq
              Expression_cluster_tiling_array ?Expression_cluster INXREF Tiling_array
+             Expression_cluster_scRNASeq ?Expression_cluster XREF Single_Cell_RNASeq //Wen WS285 for CenGen data
              Expression_cluster_qPCR ?Expression_cluster INXREF qPCR  //added by Wen for qPCR curation
              Gene_cluster ?Gene_cluster INXREF Analysis
              Molecule ?Molecule XREF Analysis
