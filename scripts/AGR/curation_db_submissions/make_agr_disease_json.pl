@@ -46,7 +46,7 @@ my $chebi_name_map = get_chebi_name_map();
 $acedbpath = $wormbase->autoace unless $acedbpath;
 $ws_version = $wormbase->get_wormbase_version_name unless $ws_version;
 
-$outfile = "./wormbase.disease_association.${ws_version}.json" unless defined $outfile;
+$outfile = "./wormbase.disease_annotations.${ws_version}.json" unless defined $outfile;
 
 
 my %go2eco = (
@@ -158,10 +158,12 @@ while( my $obj = $it->next) {
 	    object               => $obj->Disease_term->name,
 	    data_provider        => 'WB',
 	    date_last_modified   => $evi_date,
+	    created_by           => 'WB:curator',
+	    annotation_type      => 'manually_curated',
 	    evidence_codes       => \@evi_codes,
-	    reference            => $paper,
+	    single_reference     => $paper,
 	};
-	$annot->{modified_by} = 'WB:' . $obj->Curator_confirmed->name if $obj->Curator_confirmed;
+	$annot->{modified_by} = $obj->Curator_confirmed ? 'WB:' . $obj->Curator_confirmed->name : "WB:curator";
 	$annot->{genetic_sex} = $obj->Genetic_sex->name if $obj->Genetic_sex;
 	$annot->{related_notes} = [{
 	    note_type => 'disease_summary',
@@ -235,11 +237,11 @@ while( my $obj = $it->next) {
 	
 	$annot->{predicate} = $assoc_type;
 	$annot->{subject} = $obj_id;
-	$annot->{negated} = 'true' if $obj->at('Qualifier_not');
+	$annot->{negated} = JSON::true if $obj->at('Qualifier_not');
 	
 
 	my $condition_relations = get_condition_relations($obj, $chebi_name_map);
-	$annot->{conditionRelations} = $condition_relations if @$condition_relations;
+	$annot->{condition_relations} = $condition_relations if @$condition_relations;
 	
 	if ($obj_type eq 'gene') {
 	    push @gene_annots, $annot;
