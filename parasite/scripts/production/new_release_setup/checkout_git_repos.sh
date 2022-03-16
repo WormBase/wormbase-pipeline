@@ -28,7 +28,7 @@ checkout_ensembl_branch(){
 checkout_ensembl_branch ensembl-analysis dev/hive_master
 checkout_ensembl_branch ensembl-pipeline master
 checkout_ensembl_branch ensembl-taxonomy master
-checkout_ensembl_branch ensembl-funcgen master
+checkout_ensembl_branch ensembl-funcgen main
 checkout_ensembl_branch ensembl release/${ENSEMBL_VERSION}
 checkout_ensembl_branch ensembl-compara release/${ENSEMBL_VERSION}
 checkout_ensembl_branch ensembl-io release/${ENSEMBL_VERSION}
@@ -39,11 +39,11 @@ checkout_ensembl_branch ensembl-vep release/${ENSEMBL_VERSION}
 checkout_ensembl_branch ensembl-metadata release/${ENSEMBL_VERSION}
 checkout_ensembl_branch ensj-healthcheck release/${ENSEMBL_VERSION}
 checkout_ensembl_branch ensembl-datacheck master
-checkout_ensembl_branch ensembl-py master
+checkout_ensembl_branch ensembl-py main
 checkout_ensembl_branch ensembl-hive version/2.6
-checkout_ensembl_branch eg-pipelines master EnsemblGenomes
 checkout_ensembl_branch parasite-static master EnsemblGenomes
 checkout_ensembl_branch eg-web-common master EnsemblGenomes
 checkout_ensembl_branch ensembl-production-imported trunk
 checkout_ensembl_branch ensembl-production-imported-private trunk
-
+checkout_ensembl_branch ensembl-taxonomy main
+checkout_ensembl_branch GIFTS main
