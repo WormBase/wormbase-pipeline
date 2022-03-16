@@ -30,8 +30,8 @@ cat $DIR/.tmp/core_db_and_taxon_list.tsv \
       } ; print Dump(\%h);' \
   > $DIR/.tmp/core_db_per_taxon.yaml
 
-if [ -d "/nfs/ftp" ] ; then
-  cp -v /nfs/ftp/pub/databases/GO/goa/UNIPROT/goa_uniprot_all.gaf.gz $DIR/.tmp/goa_uniprot_all.gaf.gz
+if [ -d "$FTP" ] ; then
+  cp -v ${FTP}/databases/GO/goa/UNIPROT/goa_uniprot_all.gaf.gz $DIR/.tmp/goa_uniprot_all.gaf.gz
 else 
   wget -c ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/UNIPROT/goa_uniprot_all.gaf.gz -O $DIR/.tmp/goa_uniprot_all.gaf.gz
 fi
@@ -63,5 +63,6 @@ if [ "$num_files" -ne "$num_core_dbs" ] ; then
     <( perl -pe 's/_core.*//' < $DIR/.tmp/core_db_and_taxon_list.tsv | sort )
   exit 1
 else
-  rm -v $DIR/.tmp/**
+  echo "rm -v $DIR/.tmp/**"
+fi
 
