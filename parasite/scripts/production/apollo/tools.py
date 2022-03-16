@@ -94,10 +94,6 @@ class Species:
             stu2sam_dict[study_id] = list(set(sst.design_dict().values()))
         return(stu2sam_dict)
 
-
-
-
-
 class Study(Species):
     def __init__(self, species_name, study_id):
         super().__init__(species_name)
@@ -335,6 +331,16 @@ def samples_needed(selected_samples, species):
              if selected_sample in species.studies():
                  samples_needed+=species.studies_to_samples()[selected_sample]
      return(list(set(samples_needed)))
+
+def species_input(ui_species):
+    if bool(re.match("^[a-z0-9]+_[a-z0-9]+_[a-z0-9]+$",ui_species)):
+        return("spe_cies_bp")
+    elif bool(re.match("^[a-z0-9]+_[a-z0-9]+$",ui_species)):
+        return("spe_cies")
+    else:
+        exit_with_error("Wrong species input. Please try again.")
+
+
 
 
 

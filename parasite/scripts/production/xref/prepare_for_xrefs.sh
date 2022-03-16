@@ -36,5 +36,10 @@ if ! [ -s "$dir/sql/populate_metadata.sql" ] ; then echo "Error, not populated: 
 
 TMP=$dir/tmp perl -MProductionMysql -E 'map {say "$ENV{TMP}/$_"} (ProductionMysql->staging->species(@ARGV))' "$@" | xargs rm -rfv
 
+#Create the source database we need
+mysql-ps-prod-1-w -Ne "DROP DATABASE IF EXISTS WBPS${PARASITE_VERSION}_xref_source";
+mysql-ps-prod-1-w -Ne "CREATE DATABASE WBPS${PARASITE_VERSION}_xref_source";
+mysql-ens-meta-prod-1 mysqldump -d xref_source | mysql-ps-prod-1-w -D WBPS${PARASITE_VERSION}_xref_source  
+
 XREF_SETUP_DIR=$dir
 export XREF_SETUP_DIR

@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 use ProductionMysql;
+use File::Basename;
+
 sub read_templates {
   my (%templates, $current);
   while(<DATA>) {
@@ -37,6 +39,7 @@ for my $core_db (@core_dbs){
 }
 
 my $has_wormbase_parsers;
+my $has_synonyms;
 for my $species (keys %core_dbs_per_species){
    my @core_dbs = @{$core_dbs_per_species{$species}};
    my ($spe, $cies) = split "_", $species;
@@ -45,9 +48,11 @@ for my $species (keys %core_dbs_per_species){
    my %taxons;
    my %wormbase_annotation_paths;
    my %aliases;
+   my %possible_synonyms_files;
    for my $core_db (@core_dbs) {
       my ($_spe, $_cies, $bioproject) = split "_", $core_db;
       $taxons{ProductionMysql->staging->meta_value($core_db, "species.taxonomy_id")}++;
+      my $possible_synonyms_file = join("/", $ENV{'PARASITE_SYNONYMS_DIR'}, join("_", $_spe, $_cies, $bioproject), "curated_synonyms.tsv");
       my $possible_wormbase_annotation_path = 
        join ("/",
          "/nfs/ftp/public/databases/wormbase/releases",
@@ -59,6 +64,7 @@ for my $species (keys %core_dbs_per_species){
          join(".", $wormbase_species, uc($bioproject), "WS$ENV{WORMBASE_VERSION}", "xrefs.txt.gz")
        );
       $wormbase_annotation_paths{$possible_wormbase_annotation_path} ++ if -f $possible_wormbase_annotation_path;
+      $possible_synonyms_files{$possible_synonyms_file} ++ if -f $possible_synonyms_file;
      $aliases{
        "${spe}_${cies}_${bioproject}"
      }++;
@@ -88,7 +94,7 @@ for my $species (keys %core_dbs_per_species){
        print "aliases         = $aliases\n";
        print "taxonomy_id     = $taxon\n";
        my $sources = $templates->{STANDARD_SOURCES};
-       if( $species =~ /schistosoma_mansoni/ or $species =~ /haemonchus_contortus_prjeb506/ ){
+       if( $species =~ /schistosoma_mansoni/ or $species =~ /haemonchus_contortus/ ){
          $sources =~ s{Uniprot/SPTREMBL::MULTI-invertebrate}{Uniprot/SPTREMBL::MULTI-invertebrate-approx};
        }
        print $sources;
@@ -97,7 +103,7 @@ for my $species (keys %core_dbs_per_species){
        my ($wormbase_annotation_path, @other_wormbase_annotation_paths) = keys %wormbase_annotation_paths;
        die %wormbase_annotation_paths if @other_wormbase_annotation_paths;
        $has_wormbase_parsers++;
-       (my $ftp_path = $wormbase_annotation_path) =~ s/\/nfs\/ftp/ftp:\/\/ftp.ebi.ac.uk/;
+       (my $ftp_path = $wormbase_annotation_path) =~ s/\/nfs\/ftp\/public/ftp:\/\/ftp.ebi.ac.uk\/pub/;
        my $spe_1 = substr ($spe, 0, 1 );
        my $source =  "wormbase::$spe_1$cies";
        print "source = $source\n";
@@ -107,9 +113,24 @@ for my $species (keys %core_dbs_per_species){
        print $templates->{WORMBASE_SOURCE};
        print "data_uri = $ftp_path\n";
    }
+   if (%possible_synonyms_files){
+       my ($possible_synonyms_file, @other_possible_synonyms_files) = keys %possible_synonyms_files;
+       die %possible_synonyms_files if @other_possible_synonyms_files;
+       my $possible_synonyms_dir = dirname($possible_synonyms_file);
+       $has_synonyms++;
+       my $spe_1 = substr ($spe, 0, 1 );
+       my $source =  "curatedsynonyms::$spe_1$cies";
+       print "source = $source\n";
+       print "\n";
+       print "[source $source]\n";
+       print "name            = curatedsynonyms_$spe_1$cies\n";
+       print $templates->{CURATED_SYNONYMS_SOURCE};
+       print "data_uri = $possible_synonyms_dir\n";
+   }
    print "\n";
 }
 print $templates->{WORMBASE_FAKE_SOURCES} if $has_wormbase_parsers;
+print $templates->{CURATED_SYNONYMS_FAKE_SOURCE} if $has_synonyms;
 1;
 __DATA__
 
@@ -133,6 +154,15 @@ prio_descr      =
 parser          = WormbaseDirectParser
 release_uri     =
 END_WORMBASE_SOURCE_TEMPLATE
+
+BEGIN_CURATED_SYNONYMS_SOURCE_TEMPLATE
+download        = Y
+order           = 50
+priority        = 1
+prio_descr      =
+parser          = CuratedSynonymsParser
+release_uri     =
+END_CURATED_SYNONYMS_SOURCE_TEMPLATE
 
 BEGIN_ENSEMBL_INSDC_PARSERS_TEMPLATE
 
@@ -205,7 +235,7 @@ query_cutoff = 95
 target_cutoff = 70
 
 END_ENSEMBL_INSDC_PARSERS_TEMPLATE
-
+-
 BEGIN_ENSEMBL_OTHER_PARSERS_TEMPLATE
 
 [source EntrezGene::MULTI]
@@ -335,6 +365,18 @@ parser          = comes from WormbaseDirectParser
 release_uri     =
 data_uri        =
 END_WORMBASE_FAKE_SOURCES_TEMPLATE
+
+BEGIN_CURATED_SYNONYMS_FAKE_SOURCE_TEMPLATE
+[source curated_gene_synonyms::curatedsynonyms]
+name            = curated_gene_synonyms
+download        = N
+order           = 50
+priority        = 1
+prio_descr      =
+parser          = comes from CuratedSynonymsParser
+release_uri     =
+data_uri        =
+END_CURATED_SYNONYMS_FAKE_SOURCE_TEMPLATE
 
 BEGIN_ENSEMBL_FAKE_SOURCES_TEMPLATE
 [source RefSeq_dna::MULTI-predicted]
@@ -554,6 +596,13 @@ prio_descr      =
 parser          = UniProtParser
 release_uri     =
 data_uri        =
+
+[source Uniprot_isoform]
+name            = Uniprot_isoform
+download        = N
+order           = 30
+priority        = 1
+parser          = UniProtParser
 
 [source Uniprot::EMBL-predicted]
 name            = EMBL_predicted

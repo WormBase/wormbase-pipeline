@@ -43,12 +43,15 @@ sub default_options {
     run_all => 0,
     meta_filters => {},
 
+    datamove_queue_name => 'datamover',
+    queue_name => 'production',
+
     # Don't dump scaffolds smaller than this
     min_slice_length        => 5000,
 
     # Program paths
-    builddatabase_exe => '/nfs/panda/ensemblgenomes/wormbase/parasite/software/RepeatModeler2/RepeatModeler/BuildDatabase',
-    repeatmodeler_exe => '/nfs/panda/ensemblgenomes/wormbase/parasite/software/RepeatModeler2/RepeatModeler/RepeatModeler',
+    builddatabase_exe => 'BuildDatabase',
+    repeatmodeler_exe => 'RepeatModeler',
 
     # Blast engine can be wublast or ncbi
     blast_engine => 'ncbi',
@@ -360,8 +363,8 @@ sub resource_classes {
   
   return {
     %{$self->SUPER::resource_classes},
-    '20Gb_mem_16_cores'  => {'LSF' => '-q production-rh74 -M 20000 -n 16 -R "select [mem>20000] rusage[mem=20000] span[hosts=1]"'},
-    '50Gb_mem_16_cores' => {'LSF' => '-q production-rh74 -M 50000 -n 16 -R "select [mem>50000] rusage[mem=50000] span[hosts=1]"'},
+    '20Gb_mem_16_cores'  => {'LSF' => '-q production -M 20000 -n 16 -R "select [mem>20000] rusage[mem=20000] span[hosts=1]"'},
+    '50Gb_mem_16_cores' => {'LSF' => '-q production -M 50000 -n 16 -R "select [mem>50000] rusage[mem=50000] span[hosts=1]"'},
   }
 }
 
