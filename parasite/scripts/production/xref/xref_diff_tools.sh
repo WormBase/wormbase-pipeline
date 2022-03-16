@@ -6,10 +6,10 @@ diff_query_results(){
  previous_core_db=$(perl -MProductionMysql -E 'say ProductionMysql->previous_staging->core_db(@ARGV)' "$species" )
  [ "$core_db" ] || return
  [ "$previous_core_db" ] || return
- diff \
-   <( $PREVIOUS_PARASITE_STAGING_MYSQL $previous_core_db -Ne "$sql" | perl -pe "$filter" | sort ) \
-   <( $PARASITE_STAGING_MYSQL $core_db -Ne "$sql" | perl -pe "$filter" | sort ) \
-   | grep '<\|>'
+ printf "Old:\n"
+ $PREVIOUS_PARASITE_STAGING_MYSQL $previous_core_db -Ne "$sql" | perl -pe "$filter" | sort
+ printf "\nNew:\n"
+ $PARASITE_STAGING_MYSQL $core_db -Ne "$sql" | perl -pe "$filter" | sort
 }
 join_query_results(){
  sql=$1
