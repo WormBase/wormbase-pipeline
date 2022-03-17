@@ -175,6 +175,12 @@ if (not $manual_upload) {
       or $log->log_and_die ("FTP-put failed for $collated_file: ".$ftp->message."\n");
   $ftp->quit;
   
+  ###########################
+  # Back up submission file #
+  # #########################
+  
+  system ("cp $collated_file /nfs/production/flicek/wormbase/wb/BUILD/autoace/MISC_OUTPUT/") or die "Copying backup file failed: $!";
+
   $log->write_to("\nFile: $collated_file uploaded ENA ftp account\n");
   $log->write_to("\nRefer to log file $submit_log_file for details on which entries were uploaded\n");
 }
