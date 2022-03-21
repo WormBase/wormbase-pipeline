@@ -25,4 +25,11 @@ ok(not(@too_long_names), "Biomart names under 18 chars") or diag explain join("\
   join("\t", $biomart_name, length $biomart_name,  grep {$core_db_to_biomart_names{$_} eq $biomart_name} keys %core_db_to_biomart_names)
 } @too_long_names);
 
+#If you want to see all matches then uncomment:
+# my $key;
+# foreach $key (keys %core_db_to_biomart_names)
+# {
+#   print "$key -> $core_db_to_biomart_names{$key}\n";
+# };
+
 done_testing;
