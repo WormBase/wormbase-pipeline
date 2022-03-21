@@ -64,9 +64,9 @@ while (<$gff_in_fh>){
   if (exists $family_names->{$transposond}) {
     my $gfamily=$family_names->{$transposond}[0];
     if ($gff3) {
-      print $gff_out_fh ";Family=$gfamily\n";
+      print $gff_out_fh ";family=$gfamily\n";
     } else {
-      print $gff_out_fh " ; Family \"$gfamily\"\n";
+      print $gff_out_fh " ; family \"$gfamily\"\n";
     }
     $changed_lines++;
   }
