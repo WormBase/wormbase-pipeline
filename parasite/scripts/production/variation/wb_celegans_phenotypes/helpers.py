@@ -28,7 +28,7 @@ def wbphenoftp_parser(file, taxon_id, names_dict):
     :return: A Pandas df object.
     """
     print(dtnow() + ': INFO - Loaded wormbase phenotype.wb file from FTP.')
-    wbpheno_df = pd.read_csv(file, skiprows=3, header=None, sep='\t')
+    wbpheno_df = pd.read_csv(file, comment="!", header=None, sep='\t')
     print(dtnow() + ': INFO - Starting phenotype.wb datachecks.')
     error_messages = [z for z in [wb_ftpfile_datacheck(wbpheno_df, x, names_dict[x]) for x in names_dict] if z != ""]
     if len(error_messages)>0:

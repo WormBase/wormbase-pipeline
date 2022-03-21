@@ -12,17 +12,17 @@ import datetime
 from intermine.webservice import Service
 
 #Check Input
-if len(sys.argv) != 5:
-    print(dtnow()+": ERROR - Usage: python parse_wbdump_rnai.py SPECIES WORMBASE_VERSION"
-                  "WORMBASE_DATABASES PHENOTYPE_HOME")
-    print("\tExample: ./parse_wbdump_rnai.py caenorhabditis_elegans_prjna13758 $WORMBASE_VERSION "
-          "/nfs/production/flicek/wormbase/wb/DATABASES $PHENOTYPE_HOME/WORMBASE/WBPS$PARASITE_VERSION")
-    raise ValueError
-
-SPECIES = sys.argv[1]
-WORMBASE_VERSION = sys.argv[2]
-PARASITE_VERSION = sys.argv[3]
-PHENOTYPE_HOME = sys.argv[4]
+# if len(sys.argv) != 5:
+#     print(dtnow()+": ERROR - Usage: python parse_wbdump_rnai.py SPECIES WORMBASE_VERSION"
+#                   "WORMBASE_DATABASES PHENOTYPE_HOME")
+#     print("\tExample: ./parse_wbdump_rnai.py caenorhabditis_elegans_prjna13758 $WORMBASE_VERSION "
+#           "/nfs/production/flicek/wormbase/wb/DATABASES $PHENOTYPE_HOME/WORMBASE/WBPS$PARASITE_VERSION")
+#     raise ValueError
+#
+# SPECIES = sys.argv[1]
+# WORMBASE_VERSION = sys.argv[2]
+# PARASITE_VERSION = sys.argv[3]
+# PHENOTYPE_HOME = sys.argv[4]
 
 SPECIES = "caenorhabditis_elegans_prjna13758"
 WORMBASE_VERSION = os.getenv('WORMBASE_VERSION')
@@ -60,10 +60,9 @@ print('PHENOTYPES_FILE = '+PHENOTYPES_FILE)
 
 print(dtnow() + ': INFO - Parsing Input Files')
 #Read/Parse and process the WormBase phenotypes FTP file
-wbpheno_df = wbphenoftp_parser(file=WB_FTP_PHENO_FILE,
+wbpheno_df = wbphenoftp_parser(prefile=WB_FTP_PHENO_FILE,
+                               workdir=WORKDIR,
                                taxon_id=species2taxonidncbi(SPECIES,NCBI_TAXON_URL),
-                               VAR_URL = WB_VAR_URL,
-                               RNAI_URL = WB_RNAi_URL,
                                names=None)
 
 #Get PMIDs for the WBPapers or WBVar
