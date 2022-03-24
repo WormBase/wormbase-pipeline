@@ -7,7 +7,7 @@
 # Last edited by: $Author: pad $
 # Last edited on: $Date: 2015-07-02 10:23:29 $
 #====================
-#perl ~/wormbase/scripts/merge_split_camaces.pl -update -skd -pad -species elegans -test -version $MVERSION > /nfs/wormpub/camace_orig/WSXXX -WSXXY/load_data.txt
+#perl ~/wormbase/scripts/merge_split_camaces.pl -update -skd -pad -species elegans -test -version $MVERSION > /nfs/wormpub/CURATION_DATABASES/camace_orig/WSXXX -WSXXY/load_data.txt
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -151,20 +151,20 @@ else {
 if ($species eq 'elegans') {
   $canonical = $wormbase->database('camace');
   if ($test){
-    $orig = $wormpub."/camace_testorig";
+    $orig = $wormpub."/CURATION_DATABASES/camace_testorig";
   }
   else  {
-    $orig = $wormpub."/camace_orig";
+    $orig = $wormpub."/CURATION_DATABASES/camace_orig";
   }
   $root = 'camace';
 }
 else {
   $canonical = $wormbase->database($species);
   if ($test) {
-    $orig = $wormpub."/${species}_testorig";
+    $orig = $wormpub."/CURATION_DATABASES/${species}_testorig";
   }
   else {
-    $orig = $wormpub."/${species}_orig";
+    $orig = $wormpub."/CURATION_DATABASES/${species}_orig";
   }
   $root = $species;
 }
@@ -337,7 +337,7 @@ sub dump_sdb {
 
   foreach my $database (@databases) {
 
-    $database_path = $wormpub."/${root}_${database}";
+    $database_path = $wormpub."/CURATION_DATABASES/${root}_${database}";
     #$ENV{'ACEDB'} = $database_path;
     
     foreach my $class (@classes) {
@@ -478,7 +478,7 @@ sub split_databases {
 
 #reinitialise the $species_splits
   foreach my $database (@databases) {
-    my $split_db = $wormpub."/${root}_${database}";
+    my $split_db = $wormpub."/CURATION_DATABASES/${root}_${database}";
     my $tsuser = "Initialise";
     if (-e $split_db."/database/ACEDB.wrm") {
       $log->write_to ("Destroying $split_db\n");
@@ -497,7 +497,7 @@ sub split_databases {
       $wormbase->run_command("cp -r $wspec $split_db/", $log) && die "Failed to copy the wspec dir\n" unless (-e $split_db."/wspec");
       $wormbase->run_command("cp -rf $wspec/models.wrm $split_db/wspec/models.wrm", $log) && die "Failed to force copy the models fileir\n";
       $wormbase->run_command("chmod g+w $split_db/wspec/*", $log);
-      $wormbase->run_command("cp -r $wormpub/wormbase/wgf $split_db/", $log) && die "Failed to copy the wgf dir\n" unless (-e $split_db."/wgf");
+      $wormbase->run_command("cp -r $wormpub/DATABASES/current_DB/wgf $split_db/", $log) && die "Failed to copy the wgf dir\n" unless (-e $split_db."/wgf");
     }
     my $command = "y\nsave\nquit\n";
     print "Opening $split_db for edits\n" if ($verbose);
@@ -530,13 +530,13 @@ sub split_databases {
   shift @databases; #remove orig from database array
   $log->write_to ("@databases\n") if ($debug);
   foreach my $database (@databases) {
-    $log->write_to ("Transfering $orig to $wormpub/${root}_${database}\n");
+    $log->write_to ("Transfering $orig to $wormpub/CURATION_DATABASES/${root}_${database}\n");
     if ($debug) {
-      print "Transfering $orig to $wormpub/${root}_${database}\n";
-      $wormbase->run_script("TransferDB.pl -debug $debug -test -start  $orig -end $wormpub/${root}_${database} -split -database -wspec -debug pad", $log) && $log->write_to ("Failed to run TransferDB.pl for ${root}_${database}\n");
+      print "Transfering $orig to $wormpub/CURATION_DATABASES/${root}_${database}\n";
+      $wormbase->run_script("TransferDB.pl -debug $debug -test -start  $orig -end $wormpub/CURATION_DATABASES/${root}_${database} -split -database -wspec -debug pad", $log) && $log->write_to ("Failed to run TransferDB.pl for ${root}_${database}\n");
     }
     else {
-      $wormbase->run_script("TransferDB.pl -start  $orig -end $wormpub/${root}_${database} -split -database -wspec -debug pad", $log) && $log->write_to ("Failed to run TransferDB.pl for ${root}_${database}\n");
+      $wormbase->run_script("TransferDB.pl -start  $orig -end $wormpub/CURATION_DATABASES/${root}_${database} -split -database -wspec -debug pad", $log) && $log->write_to ("Failed to run TransferDB.pl for ${root}_${database}\n");
     }
   }
   $log->write_to ("@databases SPLIT(S) UPDATED\n");
