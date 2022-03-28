@@ -426,7 +426,7 @@ sub  quick_tests {
   my %CDS_queries = (
 		     "has no CDS tag"                          => "where !CDS",
 		     "has a bad Method tag"                    => '; Method != "history"; Method != "curated"; Method != "Transposon_CDS"; Method != "Genefinder"; Method != "not_confirmed_isoformer"; Method != "RNASEQ.Hillier"; Method != "mGene"; Method != "RNASEQ.Hillier.Aggregate"; Method != "isoformer"; Method != "jigsaw"; Method != "twinscan" ; Method != "ensembl" ; Method != "Trinity_CDS" ; Method != "genBlastG"',
-		     "has no Corresponding_transposon tag"     => "where Method = Transposon_CDS; !Corresponding_transposon",
+		     "has no Corresponding_transposon tag"     => "where Method = Transposon_CDS AND Species = \"Caenorhabditis elegans\"; !Corresponding_transposon",
 		     "has no Gene tag"                         => "where Method = Transposon_CDS AND !Gene",
 		     "has no Gene tag for this CDS"            => "where Method = curated AND !Gene",
 		     "has no From_laboratory tag"              => "where Method = Transposon_CDS AND !From_laboratory",
