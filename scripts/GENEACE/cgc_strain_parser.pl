@@ -69,6 +69,7 @@ $log->log_and_die("input file $input_file doesn't exist\n") unless -e $input_fil
 # misc variables
 #######################
 my $geneace_dir = $wormbase->database('geneace');
+#my $build_dir = $wormbase->basedir."/".$wormbase->species;
 my $tace        = $wormbase->tace;
 my $rundate     = $wormbase->rundate;
 
@@ -120,9 +121,11 @@ my $strain_count = `grep Strain: $input_file | wc -l`;
 
 open(INPUT, $input_file) || die "Can't open inputfile!"; 
 
-# setup the nameserver
-#my $db = NameDB_handler->new($wormbase, $test);
+# Connect to geneace for the latest WBVar and gene info
 my $geneAceDB = Ace->connect(-path => $geneace_dir) or die Ace->error;
+# a full build database connection might also be good for Person/Author info but use BUILD/elegans for speed of access.
+#my $buildAceDB =  Ace->connect(-path => $build_dir) or die Ace->error;
+
 
 while(<INPUT>){
   # drop out of loop before you reach last line of file
@@ -425,11 +428,27 @@ sub _get_variationId {
 # function to find a WBPerson by searching through a collection of tags
 
 sub find_author {
+    my (@wbperson, $wbperson);
     my ($searchterm)=@_;
-    my ($wbperson) = $geneAceDB->aql("select all class Person where ->Standard_name like \"$searchterm\"".
-                    " or ->Full_name like \"$searchterm\" or ->Also_known_as like \"$searchterm\"");
-    $$wbperson[0]||=$searchterm;
-    return "$$wbperson[0]";
+    # Remove '.'
+    $searchterm =~ s/\.//;
+    @wbperson = $geneAceDB->aql("select all class Person where ->Standard_name like \"$searchterm\"".
+				" or ->Full_name like \"$searchterm\" or ->Also_known_as like \"$searchterm\"".
+				" or ->Possibly_publishes_as like \"$searchterm\"");
+#    unless (defined @wbperson[0]) {
+#    	@wbperson = $buildAceDB->aql("select all class Person where ->Standard_name like \"$searchterm\"".
+#				     " or ->Full_name like \"$searchterm\" or ->Also_known_as like \"$searchterm\"".
+#				     " or -> Possibly_publishes_as like \"$searchterm\"");
+#    }
+    if (defined @wbperson[0]) {
+	$wbperson = @wbperson[0]->[0]->name;
+    }
+    else {
+	$wbperson = $searchterm;
+    }
+    return $wbperson;
+    #    $wbperson[0]||=$searchterm;
+    #    return "$$wbperson[0]";
 }
 
 

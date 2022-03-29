@@ -222,13 +222,13 @@ sub process_gene_class{
   }
 
   # checks Genes that do not have a map position nor an interpolated_map_position but has sequence info
-  my $query = "Find Live_genes WHERE !(Map | Interpolated_map_position) & Sequence_name & Species=\"*elegans\" & !Positive_clone=\"MTCE\" & !Made_into_transposon";
+  my $query = "Find Live_genes WHERE !(Map | Interpolated_map_position) & Sequence_name & Species=\"*elegans\" & !Positive_clone=\"MTCE\" & !Transposon_in_origin";
   foreach my $gene ($db->fetch(-query=>"$query")){
     if( $Gene_info{$gene} ) {
       print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has neither Map nor Interpolated_map_position info but has Sequence_name\n";
     }
     else {
-      print LOG "$gene not in Gene_info hash\n";
+      print LOG "$gene not in \'Live_genes\'(subclasses.wrm) Gene_info hash\n";
     }
   }
 
@@ -1159,6 +1159,7 @@ sub process_strain_class {
   #Mos1 transposon | Mos1 transposon
   #MosDel | MosDel
   #MosSCI | MosSCI
+  #RMCE | Recombinase-mediated cassette exchange (RMCE)                                                                                                                               
   #ENU | N-Ethyl-N-nitrosoUrea (ENU)
   #Nitrosoguanidine | Nitrosoguanidine
   #Phage transduction | Phage transduction
@@ -1183,7 +1184,9 @@ sub process_strain_class {
   #TMP+UV+Gamma Irradiation | Mix
   #UV+Formaldehyde | Mix
   #UV+TMP | Mix
-  my @mutagens = ('HCHO','ICR','DEO','DMH','60Co Irradiation','Acetaldehyde','CRE','CRISPR_Cas9','Cs137 Irradiation','DEB','Diethoxybutane','DES','EMS','Gamma Irradiation','Heat shock','IEF','MMS','Microinjection','Microparticle bombardment','mini-Mos','Mos1 transposon','MosDel','MosSCI','ENU','Nitrosoguanidine','Phage transduction','32P Irradiation','Spontaneous','TALEN','Tc1','Tc4','Tc5','TMP','UV','X-ray','UNKNOWN','EMS+ENU','EMS+Formaldehyde','EMS+Tc3','EMS+Tc4','IEF+EMS','Microinjection+Gamma Irradiation','Microparticle bombardment+MosSCI','Microparticle bombardment+X-ray','TMP+UV+Gamma Irradiation','UV+Formaldehyde','UV+TMP');
+  #UV+CRISPR_Cas9
+  #UV+ENU | Mix
+  my @mutagens = ('HCHO','ICR','DEO','DMH','60Co Irradiation','Acetaldehyde','CRE','CRISPR_Cas9','Cs137 Irradiation','DEB','Diethoxybutane','DES','EMS','Gamma Irradiation','Heat shock','IEF','MMS','Microinjection','Microparticle bombardment','mini-Mos','Mos1 transposon','MosDel','MosSCI','ENU','Nitrosoguanidine','Phage transduction','32P Irradiation','Spontaneous','TALEN','Tc1','Tc4','Tc5','TMP','UV','X-ray','UNKNOWN','EMS+ENU','EMS+Formaldehyde','EMS+Tc3','EMS+Tc4','IEF+EMS','Microinjection+Gamma Irradiation','Microparticle bombardment+MosSCI','Microparticle bombardment+X-ray','TMP+UV+Gamma Irradiation','UV+Formaldehyde','UV+TMP','UV+ENU','UV+CRISPR_Cas9','RMCE');
   
   
   foreach $strain (@strains){
