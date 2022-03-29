@@ -26,7 +26,6 @@ my $debug;
 my $test;      # uses test environment
 my $quicktest; # same as $test but only runs one chromosome
 my $verbose;
-my $gffs;
 my $store;
 
 GetOptions ("help"         => \$help,
@@ -34,8 +33,7 @@ GetOptions ("help"         => \$help,
 	    "test"         => \$test,
 	    "verbose"      => \$verbose,
             "quicktest"    => \$quicktest,
-	    "store:s"      => \$store,
-	    "gffs:s"       => \$gffs
+	    "store:s"      => \$store
 	   );
 
 ($test = 1) if ($quicktest);
@@ -64,12 +62,8 @@ my $log = Log_files->make_build_log($wormbase);
 my $basedir  = $wormbase->basedir;
 my $outdir    = $wormbase->autoace."/yellow_brick_road";
 mkpath $outdir unless (-e $outdir);
-if ($gffs) {
-    $gff_dir = $gffs;
-}
-else {
 my $gff_dir = $wormbase->gff_splits;
-}
+
 
 my @gff_files = ('I','II','III','IV','V','X');
 @gff_files = ('III') if ($quicktest);
