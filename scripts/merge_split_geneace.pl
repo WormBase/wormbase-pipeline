@@ -124,7 +124,7 @@ if ($test){
     $canonical = $wormpub."/DATABASES/TEST_DATABASES/geneace";
 }
 else  {
-    $orig = $wormpub."/geneace_orig";
+    $orig = $wormpub."/CURATION_DATABASES/geneace_orig";
     $canonical = $wormbase->database('geneace');
 
 }
