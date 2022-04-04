@@ -128,7 +128,7 @@ else  {
     $canonical = $wormbase->database('geneace');
 
 }
-$root = 'geneace';
+$root = '/CURATION_DATABASES/geneace';
 
 our $directory   = $orig."/WS${WS_version}-WS${next_build}";
 $log->write_to ("OUTPUT_DIR: ".$orig."/WS${WS_version}-WS${next_build}\n\n");
