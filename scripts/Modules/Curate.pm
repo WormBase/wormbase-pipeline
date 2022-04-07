@@ -167,11 +167,11 @@ sub set_alternate_curation_database {
   
   if ($self->{species} eq 'elegans' && defined $self->{ace2}) {
     if ($self->{user} eq 'pad') {
-      push @{$self->{carefully_check}}, qw(CHROMOSOME_IV CHROMOSOME_V);
-      $self->{carefully_check_database} = $self->{'wormbase'}->{'wormpub'} . "/camace_gw3";
-    } elsif ($self->{user} eq 'gw3') {
-      push @{$self->{carefully_check}}, qw(CHROMOSOME_I CHROMOSOME_II CHROMOSOME_III CHROMOSOME_X);
-      $self->{carefully_check_database} = $self->{'wormbase'}->{'wormpub'} . "/camace_pad";
+      push @{$self->{carefully_check}}, qw(CHROMOSOME_I CHROMOSOME_II CHROMOSOME_III CHROMOSOME_X CHROMOSOME_IV CHROMOSOME_V);
+      $self->{carefully_check_database} = $self->{'wormbase'}->{'wormpub'} . "/CURATION_DATABASES/camace_pad";
+    } elsif ($self->{user} eq 'skd') {
+      push @{$self->{carefully_check}}, qw(CHROMOSOME_I CHROMOSOME_II CHROMOSOME_III CHROMOSOME_X CHROMOSOME_IV CHROMOSOME_V);
+      $self->{carefully_check_database} = $self->{'wormbase'}->{'wormpub'} . "/CURATION_DATABASES/camace_skd";
     } else {
       die "You must be either pad or gw3 to curate elegans";
     }
