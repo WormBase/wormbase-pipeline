@@ -59,7 +59,7 @@ if ( $store ) {
 
 if (!defined $database) {
   if ($species eq 'elegans') {
-    $database = $wormbase->wormpub."CURATION_DATABASES/camace_$ENV{USER}";
+    $database = $wormbase->wormpub."/CURATION_DATABASES/camace_$ENV{USER}";
   } else {
     $database = $wormbase->wormpub."/CURATION_DATABASES/${species}_curation";
   }
