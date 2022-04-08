@@ -46,4 +46,29 @@ for f in $($HANDOVER_STAGING_MYSQL -Ne "SHOW DATABASES LIKE \"%${EG_VERSION}_${E
   $HANDOVER_STAGING_MYSQL-w $f -Ne "INSERT IGNORE INTO meta(species_id,meta_key,meta_value)
   VALUES ('1','genebuild.method','import');";
 
+  #Drop old tables which do not belong to the schema
+  $HANDOVER_STAGING_MYSQL-w $f -Ne "DROP TABLE IF EXISTS input_id_analysis;";
+  $HANDOVER_STAGING_MYSQL-w $f -Ne "DROP TABLE IF EXISTS analysis_description_bak;";
+  $HANDOVER_STAGING_MYSQL-w $f -Ne "DROP TABLE IF EXISTS input_id_type_analysis;";
+  $HANDOVER_STAGING_MYSQL-w $f -Ne "DROP TABLE IF EXISTS rule_conditions;";
+  $HANDOVER_STAGING_MYSQL-w $f -Ne "DROP TABLE IF EXISTS rule_goal;";
+
+  trsamp=$($HANDOVER_STAGING_MYSQL $core_db -Ne \
+  "SELECT meta_value FROM meta WHERE meta_key='sample.transcript_param';");
+  bestsamp=$($HANDOVER_STAGING_MYSQL $core_db -Ne \
+  "SELECT stable_id FROM transcript WHERE stable_id LIKE \"%${trsamp}%\" LIMIT 1;");
+  echo $core_db $trsamp $bestsamp;
+  $HANDOVER_STAGING_MYSQL-w $core_db -Ne "UPDATE meta SET meta_value='${bestsamp}' WHERE meta_key='sample.transcript_param';";
+
+  $HANDOVER_STAGING_MYSQL-w $core_db -Ne \
+  "UPDATE transcript t
+  INNER JOIN xref x on t.display_xref_id = x.xref_id
+  INNER JOIN object_xref USING (xref_id)
+  INNER JOIN seq_region USING (seq_region_id)
+  INNER JOIN coord_system USING (coord_system_id)
+  SET t.display_xref_id = NULL
+  WHERE x.dbprimary_acc regexp '-20[[:digit:]]$' AND
+  x.dbprimary_acc = x.display_label AND
+  ensembl_object_type = 'Transcript' AND
+  species_id = 1;";
 done

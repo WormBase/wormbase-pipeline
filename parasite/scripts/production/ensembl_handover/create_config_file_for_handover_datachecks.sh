@@ -23,7 +23,7 @@ printf "{
     \"old_server_uri\" : [\"$(${PARASITE_STAGING_MYSQL} details url)\"]
   },
   \"history_file\" : null,
-  \"output_dir\"   : \"${PARASITE_SCRATCH}/log/WBPS_HANDOVER_${PARASITE_HANDOVER_VERSION}/datachecks/\",
+  \"output_dir\"   : \"${HANDOVER_SCRATCH}/datachecks/\",
   \"output_file\"  : null
 }" > ${HANDOVER_CONF}/datachecks_config.json
 
