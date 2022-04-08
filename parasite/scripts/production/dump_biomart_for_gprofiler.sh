@@ -7,7 +7,7 @@ set -x
 set -euo pipefail
 
 STAGING_DIR=${PARASITE_SCRATCH}/dumps/WBPS${PARASITE_VERSION}/biomart/WBPS${PARASITE_VERSION}
-RELEASE_DIR=/nfs/ftp/pub/databases/wormbase/collaboration/UTE/WBPS${PARASITE_VERSION}
+RELEASE_DIR=/nfs/ftp/public/databases/wormbase/collaboration/UTE/WBPS${PARASITE_VERSION}
 
 
 if [ ! -d "$STAGING_DIR" ] ; then
@@ -24,7 +24,8 @@ if [ ! -d "$STAGING_DIR" ] ; then
     -db_url ${SRV_URL}${DBNAME} \
     -dbname ${DBNAME} \
     -output_dir ${TMP} \
-    -dump_dir ${TMP}
+    -dump_dir ${TMP} \
+    -overwrite 1
 
   #Outputting sql files
   for table in $( $PARASITE_STAGING_MYSQL ${DBNAME} -Ne "SHOW TABLES" ); do
@@ -32,7 +33,7 @@ if [ ! -d "$STAGING_DIR" ] ; then
     --quick --single-transaction \
     parasite_mart_${PARASITE_VERSION} $table > ${TMP}/$table.sql;
   done
-    mv -v $TMP $STAGING_DIR
+    mv $TMP/* $STAGING_DIR
   fi
 
 find $STAGING_DIR -type f -name '*.txt' | while read -r f; do

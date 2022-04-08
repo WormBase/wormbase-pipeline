@@ -29,7 +29,10 @@ perform_dc() {
   dtn "Success: $DC: got $result_count"
 }
 
-${PARASITE_STAGING_MYSQL} -Ne "SHOW DATABASES" | grep _${PARASITE_VERSION}_${ENSEMBL_VERSION}_${WORMBASE_VERSION} \
+DB_SERVER=$1
+DB_REGEX=$2
+
+$DB_SERVER -Ne "SHOW DATABASES" | grep $DB_REGEX \
 | while read cdb;
   do
   dtn "Processing $cdb";
@@ -37,24 +40,24 @@ ${PARASITE_STAGING_MYSQL} -Ne "SHOW DATABASES" | grep _${PARASITE_VERSION}_${ENS
   DC="1/2: Gene display_xref_ids DC"
   SQLS="SELECT COUNT(*) FROM gene WHERE display_xref_id IS NOT NULL"
   threshold=10000
-  dccount=$($PARASITE_STAGING_MYSQL $cdb -Ne "$SQLS")
+  dccount=$($DB_SERVER $cdb -Ne "$SQLS")
   perform_dc $cdb $threshold $dccount $DC
   ###########################################################################
   DC="2/2: Gene description DC"
   SQLS="SELECT COUNT(*) FROM gene WHERE description IS NOT NULL"
   threshold=2000
-  dccount=$($PARASITE_STAGING_MYSQL $cdb -Ne "$SQLS")
+  dccount=$($DB_SERVER $cdb -Ne "$SQLS")
   perform_dc $cdb $threshold $dccount $DC
    ###########################################################################
   DC="Extra 1/2: Transcript display_xref_ids DC"
   SQLS="SELECT COUNT(*) FROM transcript WHERE display_xref_id IS NOT NULL"
   threshold=10000
-  dccount=$($PARASITE_STAGING_MYSQL $cdb -Ne "$SQLS")
+  dccount=$($DB_SERVER $cdb -Ne "$SQLS")
   dtn "Info: ${cdb} transcript display_xref_id count: ${dccount}"
   ###########################################################################
   DC="Extra 2/2: Transcript description Advisory DC"
   SQLS="SELECT COUNT(*) FROM transcript WHERE description IS NOT NULL"
-  dccount=$($PARASITE_STAGING_MYSQL $cdb -Ne "$SQLS")
+  dccount=$($DB_SERVER $cdb -Ne "$SQLS")
   dtn "Info: ${cdb} transcript description count: ${dccount}"
   printf "\n"
 done

@@ -23,8 +23,8 @@ if [[ ! $CORE_DBS =~ (^|[[:space:]])$core_db($|[[:space:]]) ]]; then echo "core_
 
 #Check busco software
 module load busco
-if [ ! -e "$BUSCO4_CONTAINER" ] ; then echo "Importing BUSCO singularity image didn't work!" ; exit 1 ; fi
-if [ ! -e "$BUSCO5_CONTAINER" ] ; then echo "Importing BUSCO singularity image didn't work!" ; exit 1 ; fi
+#if [ ! -e "$BUSCO4_CONTAINER" ] ; then echo "Importing BUSCO singularity image didn't work!" ; exit 1 ; fi
+#if [ ! -e "$BUSCO5_CONTAINER" ] ; then echo "Importing BUSCO singularity image didn't work!" ; exit 1 ; fi
 if [ ! -e "$BUSCO3_CONTAINER" ] ; then echo "Importing BUSCO singularity image didn't work!" ; exit 1 ; fi
 if [ ! -d "$BUSCO_LINEAGES" ] ; then echo "Importing BUSCO lineages didn't work!" ; exit 1 ; fi
 
