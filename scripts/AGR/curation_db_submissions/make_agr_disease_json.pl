@@ -326,7 +326,8 @@ sub get_condition_relations {
             }} $obj->Inducing_chemical;
         my @inducing_agents     = map {{
             condition_statement => 'experimental conditions:' . $_->name,
-            condition_class => $zeco{'experimental conditions'}
+            condition_class => $zeco{'experimental conditions'},
+	    condition_free_text => $_->name
             }} $obj->Inducing_agent;
         @inducers = (@inducing_chemicals, @inducing_agents);
         push @$conditions, @inducers;
@@ -348,7 +349,8 @@ sub get_condition_relations {
             }} $obj->Modifier_molecule;
         my @other_modifiers = map {{
 	    condition_statement => 'experimental conditions:' . $_->name,
-	    condition_class => $zeco{'experimental conditions'}
+	    condition_class => $zeco{'experimental conditions'},
+	    condition_free_text => $_->name
 	    }} $obj->Other_modifier;
         @modifiers = (@modifying_molecules, @other_modifiers);
         push @$conditions, @modifiers;
