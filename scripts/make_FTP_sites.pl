@@ -77,6 +77,8 @@ use IO::Handle;
 use File::Path;
 use Bio::SeqIO;
 use JSON;
+use Modules::AGR;
+use DateTime;
 
 #################################################################################
 # Command-line options and variables                                            #
@@ -137,7 +139,7 @@ if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
   $wormbase = Wormbase->new(-debug   => $debug,
-                            -test    => $test,
+                            -test    => $test
       );
 }
 
@@ -1261,16 +1263,26 @@ sub make_md5sums {
 sub make_blast_meta{
     
     my $meta_file = $ENV{'AGR_UPLOADS'} ."/blast_meta/blast_meta.${WS_version_name}.json";
-    my @meta_data;
+    my $blast_meta;
     my $runtime = $wormbase->runtime;
     $log->write_to("$runtime: creating AGR BLAST metadata file\n");
 
     my %accessors = ($wormbase->species_accessors, $wormbase->tier3_species_accessors);
     $accessors{$wormbase->species} = $wormbase;
 
+    my $meta_data = {
+	'dateProduced' => AGR::get_rfc_date(),
+	'dataProvider' => 'WB',
+	'contact' => 'help@wormbase.org',
+	'release' => $WS_version_name
+    };
+    $blast_meta->{'metaData'} = $meta_data;
+    my $data = [];
+
     for my $species (keys %accessors) {
 	my $wb = $accessors{$species};
 
+	
 	my $fasta_dir = join('/', $targetdir, 'species', $wb->gspecies_name, $wb->ncbi_bioproject);
 	my $fasta_prefix = join('.', $wb->gspecies_name, $wb->ncbi_bioproject, $WS_version_name);
 	my $fasta_url = join('/', 'ftp://ftp.wormbase.org/pub/wormbase/releases', $WS_version_name,
@@ -1281,7 +1293,9 @@ sub make_blast_meta{
 	my $protein_path = $fasta_dir . '/' . $protein_file;
 	my $genome_url = $fasta_url . '/' . $genome_file;
 	my $protein_url = $fasta_url . '/' . $protein_file;
-	
+
+	my ($genus, $species) = $wb->long_name =~ /^(\S+)\s(\S+)$/;
+
 	if (-e $genome_path) {
 	    my $genome_md5 = substr(`md5sum ${genome_path}`, 0, 32);
 	    my $genome_entry = {
@@ -1291,9 +1305,12 @@ sub make_blast_meta{
 		'version' => $WS_version_name,
 	        'blast_title' => $wb->short_name . ' Genome Assembly',
 	        'seqtype' => 'nucl',
-		    'meta' => {'wormbase_release' => $WS_version_name}
+		'bioproject' => $wb->ncbi_bioproject,
+		'taxon_id' => $wb->ncbi_tax_id,
+		'genus' => $genus,
+		'species' => $species
 	    };
-	    push @meta_data, $genome_entry;
+	    push @{$data}, $genome_entry;
 	}
 	if (-e $protein_path) {
 	    my $protein_md5 = substr(`md5sum ${protein_path}`, 0, 32);
@@ -1304,15 +1321,20 @@ sub make_blast_meta{
 	        'version' => $WS_version_name,
 	        'blast_title' => $wb->short_name . ' Protein Sequences',
 	        'seqtype' => 'prot',
-	        'meta' => {'wormbase_release' => $WS_version_name}
+		'bioproject' => $wb->ncbi_bioproject,
+		'taxon_id' => $wb->ncbi_tax_id,
+		'genus' => $genus,
+		'species' => $species    
 	    };
-	    push @meta_data, $protein_entry;
+	    push @{$data}, $protein_entry;
 	}
     }
 
+    $blast_meta->{'data'} = $data;
+    
     open (OUT, ">$meta_file") or die ("Cannot open $meta_file for writing : $!\n");
     my $json_obj = JSON->new;
-    my $json_string = $json_obj->allow_nonref->canonical->pretty->encode(\@meta_data);
+    my $json_string = $json_obj->allow_nonref->canonical->pretty->encode($blast_meta);
     print OUT $json_string;
     close(OUT);
 }
