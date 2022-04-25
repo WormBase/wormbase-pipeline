@@ -178,8 +178,9 @@ if (not $manual_upload) {
   ###########################
   # Back up submission file #
   # #########################
-  
-  system ("cp $collated_file /nfs/production/flicek/wormbase/wb/BUILD/autoace/MISC_OUTPUT/") or die "Copying backup file failed: $!";
+
+  use File::Copy;
+  copy $collated_file, "/nfs/production/flicek/wormbase/wb/BUILD/autoace/MISC_OUTPUT/" or $log->log_and_die("Backup file copy failed: $!");
 
   $log->write_to("\nFile: $collated_file uploaded ENA ftp account\n");
   $log->write_to("\nRefer to log file $submit_log_file for details on which entries were uploaded\n");
