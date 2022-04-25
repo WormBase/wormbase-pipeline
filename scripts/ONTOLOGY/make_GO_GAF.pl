@@ -191,7 +191,12 @@ foreach my $suf (0..9) {
       $gaf_line->{qualifier} = 'NOT|'.$al;
     }
     if ($obj->Annotation_relation) {
-      my $al = $obj->Annotation_relation->Name;
+      my $al;
+      if ($obj->Annotation_relation->name eq 'RO_0002263') {
+	  $al = 'acts upstream of'; #hopefully only needed for WS285
+      } else {
+	  $al = $obj->Annotation_relation->Name;
+      }
       $al =~ s/\s+/_/g;
       $al =~ s/,//g; # hopefully only needed for 278 and 279
       if ($al eq 'colocalizes_with' or
