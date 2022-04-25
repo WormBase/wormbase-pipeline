@@ -115,14 +115,18 @@ while (<IN>) {
         
         if ($DOMAIN =~ /Gene/){
             my $gene_ref = $db->find_genes($entry);
-            unless (defined $gene_ref->[0]{'id'}) {
-                print OUT "\/\/Cannot find $entry\n";
-                next;
+            my $gene_id_found = 0;
+            for my $gr(@{$gene_ref}) {
+		if ($gr->{'name'} eq $entry) {
+		    my $WBgene_id = $gr->{'id'};
+		    print OUT "-R $DOMAIN $entry $WBgene_id\n";
+		    $gene_id_found = 1;
+		    last;
+		}
             }
-            if (defined $gene_ref) {
-                my $WBgene_id = $gene_ref->[0]{'id'};
-                print OUT "-R $DOMAIN $entry $WBgene_id\n";
-            }
+	    if ($gene_id_found == 0) {
+		print OUT "\/\/Cannot find $entry\n";
+	    }
         }
     }
 }

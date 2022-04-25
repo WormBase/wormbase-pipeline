@@ -59,9 +59,9 @@ if ( $store ) {
 
 if (!defined $database) {
   if ($species eq 'elegans') {
-    $database = $wormbase->wormpub."/camace_$ENV{USER}";
+    $database = $wormbase->wormpub."/CURATION_DATABASES/camace_$ENV{USER}";
   } else {
-    $database = $wormbase->wormpub."/${species}_curation";
+    $database = $wormbase->wormpub."/CURATION_DATABASES/${species}_curation";
   }
 }
 if (!-e $database || !-d $database) {die "Can't find database $database\n"}

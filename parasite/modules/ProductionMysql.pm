@@ -194,4 +194,14 @@ sub core_db_to_biomart_name {
   return $core_db;
 }
 
+sub core_db_to_local_ftp_filename {
+  my ($db_cmd, $core_db) = @_;
+  my $ftp_id = meta_value($db_cmd, $core_db, 'species.ftp_genome_id');
+  my $species_name = lc meta_value($db_cmd, $core_db, 'species.scientific_name');
+  $species_name =~ s/ /_/ig;
+  my $ftp_dir = $ENV{'$WORMBASE_FTP'};
+  return $species_name . "." . $ftp_id . "." . 'WBPS' . $ENV{PARASITE_VERSION}
+}
+
+
 1;
