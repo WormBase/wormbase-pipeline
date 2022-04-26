@@ -155,6 +155,7 @@ while( my $obj = $it->next) {
 	
 	my $annot = {
 	    mod_entity_id        => $obj->name,
+	    internal             => JSON::false,
 	    object               => $obj->Disease_term->name,
 	    data_provider        => 'WB',
 	    date_last_modified   => $evi_date,
@@ -323,11 +324,13 @@ sub get_condition_relations {
             condition_statement => 'chemical treatment:' . get_chemical_name($_, $chebi_name_map),
             condition_chemical => get_chemical_ontology_id($_),
             condition_class => $zeco{'chemical treatment'},
+	    internal => JSON::false
             }} $obj->Inducing_chemical;
         my @inducing_agents     = map {{
             condition_statement => 'experimental conditions:' . $_->name,
             condition_class => $zeco{'experimental conditions'},
-	    condition_free_text => $_->name
+	    condition_free_text => $_->name,
+	    internal => JSON::false
             }} $obj->Inducing_agent;
         @inducers = (@inducing_chemicals, @inducing_agents);
         push @$conditions, @inducers;
@@ -345,12 +348,14 @@ sub get_condition_relations {
         my @modifying_molecules = map {{
             condition_statement => 'chemical treatment:' . get_chemical_name($_, $chebi_name_map),
             condition_chemical => get_chemical_ontology_id($_),
-            condition_class => $zeco{'chemical treatment'}
+            condition_class => $zeco{'chemical treatment'},
+	    internal => JSON::false
             }} $obj->Modifier_molecule;
         my @other_modifiers = map {{
 	    condition_statement => 'experimental conditions:' . $_->name,
 	    condition_class => $zeco{'experimental conditions'},
-	    condition_free_text => $_->name
+	    condition_free_text => $_->name,
+	    internal => JSON::false
 	    }} $obj->Other_modifier;
         @modifiers = (@modifying_molecules, @other_modifiers);
         push @$conditions, @modifiers;
@@ -363,7 +368,8 @@ sub get_condition_relations {
     if ($condition_relation_type) {
 	my $cr_json = {
 	    condition_relation_type => $condition_relation_type,
-	    conditions => $conditions
+	    conditions => $conditions,
+	    internal => JSON::false
 	};
         push @$condition_relations, $cr_json;
     }
