@@ -74,11 +74,13 @@ use Log_files;
 use Storable;
 use Ace;
 use IO::Handle;
+use IO::Uncompress::Gunzip;
 use File::Path;
 use Bio::SeqIO;
 use JSON;
 use Modules::AGR;
 use DateTime;
+use Fcntl qw(:seek);
 
 #################################################################################
 # Command-line options and variables                                            #
@@ -1297,6 +1299,7 @@ sub make_blast_meta{
 	my ($genus, $species) = $wb->long_name =~ /^(\S+)\s(\S+)$/;
 
 	if (-e $genome_path) {
+	    next if is_empty_gzip_file($genome_path);
 	    my $genome_md5 = substr(`md5sum ${genome_path}`, 0, 32);
 	    my $genome_entry = {
 		'URI' => $genome_url,
@@ -1313,6 +1316,7 @@ sub make_blast_meta{
 	    push @{$data}, $genome_entry;
 	}
 	if (-e $protein_path) {
+	    next if is_empty_gzip_file($protein_path);
 	    my $protein_md5 = substr(`md5sum ${protein_path}`, 0, 32);
 	    my $protein_entry = {
 		'URI' => $protein_url,
@@ -1338,7 +1342,18 @@ sub make_blast_meta{
     print OUT $json_string;
     close(OUT);
 }
-    
+
+#################################################################################
+sub is_empty_gzip_file {
+    my $path = shift;
+
+    my $u = IO::Uncompress::Gunzip->new($path);
+    if ($u->seek(1, SEEK_CUR)) {
+	return 0;
+    }
+    return 1;
+}
+
 ##################################################################################
 sub CheckSize {
   my ($first,$second)=@_;
