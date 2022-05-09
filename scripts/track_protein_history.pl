@@ -212,7 +212,7 @@ sub get_wormpep {
   my ($version, $hashref, $diff) = @_;
 
   #get the  CDS and protein IDs in the wormpep sequence file
-  open( PEP, $wormbase->basedir."/WORMPEP/wormpep${version}_noah/wormpep$version" );
+  open( PEP, $wormbase->basedir."/WORMPEP/wormpep${version}/wormpep$version" );
   my $CDS;
   my $pep;
   while (my $line = <PEP>) {
@@ -249,7 +249,7 @@ sub get_wormpep_history {
 
   # get database version file
   
-  my $data_file = $wormbase->basedir . "/WORMPEP/wormpep${database_version}_noah/wormpep.history$database_version";
+  my $data_file = $wormbase->basedir . "/WORMPEP/wormpep${database_version}/wormpep.history$database_version";
 
   my %wormpep_history;
 
