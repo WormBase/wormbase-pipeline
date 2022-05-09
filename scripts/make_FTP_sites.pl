@@ -79,8 +79,11 @@ use File::Path;
 use Bio::SeqIO;
 use JSON;
 use Modules::AGR;
+use Const::Fast;
 use DateTime;
 use Fcntl qw(:seek);
+
+const my $FTP_BLAST_META_PATH => '/nfs/ftp/public/databases/wormbase/misc_datasets/AGR/blast_meta.wormbase.json';
 
 #################################################################################
 # Command-line options and variables                                            #
@@ -1287,7 +1290,7 @@ sub make_blast_meta{
 	
 	my $fasta_dir = join('/', $targetdir, 'species', $wb->gspecies_name, $wb->ncbi_bioproject);
 	my $fasta_prefix = join('.', $wb->gspecies_name, $wb->ncbi_bioproject, $WS_version_name);
-	my $fasta_url = join('/', 'ftp://ftp.wormbase.org/pub/wormbase/releases', $WS_version_name,
+	my $fasta_url = join('/', 'ftp://ftp.ebi.ac.uk/pub/databases/wormbase/releases', $WS_version_name,
 			     'species', $wb->gspecies_name, $wb->ncbi_bioproject);
 	my $genome_file = $fasta_prefix . '.genomic.fa.gz';
 	my $protein_file = $fasta_prefix . '.protein.fa.gz';
@@ -1309,7 +1312,7 @@ sub make_blast_meta{
 	        'blast_title' => $wb->short_name . ' Genome Assembly',
 	        'seqtype' => 'nucl',
 		'bioproject' => $wb->ncbi_bioproject,
-		'taxon_id' => $wb->ncbi_tax_id,
+		'taxon_id' => 'NCBITaxon:' . $wb->ncbi_tax_id,
 		'genus' => $genus,
 		'species' => $species
 	    };
@@ -1326,7 +1329,7 @@ sub make_blast_meta{
 	        'blast_title' => $wb->short_name . ' Protein Sequences',
 	        'seqtype' => 'prot',
 		'bioproject' => $wb->ncbi_bioproject,
-		'taxon_id' => $wb->ncbi_tax_id,
+		'taxon_id' => 'NCBITaxon:' . $wb->ncbi_tax_id,
 		'genus' => $genus,
 		'species' => $species    
 	    };
@@ -1341,6 +1344,12 @@ sub make_blast_meta{
     my $json_string = $json_obj->allow_nonref->canonical->pretty->encode($blast_meta);
     print OUT $json_string;
     close(OUT);
+    my $exit_code = system("bsub -q datamover -Is cp $meta_file $FTP_BLAST_META_PATH");
+    if ($exit_code) {
+	$log->error("Copying BLAST metadata file to $FTP_BLAST_META_PATH failed\n");
+    } else {
+	$log->write_to("Copied BLAST metadata file to $FTP_BLAST_META_PATH\n");
+    }
 }
 
 #################################################################################
