@@ -163,6 +163,7 @@ while( my $obj = $it->next) {
 	    annotation_type      => 'manually_curated',
 	    evidence_codes       => \@evi_codes,
 	    single_reference     => $paper,
+	    internal             => JSON::false
 	};
 	$annot->{modified_by} = $obj->Curator_confirmed ? 'WB:' . $obj->Curator_confirmed->name : "WB:curator";
 	$annot->{genetic_sex} = $obj->Genetic_sex->name if $obj->Genetic_sex;
