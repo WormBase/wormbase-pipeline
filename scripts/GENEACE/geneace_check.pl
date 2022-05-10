@@ -1186,7 +1186,8 @@ sub process_strain_class {
   #UV+TMP | Mix
   #UV+CRISPR_Cas9
   #UV+ENU | Mix
-  my @mutagens = ('HCHO','ICR','DEO','DMH','60Co Irradiation','Acetaldehyde','CRE','CRISPR_Cas9','Cs137 Irradiation','DEB','Diethoxybutane','DES','EMS','Gamma Irradiation','Heat shock','IEF','MMS','Microinjection','Microparticle bombardment','mini-Mos','Mos1 transposon','MosDel','MosSCI','ENU','Nitrosoguanidine','Phage transduction','32P Irradiation','Spontaneous','TALEN','Tc1','Tc4','Tc5','TMP','UV','X-ray','UNKNOWN','EMS+ENU','EMS+Formaldehyde','EMS+Tc3','EMS+Tc4','IEF+EMS','Microinjection+Gamma Irradiation','Microparticle bombardment+MosSCI','Microparticle bombardment+X-ray','TMP+UV+Gamma Irradiation','UV+Formaldehyde','UV+TMP','UV+ENU','UV+CRISPR_Cas9','RMCE');
+  #mini-Mos+CRISPR_Cas9
+  my @mutagens = ('HCHO','ICR','DEO','DMH','60Co Irradiation','Acetaldehyde','CRE','CRISPR_Cas9','Cs137 Irradiation','DEB','Diethoxybutane','DES','EMS','Gamma Irradiation','Heat shock','IEF','MMS','Microinjection','Microparticle bombardment','mini-Mos','Mos1 transposon','MosDel','MosSCI','ENU','Nitrosoguanidine','Phage transduction','32P Irradiation','Spontaneous','TALEN','Tc1','Tc4','Tc5','TMP','UV','X-ray','UNKNOWN','EMS+ENU','EMS+Formaldehyde','EMS+Tc3','EMS+Tc4','IEF+EMS','Microinjection+Gamma Irradiation','Microparticle bombardment+MosSCI','Microparticle bombardment+X-ray','TMP+UV+Gamma Irradiation','UV+Formaldehyde','UV+TMP','UV+ENU','UV+CRISPR_Cas9','RMCE','mini-Mos+CRISPR_Cas9');
   
   
   foreach $strain (@strains){
@@ -1207,6 +1208,9 @@ sub process_strain_class {
     }
     unless ($strain =~ /WBStrain\d{8}/){
 	print LOG "WARNING: $strain has not been accessioned or merged into the WBStrain record.\n";
+    }
+    if (!$strain->Species){
+	print LOG "WARNING: Strain $strain has no Species tag, this can cause issues with data not being loaded into the Alliance curation database.\n";
     }
     if (!$strain->Location){
       print LOG "WARNING(a): Strain $strain has no location tag\n";
