@@ -1134,7 +1134,16 @@ sub process_strain_class {
   my $straincount = scalar(@strains);
   my $laststrain = $strains[-1]->name;
   unless ($laststrain =~ "WBStrain000$straincount") {print LOG "The last WBStrain ID $laststrain is not equal the strain class count $straincount (assuming 3x0 padding).\n";}
-
+  my @multimutagen= $db->fetch(-query=>'find Strain COUNT Mutagen > 1');
+  if (@multimutagen){
+      foreach (@multimutagen){
+	  print LOG "Strain error - $_ contains two mutagens which should be corrected\n";
+      }
+  }
+  else {
+      print LOG "No Strains found with multiple mutagens\n";
+  }
+  
   # Accepted mutagen values
   #HCHO | Formaldehyde
   #ICR | Umbrell for these compounds?  ICR 191, 170, 292, 372, 191-OH, and 170-OH.
