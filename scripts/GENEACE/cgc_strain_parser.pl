@@ -418,7 +418,7 @@ sub _get_variationId {
 	return $var if $var;
     }
     else {
-	my $new_id = $id."_new}";
+	my $new_id = $id;
 	print STDERR "var not-found: $id -> $new_id\n" if $verbose;
 	return $new_id;
     }
@@ -477,7 +477,7 @@ sub check_details {
 
   # otherwise we might need to make a new Gene object (to be checked by curator)
   # Only want to consider gene names which look sensible (i.e. can't do much with 'let-?')
-  elsif(defined $gene and $gene =~ m/^(\w|\-)+\d+$/){
+  elsif(defined $gene and $gene =~ m/\S+\-\d+$/){
 
     print NEWGENES "Gene : WBGene\n";
     print NEWGENES "Evidence Inferred_automatically \"Gene name parsed from strain object: $strain\"\n";
@@ -501,7 +501,10 @@ sub check_details {
     print NEWGENES "Allele \"$variationId\" Inferred_automatically \"From strain object: $strain\"\n\n";
 
   }
-  print ALLELEFLUFF "Variation : $variationId\nPublic_name \"$_allele\"\nStatus Live\n\n" unless $geneAceDB->fetch(Variation => $variationId); 
+  #Automatically ignore Si variants as these will be in the Transgene class namespace
+  unless ($_allele =~ /Si/) {
+      print ALLELEFLUFF "Variation : $variationId\nPublic_name \"$_allele\"\nStatus Live\n\n" unless $geneAceDB->fetch(Variation => $variationId);
+  }
 }
 
 ##################################################################################################
