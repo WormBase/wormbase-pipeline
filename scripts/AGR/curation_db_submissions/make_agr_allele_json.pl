@@ -45,17 +45,16 @@ my %objectsIds;
 
 my $db = Ace->connect(-path => $acedbpath, -program => $tace) or die("Connection failure: ". Ace->error);
 
-#my $it = $db->fetch_many(-query => 'find Variation WHERE (Phenotype OR Disease_info OR Interactor) AND NOT Natural_variant');
-my $it = $db->fetch_many(-query => 'find Variation WHERE Species = "Caenorhabditis elegans" AND Reference AND (Phenotype OR Disease_info OR Interactor) AND NOT Natural_variant');
-process($it);
+my @variations = $db->fetch(-query => "Find Variation WHERE species = \"Caenorhabditis elegans\"");
+process(\@variations);
 
-$it = $db->fetch_many(-query => 'find Transgene WHERE Species = "Caenorhabditis elegans"');
+my $it = $db->fetch_many(-query => 'find Transgene WHERE Species = "Caenorhabditis elegans"');
 process_transgenes($it);
 
 sub process{
-    my ($it) = @_;
+    my ($variations) = @_;
 
-    while (my $obj = $it->next) {
+    for my $obj (@$variations) {
 	next unless $obj->isObject();
 	unless ($obj->Species) {
 	    print "No species for $obj - skipping\n";
@@ -64,7 +63,7 @@ sub process{
 	
 	my $json_obj = {
 	    curie         => "WB:$obj", 
-	    taxonId       => "NCBITaxon:" . $obj->Species->NCBITaxonomyID,
+	    taxon       => "NCBITaxon:" . $obj->Species->NCBITaxonomyID,
 	    internal      => $obj->Live ? JSON::false : JSON::true
 	};
 	$json_obj->{symbol} = $obj->Public_name->name if $obj->Public_name;
@@ -88,7 +87,7 @@ sub process_transgenes{
 	
 	my $json_obj = {
 	    curie         => "WB:$obj", 
-	    taxonId       => "NCBITaxon:" . $obj->Species->NCBITaxonomyID,
+	    taxon       => "NCBITaxon:" . $obj->Species->NCBITaxonomyID,
 	    internal      => JSON::false
 	};	
 	$json_obj->{symbol} = $obj->Public_name->name if $obj->Public_name;
