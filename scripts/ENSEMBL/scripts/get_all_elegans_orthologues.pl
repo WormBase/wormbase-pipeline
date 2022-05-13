@@ -137,7 +137,7 @@ foreach my $gdb1 (sort { $a->name cmp $b->name } @genome_dbs) {
         $homols{$gid2}->{Paralog}->{$species{$gdb1->dbID}}->{$gid1} = 1;
       } else {
         $homols{$gid1}->{Ortholog}->{$species{$gdb2->dbID}}->{$gid2} = 1;
-        $homols{$gid2}->{Ortholog}->{$species{$gdb1->dbID}}->{$gdb1} = 1;
+        $homols{$gid2}->{Ortholog}->{$species{$gdb1->dbID}}->{$gid1} = 1;
       }
     } 
   }
