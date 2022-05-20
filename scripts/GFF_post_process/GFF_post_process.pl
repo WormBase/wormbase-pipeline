@@ -476,12 +476,13 @@ sub collate_and_sort {
   while(<$gff_in>) {
     print $out_fh $_;
   }
-  
+
+  my $tmp_sort_dir = $gff3 ? $ENV{'WB_SCRATCH'} . '/gff3_sort_tmp' : $ENV{'WB_SCRATCH'} . '/gff2_sort_tmp';
   if ($gff3) {
-    open($gff_in, "sort -S 3G -k 1,1 -k4,4n -k 5,5n $processed_gff_file | perl $ENV{CVS_DIR}/GFF_post_process/sort_gff3.pl - |")
+    open($gff_in, "sort -S 3G -T $tmp_sort_dir -k 1,1 -k4,4n -k 5,5n $processed_gff_file | perl $ENV{CVS_DIR}/GFF_post_process/sort_gff3.pl - |")
         or $log->log_and_die("Could not open sort_gff3.pl command for $processed_gff_file\n");
   } else {
-    open($gff_in, "sort -S 3G -k 1,1 -k4,4n -k 5,5n $processed_gff_file |") 
+    open($gff_in, "sort -S 3G -T $tmp_sort_dir -k 1,1 -k4,4n -k 5,5n $processed_gff_file |") 
         or $log->log_and_die("Could not open sort cmd for $processed_gff_file\n");
   }
   while(<$gff_in>) {
