@@ -61,7 +61,7 @@ GetOptions(
 if ($help) {
   usage();
 } elsif (!$p_version) {
-  print STDERR "> Error! Please give an Ensembl version, using the option '-v' \n";
+  print STDERR "> Error! Please give a ParaSite version, using the option '-pv' \n";
   usage();
 } elsif (!$e_version) {
   print STDERR "> Error! Please give an Ensembl version, using the option '-v' \n";
@@ -110,7 +110,7 @@ while (my ($dbname) = $sth_h->fetchrow_array) {
   my $cdbname = `sed 's/variation/core/g' <<< $dbname`;
   #print "Core: ".$cdbname."\n";
 
-  my $ftpfilename = ProductionMysql::core_db_to_local_ftp_filename(ProductionMysql->staging, $cdbname);
+  my $ftpfilename = ProductionMysql::core_db_to_local_ftp_path_n_filename(ProductionMysql->staging, $cdbname);
 
   $dbname =~ /^(.+)_variation_.+_(.+)/;
   my $s_name = $1;
@@ -186,6 +186,7 @@ sub usage {
 
     -user|u           Database login user name (Required)
     -v                Ensembl version, e.g. 96 (Required)
+    -pv               ParaSite version, e.g. 16 (Required)
     -hname            The host name (with port) where the databases are stored,
                         e.g. ensembldb.ensembl.org1:3334 (Required)
   } . "\n";

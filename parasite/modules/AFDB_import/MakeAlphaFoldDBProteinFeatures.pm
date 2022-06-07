@@ -219,9 +219,9 @@ sub make_protein_features() {
                     -hstart   => $$afdb_line{'RES_BEG'},
                     -hend     => $$afdb_line{'RES_END'},
                     -analysis => $analysis,
-                    -hdescription => "Via SIFTS (".$$afdb_line{'SIFTS_RELEASE_DATE'}.
-                                     ") UniProt protein ".$$afdb_line{'SP_PRIMARY'}.
-                                     " isoform exact match to Ensembl protein $translation_sid"
+                    -hdescription => "Via xrefs pipeline:".
+                                     " UniProt protein ".$$afdb_line{'SP_PRIMARY'}.
+                                     " isoform match to Ensembl protein $translation_sid"
                  );
               $pf_translation{$translation->dbID()} = $pf;
               push(@pfs,\%pf_translation);

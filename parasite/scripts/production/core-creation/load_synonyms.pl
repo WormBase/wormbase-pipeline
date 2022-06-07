@@ -153,6 +153,8 @@ foreach $stableid (keys(%syns)) {
             $synonym_store_sth->execute($xref_id, $synonym);
             $logger->info("Added $synonym to $stableid");
         }
+        $gene->display_xref($old_display_xref);
+        $gene_adaptor->update($gene);
         $synonym_store_sth->finish();
     }
 

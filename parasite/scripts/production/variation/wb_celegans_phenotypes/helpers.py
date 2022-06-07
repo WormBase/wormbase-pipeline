@@ -15,6 +15,13 @@ def dtnow():
     ppdtnow = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     return(str(ppdtnow))
 
+def exit_with_error(error_message):
+    print(dtnow() + ": ERROR - "+error_message+".")
+    raise ValueError
+
+def print_info(info_message):
+    print(dtnow() + ": INFO - " + error_message + ".")
+
 def wbphenoftp_parser(file, taxon_id, names_dict):
     """
     This function reads the WormBase phenotypes_association file
