@@ -169,6 +169,8 @@ else {
   $root = $species;
 }
 
+print "REACHED 1\n";
+
 our $directory   = $orig."/WS${WS_version}-WS${next_build}";
 $log->write_to ("OUTPUT_DIR: ".$orig."/WS${WS_version}-WS${next_build}\n\n");
 
@@ -197,6 +199,8 @@ if ($merge) {
   shift (@databases); #remove 1st element of array as there aren't going to be any camace_orig updates
   # run acediff on the files tidy up and reformat the diff files ready to be loaded
   #my $script_path = glob("~pad/wormbase/scripts");
+  print "REACHED 2\n";
+  
   foreach my $database (@databases) {
       print "Dumping Data from $database\n";
     foreach my $class (@classes) {
@@ -250,6 +254,9 @@ if ($merge) {
   }
   $log->write_to ("Phase 1 finished and all files can be found in $directory\n");
 }
+
+print "REACHED 3\n";
+
 
 #################################################################
 ## (2) synchronises Canonical Database with the split versions ##
