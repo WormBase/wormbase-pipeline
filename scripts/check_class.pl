@@ -5,8 +5,8 @@
 # Counts the number of objects in an ACEDB database for each Class stated in the config file
 # Compares this number to those from a previous version of the database at the same stage in the Build
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2014-02-13 17:10:13 $
+# Last updated by: $Author: mqt $
+# Last updated on: $Date: 2022-06-13 10:57:00 $
 
 
 use strict;
@@ -18,7 +18,6 @@ use Log_files;
 use Storable;
 use IO::Handle;
 
-
 $|=1;
 
 
@@ -28,7 +27,7 @@ $|=1;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
 my ($database, $database1, $database2, $classes, $species, $stage);
-my ($dbname_0, $dbname_1, $dbname_2);
+my ($current_dbname, $prev_dbname, $prev_prev_dbname);
 my ($camace, $genace, $csh, $caltech, $misc_static, $briggsae, $incomplete, $data_sets, $pre_merge, $ftp_sites);
 
 GetOptions (
@@ -87,9 +86,7 @@ my $prev_prev_version = $version-2;
 my $exec = $wormbase->tace;
 
 $database = $wormbase->autoace;
-$dbname_0    = "WS${prev_prev_version}";
-$dbname_1    = "WS${prev_version}";
-$dbname_2    = "WS${version}";
+$current_dbname    = "WS${version}";
 
 my $file = $wormbase->build_data . "/COMPARE/class_count.dat"; # file holding pparse details from previous Builds
 
@@ -105,105 +102,87 @@ my @classes = ();
 $stage="unknown" if (!defined $stage);
 
 # get the collected sets of classes
- @classes = (@classes, &set_classes('camace')) if ($camace);
- @classes = (@classes, &set_classes('genace')) if ($genace);
- @classes = (@classes, &set_classes('csh')) if ($csh);
- @classes = (@classes, &set_classes('caltech')) if ($caltech);
- @classes = (@classes, &set_classes('misc_static')) if ($misc_static);
- @classes = (@classes, &set_classes('briggsae')) if ($briggsae);
- @classes = (@classes, &set_classes('incomplete')) if ($incomplete);
- @classes = (@classes, &set_classes('data_sets')) if ($data_sets);
- @classes = (@classes, &set_classes('pre_merge')) if ($pre_merge);
- @classes = (@classes, &set_classes('ftp_sites')) if ($ftp_sites);
+@classes = (@classes, &set_classes('camace')) if ($camace);
+@classes = (@classes, &set_classes('genace')) if ($genace);
+@classes = (@classes, &set_classes('csh')) if ($csh);
+@classes = (@classes, &set_classes('caltech')) if ($caltech);
+@classes = (@classes, &set_classes('misc_static')) if ($misc_static);
+@classes = (@classes, &set_classes('briggsae')) if ($briggsae);
+@classes = (@classes, &set_classes('incomplete')) if ($incomplete);
+@classes = (@classes, &set_classes('data_sets')) if ($data_sets);
+@classes = (@classes, &set_classes('pre_merge')) if ($pre_merge);
+@classes = (@classes, &set_classes('ftp_sites')) if ($ftp_sites);
 
-$log->write_to("Checking $dbname_1 vs $dbname_2 for classes:\n@classes\n\n");
+$log->write_to("Comparing $current_dbname against previous releases for classes:\n@classes\n\n");
 
-my ($class_count) = &count_classes($database, @classes);
+# Get count in current databases
+my $current_counts = &count_classes($database, @classes);
 
-# get the results from previous releases
-my %results_0; 			# results from the last but one release
-my %results_1;			# results from the last release
-my $got_prev_results=0;
-my $got_prev_prev_results=0;
-for (my $version_count = 10; $version_count; $version_count--) { # go back up to 10 releases
-  %results_0 = ();
-  if (!$got_prev_results) {%results_1 = ()}
-  foreach my $class (@classes) {
-    $results_0{$class} = &get_prev_count($species, $prev_prev_version, $class, $stage);
-    if (!$got_prev_results) {$results_1{$class} = &get_prev_count($species, $prev_version, $class, $stage)}
-  }
+# Parse comparison file to retrieve previous results
+my $stage_counts = get_stage_counts($species, $stage);
 
-  # check to see if we have results from the previous release number we are currently checking
-  # (elegans is the only species done every release)
-  foreach my $class (keys %results_1) {
-    if ($results_1{$class} != -1) {
-      $got_prev_results = 1;
-    } else {
-      $results_1{$class} = 0;	# change the value from -1 to 0 to get a sensible-looking display
+my %prev_results;
+my %prev_prev_results;
+my $prev_results_found = 0;
+my $prev_prev_results_found = 0;
+my $check_version = $version;
+while ($check_version > 195) {
+    $check_version--;
+    next unless exists $stage_counts->{$check_version};
+    if (!$prev_results_found) {
+	for my $class (@classes) {
+	    $prev_results{$class} = exists $stage_counts->{$check_version}{$class} ? $stage_counts->{$check_version}{$class} : 0
+	}
+	$prev_dbname = 'WS' . $check_version;
+	$prev_results_found = 1;
     }
-    if ($results_0{$class} != -1) {
-      $got_prev_prev_results = 1;
-    } else {
-      $results_0{$class} = 0;	# change the value from -1 to 0 to get a sensible-looking display
+    else {
+	for my $class (@classes) {
+	    $prev_prev_results{$class} = exists $stage_counts->{$check_version}{$class} ? $stage_counts->{$check_version}{$class} : 0
+	}
+	$prev_prev_dbname = 'WS' . $check_version;
+	$prev_prev_results_found = 1;
+	last;
     }
-  }
-
-  if ($got_prev_prev_results) {last}
-
-  # go back another version
-  $prev_prev_version--;
-  $dbname_0    = "WS${prev_prev_version}";
-  if (!$got_prev_results) {
-    $prev_version--;
-    $dbname_1    = "WS${prev_version}";
-  }
 }
-
 # display message if there are no previous results
-if (!$got_prev_results) {
-  $log->write_to("\n\nNo results have been found for this species for the last 10 releases\n\n");
-  $dbname_0 = '';
-  $dbname_1 = '';
+$prev_prev_dbname = '' if !$prev_prev_results_found;
+if (!$prev_results_found) {
+    $log->write_to("\n\nNo previous_results have been found for this species\n\n");
+    $prev_dbname = '';
 }
 
 # display header
-$log->write_to(sprintf("%-22s %7s %7s %7s %7s\n", "CLASS","($dbname_0)",$dbname_1,$dbname_2,"Difference"));
+$log->write_to(sprintf("%-22s %7s %7s %7s %7s\n", "CLASS","($prev_prev_dbname)", $prev_dbname, $current_dbname, "Difference"));
 
-my %seen;
-my $count = 0;
 my $errors = 0;
 foreach my $class (@classes) {
 
-  ##################################################
-  # Calculate difference between databases         #
-  ##################################################
-  
-  my $count0 = $results_0{$class};
-  my $count1 = $results_1{$class};
-  my $count2 = $$class_count[$count];
-  &store_count($species, $version, $class, $stage, $count2);
-  my $diff = $count2 - $count1;
-  my $err = "";
-  if ($count2 == 0) {
-    $err = "***** POSSIBLE ERROR *****";
-    $log->error;
-    $errors++;
-  } elsif (	# we expect the 'incomplete' classes to be less than in currentdb
-      ($count2 < $count1 * 0.9 || 
-      $count2 > $count1 * 1.1)) {
-    $err = "***** POSSIBLE ERROR *****";
-    $log->error;
-    $errors++;
-  }
-  $count++;
-
-  # don't want to report duplicate classes
-  if ($seen{$class}) {next;}
-  $seen{$class} = 1;
-
-  $log->write_to(sprintf("%-22s %7d %7d %7d %7d %s\n", $class,$count0,$count1,$count2,$diff,$err)) if ($err || $verbose);
+    ##################################################
+    # Calculate difference between databases         #
+    ##################################################
+    
+    my $prev_prev_count = exists $prev_prev_results{$class} ? $prev_prev_results{$class} : 0;
+    my $prev_count = exists $prev_results{$class} ? $prev_results{$class} : 0;
+    my $current_count = exists $current_counts->{$class} ? $current_counts->{$class} : 0;
+    &store_count($species, $version, $class, $stage, $current_count);
+    my $diff = $current_count - $prev_count;
+    my $err = "";
+    if ($current_count == 0) {
+	$err = "***** POSSIBLE ERROR *****";
+	$log->error;
+	$errors++;
+    } elsif (	# we expect the 'incomplete' classes to be less than in currentdb
+		($current_count < $prev_count * 0.9 || 
+		 $current_count > $prev_count * 1.1)) {
+	$err = "***** POSSIBLE ERROR *****";
+	$log->error;
+	$errors++;
+    }
+    
+    $log->write_to(sprintf("%-22s %7d %7d %7d %7d %s\n", $class,$prev_prev_count,$prev_count,$current_count,$diff,$err)) if ($err || $verbose);
 }
-$log->write_to("\n$count class counts checked, $errors potential errors found\n");
+$log->write_to("\n" . scalar @classes . " class counts checked, $errors potential errors found\n");
 
 # Email log file
 $log->mail();
@@ -238,86 +217,75 @@ sub usage {
 
 sub count_classes {
 
-  my ($database, @classes)  = @_;
-
-  my @class_count;
-
-  my $count=0;
-
-  # Formulate query
-  my $command;
-  foreach my $class (@classes) {
-    $command .= "query find $class\n";
-  }
-  $command .= "quit\n";
-
-
-  ####################################
-  # Count objects in database
-  ####################################
-  #print "Command = $command\n";
-  # open tace connection and count how many objects in each class
-  open (TACE, "echo '$command' | $exec $database | ");
-  while (<TACE>) {
-    (push @class_count, $1) if (/^\/\/ (\d+) Active Objects/);
-    $count++ if (/^\/\/ (\d+) Active Objects/);
-  }
-  close (TACE);
+    my ($database, @classes)  = @_;
     
+    my %class_counts;
     
-  if ($count != @classes) {die "There are different numbers of classes and results (".scalar @classes." $count)\npossibly some results are not being returned?\n";}
-
-  return (\@class_count);
+    for my $class (@classes) {
+	my $cmd = "query find $class\nquit\n";
+    
+	####################################
+	# Count objects in database
+	####################################
+	open (TACE, "echo '$cmd' | $exec $database | ");
+	while (<TACE>) {
+	    if (/^\/\/ (\d+) Active Objects/) {
+		$class_counts{$class} = $1;
+	    }
+	}
+	close (TACE);
+    }
+    
+    if (scalar (keys %class_counts) != @classes) {die "There are different numbers of classes and results (" . scalar @classes . ' ' . scalar (keys %class_counts) . ")\npossibly some results are not being returned?\n";}
+    
+    return (\%class_counts);
     
 }
 
 
 ###############################################
-# get the count of this class found in the previous Build
-sub get_prev_count {
-  my ($species, $version, $class, $stage) = @_;
+# get counts from previous builds at specified stage
+sub get_stage_counts {
+    my ($species, $stage) = @_;
 
-  my $last_count = -1;		# -1 is a flag value indicating no results were found
-  if (open (CLASS_COUNT, "< $file")) {
+    my %counts;
+    my %classes_to_count = map {$_ => 1} @classes;
+    open (CLASS_COUNT, "< $file") or die $!;
     while (my $line = <CLASS_COUNT>) {
-      chomp $line;
-      my ($cc_version, $cc_class, $cc_species, $cc_count, $cc_stage) = split /\t+/, $line;
-      # we don't want to get the count from any details that may have
-      # been stored by an earlier run of this script in this Build,
-      # but we want the most recent version's count apart from that,
-      # so get the most recent result that isn't from this Build.
-      if ($cc_version == $version && $cc_class eq $class && $cc_species eq $species && $cc_stage eq $stage) {
-	# store to get the last one in the previous build
-	$last_count = $cc_count;
-      } 
+	chomp $line;
+	my ($cc_version, $cc_class, $cc_species, $cc_count, $cc_stage) = split /\t+/, $line;
+	next unless $cc_stage eq $stage && $cc_species eq $species;
+	next unless exists $classes_to_count{$cc_class};
+	$counts{$cc_version}{$cc_class} = $cc_count;
     }
     close (CLASS_COUNT);
-  }
-  return $last_count;
+   
+    return \%counts;
 }
+
 
 ###############################################
 # now store the details for this Build
 sub store_count {
-
-  my ($species, $version, $class, $stage, $count) = @_;
-
-
-  if (open (CLASS_COUNT, ">> $file")) {
-    if ($version && $class && $species && $count && $stage) {
-      print CLASS_COUNT "$version\t$class\t$species\t$count\t$stage\n";
+    
+    my ($species, $version, $class, $stage, $count) = @_;
+    
+    
+    if (open (CLASS_COUNT, ">> $file")) {
+	if ($version && $class && $species && $count && $stage) {
+	    print CLASS_COUNT "$version\t$class\t$species\t$count\t$stage\n";
+	} else {
+	    if (!$count) {
+		$log->write_to("*** ERROR: There are zero $class in the database!\n\n");
+	    } else {
+		$log->write_to("*** POSSIBLE ERROR: Couldn't write to $file because some of the following is blank\nversion=$version, class=$class, species=$species, count=$count\n\n");
+	    }
+	    $log->error;
+	}
+	close (CLASS_COUNT);
     } else {
-      if (!$count) {
-$log->write_to("*** ERROR: There are zero $class in the database!\n\n");
-      } else {
-      $log->write_to("*** POSSIBLE ERROR: Couldn't write to $file because some of the following is blank\nversion=$version, class=$class, species=$species, count=$count\n\n");
+	$log->write_to("WARNING: Couldn't write to $file\n\n");
     }
-      $log->error;
-    }
-    close (CLASS_COUNT);
-  } else {
-    $log->write_to("WARNING: Couldn't write to $file\n\n");
-  }
 }
 
 
