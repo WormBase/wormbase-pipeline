@@ -636,6 +636,7 @@ sub make_fpkm {
     chomp;
     s/\"//g;  #remove "
     next if (/acedb/ or /\/\//);
+    s/\\\//\//g; # un-escape slashes
     my @data = split(/\t/,$_);
     my ($analysis, $analysis_reference, $sra_or_study, $sraid, $condition) = @data;
 
@@ -679,6 +680,7 @@ sub get_condition_details {
     chomp;
     s/\"//g;  #remove "
     next if (/acedb/ or /\/\//);
+    s/\\\//\//g; # un-escape slashes
     my @data = split(/\t/,$_);
     my ($condition, $life_stage, $condition_species, $strain, $condition_reference, $sex, $tissue, $treatment, $food, $exposure, $temperature, $genotype) = @data;
 
