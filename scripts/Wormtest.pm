@@ -1072,7 +1072,7 @@ sub _add_old_blast_counts {
     my ($self, $counts, $blast_type) = @_;
     
 
-    my $last_build_file = $ENV{'BUILD_HOME'} . '/BUILD/' . $self->{'wormbase'}->species . '/acefiles/' .
+    my $last_build_file = $ENV{'BUILD_HOME'} . '/BUILD/BACKUP/blast_ace_bkup/' .
 	$self->{'wormbase'}->species . '_' . $blast_type . '.ace';
 
     if (-e $last_build_file) {
