@@ -14,6 +14,7 @@ use Wormbase;
 use IO::File;
 use Getopt::Long;
 use strict;
+use Compress::Zlib;
 
 my ($debug,$test,$store,$wormbase,$load,$outfile);
 GetOptions( 'debug=s'    => \$debug,
@@ -80,6 +81,7 @@ sub get_orthos{
 	my ($url)=@_;
 	my $payload = get($url);
 	$log->log_and_die("cannot download orthologs from $url\n") unless $payload;
+	$payload = Compress::Zlib::memGunzip($payload) if $url =~ /\.gz$/;
 	my $json = decode_json($payload);
         foreach my $data(@{$json->{data}}){
 		next unless $data->{strictFilter};

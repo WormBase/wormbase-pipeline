@@ -403,16 +403,20 @@ sub build_folder_contents_present {
 								  $errors);
     my %files_present = map {$_ => 1} @$filenames;
     my %subdirs_present = map {$_ => 1} @$subdirnames;
-    for my $build_file ('runlog', 'Elegans.store') {
+    my $store_file = ucfirst($self->{'wormbase'}->organism) . '.store';
+    for my $build_file ('runlog', $store_file) {
 	if (!exists $files_present{$build_file}) {
 	    $self->{'log'}->write_to("ERROR: $build_file not present in " .
 				     $self->{'wormbase'}->autoace . "\n");
 	    $errors++;
 	}
     }
-    for my $build_subdir ('acefiles', 'BLAT', 'CHECKS', 'CHROMOSOMES', 'COMMON_DATA', 'database',
-			  'GFF_SPLITS', 'logs', 'MISC_OUTPUT', 'ONTOLOGY', 'release', 'REPORTS',
-			  'SEQUENCES', 'SPELL', 'TMP', 'TRANSCRIPTS', 'wgf', 'wquery', 'wspec') {  
+
+    my @subdirs = ('acefiles', 'BLAT', 'CHECKS', 'CHROMOSOMES', 'COMMON_DATA', 'database',
+		   'GFF_SPLITS', 'logs', 'MISC_OUTPUT', 'ONTOLOGY', 'release', 'REPORTS',
+		   'SEQUENCES', 'SPELL', 'TMP', 'TRANSCRIPTS', 'wquery', 'wspec');
+    push @subdirs, 'wgf' if $self->{'wormbase'}->organism eq 'elegans';
+    for my $build_subdir (@subdirs) {  
 	if (!exists $subdirs_present{$build_subdir}) {
 	    $self->{'log'}->write_to("ERROR: $build_subdir directory not present in " .
 				     $self->{'wormbase'}->autoace . "\n");
@@ -1068,7 +1072,7 @@ sub _add_old_blast_counts {
     my ($self, $counts, $blast_type) = @_;
     
 
-    my $last_build_file = $ENV{'BUILD_HOME'} . '/BUILD/' . $self->{'wormbase'}->species . '/acefiles/' .
+    my $last_build_file = $ENV{'BUILD_HOME'} . '/BUILD/BACKUP/blast_ace_bkup/' .
 	$self->{'wormbase'}->species . '_' . $blast_type . '.ace';
 
     if (-e $last_build_file) {

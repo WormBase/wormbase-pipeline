@@ -18,8 +18,20 @@ use strict;
 use Wormbase;
 use Ace;
 use Storable 'retrieve';
+use Const::Fast;
 
 use base ('ProteinConsequence::BaseProteinConsequence');
+
+
+const my $REFSEQ_CHR_MAP => {
+    'I'     => 'NC_003279.8',
+    'II'    => 'NC_003280.10',
+    'III'   => 'NC_003281.10',
+    'IV'    => 'NC_003282.8',
+    'V'     => 'NC_003283.11',
+    'X'     => 'NC_003284.9',
+    'MtDNA' => 'NC_001328.1'
+    };
 
 sub run {
     my $self = shift;
@@ -46,7 +58,7 @@ sub run {
 	print $fh "Sequence : \"$allele->{clone}\"\nAllele $var $allele->{clone_start} $allele->{clone_stop}\n\n";
     }
 
-    my ($transcripts, $hgvsg) = $self->get_transcript_consequences($vep_output);
+    my ($transcripts, $hgvsg, $other_names) = $self->get_transcript_consequences($vep_output);
 
     my ($gene_alleles, $allele_genes, $pseudogenes);
     ($gene_alleles, $allele_genes, $transcripts, $pseudogenes) = 
@@ -76,7 +88,13 @@ sub run {
     for my $var (keys %$transcripts) {
 	next unless $self->add_transcript_consequences_for_variation($var, $mapped_alleles->{$var}{allele});
 	print $fh "Variation : \"$var\"\n";
+	
 	print $fh 'HGVSg "' . $hgvsg->{$var} . "\"\n" if exists $hgvsg->{$var};
+	if (exists $other_names->{$var}) {
+	    for my $other_name (keys %{$other_names->{$var}}) {
+		print $fh 'Other_name "' . $other_name . "\"\n";
+	    }
+	}
 	for my $transcript (keys %{$transcripts->{$var}}) {
 	    my $type = 'Transcript';
 	    if (exists $pseudogenes->{$var}{$transcript}) {
@@ -324,7 +342,7 @@ sub get_transcript_consequences {
 	);
     
 
-    my (%transcripts, %hgvsg, %worst_rankings);
+    my (%transcripts, %hgvsg, %other_names, %worst_rankings);
     open (VEP, '<', $vep_output);
     while (<VEP>) {
 	next if $_ =~ /^#/;
@@ -347,11 +365,15 @@ sub get_transcript_consequences {
 	$transcripts{$var}{$feature}{"VEP_consequence \"$consequence\""}++;
 	
 	$transcripts{$var}{$feature}{'VEP_impact "' . $attributes{'IMPACT'} . '"'} = 1 if exists $attributes{'IMPACT'};
-	$transcripts{$var}{$feature}{'HGVSc "' . $attributes{'HGVSc'} . '"'} = 1 if exists $attributes{'HGVSc'};
+	if (exists $attributes{'HGVSc'}) {
+	    $transcripts{$var}{$feature}{'HGVSc "' . $attributes{'HGVSc'} . '"'} = 1;
+	    $other_names{$var}{$attributes{'HGVSc'}} = 1;
+	}
 	if (exists $attributes{'HGVSp'}) {
 	    my $hgvsp = $attributes{'HGVSp'};
 	    $hgvsp =~ s/%3D/=/;
 	    $transcripts{$var}{$feature}{'HGVSp "' . $hgvsp . '"'} = 1;
+	    $other_names{$var}{$hgvsp} = 1;
 	}
 	$transcripts{$var}{$feature}{'Intron_number "' . $attributes{'INTRON'} . '"'} = 1 if exists $attributes{'INTRON'};
 	$transcripts{$var}{$feature}{'Exon_number "' . $attributes{'EXON'} . '"'} = 1 if exists $attributes{'EXON'};
@@ -363,6 +385,7 @@ sub get_transcript_consequences {
 	$transcripts{$var}{$feature}{"Amino_acid_change \"$aas\""} = 1 unless $aas eq '-';
 
 	$hgvsg{$var} = $attributes{'HGVSg'};
+	$other_names{get_agr_format_hgvsg_name($attributes{'HGVSg'})} = 1;
 
 	for my $pp ('SIFT', 'PolyPhen') {
 	    next unless exists $attributes{$pp};
@@ -373,7 +396,7 @@ sub get_transcript_consequences {
     }
     close (VEP);
 
-    return (\%transcripts, \%hgvsg);
+    return (\%transcripts, \%hgvsg, \%other_names);
 }
 
 
@@ -398,4 +421,27 @@ sub restructure_hash{
 }
 
 
+=head2 get_agr_format_hgvsg_name
+
+    Title:    get_agr_format_hgvsg_name
+    Function: converts HGVSg from VEP into format used by AGR
+    Args:     HGVSg string
+    Returns:  reformatted HGVSg string
+
+=cut
+
+sub get_agr_format_hgvsg_name {
+    my $hgvsg = shift;
+
+    my ($chr, $var) = $hgvsg =~ /^([^:]+):(.+)$/;
+    $chr =~ s/^chr//;
+    $chr =~ s/^CHROMOSOME_//;
+    $chr = $REFSEQ_CHR_MAP->{$chr} if exists $REFSEQ_CHR_MAP->{$chr};
+
+    my $agr_hgvsg = $chr . ':' . $var;
+    
+    return $agr_hgvsg;
+}
+
+    
 1;

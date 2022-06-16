@@ -4,7 +4,8 @@ use strict;
 use Ace;
 use Getopt::Long;
 use Storable;
-          
+use Const::Fast;
+
 use lib $ENV{CVS_DIR};
 use Wormbase;
 use Log_files;
@@ -12,6 +13,13 @@ use Log_files;
 use lib "$ENV{CVS_DIR}/ONTOLOGY";
 use GAF;
 
+const my $VALID_GO_CODES => {
+    'EXP' => 1, 'IDA' => 1, 'IPI' => 1, 'IMP' => 1, 'IGI' => 1, 'IEP' => 1,
+    'HTP' => 1, 'HDA' => 1, 'HMP' => 1, 'HGI' => 1, 'HEP' => 1, 'IBA' => 1,
+    'IBD' => 1, 'IKR' => 1, 'IRD' => 1, 'ISS' => 1, 'ISO' => 1, 'ISA' => 1,
+    'ISM' => 1, 'IGC' => 1, 'RCA' => 1, 'TAS' => 1, 'NAS' => 1, 'IC' => 1,
+    'ND' => 1, 'IEA' => 1,
+};
 
 my ($help, $debug, $test, $store, $wormbase,$tace);
 my ($outputdir, $acedbpath, @all_gaf_lines, @nr_gaf_lines, @per_species_files, %dead_genes, $count);
@@ -109,6 +117,12 @@ foreach my $suf (0..9) {
       }
       next;
     }
+
+    my $go_code = $obj->GO_code->name;
+    if (!exists $VALID_GO_CODES->{$go_code}) {	
+	$log->write_to("WARNING: Skipping annotation $obj due to invalid evidence code: $go_code\n");
+	next;
+    }
     
     my $gaf_line = {
       annot_num   => $obj->name,
@@ -116,7 +130,7 @@ foreach my $suf (0..9) {
       db          => "WB", 
       gene        => $wbgene,
       go_term     => $obj->GO_term->name,
-      go_code     => $obj->GO_code->name,
+      go_code     => $go_code,
       aspect      => $go_aspect{$obj->GO_term->name},
       date        => ($obj->Date_last_updated) ? &get_GAF_date($obj->Date_last_updated->name) : $date,
       object_type => "gene",
@@ -191,7 +205,12 @@ foreach my $suf (0..9) {
       $gaf_line->{qualifier} = 'NOT|'.$al;
     }
     if ($obj->Annotation_relation) {
-      my $al = $obj->Annotation_relation->Name;
+      my $al;
+      if ($obj->Annotation_relation->name eq 'RO_0002263') {
+	  $al = 'acts upstream of'; #hopefully only needed for WS285
+      } else {
+	  $al = $obj->Annotation_relation->Name;
+      }
       $al =~ s/\s+/_/g;
       $al =~ s/,//g; # hopefully only needed for 278 and 279
       if ($al eq 'colocalizes_with' or
