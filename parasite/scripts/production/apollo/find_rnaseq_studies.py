@@ -1,3 +1,5 @@
+#!/hps/software/users/wormbase/parasite/shared/.pyenv/versions/p395/bin/python
+
 from optparse import OptionParser
 import sys
 import os
@@ -9,8 +11,8 @@ import gzip
 import glob
 from pathlib import Path
 import dependencies
-import diotools
-from diotools import *
+import ProductionUtils
+from ProductionUtils import *
 from tools import *
 from dependencies import *
 

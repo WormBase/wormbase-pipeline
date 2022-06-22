@@ -1,3 +1,5 @@
+#!/hps/software/users/wormbase/parasite/shared/.pyenv/versions/p395/bin/python
+
 import os
 import pysam
 import glob
@@ -8,7 +10,8 @@ from optparse import OptionParser
 from pathlib import Path
 import dependencies
 from dependencies import *
-from diotools import *
+from ProductionUtils import *
+from ProductionMysql import *
 
 class ui:
     def __init__(self, parser_object):
@@ -17,6 +20,11 @@ class ui:
             self.species = options.SPECIES
         else:
             parser.error('species not given')
+        if options.apname:
+            self.apname = options.apname
+        else:
+            print_info("The apollo name instance has not been given. "+self.species+" will be used instead.")
+            self.apname = options.species
         self.explore = options.explore
         self.cpext = options.cpext
         self.extdest = options.extdest
@@ -43,14 +51,21 @@ def check_dependent_dirs():
                                                            "script and try again.")
 
 class Species:
-    def __init__(self, species_name):
-        self.species = species_name
-        self.apollo_dir = apollo_dir+"/"+species_name
-        self.permanent_apollo_dir = permanent_apollo_dir+"/"+species_name
-        self.bam_dir = apollo_dir+"/"+species_name+"/bam"
-        self.cram_dir = apollo_dir+"/"+species_name+"/cram"
-        self.bigwig_dir = apollo_dir+"/"+species_name+"/bigwig"
-        self.se_dir = expression_dir+"/"+species_name
+    def __init__(self, ui):
+        self.ui = ui
+        if staging.is_core("species"):
+            self.species = "_".join(ui.species.split("_")[0:1])
+        else:
+            self.species = ui.species
+        self.species = ui.species
+        self.apname = ui.apname
+        self.apollo_dir = os.path.join(apollo_dir,self.apname)
+        self.permanent_apollo_dir = os.path.join(permanent_apollo_dir,self.apname)
+        self.bam_dir = os.path.join(self.apollo_dir,"bam")
+        self.cram_dir = os.path.join(self.apollo_dir,"cram")
+        self.toapollo_dir = os.path.join(self.apollo_dir, "to_apollo")
+        self.bigwig_dir = self.apollo_dir+"/bigwig"
+        self.se_dir = expression_dir+"/"+self.species
         self.reference_dir = os.path.join(self.apollo_dir,"reference")
         self.log_dir = os.path.join(self.apollo_dir,"log")
     def check_if_studies(self):
@@ -83,20 +98,61 @@ class Species:
         return_samples = []
         study_ids = self.studies()
         for study_id in study_ids:
-            sst = Study(self.species, study_id)
+            sst = Study(self.ui, study_id)
             return_samples += list(set(sst.design_dict().values()))
         return(return_samples)
     def studies_to_samples(self):
         stu2sam_dict = {}
         study_ids = self.studies()
         for study_id in study_ids:
-            sst = Study(self.species, study_id)
+            sst = Study(self.ui, study_id)
             stu2sam_dict[study_id] = list(set(sst.design_dict().values()))
         return(stu2sam_dict)
+    def all_bams(self):
+        return(flatten([Study(self.ui, study_id).bams() for study_id in self.studies()]))
+    def all_final_merged_bams(self):
+        return([Study(self.ui, study_id).merged_bam_final for study_id in self.studies()])
+    def all_bigwigs(self):
+        return(flatten([Study(self.ui, study_id).bigwigs() for study_id in self.studies()]))
+    def move_all_finals_to_final_dir_command(self, to_wait_id=""):
+        bam_files_to_move = self.all_bams() + self.all_final_merged_bams()
+        bigwigs_to_move = self.all_bigwigs()
+        bash_commands = [do_if_exist(x, "\tmv " + \
+                         x + "* " + \
+                         self.toapollo_dir) for x in bam_files_to_move]
+        bash_commands += [do_if_exist(x, "\tmv " + \
+                         x + " " + \
+                         self.toapollo_dir) for x in bigwigs_to_move]
+        bash_command = "\n".join(bash_commands)
+        return(bash_command)
+    def move_all_finals_to_final_dir_command_submit(self, to_wait_id=""):
+        job_id = lsf_submit(self.move_all_finals_to_final_dir_command(),
+                            jobprefix=self.species + "_01_move_to_final_dir",
+                            to_wait_id=to_wait_id,
+                            cpu=1,
+                            mem="1gb",
+                            cwd=self.log_dir,
+                            queue="production")
+        return (job_id)
+    def rsync_to_external_location_command(self):
+        bash_command = rsync_to_external_location_command(directory=self.toapollo_dir,
+                                                          remote_path=os.path.join(embassy_apollo_path, self.apname),
+                                                          method="embassy",
+                                                          bucket=embassy_bucket)
+        return ("#!/bin/bash\n\n"+expand_aliases()+bash_command)
+    def rsync_to_external_location_command_submit(self, to_wait_id=""):
+        job_id = lsf_submit(self.rsync_to_external_location_command(),
+                            jobprefix=self.species + "_02_copy_to_embassy",
+                            to_wait_id=to_wait_id,
+                            cpu=1,
+                            mem="1gb",
+                            cwd=self.log_dir,
+                            queue="production")
+        return(job_id)
 
 class Study(Species):
-    def __init__(self, species_name, study_id):
-        super().__init__(species_name)
+    def __init__(self, ui, study_id):
+        super().__init__(ui)
         self.study_id = study_id
         self.spath = os.path.join(self.se_dir, self.study_id)
         self.design_file = os.path.join(self.spath, self.study_id + ".design.tsv")
@@ -131,7 +187,7 @@ class Study(Species):
                 run_once += 1
     def ref_fasta_ftpfile(self):
         for dek in self.design_keys():
-            ssa = Sample(self.species, self.study_id, dek)
+            ssa = Sample(self.ui, self.study_id, dek)
             fasta = ssa.ref_fasta_ftpfile_sample()
             break
         return fasta
@@ -158,14 +214,14 @@ class Study(Species):
     def bigwigs(self):
         bigwigs = []
         for dek in self.design_keys():
-            ssa = Sample(self.species, self.study_id, dek)
+            ssa = Sample(self.ui, self.study_id, dek)
             bigwig = ssa.bigwig
             bigwigs.append(bigwig)
         return bigwigs
     def bams(self):
         bams = []
         for dek in self.design_keys():
-            ssa = Sample(self.species, self.study_id, dek)
+            ssa = Sample(self.ui, self.study_id, dek)
             bam = ssa.bam_deduped
             bams.append(bam)
         return bams
@@ -193,13 +249,14 @@ class Study(Species):
 
 
 
+
+
 class Sample(Study):
-    def __init__(self, species_name, study_id, design_key):
-        super().__init__(species_name, study_id)
+    def __init__(self, ui, study_id, design_key):
+        super().__init__(ui, study_id)
         self.sample_name = design_key
         self.sample_id = self.design_dict()[self.sample_name]
         self.shortid = self.sample_id[0:6]
-        self.ftp = os.path.join(rnaseq_ftp_dir,self.shortid,self.sample_id)
         self.sample_bam_dir = os.path.join(self.study_bam_dir,self.sample_id)
         self.sample_bigwig_dir = os.path.join(self.study_bigwig_dir, self.sample_id)
         self.bam = os.path.join(self.sample_bam_dir, self.sample_name+".bam")
@@ -210,6 +267,18 @@ class Sample(Study):
         self.bam_deduped = self.bam_noext + ".deduped.bam"
         self.bigwig = os.path.join(self.sample_bigwig_dir, self.sample_name+".bigwig")
         self.fasta = self.ref_fasta
+    def ftp(self):
+        ftp = os.path.join(rnaseq_ftp_dir, self.shortid, self.sample_id)
+        if not os.path.isdir(ftp):
+            alt_ftp_path = os.path.join(rnaseq_ftp_dir, self.shortid, "*", self.sample_id)
+            alt_ftp_dirs = glob.glob(alt_ftp_path)
+            if len(alt_ftp_dirs) > 1:
+                exit_with_error("There are many FTP directories for "+alt_ftp_path+". Exiting.")
+            elif len(alt_ftp_dirs) == 0:
+                exit_with_error("Cannot find an FTP directory in "+ftp+" or "+alt_ftp_path)
+            else:
+                return(alt_ftp_dirs[0])
+        return(ftp)
     def create_sample_dirs(self):
         for dir_name in [self.sample_bam_dir, self.sample_bigwig_dir]:
             if not os.path.exists(dir_name):
@@ -217,21 +286,21 @@ class Sample(Study):
                 print_w_indent("Creating "+dir_name)
                 os.makedirs(dir_name)
     def bam_ftpfile(self):
-        bamfiles = glob.glob(os.path.join(self.ftp,self.sample_id+".bam"))
-        cramfiles = glob.glob(os.path.join(self.ftp,self.sample_id+".cram"))
+        bamfiles = glob.glob(os.path.join(self.ftp(),self.sample_id+".bam"))
+        cramfiles = glob.glob(os.path.join(self.ftp(),self.sample_id+".cram"))
         if len(bamfiles)>0:
             alfile = bamfiles[0]
         elif len(bamfiles)<1 and len(cramfiles)>0:
             alfile = cramfiles[0]
         else:
             exit_with_error("Could not find BAM/CRAM file in FTP"
-                            "directory: " + self.ftp + " for " + self.sample_id)
+                            "directory: " + self.ftp() + " for " + self.sample_id)
         return(alfile)
     def bigwig_ftpfile(self):
-        bigwigfiles = glob.glob(os.path.join(self.ftp,self.sample_id+".nospliced.bw"))
+        bigwigfiles = glob.glob(os.path.join(self.ftp(),self.sample_id+".nospliced.bw"))
         if len(bigwigfiles)<0:
             exit_with_error("Could not find a bigwig file in FTP"
-                            "directory: " + self.ftp + " for " + self.sample_id)
+                            "directory: " + self.ftp() + " for " + self.sample_id)
         return(bigwigfiles[0])
     def bam_copied(self):
         if self.bam_ftpfile().endswith(".cram"):
@@ -296,13 +365,13 @@ class Sample(Study):
 
 
 
-def explore_print(species):
-    print("Species" + "\t" + "Study_id" + "\t" + "Sample_id" + "\t" + "sample_id_condition")
+def explore_print(ui):
+    print("Species" + "\t" + "Study_id" + "\t" + "Sample_id" + "\t" + "sample_id_condition" + "\t" + "ftp_location")
     for spec_study in species.studies():
-        sst = Study(species.species, spec_study)
+        sst = Study(ui, spec_study)
         for dek in sst.design_keys():
-            ssa = Sample(sst.species, spec_study, dek)
-            print(ssa.species + "\t" + ssa.study_id + "\t" + ssa.sample_id + "\t" + ssa.sample_name)
+            ssa = Sample(ui, spec_study, dek)
+            print(ssa.species + "\t" + ssa.study_id + "\t" + ssa.sample_id + "\t" + ssa.sample_name + "\t" + ssa.ftp())
 
 
 def studies_needed(selected_studies, species):
