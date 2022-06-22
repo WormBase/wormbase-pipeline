@@ -21,8 +21,7 @@ use GenomeBrowser::JBrowseDisplay::RnaseqTracks;
 sub new {
     my ( $class, %args ) = @_;
     die "$class: need root dir" unless $args{root_dir};
-    $args{jbrowse_install} //=
-"/nfs/production/panda/ensemblgenomes/wormbase/software/packages/jbrowse/JBrowse-1.12.5";
+    $args{jbrowse_install} //= "$ENV{PARASITE_SOFTWARE}/jbrowse";
 
     make_path "$args{root_dir}/out";
     make_path "$args{root_dir}/JBrowseTools";
