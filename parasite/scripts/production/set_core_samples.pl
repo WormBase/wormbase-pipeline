@@ -42,15 +42,14 @@ my (
   'gene_id=s' => \$gene_id,
 );
 
-    
 # get a compara dba
 my $compara_db = Bio::EnsEMBL::Compara::DBSQL::DBAdaptor->new( -url => sprintf( 'mysql://%s:%s@%s:%d/%s',
-                                                                                $compara_user, 
+                                                                                $compara_user,
                                                                                 "",
                                                                                 $compara_host,
                                                                                 $compara_port,
                                                                                 $compara_dbname),
-                                                               -species => 'Multi' );
+                                                               -species => 'Multi' ) unless ( ! defined $compara_dbname);
 my $core_db = Bio::EnsEMBL::DBSQL::DBAdaptor->new( -dbname => $dbname,
                                                    -host => $host,
                                                    -port => $port,
