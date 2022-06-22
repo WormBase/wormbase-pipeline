@@ -4,8 +4,8 @@ use warnings;
 use File::Basename;
 use Getopt::Long;
 
-use lib "/nfs/panda/ensemblgenomes/wormbase/parasite/wbps-expression/lib";
-use lib "/nfs/panda/ensemblgenomes/wormbase/parasite/wbps-expression/local/lib/perl5";
+use lib "$ENV{EXPRESSION_CODE}/lib";
+use lib "$ENV{EXPRESSION_CODE}/local/lib/perl5";
 
 use Log::Any::Adapter;
 use Log::Log4perl qw(:easy);
@@ -17,10 +17,17 @@ use WbpsExpression;
 use GenomeBrowser::JBrowseDisplay;
 use GenomeBrowser::RnaseqHub;
 
+my $EMBASSY_URL = "$ENV{EMBASSY_ACCESS_URL_RNASEQER}";
+if ($EMBASSY_URL eq "")
+{
+  exit_with_usage();
+}
+
 my @species;
 my $jbrowse_skip = 0;
 my $hub_skip = 0;
-my $sanger_deployment_skip = 0;
+my $deployment_skip = 0;
+my $deploy_to_sanger = 0;
 my $jbrowse_tools_skip = 0;
 my $jbrowse_tools_nofatal = 0;
 my $root_dir = "$ENV{PARASITE_SCRATCH}/jbrowse/WBPS$ENV{PARASITE_VERSION}";
@@ -29,7 +36,8 @@ GetOptions(
   'species=s@'    => \@species,
   'jbrowse_skip' => \$jbrowse_skip,
   'hub_skip' => \$hub_skip,
-  'sanger_deployment_skip' => \$sanger_deployment_skip,
+  'deployment_skip' => \$deployment_skip,
+  'deploy_to_sanger' => \$deploy_to_sanger,
   'jbrowse_tools_skip' => \$jbrowse_tools_skip,
   'jbrowse_tools_nofatal' => \$jbrowse_tools_nofatal,
   'root_dir' => \$root_dir,
@@ -40,7 +48,7 @@ for my $species (@species){
   next if $jbrowse_skip;
   GenomeBrowser::JBrowseDisplay->new(root_dir => $root_dir)->make_displays(
     $species,
-    sanger_deployment_skip=>$sanger_deployment_skip,
+    deployment_skip=>$deployment_skip,
     jbrowse_tools_skip => $jbrowse_tools_skip,
     jbrowse_tools_nofatal=> $jbrowse_tools_nofatal,
   );
@@ -49,7 +57,7 @@ for my $species (@species){
   next if $hub_skip;
   GenomeBrowser::RnaseqHub->new($root_dir)->make_hubs(
     $species,
-    sanger_deployment_skip=>$sanger_deployment_skip,
+    deployment_skip=>$deployment_skip,
   );
 }
 

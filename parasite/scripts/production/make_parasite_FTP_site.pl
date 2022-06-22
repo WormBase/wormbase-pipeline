@@ -42,14 +42,14 @@ for my $path_species (glob "$source_dir/*") {
      my $this_target_dir = "$wbps_release_ftp_dir/species/$species/$bioproject";
      mkpath $this_target_dir if not -d $this_target_dir;
      my $putative_wormbase_dir = join("/", $wormbase_release_ftp_dir,"species", lc((substr $spe, 0, 1 ) . "_" . $cies) , uc($bioproject));
-     if ( -d $putative_wormbase_dir and ($wbps_version > 14 || $bioproject ne "PRJNA248909")) { # wait for WormBase to update C. remanei PX356
+     if ( -d $putative_wormbase_dir and $wbps_version > 14 ) { # wait for WormBase to update C. remanei PX356
         print localtime ." ". $species . " making symlinks $putative_wormbase_dir -> $this_target_dir \n";
         &make_symlinks_to_wormbase_species (
           "$species.$bioproject.WBPS$wbps_version",
           $putative_wormbase_dir,
           $this_target_dir
         );
-        my $cp_cmd = "rsync -a --include='*.paralogs.tsv.gz' --include='*.orthologs.tsv.gz' --exclude '*' $this_source_dir/ $this_target_dir/";
+        my $cp_cmd = "rsync -a --include='*.paralogs.tsv.gz' --include='*.orthologs.tsv.gz' --include='*phenotypes.gaf.gz' --exclude '*' $this_source_dir/ $this_target_dir/";
         print localtime . " $species $cp_cmd\n";
         system($cp_cmd) and die("Failed: $cp_cmd");
      } else {
