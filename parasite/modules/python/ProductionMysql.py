@@ -33,6 +33,9 @@ class Staging:
         def species(self, pattern):
             fdbs=self.dbs(pattern)
             return(['_'.join(x.split("_")[0:3]) for x in fdbs])
+        def is_core(self, input):
+            if input in self.core_dbs("_core_"+os.environ["PARASITE_VERSION"]+"_"): return True
+            else: return False
 
 class Core(Staging):
     def __init__(self, STAGING_HOST, pattern):

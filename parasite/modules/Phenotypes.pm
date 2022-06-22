@@ -213,13 +213,12 @@ sub generate_phenotype_gff {
       poa.accession,
       CONCAT("PMID:",st.external_reference) AS db_reference,
       "IMP",
-      CONCAT(pfa2.value,":",pfa.value) AS db_reference2,
       "P",
       pf.type,
       CONCAT("taxon:",(SELECT meta_value FROM $config->{cdbname}.meta WHERE meta_key='species.taxonomy_id')) AS taxon,
-      (SELECT edr.release_date) AS date,
+      (SELECT REPLACE(edr.release_date,'-','')) AS date,
       'WBPS' AS assigned_by,
-      p.description AS annot_extension
+      CONCAT("CElegansPhenotypeOntology:",p.description) AS annot_extension
 
       FROM
         seq_region sr,
@@ -271,11 +270,25 @@ sub generate_phenotype_gff {
   close LOCK;
 
   open (OUT, '>', $file) or die "ERROR: Unable to write to file $file\n";
-  print OUT "!gaf-version 2.0\n"; #HEADER
+  print OUT "!gaf-version 2.1\n"; #HEADER
+  print OUT "!GO Annotation File (GAF) 2.1 Description: http://geneontology.org/docs/go-annotation-file-gaf-format-2.1\n"; #HEADER
   print OUT "!generated-by: WormBase ParaSite\n"; #HEADER
   print OUT "!project-URL: https://parasite.wormbase.org\n"; #HEADER
   print OUT "!project-release: WBPS$ENV{'PARASITE_VERSION'}\n"; #HEADER
-
+  print OUT "!columns descriptions:\n"; #HEADER
+  print OUT "! 1) DB\n"; #HEADER
+  print OUT "! 2) DB Object ID (Gene ID)\n"; #HEADER
+  print OUT "! 3) DB Object Symbol (Gene Symbol)\n"; #HEADER
+  print OUT "! 4) Qualifier (NOT = It has been demonstrated that the gene is not associated with the phenotype)\n"; #HEADER
+  print OUT "! 5) Phenotype ID\n"; #HEADER
+  print OUT "! 6) DB:Reference\n"; #HEADER
+  print OUT "! 7) Evidence Code (http://geneontology.org/page/guide-go-evidence-codes)\n"; #HEADER
+  print OUT "! 8) Aspect (P = biological process)\n"; #HEADER
+  print OUT "! 9) DB Object Type\n"; #HEADER
+  print OUT "! 10) Taxon\n"; #HEADER
+  print OUT "! 11) Release Date\n"; #HEADER
+  print OUT "! 12) Assigned By\n"; #HEADER
+  print OUT "! 13) Annotation Extension (Phenotype description provided by https://github.com/obophenotype/c-elegans-phenotype-ontology)\n"; #HEADER
   while(my $row = $sth->fetchrow_arrayref()) {
     # swap start end for insertions
     #@$row[3,4] = @$row[4,3] if (@$row[3] > @$row[4]);

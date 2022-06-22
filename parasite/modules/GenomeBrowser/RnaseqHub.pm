@@ -90,7 +90,7 @@ sub make_hub_for_core_db {
             my $run_id = $run->{run_id};
             &create_run_doc( $self->path( $_Species, "doc", "$run_id.html" ),
                 $study, $run, );
-            my $url = GenomeBrowser::Deployment::sync_ebi_to_sanger(
+            my $url = GenomeBrowser::Deployment::sync_ebi_externally(
                 $species, $assembly, $run_id,
                 $run->{bigwig}, %opts );
             push @run_tracks,

@@ -36,7 +36,7 @@ sub track_selector_and_tracks_for_species_and_assembly {
         my $category = $has_multiple_categories ? "RNASeq: $study->{study_category}" : "RNASeq";
         for my $run (@{$study->{runs}}) {
           my $run_id = $run->{run_id};
-          my $url    = GenomeBrowser::Deployment::sync_ebi_to_sanger(
+          my $url    = GenomeBrowser::Deployment::sync_ebi_externally(
               $species, $assembly, $run_id,
               $run->{bigwig}, %opts );
           my $track_name = join(": ", grep {$_} (join("/", grep {$_} $run_id, $run->{replicate})), $run->{condition});
