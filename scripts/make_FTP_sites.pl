@@ -1301,15 +1301,26 @@ sub make_blast_meta{
 
 	my ($genus, $species) = $wb->long_name =~ /^(\S+)\s(\S+)$/;
 
+	my $strain_suffix;
+	if ($wb->ncbi_bioproject eq 'PRJNA275000') {
+	    $strain_suffix = ' CB4856';
+	} elsif ($wb->ncbi_bioproject eq 'PRJEB28388') {
+	    $strain_suffix = ' VC2010';
+	} elsif ($wb->ncbi_bioproject eq 'PRJNA577507') {
+	    $strain_suffix = ' PX506';
+	} else {
+	    $strain_suffix = '';
+	}
+	
 	if (-e $genome_path) {
 	    next if is_empty_gzip_file($genome_path);
 	    my $genome_md5 = substr(`md5sum ${genome_path}`, 0, 32);
 	    my $genome_entry = {
 		'URI' => $genome_url,
-		'description' => $wb->long_name . ' genome assembly',
+		'description' => $wb->long_name . $strain_suffix . ' genome assembly',
 		'md5sum' => $genome_md5,
 		'version' => $WS_version_name,
-	        'blast_title' => $wb->short_name . ' Genome Assembly',
+	        'blast_title' => $wb->short_name . $strain_suffix . ' Genome Assembly',
 	        'seqtype' => 'nucl',
 		'bioproject' => $wb->ncbi_bioproject,
 		'taxon_id' => 'NCBITaxon:' . $wb->ncbi_tax_id,
@@ -1323,10 +1334,10 @@ sub make_blast_meta{
 	    my $protein_md5 = substr(`md5sum ${protein_path}`, 0, 32);
 	    my $protein_entry = {
 		'URI' => $protein_url,
-		'description' => $wb->long_name . ' protein sequences',
+		'description' => $wb->long_name . $strain_suffix . ' protein sequences',
 	        'md5sum' => $protein_md5,
 	        'version' => $WS_version_name,
-	        'blast_title' => $wb->short_name . ' Protein Sequences',
+	        'blast_title' => $wb->short_name . $strain_suffix . ' Protein Sequences',
 	        'seqtype' => 'prot',
 		'bioproject' => $wb->ncbi_bioproject,
 		'taxon_id' => 'NCBITaxon:' . $wb->ncbi_tax_id,
