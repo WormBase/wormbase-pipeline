@@ -74,10 +74,8 @@ done
 # genomes in this list had their annotation updated in WBPS release 17
 # so we add WBPS16 gene models as an additional track
 genomes_updated_16=(					\
-fasciola_hepatica_prjna179522				\
 heterodera_glycines_prjna381081				\
 necator_americanus_prjna72135 			\
-schistosoma_mansoni_prjea36577 		\
 strongyloides_stercoralis_prjeb528
 )
 
