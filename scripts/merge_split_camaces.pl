@@ -737,7 +737,7 @@ sub load_curation_data {
 		  "$blat_dir/virtual_objects.$species.ci.OST.$species.ace",
 		  "$blat_dir/virtual_objects.$species.ci.RST.$species.ace",
 		  "$blat_dir/virtual_objects.$species.ci.ncRNA.$species.ace",
-		  "$blat_dir/virtual_objects.$species.ci.elegans.Nanopore.elegans.ace",
+		  "$blat_dir/virtual_objects.$species.ci.Nanopore.elegans.ace",
 		  "$blat_dir/$species.blat.${species}_OST.ace",
 		  "$blat_dir/$species.blat.${species}_RST.ace",
 		  "$blat_dir/$species.blat.${species}_ncRNA.ace",
