@@ -17,6 +17,8 @@ def trim_paired_fqs(fastp, input_fqs, output_fqs,
                    "-w " + str(threads) + ";\n\n"
     return(bash_command)
 
+
+
 def curl_fastqs(fastqs_dict):
     """fastqs_dict should be a dictionary with the remote paths as keys and the output paths as values"""
     bash_command = "\n\n".join(

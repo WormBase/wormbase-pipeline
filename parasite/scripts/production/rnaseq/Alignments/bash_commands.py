@@ -1,12 +1,15 @@
 import os
 
 def star_alignment(star, reference, threads, fastqs, outFileNamePrefix,
-                           limitBAMsortRAM, sjdbOverhang, gtf, extra_params=""):
+                           limitBAMsortRAM, sjdbOverhang, gtf, is_paired=1, extra_params=""):
+    readFilesIn_string = ",".join([x[0] for x in fastqs])
+    if is_paired==1:
+        readFilesIn_string+= " "+",".join([x[1] for x in fastqs])
     bash_command = star + " " + \
                    "--genomeDir " + reference + " " + \
                    "--runThreadN " + threads + " " + \
                    "--outBAMsortingThreadN " + threads + " " + \
-                   "--readFilesIn " + " ".join(fastqs) + " " + \
+                   "--readFilesIn " + readFilesIn_string + " " + \
                    "--outFileNamePrefix " + outFileNamePrefix + " " + \
                    "--limitBAMsortRAM " + limitBAMsortRAM + " " + \
                    "--sjdbOverhang " + sjdbOverhang + " " + \

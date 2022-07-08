@@ -25,8 +25,19 @@ def sra_ftp_to_fire(fastq, sra_ftp_path_prefix=sra_ftp_path_prefix, sra_fire_pat
     #                     "\n".join([fire_fastq, fastq]))
 
 def validate_selects_format(user_select):
-    validation_regex = "^\w+$|^\w+:\w+$|^\w+:\w+(;\w+){1,}$"
-    return (bool(re.search(validation_regex, user_select)))
+    validation_regex = "^\w+$|^\w+:\w+$|^\w+:\[?\w+(]?;\[?\w+){1,}]?|^\w+$"
+    if "[" in user_select:
+        bracket_error=False
+        starting_positions = findOccurrences(user_select, "[")
+        ending_positions = findOccurrences(user_select, "]")
+        for count, value in enumerate(starting_positions):
+            if starting_positions[count] >= ending_positions[count]:
+                bracket_error=True
+                break
+    if bool(re.search(validation_regex, user_select))==False or bracket_error==True:
+        return(False)
+    else:
+        return(True)
 
 def species_input(ui_species):
     if bool(re.match("^[a-z0-9]+_[a-z0-9]+_[a-z0-9]+$", ui_species)):
