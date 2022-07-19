@@ -25,7 +25,7 @@ checkout_ensembl_branch(){
  git clone --single-branch -b $branch_name --depth 1 https://github.com/${repo_owner}/${repo_name}.git ${where_to_clone}
 }
 
-checkout_ensembl_branch ensembl-analysis dev/hive_master
+checkout_ensembl_branch ensembl-analysis main
 checkout_ensembl_branch ensembl-pipeline main
 checkout_ensembl_branch ensembl-taxonomy main
 checkout_ensembl_branch ensembl-funcgen main
@@ -41,8 +41,8 @@ checkout_ensembl_branch ensj-healthcheck release/${ENSEMBL_VERSION}
 checkout_ensembl_branch ensembl-datacheck release/${ENSEMBL_VERSION}
 checkout_ensembl_branch ensembl-py main
 checkout_ensembl_branch ensembl-hive version/2.6
-checkout_ensembl_branch parasite-static master EnsemblGenomes
-checkout_ensembl_branch eg-web-common master EnsemblGenomes
-checkout_ensembl_branch ensembl-production-imported trunk
-checkout_ensembl_branch ensembl-production-imported-private trunk
+checkout_ensembl_branch parasite-static main EnsemblGenomes
+checkout_ensembl_branch eg-web-common main EnsemblGenomes
+checkout_ensembl_branch ensembl-production-imported main
+checkout_ensembl_branch ensembl-production-imported-private main
 checkout_ensembl_branch GIFTS main
