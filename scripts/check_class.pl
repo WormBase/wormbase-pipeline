@@ -562,7 +562,6 @@ sub set_classes {
 		"GO_term",
 		"Interaction",
 		"Position_matrix",
-		"LongText",
 		"Movie",
 		"Structure_data",
 		);  
