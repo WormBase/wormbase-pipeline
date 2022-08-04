@@ -13,8 +13,15 @@ for f in $($HANDOVER_STAGING_MYSQL -Ne "SHOW DATABASES LIKE \"%${EG_VERSION}_${E
 
   do new_s_name=$(echo $f | cut -d'_' -f1,2);
 
+  echo "Fixing $f (${new_s_name}) in $($HANDOVER_STAGING_MYSQL host)";
+
   $HANDOVER_STAGING_MYSQL-w $f -Ne "UPDATE meta SET meta_value = '${new_s_name}'
   WHERE meta_key = 'species.production_name';";
+
+  if [ "$new_s_name" == "caenorhabditis_elegans" ]; then
+    $HANDOVER_STAGING_MYSQL-w $f -Ne "UPDATE meta SET meta_value = 'Caenorhabditis_elegans'
+    WHERE meta_key = 'species.url';";
+  fi;
 
   # Make sure the dbs have the correct species.division name in the db
   $HANDOVER_STAGING_MYSQL-w $f -Ne "UPDATE meta SET meta_value = 'EnsemblMetazoa'
@@ -53,14 +60,23 @@ for f in $($HANDOVER_STAGING_MYSQL -Ne "SHOW DATABASES LIKE \"%${EG_VERSION}_${E
   $HANDOVER_STAGING_MYSQL-w $f -Ne "DROP TABLE IF EXISTS rule_conditions;";
   $HANDOVER_STAGING_MYSQL-w $f -Ne "DROP TABLE IF EXISTS rule_goal;";
 
-  trsamp=$($HANDOVER_STAGING_MYSQL $core_db -Ne \
+  trsamp=$($HANDOVER_STAGING_MYSQL $f -Ne \
   "SELECT meta_value FROM meta WHERE meta_key='sample.transcript_param';");
-  bestsamp=$($HANDOVER_STAGING_MYSQL $core_db -Ne \
+  bestsamp=$($HANDOVER_STAGING_MYSQL $f -Ne \
   "SELECT stable_id FROM transcript WHERE stable_id LIKE \"%${trsamp}%\" LIMIT 1;");
-  echo $core_db $trsamp $bestsamp;
-  $HANDOVER_STAGING_MYSQL-w $core_db -Ne "UPDATE meta SET meta_value='${bestsamp}' WHERE meta_key='sample.transcript_param';";
 
-  $HANDOVER_STAGING_MYSQL-w $core_db -Ne \
+  $HANDOVER_STAGING_MYSQL-w $f -Ne "UPDATE meta SET meta_value='${bestsamp}' WHERE meta_key='sample.transcript_param';";
+
+  $HANDOVER_STAGING_MYSQL-w $f -Ne "DELETE FROM meta WHERE meta_key LIKE \"interpro%\" OR meta_key LIKE \"%busco%\" OR meta_key='species.ftp_genome_id' OR meta_key='species.biosample';";
+
+  gsd=$($HANDOVER_STAGING_MYSQL-w $f -Ne "SELECT meta_value FROM meta WHERE meta_key='genebuild.start_date';");
+  gv=$($HANDOVER_STAGING_MYSQL-w $f -Ne "SELECT meta_value FROM meta WHERE meta_key='genebuild.version';");
+
+  if [[ "$gsd" == "$gv" ]]; then $HANDOVER_STAGING_MYSQL-w $f -Ne "UPDATE meta SET meta_value=1 WHERE meta_key='genebuild.version';"; fi;
+
+  $HANDOVER_STAGING_MYSQL-w $f -Ne "DELETE FROM meta WHERE meta_key NOT IN ('division', 'patch', 'schema_type', 'schema_version') AND species_id IS NULL;"
+
+  $HANDOVER_STAGING_MYSQL-w $f -Ne \
   "UPDATE transcript t
   INNER JOIN xref x on t.display_xref_id = x.xref_id
   INNER JOIN object_xref USING (xref_id)
