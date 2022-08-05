@@ -56,11 +56,12 @@ num_core_dbs=$( wc -l < $DIR/.tmp/core_db_and_taxon_list.tsv)
 #    grep -P '\b2011161\b' $DIR/.tmp/goa_uniprot_all.gaf.gz
 #    
 if [ "$num_files" -ne "$num_core_dbs" ] ; then
-  >&2 echo "The two numbers are not the same. Blimey! "
+  >&2 echo "WARNING: The two numbers are not the same! "
   >&2 echo "Diff directory content vs core dbs: "
   >&2 diff \
     <( ls -1 $DIR | perl -pe 's/annotations_ensembl-(.*).gpa/$1/' | sort )  \
     <( perl -pe 's/_core.*//' < $DIR/.tmp/core_db_and_taxon_list.tsv | sort )
+  >&2 echo "This might be ok. Pleae check whether the reported species are in the gaf ftp file: ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/UNIPROT/goa_uniprot_all.gaf.gz "
   exit 1
 else
   echo "rm -v $DIR/.tmp/**"
