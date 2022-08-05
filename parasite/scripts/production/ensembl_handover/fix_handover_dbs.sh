@@ -59,6 +59,8 @@ for f in $($HANDOVER_STAGING_MYSQL -Ne "SHOW DATABASES LIKE \"%${EG_VERSION}_${E
   $HANDOVER_STAGING_MYSQL-w $f -Ne "DROP TABLE IF EXISTS input_id_type_analysis;";
   $HANDOVER_STAGING_MYSQL-w $f -Ne "DROP TABLE IF EXISTS rule_conditions;";
   $HANDOVER_STAGING_MYSQL-w $f -Ne "DROP TABLE IF EXISTS rule_goal;";
+  $HANDOVER_STAGING_MYSQL-w $f -Ne "DROP TABLE IF EXISTS job_status;";
+  $HANDOVER_STAGING_MYSQL-w $f -Ne "DROP TABLE IF EXISTS job;";
 
   trsamp=$($HANDOVER_STAGING_MYSQL $f -Ne \
   "SELECT meta_value FROM meta WHERE meta_key='sample.transcript_param';");
@@ -67,17 +69,32 @@ for f in $($HANDOVER_STAGING_MYSQL -Ne "SHOW DATABASES LIKE \"%${EG_VERSION}_${E
 
   $HANDOVER_STAGING_MYSQL-w $f -Ne "UPDATE meta SET meta_value='${bestsamp}' WHERE meta_key='sample.transcript_param';";
 
-  $HANDOVER_STAGING_MYSQL-w $f -Ne "DELETE FROM meta WHERE meta_key LIKE \"interpro%\" OR meta_key LIKE \"%busco%\" OR meta_key='species.ftp_genome_id' OR meta_key='species.biosample';";
+  $HANDOVER_STAGING_MYSQL-w $f -Ne "DELETE FROM meta WHERE meta_key LIKE \"interpro%\" OR meta_key LIKE \"%busco%\" OR meta_key LIKE \"%cegma%\" OR meta_key='species.ftp_genome_id' OR meta_key='species.biosample';";
 
   gsd=$($HANDOVER_STAGING_MYSQL-w $f -Ne "SELECT meta_value FROM meta WHERE meta_key='genebuild.start_date';");
   gv=$($HANDOVER_STAGING_MYSQL-w $f -Ne "SELECT meta_value FROM meta WHERE meta_key='genebuild.version';");
 
-  if [[ "$gsd" == "$gv" ]]; then $HANDOVER_STAGING_MYSQL-w $f -Ne "UPDATE meta SET meta_value=1 WHERE meta_key='genebuild.version';"; fi;
+  if [[ "$gsd" == "$gv" ]]; then $HANDOVER_STAGING_MYSQL-w $f -Ne "UPDATE meta SET meta_value='WBPS${PARASITE_VERSION}' WHERE meta_key='genebuild.version';"; fi;
 
-  $HANDOVER_STAGING_MYSQL-w $f -Ne "DELETE FROM meta WHERE meta_key NOT IN ('division', 'patch', 'schema_type', 'schema_version') AND species_id IS NULL;"
+  $HANDOVER_STAGING_MYSQL-w $f -Ne "UPDATE meta SET meta_value='WBPS${PARASITE_VERSION}' WHERE meta_key='genebuild.version' AND meta_value='1';";
 
-  $HANDOVER_STAGING_MYSQL-w $f -Ne \
-  "UPDATE transcript t
+  $HANDOVER_STAGING_MYSQL-w $f -Ne "UPDATE meta SET meta_value='repeatmask_customlib' WHERE meta_key='repeat.analysis' AND meta_value='repeatmask';";
+  $HANDOVER_STAGING_MYSQL-w $f -Ne "UPDATE meta SET meta_value='trf' WHERE meta_key='repeat.analysis' AND meta_value='repeatmask_repbase';";
+
+  $HANDOVER_STAGING_MYSQL-w $f -Ne "DELETE FROM meta WHERE meta_key NOT IN ('division', 'patch', 'schema_type', 'schema_version') AND species_id IS NULL;";
+
+  #  $HANDOVER_STAGING_MYSQL mysqldump $f mapping_session > $HANDOVER_SCRATCH/$f.mapping_session.sql;
+  #  sed -i s,"\`old_assembly\` varchar(20) NOT NULL DEFAULT","\`old_assembly\` varchar(80) NOT NULL DEFAULT",g $HANDOVER_SCRATCH/$f.mapping_session.sql;
+  #  sed -i s,"\`new_assembly\` varchar(20) NOT NULL DEFAULT","\`new_assembly\` varchar(80) NOT NULL DEFAULT",g $HANDOVER_SCRATCH/$f.mapping_session.sql;
+  #  $HANDOVER_STAGING_MYSQL-w $f -Ne "DROP TABLE mapping_session;";
+  #  $HANDOVER_STAGING_MYSQL-w $f < $HANDOVER_SCRATCH/$f.mapping_session.sql;
+  #
+  #  $HANDOVER_STAGING_MYSQL mysqldump $f stable_id_event > $HANDOVER_SCRATCH/$f.stable_id_event.sql;
+  #  sed -i s,"\`type\` enum('gene'\,'transcript'\,'translation') NOT NULL","\`type\` enum('gene'\,'transcript'\,'translation'\,'rnaproduct') NOT NULL",g $HANDOVER_SCRATCH/$f.stable_id_event.sql;
+  #  $HANDOVER_STAGING_MYSQL-w $f -Ne "DROP TABLE stable_id_event;";
+  #  $HANDOVER_STAGING_MYSQL-w $f < $HANDOVER_SCRATCH/$f.stable_id_event.sql;
+
+  $HANDOVER_STAGING_MYSQL-w $f -Ne "UPDATE transcript t
   INNER JOIN xref x on t.display_xref_id = x.xref_id
   INNER JOIN object_xref USING (xref_id)
   INNER JOIN seq_region USING (seq_region_id)
