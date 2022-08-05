@@ -107,6 +107,7 @@ while( my $slice = shift @slices) {
       $gene_to_dump{attribs}{description_source} = $description_source;
       $gene_to_dump{attribs}{description_source_acc} = $description_source_acc;
     }
+    print $gene_gff_id."\n";
     my $archive_stable_id = $archive_adaptor->fetch_by_stable_id($gene->stable_id);
     if ($archive_stable_id) {
 # EnsEMBL code doesn't quite handle non-linear history, e.g.  Smp_120050+Smp_199230->Smp_335780+Smp_315690

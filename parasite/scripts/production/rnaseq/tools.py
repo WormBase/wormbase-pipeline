@@ -93,7 +93,7 @@ def check_dependent_software():
 
 
 class Species:
-    def __init__(self, ui, studies_dict=None):
+    def __init__(self, ui, groups_dict=None):
         self.ui = ui
         self.cdb = self.ui.core_db
         self.species = "_".join(self.cdb.split("_")[0:2])
@@ -110,11 +110,11 @@ class Species:
         self.aligner_gtf = self.ui.genome_gtf
         if self.ui.selects:
             self.selects = self.ui.selects
-        if studies_dict:
-            self.studies_dict = studies_dict
-            self.studies = list(self.studies_dict.keys())
-            self.samples = flatten([[y["run_accession"] for y in self.studies_dict[x]] for x in self.studies])
-            self.studies_to_samples_dict = {x: [y["run_accession"] for y in self.studies_dict[x]] for x in self.studies}
+        if groups_dict:
+            self.groups_dict = groups_dict
+            self.studies = list(self.groups_dict.keys())
+            self.samples = flatten([[y["run_accession"] for y in flatten(list(self.groups_dict[x].values()))] for x in self.studies])
+            self.studies_to_samples_dict = {x: flatten([[y["run_accession"] for y in flatten(list(self.groups_dict[x].values()))]]) for x in self.studies}
 
     def create_dirs(self):
         run_once = 0
@@ -132,17 +132,18 @@ class Species:
 
 class Study(Species):
 
-    def __init__(self, ui, studies_dict, study_id):
-        super().__init__(ui, studies_dict)
+    def __init__(self, ui, groups_dict, study_id):
+        super().__init__(ui, groups_dict)
         self.study_id = study_id
         self.study_dir = os.path.join(self.studies_dir, self.study_id)
         self.merged_dir = os.path.join(self.study_dir, "merged")
         self.to_apollo_dir = os.path.join(self.study_dir, "to_apollo")
         self.log_dir = os.path.join(self.study_dir, "log")
 
-        self.dict = {self.study_id: self.studies_dict[self.study_id]}
-        self.sample_ids = [x["run_accession"] for x in self.dict[self.study_id]]
-        self.samples_dict = {x["run_accession"]: x for x in self.dict[self.study_id]}
+        self.dict = {self.study_id: self.groups_dict[self.study_id]}
+        self.sample_ids = self.studies_to_samples_dict[self.study_id]
+        self.group_ids = self.groups_dict[self.study_id].keys()
+        self.group_dict = self.groups_dict[self.study_id]
 
         self.merged_bam = os.path.join(self.merged_dir, self.study_id + ".merged.bam")
         self.merged_bam_noext = str(Path(self.merged_bam).with_suffix(''))
@@ -165,24 +166,24 @@ class Study(Species):
 
     def bigwigs(self):
         bigwigs = []
-        for sample_id in self.sample_ids:
-            ssa = Sample(self.ui, self.studies_dict, self.study_id, sample_id)
+        for group_id in self.group_ids:
+            ssa = Group(self.ui, self.groups_dict, self.study_id, group_id)
             bigwig = ssa.bigwig
             bigwigs.append(bigwig)
         return bigwigs
 
     def bams(self):
-        bigwigs = []
-        for sample_id in self.sample_ids:
-            ssa = Sample(self.ui, self.studies_dict, self.study_id, sample_id)
+        bams = []
+        for group_id in self.group_ids:
+            ssa = Group(self.ui, self.groups_dict, self.study_id, group_id)
             bam = ssa.bam_deduped
             bams.append(bam)
         return bams
 
     def files_to_apollo(self):
         files_to_apollo = []
-        for sample_id in self.sample_ids:
-            ssa = Sample(self.ui, self.studies_dict, self.study_id, sample_id)
+        for group_id in self.group_ids:
+            ssa = Group(self.ui, self.groups_dict, self.study_id, group_id)
             files_to_apollo.append(ssa.bam_for_apollo)
             files_to_apollo.append(ssa.bigwig_for_apollo)
         return files_to_apollo
@@ -201,36 +202,48 @@ class Study(Species):
         return (bash_command)
 
 
-class Sample(Study):
-    def __init__(self, ui, studies_dict, study_id, sample_id):
-        super().__init__(ui, studies_dict, study_id)
+class Group(Study):
+    def __init__(self, ui, groups_dict, study_id, group_id):
+        super().__init__(ui, groups_dict, study_id)
         # Sample Ids
-        self.sample_id = sample_id
-        self.sample_dir = os.path.join(self.study_dir, self.sample_id)
-        self.sample_dict = self.samples_dict[self.sample_id]
-        self.tmp_dir = os.path.join(self.sample_dir, "tmp")
-        self.short_sample_id = self.sample_id[0:6]
+        self.group_id = group_id
+        self.group_dir = os.path.join(self.study_dir, self.group_id)
+        self.group_dict = self.groups_dict[self.study_id][self.group_id]
+        self.sample_ids = [x["run_accession"] for x in self.groups_dict[self.study_id][self.group_id]]
+        self.tmp_dir = os.path.join(self.group_dir, "tmp")
 
         # FASTQ Options
-        self.fastqs_ftp_paths = self.sample_dict["fastq_ftp"].split(";")
-        self.fastqs_fire_paths = [sra_ftp_to_fire(fastq) for fastq in self.fastqs_ftp_paths]
-        self.fastqs_dict = {fastq: os.path.join(self.sample_dir, self.sample_id + ".r" + str(cnt) + ".fastq.gz") for
-                            cnt, fastq in
-                            enumerate(self.fastqs_fire_paths, 1)}
-        self.fastqs = [os.path.join(self.sample_dir, self.sample_id + ".r" + str(cnt) + ".fastq.gz") for cnt, fastq in
-                       enumerate(self.fastqs_fire_paths, 1)]
-        self.trimmed_fastqs = [os.path.join(self.sample_dir, self.sample_id + ".r" + str(cnt) + ".trimmed.fastq.gz") for
-                               cnt, fastq in enumerate(self.fastqs_fire_paths, 1)]
-        self.fastp_html_report = os.path.join(self.sample_dir, self.sample_id + ".fastp_report.html")
-        self.fastp_json_report = os.path.join(self.sample_dir, self.sample_id + ".fastp_report.json")
-        self.no_of_fastqs = len(self.fastqs_ftp_paths)
+        for cnt, run_entry in enumerate(self.group_dict):
+            fastqs_ftp_paths = run_entry["fastq_ftp"].split(";")
+            self.group_dict[cnt]["fastq_prefix"] = os.path.join(self.group_dir, run_entry["run_accession"] + ".r")
+            self.group_dict[cnt]["fastq_ftp_paths_list"] = fastqs_ftp_paths
+            self.group_dict[cnt]["fastq_fire_paths_list"] = [sra_ftp_to_fire(fastq) for fastq in self.group_dict[cnt]["fastq_ftp_paths_list"]]
+            self.group_dict[cnt]["fastqs_dict"] = {fastq: self.group_dict[cnt]["fastq_prefix"] + str(count) + ".fastq.gz" for
+                                                         count, fastq in
+                                                         enumerate(self.group_dict[cnt]["fastq_fire_paths_list"], 1)}
+            self.group_dict[cnt]["fastqs"] = [self.group_dict[cnt]["fastq_prefix"] + str(count) + ".fastq.gz" for
+                                                    count, fastq in enumerate(self.group_dict[cnt]["fastq_fire_paths_list"], 1)]
+            self.group_dict[cnt]["trimmed_fastqs"] = [self.group_dict[cnt]["fastq_prefix"] + str(count) + ".trimmed.fastq.gz" for
+                                                    count, fastq in enumerate(self.group_dict[cnt]["fastq_fire_paths_list"], 1)]
+            self.group_dict[cnt]["fastp_html_report"] = os.path.join(self.group_dir, run_entry["run_accession"] + ".fastp_report.html")
+            self.group_dict[cnt]["fastp_json_report"] = os.path.join(self.group_dir, run_entry["run_accession"] + ".fastp_report.json")
+            self.group_dict[cnt]["no_of_fastqs"] = len(self.group_dict[cnt]["fastq_ftp_paths_list"])
+        self.unique_no_of_fastqs = list(set([run_entry["no_of_fastqs"] for run_entry in self.group_dict]))
+        if len(self.unique_no_of_fastqs) != 1:
+            print([run_entry["fastqs"] for x in self.group_dict])
+            exit_w_error("Group :" + self.group_id + " has mixed single-end and paired-end reads which is not allowed")
+        self.is_paired = True
+        if self.unique_no_of_fastqs == [1]:
+            self.is_paired = False
+
+
         self.fastp_threads = fastp_threads
         self.fastp_memory = fastp_memory
 
         # STAR ALIGNMENT OPTIONS
         self.star_align_threads = star_align_threads
         self.star_align_memory = star_align_memory
-        self.star_align_outFileNamePrefix = os.path.join(self.sample_dir, self.sample_id) + "."
+        self.star_align_outFileNamePrefix = os.path.join(self.group_dir, self.group_id) + "."
         self.star_align_outFileNameSuffix = star_align_outFileNameSuffix
         self.star_align_limitBAMsortRAM = star_align_limitBAMsortRAM
         self.star_align_sjdbOverhang = star_align_sjdbOverhang
@@ -242,10 +255,10 @@ class Sample(Study):
         self.star_align_sjdbOverhang = star_align_sjdbOverhang
 
         # BAM PROCESSING OPTIONS
-        self.bam_refname_sorted = os.path.join(self.sample_dir, self.sample_id + ".refname_sorted.bam")
-        self.bam_capped = os.path.join(self.sample_dir, self.sample_id + ".capped.bam")
-        self.bam_capped_sorted = os.path.join(self.sample_dir, self.sample_id + ".capped.sorted.bam")
-        self.bigwig = os.path.join(self.sample_dir, self.sample_id + ".bigwig")
+        self.bam_refname_sorted = os.path.join(self.group_dir, self.group_id + ".refname_sorted.bam")
+        self.bam_capped = os.path.join(self.group_dir, self.group_id + ".capped.bam")
+        self.bam_capped_sorted = os.path.join(self.group_dir, self.group_id + ".capped.sorted.bam")
+        self.bigwig = os.path.join(self.group_dir, self.group_id + ".bigwig")
         self.bam2bigwig_binSize = bam2bigwig_binSize
 
         self.bam_for_apollo = self.bam_capped_sorted
@@ -263,37 +276,45 @@ class Sample(Study):
                 run_once += 1
 
     def download_fastqs_command(self):
-        bash_command = curl_fastqs(self.fastqs_dict)
+        bash_command = ""
+        for run_entry in self.group_dict:
+            bash_command += curl_fastqs(run_entry["fastqs_dict"])
         return (bash_command)
 
-    def trim_fastqs_command(self, previous_files=None, delete_previous=False):
-        if not previous_files: previous_files = self.fastqs
-        if delete_previous and not isinstance(previous_files, list): previous_files = [previous_files]
-        bash_command = trim_paired_fqs(fastp=fastp, input_fqs=self.fastqs,
-                                       output_fqs=self.trimmed_fastqs,
-                                       fastp_html_report=self.fastp_html_report,
-                                       fastp_json_report=self.fastp_json_report,
-                                       threads=self.fastp_threads) + \
-                                       (delete_if_ok(" ".join(previous_files)) if delete_previous else "")
-        return (bash_command)
+    def trim_fastqs_command_list(self, previous_files=None, delete_previous=False):
+        final_list = []
+        for run_entry in self.group_dict:
+            if not previous_files: previous_files = run_entry["fastqs"]
+            if delete_previous and not isinstance(previous_files, list): previous_files = [previous_files]
+            bash_command = trim_paired_fqs(fastp=fastp, input_fqs=run_entry["fastqs"],
+                                           output_fqs=run_entry["trimmed_fastqs"],
+                                           fastp_html_report=run_entry["fastp_html_report"],
+                                           fastp_json_report=run_entry["fastp_json_report"],
+                                           threads=self.fastp_threads) + \
+                                           (delete_if_ok(" ".join(previous_files)) if delete_previous else "")
+            final_list.append(bash_command)
+        return(final_list)
+
+
 
     def star_alignment_command(self, previous_files=None, delete_previous=False):
-        if not previous_files: previous_files = self.trimmed_fastqs
+        if not previous_files: previous_files = flatten([run_entry["trimmed_fastqs"] for run_entry in self.group_dict])
         if delete_previous and not isinstance(previous_files, list): previous_files = [previous_files]
         bash_command = star_alignment(star=star,
                                       reference=self.aligner_reference,
                                       threads=self.star_align_threads,
-                                      fastqs=self.trimmed_fastqs,
+                                      fastqs=[run_entry["trimmed_fastqs"] for run_entry in self.group_dict],
                                       outFileNamePrefix=self.star_align_outFileNamePrefix,
                                       limitBAMsortRAM=self.star_align_limitBAMsortRAM,
                                       sjdbOverhang=self.star_align_sjdbOverhang,
                                       gtf=self.aligner_gtf,
+                                      is_paired=self.is_paired,
                                       extra_params=self.star_align_extra_params) + \
                                       (delete_if_ok(" ".join(previous_files)) if delete_previous else "")
         return (bash_command)
-    
+
     def index_aligned_bam_command(self, previous_files=None, delete_previous=False):
-        if not previous_files: previous_files = self.trimmed_fastqs
+        if not previous_files: previous_files = flatten([run_entry["trimmed_fastqs"] for run_entry in self.group_dict])
         if delete_previous and not isinstance(previous_files, list): previous_files = [previous_files]
         bash_command = index_bam(inbam=self.star_align_outbam)
         return (bash_command)
@@ -317,7 +338,7 @@ class Sample(Study):
                                biostar154220=biostar154220) + \
                                (delete_if_ok(" ".join(previous_files)) if delete_previous else "")
         return (bash_command)
-    
+
     def sort_capped_bam_command(self, previous_files=None, delete_previous=False):
         if not previous_files: previous_files = self.bam_capped
         if delete_previous and not isinstance(previous_files, list): previous_files = [previous_files]
@@ -327,7 +348,7 @@ class Sample(Study):
         return (bash_command)
 
     def index_final_bam_command(self, previous_files=None, delete_previous=False):
-        if not previous_files: previous_files = self.trimmed_fastqs
+        if not previous_files: previous_files = flatten([run_entry["trimmed_fastqs"] for run_entry in self.group_dict])
         if delete_previous and not isinstance(previous_files, list): previous_files = [previous_files]
         bash_command = index_bam(inbam=self.bam_for_apollo)
         return (bash_command)
@@ -650,30 +671,82 @@ def all_studies_dict_for_species(get_rna_seq_studies_by_taxon_api_url):
     url = get_rna_seq_studies_by_taxon_api_url
     return (ena_rnaseq_by_taxon_id_to_dict(url))
 
-def selected_studies_dict_for_species(ui, all_studies_dict):
-    if not ui.selects:
-        print_warning("No selected studies - All studies will be processed.")
-        time.sleep(30)
-        return (self.all_studies_dict)
+def check_if_study_is_in_all_studies_list(study_id, all_studies_dict):
+    if study_id not in all_studies_dict.keys():
+        exit_with_error("The given study ID: " + study_id + " is not a valid "
+                        "study id for that species")
+
+def check_if_samples_have_been_defined_for_a_study(user_selection):
+    if ":" in user_selection:
+        return True
+
+def parse_user_selected_samples(selected_study_list_of_dicts, user_selection):
+    all_sample_ids = [x["run_accession"] for x in selected_study_list_of_dicts]
+    study_id = selected_study_list_of_dicts[0]["secondary_study_accession"]
+    if check_if_samples_have_been_defined_for_a_study(user_selection):
+        sample_string = user_selection.split(":")[1]
+        sample_ids = [re.sub("\(.+\)","",x.replace("[", "").replace("]", "")) for x in sample_string.split(";")]
+    else:
+        print_info("No samples were identified for study: " + study_id
+                   + ". Processing with all samples.")
+        sample_ids = all_sample_ids
+    return(sample_ids)
+
+def parser_user_selected_samples_rungroup_names(user_selection, all_selected_sample_ids):
+    sample_group_names_dict = {}
+    if check_if_samples_have_been_defined_for_a_study(user_selection):
+        sample_string = user_selection.split(":")[1]
+        sample_ids_with_group_names = [x for x in sample_string.split(";") if "(" in x and "[" not in x and "]" not in x]
+        for sample_id_and_group in sample_ids_with_group_names:
+            sample_id, group_name = re.search("(\w+)\((\w+)\)", sample_id_and_group).group(1,2)
+            sample_group_names_dict[sample_id] = group_name
+    for selected_sample_id in all_selected_sample_ids:
+        if selected_sample_id not in sample_group_names_dict:
+            sample_group_names_dict[selected_sample_id]=selected_sample_id
+    return(sample_group_names_dict)
+
+
+def parse_user_selected_sample_groups_and_return_group_list(user_selection, all_selected_sample_ids):
+    if check_if_samples_have_been_defined_for_a_study(user_selection):
+        sample_string = user_selection.split(":")[1]
+        if "[" not in sample_string:
+            return([[x] for x in all_selected_sample_ids])
+    get_samples_groups = [x for x in re.findall("\[((\w+;?){1,})]\(([a-zA-Z0-9_ ]+)\)?;?", sample_string) if x!=""]
+    match_replicates_dict = {x[0]:x[-1] for x in get_samples_groups}
+    samples_to_group_names_dict = parser_user_selected_samples_rungroup_names(user_selection, all_selected_sample_ids)
+    all_grouped_samples_groups = []
+    for grouped_samples_string in match_replicates_dict:
+        grouped_samples = grouped_samples_string.split(";")
+        group_name = match_replicates_dict[grouped_samples_string].replace("(", "").replace(")", "")
+        all_grouped_samples_groups.append({"name":group_name, "samples":grouped_samples})
+    all_sample_ids_in_groups = flatten([x["samples"] for x in all_grouped_samples_groups])
+    if len(all_grouped_samples_groups) != len(all_selected_sample_ids):
+        all_grouped_samples_groups+=[{"name":samples_to_group_names_dict[x], "samples":[x]} for x in all_selected_sample_ids if x not in all_sample_ids_in_groups]
+    return(all_grouped_samples_groups)
+
+
+def parse_user_selected_studies_samples(ui, all_studies_for_taxon_id_dict):
+
     selected_studies_dict = {}
-    for select in ui.selects:
-        study_id = select.split(":")[0]
-        if study_id in all_studies_dict.keys():
-            selected_studies_dict[study_id] = all_studies_dict[study_id]
-            all_sample_ids = [x["run_accession"] for x in selected_studies_dict[study_id]]
-            try:
-                sample_ids = select.split(":")[1].split(";")
-            except IndexError:
-                print_info("No samples were identified for study: " + study_id
-                           + ". Processing with all samples.")
-                sample_ids = all_sample_ids
-            for sample_id in sample_ids:
-                if sample_id not in all_sample_ids:
-                    exit_with_error("The given sample ID: " + sample_id + " is not a valid "
-                                                                          "sample id from the study " + study_id + ". Please double-check. Exiting.")
-            study_dict_values = [x for x in selected_studies_dict[study_id] if x["run_accession"] in sample_ids]
-            selected_studies_dict[study_id] = study_dict_values
-        else:
-            exit_with_error("The given study ID: " + study_id + " is not a valid "
-                                                                "study id for that species")
-    return (selected_studies_dict)
+    selected_studies_grouped_samples_dict = {}
+
+    for user_selection in ui.selects:
+        study_id = user_selection.split(":")[0]
+        check_if_study_is_in_all_studies_list(study_id, all_studies_for_taxon_id_dict)
+        selected_studies_dict[study_id] = all_studies_for_taxon_id_dict[study_id]
+        sample_ids = parse_user_selected_samples(selected_studies_dict[study_id], user_selection)
+        sample_groups = parse_user_selected_sample_groups_and_return_group_list(user_selection, sample_ids)
+        study_dict_values = [x for x in selected_studies_dict[study_id] if x["run_accession"] in sample_ids]
+        selected_studies_grouped_samples_dict[study_id] = {}
+        selected_studies_dict[study_id] = study_dict_values
+        counter=1
+        for sample_group in sample_groups:
+            group_name='_'.join(sample_group["name"].split())
+            if group_name=="":
+                group_name="group-"+str(counter)
+                counter+=1
+            selected_studies_grouped_samples_dict_values = [x for x in selected_studies_dict[study_id] if x["run_accession"] in sample_group["samples"]]
+            selected_studies_grouped_samples_dict[study_id][group_name] = selected_studies_grouped_samples_dict_values
+
+    return (selected_studies_dict, selected_studies_grouped_samples_dict)
+

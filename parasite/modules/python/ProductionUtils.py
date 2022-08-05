@@ -116,3 +116,6 @@ def regex_match_one_db(pattern, databases):
 def url_file_exists(path):
     r = requests.head(path)
     return r.status_code == requests.codes.ok
+
+def findOccurrences(s, ch):
+    return [i for i, letter in enumerate(s) if letter == ch]

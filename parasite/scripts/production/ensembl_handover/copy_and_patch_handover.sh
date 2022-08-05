@@ -27,8 +27,9 @@ else printf "$error_message"; exit 1;
 fi
 echo  "Creating $NEWDB"
 if ! ${HANDOVER_STAGING_MYSQL}-w -e "CREATE DATABASE $NEWDB"; then
-  echo "Could not create $NEWDB - should this script be running? Bailing out."
-  exit 1
+  echo "Could not create $NEWDB - should this script be running? Bailing out.";
+  echo "Skip";
+  continue;
 fi
 echo "Dumping $DB to $NEWDB"
 ${HANDOVER_FROM_STAGING_MYSQL} mysqldump $DB | ${HANDOVER_STAGING_MYSQL}-w $NEWDB

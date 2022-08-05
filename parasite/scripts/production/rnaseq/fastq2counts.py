@@ -40,97 +40,124 @@ user_input.print_user_input()
 species = Species(user_input)
 species.create_dirs()
 species_all_studies_dict = all_studies_dict_for_species(species.get_rna_seq_studies_by_taxon_api_url)
-species_selected_studies_dict = selected_studies_dict_for_species(user_input, species_all_studies_dict)
-selected_species = Species(user_input, species_selected_studies_dict)
+species_selected_studies_dict, selected_studies_grouped_samples_dict = parse_user_selected_studies_samples(user_input, species_all_studies_dict)
+
+print(selected_studies_grouped_samples_dict)
+
+selected_species = Species(user_input, selected_studies_grouped_samples_dict)
+selected_species.create_dirs()
 
 for study_id in selected_species.studies:
-    study = Study(user_input, species_selected_studies_dict, study_id)
+    study = Study(user_input, selected_studies_grouped_samples_dict, study_id)
     study.create_dirs()
     print_info("Processing Study " + study.study_id)
     print_w_indent("With samples:\n" + "\n".join(study.sample_ids))
-    for sample_id in study.sample_ids:
-        print_info("Processing Sample: " + sample_id)
-        sample = Sample(user_input, species_selected_studies_dict, study_id, sample_id)
-        sample.create_dirs()
-        if sample.no_of_fastqs != 2:
-            print_warning("Sample "+sample_id+" doesn't have 2 fastq files. Skipping...")
-            continue
-    #     # sample_processing_command = sample.download_fastqs_command() + \
-    #     #                             sample.trim_fastqs_command(delete_previous=False) + \
-    #     #                             sample.star_alignment_command(delete_previous=False) + \
-    #     #                             sample.sortrefname_bam_command() + \
-    #     #                             sample.cap_bam_command(delete_previous=False) + \
-    #     #                             sample.bam2bigwig_commnd(delete_previous=False) + \
-    #     #                             study.move_all_finals_to_final_dir_command() + \
-    #     #                             study.deploy_to_embassy_command()
-    #
-        sample_processing_command = sample.download_fastqs_command() + \
-                                    sample.trim_fastqs_command(delete_previous=True) + \
-                                    sample.star_alignment_command(delete_previous=True) + \
-                                    sample.index_aligned_bam_command() + \
-                                    sample.sortrefname_bam_command() + \
-                                    sample.cap_bam_command(delete_previous=True) + \
-                                    sample.sort_capped_bam_command(delete_previous=True) + \
-                                    sample.index_final_bam_command() + \
-                                    sample.bam2bigwig_command(delete_previous=False) + \
-                                    sample.move_final_bam_to_apollo_dir_command() + \
-                                    sample.move_final_bigwig_to_apollo_dir_command()
+    for group_id in study.group_ids:
+        print_info("Processing Group: " + group_id)
+        group = Group(user_input, selected_studies_grouped_samples_dict, study_id, group_id)
+        group.create_dirs()
+        print_w_indent("Studies in this group are: " + \
+                       ("Paired-ended" if group.is_paired==1 else "Single-ended, ") + \
+                       "and they will be treated accordingly.")
+        print_w_indent("With samples:\n" + "\n".join(group.sample_ids))
 
-        sample_processing_command = sample.download_fastqs_command() + \
-                                    sample.trim_fastqs_command(delete_previous=True) + \
-                                    sample.star_alignment_command(delete_previous=True) + \
-                                    sample.index_aligned_bam_command() + \
-                                    sample.bam2bigwig_command(delete_previous=True) + \
-                                    sample.move_final_bigwig_to_apollo_dir_command()
+        group_processing_command = group.download_fastqs_command() + \
+                                    "\n\n".join(group.trim_fastqs_command_list(delete_previous=False)) + \
+                                    group.star_alignment_command(delete_previous=True) + \
+                                    group.index_aligned_bam_command() + \
+                                    group.sortrefname_bam_command() + \
+                                    group.cap_bam_command(delete_previous=True) + \
+                                    group.sort_capped_bam_command(delete_previous=True) + \
+                                    group.index_final_bam_command() + \
+                                    group.bam2bigwig_command(delete_previous=False) + \
+                                    group.move_final_bam_to_apollo_dir_command() + \
+                                    group.move_final_bigwig_to_apollo_dir_command()
 
-        sample_processing_submit = lsf_submit(sample_processing_command,
-                                              jobprefix = sample.sample_id + "_newbigwigs",
+        group_processing_submit = lsf_submit(group_processing_command,
+                                              jobprefix = group.group_id,
                                               to_wait_id="",
                                               cpu=6, mem="20gb",
-                                              cwd=sample.sample_dir,
+                                              cwd=group.group_dir,
                                               queue="production",
                                               only_write=False)
-
-        print_info("Submitted job: " +  sample_processing_submit + " for sample: " + sample.sample_id)
-        # study_processing_command = study.move_all_finals_to_final_dir_command() + \
-        #                            study.deploy_to_embassy_command()
-        #
-        # study_processing_submit = lsf_submit(study_processing_command,
-        #                                       jobprefix = study.study_id,
-        #                                       to_wait_id="",
-        #                                       cpu=1, mem="2gb",
-        #                                       cwd=study.log_dir,
-        #                                       queue="production",
-        #                                       only_write=False)
-
-# print(sample.download_fastqs_command())
-# print(sample.trim_fastqs_command())
-# print(sample.star_alignment_command())
-# print(sample.sortrefname_bam_command())
-# print(sample.cap_bam_command())
-# print(sample.bam2bigwig_commnd())
-# print(study.move_all_finals_to_final_dir_command())
-# print(study.deploy_to_embassy_command())
-
-
-
-
-# species = Species(user_input)
+# # for study_id in selected_species.studies:
+# #     study = Study(user_input, species_selected_studies_dict, study_id)
+# #     study.create_dirs()
+# #     print_info("Processing Study " + study.study_id)
+# #     print_w_indent("With samples:\n" + "\n".join(study.sample_ids))
+# #     for sample_id in study.sample_ids:
+# #         print_info("Processing Sample: " + sample_id)
+# #         sample = Sample(user_input, species_selected_studies_dict, study_id, sample_id)
+# #         sample.create_dirs()
+# #         if sample.no_of_fastqs != 2:
+# #             print_warning("Sample "+sample_id+" doesn't have 2 fastq files. Skipping...")
+# #             continue
+# #     #     # sample_processing_command = sample.download_fastqs_command() + \
+# #     #     #                             sample.trim_fastqs_command(delete_previous=False) + \
+# #     #     #                             sample.star_alignment_command(delete_previous=False) + \
+# #     #     #                             sample.sortrefname_bam_command() + \
+# #     #     #                             sample.cap_bam_command(delete_previous=False) + \
+# #     #     #                             sample.bam2bigwig_commnd(delete_previous=False) + \
+# #     #     #                             study.move_all_finals_to_final_dir_command() + \
+# #     #     #                             study.deploy_to_embassy_command()
+# #     #
 #
-# print(species.species)
-# print(species.taxon_id)
-# print([x for x in species.all_studies_dict()["ERP001675"] if x["secondary_sample_accession"]=="ERS323732"])
-# if user_input.explore:
-#     explore_print(user_input)
-#     exit()
+# #
+# #         sample_processing_command = sample.download_fastqs_command() + \
+# #                                     sample.trim_fastqs_command(delete_previous=True) + \
+# #                                     sample.star_alignment_command(delete_previous=True) + \
+# #                                     sample.index_aligned_bam_command() + \
+# #                                     sample.bam2bigwig_command(delete_previous=True) + \
+# #                                     sample.move_final_bigwig_to_apollo_dir_command()
+# #
+# #         sample_processing_submit = lsf_submit(sample_processing_command,
+# #                                               jobprefix = sample.sample_id + "_newbigwigs",
+# #                                               to_wait_id="",
+# #                                               cpu=6, mem="20gb",
+# #                                               cwd=sample.sample_dir,
+# #                                               queue="production",
+# #                                               only_write=False)
+# #
+# #         print_info("Submitted job: " +  sample_processing_submit + " for sample: " + sample.sample_id)
+#         # study_processing_command = study.move_all_finals_to_final_dir_command() + \
+#         #                            study.deploy_to_embassy_command()
+#         #
+#         # study_processing_submit = lsf_submit(study_processing_command,
+#         #                                       jobprefix = study.study_id,
+#         #                                       to_wait_id="",
+#         #                                       cpu=1, mem="2gb",
+#         #                                       cwd=study.log_dir,
+#         #                                       queue="production",
+#         #                                       only_write=False)
 #
-# # Check that dependent directories exist
-# check_dependent_dirs()
+# # print(sample.download_fastqs_command())
+# # print(sample.trim_fastqs_command())
+# # print(sample.star_alignment_command())
+# # print(sample.sortrefname_bam_command())
+# # print(sample.cap_bam_command())
+# # print(sample.bam2bigwig_commnd())
+# # print(study.move_all_finals_to_final_dir_command())
+# # print(study.deploy_to_embassy_command())
 #
-# # Create and print out needed directories if not exist
-# species.create_dirs()
-# species.report_input()
 #
-# #Find which studies/samples are needed based on the users select_studies input
-# studies_to_use = studies_needed(user_input.selected_studies, species)
-# samples_to_use = samples_needed(user_input.selected_studies, species)
+#
+#
+# # species = Species(user_input)
+# #
+# # print(species.species)
+# # print(species.taxon_id)
+# # print([x for x in species.all_studies_dict()["ERP001675"] if x["secondary_sample_accession"]=="ERS323732"])
+# # if user_input.explore:
+# #     explore_print(user_input)
+# #     exit()
+# #
+# # # Check that dependent directories exist
+# # check_dependent_dirs()
+# #
+# # # Create and print out needed directories if not exist
+# # species.create_dirs()
+# # species.report_input()
+# #
+# # #Find which studies/samples are needed based on the users select_studies input
+# # studies_to_use = studies_needed(user_input.selected_studies, species)
+# # samples_to_use = samples_needed(user_input.selected_studies, species)

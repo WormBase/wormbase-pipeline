@@ -6,7 +6,7 @@ expression_dir = "/hps/software/users/wormbase/parasite/repositories/wbps-expres
 #ps_ftp_dir = "/nfs/ftp/public/databases/wormbase/parasite/releases/current/species/"
 rnaseq_dir = os.getenv("PARASITE_SCRATCH")+"/rnaseq"
 ena_api_url = "https://www.ebi.ac.uk/ena/portal/api/search?result=study&query=secondary_study_accession={0}&fields=study_accession&format=json"
-ena_rnaseq_by_taxon_url = "https://www.ebi.ac.uk/ena/portal/api/search?result=read_run&query=tax_eq(6183)%20AND%20(library_strategy%3D%22RNA-Seq%22%20OR%20library_strategy%3D%22OTHER%22)&fields=study_accession%2Caccession%2Cfastq_ftp%2Csecondary_study_accession%2Csecondary_sample_accession&format=json"
+ena_rnaseq_by_taxon_url = "https://www.ebi.ac.uk/ena/portal/api/search?result=read_run&query=tax_eq({0})%20AND%20(library_strategy%3D%22RNA-Seq%22%20OR%20library_strategy%3D%22OTHER%22)&fields=study_accession%2Caccession%2Cfastq_ftp%2Csecondary_study_accession%2Csecondary_sample_accession&format=json"
 permanent_apollo_dir="/nfs/production/flicek/wormbase/parasite/apollo"
 reference_genomes_dir="/nfs/production/flicek/wormbase/parasite/data/reference_genomes/star/"
 reference_genomes_ftp="https://ftp.ebi.ac.uk/pub/databases/wormbase/parasite/releases/current/species/"
@@ -28,10 +28,12 @@ star_align_limitBAMsortRAM = "18486355837"
 star_align_sjdbOverhang = "99"
 star_align_sjdbGTFtagExonParentGene = "gene_id"
 star_align_quantMode = "GeneCounts"
+star_align_outFilterMultimapNmax = "1"
 star_align_extra_params = "--outSAMtype " + star_align_outSAMtype + " " + \
                           "--readFilesCommand " + star_align_readFilesCommand + " " + \
                           "--sjdbGTFtagExonParentGene " + star_align_sjdbGTFtagExonParentGene + " " + \
-                          "--quantMode " + star_align_quantMode + " "
+                          "--quantMode " + star_align_quantMode + " " #+ \
+                          #"--outFilterMultimapNmax " + star_align_outFilterMultimapNmax + " "
                     
 cap_reads = "30"
 
