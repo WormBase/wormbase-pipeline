@@ -222,11 +222,11 @@ unless($compara_dbh->get_SpeciesSetAdaptor->fetch_collection_by_name($collection
 #
 if ($create_tree_mlss) {
   # For orthologs
-  system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara $master_dbname --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type ENSEMBL_ORTHOLOGUES --f --pw  -use_genomedb_ids --release") 
+  system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara $master_dbname --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type ENSEMBL_ORTHOLOGUES --f --pw --release")
       and die "Could not create MLSS for orthologs\n";
   
   # For same-species paralogues
-  system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara $master_dbname --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type ENSEMBL_PARALOGUES --f --sg --use_genomedb_ids --release") 
+  system("perl $compara_code/scripts/pipeline/create_mlss.pl --compara $master_dbname --reg_conf $reg_conf --collection $collection_name --source wormbase --method_link_type ENSEMBL_PARALOGUES --f --sg --release")
       and die "Could not create MLSS for within-species paralogs\n"; 
   
 # For protein trees
