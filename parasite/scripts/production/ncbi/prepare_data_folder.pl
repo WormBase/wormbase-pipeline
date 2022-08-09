@@ -76,10 +76,11 @@ use YAML;
 
 use constant NCBI_FTP_SERVER  => 'ftp.ncbi.nlm.nih.gov';
 
-my($force, $gff3_download, $help);
-GetOptions( 'force'           => \$force,
-            'gff3_download'   => \$gff3_download,
-            'help'            => \$help
+my($force, $gff3_download, $help, $species);
+GetOptions('force'  => \$force,
+    'gff3_download' => \$gff3_download,
+    'help'          => \$help,
+    'species=s'       => \$species
             )
             || pod2usage({-exitval=>1});
 $help && pod2usage({-verbose=>2, -exitval=>0});
@@ -95,7 +96,7 @@ try{
 };
 pod2usage(255) unless $conf;
 
-my ($species,$spe,$cies) = CoreCreation::Config::Utils::parasite_data_id($conf->{SpeciesName}, $conf->{GB_BioProjects}{Bioproj}{BioprojectAccn});
+my ($official_species,$spe,$cies) = CoreCreation::Config::Utils::parasite_data_id($conf->{SpeciesName}, $conf->{GB_BioProjects}{Bioproj}{BioprojectAccn});
 
 # this variable is treated as a string, but can be read as a HASH
 # (on incidences I have seen are empty hashes, but I suspect this is just an artefact of
@@ -255,7 +256,7 @@ my $output_conf = {  taxon_id                => $conf->{SpeciesTaxid} // CoreCre
                                              "provider.url"             => $this_url // CoreCreation::Config::Utils::MISSING_METADATA_PATTERN,
                                              "species.strain"           => $conf->{Biosource}{Isolate} // CoreCreation::Config::Utils::MISSING_METADATA_PATTERN,
                                              "species.biosample"        => $conf->{BioSampleAccn} // CoreCreation::Config::Utils::MISSING_METADATA_PATTERN,
-                                             "species.nematode_clade"   => $species =~ /meloidogyne|globodera|heterodera/ ? "IV" : $species =~ /pristionchus|caenorhabditis/ ? "V": CoreCreation::Config::Utils::MISSING_METADATA_PATTERN,
+                                             "species.nematode_clade"   => $official_species =~ /meloidogyne|globodera|heterodera/ ? "IV" : $species =~ /pristionchus|caenorhabditis/ ? "V": CoreCreation::Config::Utils::MISSING_METADATA_PATTERN,
                                              }
                      };
 # if the source config indicated there mitochondrial DNA in this assembly, flag it by inserting a null value

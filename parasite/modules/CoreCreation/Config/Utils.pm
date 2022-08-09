@@ -18,7 +18,7 @@ use strict;
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(parasite_data_id parasite_data_id_is_valid flatten_hash);
 
-use constant PARASITE_DATA_FILTER      => qr/^[a-z\d]+_[a-z\d]+_[a-z]+\d+$/;
+use constant PARASITE_DATA_FILTER      => qr/^[a-z\d]+_[a-z\d]+_[a-z\d]+\d+$/;
 use constant BIOPROJECT_FILTER         => qr/^[a-z]+\d+$/;
 use constant MISSING_METADATA_PATTERN  => '?';
 
