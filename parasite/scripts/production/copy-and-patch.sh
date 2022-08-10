@@ -20,8 +20,8 @@ perl -MProductionMysql -E '
   echo  "Creating $NEWDB"
   if ! ${PARASITE_STAGING_MYSQL}-w -e "CREATE DATABASE $NEWDB"; then
     echo "Could not create $NEWDB - should this script be running? Bailing out."
-    #exit 1
-    continue
+    exit 1
+    #continue
   fi
   echo "Dumping $DB to $NEWDB"
   ${PREVIOUS_PARASITE_STAGING_MYSQL} mysqldump $DB | ${PARASITE_STAGING_MYSQL}-w $NEWDB
