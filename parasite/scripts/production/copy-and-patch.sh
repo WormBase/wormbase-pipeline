@@ -5,7 +5,7 @@
 perl -MProductionMysql -E '
    say for ProductionMysql->previous_staging->core_databases(@ARGV ? @ARGV : "core_$ENV{PREVIOUS_PARASITE_VERSION}_$ENV{PREVIOUS_ENSEMBL_VERSION}_");
    say for ProductionMysql->previous_staging->variation_databases(@ARGV ? @ARGV : "variation_$ENV{PREVIOUS_PARASITE_VERSION}_$ENV{PREVIOUS_ENSEMBL_VERSION}_");
-' "$@" | tail -n 139 | while read -r DB; do
+' "$@" | while read -r DB; do
   echo "Copying $DB"
   NEWDB=$( sed "s/_$PREVIOUS_PARASITE_VERSION\_$PREVIOUS_ENSEMBL_VERSION/_$PARASITE_VERSION\_$ENSEMBL_VERSION/" <<< $DB )
   echo "Looking for previous versions of $NEWDB"
@@ -20,7 +20,8 @@ perl -MProductionMysql -E '
   echo  "Creating $NEWDB"
   if ! ${PARASITE_STAGING_MYSQL}-w -e "CREATE DATABASE $NEWDB"; then
     echo "Could not create $NEWDB - should this script be running? Bailing out."
-    exit 1
+    #exit 1
+    continue
   fi
   echo "Dumping $DB to $NEWDB"
   ${PREVIOUS_PARASITE_STAGING_MYSQL} mysqldump $DB | ${PARASITE_STAGING_MYSQL}-w $NEWDB
