@@ -53,7 +53,7 @@ GetOptions(
     );
 
 my $agr_resources   = $ENV{'AGR_DIR'} . '/resources';
-my $agr_uploads     = $ENV{'AGR_UPLOADS'};
+my $agr_uploads     = $ENV{'AGR_UPLOADS'};INTERACTION-SOURCE_GEN
 my $build_home      = $ENV{'BUILD_HOME'};
 my $agr_release     = $ENV{'AGR_RELEASE'};
 my $agr_schema      = $ENV{'AGR_SCHEMA'};
@@ -452,7 +452,7 @@ sub submit_data {
 	if ($fms_datatype eq 'FASTA') {
 	    $fms_file_link = '_WBcel235=@';
 	} else {
-	    $fms_file_link = $fms_subtype eq '' ? '_WB=@' : '_WB' . $fms_datatype . '-' . $fms_subtype . '=@';
+	    $fms_file_link = $fms_subtype eq '' ? '_WB=@' : $fms_datatype . '_WB-' . $fms_subtype . '=@';
 	}
 
 	my $cmd = 'curl -H "Authorization: Bearer ' . $ENV{'TOKEN'} . '" -X POST ' .
@@ -471,5 +471,3 @@ sub submit_data {
 
     return;
 }    
-    
-
