@@ -430,6 +430,43 @@ sub build_folder_contents_present {
 }
 
 
+=head2 laboratory_objects_valid()
+
+    Function: ensures Laboratory objects have valid names and attached data
+    Args:     String - filename of ace patch file for removing invalid objects
+    Returns:  Count of errors
+
+=cut
+
+sub laboratory_objects_valid {
+    my $self = shift;
+    my $outfile = shift;
+
+    my $out_fh = file($outfile)->openw;
+    
+    my $errors;
+    my $db = Ace->connect(-path => $self->{'wormbase'}->autoace,
+			  -program => $self->{'wormbase'}->tace) or 
+	die ('Connection failure: ' . Ace->error);
+    my $i = $db->fetch_many(-query => 'find Laboratory');
+    while (my $lab = $i->next) {
+	next if $lab->name eq 'Not_deposited';
+	my $valid_name = $lab->name =~ /^[A-Z]{2,3}$/ ? 1 : 0;
+	my $has_data = $lab->Address || $lab->CGC || $lab->Staff || $lab->Remark ? 1 : 0;
+	if (!$valid_name || !$has_data) {
+	    $self->{'log'}->write_to("ERROR: Possible invalid laboratory name '" . $lab->name . "'\n") if !$valid_name;
+	    $self->{'log'}->write_to("ERROR: No data attached to laboratory '" . $lab->name . "'\n") if !$has_data;
+	    $errors++;
+	    $out_fh->print('-D Laboratory ' . $lab->name . "\n\n"); 
+	}
+    }
+                                                         
+    $self->{'log'}->write_to("All Laboratory objects appear to be valid\n") unless $errors;
+
+    return $errors;
+}
+
+
 =head2 cache_size_sufficient()
 
     Function: ensures that cache2 size is sufficient for briggsae
