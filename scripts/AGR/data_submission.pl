@@ -53,7 +53,7 @@ GetOptions(
     );
 
 my $agr_resources   = $ENV{'AGR_DIR'} . '/resources';
-my $agr_uploads     = $ENV{'AGR_UPLOADS'};INTERACTION-SOURCE_GEN
+my $agr_uploads     = $ENV{'AGR_UPLOADS'};
 my $build_home      = $ENV{'BUILD_HOME'};
 my $agr_release     = $ENV{'AGR_RELEASE'};
 my $agr_schema      = $ENV{'AGR_SCHEMA'};
