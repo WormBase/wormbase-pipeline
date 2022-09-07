@@ -2270,7 +2270,7 @@
            URL UNIQUE Text             // Link to database home page
            Email Text                  // Contact email
            URL_constructor UNIQUE Text // rule to build URL to specific database entry page
-
+	   Database_type	Text // Type or category of database WS287
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //
