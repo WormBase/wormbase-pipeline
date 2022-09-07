@@ -347,7 +347,9 @@
                      Disease_relevance ?Text ^note ?Species #Evidence
         Modifies_disease ?DO_term INXREF Disease_modifier_gene //New tag WS278
         Models_disease_in_annotation ?Disease_model_annotation INXREF Disease_relevant_gene //New tag WS278
-        Modifies_disease_in_annotation ?Disease_model_annotation INXREF Modifier_gene //New tag WS278
+	Modifies_disease_in_annotation ?Disease_model_annotation INXREF Modifier_gene //New tag WS278
+	Models_disease_asserted ?Disease_model_annotation INXREF Asserted_gene // Indicates the gene the disease affects // new tag request for WS287
+        Models_disease_inferred ?Disease_model_annotation INXREF Inferred_gene // Indicates the gene the disease affects // new tag request for WS287
         Molecular_info Corresponding_CDS ?CDS OUTXREF Gene #Evidence             // to link to live CDSs
                        Corresponding_CDS_history ?CDS OUTXREF Gene_history       // to link to history CDSs
                        Corresponding_transcript ?Transcript OUTXREF Gene #Evidence
@@ -1112,10 +1114,10 @@
                                      Disease_relevant_gene ^modeled-by-disease-relevant-gene UNIQUE ?Gene OUTXREF Models_disease_in_annotation ?Text
                                      Genotype ^modeled-by-genotype UNIQUE ?Genotype OUTXREF Models_disease_in_annotation //to associate genotypes
                                      Modeled_by_remark UNIQUE ?Text
-                          Annotation_made_with Interacting_variation ?Variation //Addition for WS261
-                                               Interacting_transgene ?Transgene
-                                               Interacting_gene ?Gene
-                                               RNAi_experiment ?RNAi
+                          Asserted_gene ?Gene OUTXREF // Indicates // new tag request for WS287
+			  Inferred_gene ?Gene OUTXREF // Indicates the gene in Variation or Strain, when submitted // new tag request for WS287
+			  Asserted_variation ?Variation OUTXREF Disease_model_annotation // request for WS287
+ 
                           Inferred_gene ?Gene OUTXREF Disease_model_annotation
                           Association_type UNIQUE is_model_of
                                                   is_implicated_in                       
@@ -3689,9 +3691,10 @@
                        Phenotype_remark ?Text #Evidence
                        Phenotype_not_observed ?Phenotype OUTXREF Not_in_Variation #Phenotype_info  //added by Wen to separate Not phenotype from real phenotypes
            Disease_info Models_disease ?DO_term INXREF Disease_model_variation
-                        Modifies_disease ?DO_term INXREF Disease_modifier_variation //New tag
-                        Models_disease_in_annotation ?Disease_model_annotation INXREF Variation //New tag
-                        Modifies_disease_in_annotation ?Disease_model_annotation INXREF Modifier_variation //New tag
+                        Modifies_disease ?DO_term INXREF Disease_modifier_variation //New tag  WS278
+                        Models_disease_in_annotation ?Disease_model_annotation INXREF Variation //New tag  WS278
+                        Modifies_disease_in_annotation ?Disease_model_annotation INXREF Modifier_variation //New tag WS278
+			Modifies_disease_asserted_variation ?Disease_model_annotation INXREF Asserted_variation // request for WS287
            Reference ?Paper OUTXREF Allele
            Remark ?Text #Evidence
 //           Method UNIQUE ?Method       // Becomes :locatable/method
