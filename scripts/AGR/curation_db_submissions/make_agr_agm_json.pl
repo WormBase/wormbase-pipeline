@@ -46,7 +46,8 @@ while (my $obj = $it->next) {
 	name      => ($obj->Public_name ? "${\$obj->Public_name}" : "$obj"),
 	subtype   => 'strain',
 	taxon     => 'NCBITaxon:' . $obj->Species->NCBITaxonomyID,
-	internal  => JSON::false
+	internal  => JSON::false,
+	obsolete  => JSON::false
     };
     push @agms, $strain;
 }
@@ -65,7 +66,8 @@ while (my $obj = $it2->next) {
 	name      => ($obj->Genotype_name ? "${\$obj->Genotype_name}" : "$obj"),
 	subtype   => 'genotype',
 	taxon     => 'NCBITaxon:' . $obj->Species->NCBITaxonomyID,
-	internal  => JSON::false
+	internal  => JSON::false,
+	obsolete  => JSON::false
     };
     push @agms, $genotype;
 }
