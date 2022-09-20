@@ -29,6 +29,21 @@ def get_args():
 		help = "Indicate input .gff file has no parentage information to link features. By default, assumes parentage information is included.")
 	parser.add_argument("-g", "--gene_prefix", default = False,
 		help = "A string to append to each gene and ID name, in case original names are lacking. No changes made by default.")
+
+	parser.add_argument("-p", "--prefixes", required = False, default = None, nargs = '+',
+		help = "List of prefixes to remove from .gff fields (e.g. parts of gene IDs that are constant across all genes).")
+
+	parser.add_argument("-F", "--fabricate_transcripts_for_scaffold", required = False, default = None,
+		help = "Use gene information to create missing transcript features for a specified scaffold (provide scaffold name).")
+
+
+	name_inference_group = parser.add_mutually_exclusive_group()
+	name_inference_group.add_argument("-n", "--infer_gene_names", default = False, action = "store_true",
+		help = "Use feature ID attribute to create Name attribues for features that lack a name (directy copy)")
+	name_inference_group.add_argument("-N", "--overwrite_gene_names", default = False, action = "store_true",
+		help = "Use feature ID attribute to create Name attribues for all features (directy copy). Overwrites original names.")
+
+
 	parser.add_argument("-f", "--fasta", required = False, default = None, type = str,
 		help = ".fasta file containing assembly scaffolds. If not specified, .fasta file will be inferred from directory contents.")
 	parser.add_argument("-s", "--synonyms_file", required = False, default = None, type = str,
@@ -82,14 +97,26 @@ def main():
 
 	# TODO: Find a way to not hardcode WormBase_imported
 	if args.source_to_WB is True:
-		gff_df = rename_sources(gff_df, "WormBase_imported")
+		gff_df = rename_sources(gff_df, new_source = "WormBase_imported")
+
+	if args.overwrite_gene_names is True:
+		gff_df = infer_and_overwrite_name_attribute_from_id(gff_df)
+	elif args.infer_gene_names is True:
+		gff_df = infer_name_attribute_from_id(gff_df)
 
 	if args.gene_prefix:
-		gff_df = add_prefix_to_id(gff_df, args.gene_prefix)
-		gff_df = add_prefix_to_name(gff_df, args.gene_prefix)
+		gff_df = add_prefix_to_id(gff_df, prefix = args.gene_prefix)
+		gff_df = add_prefix_to_name(gff_df, prefix = args.gene_prefix)
 
 	if args.scaffold_rename:
 		gff_df = rename_scaffolds(gff_df, synonyms_file)
+
+	if args.prefixes is not None:
+		print(args.prefixes)
+		gff_df = remove_prefixes_from_column_values(gff_df, args.prefixes)
+
+	if args.fabricate_transcripts_for_scaffold is not None:
+		gff_df = extrapolate_missing_transcripts_for_scaffold(gff_df, args.fabricate_transcripts_for_scaffold)
 
 	write_output_gff(gff_df, output_gff)
 	
