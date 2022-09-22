@@ -8,7 +8,7 @@ use Getopt::Long;
 use Storable;
 
 my ($debug, $test, $database, $species, $log_file, $prev_release, $store);
-my ($recent_citace, $primary_seq_dumps, $elegans_first, $build_contents, $dna_headers, $split_gffs,
+my ($recent_citace, $primary_seq_dumps, $elegans_first, $build_contents, $dna_headers, $split_gffs, $lab_check,
     $tier2_contigs, $masked_files, $blat_files, $cdnafiles, $homology_loaded, $tier2_blat_contigs, $est_dat,
     $cache_size, $uniprot_ids, $vep, $blastx, $blastp, $dbxref, $final_gff, $species_merge, $composition, $map);
 GetOptions(
@@ -23,6 +23,7 @@ GetOptions(
     'primary_seq_dumps'  => \$primary_seq_dumps, #checks cDNA dumps are present
     'elegans_first'      => \$elegans_first, # checks that elegans database has been loaded if attempting to load another species database
     'build_contents'     => \$build_contents, # checks expected folders and files are in build directory
+    'lab_check:s'        => \$lab_check,
     'dna_headers'        => \$dna_headers, # checks DNA FASTA files all have headers
     'split_gffs:s'       => \$split_gffs, # checks that all expected split GFF files are present
     'composition'        => \$composition, # checks that the DNA composition matches the previous release (elegans only)
@@ -72,6 +73,9 @@ if ($elegans_first) {
 }
 if ($build_contents) {
     $errors += $wormtest->build_folder_contents_present;
+}
+if ($lab_check) {
+    $errors += $wormtest->laboratory_objects_valid($lab_check);
 }
 if ($dna_headers) {
     $errors += $wormtest->dna_files_have_headers;
