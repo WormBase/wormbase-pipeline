@@ -96,7 +96,8 @@ while (my $obj = $it->next) {
 	curie    => 'WB:' . $obj->name,
 	symbol   => $symbol,
 	taxon    => 'NCBITaxon:' . $obj->Species->NCBITaxonomyID,
-	internal => $obj->Live ? JSON::false : JSON::true
+	obsolete => $obj->Live ? JSON::false : JSON::true,
+	internal => JSON::true
 	
     };
 

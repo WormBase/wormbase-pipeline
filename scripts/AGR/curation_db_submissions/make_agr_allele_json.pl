@@ -64,7 +64,8 @@ sub process{
 	my $json_obj = {
 	    curie         => "WB:$obj", 
 	    taxon       => "NCBITaxon:" . $obj->Species->NCBITaxonomyID,
-	    internal      => $obj->Live ? JSON::false : JSON::true
+	    internal      => JSON::false,
+	    obsolete   => $obj->Live ? JSON::false : JSON::true
 	};
 	$json_obj->{symbol} = $obj->Public_name->name if $obj->Public_name;
 	if ($obj->Other_name) {
@@ -87,8 +88,9 @@ sub process_transgenes{
 	
 	my $json_obj = {
 	    curie         => "WB:$obj", 
-	    taxon       => "NCBITaxon:" . $obj->Species->NCBITaxonomyID,
-	    internal      => JSON::false
+	    taxon         => "NCBITaxon:" . $obj->Species->NCBITaxonomyID,
+	    internal      => JSON::false,
+	    obsolete      => JSON::false
 	};	
 	$json_obj->{symbol} = $obj->Public_name->name if $obj->Public_name;
 	if ($obj->Synonym) {

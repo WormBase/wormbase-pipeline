@@ -101,7 +101,10 @@ sub process{
 
     my $symbol = $obj->Public_name->name;
     my %synonyms = map {$_->name => 1}$obj->Other_name;
-
+    for my $syn (keys %synonyms) {
+	push @synonyms_to_submit, $syn unless $syn =~ /^[^:]+:[pcg]\./; # remove HGVS identifiers (already generated in Alliance)
+    }
+    
     my $json_obj = {
       primaryId     => "WB:$obj", 
       symbol        => $symbol,
