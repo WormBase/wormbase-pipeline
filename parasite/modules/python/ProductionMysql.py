@@ -101,4 +101,9 @@ class Variation(Staging):
 staging = Staging(STAGING_HOST)
 previous_staging = Staging(PREVIOUS_STAGING_HOST)
 
+# Example 1: Loading this script and execute a command in a core database:
+# from ProductionMysql import * 
 
+# my_core = Core(staging.host, "schistosoma_mansoni_prjea36577_core_18_108_1")
+# execution = my_core.connect().execute("SELECT * FROM gene LIMIT 10;")
+# print([x for x in execution])
