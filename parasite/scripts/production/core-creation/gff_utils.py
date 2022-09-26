@@ -151,7 +151,7 @@ def extrapolate_scaffold_transcripts_from_genes(gff_df, scaffold, suffix = "_mRN
 	scaffold_genes = get_all_gene_features(scaffold_df)
 
 	# Extrapolate transcript features from gene features
-	scaffold_transcripts = scaffold_genes.copy(deep=True).reset_index()
+	scaffold_transcripts = scaffold_genes.copy(deep=True).reset_index(drop=True)
 
 	scaffold_transcripts["type"] = "mRNA"
 	# Set transcript's parent to gene it is based on.
@@ -179,7 +179,7 @@ def extrapolate_scaffold_genes_from_transcripts(gff_df, scaffold, suffix = "_gen
 	scaffold_transcripts = get_all_transcript_features(scaffold_df)
 
 	# Extrapolate gene features from transcript fetures.
-	scaffold_genes = scaffold_transcripts.copy(deep = True).reset_index()
+	scaffold_genes = scaffold_transcripts.copy(deep = True).reset_index(drop=True)
 
 	scaffold_genes["type"] = "gene"
 
@@ -213,7 +213,7 @@ def extrapolate_scaffold_exons_from_cds(gff_df, scaffold):
 	scaffold_cds = get_all_cds_features(scaffold_df)
 
 	# Extrapolate exon features from CDS features
-	scaffold_exons = scaffold_cds.copy(deep=True).reset_index()
+	scaffold_exons = scaffold_cds.copy(deep=True).reset_index(drop=True)
 
 	scaffold_exons["type"] = "exon"
 
@@ -239,7 +239,7 @@ def extrapolate_scaffold_cds_from_exons(gff_df, scaffold):
 	scaffold_exons = get_all_exon_features(scaffold_df)
 
 	# Extrapolate CDS features from exon features
-	scaffold_cds = scaffold_exons.copy(deep=True).reset_index()
+	scaffold_cds = scaffold_exons.copy(deep=True).reset_index(drop=True)
 
 	scaffold_cds["type"] = "CDS"
 
