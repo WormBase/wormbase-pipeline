@@ -33,9 +33,21 @@ def get_args():
 	parser.add_argument("-p", "--prefixes", required = False, default = None, nargs = '+',
 		help = "List of prefixes to remove from .gff fields (e.g. parts of gene IDs that are constant across all genes).")
 
-	parser.add_argument("-F", "--fabricate_transcripts_for_scaffold", required = False, default = None,
-		help = "Use gene information to create missing transcript features for a specified scaffold (provide scaffold name).")
+	# Set of arguments to extrapolate missing features for a given scaffold.
 
+	# Extrapolate transcripts from genes, or vice versa.
+	gene_transcript_extrapolation = parser.add_mutually_exclusive_group()
+	gene_transcript_extrapolation.add_argument("-T", "--extrapolate_transcripts_for_scaffold", required = False, default = None,
+		help = "Use gene information to create missing transcript features for a specified scaffold (provide community scaffold name).")
+	gene_transcript_extrapolation.add_argument("-G", "--extrapolate_genes_for_scaffold", required = False, default = None,
+		help = "Use transcript information to create missing gene features for a specified scaffold (provide community scaffold name).")
+
+	# Extrapolate exons from CDSs, or vice versa
+	exon_cds_extrapolation = parser.add_mutually_exclusive_group()
+	exon_cds_extrapolation.add_argument("-E", "--extrapolate_exons_for_scaffold", required = False, default = None,
+		help = "Use CDS information to create missing exon features for a specified scaffold (provide community scaffold name).")
+	exon_cds_extrapolation.add_argument("-C", "--extrapolate_CDSs_for_scaffold", required = False, default = None,
+		help = "Use exon information to create missing CDS features for a specified scaffold (provide community scaffold name).")
 
 	name_inference_group = parser.add_mutually_exclusive_group()
 	name_inference_group.add_argument("-n", "--infer_gene_names", default = False, action = "store_true",
@@ -112,11 +124,17 @@ def main():
 		gff_df = rename_scaffolds(gff_df, synonyms_file)
 
 	if args.prefixes is not None:
-		print(args.prefixes)
 		gff_df = remove_prefixes_from_column_values(gff_df, args.prefixes)
 
-	if args.fabricate_transcripts_for_scaffold is not None:
-		gff_df = extrapolate_missing_transcripts_for_scaffold(gff_df, args.fabricate_transcripts_for_scaffold)
+	if args.extrapolate_transcripts_for_scaffold is not None:
+		gff_df = extrapolate_scaffold_transcripts_from_genes(gff_df, args.extrapolate_transcripts_for_scaffold)
+	elif args.extrapolate_genes_for_scaffold is not None:
+		gff_df = extrapolate_scaffold_genes_from_transcripts(gff_df, args.extrapolate_transcripts_for_scaffold)
+
+	if args.extrapolate_exons_for_scaffold is not None:
+		gff_df = extrapolate_scaffold_exons_from_cds(gff_df, args.extrapolate_exons_for_scaffold)
+	elif args.extrapolate_CDSs_for_scaffold is not None:
+		gff_df = extrapolate_scaffold_cds_from_exons(gff_df, args.extrapolate_CDSs_for_scaffold)
 
 	write_output_gff(gff_df, output_gff)
 	

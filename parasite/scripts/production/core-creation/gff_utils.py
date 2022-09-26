@@ -117,16 +117,38 @@ def infer_name_attribute_from_id(gff_df):
 	gff_df["Name"] = gff_df["ID"]
 	return gff_df
 
-# Creates mRNA and exon features for genes on a given scaffold where only
-# gene and CDS features are provided. Returns df with fabricated features
-def extrapolate_missing_transcripts_for_scaffold(gff_df, scaffold):
-	# Grab all features on scaffold
+
+# Updates CDS features on a scaffold to point to a transcript as parent
+# Assumes the CDSs originally pointed to a gene as a parent and that 
+# transcripts were extrapolated from said genes.
+def _update_scaffold_cds_parent_attribute(gff_df, scaffold):
+	scaffold_mask = gff_df.loc[:,"scaffold"] == scaffold 
+	scaffold_df = gff_df.loc[scaffold_mask]
+
+	scaffold_transcripts = get_all_transcript_features(scaffold_df)
+	scaffold_cds = get_all_cds_features(scaffold_df)
+
+	gene_transcript_dict = dict(zip(scaffold_transcripts["Parent"], scaffold_transcripts["ID"]))
+
+	scaffold_cds["Parent"] = scaffold_cds["Parent"].map(gene_transcript_dict)
+
+	scaffold_cds_mask = (gff_df.loc[:,"scaffold"] == scaffold) & (gff_df.loc[:,"type"] == "CDS")
+
+	# Replace the original features for given scaffold in the .gff
+	gff_df.drop(gff_df.loc[scaffold_cds_mask].index, inplace = True)
+
+	gff_df = pd.concat([gff_df, scaffold_cds])
+
+	return gff_df
+
+
+# Creates transcript features for given scaffold based on extant genes.
+# Updates extant CDSs to point to transcripts as parents, returns df.
+def extrapolate_scaffold_transcripts_from_genes(gff_df, scaffold, suffix = "_mRNA"):
 	scaffold_mask = gff_df.loc[:,"scaffold"] == scaffold 
 	scaffold_df = gff_df.loc[scaffold_mask]
 
 	scaffold_genes = get_all_gene_features(scaffold_df)
-
-	scaffold_cds = get_all_cds_features(scaffold_df)
 
 	# Extrapolate transcript features from gene features
 	scaffold_transcripts = scaffold_genes.copy(deep=True).reset_index()
@@ -135,13 +157,60 @@ def extrapolate_missing_transcripts_for_scaffold(gff_df, scaffold):
 	# Set transcript's parent to gene it is based on.
 	scaffold_transcripts["Parent"] = scaffold_transcripts["ID"]
 
-	scaffold_transcripts["ID"] += "_mRNA"
+	# Modify transcript ID to clarify it is mRNA.
+	scaffold_transcripts["ID"] += suffix
 	scaffold_transcripts["Name"] = scaffold_transcripts["ID"]
 
-	# Change CDS parent from gene to corresponding, newly created transcript.
-	gene_transcript_dict = dict(zip(scaffold_transcripts["Parent"], scaffold_transcripts["ID"]))
+	# Add extrapolated transcripts to original gff dataframe
+	gff_df = pd.concat([gff_df, scaffold_transcripts]).reset_index()
 
-	scaffold_cds["Parent"] = scaffold_cds["Parent"].map(gene_transcript_dict)
+	# Update scaffold CDS to point to extrapolated transcripts as parents
+	gff_df = _update_scaffold_cds_parent_attribute(gff_df, scaffold)
+
+	return gff_df
+
+
+# Creates gene features for given scaffold based on extant transcripts.
+# Updates extant transcripts to point to genes as parents, returns df.
+def extrapolate_scaffold_genes_from_transcripts(gff_df, scaffold, suffix = "_gene"):
+	scaffold_mask = gff_df.loc[:,"scaffold"] == scaffold 
+	scaffold_df = gff_df.loc[scaffold_mask]
+
+	scaffold_transcripts = get_all_transcript_features(scaffold_df)
+
+	# Extrapolate gene features from transcript fetures.
+	scaffold_genes = scaffold_transcripts.copy(deep = True).reset_index()
+
+	scaffold_genes["type"] = "gene"
+
+	# Modify gene ID to clarify it is a gene and make it distinct.
+	scaffold_genes["ID"] += suffix
+
+	# Update transcripts' parent attributes to point to extrapolated genes.
+	scaffold_transcripts["Parent"] = scaffold_transcripts["ID"] + suffix
+
+	scaffold_genes["Name"] = scaffold_genes["ID"]
+
+	# TODO: Assumes transcripts are always mRNA, rather than tRNA or "transcript"
+	scaffold_transcript_mask = (gff_df.loc[:,"scaffold"] == scaffold) & (gff_df.loc[:,"type"] == "mRNA")
+
+	# Replace the original transcripts for scaffold in the .gff
+	gff_df.drop(gff_df.loc[scaffold_transcript_mask].index, inplace = True)
+
+	# Add extrapolated genes to .gff
+	gff_df = pd.concat([gff_df, scaffold_genes]).reset_index()
+
+	return gff_df
+
+
+# Creates exon features for given scaffold based on extant CDSs.
+# Exons get the same parent as the CDS. Returns df.
+def extrapolate_scaffold_exons_from_cds(gff_df, scaffold):
+	# Grab all features on scaffold
+	scaffold_mask = gff_df.loc[:,"scaffold"] == scaffold 
+	scaffold_df = gff_df.loc[scaffold_mask]
+
+	scaffold_cds = get_all_cds_features(scaffold_df)
 
 	# Extrapolate exon features from CDS features
 	scaffold_exons = scaffold_cds.copy(deep=True).reset_index()
@@ -155,14 +224,33 @@ def extrapolate_missing_transcripts_for_scaffold(gff_df, scaffold):
 	# Exons don't have a phase, unlike CDS features.
 	scaffold_exons["phase"] = "."
 
-	scaffold_df = pd.concat([scaffold_genes, scaffold_transcripts, scaffold_cds, scaffold_exons]).reset_index()
+	gff_df = pd.concat([gff_df, scaffold_exons]).reset_index()
 
-	# Replace the original features for given scaffold in the .gff
-	gff_df.drop(gff_df.loc[scaffold_mask].index, inplace = True)
+	return gff_df
 
-	gff_df = pd.concat([gff_df, scaffold_df])
 
-	return(gff_df)
+# Creates CDS features for given scaffold based on extant exons.
+# CDSs get the same parent as the exon. Returns df.
+def extrapolate_scaffold_cds_from_exons(gff_df, scaffold):
+	# Grab all features on scaffold
+	scaffold_mask = gff_df.loc[:,"scaffold"] == scaffold 
+	scaffold_df = gff_df.loc[scaffold_mask]
+
+	scaffold_exons = get_all_exon_features(scaffold_df)
+
+	# Extrapolate CDS features from exon features
+	scaffold_cds = scaffold_exons.copy(deep=True).reset_index()
+
+	scaffold_cds["type"] = "CDS"
+
+	scaffold_cds["ID"] = scaffold_exons["Parent"]
+	scaffold_cds["ID"] += "-" + (scaffold_cds.groupby("ID").cumcount()+1).astype(str)
+	scaffold_cds["Name"] = scaffold_cds["ID"]
+
+	gff_df = pd.concat([gff_df, scaffold_cds]).reset_index()
+
+	return gff_df
+
 
 # Checks if a Name attribute is present. Returns False if not.
 def has_name_attribute(gff_df):
