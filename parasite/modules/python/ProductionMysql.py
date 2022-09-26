@@ -11,6 +11,20 @@ from ensembl.database import DBConnection, UnitTestDB
 # Core(previous_staging.host, "mansoni").ftp_filename()
 # staging.core_databases
 
+
+# Example 1: Loading this script and execute a command in a core database:
+# from ProductionMysql import * 
+# my_core = Core(staging.host, "schistosoma_mansoni_prjea36577_core_18_108_1")
+# execution = my_core.connect().execute("SELECT * FROM gene LIMIT 10;")
+# print([x for x in execution])
+
+
+# Example 2: Loading this script and get a meta_value from the meta table
+# of a core database:
+# from ProductionMysql import *
+# my_core = Core(staging.host, "schistosoma_mansoni_prjea36577_core_18_108_1")
+# my_core.meta_value("species.taxonomy_id")
+
 STAGING_HOST = os.environ['PARASITE_STAGING_MYSQL']
 PREVIOUS_STAGING_HOST = os.environ['PREVIOUS_PARASITE_STAGING_MYSQL']
 PARASITE_VERSION = os.environ['PARASITE_VERSION']
@@ -100,10 +114,3 @@ class Variation(Staging):
 
 staging = Staging(STAGING_HOST)
 previous_staging = Staging(PREVIOUS_STAGING_HOST)
-
-# Example 1: Loading this script and execute a command in a core database:
-# from ProductionMysql import * 
-
-# my_core = Core(staging.host, "schistosoma_mansoni_prjea36577_core_18_108_1")
-# execution = my_core.connect().execute("SELECT * FROM gene LIMIT 10;")
-# print([x for x in execution])
