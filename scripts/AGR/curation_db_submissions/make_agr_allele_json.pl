@@ -63,7 +63,7 @@ sub process{
 	
 	my $json_obj = {
 	    curie    => "WB:$obj",
-	    name     => $obj->Public_name ? $obj->Public_name : $obj,
+	    name     => $obj->Public_name ? $obj->Public_name->name : $obj,
 	    taxon       => "NCBITaxon:" . $obj->Species->NCBITaxonomyID,
 	    internal      => JSON::false,
 	    obsolete   => $obj->Live ? JSON::false : JSON::true

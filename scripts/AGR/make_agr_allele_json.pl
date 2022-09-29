@@ -110,7 +110,7 @@ sub process{
       primaryId     => "WB:$obj", 
       symbol        => $symbol,
       symbolText    => $symbol,
-      synonyms      => @synonyms_to_submit,
+      synonyms      => \@synonyms_to_submit,
       secondaryIds => [],
       taxonId       => "NCBITaxon:" . $taxid,
         };
