@@ -8,6 +8,8 @@ perl -MProductionMysql -E '
 ' "$@" | while read -r DB; do
   echo "Copying $DB"
   NEWDB=$( sed "s/_$PREVIOUS_PARASITE_VERSION\_$PREVIOUS_ENSEMBL_VERSION/_$PARASITE_VERSION\_$ENSEMBL_VERSION/" <<< $DB )
+  # Update WormBase version for WormBase core species
+  NEWDB=$( sed "s/_$PREVIOUS_WORMBASE_VERSION/_$WORMBASE_VERSION/" <<< $NEWDB)
   echo "Looking for previous versions of $NEWDB"
   DB_PAT=$(echo $NEWDB | grep 'core' |  sed "s/core_.*/core%/")
   if [ -z $DB_PAT ]; then
