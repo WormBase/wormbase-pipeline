@@ -348,6 +348,8 @@
         Modifies_disease ?DO_term INXREF Disease_modifier_gene //New tag WS278
         Models_disease_in_annotation ?Disease_model_annotation INXREF Disease_relevant_gene //New tag WS278
         Modifies_disease_in_annotation ?Disease_model_annotation INXREF Modifier_gene //New tag WS278
+        Models_disease_asserted ?Disease_model_annotation INXREF Asserted_gene //New tag WS287
+        Models_disease_inferred ?Disease_model_annotation INXREF Inferred_gene //New tag WS287
         Molecular_info Corresponding_CDS ?CDS OUTXREF Gene #Evidence             // to link to live CDSs
                        Corresponding_CDS_history ?CDS OUTXREF Gene_history       // to link to history CDSs
                        Corresponding_transcript ?Transcript OUTXREF Gene #Evidence
@@ -1112,11 +1114,9 @@
                                      Disease_relevant_gene ^modeled-by-disease-relevant-gene UNIQUE ?Gene OUTXREF Models_disease_in_annotation ?Text
                                      Genotype ^modeled-by-genotype UNIQUE ?Genotype OUTXREF Models_disease_in_annotation //to associate genotypes
                                      Modeled_by_remark UNIQUE ?Text
-                          Annotation_made_with Interacting_variation ?Variation //Addition for WS261
-                                               Interacting_transgene ?Transgene
-                                               Interacting_gene ?Gene
-                                               RNAi_experiment ?RNAi
-                          Inferred_gene ?Gene OUTXREF Disease_model_annotation
+                          Asserted_gene ?Gene OUTXREF Models_disease_asserted // Indicates the gene in Variation or Strain when submitted, new tag request for WS287
+                          Inferred_gene ?Gene OUTXREF Models_disease_inferred // Indicates the gene in Variation or Strain when submitted, new tag request for WS287
+                          Asserted_variation ?Variation OUTXREF Models_variation_asserted // Indicates asserted Variation when submitted, new tag request for WS287
                           Association_type UNIQUE is_model_of
                                                   is_implicated_in                       
                                                   is_marker_for
@@ -2268,7 +2268,7 @@
            URL UNIQUE Text             // Link to database home page
            Email Text                  // Contact email
            URL_constructor UNIQUE Text // rule to build URL to specific database entry page
-
+           Database_type Text                  // Type or category of db WS287
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -3692,6 +3692,7 @@
                         Modifies_disease ?DO_term INXREF Disease_modifier_variation //New tag
                         Models_disease_in_annotation ?Disease_model_annotation INXREF Variation //New tag
                         Modifies_disease_in_annotation ?Disease_model_annotation INXREF Modifier_variation //New tag
+                        Models_variation_asserted ?Disease_model_annotation INXREF Asserted_variation // request for WS287
            Reference ?Paper OUTXREF Allele
            Remark ?Text #Evidence
 //           Method UNIQUE ?Method       // Becomes :locatable/method
@@ -3981,4 +3982,4 @@
 // Add a line for the WS release the models file is going to be GIT tagged for
 // This give you a final shot at creating a nicely formatted GIT commit message
 //
-// WS286
+// WS287

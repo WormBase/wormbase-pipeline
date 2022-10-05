@@ -431,6 +431,9 @@ sub submit_data {
 
 
     for my $type (@DATATYPES) {	
+	next unless $datatypes_processed->{$type};
+	my $file = $files_to_submit->{$type};
+
 	my $fms_subtype = '';
 	my $fms_datatype = $type;
 	if ($type =~ /^(.+)_(.+)$/) {
@@ -438,8 +441,6 @@ sub submit_data {
 	    $fms_subtype = $2;
 	}
 
-	next unless $datatypes_processed->{$fms_datatype};
-	my $file = $files_to_submit->{$fms_datatype};
 	
 	my $exit_code = system("gzip -9 -c $file > $file.gz");
 	if ($exit_code != 0) {
@@ -447,7 +448,12 @@ sub submit_data {
 	    return;
 	}
 
-	my $fms_file_link = $fms_subtype ? '_WB-' . $fms_subtype . '=@' : '_WB=@';
+	my $fms_file_link;
+	if ($fms_datatype eq 'FASTA') {
+	    $fms_file_link = '_WBcel235=@';
+	} else {
+	    $fms_file_link = $fms_subtype eq '' ? '_WB=@' : $fms_datatype . '_WB-' . $fms_subtype . '=@';
+	}
 
 	my $cmd = 'curl -H "Authorization: Bearer ' . $ENV{'TOKEN'} . '" -X POST ' .
 	    '"https://fms.alliancegenome.org/api/data/submit" -F "' . $ENV{'AGR_RELEASE'} . '_' .
@@ -465,5 +471,3 @@ sub submit_data {
 
     return;
 }    
-    
-

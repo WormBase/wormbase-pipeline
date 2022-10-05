@@ -19,7 +19,7 @@ my ($help, $debug, $test, $verbose, $store, $wormbase, $acefile, $species, $nolo
 my $port= 3478;
 my $server='ebiworm-db';
 my $dbname = "worm_pfam";
-my $tmpDir='/tmp';
+my $tmpDir= $ENV {'WB_SCRATCH'};
 my ($user, $pass, $update);
 my $pfam_release = "current_release";
 
