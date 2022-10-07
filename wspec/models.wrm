@@ -325,6 +325,8 @@
         Modifies_disease ?DO_term XREF Disease_modifier_gene //New tag WS278
         Models_disease_in_annotation ?Disease_model_annotation XREF Disease_relevant_gene //New tag WS278
         Modifies_disease_in_annotation ?Disease_model_annotation XREF Modifier_gene //New tag WS278
+        Models_disease_asserted ?Disease_model_annotation XREF Asserted_gene // Indicates the gene the disease affects // new tag request for WS287
+	Models_disease_inferred ?Disease_model_annotation XREF Inferred_gene // Indicates the gene the disease affects // new tag request for WS287
         Molecular_info Corresponding_CDS ?CDS XREF Gene #Evidence             // to link to live CDSs
                        Corresponding_CDS_history ?CDS XREF Gene_history       // to link to history CDSs
                        Corresponding_transcript ?Transcript XREF Gene #Evidence
@@ -1089,11 +1091,10 @@
                                      Disease_relevant_gene UNIQUE ?Gene XREF Models_disease_in_annotation ?Text  // WS278 XREF tag modified
                                      Genotype UNIQUE ?Genotype XREF Models_disease_in_annotation //to associate genotypes
                                      Modeled_by_remark UNIQUE ?Text
-                          Annotation_made_with Interacting_variation ?Variation //Addition for WS261
-                                               Interacting_transgene ?Transgene
-                                               Interacting_gene ?Gene
-                                               RNAi_experiment ?RNAi
-                          Inferred_gene ?Gene // Indicate the gene in Variation or Strain, when submitted
+                          Asserted_gene ?Gene XREF Models_disease_asserted // Indicates asserted gene in Variation or Strain // new tag request for WS287
+			  Inferred_gene ?Gene XREF Models_disease_inferred // Indicates the // new tag request for WS287
+			  Asserted_variation ?Variation XREF Modifies_disease_asserted_variation // request for WS287
+
                           Association_type UNIQUE is_model_of                  // Describe relationship between genetic entity and disease (condition)
                                                   is_implicated_in
                                                   is_marker_for
@@ -2242,6 +2243,7 @@
           URL UNIQUE Text             // Link to database home page
           Email Text                  // Contact email
           URL_constructor UNIQUE Text // rule to build URL to specific database entry page
+	  Database_type	Text // Type or category of database WS287
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -3667,6 +3669,7 @@
                         Modifies_disease ?DO_term XREF Disease_modifier_variation //New tag
                         Models_disease_in_annotation ?Disease_model_annotation XREF Variation //New tag
                         Modifies_disease_in_annotation ?Disease_model_annotation XREF Modifier_variation //New tag
+			Modifies_disease_asserted_variation ?Disease_model_annotation XREF Asserted_variation // request for WS287
            Reference ?Paper XREF Allele
            Remark ?Text #Evidence
            Method UNIQUE ?Method
@@ -3960,4 +3963,4 @@
 // Add a line for the WS release the models file is going to be CVS tagged for
 // This give you a final shot at creating a nicely formatted CVS commit message
 //
-// WS286
+// WS287

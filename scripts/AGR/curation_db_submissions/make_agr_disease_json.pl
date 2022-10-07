@@ -91,7 +91,7 @@ while( my $obj = $it->next) {
 	not $obj->Paper_evidence or
 	not $obj->Evidence_code or
 	not $obj->Disease_term) {
-	warn("Bad object $obj - missing key fields - skipping\n");
+	warn("Bad object $obj - missing key fields - skipping\n" . $obj->asTable . "\n\n");
 	next;
     }
     
@@ -144,7 +144,6 @@ while( my $obj = $it->next) {
     push @genetic, 'no_modifier' unless @genetic;
     
     for my $modifier (@genetic) {
-	
 	# [200507 mh6]
 	# the crossReference should be annotation specific, but as the id changes every release the 
 	# linking is not possible due to the lag
@@ -158,14 +157,15 @@ while( my $obj = $it->next) {
 	    internal             => JSON::false,
 	    object               => $obj->Disease_term->name,
 	    data_provider        => 'WB',
-	    date_last_modified   => $evi_date,
+	    date_updated         => $evi_date,
 	    created_by           => 'WB:curator',
 	    annotation_type      => 'manually_curated',
 	    evidence_codes       => \@evi_codes,
 	    single_reference     => $paper,
-	    internal             => JSON::false
+	    internal             => JSON::false,
+	    obsolete             => JSON::false
 	};
-	$annot->{modified_by} = $obj->Curator_confirmed ? 'WB:' . $obj->Curator_confirmed->name : "WB:curator";
+	$annot->{updated_by} = $obj->Curator_confirmed ? 'WB:' . $obj->Curator_confirmed->name : "WB:curator";
 	$annot->{genetic_sex} = $obj->Genetic_sex->name if $obj->Genetic_sex;
 	$annot->{related_notes} = [{
 	    note_type => 'disease_summary',
@@ -177,6 +177,8 @@ while( my $obj = $it->next) {
 	    $annot->{disease_genetic_modifier} = $modifier;
 	    $annot->{disease_genetic_modifier_relation} = $modifier_type; # ameliorated_by / not_ameliorated_by / exacerbated_by / not_exacerbated_by
 	}
+
+	
 	
 	#  $annot->{disease_qualifiers} = ; # susceptibility / disease_progression / severity / onset / sexual_dimorphism / resistance / penetrance
 	
@@ -199,13 +201,15 @@ while( my $obj = $it->next) {
 	my ($gene) = $obj->Disease_relevant_gene;
 	my ($genotype) = $obj->Genotype;
 	my (@inferred_genes) = map { 'WB:'.$_->name } $obj->Inferred_gene;
+	warn "Multiple inferred genes for $obj\n" if @inferred_genes > 1;
+	if (@inferred_genes) {
+	    $annot->{asserted_gene} = $inferred_genes[0] unless @inferred_genes > 1; # Model doesn't currently deal with multiple asserted genes so submit annotation without asserted genes for now
+	}
 	my ($obj_id, $obj_name, $obj_type);
-	my $assoc_type = 'is_implicated_in';
 	
 	if (defined $strain) {
 	    $obj_type = 'strain';
 	    $obj_name = $strain->Public_name ? $strain->Public_name->name : $strain->name;
-	    $assoc_type = 'is_model_of';
 	    $obj_id = 'WB:' . $strain->name;
 	} elsif (defined $allele) {
 	    if ($allele->Public_name){
@@ -229,13 +233,14 @@ while( my $obj = $it->next) {
 	    $obj_type = 'genotype';
 	    $obj_name = "${\$genotype->Genotype_name}";
 	    $obj_id = 'WB:' . $genotype->name;
-	    $assoc_type = 'is_model_of';
 	} else {
 	    warn "Could not identify a central object for the annotation from Disease_model_annotation ${\$obj->name}\n";
 	    next;
 	}
 	
-	$assoc_type = $obj->Association_type->name if $obj->Association_type and !defined $strain and !defined $allele and !defined $genotype;
+	my $assoc_type = $obj->Association_type->name;
+	$assoc_type = 'is_model_of' if $assoc_type !~ /model_of/ && ($obj_type eq 'strain' || $obj_type eq 'genotype');
+	$assoc_type = 'is_implicated_in' if $obj_type eq 'allele';
 	
 	$annot->{predicate} = $assoc_type;
 	$annot->{subject} = $obj_id;

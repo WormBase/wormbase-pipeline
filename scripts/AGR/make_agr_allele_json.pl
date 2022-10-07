@@ -100,13 +100,17 @@ sub process{
     next if defined $bgi_genes and not exists $bgi_genes->{"WB:$gene"};
 
     my $symbol = $obj->Public_name->name;
+    my @synonyms_to_submit;
     my %synonyms = map {$_->name => 1}$obj->Other_name;
-
+    for my $syn (keys %synonyms) {
+	push @synonyms_to_submit, $syn unless $syn =~ /^[^:]+:[pcg]\./; # remove HGVS identifiers (already generated in Alliance)
+    }
+    
     my $json_obj = {
       primaryId     => "WB:$obj", 
       symbol        => $symbol,
       symbolText    => $symbol,
-      synonyms      => [keys \%synonyms],
+      synonyms      => \@synonyms_to_submit,
       secondaryIds => [],
       taxonId       => "NCBITaxon:" . $taxid,
         };

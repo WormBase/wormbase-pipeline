@@ -268,6 +268,8 @@ while( my $obj = $it->next) {
   }
 
   $assoc_type = $obj->Association_type->name if $obj->Association_type and !defined $strain and !defined $allele and !defined $genotype;
+  next if !$build && $assoc_type =~ /^is_(.+)_model_of$/;
+
   
   my $assoc_rel = {
     associationType => $assoc_type,
