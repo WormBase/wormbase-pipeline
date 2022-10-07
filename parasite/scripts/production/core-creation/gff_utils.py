@@ -428,6 +428,35 @@ def reorder_gff_features(gff_df):
 	reordered_gff = reordered_gff.sort_values(by=["Parent_Gene", "type"])
 	return reordered_gff
 
+# Class to handle genome's FASTA file
+class FASTA:
+	def __init__(self, fasta_path):
+		self.path = fasta_path
+	def scaffold_names(self):
+		"""Returns a list with all the unique scaffold names of the gff dataframe"""
+		ids = []
+		for record in SeqIO.parse(self.path, "fasta"):
+			ids.append(record.id)
+		if len(ids)!=len(set(ids)):
+			sys.exit("There are non unique scaffold names in FASTA file: " + self.path)
+		return (ids)
+
+# Class tha performs datachecks on a gff dataframe
+class DATACHECK:
+	def __init__(self, gff_df, fasta):
+		self.gff_df = gff_df
+		self.fasta = fasta
+	def gff_and_fasta_scaffold_names_match(self):
+		"""Checks if the GFF's and FASTA file's scaffold names match"""
+		gff_scaffolds = list(self.gff_df["scaffold"].unique())
+		fasta_scaffolds = self.fasta.scaffold_names()
+		gff_to_fasta_discrepancies = [x for x in gff_scaffolds if x not in fasta_scaffolds]
+		fasta_to_gff_discrepancies = [x for x in fasta_scaffolds if x not in gff_scaffolds]
+		if len(gff_to_fasta_discrepancies) > 0:
+			sys.exit("These scaffolds exist in your final gff but not in the final fasta file: " + "\n".join(gff_to_fasta_discrepancies))
+		if len(fasta_to_gff_discrepancies) > 0:
+			print("Warning: These scaffolds were found in the FASTA file but not in your final GFF file. Is this ok? " + "\n".join(fasta_to_gff_discrepancies))
+
 
 # Updates attributes field and drops unecessary columns, then writes
 # processed .gff to a specified output file.

@@ -12,7 +12,7 @@ use LWP::UserAgent;
 # key is 'acc' value is hash of 'id', 'des', 'gene', 'key', 'len'
 # converted this to use the ENA RESTful interface
 # See: http://www.uniprot.org/faq/28
-# e.g. http://www.uniprot.org/uniprot/?query=organism:Homo%20sapiens&format=tab&columns=entry%20name,id,protein%20names,genes,organism,keywords,length&offset=10&limit=5
+# e.g. https://rest.uniprot.org/uniprotkb/stream?fields=accession%2Cid%2Cprotein_name%2Cgene_names%2Corganism_name%2Ckeyword%2Clength&format=tsv&query=%2A%20AND%20%28model_organism%3AHomo%20sapiens%29
 
 sub uniprot {
   my ($species) = @_;
@@ -24,8 +24,8 @@ sub uniprot {
 
   my $ua       = LWP::UserAgent->new;
   
-  my $base     = 'http://www.uniprot.org/uniprot/?';
-  my $query    = "query=organism:${species}&format=tab&columns=entry%20name,id,protein%20names,genes,organism,keywords,length";
+  my $base     = 'https://rest.uniprot.org/uniprotkb/stream?';
+  my $query = "fields=accession%2Cid%2Cprotein_name%2Cgene_names%2Corganism_name%2Ckeyword%2Clength&format=tsv&query=%2A%20AND%20%28model_organism%3A${species}%29";
   
   my $tmp_file = "/tmp/srs_results.$$.txt";
     
@@ -39,13 +39,13 @@ sub uniprot {
     if (++$count == 1) {next;} # skip the title line
     
     my @f = split /\t/;
-    
-    $acc2ids{$f[1]}{'id'} = $f[0];
-    $acc2ids{$f[1]}{'des'} = $f[2];
+
+    $acc2ids{$f[0]}{'id'} = $f[1];
+    $acc2ids{$f[0]}{'des'} = $f[2];
     my @gene_names = split /\s/, $f[3];
-    $acc2ids{$f[1]}{'gene'} = $gene_names[0];
-    $acc2ids{$f[1]}{'key'} = $f[5];
-    $acc2ids{$f[1]}{'len'} = $f[6];
+    $acc2ids{$f[0]}{'gene'} = $gene_names[0];
+    $acc2ids{$f[0]}{'key'} = $f[5];
+    $acc2ids{$f[0]}{'len'} = $f[6];
   }
   unlink $tmp_file;
 

@@ -236,7 +236,10 @@ sub count_classes {
 	close (TACE);
     }
     
-    if (scalar (keys %class_counts) != @classes) {die "There are different numbers of classes and results (" . scalar @classes . ' ' . scalar (keys %class_counts) . ")\npossibly some results are not being returned?\n";}
+    if (scalar (keys %class_counts) != @classes) {
+	die "There are different numbers of classes and results (" . scalar @classes . ' ' . scalar (keys %class_counts) . ")\npossibly some results are not being returned?\n" .
+	    join('|', keys %class_counts) . " are being returned\n";
+    }
     
     return (\%class_counts);
     
@@ -466,7 +469,6 @@ sub set_classes {
 		"Mass_Spec_experiment",
 		"Gene",
 		"Feature",
-		"Motif",
 		"Method",
 		);  
 # these classes are the ones available pre-merge for elegans
@@ -560,7 +562,6 @@ sub set_classes {
 		"GO_term",
 		"Interaction",
 		"Position_matrix",
-		"LongText",
 		"Movie",
 		"Structure_data",
 		);  

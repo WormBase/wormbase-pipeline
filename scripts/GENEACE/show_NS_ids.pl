@@ -117,7 +117,7 @@ while (<IN>) {
             my $gene_ref = $db->find_genes($entry);
             my $gene_id_found = 0;
             for my $gr(@{$gene_ref}) {
-		if ($gr->{'name'} eq $entry) {
+		if ($gr->{'cgc-name'} eq $entry) {
 		    my $WBgene_id = $gr->{'id'};
 		    print OUT "-R $DOMAIN $entry $WBgene_id\n";
 		    $gene_id_found = 1;
