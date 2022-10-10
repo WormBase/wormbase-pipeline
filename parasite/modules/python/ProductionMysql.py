@@ -114,3 +114,9 @@ class Variation(Staging):
 
 staging = Staging(STAGING_HOST)
 previous_staging = Staging(PREVIOUS_STAGING_HOST)
+
+def is_parasite_genome(pattern, staging=staging):
+    if len(staging.core_dbs(pattern)) >= 1:
+        return True
+    else:
+        return False
