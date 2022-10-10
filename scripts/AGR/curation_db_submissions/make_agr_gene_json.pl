@@ -8,7 +8,7 @@ use JSON;
 
 use Wormbase;
 
-my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $schema);
 my ($outfile, $acedbpath, $ws_version, $out_fh);
 
 GetOptions ("help"        => \$help,
@@ -19,6 +19,7 @@ GetOptions ("help"        => \$help,
 	    "database:s"  => \$acedbpath,
 	    "outfile:s"   => \$outfile,
             "wsversion=s" => \$ws_version,
+	    "schema=s"    => \$schema
 	    );
 
 if ( $store ) {
@@ -109,7 +110,8 @@ while (my $obj = $it->next) {
 }
 
 my $data = {
-  gene_ingest_set => \@genes,
+    linkml_version => $schema,
+    gene_ingest_set => \@genes,
 };
 
 open $out_fh, ">$outfile" or die "Could not open $outfile for writing\n";
