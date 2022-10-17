@@ -338,7 +338,6 @@ if( $force or not -s $conf_path or $ENV{REDO_FASTA} ) {
    # check existence of FASTA file in specified location
    my $fasta_path = File::Spec->catfile($data_dir_path,"$data_dir_name.fa");
    croak "Didn't find expected FASTA file at $fasta_path" unless -f $fasta_path and File::Spec->file_name_is_absolute($fasta_path);
-
    $this_assembly->{toplevel} = "scaffold";
    my $fasta = CoreCreation::Fasta->new($fasta_path) || croak "Failed to create CoreCreation::Fasta";
    if($split_fasta and $fasta->needs_contig_structure and not $ENV{SKIP_SPLIT_FASTA}){
