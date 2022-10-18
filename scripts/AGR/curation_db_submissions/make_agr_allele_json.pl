@@ -5,6 +5,7 @@ use Storable;
 use Getopt::Long;
 use Ace;
 use JSON;
+use Path::Class;
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -49,36 +50,25 @@ if (!$outfile) {
     }
 }
 
-my (@alleles, @annots);
-my %objectsIds;
-
 my $db = Ace->connect(-path => $acedbpath, -program => $tace) or die("Connection failure: ". Ace->error);
 
-my $it = $db->fetch_many(-query => "Find Variation WHERE species = \"Caenorhabditis elegans\"");
-process($it);
+my $out_fh  = file($outfile)->openw;
+$out_fh->print("{\n   \"linkml_version\" : \"" . $schema . "\",\n   \"allele_ingest_set\" : [");
 
-my $tgit = $db->fetch_many(-query => 'find Transgene WHERE Species = "Caenorhabditis elegans"');
-process_transgenes($tgit);
+my $alleles = process_variations($db, $out_fh);
 
-
-my $data = {
-    linkml_version    => $schema,
-    allele_ingest_set => \@alleles,
-};
-
-open $out_fh, ">$outfile" or die "Could not open $outfile for writing\n";
-
-my $json_obj = JSON->new;
-my $string = $json_obj->allow_nonref->canonical->pretty->encode($data);
-print $out_fh $string;
+$alleles = process_transgenes($db, $out_fh);
+$out_fh->print("\n   ]\n}");
 
 $db->close;
 
-sub process {
-    my ($it) = @_;
+sub process_variations {
+    my ($db, $out_fh) = @_;
 
+    my @alleles = $db->fetch(-query => "Find Variation WHERE species = \"Caenorhabditis elegans\"");
+    
     my $var_count = 0;
-    while (my $obj = $it->next) {
+    for my $obj (@alleles) {
 	$var_count++;
 	next unless $obj->isObject();
 	unless ($obj->Species) {
@@ -111,21 +101,21 @@ sub process {
 		    || $collection eq 'Substitution_allele'
 		    || $collection eq 'Transposon_insertion'
 		){
-		$collection =~ s/_/ /g;
-		$collection .= ' project' if $collection eq 'Million mutation';
+		$collection =~ s/ /_/g;
+		$collection .= '_project' if $collection eq 'Million_mutation';
 		$json_obj->{in_collection} = $collection;
 	    }
 	}
 	$json_obj->{sequencing_status} = lc $obj->SeqStatus->name if $obj->SeqStatus;
-	if ($obj->Other_name) {
-	    my @synonyms_to_submit;
-	    my %synonyms = map {$_->name => 1} $obj->Other_name;
-	    for my $syn (keys %synonyms) {
-		push @synonyms_to_submit, {name => $syn} unless $syn =~ /^[^:]+:[pcg]\./; # remove HGVS identifiers (already generated in Alliance)
-	    }
-		
-	    $json_obj->{synonyms} = \@synonyms_to_submit if @synonyms_to_submit > 0;
-	}
+	#if ($obj->Other_name) {
+	#   my @synonyms_to_submit;
+	#    my %synonyms = map {$_->name => 1} $obj->Other_name;
+	#    for my $syn (keys %synonyms) {
+	#	push @synonyms_to_submit, {name => $syn} unless $syn =~ /^[^:]+:[pcg]\./; # remove HGVS identifiers (already generated in Alliance)
+	#    }
+	#	
+	#    $json_obj->{synonyms} = \@synonyms_to_submit if @synonyms_to_submit > 0;
+	#}
 	if ($obj->Reference) {
 	    $json_obj->{references} = get_papers($obj);
 	}
@@ -138,17 +128,26 @@ sub process {
 	    $json_obj->{date_updated} = get_random_datetime(10);
 	    $json_obj->{date_created} = get_random_datetime(1);
 	}
+
+	my $json = JSON->new;
+	my $string = $json->allow_nonref->canonical->pretty->encode($json_obj);
+	$out_fh->print(',') unless $var_count == 1;
+	$out_fh->print("\n" . '      ' . $string);
 	
-	push @alleles, $json_obj;
-	last if $limit && $limit == $var_count;
+	last if $limit && $limit <= $var_count * 2;
     }
+
+    return;
 }
 
 sub process_transgenes {
-    my ($it) = @_;
+    my ($db, $out_fh) = @_;
+
+
+    my @transgenes = $db->fetch(-query => 'find Transgene WHERE Species = "Caenorhabditis elegans"');
 
     my $var_count = 0;
-    while (my $obj = $it->next) {
+    for my $obj(@transgenes) {
 	$var_count++;
 	next unless $obj->isObject();
 	unless ($obj->Species) {
@@ -164,16 +163,16 @@ sub process_transgenes {
 	    obsolete      => JSON::false
 	};	
 	$json_obj->{symbol} = $obj->Public_name->name if $obj->Public_name;
-	if ($obj->Synonym) {
-	    my %synonyms = map {$_->name => 1}$obj->Synonym;
-	    if (scalar keys %synonyms > 0) {
-		my @synonyms_to_submit;
-		for my $syn (keys %synonyms) {
-		    push @synonyms_to_submit, {name => $syn};
-		}
-		$json_obj->{synonyms} = \@synonyms_to_submit;
-	    }
-	}
+	#if ($obj->Synonym) {
+	#    my %synonyms = map {$_->name => 1}$obj->Synonym;
+	#    if (scalar keys %synonyms > 0) {
+	#	my @synonyms_to_submit;
+	#	for my $syn (keys %synonyms) {
+	#	    push @synonyms_to_submit, {name => $syn};
+	#	}
+	#	$json_obj->{synonyms} = \@synonyms_to_submit;
+	#    }
+	#}
 	if ($obj->Reference) {
 	    $json_obj->{references} = get_papers($obj);
 	}
@@ -188,8 +187,14 @@ sub process_transgenes {
 	    $json_obj->{date_created} = get_random_datetime(1);
 	}
 	
-	push @alleles, $json_obj;
+	my $json = JSON->new;
+	my $string = $json->allow_nonref->canonical->pretty->encode($json_obj);
+	$out_fh->print(",\n" . '      ' . $string);
+	
+	last if $limit && $limit <= $var_count * 2;
     }
+
+    return;
 }
 
 
