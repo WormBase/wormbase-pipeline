@@ -1,6 +1,7 @@
 import requests
 from ProductionUtils import *
 from dependencies import *
+import time
 
 def ena_rnaseq_by_taxon_id_to_dict(url):
     r = requests.get(url)
@@ -11,6 +12,40 @@ def ena_rnaseq_by_taxon_id_to_dict(url):
             study_dict[sample_accession["secondary_study_accession"]] = []
         study_dict[sample_accession["secondary_study_accession"]].append(sample_accession)
     return(study_dict)
+
+def is_ena_secondary_study(study_id, ena_secondary_study_id_count_url=ena_secondary_study_id_count_url):
+    url = ena_secondary_study_id_count_url.format(study_id)
+    r = requests.get(url)
+    counter = 1
+    while counter < 5:
+        try:
+            r_json = r.json()
+            break
+        except JSONDecodeError:
+            counter += 1
+            time.sleep(10)
+    if r_json >= 1:
+        return True
+    else:
+        print_warning(study_id + " is not a valid ENA secondary_study_id.")
+        return False
+
+def is_ena_run_accession(run_accession, ena_run_accession_count_url=ena_run_accession_count_url):
+    url = ena_run_accession_count_url.format(run_accession)
+    r = requests.get(url)
+    counter = 1
+    while counter < 5:
+        try:
+            r_json = r.json()
+            break
+        except JSONDecodeError:
+            counter += 1
+            time.sleep(10)
+    if r_json >= 1:
+        return True
+    else:
+        print_warning(run_accession + " is not a valid ENA run_accession.")
+        return False
 
 def sra_ftp_to_fire(fastq, sra_ftp_path_prefix=sra_ftp_path_prefix, sra_fire_path_prefix=sra_fire_path_prefix):
     fastq = fastq.strip()

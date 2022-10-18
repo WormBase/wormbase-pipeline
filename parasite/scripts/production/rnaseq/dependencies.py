@@ -7,6 +7,8 @@ expression_dir = "/hps/software/users/wormbase/parasite/repositories/wbps-expres
 rnaseq_dir = os.getenv("PARASITE_SCRATCH")+"/rnaseq"
 ena_api_url = "https://www.ebi.ac.uk/ena/portal/api/search?result=study&query=secondary_study_accession={0}&fields=study_accession&format=json"
 ena_rnaseq_by_taxon_url = "https://www.ebi.ac.uk/ena/portal/api/search?result=read_run&query=tax_eq({0})%20AND%20(library_strategy%3D%22RNA-Seq%22%20OR%20library_strategy%3D%22OTHER%22)&fields=study_accession%2Caccession%2Cfastq_ftp%2Csecondary_study_accession%2Csecondary_sample_accession&format=json"
+ena_secondary_study_id_count_url = "https://www.ebi.ac.uk/ena/portal/api/count?dataPortal=ena&query=secondary_study_accession%3D{0}&result=study"
+ena_run_accession_count_url = "https://www.ebi.ac.uk/ena/portal/api/count?dataPortal=ena&query=run_accession%3D{0}&result=read_run"
 permanent_apollo_dir="/nfs/production/flicek/wormbase/parasite/apollo"
 reference_genomes_dir="/nfs/production/flicek/wormbase/parasite/data/reference_genomes/star/"
 reference_genomes_ftp="https://ftp.ebi.ac.uk/pub/databases/wormbase/parasite/releases/current/species/"
@@ -43,9 +45,12 @@ bam2bigwig_binSize = "10"
 external_ssh = "sangerngs"
 external_ssh_path = "/data/production/parasites/apollo"
 ssh_host = external_ssh + ":" + external_ssh_path
-embassy_bucket = os.environ["EMBASSY_BUCKET"]
-embassy_apollo_path = os.environ["EMBASSY_APOLLO_PATH"]
-embassy_access_url_apollo = os.environ["EMBASSY_ACCESS_URL_APOLLO"]
+try:
+    embassy_bucket = os.environ["EMBASSY_BUCKET"]
+    embassy_apollo_path = os.environ["EMBASSY_APOLLO_PATH"]
+    embassy_access_url_apollo = os.environ["EMBASSY_ACCESS_URL_APOLLO"]
+except KeyError:
+    print("The embassy module has not been loaded. Maybe you want to load it and re-run?")
 
 
 #SOFTWARE
