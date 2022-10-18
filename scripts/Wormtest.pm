@@ -403,7 +403,7 @@ sub build_folder_contents_present {
 								  $errors);
     my %files_present = map {$_ => 1} @$filenames;
     my %subdirs_present = map {$_ => 1} @$subdirnames;
-    my $store_file = ucfirst($self->{'wormbase'}->organism) . '.store';
+    my $store_file = ucfirst($self->{'wormbase'}->species) . '.store';
     for my $build_file ('runlog', $store_file) {
 	if (!exists $files_present{$build_file}) {
 	    $self->{'log'}->write_to("ERROR: $build_file not present in " .
@@ -415,7 +415,7 @@ sub build_folder_contents_present {
     my @subdirs = ('acefiles', 'BLAT', 'CHECKS', 'CHROMOSOMES', 'COMMON_DATA', 'database',
 		   'GFF_SPLITS', 'logs', 'MISC_OUTPUT', 'ONTOLOGY', 'release', 'REPORTS',
 		   'SEQUENCES', 'SPELL', 'TMP', 'TRANSCRIPTS', 'wquery', 'wspec');
-    push @subdirs, 'wgf' if $self->{'wormbase'}->organism eq 'elegans';
+    push @subdirs, 'wgf' if $self->{'wormbase'}->species eq 'elegans';
     for my $build_subdir (@subdirs) {  
 	if (!exists $subdirs_present{$build_subdir}) {
 	    $self->{'log'}->write_to("ERROR: $build_subdir directory not present in " .
