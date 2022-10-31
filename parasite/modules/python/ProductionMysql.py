@@ -30,12 +30,17 @@ PREVIOUS_STAGING_HOST = os.environ['PREVIOUS_PARASITE_STAGING_MYSQL']
 PARASITE_VERSION = os.environ['PARASITE_VERSION']
 ENSEMBL_VERSION = os.environ['ENSEMBL_VERSION']
 WORMBASE_VERSION = os.environ['WORMBASE_VERSION']
+WORMBASE_ENSEMBL_SCRIPTS = os.path.join(os.environ['WORM_CODE'], 'scripts', 'ENSEMBL', 'scripts')
+DUMP_GENOME_SCRIPT = os.path.join(WORMBASE_ENSEMBL_SCRIPTS, "dump_genome.pl")
 
 
 class Staging:
-    def __init__(self, STAGING_HOST):
+    def __init__(self, STAGING_HOST, writeable=False):
         self.host = STAGING_HOST
+        if writeable:
+            self.host = STAGING_HOST + "-w"
         self.url = subprocess.check_output([self.host, 'details', 'url']).strip().decode()
+        self.script = subprocess.check_output([self.host, 'details', 'script']).strip().decode()
         self.engine = sqlalchemy.create_engine(self.url)
         self.insp = sqlalchemy.inspect(self.engine)
         self.db_list = self.insp.get_schema_names()
@@ -58,10 +63,15 @@ class Staging:
         else:
             return False
 
+    def is_a_core(self, input):
+        if input in self.core_databases:
+            return True
+        else:
+            return False
 
 class Core(Staging):
-    def __init__(self, STAGING_HOST, pattern):
-        super().__init__(STAGING_HOST)
+    def __init__(self, STAGING_HOST, pattern, writable=False):
+        super().__init__(STAGING_HOST, writable)
         self.pattern = pattern
         self.databases = self.core_databases
 
@@ -94,10 +104,23 @@ class Core(Staging):
         ftp_species = '_'.join(self.species().split("_")[0:2])
         return (ftp_species + "." + ftp_id + "." + "WBPS" + PARASITE_VERSION)
 
+    def dump_genome_command(self, outfile=False, mask=False, softmask=False, ebi_header_prefix=False):
+        command = "perl " + \
+                  DUMP_GENOME_SCRIPT + " " + \
+                  self.script + " " + \
+                  "--dbname " + self.db() + \
+                  (" --outfile " + outfile if outfile else "") + \
+                  (" --mask" if mask else "") + \
+                  (" --softmask" if softmask else "") + \
+                  ";"
+
+        return command
+
+
 
 class Variation(Staging):
-    def __init__(self, STAGING_HOST, pattern):
-        super().__init__(STAGING_HOST)
+    def __init__(self, STAGING_HOST, pattern, writable=False):
+        super().__init__(STAGING_HOST, writable)
         self.pattern = pattern
         self.databases = self.variation_databases
 
@@ -136,9 +159,20 @@ class Variation(Staging):
 
 staging = Staging(STAGING_HOST)
 previous_staging = Staging(PREVIOUS_STAGING_HOST)
+stagingw = Staging(STAGING_HOST, writeable=True)
+previous_stagingw = Staging(STAGING_HOST, writeable=True)
 
 def is_parasite_genome(pattern, staging=staging):
     if len(staging.core_dbs(pattern)) >= 1:
         return True
     else:
         return False
+
+def core_which_staging(core_db, staging=staging, previous_staging=previous_staging):
+    if staging.is_a_core(core_db):
+        this_staging=staging
+    elif previous_staging.is_a_core(core_db):
+        this_staging=previous_staging
+    else:
+        exit_with_error("Sorry but " + core_db + " is not a core db in staging or previous staging.")
+    return(this_staging)
