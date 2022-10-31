@@ -7,6 +7,7 @@ expression_dir = "/hps/software/users/wormbase/parasite/repositories/wbps-expres
 rnaseq_dir = os.getenv("PARASITE_SCRATCH")+"/rnaseq"
 ena_api_url = "https://www.ebi.ac.uk/ena/portal/api/search?result=study&query=secondary_study_accession={0}&fields=study_accession&format=json"
 ena_rnaseq_by_taxon_url = "https://www.ebi.ac.uk/ena/portal/api/search?result=read_run&query=tax_eq({0})%20AND%20(library_strategy%3D%22RNA-Seq%22%20OR%20library_strategy%3D%22OTHER%22)&fields=study_accession%2Caccession%2Cfastq_ftp%2Csecondary_study_accession%2Csecondary_sample_accession&format=json"
+ena_rnaseq_by_taxon_url_onlyrnaseq = "https://www.ebi.ac.uk/ena/portal/api/search?result=read_run&query=tax_eq({0})%20AND%20(library_strategy%3D%22RNA-Seq%22)&fields=study_accession%2Caccession%2Cfastq_ftp%2Csecondary_study_accession%2Csecondary_sample_accession&format=json"
 ena_secondary_study_id_count_url = "https://www.ebi.ac.uk/ena/portal/api/count?dataPortal=ena&query=secondary_study_accession%3D{0}&result=study"
 ena_run_accession_count_url = "https://www.ebi.ac.uk/ena/portal/api/count?dataPortal=ena&query=run_accession%3D{0}&result=read_run"
 permanent_apollo_dir="/nfs/production/flicek/wormbase/parasite/apollo"
