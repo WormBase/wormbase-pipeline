@@ -271,7 +271,7 @@ if( $force or not -s $conf_path or $ENV{REDO_FASTA} ) {
       my %pseudogenic_transcripts = ();
       foreach my $feature (@features){
          my $hash = {ID=>$feature->{attribute}->{ID}, type=>$feature->{type}, Parent=>$feature->{attribute}->{Parent}, CDS=>[], exon=>[] };
-         if( 'mRNA' eq $feature->{type} || 'transcript' eq $feature->{type} || $feature->{type} =~ m/^..?RNA$/ ) {
+         if( 'mRNA' eq $feature->{type} || 'transcript' eq $feature->{type} || $feature->{type} =~ m/^..?RNA$/ || 'nontranslating_transcript' eq $feature->{type}) {
             die "$feature->{type} ID $feature->{attribute}->{ID} is not unique at $this_assembly->{gff3} line $.\n"
                if exists $RNAs{ $feature->{attribute}->{ID} };
             # parent must exists *and* must be a gene
