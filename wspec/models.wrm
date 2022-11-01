@@ -281,15 +281,15 @@
                        Public_name UNIQUE ?Gene_name XREF Public_name_for     // the one name that should be used
                  DB_info Database ?Database ?Database_field ?Text
                  Species UNIQUE ?Species
-                 History Version_change Int UNIQUE DateType UNIQUE ?Person #Gene_history_action
-                         Merged_into UNIQUE ?Gene XREF Acquires_merge
-                         Acquires_merge ?Gene XREF Merged_into
-                         Split_from UNIQUE ?Gene XREF Split_into
-                         Split_into ?Gene XREF Split_from
-                         Transposon_in_origin // for genes that are identified as having CDSs/Proteins that are Transposon in origin
-                 Status UNIQUE Live #Evidence
-                               Suppressed #Evidence
-                               Dead #Evidence
+                 History Version_change Int UNIQUE DateType UNIQUE ?Person #Gene_history_action /// LinkML:GeneHistory:current_version
+                         Merged_into UNIQUE ?Gene XREF Acquires_merge /// LinkML:GeneHistory:merged_into
+                         Acquires_merge ?Gene XREF Merged_into /// LinkML:GeneHistory:acquires_merge
+                         Split_from UNIQUE ?Gene XREF Split_into /// LinkML:GeneHistory:split_from
+                         Split_into ?Gene XREF Split_from /// LinkML:GeneHistory:split_into
+                         Transposon_in_origin // for genes that are identified as having CDSs/Proteins that are Transposon in origin /// LinkML:Gene:transposon_origin
+                 Status UNIQUE Live #Evidence /// LinkML:GeneHistory:current_status
+                               Suppressed #Evidence /// LinkML:GeneHistory:current_status
+                               Dead #Evidence /// LinkML:GeneHistory:current_status
         Gene_info Biotype UNIQUE ?SO_term /// LinkML:Gene:gene_type
                   Gene_class UNIQUE ?Gene_class XREF Genes
                   Laboratory ?Laboratory /// LinkML:Gene:designating_laboratories
@@ -351,23 +351,23 @@
                           Anatomy_function ?Anatomy_function XREF Gene /// LinkML:Gene:anatomy_function
                           Product_binds_matrix ?Position_Matrix XREF Bound_by_gene_product #Evidence /// LinkML:Gene:product_binds_matrix
                           WBProcess ?WBProcess XREF Gene #Evidence /// LinkML:Gene:wbprocess
-        Map_info  Map UNIQUE ?Map XREF Gene #Map_position
-                  Well_ordered          // "on the line"
-                  Hide_under ?Gene XREF Representative_for
-                  Representative_for ?Gene XREF Hide_under
-                  Positive Inside_rearr ?Rearrangement XREF Gene_inside #Evidence
-                           Positive_clone ?Clone XREF Positive_gene #Evidence
-                  Negative Outside_rearr ?Rearrangement XREF Gene_outside #Evidence
-                           Negative_clone ?Clone XREF Negative_gene #Evidence
-                  Mapping_data  2_point ?2_point_data
-                                Multi_point ?Multi_pt_data
-                                Pos_neg_data ?Pos_neg_data
-                  Interpolated_map_position UNIQUE ?Map UNIQUE Float // for loci with CDSs but no real Map position
-                  Landmark_gene // for those genes that will appear in genetic map of Genome Browser
-                  Pseudo_map_position // should be added to flag those genes which have Map position tags that
-                                      // were 'promoted' from Interpolated_map_position tags
-        Reference ?Paper XREF Gene #Evidence
-        Picture ?Picture XREF Gene
+        Map_info  Map UNIQUE ?Map XREF Gene #Map_position  /// LinkML:GeneticMapPosition
+                  Well_ordered          // "on the line" ///deprecate
+                  Hide_under ?Gene XREF Representative_for ///deprecate
+                  Representative_for ?Gene XREF Hide_under ///deprecate
+                  Positive Inside_rearr ?Rearrangement XREF Gene_inside #Evidence ///deprecate
+                           Positive_clone ?Clone XREF Positive_gene #Evidence ///deprecate
+                  Negative Outside_rearr ?Rearrangement XREF Gene_outside #Evidence ///deprecate
+                           Negative_clone ?Clone XREF Negative_gene #Evidence ///deprecate
+                  Mapping_data  2_point ?2_point_data ///deprecate 
+                                Multi_point ?Multi_pt_data ///deprecate 
+                                Pos_neg_data ?Pos_neg_data ///deprecate
+                  Interpolated_map_position UNIQUE ?Map UNIQUE Float // for loci with CDSs but no real Map position ///deprecate
+                  Landmark_gene // for those genes that will appear in genetic map of Genome Browser ///deprecate
+                  Pseudo_map_position // should be added to flag those genes which have Map position tags that ///deprecate
+                                      // were 'promoted' from Interpolated_map_position tags ///deprecate
+        Reference ?Paper XREF Gene #Evidence /// LinkML:Reference
+        Picture ?Picture XREF Gene /// LinkML:Picture
         Remark ?Text #Evidence /// LinkML:Gene:related_notes
         Method UNIQUE ?Method
 
