@@ -33,7 +33,8 @@ my $wormbase;
 # use the time and the process ID to make a unique file extension
 my $time = time();
 my $pid = "$$";
-my $outfile = "/tmp/acezip.$pid.$time.new";
+my $tmpDir= $ENV {'WB_SCRATCH'};
+my $outfile = "/$tmpDir/acezip.$pid.$time.new";
 my $presort = "$file.$pid.$time.presort";
 my $sort = "$file.$pid.$time.sort";
 
