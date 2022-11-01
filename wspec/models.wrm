@@ -272,9 +272,9 @@
 
 
 ?Gene   Evidence #Evidence
-        SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Gene_child
+        SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Gene_child /// LinkML:Gene:contig
         Identity Version UNIQUE Int
-                 Name  CGC_name UNIQUE ?Gene_name XREF CGC_name_for #Evidence /// LinkML:Gene:symbol
+                 Name  CGC_name UNIQUE ?Gene_name XREF CGC_name_for #Evidence /// LinkML:Gene:symbol /// LinkML:Gene:designating_persons from #Evidence Person_evidence  
                        Sequence_name UNIQUE ?Gene_name XREF Sequence_name_for // captures main CDS name without isoforms
                        Molecular_name ?Gene_name XREF Molecular_name_for      // for linking to full CDS names, wormpep etc.
                        Other_name ?Gene_name XREF Other_name_for #Evidence    // other unapproved CGC-style gene names
@@ -292,7 +292,7 @@
                                Dead #Evidence
         Gene_info Biotype UNIQUE ?SO_term /// LinkML:Gene:gene_type
                   Gene_class UNIQUE ?Gene_class XREF Genes
-                  Laboratory ?Laboratory
+                  Laboratory ?Laboratory /// LinkML:Gene:designating_laboratories
                   Cloned_by #Evidence      // mt3 acreditation of person who cloned gene [060829 ar2]
                   Reference_allele ?Variation #Evidence
                   Allele ?Variation XREF Gene #Evidence
@@ -348,9 +348,9 @@
                           SAGE_tag ?SAGE_tag XREF Gene #SAGE_mapping_info
                           3d_data ?3d_data XREF Gene // for NESGC structure information
                           Interaction ?Interaction
-                          Anatomy_function ?Anatomy_function XREF Gene
-                          Product_binds_matrix ?Position_Matrix XREF Bound_by_gene_product #Evidence
-                          WBProcess ?WBProcess XREF Gene #Evidence
+                          Anatomy_function ?Anatomy_function XREF Gene /// LinkML:Gene:anatomy_function
+                          Product_binds_matrix ?Position_Matrix XREF Bound_by_gene_product #Evidence /// LinkML:Gene:product_binds_matrix
+                          WBProcess ?WBProcess XREF Gene #Evidence /// LinkML:Gene:wbprocess
         Map_info  Map UNIQUE ?Map XREF Gene #Map_position
                   Well_ordered          // "on the line"
                   Hide_under ?Gene XREF Representative_for
@@ -3023,7 +3023,7 @@
 ?Operon Public_name UNIQUE ?Text //Used for storing a publically accepted name for an Operon, not populated by default.
         SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF Operon
         Species UNIQUE ?Species
-        Contains_gene ?Gene XREF Contained_in_operon #Trans_splice_leader
+        Contains_gene ?Gene XREF Contained_in_operon #Trans_splice_leader /// LinkML:Gene:trans_splice_leaders
         Associated_feature ?Feature XREF Associated_with_operon    #Evidence
         Reference ?Paper XREF Operon
         Description UNIQUE ?Text #Evidence
@@ -3035,10 +3035,10 @@
                 Deprecated Text #Evidence //pad - for operons no longer believed.
         Remark Text #Evidence
 
-#Trans_splice_leader SL1 #Evidence
-                     SL2 #Evidence
-                     Microarray #Evidence   // Handles Blumenthal microarray assignments
-                     Inferred #Evidence
+#Trans_splice_leader SL1 #Evidence /// LinkML:Gene:trans_splice_leaders
+                     SL2 #Evidence /// LinkML:Gene:trans_splice_leaders
+                     Microarray #Evidence   // Handles Blumenthal microarray assignments /// LinkML:Gene:trans_splice_leaders
+                     Inferred #Evidence /// LinkML:Gene:trans_splice_leaders
 
 
 /////////////////////////////////////////////////////////////////////
