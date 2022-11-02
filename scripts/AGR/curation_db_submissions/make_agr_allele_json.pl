@@ -81,7 +81,7 @@ sub process_variations {
 	    name     => $obj->Public_name ? $obj->Public_name->name : $obj->name,
 	    taxon       => "NCBITaxon:" . $obj->Species->NCBITaxonomyID->name,
 	    internal      => JSON::false,
-	    obsolete   => $obj->Live ? JSON::false : JSON::true,
+	    obsolete   => $obj->Live ? JSON::true : JSON::false,
 	    created_by => 'WB:curator',
 	    updated_by => 'WB:curator'
 	};
