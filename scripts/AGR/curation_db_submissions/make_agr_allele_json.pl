@@ -157,12 +157,11 @@ sub process_transgenes {
 	
 	my $json_obj = {
 	    curie         => "WB:" . $obj->name, 
-	    name          => $obj->Public_name ? $obj->Public_name->name : $obj->name,
+	    symbol          => $obj->Public_name ? $obj->Public_name->name : $obj->name,
 	    taxon         => "NCBITaxon:" . $obj->Species->NCBITaxonomyID->name,
 	    internal      => JSON::false,
 	    obsolete      => JSON::false
 	};	
-	$json_obj->{symbol} = $obj->Public_name->name if $obj->Public_name;
 	#if ($obj->Synonym) {
 	#    my %synonyms = map {$_->name => 1}$obj->Synonym;
 	#    if (scalar keys %synonyms > 0) {
