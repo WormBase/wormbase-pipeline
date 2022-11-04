@@ -105,7 +105,6 @@ sub process_variations {
 		$json_obj->{in_collection} = $collection;
 	    }
 	}
-	$json_obj->{sequencing_status} = lc $obj->SeqStatus->name if $obj->SeqStatus;
 	#if ($obj->Other_name) {
 	#   my @synonyms_to_submit;
 	#    my %synonyms = map {$_->name => 1} $obj->Other_name;
