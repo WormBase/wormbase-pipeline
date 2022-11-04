@@ -44,7 +44,7 @@ my $it = $db->fetch_many(-query => $query);
 
 while (my $obj = $it->next) {
     next unless $obj->isObject();
-
+    next unless $obj->name =~ /^WBGene/;
     unless ($obj->Species) {
 	print "No species for $obj - skipping\n";
 	next;
@@ -62,9 +62,15 @@ while (my $obj = $it->next) {
 	}
     } elsif ($obj->CGC_name) {
 	$symbol = $obj->CGC_name->name;
-    } else {
-	print "No symbol for $obj - skipping\n";
-	next;
+    } elsif ($obj->Public_name) {
+	$symbol = $obj->Public_name->name;
+    }
+    else {
+	if ($obj->Status && $obj->Status->name eq 'Live') {
+	    print "Live gene with no symbol $obj - skipping\n";
+	    next;
+	}
+	$symbol = $obj->name;
     }
     map { $synonyms{$_->name} = 1 } $obj->Other_name;
     my @synonym_strings = keys %synonyms;
