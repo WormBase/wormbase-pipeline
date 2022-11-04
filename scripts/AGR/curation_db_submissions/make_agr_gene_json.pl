@@ -97,9 +97,8 @@ while (my $obj = $it->next) {
 	curie    => 'WB:' . $obj->name,
 	symbol   => $symbol,
 	taxon    => 'NCBITaxon:' . $obj->Species->NCBITaxonomyID,
-	obsolete => $obj->Live ? JSON::true : JSON::false,
+	obsolete => $obj->Status && $obj->Status->name eq 'Live' ? JSON::false : JSON::true,
 	internal => JSON::false
-	
     };
 
     $gene->{name} = $name if $name;
