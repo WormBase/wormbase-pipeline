@@ -88,10 +88,11 @@ sub get_orthos{
 		$data->{gene1}=~s/DRSC://;
 		$data->{gene2}=~s/DRSC://;
 		if ($data->{gene1}||$data->{gene2}){ # skip pairs that don't exist in WB
-			print_ace($data->{gene1},$data->{gene1Species},$data->{gene2},$data->{gene2Species},$data->{predictionMethodsMatched});
-			print_ace($data->{gene2},$data->{gene2Species},$data->{gene1},$data->{gene1Species},$data->{predictionMethodsMatched});
-		}else{
-			$log->write_to("cannot find ${\$data->{gene1}} / ${\$data->{gene2}}\n");
+		    next unless exists($taxon2name{$data->{gene1Species}}) && exists($taxon2name{$data->{gene2Species}}); # skip unrecognised species
+		    print_ace($data->{gene1},$data->{gene1Species},$data->{gene2},$data->{gene2Species},$data->{predictionMethodsMatched});
+		    print_ace($data->{gene2},$data->{gene2Species},$data->{gene1},$data->{gene1Species},$data->{predictionMethodsMatched});
+		} else {
+		    $log->write_to("cannot find ${\$data->{gene1}} / ${\$data->{gene2}}\n");
 		}
 	}
 }
