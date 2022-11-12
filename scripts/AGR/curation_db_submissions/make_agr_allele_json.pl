@@ -77,10 +77,10 @@ sub process_variations {
 	}
 	
 	my $json_obj = {
-	    curie    => "WB:" . $obj->name,
+	    curie      => "WB:" . $obj->name,
 	    symbol     => $obj->Public_name ? $obj->Public_name->name : $obj->name,
-	    taxon       => "NCBITaxon:" . $obj->Species->NCBITaxonomyID->name,
-	    internal      => JSON::false,
+	    taxon      => "NCBITaxon:" . $obj->Species->NCBITaxonomyID->name,
+	    internal   => JSON::false,
 	    obsolete   => $obj->Status && $obj->Status->name eq 'Live' ? JSON::false : JSON::true,
 	    created_by => 'WB:curator',
 	    updated_by => 'WB:curator'
@@ -105,6 +105,10 @@ sub process_variations {
 		$json_obj->{in_collection} = $collection;
 	    }
 	}
+
+	my $mutation_types = get_mutation_types($obj);
+	$json_obj->{allele_mutation_type_dtos} = $mutation_types if scalar @$mutation_types > 0;
+	
 	#if ($obj->Other_name) {
 	#   my @synonyms_to_submit;
 	#    my %synonyms = map {$_->name => 1} $obj->Other_name;
@@ -226,4 +230,77 @@ sub get_random_datetime {
     my $day_string = $day > 9 ? $day : '0' . $day;
     
     return '20' . $year_string . '-' . $month_string . '-' . $day_string . 'T00:00:00+00:00';
+}
+
+sub get_mutation_types {
+    my $obj = shift;
+
+    my @mutation_types;
+    if ($obj->Substitution) {
+	my $substitution = {
+	   mutation_type_curies => ["SO:1000002"],
+	   internal => JSON::false
+	};
+	if ($obj->Substitution->right) {
+	    my @substitution_paper_evidence;
+	    for my $evi ($obj->Substitution->right->col) {
+		next unless $evi->name eq 'Paper_evidence';
+		for my $paper ($evi->col) {
+		    push @substitution_paper_evidence, $paper->name;
+		}
+	    }
+	    $substitution->{evidence_curies} = \@substitution_paper_evidence if @substitution_paper_evidence > 0;
+	}
+	push @mutation_types, $substitution;
+    }
+
+    if ($obj->Insertion) {
+	my $insertion = {
+	    mutation_type_curies => ["SO:0000667"],
+	    internal => JSON::false
+	};
+	my @insertion_paper_evidence;
+	for my $evi ($obj->Insertion->col) {
+	    next unless $evi->name eq 'Paper_evidence';
+	    for my $paper ($evi->col) {
+		push @insertion_paper_evidence, $paper->name;
+	    }
+	}
+	$insertion->{evidence_curies} = \@insertion_paper_evidence if @insertion_paper_evidence > 0;
+	push @mutation_types, $insertion;
+    }
+
+    if ($obj->Deletion) {
+	my $deletion = {
+	    mutation_type_curies => ["SO:0000159"],
+	    internal => JSON::false
+	};
+	my @deletion_paper_evidence;
+	for my $evi ($obj->Deletion->col) {
+	    next unless $evi->name eq 'Paper_evidence';
+	    for my $paper ($evi->col) {
+		push @deletion_paper_evidence, $paper->name;
+	    }
+	}
+	$deletion->{evidence_curies} = \@deletion_paper_evidence if @deletion_paper_evidence > 0;
+	push @mutation_types, $deletion;
+    }
+
+    if ($obj->Tandem_duplication) {
+	my $duplication = {
+	    mutation_type_curies => ["SO:1000173"],
+	    internal => JSON::false
+	};
+	my @duplication_paper_evidence;
+	for my $evi ($obj->Tandem_duplication->col) {
+	    next unless $evi->name eq 'Paper_evidence';
+	    for my $paper ($evi->col) {
+		push @duplication_paper_evidence, $paper->name;
+	    }
+	}
+	$duplication->{evidence_curies} = \@duplication_paper_evidence if @duplication_paper_evidence > 0;
+	push @mutation_types, $duplication
+    };
+
+    return \@mutation_types;
 }
