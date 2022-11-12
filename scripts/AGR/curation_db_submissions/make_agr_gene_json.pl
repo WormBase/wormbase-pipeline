@@ -108,8 +108,8 @@ while (my $obj = $it->next) {
     };
 
     $gene->{name} = $name if $name;
-    $gene->{synonyms} = \@synonym_strings if @synonym_strings;
-    $gene->{secondary_identifiers} = \@secondary_ids if @secondary_ids;
+#    $gene->{synonyms} = \@synonym_strings if @synonym_strings;
+#    $gene->{secondary_identifiers} = \@secondary_ids if @secondary_ids;
     
     push @genes, $gene;
 }
