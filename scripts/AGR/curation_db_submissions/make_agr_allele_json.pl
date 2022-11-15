@@ -77,13 +77,13 @@ sub process_variations {
 	}
 	
 	my $json_obj = {
-	    curie      => "WB:" . $obj->name,
-	    symbol     => $obj->Public_name ? $obj->Public_name->name : $obj->name,
-	    taxon      => "NCBITaxon:" . $obj->Species->NCBITaxonomyID->name,
-	    internal   => JSON::false,
-	    obsolete   => $obj->Status && $obj->Status->name eq 'Live' ? JSON::false : JSON::true,
-	    created_by => 'WB:curator',
-	    updated_by => 'WB:curator'
+	    curie             => "WB:" . $obj->name,
+	    symbol            => $obj->Public_name ? $obj->Public_name->name : $obj->name,
+	    taxon_curie       => "NCBITaxon:" . $obj->Species->NCBITaxonomyID->name,
+	    internal          => JSON::false,
+	    obsolete          => $obj->Status && $obj->Status->name eq 'Live' ? JSON::false : JSON::true,
+	    created_by_curie  => 'WB:curator',
+	    updated_by_curie  => 'WB:curator'
 	};
 	if ($obj->Method) {
 	    my $collection = $obj->Method->name;
@@ -102,7 +102,7 @@ sub process_variations {
 		){
 		$collection =~ s/ /_/g;
 		$collection .= '_project' if $collection eq 'Million_mutation';
-		$json_obj->{in_collection} = $collection;
+		$json_obj->{in_collection_name} = $collection;
 	    }
 	}
 
@@ -119,13 +119,13 @@ sub process_variations {
 	#    $json_obj->{synonyms} = \@synonyms_to_submit if @synonyms_to_submit > 0;
 	#}
 	if ($obj->Reference) {
-	    $json_obj->{references} = get_papers($obj);
+	    $json_obj->{reference_curies} = get_papers($obj);
 	}
 
 	# Stick some random data in for curation DB test files
 	if ($curation_test) {
 	    my @inheritance_modes = qw(dominant recessive semi-dominant unknown);
-	    $json_obj->{inheritance_mode} = $inheritance_modes[rand @inheritance_modes];
+	    $json_obj->{inheritance_mode_name} = $inheritance_modes[rand @inheritance_modes];
 	    $json_obj->{is_extinct} = $var_count % 2 == 0 ? JSON::true : JSON::false;
 	    $json_obj->{date_updated} = get_random_datetime(10);
 	    $json_obj->{date_created} = get_random_datetime(1);
@@ -159,8 +159,8 @@ sub process_transgenes {
 	
 	my $json_obj = {
 	    curie         => "WB:" . $obj->name, 
-	    symbol          => $obj->Public_name ? $obj->Public_name->name : $obj->name,
-	    taxon         => "NCBITaxon:" . $obj->Species->NCBITaxonomyID->name,
+	    symbol        => $obj->Public_name ? $obj->Public_name->name : $obj->name,
+	    taxon_curie   => "NCBITaxon:" . $obj->Species->NCBITaxonomyID->name,
 	    internal      => JSON::false,
 	    obsolete      => JSON::false
 	};	
@@ -175,14 +175,14 @@ sub process_transgenes {
 	#    }
 	#}
 	if ($obj->Reference) {
-	    $json_obj->{references} = get_papers($obj);
+	    $json_obj->{reference_curies} = get_papers($obj);
 	}
 
 	
 	# Stick some random data in for curation DB test files
 	if ($curation_test) {
 	    my @inheritance_modes = qw(dominant recessive semi-dominant unknown);
-	    $json_obj->{inheritance_mode} = $inheritance_modes[rand @inheritance_modes];
+	    $json_obj->{inheritance_mode_name} = $inheritance_modes[rand @inheritance_modes];
 	    $json_obj->{is_extinct} = $var_count % 2 == 0 ? JSON::true : JSON::false;
 	    $json_obj->{date_updated} = get_random_datetime(10);
 	    $json_obj->{date_created} = get_random_datetime(1);
@@ -246,7 +246,7 @@ sub get_mutation_types {
 	    for my $evi ($obj->Substitution->right->col) {
 		next unless $evi->name eq 'Paper_evidence';
 		for my $paper ($evi->col) {
-		    push @substitution_paper_evidence, $paper->name;
+		    push @substitution_paper_evidence, 'WB:' . $paper->name;
 		}
 	    }
 	    $substitution->{evidence_curies} = \@substitution_paper_evidence if @substitution_paper_evidence > 0;
@@ -263,7 +263,7 @@ sub get_mutation_types {
 	for my $evi ($obj->Insertion->col) {
 	    next unless $evi->name eq 'Paper_evidence';
 	    for my $paper ($evi->col) {
-		push @insertion_paper_evidence, $paper->name;
+		push @insertion_paper_evidence, 'WB:' . $paper->name;
 	    }
 	}
 	$insertion->{evidence_curies} = \@insertion_paper_evidence if @insertion_paper_evidence > 0;
@@ -279,7 +279,7 @@ sub get_mutation_types {
 	for my $evi ($obj->Deletion->col) {
 	    next unless $evi->name eq 'Paper_evidence';
 	    for my $paper ($evi->col) {
-		push @deletion_paper_evidence, $paper->name;
+		push @deletion_paper_evidence, 'WB:' . $paper->name;
 	    }
 	}
 	$deletion->{evidence_curies} = \@deletion_paper_evidence if @deletion_paper_evidence > 0;
@@ -295,7 +295,7 @@ sub get_mutation_types {
 	for my $evi ($obj->Tandem_duplication->col) {
 	    next unless $evi->name eq 'Paper_evidence';
 	    for my $paper ($evi->col) {
-		push @duplication_paper_evidence, $paper->name;
+		push @duplication_paper_evidence, 'WB:' . $paper->name;
 	    }
 	}
 	$duplication->{evidence_curies} = \@duplication_paper_evidence if @duplication_paper_evidence > 0;
