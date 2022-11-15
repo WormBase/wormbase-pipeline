@@ -202,7 +202,6 @@ while( my $obj = $it->next) {
 	my ($gene) = $obj->Disease_relevant_gene;
 	my ($genotype) = $obj->Genotype;
 	my (@inferred_genes) = map { 'WB:'.$_->name } $obj->Inferred_gene;
-	warn "Multiple inferred genes for $obj\n" if @inferred_genes > 1;
 	if (@inferred_genes) {
 	    $annot->{asserted_gene_curies} = \@inferred_genes;
 	}
