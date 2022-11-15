@@ -156,27 +156,27 @@ while( my $obj = $it->next) {
 	my $annot = {
 	    mod_entity_id        => $obj->name,
 	    internal             => JSON::false,
-	    object               => $obj->Disease_term->name,
+	    do_term_curie        => $obj->Disease_term->name,
 	    data_provider        => 'WB',
 	    date_updated         => $evi_date,
-	    created_by           => 'WB:curator',
-	    annotation_type      => 'manually_curated',
-	    evidence_codes       => \@evi_codes,
-	    single_reference     => $paper,
+	    created_by_curie     => 'WB:curator',
+	    annotation_type_name => 'manually_curated',
+	    evidence_code_curies => \@evi_codes,
+	    reference_curie      => $paper,
 	    internal             => JSON::false,
 	    obsolete             => JSON::false
 	};
-	$annot->{updated_by} = $obj->Curator_confirmed ? 'WB:' . $obj->Curator_confirmed->name : "WB:curator";
-	$annot->{genetic_sex} = $obj->Genetic_sex->name if $obj->Genetic_sex;
-	$annot->{related_notes} = [{
-	    note_type => 'disease_summary',
-	    internal  => JSON::false,
-	    free_text => $obj->Disease_model_description->name
+	$annot->{updated_by_curie} = $obj->Curator_confirmed ? 'WB:' . $obj->Curator_confirmed->name : "WB:curator";
+	$annot->{genetic_sex_name} = $obj->Genetic_sex->name if $obj->Genetic_sex;
+	$annot->{note_dtos} = [{
+	    note_type_name => 'disease_summary',
+	    internal       => JSON::false,
+	    free_text      => $obj->Disease_model_description->name
 	}] if $obj->Disease_model_description;
 	
 	unless ($modifier eq 'no_modifier') {
-	    $annot->{disease_genetic_modifier} = $modifier;
-	    $annot->{disease_genetic_modifier_relation} = $modifier_type; # ameliorated_by / not_ameliorated_by / exacerbated_by / not_exacerbated_by
+	    $annot->{disease_genetic_modifier_curie} = $modifier;
+	    $annot->{disease_genetic_modifier_relation_name} = $modifier_type; # ameliorated_by / not_ameliorated_by / exacerbated_by / not_exacerbated_by
 	}
 
 	
@@ -204,15 +204,18 @@ while( my $obj = $it->next) {
 	my (@inferred_genes) = map { 'WB:'.$_->name } $obj->Inferred_gene;
 	warn "Multiple inferred genes for $obj\n" if @inferred_genes > 1;
 	if (@inferred_genes) {
-	    $annot->{asserted_genes} = \@inferred_genes;
+	    $annot->{asserted_gene_curies} = \@inferred_genes;
 	}
 	my ($obj_id, $obj_name, $obj_type);
-	
+
+	my $subject_field;
 	if (defined $strain) {
+	    $subject_field = 'agm_curie';
 	    $obj_type = 'strain';
 	    $obj_name = $strain->Public_name ? $strain->Public_name->name : $strain->name;
 	    $obj_id = 'WB:' . $strain->name;
 	} elsif (defined $allele) {
+	    $subject_field = 'allele_curie';
 	    if ($allele->Public_name){
 		$obj_type = "allele";
 		$obj_name = $allele->Public_name->name;
@@ -222,15 +225,18 @@ while( my $obj = $it->next) {
 		next;
 	    }
 	} elsif (defined $transgene) {
+	    $subject_field = 'allele_curie';
 	    $obj_type = 'allele';# as quick fix for 3.0
 	    $obj_name = $transgene->Public_name->name;
 	    $obj_id = 'WB:' . $transgene->name;
 	} elsif (defined $gene) {
+	    $subject_field = 'gene_curie';
 	    $obj_type = 'gene';
 	    $obj_name = $gene->Public_name->name;
 	    $obj_id = 'WB:' . $gene->name;
 	    @inferred_genes = ();
 	} elsif (defined $genotype){
+	    $subject_field = 'agm_curie';
 	    $obj_type = 'genotype';
 	    $obj_name = "${\$genotype->Genotype_name}";
 	    $obj_id = 'WB:' . $genotype->name;
@@ -243,13 +249,13 @@ while( my $obj = $it->next) {
 	$assoc_type = 'is_model_of' if $assoc_type !~ /model_of/ && ($obj_type eq 'strain' || $obj_type eq 'genotype');
 	$assoc_type = 'is_implicated_in' if $obj_type eq 'allele';
 	
-	$annot->{predicate} = $assoc_type;
-	$annot->{subject} = $obj_id;
+	$annot->{disease_relation_name} = $assoc_type;
+	$annot->{$subject_field} = $obj_id;
 	$annot->{negated} = JSON::true if $obj->at('Qualifier_not');
 	
 
 	my $condition_relations = get_condition_relations($obj, $chebi_name_map);
-	$annot->{condition_relations} = $condition_relations if @$condition_relations;
+	$annot->{condition_relation_dtos} = $condition_relations if @$condition_relations;
 	
 	if ($obj_type eq 'gene') {
 	    push @gene_annots, $annot;
@@ -328,12 +334,12 @@ sub get_condition_relations {
     if ($obj->Experimental_condition){
         $condition_relation_type = 'induced_by';
         my @inducing_chemicals = map {{
-            condition_chemical => get_chemical_ontology_id($_),
-            condition_class => $zeco{'chemical treatment'},
+            condition_chemical_curie => get_chemical_ontology_id($_),
+            condition_class_curie => $zeco{'chemical treatment'},
 	    internal => JSON::false
             }} $obj->Inducing_chemical;
         my @inducing_agents     = map {{
-            condition_class => $zeco{'experimental conditions'},
+            condition_class_curie => $zeco{'experimental conditions'},
 	    condition_free_text => $_->name,
 	    internal => JSON::false
             }} $obj->Inducing_agent;
@@ -351,13 +357,13 @@ sub get_condition_relations {
 	    }
 	}
         my @modifying_molecules = map {{
-            condition_chemical => get_chemical_ontology_id($_),
-            condition_class => $zeco{'chemical treatment'},
+            condition_chemical_curie => get_chemical_ontology_id($_),
+            condition_class_curie => $zeco{'chemical treatment'},
 	    internal => JSON::false
             }} $obj->Modifier_molecule;
         my @other_modifiers = map {{
-	    condition_class => $zeco{'experimental conditions'},
-	    condition_free_text => $_->name,
+	    condition_class_curie => $zeco{'experimental conditions'},
+	    condition_free_text_curie => $_->name,
 	    internal => JSON::false
 	    }} $obj->Other_modifier;
         @modifiers = (@modifying_molecules, @other_modifiers);
@@ -370,8 +376,8 @@ sub get_condition_relations {
 
     if ($condition_relation_type) {
 	my $cr_json = {
-	    condition_relation_type => $condition_relation_type,
-	    conditions => $conditions,
+	    condition_relation_type_name => $condition_relation_type,
+	    condition_dtos => $conditions,
 	    internal => JSON::false
 	};
         push @$condition_relations, $cr_json;

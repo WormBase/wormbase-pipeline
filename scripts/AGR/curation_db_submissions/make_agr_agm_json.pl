@@ -43,12 +43,12 @@ while (my $obj = $it->next) {
 	next;
     }
     my $strain = {
-	curie     => "WB:$obj",
-	name      => ($obj->Public_name ? "${\$obj->Public_name}" : "$obj"),
-	subtype   => 'strain',
-	taxon     => 'NCBITaxon:' . $obj->Species->NCBITaxonomyID,
-	internal  => JSON::false,
-	obsolete  => JSON::false
+	curie        => "WB:$obj",
+	name         => ($obj->Public_name ? "${\$obj->Public_name}" : "$obj"),
+	subtype_name => 'strain',
+	taxon_curie  => 'NCBITaxon:' . $obj->Species->NCBITaxonomyID,
+	internal     => JSON::false,
+	obsolete     => JSON::false
     };
     push @agms, $strain;
 }
@@ -63,12 +63,12 @@ while (my $obj = $it2->next) {
 	next;
     }
     my $genotype = {
-	curie => "WB:$obj",
-	name      => ($obj->Genotype_name ? "${\$obj->Genotype_name}" : "$obj"),
-	subtype   => 'genotype',
-	taxon     => 'NCBITaxon:' . $obj->Species->NCBITaxonomyID,
-	internal  => JSON::false,
-	obsolete  => JSON::false
+	curie        => "WB:$obj",
+	name         => ($obj->Genotype_name ? "${\$obj->Genotype_name}" : "$obj"),
+	subtype_name => 'genotype',
+	taxon_curie  => 'NCBITaxon:' . $obj->Species->NCBITaxonomyID,
+	internal     => JSON::false,
+	obsolete     => JSON::false
     };
     push @agms, $genotype;
 }
