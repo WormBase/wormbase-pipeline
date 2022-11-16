@@ -1094,7 +1094,6 @@
                           Asserted_gene ?Gene XREF Models_disease_asserted // Indicates asserted gene in Variation or Strain // new tag request for WS287
 			  Inferred_gene ?Gene XREF Models_disease_inferred // Indicates the // new tag request for WS287
 			  Asserted_variation ?Variation XREF Modifies_disease_asserted_variation // request for WS287
-
                           Association_type UNIQUE is_model_of                  // Describe relationship between genetic entity and disease (condition)
                                                   is_implicated_in
                                                   is_marker_for
