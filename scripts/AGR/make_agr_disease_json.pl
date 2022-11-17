@@ -161,11 +161,7 @@ while( my $obj = $it->next) {
   # * had Qualifier_not as not to be submitted, but that changed with 3.1.0
   # Inducing_chemical, Modifier_molecule, and Other_molecule were also not submitted prior to 4.0
   unless ($build) {
-	  next if ($obj->Interacting_variation
-	         ||$obj->Interacting_transgene
-	         ||$obj->Interacting_gene
-	         ||$obj->RNAi_experiment
-	         ||$obj->Modifier_transgene
+	  next if ($obj->Modifier_transgene
 	         ||$obj->Modifier_variation
 	         ||$obj->Modifier_gene
 	  );
@@ -178,7 +174,7 @@ while( my $obj = $it->next) {
   my ($genotype) = $obj->Genotype;
   my (@inferred_genes) = map { 'WB:'.$_->name } $obj->Inferred_gene;
   my ($obj_id, $obj_name, $obj_type);
-  my (@with_list) = map {'WB:'.$_->name} ($obj->Interacting_variation,$obj->Interacting_gene,$obj->Interacting_transgene);
+  my @with_list;
   my $assoc_type = 'is_implicated_in';
   
   if ($white && $allele){ # remove annotations unless they are in the AGR allele variations
