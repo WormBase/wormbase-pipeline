@@ -3,11 +3,12 @@ use warnings;
 use strict;
 
 # Point to where your input fasta file is located
-my $fasta_file = "/nfs/production/flicek/wormbase/parasite/data/releases/release18/heterobilharzia_americana_td1prjeb44434/heterobilharzia_americana_td1prjeb44434.fa";
+my $fasta_file = $ARGV[0];
 
 # Declare that you want to read this file, and print the error message
 # in case that the input fasta file does not exist at the specified path
 open(FASTA, "<", $fasta_file) or die("Probably wrong path: $fasta_file\n");
+print("$fasta_file has been read");
 
 # We will linearize the sequences into this hash
 my %singleLineSequences;
