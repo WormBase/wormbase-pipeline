@@ -8,6 +8,7 @@ import subprocess
 import re
 import requests
 import random
+import validators
 import sqlalchemy
 import string
 import csv
@@ -135,5 +136,18 @@ def url_file_exists(path):
 
 def findOccurrences(s, ch):
     return [i for i, letter in enumerate(s) if letter == ch]
+
+def download_if_url_or_copy_file_command(path, output=None):
+    if validators.url(path):
+        command = "curl -H 'Connection: keep-alive' --keepalive-time 2 " + \
+                  ("--output " + output + " " if output else "") + \
+                  path + ";"
+    else:
+        command = "rsync -avz " + \
+                  path + \
+                  (" " + output if output else "") + \
+                  ";"
+    return command
+
 
 

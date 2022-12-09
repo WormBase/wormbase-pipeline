@@ -2,6 +2,13 @@ from ProductionMysql import *
 import logging
 from argparse import ArgumentParser
 
+'''
+This script updates outdated taxonomy IDs for coreDB species by looking
+up their current taxonomy ID in the NCBI taxnomy database. If the NCBI
+taxID and the WBPS coreDB taxID don't match, it updates it with the 
+NCBI taxID. In some cases, the species may have changed entirely - this
+is logged but has to be dealt with manually rather than in this script.
+'''
 
 def get_args():
 	parser = ArgumentParser()

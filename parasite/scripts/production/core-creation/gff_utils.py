@@ -22,15 +22,13 @@ from reformat_gff_dependencies import *
 
 # Removes provided prefixes from all columns in a .gff3 dataframe.
 def remove_prefixes_from_column_values(gff_df, prefixes):
-    for prefix in prefixes:
-        # Look only at beginning of line, escape any special characters.
-        prefix = "^"+re.escape(prefix)
-        for col in gff_df:
-            # Avoid using re.sub on NaN values as this turns them into str
-            nan_mask = gff_df.loc[:,col].isna()
-            gff_df.loc[~nan_mask, col] = [re.sub(prefix, "", str(x)) for x in gff_df.loc[~nan_mask, col]]
+    gff_df = gff_df.replace(prefixes, "", regex=True)
     return gff_df
 
+# Removes provided prefixes from the 'Name' column in a .gff3 dataframe.
+def remove_prefixes_from_name_column(gff_df, prefixes):
+    gff_df['Name'] = gff_df['Name'].replace(prefixes, "", regex=True)
+    return gff_df
 
 # Takes a GFF dataframe and adds a column for each attribute specified
 # in the attributes column (column 9). Does not remove the original
@@ -273,6 +271,10 @@ def add_prefix_to_name(gff_df, prefix):
     gff_df["Name"] = prefix + gff_df["Name"]
     return gff_df
 
+def make_coding_transcripts_mRNA(gff_df):
+    gff_df.loc[gff_df['type'].isin(coding_transcript_types), ['type']] = 'mRNA'
+    return(gff_df)
+
 
 # Replaces names in source column with provided argument.
 def rename_sources(gff_df, new_source):
@@ -308,8 +310,11 @@ def get_all_cds_features(gff_df):
     return cds_df
 
 # Returns a dataframe containing only exon and CDS features.
-def get_all_exon_and_cds_features(gff_df):
-    exon_cds_df = gff_df[(gff_df["type"] == "CDS") | (gff_df["type"] == "exon")]
+def get_all_exon_and_cds_features(gff_df, transcripts=None):
+    if transcripts is None:
+        exon_cds_df = gff_df[(gff_df["type"] == "CDS") | (gff_df["type"] == "exon")]
+    else:
+        exon_cds_df = gff_df[((gff_df["type"] == "CDS") | (gff_df["type"] == "exon")) & (gff_df["Parent"].isin(transcripts))]
     return exon_cds_df
 
 # This function takes a dataframe grouped by the "Parent" column and
@@ -317,14 +322,39 @@ def get_all_exon_and_cds_features(gff_df):
 # This function is being used by the transcripts_have_exons_and_valid_cds datacheck.
 def _count_cds_exons_per_transcript(gff_df):
     exons_cds_stats = {
-        'no_of_exons': gff_df[gff_df['type']=='exon']['ID'].count(),
-        'no_of_cds': gff_df[gff_df['type']=='CDS']['ID'].count(),
+        'no_of_exons': gff_df[gff_df['type']=='exon']['Parent'].count(),
+        'no_of_cds': gff_df[gff_df['type']=='CDS']['Parent'].count(),
         'exons_max_coord': max([gff_df[gff_df['type']=='exon']["start"].max(),gff_df[gff_df['type']=='exon']["end"].max()]),
         'exons_min_coord': min([gff_df[gff_df['type']=='exon']["start"].min(),gff_df[gff_df['type']=='exon']["end"].min()]),
         'cds_max_coord': max([gff_df[gff_df['type']=='CDS']["start"].max(),gff_df[gff_df['type']=='CDS']["end"].max()]),
         'cds_min_coord': min([gff_df[gff_df['type']=='CDS']["start"].min(),gff_df[gff_df['type']=='CDS']["end"].min()]),
     }
     return pd.Series(exons_cds_stats)
+
+def get_parent_gene_for_all(gff_df):
+    gff_df.set_index("ID", drop = False, inplace = True)
+
+    gene_df = get_all_gene_features(gff_df)
+    transcript_df = get_all_transcript_features(gff_df)
+    exon_df = get_all_exon_features(gff_df)
+    cds_df = get_all_cds_features(gff_df)
+
+    # Create a "Parent Gene" column for each feature to allow sorting.
+    gene_df = _get_parent_gene_for_genes(gene_df)
+
+    transcript_df  = _get_parent_gene_for_transcripts(transcript_df)
+
+    exon_df = _get_parent_gene_for_exons_or_cds(exon_df, transcript_df)
+    # exon_df.to_csv("exond_df.tsv", sep = '\t')
+
+    cds_df = _get_parent_gene_for_exons_or_cds(cds_df, transcript_df)
+    # cds_df.to_csv("cds_df.tsv", sep = '\t')
+
+    # Stick all features together and sort them by parent gene.
+    reordered_gff = pd.concat([gene_df, transcript_df, exon_df, cds_df])
+
+    return(reordered_gff)
+
 
 # Creates Parent Gene column for all gene features. This contains the ID
 # the gene's own gene ID (quick copy). Used for sorting the final .gff.
@@ -349,13 +379,29 @@ def _get_parent_gene_for_transcripts(transcript_df):
 # Used for sorting the final .gff.
 def _get_parent_gene_for_exons_or_cds(exon_or_cds_df, transcript_df):
     # TODO: May need dramatic speeding up due to reliance on iterrows.
-    for index, exon in exon_or_cds_df.iterrows():
-        # TODO: Still raises a chained assignment warning:
-        parent_transcript_id = exon["Parent"]
-        parent_gene_id = transcript_df.at[parent_transcript_id, "Parent_Gene"]
-        exon_or_cds_df.at[index, "Parent_Gene"] = parent_gene_id
-    return exon_or_cds_df
+    exon_or_cds_df.reset_index(drop = True, inplace = True)
+    transcript_df.reset_index(drop = True, inplace = True)
+    exon_or_cds_tr_merged = exon_or_cds_df.merge(transcript_df[["ID","Parent"]], left_on="Parent", right_on="ID", suffixes=(None, "_transcript"))
+    exon_or_cds_tr_merged.rename(columns={'Parent_transcript': 'Parent_Gene'}, inplace=True)
+    exon_or_cds_tr_merged.drop(columns=['ID_transcript'])
+    return exon_or_cds_tr_merged
 
+# Gets a condition (or a semicolon-separated list of them) in the format of <attribute_field>=<something> like
+# gene_status=other and outputs the input gff without the features having the condition specified in their attributes
+# as well as their children features. It also outputs a separate gff with these filtered features.
+def extract_genes_and_features_with_gene_attribute_value(gff_df, attribute_condition_input):
+
+    attribute_conditions = attribute_condition_input.split(';')
+    attribute_conditions_dict = {attribute_field.split('=')[0].strip():attribute_field.split('=')[1].strip() for attribute_field in attribute_conditions}
+
+    query = ' & '.join(['{}=="{}"'.format(k, v) for k, v in attribute_conditions_dict.items()]) + ' & type=="gene"'
+
+    extracted_genes = list(set(gff_df.query(query)['ID']))
+    mask_var = (gff_df['ID'].isin(extracted_genes)) | (gff_df['Parent_Gene'].isin(extracted_genes))
+    extracted_gff_df = gff_df[mask_var]
+    original_gff_df = gff_df[~mask_var]
+
+    return original_gff_df, extracted_gff_df
 
 # Returns numpy array containing all unique type values in .gff
 def _get_all_unique_types(gff_df):
@@ -418,26 +464,11 @@ def _drop_useless_columns(gff_df):
 # exon and CDS features. Orders the dataframe so that features exist in a
 # hierarchy: gene, gene's transcripts, transcript's exons/CDSs
 def reorder_gff_features(gff_df):
-    gff_df.set_index("ID", drop = False, inplace = True)
+    gff_df.set_index("ID", drop=False, inplace=True)
 
-    gene_df = get_all_gene_features(gff_df)
-    transcript_df = get_all_transcript_features(gff_df)
-    exon_df = get_all_exon_features(gff_df)
-    cds_df = get_all_cds_features(gff_df)
+    reordered_gff = get_parent_gene_for_all(gff_df)
 
-    # Create a "Parent Gene" column for each feature to allow sorting.
-    gene_df = _get_parent_gene_for_genes(gene_df)
-    transcript_df  = _get_parent_gene_for_transcripts(transcript_df)
-
-    exon_df = _get_parent_gene_for_exons_or_cds(exon_df, transcript_df)
-    exon_df.to_csv("exond_df.tsv", sep = '\t')
-    cds_df = _get_parent_gene_for_exons_or_cds(cds_df, transcript_df)
-    cds_df.to_csv("cds_df.tsv", sep = '\t')
-
-    # Stick all features together and sort them by parent gene.
-    reordered_gff = pd.concat([gene_df, transcript_df, exon_df, cds_df])
-
-    reordered_gff["type"] = pd.Categorical(reordered_gff["type"], list(set((["gene"] + transcript_types + ["exon", "CDS"]))))
+    reordered_gff["type"] = pd.Categorical(reordered_gff["type"], list((["gene"] + transcript_types + ["exon", "CDS"])))
 
     # TODO: Sort is purely alphabetic (e.g. g10 comes after g1, should be g2)
     reordered_gff = reordered_gff.sort_values(by=["Parent_Gene", "type"])
@@ -458,9 +489,25 @@ class FASTA:
 
 # Class tha performs datachecks on a gff dataframe
 class DATACHECK:
-    def __init__(self, gff_df, fasta):
+    def __init__(self, gff_df, fasta, args, outprefix=""):
         self.gff_df = gff_df
         self.fasta = fasta
+        self.args = args
+        self.outprefix = outprefix
+
+    def perform_datachecks(self):
+        if self.args.dc_fasta_gff_scaffold or self.args.dc_cds_but_no_exons or self.args.dc_cds_within_exons:
+            print_info("Performing DCs: " + ("for " + self.outprefix if self.outprefix!="" else ""))
+        if self.args.dc_fasta_gff_scaffold:
+            self.gff_and_fasta_scaffold_names_match()
+        if self.args.dc_cds_but_no_exons or self.args.dc_cds_within_exons:
+            self.transcripts_have_exons_and_valid_cds(dc_cds_but_no_exons=self.args.dc_cds_but_no_exons,
+                                                           dc_cds_but_no_exons_fix=self.args.dc_cds_but_no_exons_fix,
+                                                           dc_cds_within_exons=self.args.dc_cds_within_exons,
+                                                           dc_cds_within_exons_fix=self.args.dc_cds_within_exons_fix,
+                                                           dc_coding_transcripts_with_cds=self.args.dc_coding_transcripts_with_cds,
+                                                           dc_coding_transcripts_with_cds_fix=self.args.dc_coding_transcripts_with_cds_fix,
+                                                           prefix=self.outprefix)
 
     def gff_and_fasta_scaffold_names_match(self):
         """Checks if the GFF's and FASTA file's scaffold names match"""
@@ -471,16 +518,17 @@ class DATACHECK:
         fasta_to_gff_discrepancies = [x for x in fasta_scaffolds if x not in gff_scaffolds]
 
         if len(gff_to_fasta_discrepancies) > 0:
-            with open('in_GFF_not_in_FASTA_scaffolds.txt', mode='wt') as myfile:
+            with open(self.outprefix+'in_GFF_not_in_FASTA_scaffolds.txt', mode='wt') as myfile:
                 myfile.write('\n'.join(gff_to_fasta_discrepancies))
             exit_with_error("These scaffolds exist in your final gff but not in the final fasta file:\n" + "\n".join(gff_to_fasta_discrepancies))
 
         if len(fasta_to_gff_discrepancies) > 0:
             print_warning("These scaffolds were found in the FASTA file but not in your final GFF file. Is this ok?\n" + "\n".join(fasta_to_gff_discrepancies))
-            with open('in_FASTA_not_in_GFF_scaffolds.txt', mode='wt') as myfile:
+            with open(self.outprefix+'in_FASTA_not_in_GFF_scaffolds.txt', mode='wt') as myfile:
                 myfile.write('\n'.join(fasta_to_gff_discrepancies))
 
-    def transcripts_have_exons_and_valid_cds(self, dc_cds_but_no_exons, dc_cds_but_no_exons_fix, dc_cds_within_exons, dc_cds_within_exons_fix):
+    def transcripts_have_exons_and_valid_cds(self, dc_cds_but_no_exons, dc_cds_but_no_exons_fix, dc_cds_within_exons, dc_cds_within_exons_fix,
+                                             dc_coding_transcripts_with_cds, dc_coding_transcripts_with_cds_fix, prefix):
         """Performs 2 datachecks: 1) Ensures that all transcripts with CDSs have exons,
          2) Ensures that all CDSs are within their exons boundaries. In both cases the script
          outputs a list of the offending transcripts and also write these to files. If the fix
@@ -488,7 +536,8 @@ class DATACHECK:
          set to 'nontranslating_transcript'."""
 
         # Get a DF with all exons and CDS, group it by transcript and calculate useful metrics
-        exons_cds_df = get_all_exon_and_cds_features(self.gff_df)
+        coding_transcripts = list(self.gff_df[self.gff_df["type"].isin(coding_transcript_types)]["ID"].unique())
+        exons_cds_df = get_all_exon_and_cds_features(self.gff_df, transcripts=coding_transcripts)
         counts_per_transcript_df = exons_cds_df.groupby('Parent').apply(_count_cds_exons_per_transcript)
 
         # Datacheck 1
@@ -498,7 +547,7 @@ class DATACHECK:
                 print_warning("The following transcripts have CDS but they don't have exons. These transcripts "
                               "will be written in cds_not_exons_transcripts.txt")
                 print("\n".join(dc1_offending_transcripts))
-                with open('cds_not_exons_transcripts.txt', mode='wt') as myfile:
+                with open(prefix+'cds_not_exons_transcripts.txt', mode='wt') as myfile:
                     myfile.write('\n'.join(dc1_offending_transcripts))
                 if dc_cds_but_no_exons_fix:
                     print_info("Changing the type of the offending transcripts to 'nontranslating_transcript'")
@@ -515,7 +564,7 @@ class DATACHECK:
                 print_warning("The following transcripts have CDS which are not within exon boundaries. These transcripts "
                               "will be written in cds_not_within_exons_transcripts.txt")
                 print("\n".join(dc2_offending_transcripts))
-                with open('cds_not_within_exons_transcripts.txt', mode='wt') as myfile:
+                with open(prefix+'cds_not_within_exons_transcripts.txt', mode='wt') as myfile:
                     myfile.write('\n'.join(dc2_offending_transcripts))
                 if dc_cds_within_exons_fix:
                     print_info("Changing the type of the offending transcripts to 'nontranslating_transcript'")
@@ -524,16 +573,31 @@ class DATACHECK:
                     self.gff_df.drop(self.gff_df.loc[(self.gff_df['type'] == 'CDS') &
                                                      (self.gff_df['Parent'].isin(dc2_offending_transcripts))].index, inplace=True)
 
+        # Datacheck 3
+        if dc_coding_transcripts_with_cds:
+            dc3_offending_transcripts=counts_per_transcript_df[counts_per_transcript_df['no_of_cds']==0].index.values.tolist()
+            if dc3_offending_transcripts:
+                print_warning("The following coding transcripts do not have CDS features. These transcripts "
+                              "will be written in without_CDS_transcripts.txt")
+                print("\n".join(dc3_offending_transcripts))
+                with open(prefix+'without_CDS_transcripts.txt', mode='wt') as myfile:
+                    myfile.write('\n'.join(dc3_offending_transcripts))
+                if dc_coding_transcripts_with_cds_fix:
+                    print_info("Changing the type of the offending transcripts to 'nontranslating_transcript'")
+                    self.gff_df.loc[(self.gff_df['type'].isin(coding_transcript_types)) &
+                                    (self.gff_df['ID'].isin(dc3_offending_transcripts)), 'type'] = "nontranslating_transcript"
+
 # Updates attributes field and drops unecessary columns, then writes
 # processed .gff to a specified output file.
 def write_output_gff(gff_df, output_file):
     gff_df = finalise_attributes_column(gff_df)
+    gff_df = make_coding_transcripts_mRNA(gff_df)
     gff_df = _drop_useless_columns(gff_df)
     gff_df = reorder_gff_features(gff_df)
     gff_df = _drop_superfluous_columns(gff_df)
 
     with open(output_file, 'w') as output_gff:
-        output_gff.write("##gff-version 3\n")
+         output_gff.write("##gff-version 3\n")
 
     gff_df.to_csv(output_file, mode = 'a', header = False, sep = '\t', index = False)
 
