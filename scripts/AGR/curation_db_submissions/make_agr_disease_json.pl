@@ -17,7 +17,7 @@ use XML::LibXML;
 
 const my $CHEBI_PURL => 'http://purl.obolibrary.org/obo/chebi.owl';
 
-my ($debug, $test, $verbose, $store, $wormbase, $acedbpath, $ws_version, $outfile);
+my ($debug, $test, $verbose, $store, $wormbase, $acedbpath, $ws_version, $outfile, $schema);
 
 GetOptions (
     'debug=s'      => \$debug,
@@ -26,7 +26,8 @@ GetOptions (
     'store:s'      => \$store,
     'database:s'   => \$acedbpath,
     'outfile:s'    => \$outfile,
-    'wsversion=s'  => \$ws_version
+    'wsversion=s'  => \$ws_version,
+    'schema=s'     => \$schema
 )||die("unknown command line option: $@\n");
 
 if ( $store ) {
@@ -203,7 +204,7 @@ while( my $obj = $it->next) {
 	my (@inferred_genes) = map { 'WB:'.$_->name } $obj->Inferred_gene;
 	warn "Multiple inferred genes for $obj\n" if @inferred_genes > 1;
 	if (@inferred_genes) {
-	    $annot->{asserted_gene} = $inferred_genes[0] unless @inferred_genes > 1; # Model doesn't currently deal with multiple asserted genes so submit annotation without asserted genes for now
+	    $annot->{asserted_genes} = \@inferred_genes;
 	}
 	my ($obj_id, $obj_name, $obj_type);
 	
@@ -265,7 +266,7 @@ while( my $obj = $it->next) {
 
 $db->close;
 
-my $all_annots = {};
+my $all_annots = {linkml_version => $schema};
 $all_annots->{disease_allele_ingest_set} = \@allele_annots;
 $all_annots->{disease_gene_ingest_set} = \@gene_annots;
 $all_annots->{disease_agm_ingest_set} = \@agm_annots;
@@ -327,13 +328,11 @@ sub get_condition_relations {
     if ($obj->Experimental_condition){
         $condition_relation_type = 'induced_by';
         my @inducing_chemicals = map {{
-            condition_statement => 'chemical treatment:' . get_chemical_name($_, $chebi_name_map),
             condition_chemical => get_chemical_ontology_id($_),
             condition_class => $zeco{'chemical treatment'},
 	    internal => JSON::false
             }} $obj->Inducing_chemical;
         my @inducing_agents     = map {{
-            condition_statement => 'experimental conditions:' . $_->name,
             condition_class => $zeco{'experimental conditions'},
 	    condition_free_text => $_->name,
 	    internal => JSON::false
@@ -352,13 +351,11 @@ sub get_condition_relations {
 	    }
 	}
         my @modifying_molecules = map {{
-            condition_statement => 'chemical treatment:' . get_chemical_name($_, $chebi_name_map),
             condition_chemical => get_chemical_ontology_id($_),
             condition_class => $zeco{'chemical treatment'},
 	    internal => JSON::false
             }} $obj->Modifier_molecule;
         my @other_modifiers = map {{
-	    condition_statement => 'experimental conditions:' . $_->name,
 	    condition_class => $zeco{'experimental conditions'},
 	    condition_free_text => $_->name,
 	    internal => JSON::false

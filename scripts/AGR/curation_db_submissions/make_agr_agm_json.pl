@@ -6,7 +6,7 @@ use Ace;
 use Wormbase;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($outfile, $acedbpath, $ws_version, $out_fh);
+my ($outfile, $acedbpath, $ws_version, $out_fh, $schema);
 
 GetOptions ("help"        => \$help,
             "debug=s"     => \$debug,
@@ -16,6 +16,7 @@ GetOptions ("help"        => \$help,
 	    "database:s"  => \$acedbpath,
 	    "outfile:s"   => \$outfile,
             "wsversion=s" => \$ws_version,
+	    "schema=s"    => \$schema
 	    );
 
 if ( $store ) {
@@ -71,8 +72,9 @@ while (my $obj = $it2->next) {
     };
     push @agms, $genotype;
 }
- my $data = {
-     agm_ingest_set => \@agms,
+my $data = {
+    linkml_version => $schema,
+    agm_ingest_set => \@agms,
 };
 
 my $json_obj = JSON->new;
