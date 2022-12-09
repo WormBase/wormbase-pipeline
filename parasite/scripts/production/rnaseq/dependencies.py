@@ -8,6 +8,7 @@ rnaseq_dir = os.getenv("PARASITE_SCRATCH")+"/rnaseq"
 ena_api_url = "https://www.ebi.ac.uk/ena/portal/api/search?result=study&query=secondary_study_accession={0}&fields=study_accession&format=json"
 ena_rnaseq_by_taxon_url = "https://www.ebi.ac.uk/ena/portal/api/search?result=read_run&query=tax_eq({0})%20AND%20(library_strategy%3D%22RNA-Seq%22%20OR%20library_strategy%3D%22OTHER%22)&fields=study_accession%2Caccession%2Cfastq_ftp%2Csecondary_study_accession%2Csecondary_sample_accession&format=json"
 ena_rnaseq_by_taxon_url_onlyrnaseq = "https://www.ebi.ac.uk/ena/portal/api/search?result=read_run&query=tax_eq({0})%20AND%20(library_strategy%3D%22RNA-Seq%22)&fields=study_accession%2Caccession%2Cfastq_ftp%2Csecondary_study_accession%2Csecondary_sample_accession&format=json"
+ena_isoseq_by_taxon_url = "https://www.ebi.ac.uk/ena/portal/api/search?result=read_study&query=tax_eq({0})%20AND%20(instrument_platform%3D%22OXFORD_NANOPORE%22%20OR%20instrument_platform%3D%22PACBIO_SMRT%22)%20AND%20(%20library_strategy%3D%22RNA-Seq%22%20)&format=json"
 ena_secondary_study_id_count_url = "https://www.ebi.ac.uk/ena/portal/api/count?dataPortal=ena&query=secondary_study_accession%3D{0}&result=study"
 ena_run_accession_count_url = "https://www.ebi.ac.uk/ena/portal/api/count?dataPortal=ena&query=run_accession%3D{0}&result=read_run"
 permanent_apollo_dir="/nfs/production/flicek/wormbase/parasite/apollo"
@@ -66,3 +67,4 @@ fastp = sw_fastp_path
 star = "STAR"
 sw_path_path = "/hps/software/users/wormbase/parasite/shared/.pyenv/versions/p395/bin"
 bamCoverage = 'export PATH='+sw_path_path+':$PATH\nexport PYTHONPATH=""\n\nbamCoverage'
+
