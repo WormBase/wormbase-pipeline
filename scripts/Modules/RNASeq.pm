@@ -97,7 +97,7 @@ sub new {
   $self->{'check'} = shift;      # true if existing GTF file and cufflinks data should be left untouched (for checkpointing and restarting)
   $self->{'test'} = shift;       # use files from the TEST build folder if true
   $self->{'test_set'} = shift;    # true if limited set of experiments in Studies_test.ini should be used
-
+  
   # set up useful paths etc.
   $self->{'RNASeqBase'}      = $ENV{'RNASEQ'} . '/' . $self->{wormbase}->{species};
   $self->{'RNASeqSRADir'}    = $self->RNASeqBase . "/SRA"; # holds Experiment data and analysis results
@@ -2612,6 +2612,20 @@ sub check_all_done {
 	(-e $cufflinks_done_file || $notbuild)) {
       $status=1;
     }
+  }
+
+  my ($log_dir) = $self->{'log'} =~ /^(.+\/)[^\/]+$/; 
+  my $align_log_file = $log_dir . 'RNASeq_align.' . $experiment_accession . '.out';
+  if (-e $align_log_file) {
+      $status = 0;
+      open (ALIGNLOG, '<', $align_log_file);
+      while (<ALIGNLOG>) {
+	  if ($_ =~ /Successfully completed./) {
+	      $status = 1;
+	      last;
+	  }
+      }
+      close (ALIGNLOG);
   }
 
   return $status;
