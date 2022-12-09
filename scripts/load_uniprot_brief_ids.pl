@@ -40,6 +40,7 @@ my $log = Log_files->make_build_log($wb);
 $database = $wb->autoace if not defined $database;
 $pid_table_file = $wb->acefiles . "/EBI_protein_ids.txt" if not defined $pid_table_file;
 $outace = $wb->acefiles . "/EBI_Uniprot_brief_ids.ace" if not defined $outace;
+my $ec_map = get_enzyme_commission_nr_map();
 
 my $cur_data = &fetch_current_data();
 
@@ -55,6 +56,14 @@ while(<$table_fh>) {
   my( $cds, $uniprot_ac, $product_name) 
       = ($data[5],$data[6],$data[9]);  
 
+  # Deal with EC numbers in product name
+  if ($product_name =~ /^Transferred entry: ([^\.]+\.[^\.]+\.[^\.]+\.[^\.]+)$/) {
+      my $ec_nr = $1;
+      if (exists $ec_map->{$1}) {
+	  $product_name = $ec_map->{$1};
+      }
+  }
+  
   next if $cds eq '.';
   
   if (defined $product_name and $product_name ne '.' and defined $uniprot_ac and $uniprot_ac ne'.') {
@@ -205,4 +214,22 @@ sub fetch_current_data {
 }
 
 
+sub get_enzyme_commission_nr_map {
+    my %ec_map;
+
+    open (EC, "wget -q --output-document - https://ftp.expasy.org/databases/enzyme/enzyme.dat |");
+    my $id;
+    while (<EC>) {
+	if ($_ =~ /^ID\s+(.+)$/) {
+	    $id = $1;
+	} elsif ($_ =~ /^DE\s+(.+)$/) {
+	    $ec_map{$id} = $1;
+	}
+    }
+    close (EC);
+
+    return \%ec_map;
+}
+
+  
 1;
