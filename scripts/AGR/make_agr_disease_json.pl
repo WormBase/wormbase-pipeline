@@ -172,7 +172,7 @@ while( my $obj = $it->next) {
   my ($transgene) = $obj->Transgene;
   my ($gene) = $obj->Disease_relevant_gene;
   my ($genotype) = $obj->Genotype;
-  my (@inferred_genes) = map { 'WB:'.$_->name } $obj->Inferred_gene;
+  my (@inferred_genes) = map { 'WB:'.$_->name } $obj->Asserted_gene;
   my ($obj_id, $obj_name, $obj_type);
   my @with_list;
   my $assoc_type = 'is_implicated_in';

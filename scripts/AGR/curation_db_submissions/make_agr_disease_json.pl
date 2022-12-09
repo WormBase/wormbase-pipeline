@@ -201,9 +201,9 @@ while( my $obj = $it->next) {
 	my ($transgene) = $obj->Transgene;
 	my ($gene) = $obj->Disease_relevant_gene;
 	my ($genotype) = $obj->Genotype;
-	my (@inferred_genes) = map { 'WB:'.$_->name } $obj->Inferred_gene;
-	if (@inferred_genes) {
-	    $annot->{asserted_gene_curies} = \@inferred_genes;
+	my (@asserted_genes) = map { 'WB:'.$_->name } $obj->Asserted_gene;
+	if (@asserted_genes) {
+	    $annot->{asserted_gene_curies} = \@asserted_genes;
 	}
 	my ($obj_id, $obj_name, $obj_type);
 
