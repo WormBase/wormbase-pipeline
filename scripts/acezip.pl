@@ -33,7 +33,8 @@ my $wormbase;
 # use the time and the process ID to make a unique file extension
 my $time = time();
 my $pid = "$$";
-my $outfile = "/tmp/acezip.$pid.$time.new";
+my $tmpDir= $ENV {'WB_SCRATCH'};
+my $outfile = "/$tmpDir/acezip.$pid.$time.new";
 my $presort = "$file.$pid.$time.presort";
 my $sort = "$file.$pid.$time.sort";
 
@@ -68,7 +69,7 @@ $/= $oldlinesep;
 # sort the file - sometimes the sorted file doesn't appear - this is very odd - try a few times to make it
 my $tries = 5;
 while ($tries-- && ! -e "$sort") {
-  $wormbase->run_command("sort -S 4G $presort -o $sort", $log);
+  $wormbase->run_command("sort -T $tmpDir -S 4G $presort -o $sort", $log);
   system('sleep 5'); # wait a few seconds for NFS to realise that there really is a file there
 }
 

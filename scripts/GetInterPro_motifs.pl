@@ -104,7 +104,7 @@ sub get_interpro {
  
   #Get the latest version
   $log->write_to("Attempting to get latest version of Interpro XML file...\n");
-  $wormbase->run_command("wget -q -O $lfile ftp://ftp.ebi.ac.uk/pub/databases/interpro/interpro.xml.gz");
+  $wormbase->run_command("wget -q -O $lfile ftp://ftp.ebi.ac.uk/pub/databases/interpro/current_release/interpro.xml.gz");
 }
 
 #########################

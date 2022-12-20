@@ -5,6 +5,7 @@ use Storable;
 use Getopt::Long;
 use Ace;
 use JSON;
+use Path::Class;
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -49,36 +50,25 @@ if (!$outfile) {
     }
 }
 
-my (@alleles, @annots);
-my %objectsIds;
-
 my $db = Ace->connect(-path => $acedbpath, -program => $tace) or die("Connection failure: ". Ace->error);
 
-my $it = $db->fetch_many(-query => "Find Variation WHERE species = \"Caenorhabditis elegans\"");
-process($it);
+my $out_fh  = file($outfile)->openw;
+$out_fh->print("{\n   \"linkml_version\" : \"" . $schema . "\",\n   \"allele_ingest_set\" : [");
 
-my $tgit = $db->fetch_many(-query => 'find Transgene WHERE Species = "Caenorhabditis elegans"');
-process_transgenes($tgit);
+my $alleles = process_variations($db, $out_fh);
 
-
-my $data = {
-    linkml_version    => $schema,
-    allele_ingest_set => \@alleles,
-};
-
-open $out_fh, ">$outfile" or die "Could not open $outfile for writing\n";
-
-my $json_obj = JSON->new;
-my $string = $json_obj->allow_nonref->canonical->pretty->encode($data);
-print $out_fh $string;
+$alleles = process_transgenes($db, $out_fh);
+$out_fh->print("\n   ]\n}");
 
 $db->close;
 
-sub process {
-    my ($it) = @_;
+sub process_variations {
+    my ($db, $out_fh) = @_;
 
+    my @alleles = $db->fetch(-query => "Find Variation WHERE species = \"Caenorhabditis elegans\"");
+    
     my $var_count = 0;
-    while (my $obj = $it->next) {
+    for my $obj (@alleles) {
 	$var_count++;
 	next unless $obj->isObject();
 	unless ($obj->Species) {
@@ -87,15 +77,14 @@ sub process {
 	}
 	
 	my $json_obj = {
-	    curie    => "WB:" . $obj->name,
-	    name     => $obj->Public_name ? $obj->Public_name->name : $obj->name,
-	    taxon       => "NCBITaxon:" . $obj->Species->NCBITaxonomyID->name,
-	    internal      => JSON::false,
-	    obsolete   => $obj->Live ? JSON::false : JSON::true,
-	    created_by => 'WB:curator',
-	    updated_by => 'WB:curator'
+	    curie             => "WB:" . $obj->name,
+	    allele_symbol_dto => get_symbol_dto($obj),
+	    taxon_curie       => "NCBITaxon:" . $obj->Species->NCBITaxonomyID->name,
+	    internal          => JSON::false,
+	    obsolete          => $obj->Status && $obj->Status->name eq 'Live' ? JSON::false : JSON::true,
+	    created_by_curie  => 'WB:curator',
+	    updated_by_curie  => 'WB:curator'
 	};
-	$json_obj->{symbol} = $obj->Public_name->name if $obj->Public_name;
 	if ($obj->Method) {
 	    my $collection = $obj->Method->name;
 	    unless ($collection eq 'Allele'
@@ -111,44 +100,62 @@ sub process {
 		    || $collection eq 'Substitution_allele'
 		    || $collection eq 'Transposon_insertion'
 		){
-		$collection =~ s/_/ /g;
-		$collection .= ' project' if $collection eq 'Million mutation';
-		$json_obj->{in_collection} = $collection;
+		$collection =~ s/ /_/g;
+		$collection .= '_project' if $collection eq 'Million_mutation';
+		$json_obj->{in_collection_name} = $collection;
 	    }
 	}
-	$json_obj->{sequencing_status} = lc $obj->SeqStatus->name if $obj->SeqStatus;
+
+	my $mutation_types = get_mutation_types($obj);
+	$json_obj->{allele_mutation_type_dtos} = $mutation_types if scalar @$mutation_types > 0;
+
+	my @synonym_dtos;
 	if ($obj->Other_name) {
-	    my @synonyms_to_submit;
-	    my %synonyms = map {$_->name => 1} $obj->Other_name;
-	    for my $syn (keys %synonyms) {
-		push @synonyms_to_submit, {name => $syn} unless $syn =~ /^[^:]+:[pcg]\./; # remove HGVS identifiers (already generated in Alliance)
+	    for my $other_name ($obj->Other_name) {
+		next if $other_name->name =~ /^[^:]+:[pcg]\./;
+		my $synonym_dto = {
+		    display_text   => $other_name->name,
+		    format_text    => $other_name->name,
+		    name_type_name => 'unspecified'
+		};
+		my $synonym_evidence = get_evidence_curies($other_name);
+		$synonym_dto->{evidence_curies} = $synonym_evidence if @$synonym_evidence;
+		push @synonym_dtos, $synonym_dto;
 	    }
-		
-	    $json_obj->{synonyms} = \@synonyms_to_submit if @synonyms_to_submit > 0;
 	}
+	$json_obj->{allele_synonym_dtos} = \@synonym_dtos if @synonym_dtos;
+	
 	if ($obj->Reference) {
-	    $json_obj->{references} = get_papers($obj);
+	    $json_obj->{reference_curies} = get_papers($obj);
 	}
 
 	# Stick some random data in for curation DB test files
 	if ($curation_test) {
 	    my @inheritance_modes = qw(dominant recessive semi-dominant unknown);
-	    $json_obj->{inheritance_mode} = $inheritance_modes[rand @inheritance_modes];
 	    $json_obj->{is_extinct} = $var_count % 2 == 0 ? JSON::true : JSON::false;
 	    $json_obj->{date_updated} = get_random_datetime(10);
 	    $json_obj->{date_created} = get_random_datetime(1);
 	}
+
+	my $json = JSON->new;
+	my $string = $json->allow_nonref->canonical->pretty->encode($json_obj);
+	$out_fh->print(',') unless $var_count == 1;
+	$out_fh->print("\n" . '      ' . $string);
 	
-	push @alleles, $json_obj;
-	last if $limit && $limit == $var_count;
+	last if $limit && $limit <= $var_count * 2;
     }
+
+    return;
 }
 
 sub process_transgenes {
-    my ($it) = @_;
+    my ($db, $out_fh) = @_;
+
+
+    my @transgenes = $db->fetch(-query => 'find Transgene WHERE Species = "Caenorhabditis elegans"');
 
     my $var_count = 0;
-    while (my $obj = $it->next) {
+    for my $obj(@transgenes) {
 	$var_count++;
 	next unless $obj->isObject();
 	unless ($obj->Species) {
@@ -158,38 +165,47 @@ sub process_transgenes {
 	
 	my $json_obj = {
 	    curie         => "WB:" . $obj->name, 
-	    name          => $obj->Public_name ? $obj->Public_name->name : $obj->name,
-	    taxon         => "NCBITaxon:" . $obj->Species->NCBITaxonomyID->name,
+	    allele_symbol_dto => get_symbol_dto($obj),
+	    taxon_curie   => "NCBITaxon:" . $obj->Species->NCBITaxonomyID->name,
 	    internal      => JSON::false,
 	    obsolete      => JSON::false
 	};	
-	$json_obj->{symbol} = $obj->Public_name->name if $obj->Public_name;
+
+	my @synonym_dtos;
 	if ($obj->Synonym) {
-	    my %synonyms = map {$_->name => 1}$obj->Synonym;
-	    if (scalar keys %synonyms > 0) {
-		my @synonyms_to_submit;
-		for my $syn (keys %synonyms) {
-		    push @synonyms_to_submit, {name => $syn};
-		}
-		$json_obj->{synonyms} = \@synonyms_to_submit;
+	    for my $synonym ($obj->Synonym) {
+		my $synonym_dto = {
+		    display_text   => $synonym->name,
+		    format_text    => $synonym->name,
+		    name_type_name => 'unspecified'
+		};
+		push @synonym_dtos, $synonym_dto;
 	    }
 	}
+	$json_obj->{allele_synonym_dtos} = \@synonym_dtos if @synonym_dtos;
+	
+
+
 	if ($obj->Reference) {
-	    $json_obj->{references} = get_papers($obj);
+	    $json_obj->{reference_curies} = get_papers($obj);
 	}
 
 	
 	# Stick some random data in for curation DB test files
 	if ($curation_test) {
-	    my @inheritance_modes = qw(dominant recessive semi-dominant unknown);
-	    $json_obj->{inheritance_mode} = $inheritance_modes[rand @inheritance_modes];
 	    $json_obj->{is_extinct} = $var_count % 2 == 0 ? JSON::true : JSON::false;
 	    $json_obj->{date_updated} = get_random_datetime(10);
 	    $json_obj->{date_created} = get_random_datetime(1);
 	}
 	
-	push @alleles, $json_obj;
+	my $json = JSON->new;
+	my $string = $json->allow_nonref->canonical->pretty->encode($json_obj);
+	$out_fh->print(",\n" . '      ' . $string);
+	
+	last if $limit && $limit <= $var_count * 2;
     }
+
+    return;
 }
 
 
@@ -225,3 +241,117 @@ sub get_random_datetime {
     
     return '20' . $year_string . '-' . $month_string . '-' . $day_string . 'T00:00:00+00:00';
 }
+
+sub get_mutation_types {
+    my $obj = shift;
+
+    my @mutation_types;
+    if ($obj->Substitution) {
+	my $substitution = {
+	   mutation_type_curies => ["SO:1000002"],
+	   internal => JSON::false
+	};
+	if ($obj->Substitution->right) {
+	    my @substitution_paper_evidence;
+	    for my $evi ($obj->Substitution->right->col) {
+		next unless $evi->name eq 'Paper_evidence';
+		for my $paper ($evi->col) {
+		    push @substitution_paper_evidence, 'WB:' . $paper->name;
+		}
+	    }
+	    $substitution->{evidence_curies} = \@substitution_paper_evidence if @substitution_paper_evidence > 0;
+	}
+	push @mutation_types, $substitution;
+    }
+
+    if ($obj->Insertion) {
+	my $insertion = {
+	    mutation_type_curies => ["SO:0000667"],
+	    internal => JSON::false
+	};
+	my @insertion_paper_evidence;
+	for my $evi ($obj->Insertion->col) {
+	    next unless $evi->name eq 'Paper_evidence';
+	    for my $paper ($evi->col) {
+		push @insertion_paper_evidence, 'WB:' . $paper->name;
+	    }
+	}
+	$insertion->{evidence_curies} = \@insertion_paper_evidence if @insertion_paper_evidence > 0;
+	push @mutation_types, $insertion;
+    }
+
+    if ($obj->Deletion) {
+	my $deletion = {
+	    mutation_type_curies => ["SO:0000159"],
+	    internal => JSON::false
+	};
+	my @deletion_paper_evidence;
+	for my $evi ($obj->Deletion->col) {
+	    next unless $evi->name eq 'Paper_evidence';
+	    for my $paper ($evi->col) {
+		push @deletion_paper_evidence, 'WB:' . $paper->name;
+	    }
+	}
+	$deletion->{evidence_curies} = \@deletion_paper_evidence if @deletion_paper_evidence > 0;
+	push @mutation_types, $deletion;
+    }
+
+    if ($obj->Tandem_duplication) {
+	my $duplication = {
+	    mutation_type_curies => ["SO:1000173"],
+	    internal => JSON::false
+	};
+	my @duplication_paper_evidence;
+	for my $evi ($obj->Tandem_duplication->col) {
+	    next unless $evi->name eq 'Paper_evidence';
+	    for my $paper ($evi->col) {
+		push @duplication_paper_evidence, 'WB:' . $paper->name;
+	    }
+	}
+	$duplication->{evidence_curies} = \@duplication_paper_evidence if @duplication_paper_evidence > 0;
+	push @mutation_types, $duplication
+    };
+
+    return \@mutation_types;
+}
+
+sub get_symbol_dto {
+    my $obj = shift;
+
+    my $symbol_dto;
+    if ($obj->Public_name) {
+	$symbol_dto = {
+	    display_text       => $obj->Public_name->name,
+	    format_text        => $obj->Public_name->name,
+	    name_type_name     => 'nomenclature_symbol',
+	    synonym_scope_name => 'exact',
+	};
+	my $symbol_evidence = get_evidence_curies($obj->Public_name);
+	$symbol_dto->{evidence_curies} = $symbol_evidence if @$symbol_evidence;
+    } else {
+	$symbol_dto = {
+	    display_text       => $obj->name,
+	    format_text        => $obj->name,
+	    name_type_name     => 'systematic_name',
+	    synonym_scope_name => 'exact'
+	};
+    }
+
+    return $symbol_dto;
+}
+
+sub get_evidence_curies {
+    my $name_obj = shift;
+
+    my @paper_evidence;
+    for my $evi ($name_obj->col) {
+	next unless $evi->name eq 'Paper_evidence';
+	for my $paper ($evi->col) {
+	    push @paper_evidence, 'WB:' . $paper->name;
+	}
+    }
+
+    return \@paper_evidence;
+}
+
+    

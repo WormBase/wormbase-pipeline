@@ -44,45 +44,17 @@ my $it = $db->fetch_many(-query => $query);
 
 while (my $obj = $it->next) {
     next unless $obj->isObject();
-
+    next unless $obj->name =~ /^WBGene/;
     unless ($obj->Species) {
 	print "No species for $obj - skipping\n";
 	next;
     }
 
-    # Symbol and synonym
-    my ($symbol, %synonyms);
-    if ($obj->Sequence_name) {
-	my $seq_name = $obj->Sequence_name->name;
-	if ($obj->CGC_name) {
-	    $symbol = $obj->CGC_name->name;
-	    $synonyms{$seq_name} = 1;
-	} else {
-	    $symbol = $seq_name;
-	}
-    } elsif ($obj->CGC_name) {
-	$symbol = $obj->CGC_name->name;
-    } else {
-	print "No symbol for $obj - skipping\n";
+    my ($symbol, $full_name, $systematic_name, $synonyms) = get_name_slot_annotations($obj);
+   
+    if (!defined $symbol && $obj->Status && $obj->Status->name eq 'Live') {
+	print "Live gene with no symbol $obj - skipping\n";
 	next;
-    }
-    map { $synonyms{$_->name} = 1 } $obj->Other_name;
-    my @synonym_strings = keys %synonyms;
-
-    # Name (from gene class)
-    my ($gene_class_name, $brief_id_name);
-    if ($obj->Gene_class and $obj->Gene_class->Description) {
-	$gene_class_name = $obj->Gene_class->Description->name;
-    }
-    if ($obj->Corresponding_CDS and $obj->Corresponding_CDS->Brief_identification) {
-	$brief_id_name = $obj->Corresponding_CDS->Brief_identification->name;
-    }
-    my $name;
-    if ($gene_class_name) {
-	my ($suff) = $symbol =~ /-(\S+)/; 
-	$name = "$gene_class_name $suff";
-    } elsif ($brief_id_name) {
-	$name = $brief_id_name;
     }
 
     # Secondary ids
@@ -95,16 +67,17 @@ while (my $obj = $it->next) {
     
     my $gene = {
 	curie    => 'WB:' . $obj->name,
-	symbol   => $symbol,
-	taxon    => 'NCBITaxon:' . $obj->Species->NCBITaxonomyID,
-	obsolete => $obj->Live ? JSON::false : JSON::true,
-	internal => JSON::true
-	
+	gene_symbol_dto   => $symbol,
+	taxon_curie    => 'NCBITaxon:' . $obj->Species->NCBITaxonomyID,
+	obsolete => $obj->Status && $obj->Status->name eq 'Live' ? JSON::false : JSON::true,
+	internal => JSON::false
     };
 
-    $gene->{name} = $name if $name;
-    $gene->{synonyms} = \@synonym_strings if @synonym_strings;
-    $gene->{secondary_identifiers} = \@secondary_ids if @secondary_ids;
+
+    $gene->{gene_full_name_dto} = $full_name if $full_name;
+    $gene->{gene_systematic_name_dto} = $systematic_name if $systematic_name;
+    $gene->{gene_synonym_dtos} = $synonyms if @$synonyms;
+#    $gene->{secondary_identifiers} = \@secondary_ids if @secondary_ids;
     
     push @genes, $gene;
 }
@@ -123,3 +96,115 @@ print $out_fh $string;
 $db->close;
 
 exit(0);
+
+sub get_name_slot_annotations {
+    my $obj = shift;
+
+    my ($symbol_obj, $systematic_name_obj);
+    my $symbol_type = "nomenclature_symbol";
+    my @synonym_objs = $obj->Other_name;
+    if ($obj->CGC_name) {
+	$symbol_obj = $obj->CGC_name;
+    }
+    if ($obj->Sequence_name) {
+	unless (defined $symbol_obj) {
+	    $symbol_obj = $obj->Sequence_name;
+	    $symbol_type = "systematic_name";
+	}
+	$systematic_name_obj = $obj->Sequence_name;
+    }
+    if ($obj->Public_name) {
+	if (defined $symbol_obj) {
+	    push @synonym_objs, $obj->Public_name unless $symbol_obj->name eq $obj->Public_name->name;
+	} else {
+	    $symbol_obj = $obj->Public_name;
+	}
+    }
+
+    my $symbol;
+    if ($symbol_obj) {
+	my $symbol_evidence = get_evidence_curies($symbol_obj);
+	$symbol = {
+	    display_text => $symbol_obj->name,
+	    format_text  => $symbol_obj->name,
+	    name_type_name => $symbol_type,
+	    synonym_scope_name => "exact",
+	};
+	$symbol->{evidence_curies} = $symbol_evidence if @$symbol_evidence;
+    } else {
+	$symbol = {
+	    display_text   => $obj->name,
+	    format_text    => $obj->name,
+	    name_type_name => 'systematic_name'
+
+	};
+    }
+
+    my $systematic_name;
+    if ($systematic_name_obj) {
+	my $systematic_name_evidence = get_evidence_curies($systematic_name_obj);
+	$systematic_name = {
+	    display_text => $systematic_name_obj->name,
+	    format_text => $systematic_name_obj->name,
+	    name_type_name => "systematic_name",
+	    synonym_scope_name => "exact"
+	};
+	$systematic_name->{evidence_curies} = $systematic_name_evidence if @$systematic_name_evidence;
+    }
+
+    my @synonyms;
+    if (@synonym_objs) {
+	for my $synonym_obj (@synonym_objs) {
+	    my $symbol_evidence = get_evidence_curies($synonym_obj);
+	    my $synonym = {
+		format_text => $synonym_obj->name,
+		display_text => $synonym_obj->name,
+		name_type_name => "unspecified"
+	    };
+	    $synonym->{evidence_curies} = $symbol_evidence if @$symbol_evidence;
+	    push @synonyms, $synonym;
+	}
+    }
+
+    my ($full_name, $full_name_evidence);
+        
+    if ($obj->Gene_class and $obj->Gene_class->Description) {
+	my $suffix = '';
+	if ($symbol_obj) {
+	    if ($symbol_obj->name =~ /-(\S+)$/) {
+		$suffix = ' ' . $1;
+	    }
+	}
+	$full_name_evidence = get_evidence_curies($obj->Gene_class->Description);
+	$full_name = {
+	    display_text => $obj->Gene_class->Description->name . $suffix,
+	    format_text => $obj->Gene_class->Description->name . $suffix,
+	    name_type_name => "full_name",
+	};
+	$full_name->{evidence_curies} = $full_name_evidence if @$full_name_evidence;
+    } elsif ($obj->Corresponding_CDS && $obj->Corresponding_CDS->Brief_identification) {
+	$full_name_evidence = get_evidence_curies($obj->Corresponding_CDS->Brief_identification);
+	$full_name = {
+	    display_text => $obj->Corresponding_CDS->Brief_identification->name,
+	    format_text => $obj->Corresponding_CDS->Brief_identification->name,
+	    name_type_name => "full_name",
+	};
+	$full_name->{evidence_curies} = $full_name_evidence if @$full_name_evidence;
+    }
+	
+    return ($symbol, $full_name, $systematic_name, \@synonyms);
+}
+
+sub get_evidence_curies {
+    my $name_obj = shift;
+
+    my @paper_evidence;
+    for my $evi ($name_obj->col) {
+	next unless $evi->name eq 'Paper_evidence';
+	for my $paper ($evi->col) {
+	    push @paper_evidence, 'WB:' . $paper->name;
+	}
+    }
+
+    return \@paper_evidence;
+}
