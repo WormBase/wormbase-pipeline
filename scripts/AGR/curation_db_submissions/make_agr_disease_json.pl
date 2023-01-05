@@ -233,7 +233,7 @@ while( my $obj = $it->next) {
 	    $obj_type = 'gene';
 	    $obj_name = $gene->Public_name->name;
 	    $obj_id = 'WB:' . $gene->name;
-	    @inferred_genes = ();
+	    @asserted_genes = ();
 	} elsif (defined $genotype){
 	    $subject_field = 'agm_curie';
 	    $obj_type = 'genotype';
