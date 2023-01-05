@@ -15,6 +15,7 @@ use Path::Class;
 use Const::Fast;
 use XML::LibXML;
 
+const my $LINKML_SCHEMA = 'v1.5.0';
 const my $CHEBI_PURL => 'http://purl.obolibrary.org/obo/chebi.owl';
 
 my ($debug, $test, $verbose, $store, $wormbase, $acedbpath, $ws_version, $outfile, $schema);
@@ -26,8 +27,7 @@ GetOptions (
     'store:s'      => \$store,
     'database:s'   => \$acedbpath,
     'outfile:s'    => \$outfile,
-    'wsversion=s'  => \$ws_version,
-    'schema=s'     => \$schema
+    'wsversion=s'  => \$ws_version
 )||die("unknown command line option: $@\n");
 
 if ( $store ) {
@@ -271,7 +271,7 @@ while( my $obj = $it->next) {
 
 $db->close;
 
-my $all_annots = {linkml_version => $schema};
+my $all_annots = {linkml_version => $LINKML_SCHEMA};
 $all_annots->{disease_allele_ingest_set} = \@allele_annots;
 $all_annots->{disease_gene_ingest_set} = \@gene_annots;
 $all_annots->{disease_agm_ingest_set} = \@agm_annots;
