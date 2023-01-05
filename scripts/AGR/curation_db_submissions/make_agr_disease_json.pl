@@ -179,24 +179,7 @@ while( my $obj = $it->next) {
 	    $annot->{disease_genetic_modifier_relation_name} = $modifier_type; # ameliorated_by / not_ameliorated_by / exacerbated_by / not_exacerbated_by
 	}
 
-	
-	
 	#  $annot->{disease_qualifiers} = ; # susceptibility / disease_progression / severity / onset / sexual_dimorphism / resistance / penetrance
-	
-	
-	# [200310 mh6]
-	# based on a list of annotations to skip for AGR from 
-	# https://wiki.wormbase.org/index.php/Specifications_for_data_submission_to_the_Alliance
-	# * had Qualifier_not as not to be submitted, but that changed with 3.1.0
-	# Inducing_chemical, Modifier_molecule, and Other_molecule were also not submitted prior to 4.0
-	
-	if ($obj->Modifier_transgene
-	    ||$obj->Modifier_variation
-	    ||$obj->Modifier_gene
-	    ) {
-	    warn "Skipping $obj due to modifier transgene/variation/gene\n";
-	    next;
-	}
 	
 	my ($strain) = $obj->Strain;
 	my ($allele) = $obj->Variation;
