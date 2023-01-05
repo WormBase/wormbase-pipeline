@@ -190,11 +190,13 @@ while( my $obj = $it->next) {
 	# * had Qualifier_not as not to be submitted, but that changed with 3.1.0
 	# Inducing_chemical, Modifier_molecule, and Other_molecule were also not submitted prior to 4.0
 	
-	next if ($obj->Interacting_variation
-		 ||$obj->Interacting_transgene
-		 ||$obj->Interacting_gene
-		 ||$obj->RNAi_experiment
-	    );
+	if ($obj->Modifier_transgene
+	    ||$obj->Modifier_variation
+	    ||$obj->Modifier_gene
+	    ) {
+	    warn "Skipping $obj due to modifier transgene/variation/gene\n";
+	    next;
+	}
 	
 	my ($strain) = $obj->Strain;
 	my ($allele) = $obj->Variation;
