@@ -1596,6 +1596,7 @@ ASSEMBLIES.WSREL.json
 anatomy_association.WSREL.wb
 anatomy_ontology.WSREL.obo
 gene_association.WSREL.wb
+gene_association_nonnoctua.WSREL.wb
 gene_ontology.WSREL.obo
 phenotype_association.WSREL.wb
 phenotype_ontology.WSREL.obo

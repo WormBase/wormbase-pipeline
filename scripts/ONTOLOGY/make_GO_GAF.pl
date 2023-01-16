@@ -405,13 +405,18 @@ $log->write_to("Writing annotations...\n") if $debug;
 # separate file for each species, and collated file with all species
 #
 my $collated_file = "$outputdir/gene_association." . $wormbase->get_wormbase_version_name. ".wb" ;
+my $non_noctua_file = "$outputdir/gene_association_nonnoctua." . $wormbase->get_wormbase_version_name. ".wb" ;
 open (my $colfh, ">$collated_file") or $log->log_and_die("Could not open $collated_file for writing\n");
+open (my $nnfh, ">$non_noctua_file") or $log->log_and_die("Could not open $non_noctua_file for writing\n");
 &print_wormbase_GAF_header($colfh, $wormbase->get_wormbase_version_name, 'GO', '2.2');
+&print_wormbase_GAF_header($nnfh, $wormbase->get_wormbase_version_name, 'GO', '2.2');
 for my $gaf (@nr_gaf_lines) {
     my $line = &get_gaf_line($gaf);
     print $colfh $line;
+    print $nnfh $line unless $gaf->{contributor} eq 'WB';
 }
 close($colfh) or $log->log_and_die("Could not close $outputdir/$collated_file after writing\n");
+close($nnfh) or $log->log_and_die("Could not close $outputdir/$non_noctua_file after writing\n");
 
 &make_species_files($wormbase, $collated_file);
 
