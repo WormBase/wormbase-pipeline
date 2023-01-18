@@ -34,9 +34,10 @@ my $wormbase;
 # use the time and the process ID to make a unique file extension
 my $time = time();
 my $pid = "$$";
-my $outfile1 = "/tmp/acediff1.$pid.$time.new";
-my $outfile2 = "/tmp/acediff2.$pid.$time.new";
-my $tmp = "/tmp/acediff.$pid.$time.tmp";
+my $tmpDir= $ENV {'WB_SCRATCH'};
+my $outfile1 = "/$tmpDir/acediff1.$pid.$time.new";
+my $outfile2 = "/$tmpDir/acediff2.$pid.$time.new";
+my $tmp = "/$tmpDir/acediff.$pid.$time.tmp";
 
 
 if( $store ) {
