@@ -152,6 +152,8 @@ while( my $obj = $it->next) {
 	unless (@evi_codes) {
 	    push @evi_codes, $go2eco{'IMP'};
 	}
+
+	# date_created to come from list sent by Chris
 	
 	my $annot = {
 	    mod_entity_id        => $obj->name,
@@ -159,14 +161,15 @@ while( my $obj = $it->next) {
 	    do_term_curie        => $obj->Disease_term->name,
 	    data_provider_name   => 'WB',
 	    date_updated         => $evi_date,
-	    created_by_curie     => 'WB:curator',
 	    annotation_type_name => 'manually_curated',
 	    evidence_code_curies => \@evi_codes,
 	    reference_curie      => $paper,
 	    internal             => JSON::false,
 	    obsolete             => JSON::false
 	};
-	$annot->{updated_by_curie} = $obj->Curator_confirmed ? 'WB:' . $obj->Curator_confirmed->name : "WB:curator";
+	if ($obj->Curator_confirmed) {
+	    $annot->{created_by_curie} = 'WB:' . $obj->Curator_confirmed->name;
+	}
 	$annot->{genetic_sex_name} = $obj->Genetic_sex->name if $obj->Genetic_sex;
 	$annot->{note_dtos} = [{
 	    note_type_name => 'disease_summary',
