@@ -421,6 +421,7 @@ sub get_curation_dates {
     while (my $line = $fh->getline()) {
 	chomp $line;
 	my ($id, $curator, $timestamp) = split("\t", $line);
+	$id =~ s/\s//g;
 	$timestamp = substr($timestamp,0,10) . 'T' . substr($timestamp, 11, 8) . substr($timestamp, -3) . ':00';
 	$dates{$id} = $timestamp;
     }
