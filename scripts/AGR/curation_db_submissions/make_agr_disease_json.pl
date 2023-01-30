@@ -18,10 +18,11 @@ use XML::LibXML;
 const my $LINKML_SCHEMA => 'v1.5.0';
 const my $CHEBI_PURL => 'http://purl.obolibrary.org/obo/chebi.owl';
 
-my ($debug, $test, $verbose, $store, $wormbase, $acedbpath, $ws_version, $outfile, $schema);
+my ($debug, $test, $verbose, $store, $wormbase, $acedbpath, $ws_version, $outfile, $schema, $dates_file);
 
 GetOptions (
     'debug=s'      => \$debug,
+    'dates=s'      => \$dates_file,  
     'test'         => \$test,
     'verbose'      => \$verbose,
     'store:s'      => \$store,
@@ -43,6 +44,7 @@ my $date = AGR::get_rfc_date();
 my $alt_date = join("/", $date =~ /^(\d{4})(\d{2})(\d{2})/);
 
 my $chebi_name_map = get_chebi_name_map();
+my $curation_dates = get_curation_dates($dates_file);
 
 $acedbpath = $wormbase->autoace unless $acedbpath;
 $ws_version = $wormbase->get_wormbase_version_name unless $ws_version;
@@ -180,6 +182,11 @@ while( my $obj = $it->next) {
 	unless ($modifier eq 'no_modifier') {
 	    $annot->{disease_genetic_modifier_curie} = $modifier;
 	    $annot->{disease_genetic_modifier_relation_name} = $modifier_type; # ameliorated_by / not_ameliorated_by / exacerbated_by / not_exacerbated_by
+	}
+
+	my ($id) = $obj->name =~ /^WBDOannot0*([^0]+)$/;
+	if (exists $curation_dates->{$id}) {
+	    $annot->{date_created} = $curation_dates->{$id};
 	}
 
 	#  $annot->{disease_qualifiers} = ; # susceptibility / disease_progression / severity / onset / sexual_dimorphism / resistance / penetrance
@@ -406,4 +413,18 @@ sub get_chemical_name {
     return $obj->Public_name->name;
 }
 
+sub get_curation_dates {
+    my ($file) = @_;
+
+    my %dates;
+    my $fh = file($file)->openr;
+    while (my $line = $fh->getline()) {
+	chomp $line;
+	my ($id, $curator, $timestamp) = split("\t", $line);
+	$timestamp = substr($timestamp,0,10) . 'T' . substr($timestamp, 11, 8) . substr($timestamp, -3) . ':00';
+	$dates{$id} = $timestamp;
+    }
+    
+    return \%dates;
+}
 1;
