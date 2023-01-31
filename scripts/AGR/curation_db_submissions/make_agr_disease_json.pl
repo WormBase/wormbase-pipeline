@@ -184,7 +184,7 @@ while( my $obj = $it->next) {
 	    $annot->{disease_genetic_modifier_relation_name} = $modifier_type; # ameliorated_by / not_ameliorated_by / exacerbated_by / not_exacerbated_by
 	}
 
-	my ($id) = $obj->name =~ /^WBDOannot0*([^0]+)$/;
+	my ($id) = $obj->name =~ /^WBDOannot0*([^0]\d+)$/;
 	if (exists $curation_dates->{$id}) {
 	    $annot->{date_created} = $curation_dates->{$id};
 	}
