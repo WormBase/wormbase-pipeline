@@ -160,7 +160,7 @@ download        = Y
 order           = 50
 priority        = 1
 prio_descr      =
-parser          = CuratedSynonymsParser
+parser          = WormBaseCuratedSynonymsParser
 release_uri     =
 END_CURATED_SYNONYMS_SOURCE_TEMPLATE
 
@@ -373,7 +373,7 @@ download        = N
 order           = 50
 priority        = 1
 prio_descr      =
-parser          = comes from CuratedSynonymsParser
+parser          = comes from WormBaseCuratedSynonymsParser
 release_uri     =
 data_uri        =
 END_CURATED_SYNONYMS_FAKE_SOURCE_TEMPLATE
