@@ -1,0 +1,42 @@
+# Run this file with 'snakemake --snakefile Snakerestore -profile /homes/mvucak/.conda/profile/ -j {cores}'
+# First backs up the transcript and translation_attr tables for species listed in the configfile.
+# Then, updates the transcript and translation_attr tables by modifying entries which cause the 
+# RunXrefsCriticalDatachecks step to fail: These are entries without a matching entry in the translation
+# table, because those entries were removed to fix a different datacheck during the prebuild.
+
+configfile: "config.yml"
+
+rule all:
+	input:
+		expand("/hps/nobackup/flicek/wormbase/parasite/xrefs/WBPS18/xref_update/DC_dumps/{species}/{species}_transcript_dump.sql", species = config["failing_species"]),
+		expand("/hps/nobackup/flicek/wormbase/parasite/xrefs/WBPS18/xref_update/DC_dumps/{species}/{species}_translation_attrib_dump.sql", species = config["failing_species"]),
+		expand("/hps/nobackup/flicek/wormbase/parasite/xrefs/WBPS18/xref_update/DC_dumps/logs/{species}.log", species = config["failing_species"])
+
+# Back up relevant tables.
+rule create_backup_mysql_dump_for_species:
+	threads: 1
+	params:
+		core_db = lambda w: config["failing_species"]["{}".format(w.species)]["core_db"]
+	output:
+		transcript_dump = "/hps/nobackup/flicek/wormbase/parasite/xrefs/WBPS18/xref_update/DC_dumps/{species}/{species}_transcript_dump.sql",
+		translation_attrib_dump = "/hps/nobackup/flicek/wormbase/parasite/xrefs/WBPS18/xref_update/DC_dumps/{species}/{species}_translation_attrib_dump.sql"
+	shell:
+		"""
+		$PARASITE_STAGING_MYSQL mysqldump {params.core_db} transcript > {output.transcript_dump}
+		$PARASITE_STAGING_MYSQL mysqldump {params.core_db} translation_attrib > {output.translation_attrib_dump}
+		"""
+
+# Won't run until tables have been backed up.
+rule correct_nontranslating_cds_for_species:
+	input:
+		transcript_dump = "/hps/nobackup/flicek/wormbase/parasite/xrefs/WBPS18/xref_update/DC_dumps/{species}/{species}_transcript_dump.sql",
+		translation_attrib_dump = "/hps/nobackup/flicek/wormbase/parasite/xrefs/WBPS18/xref_update/DC_dumps/{species}/{species}_translation_attrib_dump.sql"
+	output:
+		log_file = "/hps/nobackup/flicek/wormbase/parasite/xrefs/WBPS18/xref_update/DC_dumps/logs/{species}.log"
+	threads: 1
+	params:
+		python_interpreter = "/hps/software/users/wormbase/parasite/software/miniconda3/envs/p395/bin/python3"
+	resources:
+		mem_mb = 1000
+	shell:
+		"{params.python_interpreter} correct_nontranslating_cds.py -s {wildcards.species} -l {output.log_file}"
