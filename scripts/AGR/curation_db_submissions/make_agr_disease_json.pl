@@ -15,7 +15,7 @@ use Path::Class;
 use Const::Fast;
 use XML::LibXML;
 
-const my $LINKML_SCHEMA => 'v1.5.0';
+const my $LINKML_SCHEMA => 'v1.6.0';
 const my $CHEBI_PURL => 'http://purl.obolibrary.org/obo/chebi.owl';
 
 my ($debug, $test, $verbose, $store, $wormbase, $acedbpath, $ws_version, $outfile, $schema, $dates_file);
@@ -156,12 +156,29 @@ while( my $obj = $it->next) {
 	}
 
 	# date_created to come from list sent by Chris
+
+	my ($prefix) = $obj->Disease_term->name =~ /^([^:]+):/;
+	my $dp_xref_dto_json = {
+	    referenced_curie => $obj->Disease_term->name,
+	    page_area => 'disease/wb',
+	    display_name => $obj->Disease_term->name,
+	    prefix => $prefix,
+	    internal => JSON::false,
+	    obsolete => JSON::false
+	};
+	
+	my $data_provider_dto_json = {
+	    source_organization_abbreviation => 'WB',
+	    cross_reference_dto => $dp_xref_dto_json,
+	    internal => JSON::false,
+	    obsolete => JSON::false
+	};
 	
 	my $annot = {
 	    mod_entity_id        => $obj->name,
 	    internal             => JSON::false,
 	    do_term_curie        => $obj->Disease_term->name,
-	    data_provider_name   => 'WB',
+	    data_provider_dto    => $data_provider_dto_json,
 	    date_updated         => $evi_date,
 	    annotation_type_name => 'manually_curated',
 	    evidence_code_curies => \@evi_codes,
