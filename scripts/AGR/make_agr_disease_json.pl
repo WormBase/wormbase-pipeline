@@ -172,6 +172,7 @@ while( my $obj = $it->next) {
   my ($transgene) = $obj->Transgene;
   my ($gene) = $obj->Disease_relevant_gene;
   my ($genotype) = $obj->Genotype;
+  my (@inferred_gene_objects) = $obj->Asserted_gene;
   my (@inferred_genes) = map { 'WB:'.$_->name } $obj->Asserted_gene;
   my ($obj_id, $obj_name, $obj_type);
   my @with_list;
@@ -328,7 +329,7 @@ while( my $obj = $it->next) {
 
 
   # here needs to be a bit of logic that adds the secondary annotations
-  foreach my $secondary ($strain,$allele,$transgene,$gene){
+  foreach my $secondary ($strain,$allele,$transgene,@inferred_gene_objects){
 	  next unless $secondary;
 
 	  my $class = lc $secondary->class;
