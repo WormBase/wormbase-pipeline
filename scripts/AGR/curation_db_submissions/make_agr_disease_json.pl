@@ -15,13 +15,14 @@ use Path::Class;
 use Const::Fast;
 use XML::LibXML;
 
-const my $LINKML_SCHEMA => 'v1.5.0';
+const my $LINKML_SCHEMA => 'v1.6.0';
 const my $CHEBI_PURL => 'http://purl.obolibrary.org/obo/chebi.owl';
 
-my ($debug, $test, $verbose, $store, $wormbase, $acedbpath, $ws_version, $outfile, $schema);
+my ($debug, $test, $verbose, $store, $wormbase, $acedbpath, $ws_version, $outfile, $schema, $dates_file);
 
 GetOptions (
     'debug=s'      => \$debug,
+    'dates=s'      => \$dates_file,  
     'test'         => \$test,
     'verbose'      => \$verbose,
     'store:s'      => \$store,
@@ -43,6 +44,7 @@ my $date = AGR::get_rfc_date();
 my $alt_date = join("/", $date =~ /^(\d{4})(\d{2})(\d{2})/);
 
 my $chebi_name_map = get_chebi_name_map();
+my $curation_dates = get_curation_dates($dates_file);
 
 $acedbpath = $wormbase->autoace unless $acedbpath;
 $ws_version = $wormbase->get_wormbase_version_name unless $ws_version;
@@ -152,21 +154,41 @@ while( my $obj = $it->next) {
 	unless (@evi_codes) {
 	    push @evi_codes, $go2eco{'IMP'};
 	}
+
+	# date_created to come from list sent by Chris
+
+	my ($prefix) = $obj->Disease_term->name =~ /^([^:]+):/;
+	my $dp_xref_dto_json = {
+	    referenced_curie => $obj->Disease_term->name,
+	    page_area => 'disease/wb',
+	    display_name => $obj->Disease_term->name,
+	    prefix => $prefix,
+	    internal => JSON::false,
+	    obsolete => JSON::false
+	};
+	
+	my $data_provider_dto_json = {
+	    source_organization_abbreviation => 'WB',
+	    cross_reference_dto => $dp_xref_dto_json,
+	    internal => JSON::false,
+	    obsolete => JSON::false
+	};
 	
 	my $annot = {
 	    mod_entity_id        => $obj->name,
 	    internal             => JSON::false,
 	    do_term_curie        => $obj->Disease_term->name,
-	    data_provider_name   => 'WB',
+	    data_provider_dto    => $data_provider_dto_json,
 	    date_updated         => $evi_date,
-	    created_by_curie     => 'WB:curator',
 	    annotation_type_name => 'manually_curated',
 	    evidence_code_curies => \@evi_codes,
 	    reference_curie      => $paper,
 	    internal             => JSON::false,
 	    obsolete             => JSON::false
 	};
-	$annot->{updated_by_curie} = $obj->Curator_confirmed ? 'WB:' . $obj->Curator_confirmed->name : "WB:curator";
+	if ($obj->Curator_confirmed) {
+	    $annot->{created_by_curie} = 'WB:' . $obj->Curator_confirmed->name;
+	}
 	$annot->{genetic_sex_name} = $obj->Genetic_sex->name if $obj->Genetic_sex;
 	$annot->{note_dtos} = [{
 	    note_type_name => 'disease_summary',
@@ -177,6 +199,11 @@ while( my $obj = $it->next) {
 	unless ($modifier eq 'no_modifier') {
 	    $annot->{disease_genetic_modifier_curie} = $modifier;
 	    $annot->{disease_genetic_modifier_relation_name} = $modifier_type; # ameliorated_by / not_ameliorated_by / exacerbated_by / not_exacerbated_by
+	}
+
+	my ($id) = $obj->name =~ /^WBDOannot0*([^0]\d+)$/;
+	if (exists $curation_dates->{$id}) {
+	    $annot->{date_created} = $curation_dates->{$id};
 	}
 
 	#  $annot->{disease_qualifiers} = ; # susceptibility / disease_progression / severity / onset / sexual_dimorphism / resistance / penetrance
@@ -403,4 +430,19 @@ sub get_chemical_name {
     return $obj->Public_name->name;
 }
 
+sub get_curation_dates {
+    my ($file) = @_;
+
+    my %dates;
+    my $fh = file($file)->openr;
+    while (my $line = $fh->getline()) {
+	chomp $line;
+	my ($id, $curator, $timestamp) = split("\t", $line);
+	$id =~ s/\s//g;
+	$timestamp = substr($timestamp,0,10) . 'T' . substr($timestamp, 11, 8) . substr($timestamp, -3) . ':00';
+	$dates{$id} = $timestamp;
+    }
+    
+    return \%dates;
+}
 1;
