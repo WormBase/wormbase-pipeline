@@ -1,0 +1,255 @@
+configfile: "config.yml"
+
+rule all:
+	input:
+		# expand("{data_dir}Reads/Raw/{sra_accession}/{sra_accession}_{num}.fastq.gz", data_dir = config["data_directory"], sra_accession = config["all_sra_accessions"], num = [1,2]),
+		# expand("{data_dir}Reads/Trimmed/{sra_accession}/{sra_accession}_{num}_val_{num}.fq.gz", data_dir = config["data_directory"], sra_accession = config["all_sra_accessions"], num = [1,2]),
+		# expand("{data_dir}Alignments/{sra_accession}_alignment.bam", data_dir = config["data_directory"], sra_accession = config["all_sra_accessions"]),
+		# expand("{data_dir}Alignments/Unique/{sample_group}_merged_alignment.bam", data_dir = config["data_directory"], sample_group = ["female_drug" ,"male_drug", "female_dmso","male_dmso"]),
+		expand("{data_dir}Peak_Calling/{sample_group}_merged_treat_pileup.bdg", data_dir = config["data_directory"], sample_group = ["female_drug" ,"male_drug", "female_dmso","male_dmso"]),
+		# expand("{data_dir}Peak_Calling/{sra_accession}_treat_pileup.bdg", data_dir = config["data_directory"], sra_accession = config["all_sra_accessions"]),
+		expand("{data_dir}Peak_Calling/{sample_group}_merged_ppois.bdg", data_dir = config["data_directory"], sample_group = ["female_drug" ,"male_drug", "female_dmso","male_dmso"]),
+		expand("{data_dir}Peak_Calling/{sample_group}_merged_ppois.bw", data_dir = config["data_directory"], sample_group = ["female_drug" ,"male_drug", "female_dmso","male_dmso"]),
+
+onstart:
+    shell("mkdir -p jobs/fasterq_dump_sra_accessions")
+
+rule fasterq_dump_sra_accessions:
+	input:
+		sra_object = "".join([config["data_directory"], "Reads/Raw/{sra_accession}/{sra_accession}.sra"])
+	output:
+		reads_1 = "".join([config["data_directory"], "Reads/Raw/{sra_accession}/{sra_accession}_1.fastq"]),
+		reads_2 = "".join([config["data_directory"], "Reads/Raw/{sra_accession}/{sra_accession}_2.fastq"])
+	threads: 1
+	params:
+		output_dir = "".join([config["data_directory"], "Reads/Raw/{sra_accession}/"])
+	resources:
+		mem_mb = 1000
+	shell:
+		"fastq-dump --split-files -O {params.output_dir} {input.sra_object}"
+
+
+rule gzip_fastq_files:
+	input:
+		reads_1 = "".join([config["data_directory"], "Reads/Raw/{sra_accession}/{sra_accession}_1.fastq"]),
+		reads_2 = "".join([config["data_directory"], "Reads/Raw/{sra_accession}/{sra_accession}_2.fastq"])
+	output:
+		gzip_reads_1 = "".join([config["data_directory"], "Reads/Raw/{sra_accession}/{sra_accession}_1.fastq.gz"]),
+		gzip_reads_2 = "".join([config["data_directory"], "Reads/Raw/{sra_accession}/{sra_accession}_2.fastq.gz"])
+	threads: 1
+	resources:
+		mem_mb = 1000
+	shell:
+		"""
+		gzip {input.reads_1}
+		gzip {input.reads_2}
+		"""
+
+
+rule trim_reads:
+	input:
+		gzip_reads_1 = "".join([config["data_directory"], "Reads/Raw/{sra_accession}/{sra_accession}_1.fastq.gz"]),
+		gzip_reads_2 = "".join([config["data_directory"], "Reads/Raw/{sra_accession}/{sra_accession}_2.fastq.gz"])
+	output:
+		trim_reads_1 = "".join([config["data_directory"], "Reads/Trimmed/{sra_accession}/{sra_accession}_1_val_1.fq.gz"]),
+		trim_reads_2 = "".join([config["data_directory"], "Reads/Trimmed/{sra_accession}/{sra_accession}_2_val_2.fq.gz"])
+	params:
+		output_dir = "".join([config["data_directory"], "Reads/Trimmed/{sra_accession}"])
+	threads: 1
+	resources:
+		mem_mb = 1000
+	conda: "/homes/mvucak/conda_envs/trim.yml"
+	shell:
+		"""
+		trim_galore --paired {input.gzip_reads_1} {input.gzip_reads_2} --output_dir {params.output_dir}
+		"""
+
+
+rule map_onto_reference:
+	input:
+		trim_reads_1 = "".join([config["data_directory"], "Reads/Trimmed/{sra_accession}/{sra_accession}_1_val_1.fq.gz"]),
+		trim_reads_2 = "".join([config["data_directory"], "Reads/Trimmed/{sra_accession}/{sra_accession}_2_val_2.fq.gz"]),
+		ref_seq = "".join([config["data_directory"], "Sequences/schistosoma_mansoni_V10.fa"]),
+		ref_seq_index = "".join([config["data_directory"], "Sequences/schistosoma_mansoni_V10.1.bt2"])
+	output:
+		alignment_file = temp("".join([config["data_directory"], "Alignments/{sra_accession}_alignment.sam"]))
+	params:
+		ref_index_alias = "".join([config["data_directory"], "Sequences/schistosoma_mansoni_V10"])
+	resources:
+		mem_mb = 10000
+	threads: 4
+	shell:
+		"bowtie2 -p {threads} -x {params.ref_index_alias} --very-sensitive -1 {input.trim_reads_1} -2 {input.trim_reads_2} -S {output.alignment_file}"
+
+
+rule compress_alignment_sam:
+	input:
+		alignment_sam = "".join([config["data_directory"], "Alignments/{sra_accession}_alignment.sam"])
+	output:
+		alignment_bam = "".join([config["data_directory"], "Alignments/{sra_accession}_alignment.bam"])
+	resources:
+		mem_mb = 10000
+	threads: 4
+	shell:
+		"""
+        samtools view -S -b {input.alignment_sam} | samtools sort -@ {threads} -o {output.alignment_bam}
+        samtools index {output.alignment_bam}
+        """
+
+
+rule extract_sam_header:
+	input:
+		alignment_bam = "".join([config["data_directory"], "Alignments/{sra_accession}_alignment.bam"])
+	output:
+		alignment_header = temp("".join([config["data_directory"], "Alignments/{sra_accession}_alignment_header.sam"]))
+	threads: 1
+	resources:
+		mem_mb = 10000
+	shell:
+		"samtools view -H {input.alignment_bam} -o {output.alignment_header}"
+
+
+rule extract_uniquely_aligned_reads:
+	input:
+		alignment_bam = "".join([config["data_directory"], "Alignments/{sra_accession}_alignment.bam"]),
+	output:
+		unique_alignment_sam_reads = temp("".join([config["data_directory"], "Alignments/Unique/{sra_accession}_alignment_unique_reasds_only.sam"]))
+	threads: 4
+	resources:
+		mem_mb = 10000
+	shell:
+		"samtools view -@ {threads} -S {input.alignment_bam} | grep -v XS:i >>{output.unique_alignment_sam_reads}"
+
+
+rule combine_header_and_uniquely_aligned_reads:
+	input:
+		alignment_header = "".join([config["data_directory"], "Alignments/{sra_accession}_alignment_header.sam"]),
+		unique_alignment_sam_reads = "".join([config["data_directory"], "Alignments/Unique/{sra_accession}_alignment_unique_reasds_only.sam"])
+	output:
+		unique_alignment_sam = temp("".join([config["data_directory"], "Alignments/Unique/{sra_accession}_alignment_unique.sam"]))
+	threads: 1
+	resources:
+		mem_mb = 10000
+	shell:
+		"cat {input.alignment_header} {input.unique_alignment_sam_reads} > {output.unique_alignment_sam}"
+
+
+rule compress_unqiue_alignment_sam:
+	input:
+		unique_alignment_sam = "".join([config["data_directory"], "Alignments/Unique/{sra_accession}_alignment_unique.sam"])
+	output:
+		unique_alignment_bam = "".join([config["data_directory"], "Alignments/Unique/{sra_accession}_alignment_unique.bam"])
+	resources:
+		mem_mb = 10000
+	threads: 4
+	shell:
+		"""
+        samtools view -S -b {input.unique_alignment_sam} | samtools sort -@ {threads} -o {output.unique_alignment_bam}
+        samtools index {output.unique_alignment_bam}
+        """
+
+def get_all_unique_alignment_bams_for_sample_group(wildcards):
+		sample_group = wildcards.sample_group 
+
+		accessions_in_sample_group = config[sample_group]
+		unique_alignment_bams_for_sample_group = [] 
+		for accession in accessions_in_sample_group:
+			bam_file = "".join([config["data_directory"], "Alignments/Unique/{accession}_alignment_unique.bam".format(accession=accession)])
+			unique_alignment_bams_for_sample_group.append(bam_file)
+
+		return unique_alignment_bams_for_sample_group
+
+
+rule merge_alignment_bams_by_category:
+	input:
+		get_all_unique_alignment_bams_for_sample_group
+	output:
+		merged_unique_alignment_bam = "".join([config["data_directory"], "Alignments/Unique/{sample_group}_merged_alignment.bam"])
+	resources:
+		mem_mb = 10000
+	threads: 4
+	shell:
+		"samtools merge {output.merged_unique_alignment_bam} {input} -@ {threads}"
+
+
+# rule call_peaks_with_macs:
+# 	input:
+# 		alignment_bam = "".join([config["data_directory"], "Alignments/{sra_accession}_alignment.bam"])
+# 	output:
+# 		merged_peak_call = "".join([config["data_directory"], "Peak_Calling/{sra_accession}_treat_pileup.bdg"])
+# 	threads: 4
+# 	resources:
+# 		mem_mb = 10000
+# 	params:
+# 		genome_size = 350000000,
+# 		p_value_cutoff = 0.05,
+# 		band_width = 300,
+# 		output_dir = "".join([config["data_directory"], "Peak_Calling"])
+# 	shell:
+# 		"macs2 callpeak -t {input.alignment_bam} -g {params.genome_size} -q {params.p_value_cutoff} --bw {params.band_width} --keep-dup 1 --bdg -n {wildcards.sra_accession} --outdir {params.output_dir}"
+
+
+rule call_peaks_with_macs_for_merged_alignments:
+	input:
+		individual_alignments = expand("{data_dir}Alignments/{sra_accession}_alignment.bam", data_dir = config["data_directory"], sra_accession = config["all_sra_accessions"]),
+		merged_unique_alignment_bam = "".join([config["data_directory"], "Alignments/Unique/{sample_group}_merged_alignment.bam"])
+	output:
+		merged_pileup_bdg = "".join([config["data_directory"], "Peak_Calling/{sample_group}_merged_treat_pileup.bdg"]),
+		control_lambda_bdg = "".join([config["data_directory"], "Peak_Calling/{sample_group}_merged_control_lambda.bdg"])
+	threads: 4
+	resources:
+		mem_mb = 10000
+	params:
+		genome_size = 350000000,
+		p_value_cutoff = 0.05,
+		band_width = 300,
+		output_dir = "".join([config["data_directory"], "Peak_Calling"])
+	shell:
+		"macs2 callpeak -t {input.merged_unique_alignment_bam} -c {input.individual_alignments} -g {params.genome_size} -q {params.p_value_cutoff} --bw {params.band_width} --keep-dup 1 --bdg -n {wildcards.sample_group}_merged --outdir {params.output_dir}"
+
+
+rule correct_background_for_merged_alignment_peak_calls:
+	input:
+		merged_pileup_bdg = "".join([config["data_directory"], "Peak_Calling/{sample_group}_merged_treat_pileup.bdg"]),
+		control_lambda_bdg = "".join([config["data_directory"], "Peak_Calling/{sample_group}_merged_control_lambda.bdg"])
+	output:
+		corrected_bdg = "".join([config["data_directory"], "Peak_Calling/{sample_group}_merged_ppois.bdg"])
+	threads: 4
+	resources:
+		mem_mb = 10000
+	params:
+		output_dir = "".join([config["data_directory"], "Peak_Calling"])
+	shell:
+		"macs2 bdgcmp -t {input.merged_pileup_bdg} -c {input.control_lambda_bdg} -m ppois --outdir {params.output_dir} --o-prefix {wildcards.sample_group}_merged"
+
+
+rule sort_corrected_bedgraph_file:
+	input:
+		corrected_bdg = "".join([config["data_directory"], "Peak_Calling/{sample_group}_merged_ppois.bdg"])
+	output:
+		sorted_bdg = "".join([config["data_directory"], "Peak_Calling/{sample_group}_merged_ppois.sorted.bdg"])
+	threads: 1
+	resources:
+		mem_mb = 10000
+	shell:
+		"sort -k1,1 -k2,2n {input.corrected_bdg} > {output.sorted_bdg}"
+
+
+rule convert_corrected_bgd_into_bigwig:
+	input:
+		sorted_bdg = "".join([config["data_directory"], "Peak_Calling/{sample_group}_merged_ppois.sorted.bdg"]),
+		chromosome_index = "".join([config["data_directory"], "Sequences/schistosoma_mansoni_V10.fa.fai"])
+	output:
+		bigwig_file = "".join([config["data_directory"], "Peak_Calling/{sample_group}_merged_ppois.bw"])
+	threads: 4
+	resources:
+		mem_mb = 10000
+	shell:
+		"bedGraphToBigWig {input.sorted_bdg} {input.chromosome_index} {output.bigwig_file}"
+
+
+
+
+
+
+

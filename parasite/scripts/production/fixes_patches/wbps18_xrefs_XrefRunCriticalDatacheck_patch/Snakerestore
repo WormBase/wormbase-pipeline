@@ -1,0 +1,23 @@
+# Run this pipeline with 'snakemake --snakefile Snakerestore -profile /homes/mvucak/.conda/profile/ -j {cores}'
+# Restores the transcript and translation_attr tables for listed species from a mysql dump.
+
+configfile: "config.yml"
+
+rule all:
+	input:
+		expand("/hps/nobackup/flicek/wormbase/parasite/xrefs/WBPS18/xref_update/DC_dumps/{species}/{species}_mysql_restore.log", species = config["failing_species"])		
+
+rule restore_table_from_mysql_dump:
+	input:
+		transcript_dump = "/hps/nobackup/flicek/wormbase/parasite/xrefs/WBPS18/xref_update/DC_dumps/{species}_transcript_dump.sql",
+		translation_attrib_dump = "/hps/nobackup/flicek/wormbase/parasite/xrefs/WBPS18/xref_update/DC_dumps/{species}_translation_attrib_dump.sql"
+	log:
+		restore_log = "/hps/nobackup/flicek/wormbase/parasite/xrefs/WBPS18/xref_update/DC_dumps/{species}/{species}_mysql_restore.log"
+	params:
+		core_db = lambda w: config["failing_species"]["{}".format(w.species)]["core_db"]
+	shell:
+		"""
+		$PARASITE_STAGING_MYSQL-w mysql {params.core_db} < {input.transcript_dump}
+		$PARASITE_STAGING_MYSQL-w mysql {params.core_db} < {input.translation_attrib_dump}
+		touch {log.restore_log}
+		"""
