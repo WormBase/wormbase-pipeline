@@ -7,6 +7,7 @@ expression_dir = "/hps/software/users/wormbase/parasite/repositories/wbps-expres
 rnaseq_dir = os.getenv("PARASITE_SCRATCH")+"/rnaseq"
 ena_api_url = "https://www.ebi.ac.uk/ena/portal/api/search?result=study&query=secondary_study_accession={0}&fields=study_accession&format=json"
 ena_rnaseq_by_taxon_url = "https://www.ebi.ac.uk/ena/portal/api/search?result=read_run&query=tax_eq({0})%20AND%20(library_strategy%3D%22RNA-Seq%22%20OR%20library_strategy%3D%22OTHER%22)&fields=study_accession%2Caccession%2Cfastq_ftp%2Csecondary_study_accession%2Csecondary_sample_accession&format=json"
+ena_by_taxon_for_year_range_url = "https://www.ebi.ac.uk/ena/portal/api/search?result=study&query=tax_eq({0})%20AND%20first_public%3E{1}-01-01%20AND%20first_public%3C{2}-12-31&fields=secondary_study_accession&format=json"
 ena_rnaseq_by_taxon_url_onlyrnaseq = "https://www.ebi.ac.uk/ena/portal/api/search?result=read_run&query=tax_eq({0})%20AND%20(library_strategy%3D%22RNA-Seq%22)&fields=study_accession%2Caccession%2Cfastq_ftp%2Csecondary_study_accession%2Csecondary_sample_accession&format=json"
 ena_isoseq_by_taxon_url = "https://www.ebi.ac.uk/ena/portal/api/search?result=read_study&query=tax_eq({0})%20AND%20(instrument_platform%3D%22OXFORD_NANOPORE%22%20OR%20instrument_platform%3D%22PACBIO_SMRT%22)%20AND%20(%20library_strategy%3D%22RNA-Seq%22%20)&format=json"
 ena_secondary_study_id_count_url = "https://www.ebi.ac.uk/ena/portal/api/count?dataPortal=ena&query=secondary_study_accession%3D{0}&result=study"
@@ -16,6 +17,7 @@ reference_genomes_dir="/nfs/production/flicek/wormbase/parasite/data/reference_g
 reference_genomes_ftp="https://ftp.ebi.ac.uk/pub/databases/wormbase/parasite/releases/current/species/"
 sra_ftp_path_prefix="ftp.sra.ebi.ac.uk/vol1/fastq/"
 sra_fire_path_prefix="hh.fire.sdo.ebi.ac.uk/fire/public/era/fastq/"
+
 
 #RUN PARAMETERS
 fastp_memory = "10000"
@@ -52,7 +54,7 @@ try:
     embassy_apollo_path = os.environ["EMBASSY_APOLLO_PATH"]
     embassy_access_url_apollo = os.environ["EMBASSY_ACCESS_URL_APOLLO"]
 except KeyError:
-    print("The embassy module has not been loaded. Maybe you want to load it and re-run?")
+    pass
 
 
 #SOFTWARE

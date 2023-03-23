@@ -21,9 +21,10 @@ def is_ena_secondary_study(study_id, ena_secondary_study_id_count_url=ena_second
         try:
             r_json = r.json()
             break
-        except JSONDecodeError:
+        except ValueError:
             counter += 1
             time.sleep(10)
+            r_json=0
     if r_json >= 1:
         return True
     else:
@@ -38,9 +39,10 @@ def is_ena_run_accession(run_accession, ena_run_accession_count_url=ena_run_acce
         try:
             r_json = r.json()
             break
-        except JSONDecodeError:
+        except ValueError:
             counter += 1
             time.sleep(10)
+            r_json=0
     if r_json >= 1:
         return True
     else:
@@ -81,3 +83,54 @@ def species_input(ui_species):
         return ("spe_cies")
     else:
         exit_with_error("Wrong species input. Please try again.")
+
+def outlier_is_stranded_runs(production_host, db):
+
+    production = Production(PRODUCTION_HOST=production_host, pattern=db)
+    get_msg_res = [x.msg for x in production.connect().execute("SELECT DISTINCT(msg) FROM msg WHERE msg LIKE \"%Could not create a consensus:%\";")]
+    msg_list = [{"metrics": list(y["groups"].groups()),
+                 "runsdict": y["runsdict"]}
+                for y in
+                    [{"groups":re.search("metadata '(is_stranded)' \((\w+)=(\w+), (\w+)=(\w+)\)",x),
+                                         "runsdict": json.loads(x.split("All metadata: ")[1])} for x in get_msg_res]
+                if y["groups"] is not None]
+
+    msg_list = [ {"metrics": x["metrics"],
+                  "minority_is_str": x["metrics"][3] if x["metrics"][4] < x["metrics"][2] else x["metrics"][1],
+                  "runsdict": x["runsdict"]} for x in msg_list]
+
+    sep_runs = [[x for x in y["runsdict"] if str(y["runsdict"][x]["is_stranded"])==str(y["minority_is_str"])] for y in msg_list]
+
+    return(sep_runs)
+
+def all_runs_with_amgiguous_strand_inference(production_host, db):
+
+    production = Production(PRODUCTION_HOST=production_host, pattern=db)
+    get_msg_res = [x.msg for x in production.connect().execute("SELECT DISTINCT(msg) FROM msg WHERE msg LIKE \"%Could not create a consensus:%\";")]
+    msg_list = [{"metrics": list(y["groups"].groups()),
+                 "runsdict": y["runsdict"]}
+                for y in
+                    [{"groups":re.search("metadata '(is_stranded)' \((\w+)=(\w+), (\w+)=(\w+)\)",x),
+                                         "runsdict": json.loads(x.split("All metadata: ")[1])} for x in get_msg_res]
+                if y["groups"] is not None]
+
+    msg_list = [ {"metrics": x["metrics"],
+                  "minority_is_str": x["metrics"][3] if x["metrics"][4] < x["metrics"][2] else x["metrics"][1],
+                  "runsdict": x["runsdict"]} for x in msg_list]
+
+    sep_runs = [[x for x in y["runsdict"]] for y in msg_list]
+
+    return(sep_runs)
+
+def all_runs_with_failed_strand_inference(production_host, db):
+
+    production = Production(PRODUCTION_HOST=production_host, pattern=db)
+    get_msg_res = [x.msg for x in production.connect().execute("SELECT DISTINCT(msg) FROM msg WHERE msg LIKE \"%Ambiguous strand inference%\";")]
+
+    runs = list(set([list(y["groups"].groups())[1]
+                for y in
+                    [{"groups":re.search("(\w+)_(\w+)_\w+_all", x),
+                      "text":x} for x in get_msg_res]
+                if y["groups"] is not None]))
+
+    return(runs)
