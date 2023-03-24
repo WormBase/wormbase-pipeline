@@ -454,6 +454,43 @@ sub TSL {(
 	  'Pp_SL2l' => "GGTTTAAACCCAGTATCTCAAG",
 )};
 
+#######################################################
+
+package Ppa_V3;
+use Carp;
+our @ISA = qw(Species);
+
+sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/PPA/ppa_repeats.fas'}
+sub short_name {'P. pa_V3'}
+sub gspecies_name{'p_pa_V3'}
+sub long_name{'Pristionchus pacificus V3'}
+sub cds_regex{qr/PPA\d{5}[a-z]*/};
+sub seq_name_regex{qr/^PPA\d{5}/};
+sub cds_regex_noend{qr/PPA\d{5}[a-z]*/}; # for getting the CDS part of a Transcript name
+sub pep_prefix {'PP'}
+sub pepdir_prefix{'ppa'};
+sub ncbi_tax_id {'54126'};
+sub ncbi_bioproject {'PRJNA12644'}; # https://www.ncbi.nlm.nih.gov/Traces/wgs/ABKE04?display=contigs&page=1
+sub bioproject_description { 'Max Planck Institute for Developmental Biology P. pacificus genome project' }
+sub assembly_type {'contig'};
+sub wormpep_prefix {'PP'}
+sub upload_db_name {''}; # we already hold the data in the primary database, it is not downloaded
+sub TSL {(
+	  'SL1'  => "GGTTTAATTACCCAAGTTTGAG",
+	  'Pp_SL2a' => "GGTTTTTACCCAGTATCTCAAG",
+	  'Pp_SL2b' => "GGTTTTAACCCAGTATCTCAAG",
+	  'Pp_SL2c' => "GGTTTATACCCAGTATCTCAAG",
+	  'Pp_SL2d' => "GGTTTTTAACCCAGTATCTCAAG",
+	  'Pp_SL2e' => "GGTTTTTACTCAGTATCTCAAG",
+	  'Pp_SL2f' => "GGTCTTTACCCAGTATCTCAAG",
+	  'Pp_SL2g' => "GGTTTTAACCCGGTATCTCAAG",
+	  'Pp_SL2h' => "GGTTTTAACCCAGTATCTTAAG",
+	  'Pp_SL2i' => "GGTTTTGACCCAGTATCTCAAG",
+	  'Pp_SL2j' => "GTTTTATACCCAGTATCTCAAG",
+	  'Pp_SL2k' => "GGTTTATACCCAGTATCTCAAG",
+	  'Pp_SL2l' => "GGTTTAAACCCAGTATCTCAAG",
+)};
+
 
 ####################################################
 

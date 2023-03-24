@@ -101,8 +101,8 @@ sub invoke {
     undef $refresh;
   }
   
-  #print "using database: $database\n";
-  #print "species: $species\n";
+  print "using database: $database\n"; # uncommented here
+  print "species: $species\n"; # uncommented here
   
   my $SL_coords_file = "$database/SL_coords";
   my $clone_coords_file = "$database/clone_coords";
