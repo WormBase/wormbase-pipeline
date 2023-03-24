@@ -68,7 +68,7 @@ my %go2eco = (
 	IEA => 'ECO:0000265',
 	ISS => 'ECO:0000250',
 	ND  => 'ECO:0000307',
-	IPI => 'ECO:0000021',
+	IPI => 'ECO:0000353',
 	EXP => 'ECO:0000269',
 	IDA => 'ECO:0000314',
 	IGI => 'ECO:0000316',
@@ -119,18 +119,19 @@ while( my $obj = $it->next) {
   $evi_date = sprintf('%4d-%02d-%02dT00:00:00+00:00', $y, $m, $d);
 
   my ($paper) = &get_paper( $obj->Paper_evidence );
-  my @evi_codes;
+  my %evidence_codes;
   for my $ec ($obj->Evidence_code) {
       if ($ec->right =~ /^ECO:/) {
-	  push @evi_codes, $ec->right->name;
+	  $evidence_codes{$ec->right->name}++;
       }
       elsif (exists $go2eco{$ec->right}) {
-	  push @evi_codes, $go2eco{$ec->right};
+	  $evidence_codes{$go2eco{$ec->right}}++;
       }
       else {
 	  warn "No ECO conversion available for evidence code $ec for $obj\n";
       }
   }
+  my @evi_codes = keys %evidence_codes;
 
   # [200507 mh6]
   # the crossReference should be annotation specific, but as the id changes every release the 

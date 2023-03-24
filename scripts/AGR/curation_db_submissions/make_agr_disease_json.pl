@@ -15,7 +15,7 @@ use Path::Class;
 use Const::Fast;
 use XML::LibXML;
 
-const my $LINKML_SCHEMA => 'v1.6.0';
+const my $LINKML_SCHEMA => 'v1.7.0';
 const my $CHEBI_PURL => 'http://purl.obolibrary.org/obo/chebi.owl';
 
 my ($debug, $test, $verbose, $store, $wormbase, $acedbpath, $ws_version, $outfile, $schema, $dates_file);
@@ -49,7 +49,7 @@ my $curation_dates = get_curation_dates($dates_file);
 $acedbpath = $wormbase->autoace unless $acedbpath;
 $ws_version = $wormbase->get_wormbase_version_name unless $ws_version;
 
-$outfile = "./wormbase.disease_annotations.${ws_version}.json" unless defined $outfile;
+$outfile = "./wormbase.disease_annotations.${ws_version}.${LINKML_SCHEMA}.json" unless defined $outfile;
 
 
 my %go2eco = (
@@ -57,7 +57,7 @@ my %go2eco = (
     IEA => 'ECO:0000265',
     ISS => 'ECO:0000250',
     ND  => 'ECO:0000307',
-    IPI => 'ECO:0000021',
+    IPI => 'ECO:0000353',
     EXP => 'ECO:0000269',
     IDA => 'ECO:0000314',
     IGI => 'ECO:0000316',
@@ -104,23 +104,25 @@ while( my $obj = $it->next) {
     $evi_date = sprintf('%4d-%02d-%02dT00:00:00+00:00', $y, $m, $d);
     
     my ($paper) = &get_paper( $obj->Paper_evidence );
-    my @evi_codes;
+
+    my %evidence_codes;
     for my $ec ($obj->Evidence_code) {
 	if ($ec->right =~ /^ECO:/) {
-	    push @evi_codes, $ec->right->name;
+	    $evidence_codes{$ec->right->name}++;
 	}
 	elsif (exists $go2eco{$ec->right}) {
-	    push @evi_codes, $go2eco{$ec->right};
+	    $evidence_codes{$go2eco{$ec->right}}++;
 	}
 	else {
 	    warn "No ECO conversion available for evidence code $ec for $obj\n";
 	}
     }
+    my @evi_codes = keys %evidence_codes;
     unless (@evi_codes) {
-	warn "No evidence codes could be converted to ECO for $obj - skipping\n";
-	next;
+	push @evi_codes, $go2eco{'IMP'};
     }
-    
+
+
     # modifiers
     my $modifier_type;
     my (@genetic, @exp_cond);
@@ -150,10 +152,6 @@ while( my $obj = $it->next) {
 	# [200507 mh6]
 	# the crossReference should be annotation specific, but as the id changes every release the 
 	# linking is not possible due to the lag
-
-	unless (@evi_codes) {
-	    push @evi_codes, $go2eco{'IMP'};
-	}
 
 	# date_created to come from list sent by Chris
 

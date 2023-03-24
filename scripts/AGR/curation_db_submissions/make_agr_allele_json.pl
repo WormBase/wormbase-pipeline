@@ -214,18 +214,42 @@ sub get_papers {
 
     my @references;
     for my $ref ($obj->Reference) {
-	my $pmid;
-	for my $db ($ref->Database) {
-	    if ($db->name eq 'MEDLINE') {
-		$pmid = $db->right->right->name;
-		last;
-	    }
-	}
-	my $publication_id = $pmid ? "PMID:$pmid" : 'WB:' . $ref->name;
+	next unless defined $ref;
+	my $publication_id = get_paper($ref);
+	next unless defined $publication_id;
 	push @references, $publication_id;
     }
 
     return \@references;
+}
+
+sub get_paper {
+    my $ref = shift;
+
+    if (!$ref->Status) {
+	return;
+    }
+
+    my $level = 1;
+    while ($ref->Merged_into && $level < 6) {
+	$level++;
+	$ref = $ref->Merged_into;
+    }
+    return if $ref->Status->name eq 'Invalid';
+
+    my $pmid;
+    for my $db ($ref->Database) {
+	if ($db->name eq 'MEDLINE') {
+	    $pmid = $db->right->right->name;
+	    last;
+	}
+    }
+    my $publication_id = $pmid ? "PMID:$pmid" : 'WB:' . $ref->name;
+    if ($publication_id eq 'WB:WBPaper000045183') {
+	$publication_id eq 'WB:WBPaper00045183';
+    }
+
+    return $publication_id;
 }
 
 sub get_random_datetime {
@@ -256,7 +280,8 @@ sub get_mutation_types {
 	    for my $evi ($obj->Substitution->right->col) {
 		next unless $evi->name eq 'Paper_evidence';
 		for my $paper ($evi->col) {
-		    push @substitution_paper_evidence, 'WB:' . $paper->name;
+		    my $paper_id = get_paper($paper);
+		    push @substitution_paper_evidence, $paper_id if defined $paper_id;
 		}
 	    }
 	    $substitution->{evidence_curies} = \@substitution_paper_evidence if @substitution_paper_evidence > 0;
@@ -273,7 +298,8 @@ sub get_mutation_types {
 	for my $evi ($obj->Insertion->col) {
 	    next unless $evi->name eq 'Paper_evidence';
 	    for my $paper ($evi->col) {
-		push @insertion_paper_evidence, 'WB:' . $paper->name;
+		my $paper_id = get_paper($paper);
+		push @insertion_paper_evidence, $paper_id if defined $paper_id;
 	    }
 	}
 	$insertion->{evidence_curies} = \@insertion_paper_evidence if @insertion_paper_evidence > 0;
@@ -289,7 +315,8 @@ sub get_mutation_types {
 	for my $evi ($obj->Deletion->col) {
 	    next unless $evi->name eq 'Paper_evidence';
 	    for my $paper ($evi->col) {
-		push @deletion_paper_evidence, 'WB:' . $paper->name;
+		my $paper_id = get_paper($paper);
+		push @deletion_paper_evidence, $paper_id if defined $paper_id;
 	    }
 	}
 	$deletion->{evidence_curies} = \@deletion_paper_evidence if @deletion_paper_evidence > 0;
@@ -305,7 +332,8 @@ sub get_mutation_types {
 	for my $evi ($obj->Tandem_duplication->col) {
 	    next unless $evi->name eq 'Paper_evidence';
 	    for my $paper ($evi->col) {
-		push @duplication_paper_evidence, 'WB:' . $paper->name;
+		my $paper_id = get_paper($paper);
+		push @duplication_paper_evidence, $paper_id if defined $paper_id;
 	    }
 	}
 	$duplication->{evidence_curies} = \@duplication_paper_evidence if @duplication_paper_evidence > 0;
@@ -347,7 +375,8 @@ sub get_evidence_curies {
     for my $evi ($name_obj->col) {
 	next unless $evi->name eq 'Paper_evidence';
 	for my $paper ($evi->col) {
-	    push @paper_evidence, 'WB:' . $paper->name;
+	    my $paper_id = get_paper($paper);
+	    push @paper_evidence, $paper_id if defined $paper_id;
 	}
     }
 
