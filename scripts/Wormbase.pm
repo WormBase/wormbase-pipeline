@@ -19,7 +19,7 @@ use Storable;
 use Digest::MD5 qw(md5_hex);
 use Species;
 
-our @core_organisms=qw(Elegans Briggsae Remanei Brenneri Japonica Pristionchus Brugia Ovolvulus Sratti Tmuris Ppa_V3);
+our @core_organisms=qw(Elegans Briggsae Remanei Brenneri Japonica Pristionchus Brugia Ovolvulus Sratti Tmuris Ppa_v3);
 
 our @tier3_organisms=qw(Elegans_hawaii Elegans_vc2010 Remanei_px506 Otipulae Panagrellus Cangaria Ctropicalis Csinica Cnigoni Clatens Cinopinata Cbecei Cbovis Cpanamensis Cparvicauda Cquiockensis Csulstoni Ctribulationis Cuteleia Cwaitukubuli Czanzibari);
 
@@ -69,7 +69,7 @@ sub new {
 
 sub get_wormbase_version {
     my $self = shift;
-    
+
     unless ( $self->{'version'} ) {
         my $dir = $self->autoace;
         if ( -e ("$dir/wspec/database.wrm") ) {
@@ -81,6 +81,7 @@ sub get_wormbase_version {
             $self->version(666);
         }
     }
+
 }
 
 ###################################################################################
@@ -1510,7 +1511,7 @@ sub establish_paths {
   $self->{'primary'}->{'sratti'} = $self->primaries .'/sratti';
   $self->{'primary'}->{'pristionchus'} = $self->primaries.'/pristionchus';
   $self->{'primary'}->{'tmuris'} = $self->primaries.'/tmuris';
-  $self->{'primary'}->{'Ppa_V3'} = $self->primaries.'/Ppa_V3';
+  $self->{'primary'}->{'ppa_v3'} = $self->primaries.'/ppa_V3';
   
   $self->{'misc_static'} = $self->{'build_data'} . "/MISC_STATIC";
   $self->{'misc_dynamic'} = $self->{'build_data'} . "/MISC_DYNAMIC";

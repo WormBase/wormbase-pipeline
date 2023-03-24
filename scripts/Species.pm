@@ -456,7 +456,7 @@ sub TSL {(
 
 #######################################################
 
-package Ppa_V3;
+package Ppa_v3;
 use Carp;
 our @ISA = qw(Species);
 
