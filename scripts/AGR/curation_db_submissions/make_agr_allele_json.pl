@@ -6,6 +6,7 @@ use Getopt::Long;
 use Ace;
 use JSON;
 use Path::Class;
+use Const::Fast;
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -13,6 +14,8 @@ use Modules::AGR;
 
 my ($debug, $test, $verbose, $store, $wormbase, $curation_test, $limit, $schema);
 my ($outfile, $acedbpath, $ws_version, $out_fh, $bgi_json,$disease_file);
+
+const my $LINKML_SCHEMA => 'v1.7.0';
 
 GetOptions (
     'debug=s'       => \$debug,
@@ -23,8 +26,7 @@ GetOptions (
     'outfile:s'     => \$outfile,
     'curationtest' => \$curation_test,  
     'wsversion=s'   => \$ws_version,
-    'limit:i'       => \$limit,
-    'schema=s'      => \$schema
+    'limit:i'       => \$limit
 )||die();
 
 if ( $store ) {
@@ -53,7 +55,7 @@ if (!$outfile) {
 my $db = Ace->connect(-path => $acedbpath, -program => $tace) or die("Connection failure: ". Ace->error);
 
 my $out_fh  = file($outfile)->openw;
-$out_fh->print("{\n   \"linkml_version\" : \"" . $schema . "\",\n   \"allele_ingest_set\" : [");
+$out_fh->print("{\n   \"linkml_version\" : \"" . $LINKML_SCHEMA . "\",\n   \"allele_ingest_set\" : [");
 
 my $alleles = process_variations($db, $out_fh);
 
@@ -75,6 +77,22 @@ sub process_variations {
 	    print "No species for $obj - skipping\n";
 	    next;
 	}
+
+	my $dp_xref_dto_json = {
+	    referenced_curie => 'WB:' . $obj->name,
+	    page_area => 'allele',
+	    display_name => $obj->name,
+	    prefix => 'WB',
+	    internal => JSON::false,
+	    obsolete => JSON::false
+	};
+	
+	my $data_provider_dto_json = {
+	    source_organization_abbreviation => 'WB',
+	    cross_reference_dto => $dp_xref_dto_json,
+	    internal => JSON::false,
+	    obsolete => JSON::false
+	}; 
 	
 	my $json_obj = {
 	    curie             => "WB:" . $obj->name,
@@ -83,7 +101,8 @@ sub process_variations {
 	    internal          => JSON::false,
 	    obsolete          => $obj->Status && $obj->Status->name eq 'Live' ? JSON::false : JSON::true,
 	    created_by_curie  => 'WB:curator',
-	    updated_by_curie  => 'WB:curator'
+	    updated_by_curie  => 'WB:curator',
+	    data_provider_dto => $data_provider_dto_json
 	};
 	if ($obj->Method) {
 	    my $collection = $obj->Method->name;
@@ -163,12 +182,29 @@ sub process_transgenes {
 	    next;
 	}
 	
+	my $dp_xref_dto_json = {
+	    referenced_curie => 'WB:' . $obj->name,
+	    page_area => 'transgene',
+	    display_name => $obj->name,
+	    prefix => 'WB',
+	    internal => JSON::false,
+	    obsolete => JSON::false
+	};
+	
+	my $data_provider_dto_json = {
+	    source_organization_abbreviation => 'WB',
+	    cross_reference_dto => $dp_xref_dto_json,
+	    internal => JSON::false,
+	    obsolete => JSON::false
+	}; 
+	
 	my $json_obj = {
 	    curie         => "WB:" . $obj->name, 
 	    allele_symbol_dto => get_symbol_dto($obj),
 	    taxon_curie   => "NCBITaxon:" . $obj->Species->NCBITaxonomyID->name,
 	    internal      => JSON::false,
-	    obsolete      => JSON::false
+	    obsolete      => JSON::false,
+	    data_provider_dto => $data_provider_dto_json
 	};	
 
 	my @synonym_dtos;
@@ -177,7 +213,8 @@ sub process_transgenes {
 		my $synonym_dto = {
 		    display_text   => $synonym->name,
 		    format_text    => $synonym->name,
-		    name_type_name => 'unspecified'
+		    name_type_name => 'unspecified',
+		    internal      => JSON::false
 		};
 		push @synonym_dtos, $synonym_dto;
 	    }
@@ -353,6 +390,7 @@ sub get_symbol_dto {
 	    format_text        => $obj->Public_name->name,
 	    name_type_name     => 'nomenclature_symbol',
 	    synonym_scope_name => 'exact',
+	    internal      => JSON::false
 	};
 	my $symbol_evidence = get_evidence_curies($obj->Public_name);
 	$symbol_dto->{evidence_curies} = $symbol_evidence if @$symbol_evidence;
@@ -361,7 +399,8 @@ sub get_symbol_dto {
 	    display_text       => $obj->name,
 	    format_text        => $obj->name,
 	    name_type_name     => 'systematic_name',
-	    synonym_scope_name => 'exact'
+	    synonym_scope_name => 'exact',
+	    internal      => JSON::false
 	};
     }
 

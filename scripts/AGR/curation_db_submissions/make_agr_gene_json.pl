@@ -5,11 +5,13 @@ use Storable;
 use Getopt::Long;
 use Ace;
 use JSON;
-
+use Const::Fast;
 use Wormbase;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase, $schema);
 my ($outfile, $acedbpath, $ws_version, $out_fh);
+
+cosnt my $LINKML_SCHEMA => 'v1.7.0';
 
 GetOptions ("help"        => \$help,
             "debug=s"     => \$debug,
@@ -18,8 +20,7 @@ GetOptions ("help"        => \$help,
 	    "store:s"     => \$store,
 	    "database:s"  => \$acedbpath,
 	    "outfile:s"   => \$outfile,
-            "wsversion=s" => \$ws_version,
-	    "schema=s"    => \$schema
+            "wsversion=s" => \$ws_version
 	    );
 
 if ( $store ) {
@@ -58,19 +59,36 @@ while (my $obj = $it->next) {
     }
 
     # Secondary ids
-    my @secondary_ids;
-    if ($obj->Acquires_merge) {
-	foreach my $g ($obj->Acquires_merge) {
-	    push @secondary_ids, 'WB:'.$g->name;
-	}
-    }
+    #my @secondary_ids;
+    #if ($obj->Acquires_merge) {
+    #	foreach my $g ($obj->Acquires_merge) {
+    #	    push @secondary_ids, 'WB:'.$g->name;
+    #	}
+    #}
+    
+    my $dp_xref_dto_json = {
+	referenced_curie => 'WB:' . $obj->name,
+	page_area => 'gene',
+	display_name => $obj->name,
+	prefix => 'WB',
+	internal => JSON::false,
+	obsolete => JSON::false
+    };
+	
+    my $data_provider_dto_json = {
+	source_organization_abbreviation => 'WB',
+	cross_reference_dto => $dp_xref_dto_json,
+	internal => JSON::false,
+	obsolete => JSON::false
+    };
     
     my $gene = {
 	curie    => 'WB:' . $obj->name,
 	gene_symbol_dto   => $symbol,
 	taxon_curie    => 'NCBITaxon:' . $obj->Species->NCBITaxonomyID,
 	obsolete => $obj->Status && $obj->Status->name eq 'Live' ? JSON::false : JSON::true,
-	internal => JSON::false
+	internal => JSON::false,
+	data_provider_dto => $data_provider_dto_json
     };
 
 
@@ -83,7 +101,7 @@ while (my $obj = $it->next) {
 }
 
 my $data = {
-    linkml_version => $schema,
+    linkml_version => $LINKML_SCHEMA,
     gene_ingest_set => \@genes,
 };
 
@@ -129,14 +147,15 @@ sub get_name_slot_annotations {
 	    format_text  => $symbol_obj->name,
 	    name_type_name => $symbol_type,
 	    synonym_scope_name => "exact",
+	    internal => JSON::false
 	};
 	$symbol->{evidence_curies} = $symbol_evidence if @$symbol_evidence;
     } else {
 	$symbol = {
 	    display_text   => $obj->name,
 	    format_text    => $obj->name,
-	    name_type_name => 'systematic_name'
-
+	    name_type_name => 'systematic_name',
+	    internal => JSON::false
 	};
     }
 
@@ -147,7 +166,8 @@ sub get_name_slot_annotations {
 	    display_text => $systematic_name_obj->name,
 	    format_text => $systematic_name_obj->name,
 	    name_type_name => "systematic_name",
-	    synonym_scope_name => "exact"
+	    synonym_scope_name => "exact",
+	    internal => JSON::false
 	};
 	$systematic_name->{evidence_curies} = $systematic_name_evidence if @$systematic_name_evidence;
     }
@@ -159,7 +179,8 @@ sub get_name_slot_annotations {
 	    my $synonym = {
 		format_text => $synonym_obj->name,
 		display_text => $synonym_obj->name,
-		name_type_name => "unspecified"
+		name_type_name => "unspecified",
+		internal => JSON::false
 	    };
 	    $synonym->{evidence_curies} = $symbol_evidence if @$symbol_evidence;
 	    push @synonyms, $synonym;
@@ -180,6 +201,7 @@ sub get_name_slot_annotations {
 	    display_text => $obj->Gene_class->Description->name . $suffix,
 	    format_text => $obj->Gene_class->Description->name . $suffix,
 	    name_type_name => "full_name",
+	    internal => JSON::false
 	};
 	$full_name->{evidence_curies} = $full_name_evidence if @$full_name_evidence;
     } elsif ($obj->Corresponding_CDS && $obj->Corresponding_CDS->Brief_identification) {
@@ -188,6 +210,7 @@ sub get_name_slot_annotations {
 	    display_text => $obj->Corresponding_CDS->Brief_identification->name,
 	    format_text => $obj->Corresponding_CDS->Brief_identification->name,
 	    name_type_name => "full_name",
+	    internal => JSON::false
 	};
 	$full_name->{evidence_curies} = $full_name_evidence if @$full_name_evidence;
     }

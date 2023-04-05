@@ -7,7 +7,7 @@ use Wormbase;
 use Const::Fast;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($outfile, $acedbpath, $ws_version, $out_fh, $schema);
+my ($outfile, $acedbpath, $ws_version, $out_fh);
 
 const my $LINKML_SCHEMA => 'v1.7.0';
 
@@ -48,7 +48,7 @@ while (my $obj = $it->next) {
     }
 
     my $dp_xref_dto_json = {
-	referenced_curie => $obj->name,
+	referenced_curie => 'WB:' . $obj->name,
 	page_area => 'strain',
 	display_name => $obj->name,
 	prefix => 'WB',
@@ -86,7 +86,7 @@ while (my $obj = $it2->next) {
     }
 
     my $dp_xref_dto_json = {
-	referenced_curie => $obj->name,
+	referenced_curie => 'WB:' . $obj->name,
 	page_area => 'genotype',
 	display_name => $obj->name,
 	prefix => 'WB',
