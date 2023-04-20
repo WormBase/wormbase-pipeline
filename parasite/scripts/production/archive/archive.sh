@@ -10,6 +10,7 @@
 set -euo pipefail
 
 species=$1
+sourcedbname=$2
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
@@ -17,7 +18,11 @@ base_dir=$PARASITE_SCRATCH/id_mapping/WBPS${PARASITE_VERSION}/$species
 mkdir -pv $base_dir
 if [ ! -s $base_dir/$species.ini ] ; then
   echo "basedir=$base_dir" > $base_dir/$species.ini
-  perl $DIR/mapping_conf.pl --species $species >> $base_dir/$species.ini
+  if [ -z "$sourcedbname" ]; then
+    perl $DIR/mapping_conf.pl --species $species >> $base_dir/$species.ini
+  else
+    perl $DIR/mapping_conf.pl --species $species --sourcedbname $sourcedbname >> $base_dir/$species.ini
+  fi
 fi
 [ -t 0 ] && ${EDITOR:-vi} $base_dir/$species.ini
 
