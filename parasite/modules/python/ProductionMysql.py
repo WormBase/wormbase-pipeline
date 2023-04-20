@@ -189,12 +189,12 @@ class Variation(Staging):
     def db(self):
         return (regex_match_one_db(self.pattern, self.databases))
 
-    def species(self):
+    def species_name(self):
         spe_cies_bp = '_'.join(self.db().split("_")[0:3])
         return (spe_cies_bp)
 
-    def core(self):
-        return (Core(STAGING_HOST, self.species()).db())
+    def core_dbname(self):
+        return (Core(STAGING_HOST, self.species_name()).db())
 
     def connect(self):
         dbc = DBConnection(self.url + self.db())
@@ -210,12 +210,12 @@ class Variation(Staging):
 
     def ftp_filename_n_filename(self):
         ftp_id = self.meta_value('species.ftp_genome_id')
-        ftp_species = '_'.join(self.species().split("_")[0:2])
+        ftp_species = '_'.join(self.species_name().split("_")[0:2])
         return (ftp_species + "/" + ftp_id + "/" + ftp_species + "." + ftp_id + "." + "WBPS" + PARASITE_VERSION)
 
     def ftp_filename(self):
         ftp_id = self.meta_value('species.ftp_genome_id')
-        ftp_species = '_'.join(self.species().split("_")[0:2])
+        ftp_species = '_'.join(self.species_name().split("_")[0:2])
         return (ftp_species + "." + ftp_id + "." + "WBPS" + PARASITE_VERSION)
 
 
