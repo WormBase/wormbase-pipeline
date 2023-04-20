@@ -26,16 +26,17 @@ from ensembl.database import DBConnection, UnitTestDB
 # my_core.meta_value("species.taxonomy_id")
 
 STAGING_HOST = os.environ['PARASITE_STAGING_MYSQL']
+PRODUCTION_HOST = 'mysql-ps-prod-1'
 PREVIOUS_STAGING_HOST = os.environ['PREVIOUS_PARASITE_STAGING_MYSQL']
 PARASITE_VERSION = os.environ['PARASITE_VERSION']
 ENSEMBL_VERSION = os.environ['ENSEMBL_VERSION']
 WORMBASE_VERSION = os.environ['WORMBASE_VERSION']
 WORMBASE_ENSEMBL_SCRIPTS = os.path.join(os.environ['WORM_CODE'], 'scripts', 'ENSEMBL', 'scripts')
 DUMP_GENOME_SCRIPT = os.path.join(WORMBASE_ENSEMBL_SCRIPTS, "dump_genome.pl")
-
+DUMP_PROTEIN_SCRIPT = os.path.join(WORMBASE_ENSEMBL_SCRIPTS, "dump_proteins.pl")
 
 class Staging:
-    def __init__(self, STAGING_HOST, writeable=False):
+    def __init__(self, STAGING_HOST, writeable=False, ps_release=PARASITE_VERSION, e_release=ENSEMBL_VERSION):
         self.host = STAGING_HOST
         if writeable:
             self.host = STAGING_HOST + "-w"
@@ -46,6 +47,12 @@ class Staging:
         self.db_list = self.insp.get_schema_names()
         self.core_databases = [x for x in self.db_list if "_core_" in x]
         self.variation_databases = [x for x in self.db_list if "_variation_" in x]
+        self.relsuffix = "_"+ps_release+"_"+e_release
+        self.release_core_databases = [x for x in self.core_databases if "_"+ps_release+"_"+e_release in x]
+        self.genomes = ["_".join(x.split("_")[0:3]) for x in self.core_databases]
+        self.release_genomes = ["_".join(x.split("_")[0:3]) for x in self.release_core_databases]
+        self.species = list(set(["_".join(x.split("_")[0:2]) for x in self.core_databases]))
+        self.release_species = list(set(["_".join(x.split("_")[0:2]) for x in self.release_core_databases]))
 
     def core_dbs(self, pattern):
         return (regex_match_dbs(pattern, self.core_databases))
@@ -69,41 +76,90 @@ class Staging:
         else:
             return False
 
-class Core(Staging):
-    def __init__(self, STAGING_HOST, pattern, writable=False):
-        super().__init__(STAGING_HOST, writable)
+    def is_genome(self, input):
+        if input in self.release_genomes:
+            return True
+        else:
+            return False
+
+    def is_a_genome(self, input):
+        if input in self.genomes:
+            return True
+        else:
+            return False
+
+    def species_phylum(self, pattern):
+        if "diphyllobothrium_latum" in pattern:
+            pattern = "dibothriocephalus_latus_prjeb1206"
+        try:
+            coredb = regex_match_dbs(pattern, self.core_databases)[0]
+        except IndexError:
+            exit_with_error(f"Couldn't find a core db for {pattern}")
+
+        return Core(self.host, coredb).phylum()
+
+class Production:
+    def __init__(self, PRODUCTION_HOST, pattern="", writeable=False):
+        self.host = PRODUCTION_HOST
+        if writeable:
+            self.host = PRODUCTION_HOST + "-w"
+        self.url = subprocess.check_output([self.host, 'details', 'url']).strip().decode()
+        self.script = subprocess.check_output([self.host, 'details', 'script']).strip().decode()
+        self.engine = sqlalchemy.create_engine(self.url)
+        self.insp = sqlalchemy.inspect(self.engine)
+        self.db_list = self.insp.get_schema_names()
         self.pattern = pattern
-        self.databases = self.core_databases
 
     def db(self):
-        return (regex_match_one_db(self.pattern, self.databases))
-
-    def species(self):
-        spe_cies_bp = '_'.join(self.db().split("_")[0:3])
-        return (spe_cies_bp)
+        return (regex_match_one_db(self.pattern, self.db_list))
 
     def connect(self):
         dbc = DBConnection(self.url + self.db())
         return (dbc)
 
+class Core(Staging):
+    def __init__(self, STAGING_HOST, pattern, writable=False):
+        super().__init__(STAGING_HOST, writable)
+        self.pattern = pattern
+        self.databases = self.core_databases
+    def db(self):
+        return (regex_match_one_db(self.pattern, self.databases))
+    def species_name(self):
+        spe_cies_bp = '_'.join(self.db().split("_")[0:3])
+        return (spe_cies_bp)
+    def connect(self):
+        dbc = DBConnection(self.url + self.db())
+        return (dbc)
     def meta_value(self, pattern):
         META_VALUE_SQL = "SELECT meta_key, meta_value FROM meta WHERE meta_key LIKE \"%{0}%\";".format(pattern)
         get_meta_value_res = [x for x in self.connect().execute(META_VALUE_SQL)]
         if len(get_meta_value_res) > 1:
-            return ({x[0]: x[1] for x in get_meta_value_res})
+            return [{x[0]: x[1]} for x in get_meta_value_res]
         else:
-            return ([x[1] for x in get_meta_value_res][0])
-
+            return [x[1] for x in get_meta_value_res][0]
+    def phylum(self):
+        species_classifications_dict = self.meta_value('species.classification')
+        species_classifications = flatten([list(x.values()) for x in species_classifications_dict])
+        if "Nematoda" in species_classifications:
+            return "Nematoda"
+        elif "Platyhelminthes" in species_classifications:
+            return "Platyhelminthes"
+        else:
+            exit_with_error("Could not infer phylum from: "+" ".join(species_classifications))
+    def assembly_default(self):
+        return self.meta_value('assembly.default')
+    def ftp_filename_n_filename_without_version(self):
+        ftp_id = self.meta_value('species.ftp_genome_id')
+        ftp_species = '_'.join(self.species_name().split("_")[0:2])
+        return (ftp_species + "/" + ftp_id + "/" + ftp_species + "." + ftp_id + ".")
     def ftp_filename_n_filename(self):
         ftp_id = self.meta_value('species.ftp_genome_id')
-        ftp_species = '_'.join(self.species().split("_")[0:2])
+        ftp_species = '_'.join(self.species_name().split("_")[0:2])
         return (ftp_species + "/" + ftp_id + "/" + ftp_species + "." + ftp_id + "." + "WBPS" + PARASITE_VERSION)
-
     def ftp_filename(self):
         ftp_id = self.meta_value('species.ftp_genome_id')
-        ftp_species = '_'.join(self.species().split("_")[0:2])
+        ftp_species = '_'.join(self.species_name().split("_")[0:2])
         return (ftp_species + "." + ftp_id + "." + "WBPS" + PARASITE_VERSION)
-
     def dump_genome_command(self, outfile=False, mask=False, softmask=False, ebi_header_prefix=False):
         command = "perl " + \
                   DUMP_GENOME_SCRIPT + " " + \
@@ -113,10 +169,16 @@ class Core(Staging):
                   (" --mask" if mask else "") + \
                   (" --softmask" if softmask else "") + \
                   ";"
-
         return command
-
-
+    def dump_protein_command(self, outfile=False, canonical_only=True):
+        command = "perl " + \
+                  DUMP_PROTEIN_SCRIPT + " " + \
+                  self.script + " " + \
+                  "--dbname " + self.db() + \
+                  (" --outfile " + outfile if outfile else "") + \
+                  (" --canonical_only" if canonical_only else "") + \
+                  ";"
+        return command
 
 class Variation(Staging):
     def __init__(self, STAGING_HOST, pattern, writable=False):
@@ -127,12 +189,12 @@ class Variation(Staging):
     def db(self):
         return (regex_match_one_db(self.pattern, self.databases))
 
-    def species(self):
+    def species_name(self):
         spe_cies_bp = '_'.join(self.db().split("_")[0:3])
         return (spe_cies_bp)
 
-    def core(self):
-        return (Core(STAGING_HOST, self.species()).db())
+    def core_dbname(self):
+        return (Core(STAGING_HOST, self.species_name()).db())
 
     def connect(self):
         dbc = DBConnection(self.url + self.db())
@@ -148,12 +210,12 @@ class Variation(Staging):
 
     def ftp_filename_n_filename(self):
         ftp_id = self.meta_value('species.ftp_genome_id')
-        ftp_species = '_'.join(self.species().split("_")[0:2])
+        ftp_species = '_'.join(self.species_name().split("_")[0:2])
         return (ftp_species + "/" + ftp_id + "/" + ftp_species + "." + ftp_id + "." + "WBPS" + PARASITE_VERSION)
 
     def ftp_filename(self):
         ftp_id = self.meta_value('species.ftp_genome_id')
-        ftp_species = '_'.join(self.species().split("_")[0:2])
+        ftp_species = '_'.join(self.species_name().split("_")[0:2])
         return (ftp_species + "." + ftp_id + "." + "WBPS" + PARASITE_VERSION)
 
 

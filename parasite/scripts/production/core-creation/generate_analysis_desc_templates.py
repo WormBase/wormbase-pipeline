@@ -35,7 +35,7 @@ def parse_arguments():
   try:
     new_fh = open(args.new_file,"w")
   except:
-    sys.exit("Can't open file to write: " + args.new_file) 
+    sys.exit("Can't open file to write: " + args.new_file)
 
   try:
     path.exists(args.data_directory)
@@ -95,6 +95,9 @@ def parse_config_and_print_new(species, config, logic_names, new_fh):
       print("Found new name "+ ln + " for " + species)
       logic_names.append(ln)
       description = generate_description(config_data, species)
+      print(ln)
+      print(description)
+      print(new_fh)
       print_to_file(ln, description, new_fh)
 
   return(logic_names)

@@ -33,7 +33,7 @@ if [ ! -d "$STAGING_DIR" ] ; then
     --quick --single-transaction \
     parasite_mart_${PARASITE_VERSION} $table > ${TMP}/$table.sql;
   done
-    mv $TMP/* $STAGING_DIR
+    mv $TMP $STAGING_DIR
   fi
 
 find $STAGING_DIR -type f -name '*.txt' | while read -r f; do
@@ -44,8 +44,6 @@ sudo -u wormbase mkdir -pv $RELEASE_DIR/biomart
 sudo -u wormbase rsync -av --delete $STAGING_DIR/ $RELEASE_DIR/biomart/
 
 perl -MProductionMysql -E '
-my $m = "^(trichinella_pseudospiralis)_(iss[0-9]+)(prjna257433)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$|^(steinernema_carpocapsae)_(v[0-9]+)(prjna202318)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$|^(.*?)_(.{1,5}).*?_(.*?)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$|^()([a-z])[^_]+_([^_]+)_core_.*\$" ;
-
 my %core_db_to_biomart_name;
 my %bps;
 for my $core_db (ProductionMysql->staging->core_databases) {

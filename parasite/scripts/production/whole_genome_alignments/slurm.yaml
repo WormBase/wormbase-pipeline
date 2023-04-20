@@ -1,0 +1,46 @@
+---
+cactus-preprocess:              # name of Cactus job
+    cpus: 48                    # number of CPUs required to run this job
+    gpus: 4                     # number of GPUs required to run this job
+    partition: "gpu"          # name of Slurm partition where this job must run
+    memory: "480g"
+    time: "24:00:10"
+
+cactus-blast:
+    cpus: 48
+    gpus: 4
+    partition: "gpu"
+    memory: "480g"
+    time: "24:00:10"
+
+cactus-align:
+    cpus: 48
+    gpus: null
+    partition: "standard"
+    memory: "480g"
+    time: "24:00:10"
+
+hal2fasta:
+    cpus: 1
+    gpus: null
+    partition: "standard"
+    memory: "50g"
+    time: "10:00:00"
+
+halAppendSubtree:
+    cpus: 1
+    gpus: null
+    partition: "standard"
+    memory: "50g"
+    time: "10:00:00"
+
+
+regular:
+    cpus: 1
+    gpus: null
+    partition: "standard"
+    memory: "50g"
+    time: "10:00:00"
+
+
+

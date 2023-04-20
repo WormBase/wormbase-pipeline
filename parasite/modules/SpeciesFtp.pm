@@ -32,7 +32,18 @@ sub path_to {
   # fix for special bioproject names assigned to old S. carpocapsae genome versions
   $bp =~ s/V([0-9]+)PRJNA([0-9]+)/V$1_PRJNA$2/;
   # fix for special bioproject names assigned to globodera rhostochiensis genome versions l22 and l19
-  $bp =~ s/L([0-9]+)PRJNA([0-9]+)/L$1_PRJNA$2/; 
+  $bp =~ s/L([0-9]+)PRJNA([0-9]+)/L$1_PRJNA$2/;
+  # fix for special bioproject names assigned to different trematodes
+  $bp =~ s/TD([0-9]+)PRJEB([0-9]+)/TD$1_PRJEB$2/;
+  # fix for special bioproject names assigned to schmidtea
+  $bp =~ s/S2F19H([0-9]+)PRJNA([0-9]+)/S2F19H$1_PRJNA$2/;
+  # fix for special bioproject names assigned to aphelenchoides
+  $bp =~ s/A([A-Z]+)PRJNA(834627)/A$1_PRJNA$2/;
+  # fix for special bioproject names assigned to briggsae
+  $bp =~ s/QX(1410)PRJNA(784955)/QX$1_PRJNA$2/;
+  $bp =~ s/VX(34)PRJNA(784955)/VX$1_PRJNA$2/;
+  # fix for special bioproject names assigned to m chitwoodi
+  $bp =~ s/(RACE1)PRJNA(666745)/$1_PRJNA$2/;
   $zipped //= 1;
 
   my $dir = join("/", $self->{root}, "${spe}_${cies}", $bp);

@@ -25,7 +25,7 @@ checkout_ensembl_branch(){
  git clone --single-branch -b $branch_name --depth 1 https://github.com/${repo_owner}/${repo_name}.git ${where_to_clone}
 }
 
-checkout_ensembl_branch ensembl release/106
+checkout_ensembl_branch ensembl main
 checkout_ensembl_branch ensembl-hive version/2.6
 checkout_ensembl_branch ensembl-production-imported main
 checkout_ensembl_branch ensembl-production-imported-private main

@@ -6,6 +6,7 @@ import datetime
 import glob
 import subprocess
 import re
+import urllib.request
 import requests
 import random
 import validators
@@ -13,6 +14,16 @@ import sqlalchemy
 import string
 import csv
 import pandas as pd
+from Bio import Phylo
+
+PARASITE_FTP_URL="ftp://ftp.ebi.ac.uk/pub/databases/wormbase/parasite/releases"
+PARASITE_HTTP_FTP_URL="https://ftp.ebi.ac.uk/pub/databases/wormbase/parasite/releases"
+
+def ftp_suffix_dict():
+    return { "gfasta" : "genomic.fa.gz",
+             "gfasta_masked" : "genomic_masked.fa.gz",
+             "gfasta_softmasked" : "genomic_softmasked.fa.gz",
+             "pfasta" : "protein.fa.gz"}
 
 
 # Logging
@@ -22,8 +33,8 @@ def dtnow():
 
 
 def exit_with_error(error_message):
-    print(dtnow() + ": ERROR - " + error_message + ".")
-    raise ValueError
+    print(dtnow() + ": ERROR - " + error_message + ".", file=sys.stderr)
+    sys.exit(1)
 
 
 def check_file_exists(file, to_raise=False):
@@ -51,6 +62,8 @@ def print_info(info_message):
 def print_warning(info_message):
     print(dtnow() + ": WARNING - " + info_message + ".")
 
+def print_error(info_message):
+    print(dtnow() + ": ERROR - " + info_message + ".")
 
 def print_w_indent(message):
     print("\t" + message)
@@ -58,6 +71,55 @@ def print_w_indent(message):
 
 def pnl():
     print("\n")
+
+
+def is_valid_directory_name(directory_name):
+    """
+    Returns True if the directory_name can be safely used as a directory name,
+    otherwise returns False.
+    """
+    # Check if directory_name is empty or contains invalid characters
+    if not directory_name or not all(char.isalnum() or char in "-_ " for char in directory_name):
+        return False
+
+    # Check if directory with same name already exists
+    if os.path.exists(directory_name):
+        return False
+
+    return True
+
+
+def fix_directory_name(directory_name):
+    """
+    Tries to fix the given directory_name so that it can be used as a directory name.
+    """
+    # Remove invalid characters from directory_name
+    directory_name = ''.join(char for char in directory_name if char.isalnum() or char in "-_ ")
+
+    # Remove leading/trailing spaces from directory_name
+    directory_name = directory_name.strip()
+
+    # Replace spaces and other non-alphanumeric characters with hyphens
+    directory_name = '-'.join(directory_name.split())
+
+    if not is_valid_directory_name(directory_name):
+        exit_with_error("Cannot fix: "+directory_name)
+
+    return directory_name
+
+
+def create_soft_link_for_all_dir_contents(src_dir, dst_dir):
+    """
+    Creates a soft link to all the contents of src_dir in dst_dir.
+    """
+    # Get list of all files/directories in src_dir
+    src_contents = os.listdir(src_dir)
+
+    # Create soft links to all files/directories in src_dir in dst_dir
+    for content in src_contents:
+        src_path = os.path.join(src_dir, content)
+        dst_path = os.path.join(dst_dir, content)
+        os.symlink(src_path, dst_path)
 
 
 def check_if_file_exists(xfile):
@@ -130,9 +192,8 @@ def regex_match_one_db(pattern, databases):
 
 
 def url_file_exists(path):
-    r = requests.head(path)
+    r = requests.head(path, stream=True)
     return r.status_code == requests.codes.ok
-
 
 def findOccurrences(s, ch):
     return [i for i, letter in enumerate(s) if letter == ch]
@@ -148,6 +209,110 @@ def download_if_url_or_copy_file_command(path, output=None):
                   (" " + output if output else "") + \
                   ";"
     return command
+
+def argparse_core_db(cdb_input, staging_server, previous_staging_server):
+    if cdb_input in staging_server.core_databases:
+        return "{0}:{1]".format(cdb_input, staging_server.host)
+    elif cdb_input in previous_staging_server.core_databases:
+        return "{0}:{1}".format(cdb_input, previous_staging_server.host)
+    else:
+        raise ValueError
+
+def argparse_fasta_file(fasta_input):
+    if not (fasta_input.endswith(".fa")) or (fasta_input.endswith(".fasta")) \
+            or (fasta_input.endswith(".fa.gz")) or (fasta_input.endswith(".fasta.gz")):
+        raise ValueError
+    if not ":" in fasta_input:
+        raise ValueError
+    return fasta_input
+
+def parasite_release_data_genomes(parasite_data_dir, staging_server):
+    return [x for x in os.listdir(parasite_data_dir) if x in staging_server.release_genomes]
+
+def parasite_genome2core(genome, staging_server):
+    core_dbs = staging_server.core_dbs(genome)
+    if len(core_dbs)>1:
+        exit_with_error("The are more than one core dbs in {0} for {1}".format(staging_server.host,genome))
+    return core_dbs[0]
+
+def parasite_core2genome(core_db):
+    return "_".join(core_db.split("_")[0:3])
+
+def parasite_core2previouscore(core_db, previous_staging_server):
+    genome = parasite_core2genome(core_db)
+    return parasite_genome2core(genome, previous_staging_server)
+
+def parasite_release_data_cores(parasite_data_dir, staging_server):
+    parasite_data_genomes = parasite_release_data_genomes(parasite_data_dir, staging_server)
+    return [parasite_genome2core(x, staging_server) for x in parasite_data_genomes]
+
+def get_ftp_species_url_for_version(version, parasite_ftp_url):
+    ps_version = str(version)
+    url = f"{parasite_ftp_url}/WBPS{ps_version}/species/"
+    return url
+
+def get_ftp_species_for_version(version, parasite_ftp_url=PARASITE_HTTP_FTP_URL):
+    url = get_ftp_species_url_for_version(version, parasite_ftp_url)
+    page = urllib.request.urlopen(url)
+    content = page.read().decode('utf-8')
+    regex = r"href=\"(\w+_\w+)/"
+    genomes = re.findall(regex, content)
+    return genomes
+
+def get_previous_release_genomes_list(version, parasite_ftp_url=PARASITE_HTTP_FTP_URL):
+    genomes = get_ftp_species_for_version(version, parasite_ftp_url)
+    url = get_ftp_species_url_for_version(version, parasite_ftp_url)
+
+    genomes_list = []
+    for genome in genomes:
+        genome_name = re.sub(r"_", " ", genome)
+        bioprojects_url = f"{url}/{genome}/"
+        bioprojects_page = urllib.request.urlopen(bioprojects_url)
+        bioprojects_content = bioprojects_page.read().decode('utf-8')
+        bioprojects_regex = r"href=\"(\w+)/"
+        bioprojects = re.findall(bioprojects_regex, bioprojects_content)
+        for bioproject in bioprojects:
+            bioproject_name = bioproject.strip().lower()
+            genome_bioproject_name = f"{genome}_{bioproject_name}"
+            genomes_list.append(genome_bioproject_name)
+
+    return genomes_list
+
+def get_genome_ftp_file_url_from_ftp_release(genome, version, filetype, parasite_ftp_url=PARASITE_HTTP_FTP_URL):
+    ps_version = str(version)
+    genus_species = "_".join(genome.split("_")[0:2])
+    bioproject = "_".join(genome.split("_")[2:]).upper()
+
+    url = f"{parasite_ftp_url}/WBPS{ps_version}/species/{genus_species}/{bioproject}"
+
+    filesuffix = ftp_suffix_dict()[filetype]
+
+    file_url = f"{url}/{genus_species}.{bioproject}.WBPS{ps_version}.{filesuffix}"
+
+    if url_file_exists(file_url):
+        return file_url
+    else:
+        exit_with_error(f"{file_url} doesn't exit. Exiting.")
+
+def get_all_genomes_ftp_file_url_from_ftp_release(version, filetype, parasite_ftp_url=PARASITE_HTTP_FTP_URL):
+    release_genomes = get_previous_release_genomes_list(version)
+    file_urls = []
+    for genome in release_genomes:
+        file_urls.append(get_genome_ftp_file_url_from_ftp_release(genome, version, filetype, parasite_ftp_url))
+
+    return file_urls
+
+def calculate_n50_command(fasta, outfile, assembly_stats_path="assembly-stats"):
+    return f'{assembly_stats_path} {fasta} | grep "N50 =" > {outfile};'
+
+
+
+
+
+
+
+
+
 
 
 

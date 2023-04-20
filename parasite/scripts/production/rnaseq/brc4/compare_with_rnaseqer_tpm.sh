@@ -1,29 +1,35 @@
 RESULTS_DIR=$1
-RNASEQER_FTP="/nfs/ftp/public/databases/arrayexpress/data/atlas/rnaseq/"
+RNASEQER_FTP="/nfs/ftp/public/databases/arrayexpress/data/atlas/rnaseq"
+RFTP_SHORT_STUDIES=$(ls $RNASEQER_FTP -1)
+export PATH=${PARASITE_PRODUCTION}/data/conda_envs/wbps-expression/bin:$PATH;
 
-for study in $(ls $RESULTS_DIR -1);
+for study_run in $(ls $RESULTS_DIR -1);
   do
-  short_study=${study:0:6}
-  study_dir=${RESULTS_DIR}/${study};
-  # elength_file=$(ls ${RESULTS_DIR}/../../../temp/*/index/*/*.exon-lengths.tsv | head -n1)
-  echo "study: "${study}
-  # echo "   summing up metazoa pipeline output..."
-  # fsnu=${study_dir}/genes.htseq-union.firststrand.nonunique.counts
-  # ssnu=${study_dir}/genes.htseq-union.secondstrand.nonunique.counts
-  # unuc=${study_dir}/genes.htseq-union.unstranded.counts
-  #  cat ${study_dir}/genes.htseq-union.firststrand.nonunique.counts ${study_dir}/genes.htseq-union.secondstrand.nonunique.counts | awk '{a[$1]+=$2}END{for(i in a) print i,a[i]}' > ${study_dir}/genes.htseq-union.nonunique.counts;
-  #  cat ${study_dir}/genes.htseq-union.firststrand.counts ${study_dir}/genes.htseq-union.secondstrand.counts | awk '{a[$1]+=$2}END{for(i in a) print i,a[i]}' > ${study_dir}/genes.htseq-union.counts;
-  # echo "   create metazoa pipeline tpm file..."
-  # join <(sort -k1 ${unuc}) <(sort -k1 ${elength_file}) | awk '{print $1"\t"$2/($3/1000)}' > ${unuc}.rpk
-  # million_factor=$(awk '{Total=Total+$2} END{print Total/1000000}' ${unuc}.rpk)
-  # awk -v million_factor="${million_factor}" '{print $1"\t"$2/million_factor}' ${unuc}.rpk > ${unuc}.tpm
+  study=$(echo $study_run | cut -d"_" -f1);
+  run=$(echo $study_run | cut -d"_" -f2);
+  short_run=${run:0:6};
+  run_last="${run: -1}"
+  run_dir=${RESULTS_DIR}/${study_run}/${run};
+  brc4_tpm=$(ls ${run_dir}/*.tpm -1 | grep -v nonunique | head -n1);
+  if [ -f "$brc4_tpm" ]; then :; else break; fi;
+  if $(echo ${RFTP_SHORT_STUDIES} | grep -q ${short_run}); then :; else break; fi;
+  if [ -d "${RNASEQER_FTP}/${short_run}/${run}" ];
+    then RNDIR="${RNASEQER_FTP}/${short_run}/${run}";
+  elif [ -d "${RNASEQER_FTP}/${short_run}/00${run_last}/${run}" ];
+    then RNDIR="${RNASEQER_FTP}/${short_run}/00${run_last}/${run}";
+  else break;
+  fi;
+  if [ -f "${RNDIR}/${run}.pe.genes.tpm.htseq2.irap.tsv" ];
+   then irap_tpm="${RNDIR}/${run}.pe.genes.tpm.htseq2.irap.tsv";
+  else break;
+  fi;
+  echo "run: "${run}
   echo "   copying rnaseqer tpm file..."
-  cp ${RNASEQER_FTP}/${short_study}/${study}/${study}.pe.genes.tpm.htseq2.irap.tsv ${study_dir}/;
+  cp ${irap_tpm} ${run_dir}/irap.tpm.tsv;
   echo "   performing comparison and printing comparison plots..."
-  export PATH=${PARASITE_PRODUCTION}/data/conda_envs/wbps-expression/bin:$PATH;
-  Rscript ${WORM_CODE}/parasite/scripts/production/rnaseq/brc4/comparison_plots_tpm.R ${study_dir} ${study};
+  Rscript ${WORM_CODE}/parasite/scripts/production/rnaseq/brc4/comparison_plots_tpm.R ${brc4_tpm} ${run_dir}/irap.tpm.tsv ${run};
   echo "   Done"
   echo ""
-  done
+done
 
 
