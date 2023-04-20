@@ -39,11 +39,14 @@ else:
     SPECIES = staging.core_dbs("core_"+os.environ["PARASITE_VERSION"]+"_"+os.environ["ENSEMBL_VERSION"])
 
 VARIATION_DBS = staging.variation_dbs("variation_"+PARASITE_VERSION+"_"+ENSEMBL_VERSION)
-COMPARATORS = {Variation(staging.host, x).species():Variation(staging.host, x).core() for x in VARIATION_DBS}
+COMPARATORS = {Variation(staging.host, x).species_name():Variation(staging.host, x).core_dbname() for x in VARIATION_DBS}
 
 for cdb in SPECIES:
     ortho_file = OUTPUT_DIR + "/" + Core(staging.host, cdb).ftp_filename_n_filename() + ".orthologs.tsv.gz"
     output_file = OUTPUT_DIR + "/" + Core(staging.host, cdb).ftp_filename_n_filename() + ".orthology-inferred_phenotypes.gaf"
+
+    if os.path.isfile(output_file):
+        continue
 
     taxon_id = Core(staging.host, cdb).meta_value("species.taxonomy_id").strip()
     if taxon_id == "":
