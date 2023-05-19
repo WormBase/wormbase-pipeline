@@ -129,6 +129,8 @@ sub new {
     $person = 'WBPerson51134';
   } elsif ($user eq 'mh6') {
     $person = 'WBPerson4055';
+  } elsif ($user = 'mqt') {
+      $person = 'WBPerson49956';
   } else {
     die "ERROR Unknown user: $user\nPlease set up WBPerson for $user in Curate.pm\n";
   }
