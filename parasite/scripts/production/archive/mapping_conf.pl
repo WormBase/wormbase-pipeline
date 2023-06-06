@@ -7,19 +7,24 @@ use ProductionMysql;
 my $db_command = "$ENV{PARASITE_STAGING_MYSQL}";
 my $previous_db_command = "$ENV{PREVIOUS_PARASITE_STAGING_MYSQL}";
 my $species;
+my $sourcedbname;
 GetOptions (
-  'species=s' => \$species,
-  'db_command=s'  => \$db_command,
-  'previous_db_command=s' => \$previous_db_command,
+    'species=s'             => \$species,
+    'db_command=s'          => \$db_command,
+    'previous_db_command=s' => \$previous_db_command,
+    'sourcedbname=s'        => \$sourcedbname,
 );
 die "Usage: $0: --species <species> --db_command $ENV{PARASITE_STAGING_MYSQL} --previous_db_command $ENV{PREVIOUS_PARASITE_STAGING_MYSQL}"
-  unless $species ; 
+  unless $species;
+
+
+$sourcedbname //= ProductionMysql->new($previous_db_command)->core_databases($species);
 
 my $source = ProductionMysql->new($previous_db_command)->conn;
 say "sourcehost=",$source->{host};
 say "sourceport=",$source->{port};
 say "sourceuser=",$source->{user};
-say "sourcedbname=", ProductionMysql->new($previous_db_command)->core_databases($species);
+say "sourcedbname=".$sourcedbname;
 
 my $target=ProductionMysql->new($db_command)->conn;
 say "targethost=",$target->{host};

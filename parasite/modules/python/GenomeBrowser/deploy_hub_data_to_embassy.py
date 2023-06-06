@@ -17,8 +17,6 @@ if not os.path.exists(jbrowse_log_dir):
     os.makedirs(jbrowse_log_dir)
 
 for js in jbrowse_species:
-    if js=="Schistosoma_mansoni_prjea36577":
-        continue
     dcommand = "module load embassy;\n\n" + \
                EMBASSY_COMMAND + " s3 sync " + os.path.join(PARASITE_SCRATCH,"jbrowse","WBPS"+PARASITE_VERSION,"hub",js) + " " +\
                os.path.join(EMBASSY_PATH,"web_data/track_hubs/rnaseq/releases/release-"+PARASITE_VERSION,js) +\

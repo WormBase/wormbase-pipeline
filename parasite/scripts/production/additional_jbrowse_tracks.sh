@@ -126,6 +126,61 @@ for genome in ${genomes_updated_16[@]}; do
 	eval $index_cmd
 done
 
+# genomes in this list had their annotation updated in WBPS release 18
+# so we add WBPS17 gene models as an additional track
+genomes_updated_17=(					\
+heterodera_glycines_prjna381081				\
+necator_americanus_prjna72135 			\
+strongyloides_stercoralis_prjeb528
+)
+
+mkdir -p $TEMP_DIR
+
+for genome in ${genomes_updated_16[@]}; do
+	VERSION=17
+	species=$(echo $genome | grep -o "^[^_]\+_[^_]\+")
+	bioproject_lc=$(echo $genome | grep -o "[^_]\+$")
+	bioproject_uc=${bioproject_lc^^}
+	if [[ -f "$TEMP_DIR/${species}.${bioproject_uc}.WBPS${VERSION}.annotations.gff3" ]]; then
+		echo "Found $TEMP_DIR/${species}.${bioproject_uc}.WBPS${VERSION}.annotations.gff3 - will not re-download"
+	else
+		gff=$(wget -q -O $TEMP_DIR/${species}.${bioproject_uc}.WBPS${VERSION}.annotations.gff3.gz ftp://ftp.ebi.ac.uk/pub/databases/wormbase/parasite/releases/WBPS${VERSION}/species/${species}/${bioproject_uc}/${species}.${bioproject_uc}.WBPS${VERSION}.annotations.gff3.gz)
+
+		echo "Unzipping $TEMP_DIR/${species}.${bioproject_uc}.WBPS${VERSION}.annotations.gff3.gz"
+
+		gunzip $TEMP_DIR/${species}.${bioproject_uc}.WBPS${VERSION}.annotations.gff3.gz
+	fi
+
+	cmd="perl $JBROWSE_INSTALL_DIR/bin/flatfile-to-json.pl
+	--gff $TEMP_DIR/${species}.${bioproject_uc}.WBPS${VERSION}.annotations.gff3
+	--trackLabel WBPS${VERSION}_genemodels
+	--key 'WBPS${VERSION} gene models'
+	--out $JBROWSE_OUT_DIR/${genome}
+	--trackType CanvasFeatures
+	--type gene
+	--config \"{ \\\"menuTemplate\\\" : [
+			 { \\\"action\\\" : \\\"newWindow\\\" ,
+			   \\\"label\\\" : \\\"View gene on WormBase ParaSite Release ${VERSION} archive site\\\" ,
+			   \\\"url\\\" : \\\"https://release-${VERSION}.parasite.wormbase.org/Gene/Summary?g={name}\\\"}]}\"
+	--metadata \"{ \\\"Track\\\" : \\\"WBPS${VERSION} gene models\\\",
+                       \\\"Category\\\" : \\\"Genome annotation\\\",
+		       \\\"Description\\\" : \\\"Gene models from release ${VERSION} of WormBase ParaSite\\\" }\" "
+
+	echo "Running $cmd"
+
+	eval $cmd
+
+	index_cmd="perl $JBROWSE_INSTALL_DIR/bin/generate-names.pl
+		--out $JBROWSE_OUT_DIR/${genome}
+		--tracks WBPS${VERSION}_genemodels
+		--compress
+		--incremental"
+
+	echo "Running $index_cmd"
+
+	eval $index_cmd
+done
+
 
 ### Other special tracks
 # by special request we also added an additional track for alternative N americanus gene models
@@ -209,3 +264,6 @@ echo "Running $bam_cmd"
 
 eval $bam_cmd
 
+# Low confidence gene models for Schmidtea
+if [ -d ${JBROWSE_OUT}/schmidtea_mediterranea_s2f19h1prjna885486 ];
+  if [ -f /nfs/production/flicek/wormbase/parasite/data/releases/release18/schmidtea_mediterranea_s2f19h1prjna885486/extracted.gff3 ];

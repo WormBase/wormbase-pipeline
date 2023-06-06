@@ -8,7 +8,7 @@ if [ ! "$1" ] || [ ! "$2" ] ; then echo "Usage: $0 species fasta [roundworm/flat
 DBHOSTNAME=$($PARASITE_STAGING_MYSQL details script | grep -Po "^--host \K(\S+)")
 DBUSER=$($PARASITE_STAGING_MYSQL details script | grep -Po "\s+--user \K(\S+)")
 DBPORT=$($PARASITE_STAGING_MYSQL details script | grep -Po "\s+--port \K(\S+)")
-
+AUGPATH=${PARASITE_SOFTWARE}/Augustus/config
 #Input
 species=$1
 fasta=$2
@@ -57,7 +57,7 @@ if [[ $FILE_TEST == *"gzip compressed data"* ]]; then
   gzip -d -c ${fasta} > $final_fasta
 fi
 
-AUGPATH=/hps/software/users/wormbase/parasite/software/Augustus/config
+
 echo "Running BUSCO:"
 SINGULARITYENV_AUGUSTUS_CONFIG_PATH=$AUGPATH singularity exec $BUSCO3_CONTAINER run_BUSCO.py -sp $species_parameter_for_augustus -l $busco_library -o $species -i $final_fasta -c 8 -m genome -f -r \
   | tee $run_log

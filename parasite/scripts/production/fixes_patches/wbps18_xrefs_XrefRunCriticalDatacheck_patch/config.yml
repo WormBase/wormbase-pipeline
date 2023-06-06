@@ -1,0 +1,87 @@
+failing_species:
+  taenia_solium_prjna170813:
+    core_db: taenia_solium_prjna170813_core_18_108_1
+  taenia_saginata_prjna71493:
+    core_db: taenia_saginata_prjna71493_core_18_108_1
+  strongyloides_venezuelensis_prjeb530:
+    core_db: strongyloides_venezuelensis_prjeb530_core_18_108_1
+  rhabditophanes_kr3021_prjeb1297:
+    core_db: rhabditophanes_kr3021_prjeb1297_core_18_108_1
+  angiostrongylus_costaricensis_prjeb494:
+    core_db: angiostrongylus_costaricensis_prjeb494_core_18_108_1
+  schistosoma_japonicum_prjea34885:
+    core_db: schistosoma_japonicum_prjea34885_core_18_108_1
+  taenia_multiceps_prjna307624:
+    core_db: taenia_multiceps_prjna307624_core_18_108_1
+  parastrongyloides_trichosuri_prjeb515:
+    core_db: parastrongyloides_trichosuri_prjeb515_core_18_108_1
+  caenorhabditis_brenneri_prjna20035:
+    core_db: caenorhabditis_brenneri_prjna20035_core_18_108_285
+  caenorhabditis_sinica_prjna194557:
+    core_db: caenorhabditis_sinica_prjna194557_core_18_108_1
+  caenorhabditis_tropicalis_prjna53597:
+    core_db: caenorhabditis_tropicalis_prjna53597_core_18_108_1
+  echinococcus_canadensis_prjeb8992:
+    core_db: echinococcus_canadensis_prjeb8992_core_18_108_1
+  globodera_rostochiensis_prjeb13504:
+    core_db: globodera_rostochiensis_prjeb13504_core_18_108_1
+  elaeophora_elaphi_prjeb502:
+    core_db: elaeophora_elaphi_prjeb502_core_18_108_1
+  onchocerca_ochengi_prjeb1204:
+    core_db: onchocerca_ochengi_prjeb1204_core_18_108_1
+  parascaris_equorum_prjeb514:
+    core_db: parascaris_equorum_prjeb514_core_18_108_1
+  dracunculus_medinensis_prjeb500:
+    core_db: dracunculus_medinensis_prjeb500_core_18_108_1
+  globodera_rostochiensis_l22prjna695196:
+    core_db: globodera_rostochiensis_l22prjna695196_core_18_108_1
+  soboliphyme_baturini_prjeb516:
+    core_db: soboliphyme_baturini_prjeb516_core_18_108_1
+  litomosoides_sigmodontis_prjeb3075:
+    core_db: litomosoides_sigmodontis_prjeb3075_core_18_108_1
+  gyrodactylus_salaris_prjna244375:
+    core_db: gyrodactylus_salaris_prjna244375_core_18_108_1
+  globodera_pallida_prjna764088:
+    core_db: globodera_pallida_prjna764088_core_18_108_1
+  ascaris_suum_prjna80881:
+    core_db: ascaris_suum_prjna80881_core_18_108_1
+  mesorhabditis_belari_prjeb30104:
+    core_db: mesorhabditis_belari_prjeb30104_core_18_108_1
+  angiostrongylus_cantonensis_prjeb493:
+    core_db: angiostrongylus_cantonensis_prjeb493_core_18_108_1
+  cylicostephanus_goldi_prjeb498:
+    core_db: cylicostephanus_goldi_prjeb498_core_18_108_1
+  globodera_pallida_prjeb123:
+    core_db: globodera_pallida_prjeb123_core_18_108_1
+  schistosoma_bovis_prjna451066:
+    core_db: schistosoma_bovis_prjna451066_core_18_108_1
+  strongyloides_papillosus_prjeb525:
+    core_db: strongyloides_papillosus_prjeb525_core_18_108_1
+  schistosoma_curassoni_prjeb519:
+    core_db: schistosoma_curassoni_prjeb519_core_18_108_1
+  dictyocaulus_viviparus_prjeb5116:
+    core_db: dictyocaulus_viviparus_prjeb5116_core_18_108_1
+  caenorhabditis_angaria_prjna51225:
+    core_db: caenorhabditis_angaria_prjna51225_core_18_108_1
+  ascaris_lumbricoides_prjeb4950:
+    core_db: ascaris_lumbricoides_prjeb4950_core_18_108_1
+  onchocerca_ochengi_prjeb1465:
+    core_db: onchocerca_ochengi_prjeb1465_core_18_108_1
+  teladorsagia_circumcincta_prjna72569:
+    core_db: teladorsagia_circumcincta_prjna72569_core_18_108_1
+  brugia_pahangi_prjeb497:
+    core_db: brugia_pahangi_prjeb497_core_18_108_1
+  nippostrongylus_brasiliensis_prjeb511:
+    core_db: nippostrongylus_brasiliensis_prjeb511_core_18_108_1
+  echinococcus_granulosus_prjeb121:
+    core_db: echinococcus_granulosus_prjeb121_core_18_108_1
+  ditylenchus_dipsaci_prjna498219:
+    core_db: ditylenchus_dipsaci_prjna498219_core_18_108_1
+  acanthocheilonema_viteae_prjeb1697:
+    core_db: acanthocheilonema_viteae_prjeb1697_core_18_108_1
+  onchocerca_flexuosa_prjeb512:
+    core_db: onchocerca_flexuosa_prjeb512_core_18_108_1
+  heligmosomoides_polygyrus_prjeb15396:
+    core_db: heligmosomoides_polygyrus_prjeb15396_core_18_108_1
+  bursaphelenchus_xylophilus_prjea64437:
+    core_db: bursaphelenchus_xylophilus_prjea64437_core_18_108_1

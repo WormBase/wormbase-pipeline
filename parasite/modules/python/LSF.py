@@ -1,6 +1,7 @@
 import subprocess
 import time
 import re
+from ProductionUtils import print_info
 
 def lsf_submit(command, jobprefix, to_wait_id="", cpu=1, mem="4gb", cwd="./", queue="production", job_name=None, only_write=False):
     """Function which takes a pipeline command, runtime arguments, jobname, job dependencies
@@ -82,14 +83,12 @@ def lsf_job_status(job_id):
     jout = out
     jerr = err
     mout = re.findall(r", Status <(\w+)>," , jout.decode("utf-8"))
-    if mout[0]:
+    try:
         mout = mout[0]
-    else:
-        print("No job identifier detected")
-        raise ()
+    except IndexError:
+        mout = "DONE"
     if "Job not submitted" in jerr.decode("utf-8"):
-        print(jerr.decode("utf-8"))
-        raise ()
+        mout = "NOT SUBMITTED"
     return mout
 
 def lsf_bjobs():
@@ -106,3 +105,17 @@ def lsf_submitted_jobnames():
 def lsf_running_jobnames():
     lsf_split = [x.split()[6] for x in lsf_bjobs().split("\n") if x != '' and x.split()[2]=="RUN"]
     return ([x for x in lsf_split if x != "JOB_NAME"])
+
+def batch_jobs_check_status_periodically(batch_jobs_dict):
+    """Expects a dictionary as its input. Keys are references (i.e. a genome) and values are job_ids."""
+    all_jobs = list(batch_jobs_dict.values())
+    while len(all_jobs)>0:
+        for ref in batch_jobs_dict:
+            job_id = batch_jobs_dict[ref]
+            if lsf_job_status(job_id)!="RUN" and lsf_job_status(job_id)!="PEND":
+                if job_id in all_jobs: all_jobs.remove(job_id)
+                # print_info(job_id +" is DONE")
+                if lsf_job_status(job_id) == "EXIT":
+                    print_info(ref+" - "+job_id + " has FAILED.")
+        print_info("Number of jobs still running: " + str(len(all_jobs)))
+        time.sleep(15)

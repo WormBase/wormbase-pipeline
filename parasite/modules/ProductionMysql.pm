@@ -180,12 +180,22 @@ sub dbc {
 # It needs to be executed from Java, and the two implementations are slightly different: https://docs.oracle.com/javase/7/docs/api/java/util/regex/Pattern.html#jcc
 our $GOLDEN_SPECIES_REGEX_MATCH = join ("|",
   "^trichinella_pseudospiralis_(iss[0-9]+prjna257433)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$", # $1
-  "^globodera_rostochiensis_(l[0-9]+prjna695196)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$", # $1
-  "^(.{1,2}).*?_(.{1,2}).*?_(v[1-9].*?)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$", # $1, $2, $3
-  "^(.{1,2}).*?_(.{1,4}).*?_(.*?)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$", # $4, $5, $6
-  "^([a-z])[^_]+_([^_]+)_core_.*\$" # $7, $8
+  "^globodera_rostochiensis_(l[0-9]+prjna695196)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$", # $2
+  "^heterobilharzia_americana_(td[0-9]+prjeb44434)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$", # $3
+  "^aphelenchoides_besseyi_(a[a-z]{3}prjna834627)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$", # $4
+  "^caenorhabditis_briggsae_([a-z]{2}[0-9]{2,4}+prjna784955)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$", # $5
+  "^(sch)istosoma_([a-z]{3})[a-z]{2,9}_(td[1-2])prjeb44434_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$", # $6,7,8
+  "^(s)chmidtea_(med)iterranea_s2f19(h[1-2]prjna885486)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$", # $9,10,11
+  "^meloidogyne_chitwoodi_(r[a-z]{3}[1-2]?prjna666745)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$", # $12
+  "^(.{1,2}).*?_(.{1,2}).*?_(v[1-9].*?)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$", # $13,14,15
+  "^(.{1,2}).*?_(.{1,4}).*?_(.*?)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$", # $16,17,18
+  "^([a-z])[^_]+_([^_]+)_core_.*\$" # $19,20
 );
-our $GOLDEN_SPECIES_REGEX_REPLACEMENT = '$1$2$3$4$5$6$7$8$9$10';
+
+
+# $GOLDEN_SPECIES_REGEX_REPLACEMENT should have as many $ as the capturing groups above! So if you
+# add any regexes make sure to add some $ here:
+our $GOLDEN_SPECIES_REGEX_REPLACEMENT = '$1$2$3$4$5$6$7$8$9$10$11$12$13$14$15$16$17$18$19$20';
 
 sub core_db_to_biomart_name {
   my ($core_db) = @_;

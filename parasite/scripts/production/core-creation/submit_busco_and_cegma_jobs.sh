@@ -49,7 +49,7 @@ submit_busco_update_assembly() {
    -o $log/$species.%J.out \
    -e $log/$species.%J.err \
    -n 8 -M${MEM_MB} -R "select[mem > ${MEM_MB}] rusage[mem=${MEM_MB}]" \
-   bash -x $WORM_CODE/parasite/scripts/production/core-creation/busco-assembly.sh ${species}_${bioproject} $fasta $core_db
+   bash -x $WORM_CODE/parasite/scripts/production/core-creation/busco-assembly.sh ${species}_${full_bioproject} $fasta $core_db
 }
 
 submit_busco_annotation() {
