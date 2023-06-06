@@ -11,7 +11,7 @@ use Wormbase;
 my ($help, $debug, $test, $verbose, $store, $wormbase, $schema);
 my ($outfile, $acedbpath, $ws_version, $out_fh);
 
-const my $LINKML_SCHEMA => 'v1.7.2';
+const my $LINKML_SCHEMA => 'v1.7.3';
 
 GetOptions ("help"        => \$help,
             "debug=s"     => \$debug,
@@ -231,9 +231,44 @@ sub get_evidence_curies {
     for my $evi ($name_obj->col) {
 	next unless $evi->name eq 'Paper_evidence';
 	for my $paper ($evi->col) {
-	    push @paper_evidence, 'WB:' . $paper->name;
+	    my $paper_id = get_paper($paper);
+	    push @paper_evidence, $paper_id if defined $paper_id;
 	}
     }
 
     return \@paper_evidence;
 }
+
+sub get_paper {
+    my $ref = shift;
+
+    if (!$ref->Status) {
+	return;
+    }
+
+    my $level = 1;
+    while ($ref->Merged_into && $level < 6) {
+	$level++;
+	$ref = $ref->Merged_into;
+    }
+    return if $ref->Status->name eq 'Invalid';
+
+    my $pmid;
+    for my $db ($ref->Database) {
+	if ($db->name eq 'MEDLINE') {
+	    $pmid = $db->right->right->name;
+	    last;
+	}
+    }
+    my $publication_id = $pmid ? "PMID:$pmid" : 'WB:' . $ref->name;
+    if ($publication_id eq 'WB:WBPaper000045183') {
+	$publication_id = 'WB:WBPaper00045183';
+    }
+    if ($publication_id eq 'WB:WBPaper000042571') {
+	$publication_id = 'WB:WBPaper00042571';
+    }
+
+    return $publication_id;
+}
+
+1;

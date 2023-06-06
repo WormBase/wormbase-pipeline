@@ -297,19 +297,36 @@ sub print_json {
     
 
 sub get_paper {
-  my ($wb_paper) = @_;
+    my ($ref) = @_;
 
-  my $pmid;
-  foreach my $db ($wb_paper->Database) {
-    if ($db->name eq 'MEDLINE') {
-      $pmid = $db->right->right->name;
-      last;
+    if (!$ref->Status) {
+	return;
     }
-  }
-  my $publication_id = $pmid ? "PMID:$pmid" : "WB:$wb_paper";
-  
-
-  return $publication_id;
+    
+    my $level = 1;
+    while ($ref->Merged_into && $level < 6) {
+	$level++;
+	$ref = $ref->Merged_into;
+    }
+    return if $ref->Status->name eq 'Invalid';
+    
+    my $pmid;
+    foreach my $db ($red->Database) {
+	if ($db->name eq 'MEDLINE') {
+	    $pmid = $db->right->right->name;
+	    last;
+	}
+    }
+    my $publication_id = $pmid ? "PMID:$pmid" : "WB:" . $ref->name;
+    if ($publication_id eq 'WB:WBPaper000045183') {
+	$publication_id = 'WB:WBPaper00045183';
+    }
+    if ($publication_id eq 'WB:WBPaper000042571') {
+	$publication_id = 'WB:WBPaper00042571';
+    }
+    
+    
+    return $publication_id;
 }
 
 sub get_chemical_ontology_id {

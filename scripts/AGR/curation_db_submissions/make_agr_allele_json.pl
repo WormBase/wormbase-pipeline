@@ -493,9 +493,13 @@ sub get_paper {
 	    last;
 	}
     }
+    
     my $publication_id = $pmid ? "PMID:$pmid" : 'WB:' . $ref->name;
     if ($publication_id eq 'WB:WBPaper000045183') {
-	$publication_id eq 'WB:WBPaper00045183';
+	$publication_id = 'WB:WBPaper00045183';
+    }
+    if ($publication_id eq 'WB:WBPaper000042571') {
+	$publication_id = 'WB:WBPaper00042571';
     }
 
     return $publication_id;
