@@ -311,7 +311,7 @@ sub get_paper {
     return if $ref->Status->name eq 'Invalid';
     
     my $pmid;
-    foreach my $db ($red->Database) {
+    foreach my $db ($ref->Database) {
 	if ($db->name eq 'MEDLINE') {
 	    $pmid = $db->right->right->name;
 	    last;
