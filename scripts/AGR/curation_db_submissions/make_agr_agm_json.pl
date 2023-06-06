@@ -9,7 +9,7 @@ use Const::Fast;
 my ($help, $debug, $test, $verbose, $store, $wormbase);
 my ($outfile, $acedbpath, $ws_version, $out_fh);
 
-const my $LINKML_SCHEMA => 'v1.7.0';
+const my $LINKML_SCHEMA => 'v1.7.3';
 
 GetOptions ("help"        => \$help,
             "debug=s"     => \$debug,

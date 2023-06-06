@@ -48,7 +48,7 @@ if (!$outfile) {
     if ($curation_test) {
 	$outfile = "./wormbase.alleles.${ws_version}.test_data.json";
     } else {
-	$outfile = "./wormbase.alleles.${ws_version}.json";
+	$outfile = "./wormbase.alleles.${ws_version}.${LINKML_SCHEMA}.json";
     }
 }
 

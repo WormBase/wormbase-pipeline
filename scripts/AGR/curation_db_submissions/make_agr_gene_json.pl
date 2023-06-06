@@ -37,7 +37,7 @@ my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or die("Connectio
 
 my $query = 'FIND Gene WHERE Species = "Caenorhabditis elegans"';
 
-$outfile = "./wormbase.genes.${ws_version}.json" unless defined $outfile;
+$outfile = "./wormbase.genes.${ws_version}.${LINKML_SCHEMA}.json" unless defined $outfile;
 
 my @genes;
 

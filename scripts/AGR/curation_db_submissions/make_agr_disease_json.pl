@@ -434,4 +434,5 @@ sub get_curation_dates {
     
     return \%dates;
 }
+
 1;
