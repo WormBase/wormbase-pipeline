@@ -15,7 +15,7 @@ use Modules::AGR;
 my ($debug, $test, $verbose, $store, $wormbase, $curation_test, $limit, $schema);
 my ($outfile, $acedbpath, $ws_version, $out_fh, $bgi_json,$disease_file);
 
-const my $LINKML_SCHEMA => 'v1.7.0';
+const my $LINKML_SCHEMA => 'v1.7.3';
 
 GetOptions (
     'debug=s'       => \$debug,
@@ -67,7 +67,7 @@ $db->close;
 sub process_variations {
     my ($db, $out_fh) = @_;
 
-    my @alleles = $db->fetch(-query => "Find Variation WHERE species = \"Caenorhabditis elegans\"");
+    my @alleles = $db->fetch(-query => "Find Variation WHERE Species = \"Caenorhabditis elegans\"");
     
     my $var_count = 0;
     for my $obj (@alleles) {
@@ -93,16 +93,30 @@ sub process_variations {
 	    internal => JSON::false,
 	    obsolete => JSON::false
 	}; 
-	
+
+	my ($is_obsolete, $db_status_json);
+	if ($obj->Status && $obj->Status->name eq 'Dead') {
+	    $is_obsolete = JSON::true;
+	    $db_status_json = {
+		database_status_name => 'dead'
+	    };
+	} else {
+	    $is_obsolete = JSON::false;
+	    $db_status_json = {
+		database_status_name => 'live'
+	    };
+	}
+	    
 	my $json_obj = {
-	    curie             => "WB:" . $obj->name,
-	    allele_symbol_dto => get_symbol_dto($obj),
-	    taxon_curie       => "NCBITaxon:" . $obj->Species->NCBITaxonomyID->name,
-	    internal          => JSON::false,
-	    obsolete          => $obj->Status && $obj->Status->name eq 'Live' ? JSON::false : JSON::true,
-	    created_by_curie  => 'WB:curator',
-	    updated_by_curie  => 'WB:curator',
-	    data_provider_dto => $data_provider_dto_json
+	    curie                      => "WB:" . $obj->name,
+	    allele_symbol_dto          => get_symbol_dto($obj),
+	    taxon_curie                => "NCBITaxon:" . $obj->Species->NCBITaxonomyID->name,
+	    internal                   => JSON::false,
+	    obsolete                   => $is_obsolete,
+	    created_by_curie           => 'WB:curator',
+	    updated_by_curie           => 'WB:curator',
+	    data_provider_dto          => $data_provider_dto_json,
+	    allele_database_status_dto => $db_status_json
 	};
 	if ($obj->Method) {
 	    my $collection = $obj->Method->name;
@@ -144,9 +158,144 @@ sub process_variations {
 	}
 	$json_obj->{allele_synonym_dtos} = \@synonym_dtos if @synonym_dtos;
 	
+	my @secondary_ids;
+	if ($obj->Acquires_merge) {
+	    foreach my $g ($obj->Acquires_merge) {
+		my $sid_json = {
+		    secondary_id => 'WB:' . $g->name,
+		    internal => JSON::false,
+		    obsolete => JSON::false
+		};
+		push @secondary_ids, $sid_json;
+	    }
+	}
+	$json_obj->{secondary_id_dtos} = \@secondary_ids if @secondary_ids;
+    
+
 	if ($obj->Reference) {
 	    $json_obj->{reference_curies} = get_papers($obj);
 	}
+
+	my @note_dtos;
+	if ($obj->Flanking_sequences) {
+	    my $left = $obj->get('Flanking_sequences', 1);
+	    my $right = $obj->get('Flanking_sequences', 2);
+	    my $fs_note_json = {
+		free_text => $left . '|' . $right,
+		note_type_name => 'flanking_sequences',
+		internal => JSON::false,
+		obsolete => JSON::false
+	    };
+	    push @note_dtos, $fs_note_json; 
+	}
+	if ($obj->Deletion_verification) {
+	    my $dv_note_json = {
+		free_text => $obj->Deletion_verification->name,
+		note_type_name => 'indel_verification',
+		internal => JSON::false,
+		obsolete => JSON::false
+	    };
+	    my @deletion_verification_paper_evidence;
+	    for my $evi ($obj->Deletion_verification->col) {
+		next unless $evi->name eq 'Paper_evidence';
+		for my $paper ($evi->col) {
+		    my $paper_id = get_paper($paper);
+		    push @deletion_verification_paper_evidence, $paper_id if defined $paper_id;
+		}
+	    }
+	    $dv_note_json->{evidence_curies} = \@deletion_verification_paper_evidence if @deletion_verification_paper_evidence > 0;
+	    push @note_dtos, $dv_note_json;
+	}
+	if ($obj->Reference_strain_digest) {
+	    for my $rsd ($obj->Reference_strain_digest) {
+		my $site = $rsd->right;
+		if (defined $site) {
+		    my $rflp_string = 'Reference strain digest - Site: ' . $site;
+		    my $enzyme = $rsd->right->right;
+		    if (defined $enzyme) {
+			$rflp_string .= '; Enzyme: ' . $enzyme;
+			my $band_size = $rsd->right->right->right;
+			if (defined $band_size) {
+			    $rflp_string .= '; Band size: ' . $band_size;
+			}
+		    }
+		    
+		    my $rflp_note_json = {
+			free_text => $rflp_string,
+			note_type_name => 'restriction_allele',
+			internal => JSON::false,
+			obsolete => JSON::false
+		    };
+		    push @note_dtos, $rflp_note_json;
+		}
+	    }
+	}
+	if ($obj->Polymorphic_strain_digest) {
+	    for my $psd ($obj->Polymorphic_strain_digest) {
+		my $site = $psd->right;
+		if (defined $site) {
+		    my $rflp_string = 'Polymorphic strain digest - Site: ' . $site;
+		    my $enzyme = $psd->right->right;
+		    if (defined $enzyme) {
+			$rflp_string .= '; Enzyme: ' . $enzyme;
+			my $band_size = $psd->right->right->right;
+			if (defined $band_size) {
+			    $rflp_string .= '; Band size: ' . $band_size;
+			}
+		    }
+		    
+		    my $rflp_note_json = {
+			free_text => $rflp_string,
+			note_type_name => 'restriction_allele',
+			internal => JSON::false,
+			obsolete => JSON::false
+		    };
+		    push @note_dtos, $rflp_note_json;
+		}
+	    }
+	}
+	if ($obj->Mapping_target) {
+	    my $mt_note_json = {
+		free_text => $obj->Mapping_target->name,
+		note_type_name => 'positive_clone',
+		internal => JSON::false,
+		obsolete => JSON::false
+	    };
+	    push @note_dtos, $mt_note_json;
+	}
+
+	if ($obj->Detection_method) {
+	    my $dm_note_json = {
+		free_text => $obj->Detection_method->name,
+		note_type_name => 'detection_method',
+		internal => JSON::false,
+		obsolete => JSON::false
+	    };
+	    push @note_dtos, $dm_note_json;
+	}
+	if ($obj->Remark) {
+	    for my $remark ($obj->Remark) {
+		my $remark_str = $remark->name;
+		my $comment_note_json = {
+		    free_text => "$remark_str",
+		    note_type_name => 'comment',
+		    internal => JSON::false,
+		    obsolete => JSON::false
+		};
+		my @remark_paper_evidence;
+		for my $evi ($remark->col) {
+		    next unless $evi->name eq 'Paper_evidence';
+		    for my $paper ($evi->col) {
+			my $paper_id = get_paper($paper);
+			push @remark_paper_evidence, $paper_id if defined $paper_id;
+		    }
+		}
+		$comment_note_json->{evidence_curies} = \@remark_paper_evidence if @remark_paper_evidence > 0;	
+		push @note_dtos, $comment_note_json;
+	    }
+	}
+
+	$json_obj->{note_dtos} = \@note_dtos if @note_dtos;
 
 	# Stick some random data in for curation DB test files
 	if ($curation_test) {
@@ -157,11 +306,11 @@ sub process_variations {
 	}
 
 	my $json = JSON->new;
-	my $string = $json->allow_nonref->canonical->pretty->encode($json_obj);
+	my $string = $json->allow_nonref->convert_blessed->canonical->pretty->encode($json_obj);
 	$out_fh->print(',') unless $var_count == 1;
 	$out_fh->print("\n" . '      ' . $string);
 	
-	last if $limit && $limit <= $var_count * 2;
+	last if $limit && $limit <= ($var_count * 2);
     }
 
     return;
@@ -220,13 +369,76 @@ sub process_transgenes {
 	    }
 	}
 	$json_obj->{allele_synonym_dtos} = \@synonym_dtos if @synonym_dtos;
-	
-
 
 	if ($obj->Reference) {
 	    $json_obj->{reference_curies} = get_papers($obj);
 	}
+	
+	my @note_dtos;
 
+	if ($obj->Summary) {
+	    my $cs_note_json = {
+		free_text => $obj->Summary->name,
+		note_type_name => 'transgene_content_summary',
+		internal => JSON::false,
+		obsolete => JSON::false
+	    };
+		my @cs_paper_evidence;
+	    for my $evi ($obj->Summary->col) {
+		next unless $evi->name eq 'Paper_evidence';
+		for my $paper ($evi->col) {
+		    my $paper_id = get_paper($paper);
+		    push @cs_paper_evidence, $paper_id if defined $paper_id;
+		}
+	    }
+	    $cs_note_json->{evidence_curies} = \@cs_paper_evidence if @cs_paper_evidence > 0;
+	    push @note_dtos, $cs_note_json;
+	}
+
+	if ($obj->Construction_summary) {
+	    my $cs_note_json = {
+		free_text => $obj->Construction_summary->name,
+		note_type_name => 'transgene_construction_summary',
+		internal => JSON::false,
+		obsolete => JSON::false
+	    };
+	    push @note_dtos, $cs_note_json;
+	}
+
+	if ($obj->Coinjection_other) {
+	    my $co_note_json = {
+		free_text => $obj->Coinjection_other->name,
+		note_type_name => 'coinjection_other',
+		internal => JSON::false,
+		obsolete => JSON::false
+	    };
+	    push @note_dtos, $co_note_json;
+	}
+	
+	if ($obj->Remark) {
+	    for my $remark ($obj->Remark) {
+		my $remark_str = $remark->name;
+		print $remark_str . "\n";
+		my $comment_note_json = {
+		    free_text => "$remark_str",
+		    note_type_name => 'comment',
+		    internal => JSON::false,
+		    obsolete => JSON::false
+		};
+		my @remark_paper_evidence;
+		for my $evi ($remark->col) {
+		    next unless $evi->name eq 'Paper_evidence';
+		    for my $paper ($evi->col) {
+			my $paper_id = get_paper($paper);
+			push @remark_paper_evidence, $paper_id if defined $paper_id;
+		    }
+		}
+		$comment_note_json->{evidence_curies} = \@remark_paper_evidence if @remark_paper_evidence > 0;	
+		push @note_dtos, $comment_note_json;
+	    }
+	}
+      	
+	$json_obj->{note_dtos} = \@note_dtos if @note_dtos;
 	
 	# Stick some random data in for curation DB test files
 	if ($curation_test) {
@@ -239,7 +451,7 @@ sub process_transgenes {
 	my $string = $json->allow_nonref->canonical->pretty->encode($json_obj);
 	$out_fh->print(",\n" . '      ' . $string);
 	
-	last if $limit && $limit <= $var_count * 2;
+	last if $limit && $limit <= ($var_count * 2);
     }
 
     return;
@@ -331,15 +543,17 @@ sub get_mutation_types {
 	    mutation_type_curies => ["SO:0000667"],
 	    internal => JSON::false
 	};
-	my @insertion_paper_evidence;
-	for my $evi ($obj->Insertion->col) {
-	    next unless $evi->name eq 'Paper_evidence';
-	    for my $paper ($evi->col) {
-		my $paper_id = get_paper($paper);
-		push @insertion_paper_evidence, $paper_id if defined $paper_id;
+	if ($obj->Insertion->right) {
+	    my @insertion_paper_evidence;
+	    for my $evi ($obj->Insertion->right->col) {
+		next unless $evi->name eq 'Paper_evidence';
+		for my $paper ($evi->col) {
+		    my $paper_id = get_paper($paper);
+		    push @insertion_paper_evidence, $paper_id if defined $paper_id;
+		}
 	    }
+	    $insertion->{evidence_curies} = \@insertion_paper_evidence if @insertion_paper_evidence > 0;
 	}
-	$insertion->{evidence_curies} = \@insertion_paper_evidence if @insertion_paper_evidence > 0;
 	push @mutation_types, $insertion;
     }
 
@@ -348,15 +562,17 @@ sub get_mutation_types {
 	    mutation_type_curies => ["SO:0000159"],
 	    internal => JSON::false
 	};
-	my @deletion_paper_evidence;
-	for my $evi ($obj->Deletion->col) {
-	    next unless $evi->name eq 'Paper_evidence';
-	    for my $paper ($evi->col) {
-		my $paper_id = get_paper($paper);
-		push @deletion_paper_evidence, $paper_id if defined $paper_id;
+	if ($obj->Deletion->right) {
+	    my @deletion_paper_evidence;
+	    for my $evi ($obj->Deletion->right->col) {
+		next unless $evi->name eq 'Paper_evidence';
+		for my $paper ($evi->col) {
+		    my $paper_id = get_paper($paper);
+		    push @deletion_paper_evidence, $paper_id if defined $paper_id;
+		}
 	    }
+	    $deletion->{evidence_curies} = \@deletion_paper_evidence if @deletion_paper_evidence > 0;
 	}
-	$deletion->{evidence_curies} = \@deletion_paper_evidence if @deletion_paper_evidence > 0;
 	push @mutation_types, $deletion;
     }
 
@@ -365,15 +581,17 @@ sub get_mutation_types {
 	    mutation_type_curies => ["SO:1000173"],
 	    internal => JSON::false
 	};
-	my @duplication_paper_evidence;
-	for my $evi ($obj->Tandem_duplication->col) {
-	    next unless $evi->name eq 'Paper_evidence';
-	    for my $paper ($evi->col) {
-		my $paper_id = get_paper($paper);
-		push @duplication_paper_evidence, $paper_id if defined $paper_id;
+	if ($obj->Tandem_duplication->right) {
+	    my @duplication_paper_evidence;
+	    for my $evi ($obj->Tandem_duplication->right->col) {
+		next unless $evi->name eq 'Paper_evidence';
+		for my $paper ($evi->col) {
+		    my $paper_id = get_paper($paper);
+		    push @duplication_paper_evidence, $paper_id if defined $paper_id;
+		}
 	    }
+	    $duplication->{evidence_curies} = \@duplication_paper_evidence if @duplication_paper_evidence > 0;
 	}
-	$duplication->{evidence_curies} = \@duplication_paper_evidence if @duplication_paper_evidence > 0;
 	push @mutation_types, $duplication
     };
 
@@ -389,17 +607,17 @@ sub get_symbol_dto {
 	    display_text       => $obj->Public_name->name,
 	    format_text        => $obj->Public_name->name,
 	    name_type_name     => 'nomenclature_symbol',
-	    synonym_scope_name => 'exact',
 	    internal      => JSON::false
 	};
-	my $symbol_evidence = get_evidence_curies($obj->Public_name);
-	$symbol_dto->{evidence_curies} = $symbol_evidence if @$symbol_evidence;
+	if ($obj->Public_name->right) {
+	    my $symbol_evidence = get_evidence_curies($obj->Public_name->right);
+	    $symbol_dto->{evidence_curies} = $symbol_evidence if @$symbol_evidence;
+	}
     } else {
 	$symbol_dto = {
 	    display_text       => $obj->name,
 	    format_text        => $obj->name,
 	    name_type_name     => 'systematic_name',
-	    synonym_scope_name => 'exact',
 	    internal      => JSON::false
 	};
     }

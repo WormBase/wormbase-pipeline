@@ -11,13 +11,14 @@ use FileHandle;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase, $species, $database, $curate_test);
 my ($replace, $isoform, $newgene, $split, $merge, $to_cds, $to_pseudogene, $to_transcript, $make_transposon, $make_operon, $delete, $last_reviewed, $just_make_history, $check_gene_name, $show_next_sequence_name);
-my ($noload, $force, $class, $oldseq, @newseq);
+my ($noload, $force, $class, $oldseq, $outfile, @newseq);
 
 
 GetOptions ("help"              => \$help,
             "debug=s"           => \$debug,
             "test"              => \$test,
             "verbose"           => \$verbose,
+	    "outfile:s"         => \$outfile,
             "store:s"           => \$store,
 	    "species:s"         => \$species,           # this defaults to elegans
 	    "database:s"        => \$database,          # the default curation database for the species is used if this is not specied
@@ -82,7 +83,7 @@ my $log = Log_files->make_build_log($wormbase);
 
 if (!defined $species) {$species = $wormbase->species}
 
-my $outfile = "$database/$ENV{USER}_curate.ace";
+if (!defined $outfile) {$outfile = "$database/$ENV{USER}_curate.ace"};
 ## check to see if outfile exists already in which case it didn't get read in successfully in a previous session
 #if (-e $outfile) {die "The output ACE file $outfile already exists\nWas there a problem parsing this existing file last time?\n";}
  

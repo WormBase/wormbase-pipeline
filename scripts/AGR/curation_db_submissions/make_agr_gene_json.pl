@@ -11,7 +11,7 @@ use Wormbase;
 my ($help, $debug, $test, $verbose, $store, $wormbase, $schema);
 my ($outfile, $acedbpath, $ws_version, $out_fh);
 
-cosnt my $LINKML_SCHEMA => 'v1.7.0';
+const my $LINKML_SCHEMA => 'v1.7.2';
 
 GetOptions ("help"        => \$help,
             "debug=s"     => \$debug,
@@ -59,12 +59,17 @@ while (my $obj = $it->next) {
     }
 
     # Secondary ids
-    #my @secondary_ids;
-    #if ($obj->Acquires_merge) {
-    #	foreach my $g ($obj->Acquires_merge) {
-    #	    push @secondary_ids, 'WB:'.$g->name;
-    #	}
-    #}
+    my @secondary_ids;
+    if ($obj->Acquires_merge) {
+    	foreach my $g ($obj->Acquires_merge) {
+	    my $sid_json = {
+		secondary_id => 'WB:' . $g->name,
+		internal => JSON::false,
+		obsolete => JSON::false
+	    };
+    	    push @secondary_ids, $sid_json;
+    	}
+    }
     
     my $dp_xref_dto_json = {
 	referenced_curie => 'WB:' . $obj->name,
@@ -81,13 +86,16 @@ while (my $obj = $it->next) {
 	internal => JSON::false,
 	obsolete => JSON::false
     };
-    
+
+    my $is_obsolete = $obj->Status && $obj->Status->name eq 'Dead' ? JSON::true : JSON::false;
     my $gene = {
 	curie    => 'WB:' . $obj->name,
 	gene_symbol_dto   => $symbol,
 	taxon_curie    => 'NCBITaxon:' . $obj->Species->NCBITaxonomyID,
-	obsolete => $obj->Status && $obj->Status->name eq 'Live' ? JSON::false : JSON::true,
+	obsolete => $is_obsolete,
 	internal => JSON::false,
+	created_by_curie => 'WB:curator',
+	updated_by_curie => 'WB:curator',
 	data_provider_dto => $data_provider_dto_json
     };
 
@@ -95,7 +103,7 @@ while (my $obj = $it->next) {
     $gene->{gene_full_name_dto} = $full_name if $full_name;
     $gene->{gene_systematic_name_dto} = $systematic_name if $systematic_name;
     $gene->{gene_synonym_dtos} = $synonyms if @$synonyms;
-#    $gene->{secondary_identifiers} = \@secondary_ids if @secondary_ids;
+    $gene->{gene_secondary_id_dtos} = \@secondary_ids if @secondary_ids;
     
     push @genes, $gene;
 }
@@ -146,7 +154,6 @@ sub get_name_slot_annotations {
 	    display_text => $symbol_obj->name,
 	    format_text  => $symbol_obj->name,
 	    name_type_name => $symbol_type,
-	    synonym_scope_name => "exact",
 	    internal => JSON::false
 	};
 	$symbol->{evidence_curies} = $symbol_evidence if @$symbol_evidence;
@@ -166,7 +173,6 @@ sub get_name_slot_annotations {
 	    display_text => $systematic_name_obj->name,
 	    format_text => $systematic_name_obj->name,
 	    name_type_name => "systematic_name",
-	    synonym_scope_name => "exact",
 	    internal => JSON::false
 	};
 	$systematic_name->{evidence_curies} = $systematic_name_evidence if @$systematic_name_evidence;
