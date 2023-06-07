@@ -304,9 +304,20 @@ sub upload_to_ebi {
   # 
   my $uni_file = join(".", "wormbase_xrefs", $wormbase->get_wormbase_version_name, $wormbase->ncbi_tax_id, "txt", "gz");
   my $uni_symlink = join(".", "wormbase_xrefs", "latest", $wormbase->ncbi_tax_id, "txt", "gz");
-  my $dest_dir = $wormbase->ftp_site . "/collaboration/EBI/xrefs";
-  $wormbase->run_command("cp $outfile $dest_dir/$uni_file", $log);
-  $wormbase->run_command("cd $dest_dir && ln -sf $uni_file $uni_symlink", $log);
+
+  my $dest_dir = $ENV{'XREF_FTP_DROPBOX'};
+  my $exit_code = system("bsub -q datamover -Is cp $outfile $dest_dir/$uni_file");
+  if ($exit_code) {
+      $log->error("Copying xref file to $dest_dir failed\n");
+  } else {
+      $log->write("Copied xref file to $dest_dir\n");
+  }
+  $exit_code = system("bsub -q datamover -Is cd $dest_dir && ln -sf $uni_file $uni_symlink");
+  if ($exit_code) {
+      $log->error("Creating symlink to xref file in $dest_dir failed\n");
+  } else {
+      $log->write("Created symlink to  xref file in $dest_dir\n");
+  }
 }
 
 
