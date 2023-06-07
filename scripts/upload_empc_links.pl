@@ -5,7 +5,7 @@ use warnings;
 use XML::LibXML;
 use XML::LibXML::Reader;
 use Net::FTP;
-
+use LWP::Simple;
 use Getopt::Long;
 
 use lib $ENV{CVS_DIR};
@@ -19,7 +19,7 @@ my $PROVIDER_DESC = 'WormBase is an international consortium of biologists and c
 my $PROVIDER_EMAIL = 'hinxton@wormbase.org';
 
 my $LINK_BASE_URL = 'http://www.wormbase.org/resources/paper';
-my $SCHEMA_URL = 'http://europepmc.org/docs/labslink.xsd';
+my $SCHEMA_URL = 'https://europepmc.org/docs/labslink.xsd';
 
 my ($provider_xml,
     $links_xml,
@@ -122,7 +122,9 @@ foreach my $paper (@$papers) {
 print "Finished parsing papers\n";
 
 $log->write_to("Validating and writing  XML documents...\n");
-my $schema = XML::LibXML::Schema->new(location => $SCHEMA_URL);
+my $tmp_schema_file = $wormbase->acefiles . "/epmc-labslink.xmd";
+getstore($SCHEMA_URL, $tmp_schema_file);
+my $schema = XML::LibXML::Schema->new(location => $tmp_schema_file);
 
 foreach my $pair ([$provider_xml_obj, $provider_xml],
                   [$link_xml_obj, $links_xml]) {
@@ -145,6 +147,7 @@ foreach my $pair ([$provider_xml_obj, $provider_xml],
 my $provider_xml_z = "${provider_xml}.gz";
 my $links_xml_z    = "${links_xml}.gz";
 print "gz filenames\n";
+unlink $tmp_schema_file;
 unlink $provider_xml_z if -e $provider_xml_z;
 unlink $links_xml_z if -e $links_xml_z;
 print "Check files\n";
