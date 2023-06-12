@@ -1115,6 +1115,7 @@
                                      Genotype ^modeled-by-genotype UNIQUE ?Genotype OUTXREF Models_disease_in_annotation //to associate genotypes
                                      Modeled_by_remark UNIQUE ?Text
                           Asserted_gene ?Gene OUTXREF Models_disease_asserted // Indicates the gene in Variation or Strain when submitted, new tag request for WS287
+                          Asserted_human_gene ?Text //for capturing the human gene via HGNC ID for transgenic models of disease
                           Inferred_gene ?Gene OUTXREF Models_disease_inferred // Indicates the gene in Variation or Strain when submitted, new tag request for WS287
                           Asserted_variation ?Variation OUTXREF Models_variation_asserted // Indicates asserted Variation when submitted, new tag request for WS287
                           Association_type UNIQUE is_model_of
