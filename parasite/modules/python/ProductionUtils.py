@@ -8,10 +8,14 @@ import subprocess
 import re
 import urllib.request
 import requests
+import paramiko
+import tempfile
+import shutil
 import random
 import validators
 import sqlalchemy
 import string
+import json
 import csv
 import pandas as pd
 from Bio import Phylo
@@ -305,10 +309,79 @@ def get_all_genomes_ftp_file_url_from_ftp_release(version, filetype, parasite_ft
 def calculate_n50_command(fasta, outfile, assembly_stats_path="assembly-stats"):
     return f'{assembly_stats_path} {fasta} | grep "N50 =" > {outfile};'
 
+def open_remote_file(remote_address):
+    # Parse the remote address
+    username, hostname, filepath = remote_address.split('@')[0], remote_address.split('@')[1].split(':')[0], remote_address.split(':')[1]
+
+    # Create an SSH client
+    ssh = paramiko.SSHClient()
+    ssh.load_system_host_keys()
+
+    # Connect to the remote host
+    ssh.connect(hostname=hostname, username=username)
+
+    # Open the remote file
+    sftp = ssh.open_sftp()
+    remote_file = sftp.open(filepath, 'r')
+
+    # Define a function to close the remote file
+    def close_remote_file():
+        remote_file.close()
+        sftp.close()
+        ssh.close()
+
+    # Register the function to be called when the object is garbage collected
+    remote_file.__del__ = close_remote_file
+
+    return remote_file
 
 
+def check_remote_file_exists(remote_address):
+    # Parse the remote address
+    username, hostname, filepath = remote_address.split('@')[0], remote_address.split('@')[1].split(':')[0], remote_address.split(':')[1]
 
+    # Create an SSH client
+    ssh = paramiko.SSHClient()
+    ssh.load_system_host_keys()
 
+    try:
+        # Connect to the remote host
+        ssh.connect(hostname=hostname, username=username)
+
+        # Check if the file exists
+        sftp = ssh.open_sftp()
+        try:
+            sftp.stat(filepath)
+            return True
+        except FileNotFoundError:
+            return False
+        finally:
+            sftp.close()
+    finally:
+        ssh.close()
+
+def rename_remote_file(source_address, destination_address):
+    # Parse the source and destination addresses
+    source_username, source_hostname, source_filepath = source_address.split('@')[0], source_address.split('@')[1].split(':')[0], source_address.split(':')[1]
+    destination_username, destination_hostname, destination_filepath = destination_address.split('@')[0], destination_address.split('@')[1].split(':')[0], destination_address.split(':')[1]
+
+    # Create an SSH client
+    ssh = paramiko.SSHClient()
+    ssh.load_system_host_keys()
+
+    try:
+        # Connect to the remote hosts
+        ssh.connect(hostname=source_hostname, username=source_username)
+        ssh.connect(hostname=destination_hostname, username=destination_username)
+
+        # Rename the remote file
+        sftp = ssh.open_sftp()
+        try:
+            sftp.rename(source_filepath, destination_filepath)
+        finally:
+            sftp.close()
+    finally:
+        ssh.close()
 
 
 
