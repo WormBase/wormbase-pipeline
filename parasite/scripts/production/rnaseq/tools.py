@@ -132,7 +132,7 @@ class Species:
 
 class Study(Species):
 
-    def __init__(self, ui, groups_dict, study_id):
+    def __init__(self, ui, groups_dict, study_id, apollo=False):
         super().__init__(ui, groups_dict)
         self.study_id = study_id
         self.study_dir = os.path.join(self.studies_dir, self.study_id)
@@ -151,7 +151,8 @@ class Study(Species):
         self.merged_bam_capped = os.path.join(self.merged_bam_noext, ".TEMP.capped.bam")
         self.merged_bam_final = os.path.join(self.merged_bam_noext, ".capped.bam")
 
-        self.embassy_apollo_rsync_path = os.path.join(embassy_apollo_path, self.apname, self.study_id)
+        if apollo:
+            self.embassy_apollo_rsync_path = os.path.join(embassy_apollo_path, self.apname, self.study_id)
 
     def create_dirs(self):
         run_once = 0
@@ -741,12 +742,17 @@ def parse_user_selected_studies_samples(ui, all_studies_for_taxon_id_dict):
         selected_studies_dict[study_id] = study_dict_values
         counter=1
         for sample_group in sample_groups:
-            group_name='_'.join(sample_group["name"].split())
+            try:
+                group_name='_'.join(sample_group["name"].split())
+            except TypeError:
+                group_name = sample_group[0]
             if group_name=="":
                 group_name="group-"+str(counter)
                 counter+=1
-            selected_studies_grouped_samples_dict_values = [x for x in selected_studies_dict[study_id] if x["run_accession"] in sample_group["samples"]]
+            try:
+                selected_studies_grouped_samples_dict_values = [x for x in selected_studies_dict[study_id] if x["run_accession"] in sample_group["samples"]]
+            except TypeError:
+                selected_studies_grouped_samples_dict_values = [x for x in selected_studies_dict[study_id] if x["run_accession"] in sample_group]
             selected_studies_grouped_samples_dict[study_id][group_name] = selected_studies_grouped_samples_dict_values
-
     return (selected_studies_dict, selected_studies_grouped_samples_dict)
 

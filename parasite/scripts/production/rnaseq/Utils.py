@@ -63,6 +63,7 @@ def sra_ftp_to_fire(fastq, sra_ftp_path_prefix=sra_ftp_path_prefix, sra_fire_pat
 
 def validate_selects_format(user_select):
     validation_regex = "^\w+$|^\w+:\w+$|^\w+:\[?\w+(]?;\[?\w+){1,}]?|^\w+$"
+    bracket_error = False
     if "[" in user_select:
         bracket_error=False
         starting_positions = findOccurrences(user_select, "[")

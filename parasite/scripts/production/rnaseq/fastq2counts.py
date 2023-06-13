@@ -48,7 +48,7 @@ selected_species = Species(user_input, selected_studies_grouped_samples_dict)
 selected_species.create_dirs()
 
 for study_id in selected_species.studies:
-    study = Study(user_input, selected_studies_grouped_samples_dict, study_id)
+    study = Study(user_input, selected_studies_grouped_samples_dict, study_id, apollo=user_input.apdep)
     study.create_dirs()
     print_info("Processing Study " + study.study_id)
     print_w_indent("With samples:\n" + "\n".join(study.sample_ids))
@@ -68,10 +68,10 @@ for study_id in selected_species.studies:
                                     group.sortrefname_bam_command() + \
                                     group.cap_bam_command(delete_previous=True) + \
                                     group.sort_capped_bam_command(delete_previous=True) + \
-                                    group.index_final_bam_command() + \
-                                    group.bam2bigwig_command(delete_previous=False) + \
-                                    group.move_final_bam_to_apollo_dir_command() + \
-                                    group.move_final_bigwig_to_apollo_dir_command()
+                                    group.index_final_bam_command() #+ \
+                                    #group.bam2bigwig_command(delete_previous=False) + \
+                                    #group.move_final_bam_to_apollo_dir_command() + \
+                                    #group.move_final_bigwig_to_apollo_dir_command()
 
         group_processing_submit = lsf_submit(group_processing_command,
                                               jobprefix = group.group_id,
