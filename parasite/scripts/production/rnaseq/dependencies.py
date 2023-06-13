@@ -31,7 +31,7 @@ star_align_outSAMtype = "BAM SortedByCoordinate"
 star_align_outFileNameSuffix = "Aligned.sortedByCoord.out.bam"
 
 star_align_limitBAMsortRAM = "18486355837"
-star_align_sjdbOverhang = "99"
+star_align_sjdbOverhang = "100"
 star_align_sjdbGTFtagExonParentGene = "gene_id"
 star_align_quantMode = "GeneCounts"
 star_align_outFilterMultimapNmax = "1"
