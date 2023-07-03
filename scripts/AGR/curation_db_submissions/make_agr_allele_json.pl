@@ -94,18 +94,7 @@ sub process_variations {
 	    obsolete => JSON::false
 	}; 
 
-	my ($is_obsolete, $db_status_json);
-	if ($obj->Status && $obj->Status->name eq 'Dead') {
-	    $is_obsolete = JSON::true;
-	    $db_status_json = {
-		database_status_name => 'dead'
-	    };
-	} else {
-	    $is_obsolete = JSON::false;
-	    $db_status_json = {
-		database_status_name => 'live'
-	    };
-	}
+	my $is_obsolete = ($obj->Status && $obj->Status->name eq 'Dead') ? JSON::true : JSON::false;
 	    
 	my $json_obj = {
 	    curie                      => "WB:" . $obj->name,
@@ -115,8 +104,7 @@ sub process_variations {
 	    obsolete                   => $is_obsolete,
 	    created_by_curie           => 'WB:curator',
 	    updated_by_curie           => 'WB:curator',
-	    data_provider_dto          => $data_provider_dto_json,
-	    allele_database_status_dto => $db_status_json
+	    data_provider_dto          => $data_provider_dto_json
 	};
 	if ($obj->Method) {
 	    my $collection = $obj->Method->name;
