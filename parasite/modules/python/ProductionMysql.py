@@ -97,6 +97,25 @@ class Staging:
             exit_with_error(f"Couldn't find a core db for {pattern}")
 
         return Core(self.host, coredb).phylum()
+    
+    def core_dbs_with_busco(self, version, pattern=None, release=False, opposite=False):
+        if (pattern==None) and (release==False):
+            all_cores = self.core_databases
+        elif pattern and release==False:
+            all_cores = self.core_dbs(pattern)
+        elif release==True and pattern==None:
+            all_cores = self.release_core_databases
+        elif release==True and pattern:
+            all_cores = regex_match_dbs(pattern, self.release_core_databases)
+        
+        core_dbs_with_buscos = []
+
+        for dbname in all_cores:
+            if Core(self.host, dbname).has_busco_score(version):
+                core_dbs_with_buscos.append(dbname)
+        
+        return core_dbs_with_buscos
+
 
 class Production:
     def __init__(self, PRODUCTION_HOST, pattern="", writeable=False):
@@ -127,16 +146,21 @@ class Core(Staging):
     def species_name(self):
         spe_cies_bp = '_'.join(self.db().split("_")[0:3])
         return (spe_cies_bp)
+    def release(self):
+        return release_from_dbname(self.db(),"core")
     def connect(self):
         dbc = DBConnection(self.url + self.db())
         return (dbc)
     def meta_value(self, pattern):
-        META_VALUE_SQL = "SELECT meta_key, meta_value FROM meta WHERE meta_key LIKE \"%{0}%\";".format(pattern)
-        get_meta_value_res = [x for x in self.connect().execute(META_VALUE_SQL)]
-        if len(get_meta_value_res) > 1:
-            return [{x[0]: x[1]} for x in get_meta_value_res]
+        META_VALUE_SQL = f"SELECT meta_key, meta_value FROM meta WHERE meta_key LIKE '%{pattern}%';"
+        result = self.connect().execute(META_VALUE_SQL).fetchall()
+        if result:
+            if len(result) > 1:
+                return [{x[0]: x[1]} for x in result]
+            else:
+                return result[0][1]
         else:
-            return [x[1] for x in get_meta_value_res][0]
+            return []
     def phylum(self):
         species_classifications_dict = self.meta_value('species.classification')
         species_classifications = flatten([list(x.values()) for x in species_classifications_dict])
@@ -179,6 +203,24 @@ class Core(Staging):
                   (" --canonical_only" if canonical_only else "") + \
                   ";"
         return command
+    def has_busco_score(self, version):
+        busco_scores = self.meta_value(f"busco{version}")
+        if len(busco_scores)>=10:
+            return True
+        else:
+            return False
+    def busco_dataset(self, odb_version):
+        if self.phylum()=="Nematoda":
+            return f"nematoda_odb{odb_version}"
+        elif self.phylum()=="Platyhelminthes":
+            return f"metazoa_odb{odb_version}"
+    def busco_augustus_species(self):
+        if self.phylum()=="Nematoda":
+            return f"caenorhabditis"
+        elif self.phylum()=="Platyhelminthes":
+            return f"schistosoma"
+
+
 
 class Variation(Staging):
     def __init__(self, STAGING_HOST, pattern, writable=False):
@@ -193,6 +235,9 @@ class Variation(Staging):
         spe_cies_bp = '_'.join(self.db().split("_")[0:3])
         return (spe_cies_bp)
 
+    def release(self):
+        return release_from_dbname(self.db(),"variation")
+    
     def core_dbname(self):
         return (Core(STAGING_HOST, self.species_name()).db())
 
@@ -217,7 +262,6 @@ class Variation(Staging):
         ftp_id = self.meta_value('species.ftp_genome_id')
         ftp_species = '_'.join(self.species_name().split("_")[0:2])
         return (ftp_species + "." + ftp_id + "." + "WBPS" + PARASITE_VERSION)
-
 
 staging = Staging(STAGING_HOST)
 previous_staging = Staging(PREVIOUS_STAGING_HOST)

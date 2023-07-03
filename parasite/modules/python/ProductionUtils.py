@@ -242,6 +242,34 @@ def parasite_genome2core(genome, staging_server):
 def parasite_core2genome(core_db):
     return "_".join(core_db.split("_")[0:3])
 
+def release_from_dbname(dbname, dbtype="core"):
+    """
+    Extracts the release information from a given database name.
+
+    The function expects the database name to follow a specific format with a prefix `dbtype`, followed by an underscore,
+    a number with at least two digits representing the release, another underscore, and a number with at least three digits.
+    It extracts the release information from the given `dbname` and returns it.
+
+    Args:
+        dbname (str): The name of the database containing the release information.
+        dbtype (str, optional): The specific type of the database to look for (default: "core").
+
+    Returns:
+        str or None: The extracted release information if found, or None if not found.
+
+    Example:
+        dbname = "core_18_108"
+        release = release_from_dbname(dbname)
+        print(release)
+        # Output: 18
+    """    
+    pattern = rf"{dbtype}_(\d{{2,}})_(\d{{3,}})"
+    match = re.search(pattern, dbname)
+    if match:
+        return match.group(1)
+    else:
+        return None    
+
 def parasite_core2previouscore(core_db, previous_staging_server):
     genome = parasite_core2genome(core_db)
     return parasite_genome2core(genome, previous_staging_server)
