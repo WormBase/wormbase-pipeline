@@ -49,6 +49,7 @@ my $bgi_genes = AGR::get_bgi_genes( $bgi_json ) if $bgi_json;
 
 my $db = Ace->connect(-path => $acedbpath, -program => $tace) or die("Connection failure: ". Ace->error);
 
+# Note: if the following criteria change then we need to update the logic in the is_submitted_to_agr() subroutine in GFF_post_process/overload_gff_variation.pl
 my $it = $db->fetch_many(-query => 'find Variation WHERE Live AND COUNT(Gene) == 1 AND (Phenotype OR Disease_info OR Interactor) AND NOT Natural_variant');
 process($it);
 

@@ -80,6 +80,12 @@ const my %VCF_INFO => (
 	number      => 1,
 	description => 'HGVSg identifier',
     },
+    agr_submitted => {
+	id          => 'AGR_submitted',
+	type        => 'Flag',
+	number      => 0,
+	description => 'Variation meets criteria for submission to Alliance of Genome Resources'
+    },
     );
 
 const my %IUPAC_CODES => (
@@ -136,7 +142,7 @@ my $log = Log_files->make_build_log($wormbase);
 $log->log_and_die("You must define -infile\n") unless defined $infile;
 $log->log_and_die("You must define -outfile unless running in -vcf_only mode\n") unless defined $outfile or $vcf_only;
 
-my $vcf = $gff3 and !$no_vcf ? 1 : 0;
+my $vcf = ($gff3 and !$no_vcf) ? 1 : 0;
 
 my $vcf_out_fh;
 if ($vcf) {
@@ -185,7 +191,6 @@ while (<$gff_in_fh>) {
     push @new_els, ['Variation', $allele];
 
     my $variation = $db->fetch(Variation => $allele);
-    
     my @var_types = $variation->at('Variation_type');
     my @other_names = $variation->at('Name.Other_name');
     my ($public_name) = $variation->at('Name.Public_name');
@@ -316,6 +321,13 @@ while (<$gff_in_fh>) {
 	
     }
     
+    if (is_submitted_to_agr($variation)) {
+	push @new_els, ['AGR_submitted'];
+	$allele_vcf_values{'agr_submitted'} = 1;
+    }
+    
+
+    
     my @new_el_strings;
     foreach my $el (@new_els) {
       if (scalar(@$el) == 1) {
@@ -406,6 +418,21 @@ exit(0);
 #
 ##############################################################
 
+sub is_submitted_to_agr {
+    my $var = shift;
+
+    my @overlapping_genes = $var->at('Affects.Gene');
+    return 0 if scalar @overlapping_genes != 1;
+
+    return 0 if $var->Natural_variant;
+
+    if ($var->Status eq 'Live' && ($var->Phenotype || $var->Disease_info || $var->Interactor)) {
+	return 1;
+    }
+
+    return 0;
+}
+    
 sub get_chromosome_sequences {
     my %chromosomes;
     my $chr;
