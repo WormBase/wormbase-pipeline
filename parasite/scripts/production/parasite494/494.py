@@ -2,6 +2,7 @@
 from ProductionMysql import *
 from ProductionUtils import *
 import gzip
+import csv
 
 # setting up database server
 PARASITE_STAGING = os.environ['PARASITE_STAGING_MYSQL']
@@ -20,33 +21,62 @@ def get_file_path(s):
     bioproject_id = s.split("_")[2].upper()
     return f"{organism_genus}_{organism_species}/{bioproject_id}/annotation/{organism_genus}_{organism_species}.{bioproject_id}.WS{WORMBASE_VERSION}.functional_descriptions.txt.gz"
 
-#s = "brugia_malayi_prjna10729_core_18_108_285"
-#print(get_file_path(s))
-
 # list comprehension to feed each element in the databases list into the get_file_path() function
 # outputs a list containing the file path for each element in the initial databases list 
 annotation_output = [get_file_path(x) for x in databases] 
 
-
 # store the output of the get_file_path() function for each database in a separate variable.
 b_malayi, c_brenneri, c_briggsae, c_elegans, c_japonica, c_remanei, o_volvulus, p_pacificus, s_ratti, t_muris = annotation_output
 
-#b_malayi = annotation_output[0]
-#c_brenneri = annotation_output[1]
-#c_briggsae = annotation_output[2]
-#c_elegans = annotation_output[3]
-#c_japonica = annotation_output[4]
-#c_remanei = annotation_output[5]
-#o_volvulus = annotation_output[6]
-#p_pacificus = annotation_output[7]
-#s_ratti = annotation_output[8]
-#t_muris = annotation_output[9]
-
-# need to add it to the file path you have created before
+# construct file paths
+malayi_path = os.path.join(WORMBASE_FTP, 'releases', 'WS' + WORMBASE_VERSION, 'species', b_malayi)
+brenneri_path = os.path.join(WORMBASE_FTP, 'releases', 'WS' + WORMBASE_VERSION, 'species', c_brenneri)
+briggsae_path = os.path.join(WORMBASE_FTP, 'releases', 'WS' + WORMBASE_VERSION, 'species', c_briggsae)
 elegans_path = os.path.join(WORMBASE_FTP, 'releases', 'WS' + WORMBASE_VERSION, 'species', c_elegans)
+japonica_path = os.path.join(WORMBASE_FTP, 'releases', 'WS' + WORMBASE_VERSION, 'species', c_japonica)
+remanei_path = os.path.join(WORMBASE_FTP, 'releases', 'WS' + WORMBASE_VERSION, 'species', c_remanei)
+volvulus_path = os.path.join(WORMBASE_FTP, 'releases', 'WS' + WORMBASE_VERSION, 'species', o_volvulus)
+pacificus_path = os.path.join(WORMBASE_FTP, 'releases', 'WS' + WORMBASE_VERSION, 'species', p_pacificus)
+ratti_path = os.path.join(WORMBASE_FTP, 'releases', 'WS' + WORMBASE_VERSION, 'species', s_ratti)
+muris_path = os.path.join(WORMBASE_FTP, 'releases', 'WS' + WORMBASE_VERSION, 'species', t_muris)
 
-# reading the content from the file path
-with gzip.open(elegans_path, 'rb') as f:
-    file_content = f.read()
+# list of file paths
+# to feed into for loop below
+file_paths = [malayi_path, brenneri_path, briggsae_path, elegans_path, japonica_path, remanei_path, volvulus_path, pacificus_path, ratti_path, muris_path]
 
-# the variable file_content now contains the contents of the c_elegans.PRJNA13758.WS285.functional_descriptions.txt.gz file
+# loop through each of the functional annotation descriptions files
+# for each line in the file append 'stable id' from the line if it begins with 'WBGene' 
+# append automated description if line begins with 'automated description.' Collect all text after this up to 'gene desc'
+
+# create empty list 'data' to store stable_ids and automated descriptions extracted from functional annotations files
+data = []
+
+for file_path in file_paths:
+    with gzip.open(file_path, 'rt') as file:
+        stable_id = None
+        description = None
+
+        for line in file:
+            line = line.strip()
+            if line.startswith('WBGene'):
+                stable_id = line.split()[0]
+            elif line.startswith('Automated description:'):
+                description = line.strip()
+                for subline in file:
+                    subline = subline.strip()
+                    if subline.startswith('Gene class description:'):
+                        data.append([stable_id, description])
+                        break
+                    else:
+                        description += ' ' + subline
+                stable_id = None
+                description = None
+
+print(data)
+
+# write .tsv file with extracted data
+with open('data.tsv', 'w', newline='') as file:
+    writer = csv.writer(file, delimiter='\t')
+    writer.writerow(['stable_id', 'description'])
+    for row in data:
+        writer.writerow(row)
