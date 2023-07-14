@@ -4,10 +4,10 @@ from ProductionUtils import *
 import gzip
 import csv
 
-# setting up database server
+# setting up environmental variable for database server
 PARASITE_STAGING = os.environ['PARASITE_STAGING_MYSQL']
 
-# get list stored in the variable databases that comprises the organisms shared between WB and WBPS
+# databases list that comprises the organisms shared between WB and WBPS
 databases = (staging.core_dbs("core_18_108_285"))
 
 # creating a file path to each of the shared databases
@@ -61,7 +61,7 @@ for file_path in file_paths:
             if line.startswith('WBGene'):
                 stable_id = line.split()[0]
             elif line.startswith('Automated description:'):
-                description = line.strip()
+                description = line.replace('Automated description:', '').strip()
                 for subline in file:
                     subline = subline.strip()
                     if subline.startswith('Gene class description:'):
