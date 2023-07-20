@@ -2,6 +2,7 @@ import os
 import pandas as pd
 from ProductionMysql import *
 from ProductionUtils import *
+from sqlalchemy import insert
 
 # Set up environmental variables
 STAGING_HOST = os.environ['PARASITE_STAGING_MYSQL']
@@ -17,8 +18,8 @@ def get_file_path(s):
     return f"{organism_genus}_{organism_species}.{bioproject_id}.WS{WORMBASE_VERSION}.functional_descriptions.txt.gz.tsv"
 
 # list comprehension to feed each element in the databases list into the get_file_path() function
-# outputs a list containing the file path for each element in the initial databases list 
-organism_files = [get_file_path(x) for x in databases] 
+# outputs a list containing the file name for each element in the initial databases list 
+organism_files = [get_file_path(x) for x in databases]
 
 for file in organism_files:
     # Import .tsv file containing stable_id and automated description as a pandas dataframe
@@ -41,6 +42,7 @@ for file in organism_files:
         gene_id_df = pd.DataFrame(gene_id_rows, columns=['stable_id', 'gene_id'])
         
         # Query attrib_type table to get attrib_type_id for description
+        # add attrib_type as a new column to df
         attrib_type_query = core_db.connect().execute("SELECT attrib_type_id FROM attrib_type WHERE name = 'description'")
         attrib_type_id = attrib_type_query.fetchone()[0]
         gene_id_df['attrib_type_id'] = attrib_type_id
@@ -52,18 +54,18 @@ for file in organism_files:
         merged_df = merged_df[~merged_df['description'].str.contains('none available')]
 
         # Drop the 'stable_id' column
+        # rename the description column 'value' so it matches the gene_attrin table
         merged_df = merged_df.drop('stable_id', axis=1)
+        merged_df = merged_df.rename(columns={'description': 'value'})
+        
+        
+        # Convert merged_df to a list of tuples
+        data = merged_df.to_records(index=False).tolist()
+        insert_statment = "INSERT INTO gene_attrib (gene_id, attrib_type_id, value) VALUES (%s, %s, %s)"
+        core_db.connect().execute(insert_statment, data)
+"""         # convert merged_df to dictionary to insert as new rows in the gene_attrib table
+        data = merged_df.to_dict(orient='records')
 
-        # Insert the rows into the gene_id table
-        with core_db.connect() as connection:
-            # Convert the DataFrame to a list of dictionaries
-            data = merged_df.to_dict(orient='records')
-
-            # Define the table name
-            table_name = 'gene_attrib'
-
-            # Use SQLAlchemy's insert() statement to insert data into db gene_attrib table 
-            insert_stmt = insert(table_name).values(data)
-            
-            # Execute the insert statement
-            connection.execute(insert_stmt)
+        # Create the 'gene_attrib' table object using the 'meta' attribute from the 'core_db' object
+        insert_statment = "INSERT INTO gene_attrib (gene_id, attrib_type_id, value) VALUES (%s, %s, %s)"
+        core_db.connect().execute(insert_statment, data) """
