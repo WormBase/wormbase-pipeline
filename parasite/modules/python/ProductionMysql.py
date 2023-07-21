@@ -219,6 +219,11 @@ class Core(Staging):
             return f"caenorhabditis"
         elif self.phylum()=="Platyhelminthes":
             return f"schistosoma"
+    def get_file_path(self, s):
+        organism_genus = s.split("_")[0][0]
+        organism_species = s.split("_")[1]
+        bioproject_id = s.split("_")[2].upper()
+        return f"{organism_genus}_{organism_species}/{bioproject_id}/annotation/{organism_genus}_{organism_species}.{bioproject_id}.WS{WORMBASE_VERSION}.functional_descriptions.txt.gz"
 
 
 
