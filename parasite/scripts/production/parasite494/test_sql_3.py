@@ -48,7 +48,7 @@ for file in organism_files:
         data = merged_df.to_dict(orient='records')
         #print(data)
 
-        engine = create_engine(f"mysql://{STAGING_HOST}/{database}")
+        engine = create_engine(f"mysql://{STAGING_HOST}/{database}") #core.engine()
         metadata = MetaData(bind=engine)
         gene_attrib = Table('gene_attrib', metadata, autoload=True)
 
