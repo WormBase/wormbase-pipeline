@@ -37,7 +37,6 @@ def get_file_paths(WORMBASE_FTP, WORMBASE_VERSION, databases):
 # call function to get the list of file paths
 file_paths = get_file_paths(WORMBASE_FTP, WORMBASE_VERSION, databases)
 
-
 # process each functional annotation file and store each stable_id and corresponding description as an output .tsv in a scratch directory
 def process_files(file_paths):
     # variables to store hard coded text
@@ -110,6 +109,7 @@ int_folder = 'gene_descs'
 int_scratch_directory = os.path.join(PARASITE_SCRATCH, int_folder)
 gene_attrib_type = 'description'
 
+
 for file in os.listdir(int_scratch_directory):
     file_path = os.path.join(int_scratch_directory, file)
     df = pd.read_csv(file, sep='\t', names=["stable_id", "description"])
@@ -143,14 +143,3 @@ for file in os.listdir(int_scratch_directory):
         print(data)
 
         conn = core_db.engine.connect()
-        Session = sessionmaker(bind=engine)
-        session = Session()
-
-        metadata = MetaData(bind=engine)
-        table_name = Table('gene_attrib', metadata, autoload=True)
-
-        for row in data:
-            insert_stmt = table_name.insert().values(**row)
-            session.execute(insert_stmt)
-
-        session.commit()
