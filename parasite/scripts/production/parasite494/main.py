@@ -74,6 +74,16 @@ for file in os.listdir(int_scratch_directory):
         data = merged_df.to_dict(orient='records')
         print(len(data))
 
+        def check_for_empty_values(data):
+            empty_values = []
+            for item in data:
+                if not item['value']:
+                    empty_values.append(item)
+            return empty_values
+        
+        empty_values_list = check_for_empty_values(data)
+        print(empty_values_list)
+
         # database insertion
         core_db_w = Core(STAGING_HOST, database, writable=True)
         delete_query_execution = core_db_w.connect().execute(DELETE_QUERY)
