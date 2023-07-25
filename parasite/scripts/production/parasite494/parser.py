@@ -13,6 +13,10 @@ WORMBASE_VERSION = os.environ['WORMBASE_VERSION']
 WORMBASE_FTP = os.environ['WORMBASE_FTP'] # '/nfs/ftp/public/databases/wormbase/'
 PARASITE_SCRATCH = os.environ["PARASITE_SCRATCH"] 
 
+# databases list that comprises the organisms shared between WB and WBPS
+databases_search_key = f"_core_{PARASITE_VERSION}_{ENSEMBL_VERSION}_{WORMBASE_VERSION}"
+databases = (staging.core_dbs(databases_search_key))
+
 # process each functional annotation file and store each stable_id and corresponding description as an output .tsv in a scratch directory
 def process_files(file_paths):
     # variables to store hard coded text
