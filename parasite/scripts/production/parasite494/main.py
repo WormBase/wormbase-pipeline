@@ -36,6 +36,7 @@ gene_attrib_type = 'description'
 for file in os.listdir(int_scratch_directory):
     file_path = os.path.join(int_scratch_directory, file)
     df = pd.read_csv(file_path, sep='\t', names=["stable_id", "description"])
+    print(len(df))
 
     # connect to db associated with each .tsv file
     for database in databases:
@@ -48,32 +49,38 @@ for file in os.listdir(int_scratch_directory):
         ATTRIB_QUERY = "SELECT attrib_type_id FROM attrib_type WHERE name = '{}'".format(gene_attrib_type)
         # query to check if any of the genes already have a description associated with them 
         DESCRIP_QUERY = "SELECT DISTINCT(gene_id) FROM gene JOIN gene_attrib USING (gene_id) JOIN attrib_type USING (attrib_type_id) WHERE attrib_type.name='description'"
-        
+        # query to delete values from gene_attrib table where there are already descriptions present. They will be replaced with the new descriptions
+        DELETE_QUERY = "DELETE FROM gene_attrib WHERE attrib_type_id = '49'"
+
         # execute queries
         genes_query_execution = core_db.connect().execute(GENES_QUERY)
         gene_id_rows = genes_query_execution.fetchall()
         attrib_query_execution = core_db.connect().execute(ATTRIB_QUERY)
         attrib_type_id = attrib_query_execution.fetchone()[0]
-        descrip_query_execute = core_db.connect().execute(DESCRIP_QUERY)
-        descrip_q = descrip_query_execute.fetchall()
-        # print list of gene_ids that already have a description associataed with them
-        print(descrip_q)
-
-
+        #delete_query_execution = core_db.connect().execute(DELETE_QUERY)
+        #descrip_query_execute = core_db.connect().execute(DESCRIP_QUERY)
+        #descrip_q = descrip_query_execute.fetchall()
+        
         # create a df from the tuples that are returned as output to the gene query
         # add attrib_type_id column
         gene_id_df = pd.DataFrame(gene_id_rows, columns=['stable_id', 'gene_id'])
         gene_id_df['attrib_type_id'] = attrib_type_id
+        print(len(gene_id_df))
     
         # merge .tsv df and df created from querying db on the stable_id column
         merged_df = pd.merge(gene_id_df, df[df['description'] != 'none available'], on='stable_id').drop('stable_id', axis=1).rename(columns={'description': 'value'}) 
 
         # convert df to dictionary to make easier to insert into db?
         data = merged_df.to_dict(orient='records')
+        print(len(data))
 
         # database insertion
+        core_db_w = Core(STAGING_HOST, database, writable=True)
+        delete_query_execution = core_db_w.connect().execute(DELETE_QUERY)
         attrib_table = 'gene_attrib'
-        gene_attrib_table = sa.Table(attrib_table, sa.MetaData(), autoload_with=core_db.engine)
+        gene_attrib_table = sa.Table(attrib_table, sa.MetaData(), autoload_with=core_db_w.engine)
 
-        with core_db.engine.begin() as conn:
-            conn.execute(gene_attrib_table.insert(), data)
+        print(core_db_w.db())
+        #with core_db_w.engine.begin() as conn:
+        #    conn.execute(gene_attrib_table.insert(), data)
+        break
