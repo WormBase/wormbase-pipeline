@@ -70,10 +70,10 @@ for file in os.listdir(int_scratch_directory):
 
         # convert df to dictionary to make easier to insert into db?
         data = merged_df.to_dict(orient='records')
-        print(data)
 
         # database insertion
-        gene_attrib_table = sa.Table("gene_attrib", sa.MetaData(), autoload_with=core_db.engine)
+        attrib_table = 'gene_attrib'
+        gene_attrib_table = sa.Table(attrib_table, sa.MetaData(), autoload_with=core_db.engine)
 
         with core_db.engine.begin() as conn:
             conn.execute(gene_attrib_table.insert(), data)
