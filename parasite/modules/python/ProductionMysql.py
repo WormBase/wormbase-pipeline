@@ -40,7 +40,7 @@ class Staging:
         self.host = STAGING_HOST
         if writeable:
             self.host = STAGING_HOST + "-w"
-        self.url = subprocess.check_output([self.host, 'details', 'url']).strip().decode()
+        self.url = subprocess.check_output([self.host, 'details', 'url', '--db']).strip().decode()
         self.script = subprocess.check_output([self.host, 'details', 'script']).strip().decode()
         self.engine = sqlalchemy.create_engine(self.url)
         self.insp = sqlalchemy.inspect(self.engine)
