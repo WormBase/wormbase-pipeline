@@ -2,12 +2,9 @@
 from ProductionMysql import *
 from ProductionUtils import *
 import os
-import gzip
-import csv
 import parser
 import utils
-from sqlalchemy import insert, Table, MetaData
-from sqlalchemy.orm import sessionmaker
+import sqlalchemy as sa
 
 # setting up environmental variables
 PARASITE_STAGING = os.environ['PARASITE_STAGING_MYSQL']
@@ -21,21 +18,25 @@ PARASITE_SCRATCH = os.environ["PARASITE_SCRATCH"]
 databases_search_key = f"_core_{PARASITE_VERSION}_{ENSEMBL_VERSION}_{WORMBASE_VERSION}"
 databases = (staging.core_dbs(databases_search_key))
 
-# call function from utils.py to get the list of file paths
+# call get_file_paths function function to get full list of file paths
 file_paths = utils.get_file_paths(WORMBASE_FTP, WORMBASE_VERSION, databases)
 
 # call function from parser.py to process functional annotations files and store a .tsv for each organism in scratch directory 
 parser.process_files(file_paths)
 
+# setting up path to scratch directory containing intermediate files
 int_folder = 'gene_descs'
 int_scratch_directory = os.path.join(PARASITE_SCRATCH, int_folder)
+
+# variable to hold term description so it can be configured easily
 gene_attrib_type = 'description'
 
+
+# for each file in scratch directory, reconstruct file path, open as a df
 for file in os.listdir(int_scratch_directory):
     file_path = os.path.join(int_scratch_directory, file)
     df = pd.read_csv(file_path, sep='\t', names=["stable_id", "description"])
-    #print(df)
-    stable_ids = df['stable_id'].tolist()
+
     # connect to db associated with each .tsv file
     for database in databases:
         core_db = Core(STAGING_HOST, database)
@@ -45,22 +46,34 @@ for file in os.listdir(int_scratch_directory):
         GENES_QUERY = "SELECT stable_id, gene_id FROM gene"
         # query attrib_type table and return description attrib_type_id
         ATTRIB_QUERY = "SELECT attrib_type_id FROM attrib_type WHERE name = '{}'".format(gene_attrib_type)
+        # query to check if any of the genes already have a description associated with them 
+        DESCRIP_QUERY = "SELECT DISTINCT(gene_id) FROM gene JOIN gene_attrib USING (gene_id) JOIN attrib_type USING (attrib_type_id) WHERE attrib_type.name='description'"
         
-        execution = core_db.connect().execute(GENES_QUERY)
-        gene_id_rows = execution.fetchall()
-        # create a df from the tuples
+        # execute queries
+        genes_query_execution = core_db.connect().execute(GENES_QUERY)
+        gene_id_rows = genes_query_execution.fetchall()
+        attrib_query_execution = core_db.connect().execute(ATTRIB_QUERY)
+        attrib_type_id = attrib_query_execution.fetchone()[0]
+        descrip_query_execute = core_db.connect().execute(DESCRIP_QUERY)
+        descrip_q = descrip_query_execute.fetchall()
+        # print list of gene_ids that already have a description associataed with them
+        print(descrip_q)
+
+
+        # create a df from the tuples that are returned as output to the gene query
+        # add attrib_type_id column
         gene_id_df = pd.DataFrame(gene_id_rows, columns=['stable_id', 'gene_id'])
-        attrib_execution = core_db.connect().execute(ATTRIB_QUERY)
-        attrib_type_id = attrib_execution.fetchone()[0]
-        # add attrib type id as a column to df
         gene_id_df['attrib_type_id'] = attrib_type_id
-        # merge .tsv df and df created from querying db on the stable_id column 
-        merged_df = pd.merge(gene_id_df, df, on='stable_id', how='inner')
-        merged_df = merged_df[~merged_df['description'].str.contains('none available')]
-        merged_df = merged_df.drop('stable_id', axis=1)
-        merged_df = merged_df.rename(columns={'description': 'value'})
+    
+        # merge .tsv df and df created from querying db on the stable_id column
+        merged_df = pd.merge(gene_id_df, df[df['description'] != 'none available'], on='stable_id').drop('stable_id', axis=1).rename(columns={'description': 'value'}) 
+
         # convert df to dictionary to make easier to insert into db?
         data = merged_df.to_dict(orient='records')
         print(data)
 
-        conn = core_db.engine.connect()
+        # database insertion
+        gene_attrib_table = sa.Table("gene_attrib", sa.MetaData(), autoload_with=core_db.engine)
+
+        with core_db.engine.begin() as conn:
+            conn.execute(gene_attrib_table.insert(), data)
