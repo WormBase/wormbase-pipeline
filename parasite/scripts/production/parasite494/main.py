@@ -67,14 +67,12 @@ for file in os.listdir(int_scratch_directory):
         # add attrib_type_id column
         gene_id_df = pd.DataFrame(gene_id_rows, columns=['stable_id', 'gene_id'])
         gene_id_df['attrib_type_id'] = attrib_type_id
-        print(len(gene_id_df))
     
         # merge .tsv df and df created from querying db on the stable_id column
         merged_df = pd.merge(gene_id_df, df[df['description'] != 'none available'], on='stable_id').drop('stable_id', axis=1).rename(columns={'description': 'value'}) 
 
         # convert df to dictionary to make easier to insert into db?
         data = merged_df.to_dict(orient='records')
-        print(data)
 
         # database insertion
         core_db_w = Core(STAGING_HOST, database, writable=True)
@@ -82,14 +80,18 @@ for file in os.listdir(int_scratch_directory):
         delete_query_execution = core_db_w.connect().execute(DELETE_QUERY)
 
         # Create the table object using the MyTableName class
+        # metadata object is a container for the db schema info
+        # gene_attrib_table object represents the gene_attrib db table 
+        # The autoload_with parameter specifies that the table structure will be loaded from the database using the connection defined by core_db_w.engine.
         metadata = sa.MetaData()
         gene_attrib_table = sa.Table(attrib_table, metadata, autoload_with=core_db_w.engine)
 
+        # create a session, an intermediate object for interacting with the database
         Session = sessionmaker(bind=core_db_w.engine)
         session = Session()
 
         for item in data:
-        # Use the 'insert()' method to insert data into the table
+        # insert method used to insert data into the table row by row from the list of dictionaries
             ins = gene_attrib_table.insert().values(gene_id=item['gene_id'], attrib_type_id=item['attrib_type_id'], value=item['value'])
             session.execute(ins)
 
