@@ -2,9 +2,10 @@
 from ProductionMysql import *
 from ProductionUtils import *
 import os
-import parser
+import parsers
 import utils
 import sqlalchemy as sa
+from sqlalchemy.orm import sessionmaker
 
 # setting up environmental variables
 PARASITE_STAGING = os.environ['PARASITE_STAGING_MYSQL']
@@ -22,7 +23,7 @@ databases = (staging.core_dbs(databases_search_key))
 file_paths = utils.get_file_paths(WORMBASE_FTP, WORMBASE_VERSION, databases)
 
 # call function from parser.py to process functional annotations files and store a .tsv for each organism in scratch directory 
-parser.process_files(file_paths)
+parsers.process_files(file_paths)
 
 # setting up path to scratch directory containing intermediate files
 int_folder = 'gene_descs'
@@ -52,14 +53,15 @@ for file in os.listdir(int_scratch_directory):
         # query to delete values from gene_attrib table where there are already descriptions present. They will be replaced with the new descriptions
         DELETE_QUERY = "DELETE FROM gene_attrib WHERE attrib_type_id = '49'"
 
+
         # execute queries
         genes_query_execution = core_db.connect().execute(GENES_QUERY)
         gene_id_rows = genes_query_execution.fetchall()
         attrib_query_execution = core_db.connect().execute(ATTRIB_QUERY)
         attrib_type_id = attrib_query_execution.fetchone()[0]
-        #delete_query_execution = core_db.connect().execute(DELETE_QUERY)
-        #descrip_query_execute = core_db.connect().execute(DESCRIP_QUERY)
-        #descrip_q = descrip_query_execute.fetchall()
+        # checking to see if any of the genes already have an associated description
+        descrip_query_execute = core_db.connect().execute(DESCRIP_QUERY)
+        descrip_q = descrip_query_execute.fetchall()
         
         # create a df from the tuples that are returned as output to the gene query
         # add attrib_type_id column
@@ -72,25 +74,24 @@ for file in os.listdir(int_scratch_directory):
 
         # convert df to dictionary to make easier to insert into db?
         data = merged_df.to_dict(orient='records')
-        print(len(data))
-
-        def check_for_empty_values(data):
-            empty_values = []
-            for item in data:
-                if not item['value']:
-                    empty_values.append(item)
-            return empty_values
-        
-        empty_values_list = check_for_empty_values(data)
-        print(empty_values_list)
+        print(data)
 
         # database insertion
         core_db_w = Core(STAGING_HOST, database, writable=True)
-        delete_query_execution = core_db_w.connect().execute(DELETE_QUERY)
         attrib_table = 'gene_attrib'
-        gene_attrib_table = sa.Table(attrib_table, sa.MetaData(), autoload_with=core_db_w.engine)
+        delete_query_execution = core_db_w.connect().execute(DELETE_QUERY)
 
-        print(core_db_w.db())
-        #with core_db_w.engine.begin() as conn:
-        #    conn.execute(gene_attrib_table.insert(), data)
-        break
+        # Create the table object using the MyTableName class
+        metadata = sa.MetaData()
+        gene_attrib_table = sa.Table(attrib_table, metadata, autoload_with=core_db_w.engine)
+
+        Session = sessionmaker(bind=core_db_w.engine)
+        session = Session()
+
+        for item in data:
+        # Use the 'insert()' method to insert data into the table
+            ins = gene_attrib_table.insert().values(gene_id=item['gene_id'], attrib_type_id=item['attrib_type_id'], value=item['value'])
+            session.execute(ins)
+
+        session.commit()
+        session.close()
