@@ -29,9 +29,9 @@ parsers.process_files(file_paths)
 int_folder = 'gene_descs'
 int_scratch_directory = os.path.join(PARASITE_SCRATCH, int_folder)
 
+
 # variable to hold term description so it can be configured easily
 gene_attrib_type = 'description'
-
 
 # for each file in scratch directory, reconstruct file path, open as a df
 for file in os.listdir(int_scratch_directory):
@@ -75,7 +75,7 @@ for file in os.listdir(int_scratch_directory):
         # database insertion
         core_db_w = Core(STAGING_HOST, database, writable=True)
         attrib_table = 'gene_attrib'
-        delete_query_execution = core_db_w.connect().execute(DELETE_QUERY)
+        #delete_query_execution = core_db_w.connect().execute(DELETE_QUERY)
 
         # Create the table object using the MyTableName class
         # metadata object is a container for the db schema info
