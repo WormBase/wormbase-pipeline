@@ -12,7 +12,7 @@ PARASITE_STAGING = os.environ['PARASITE_STAGING_MYSQL']
 PARASITE_VERSION = os.environ['PARASITE_VERSION']
 ENSEMBL_VERSION = os.environ['ENSEMBL_VERSION']
 WORMBASE_VERSION = os.environ['WORMBASE_VERSION']
-WORMBASE_FTP = os.environ['WORMBASE_FTP'] # '/nfs/ftp/public/databases/wormbase/'
+WORMBASE_FTP = os.environ['WORMBASE_FTP'] 
 PARASITE_SCRATCH = os.environ["PARASITE_SCRATCH"] 
 
 # databases list that comprises the organisms shared between WB and WBPS
@@ -43,7 +43,7 @@ for file in os.listdir(int_scratch_directory):
     for database in databases:
         core_db = Core(STAGING_HOST, database)
 
-        # write queries
+        # write query statements
         # query gene table and return gene_id associated with each stable_id as a tuple
         GENES_QUERY = "SELECT stable_id, gene_id FROM gene"
         # query attrib_type table and return description attrib_type_id
@@ -53,13 +53,11 @@ for file in os.listdir(int_scratch_directory):
         # query to delete values from gene_attrib table where there are already descriptions present. They will be replaced with the new descriptions
         DELETE_QUERY = "DELETE FROM gene_attrib WHERE attrib_type_id = '49'"
 
-
         # execute queries
         genes_query_execution = core_db.connect().execute(GENES_QUERY)
         gene_id_rows = genes_query_execution.fetchall()
         attrib_query_execution = core_db.connect().execute(ATTRIB_QUERY)
         attrib_type_id = attrib_query_execution.fetchone()[0]
-        # checking to see if any of the genes already have an associated description
         descrip_query_execute = core_db.connect().execute(DESCRIP_QUERY)
         descrip_q = descrip_query_execute.fetchall()
         
@@ -68,7 +66,7 @@ for file in os.listdir(int_scratch_directory):
         gene_id_df = pd.DataFrame(gene_id_rows, columns=['stable_id', 'gene_id'])
         gene_id_df['attrib_type_id'] = attrib_type_id
     
-        # merge .tsv df and df created from querying db on the stable_id column
+        # merge .tsv df and df created from querying db on the stable_id column, drop rows with 'none available' description
         merged_df = pd.merge(gene_id_df, df[df['description'] != 'none available'], on='stable_id').drop('stable_id', axis=1).rename(columns={'description': 'value'}) 
 
         # convert df to dictionary to make easier to insert into db?
