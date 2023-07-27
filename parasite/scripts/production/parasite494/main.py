@@ -55,11 +55,7 @@ for file, database in file_database_pairs:
     ATTRIB_QUERY = "SELECT attrib_type_id FROM attrib_type WHERE name = '{}'".format(gene_attrib_type)
     # query to check if any of the genes already have a description associated with them 
     DESCRIP_QUERY = "SELECT DISTINCT(gene_id) FROM gene JOIN gene_attrib USING (gene_id) JOIN attrib_type USING (attrib_type_id) WHERE attrib_type.name='description'"
-    # query to delete values from gene_attrib table where there are already descriptions present. They will be replaced with the new descriptions
-    DELETE_QUERY = "DELETE FROM gene_attrib WHERE attrib_type_id = '{}'".format(attrib_type_id)
-    # data check query
-    DATA_CHECK_QUERY = "SELECT COUNT(*) FROM gene_attrib WHERE attrib_type_id = '{}'".format(attrib_type_id)
-
+    
     # execute queries
     genes_query_execution = core_db.connect().execute(GENES_QUERY)
     gene_id_rows = genes_query_execution.fetchall()
@@ -67,7 +63,14 @@ for file, database in file_database_pairs:
     attrib_type_id = attrib_query_execution.fetchone()[0]
     descrip_query_execute = core_db.connect().execute(DESCRIP_QUERY)
     descrip_q = descrip_query_execute.fetchall()
-        
+
+    # write database insertion queries
+    # query to delete values from gene_attrib table where there are already descriptions present. They will be replaced with the new descriptions
+    DELETE_QUERY = "DELETE FROM gene_attrib WHERE attrib_type_id = '{}'".format(attrib_type_id)
+    # data check query
+    DATA_CHECK_QUERY = "SELECT COUNT(*) FROM gene_attrib WHERE attrib_type_id = '{}'".format(attrib_type_id)
+
+
     # create a df from the tuples that are returned as output to the gene query
     # add attrib_type_id column
     gene_id_df = pd.DataFrame(gene_id_rows, columns=['stable_id', 'gene_id'])
