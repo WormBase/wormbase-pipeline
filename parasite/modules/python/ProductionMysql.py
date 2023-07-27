@@ -141,6 +141,8 @@ class Core(Staging):
         super().__init__(STAGING_HOST, writable)
         self.pattern = pattern
         self.databases = self.core_databases
+        self.core_url = self.url + self.db()
+        self.engine = sqlalchemy.create_engine(self.core_url)
     def db(self):
         return (regex_match_one_db(self.pattern, self.databases))
     def species_name(self):
@@ -219,7 +221,6 @@ class Core(Staging):
             return f"caenorhabditis"
         elif self.phylum()=="Platyhelminthes":
             return f"schistosoma"
-
 
 
 class Variation(Staging):
