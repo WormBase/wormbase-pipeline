@@ -34,17 +34,19 @@ int_scratch_directory = os.path.join(PARASITE_SCRATCH, int_folder)
 gene_attrib_type = 'description'
 
 
-# Create an iterator that pairs each file in int_scratch_directory with a database from the databases list
+# each output .tsv in int_scratch_directory is paired with its corresponding database from the databases list
+# returned as a tuple
+# does this based on them being in alphabetical order 
 file_database_pairs = zip(os.listdir(int_scratch_directory), databases)
 
 for file, database in file_database_pairs:
     file_path = os.path.join(int_scratch_directory, file)
     df = pd.read_csv(file_path, sep='\t', names=["stable_id", "description"])
-    print(len(df))
 
+    # connect to db
     core_db = Core(STAGING_HOST, database)
-    print(file_path)
-    print(core_db)
+    #print(file_path)
+    #print(core_db)
 
     # write query statements
     # query gene table and return gene_id associated with each stable_id as a tuple
@@ -72,9 +74,16 @@ for file, database in file_database_pairs:
     # merge .tsv df and df created from querying db on the stable_id column, drop rows with 'none available' description
     merged_df = pd.merge(gene_id_df, df[df['description'] != 'none available'], on='stable_id').drop('stable_id', axis=1).rename(columns={'description': 'value'}) 
 
+    # Store the count of dropped 'none available' descriptions
+    num_dropped_rows = len(df[df['description'] == 'none available'])
+
+    # Print the number of remaining rows after dropping 'none available' values
+    print(f"Database: {database}")
+    print(f"Total number of automated descriptions to add: {len(merged_df)}")
+    print(f"Number of 'none available' values dropped: {num_dropped_rows}")
+
     # convert df to dictionary to make easier to insert into db?
     data = merged_df.to_dict(orient='records')
-    print(len(data))
 
     # database insertion
     core_db_w = Core(STAGING_HOST, database, writable=True)
