@@ -31,9 +31,6 @@ int_scratch_directory = os.path.join(PARASITE_SCRATCH, int_folder)
 
 # variable to hold term description so it can be configured easily
 gene_attrib_type = 'description'
-attrib_id = '49'
-
-
 
 # each output .tsv in int_scratch_directory is paired with its corresponding database from the databases list
 # returned as a tuple
@@ -59,9 +56,9 @@ for file, database in file_database_pairs:
     # query to check if any of the genes already have a description associated with them 
     DESCRIP_QUERY = "SELECT DISTINCT(gene_id) FROM gene JOIN gene_attrib USING (gene_id) JOIN attrib_type USING (attrib_type_id) WHERE attrib_type.name='description'"
     # query to delete values from gene_attrib table where there are already descriptions present. They will be replaced with the new descriptions
-    DELETE_QUERY = "DELETE FROM gene_attrib WHERE attrib_type_id = '{}'".format(attrib_id)
+    DELETE_QUERY = "DELETE FROM gene_attrib WHERE attrib_type_id = '{}'".format(attrib_type_id)
     # data check query
-    DATA_CHECK_QUERY = "SELECT COUNT(*) FROM gene_attrib WHERE attrib_type_id = '{}'".format(attrib_id)
+    DATA_CHECK_QUERY = "SELECT COUNT(*) FROM gene_attrib WHERE attrib_type_id = '{}'".format(attrib_type_id)
 
     # execute queries
     genes_query_execution = core_db.connect().execute(GENES_QUERY)
