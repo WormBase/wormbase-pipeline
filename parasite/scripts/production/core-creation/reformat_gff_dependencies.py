@@ -5,4 +5,6 @@ transcript_types = ["mRNA", "tRNA", "rRNA", "transcript","nontranslating_transcr
 
 coding_transcript_types = ["mRNA", "transcript"]
 
+gene_types = ["gene", "pseudogene"]
+
 wormbase_source = "WormBase_imported"

@@ -284,7 +284,7 @@ def rename_sources(gff_df, new_source):
 
 # Returns dataframe consisting only of gene features.
 def get_all_gene_features(gff_df):
-    gene_mask = gff_df.loc[:, "type"] == "gene"
+    gene_mask = gff_df.loc[:, "type"].isin(gene_types)
     gene_df = gff_df.loc[gene_mask]
     return gene_df
 
@@ -394,7 +394,7 @@ def extract_genes_and_features_with_gene_attribute_value(gff_df, attribute_condi
     attribute_conditions = attribute_condition_input.split(';')
     attribute_conditions_dict = {attribute_field.split('=')[0].strip():attribute_field.split('=')[1].strip() for attribute_field in attribute_conditions}
 
-    query = ' & '.join(['{}=="{}"'.format(k, v) for k, v in attribute_conditions_dict.items()]) + ' & type=="gene"'
+    query = ' & '.join(['{}=="{}"'.format(k, v) for k, v in attribute_conditions_dict.items()]) + ' & type == @gene_types'
 
     extracted_genes = list(set(gff_df.query(query)['ID']))
     mask_var = (gff_df['ID'].isin(extracted_genes)) | (gff_df['Parent_Gene'].isin(extracted_genes))
@@ -419,7 +419,7 @@ def print_all_unique_feature_types(gff_df):
     print(".gff file contains the following feature types: ")
     for unique_type in _get_all_unique_types(gff_df):
         # Could be refactored so that standard types are not defined in function.
-        if unique_type not in (["gene", "exon", "CDS"] + transcript_types):
+        if unique_type not in ([gene_types + ["exon", "CDS"] + transcript_types]):
             suffix = "\t<---- Non-standard type"
         else:
             suffix = ""
@@ -468,7 +468,7 @@ def reorder_gff_features(gff_df):
 
     reordered_gff = get_parent_gene_for_all(gff_df)
 
-    reordered_gff["type"] = pd.Categorical(reordered_gff["type"], list((["gene"] + transcript_types + ["exon", "CDS"])))
+    reordered_gff["type"] = pd.Categorical(reordered_gff["type"], list((gene_types + transcript_types + ["exon", "CDS"])))
 
     # TODO: Sort is purely alphabetic (e.g. g10 comes after g1, should be g2)
     reordered_gff = reordered_gff.sort_values(by=["Parent_Gene", "type"])
