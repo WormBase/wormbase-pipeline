@@ -168,7 +168,7 @@ def main():
         if args.synonyms_file is None:
             synonyms_file = infer_synonyms_file()
         else:
-            synonyms_file = input.synonyms_file
+            synonyms_file = args.synonyms_file
         print_info("SYNONYMS file: " + synonyms_file)
         print_info("Renaming GFF scaffolds.")
         gff_df = rename_scaffolds(gff_df, synonyms_file)
