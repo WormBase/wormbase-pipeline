@@ -112,6 +112,10 @@ def main():
         species = args.species
     else:
         species = assembly_summary['organism']['organism_name']
+        if len(species.split(" "))>2:
+            correct_species = species.replace("sp.", "")
+            print(correct_species)
+            species = correct_species.split(" ")[0] + " " + "".join("".join(correct_species.split(" ")[1:]).split("_"))
     
     if args.bioproject:
         bioproject = args.bioproject
