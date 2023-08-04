@@ -21,13 +21,6 @@ jira_parent_key = os.environ["PARASITE_JIRA_PREPROCESSING_KEY"]
 helpdesk_url_for_id = "https://helpdesk.ebi.ac.uk/Ticket/Display.html?id={0}"
 parasite_version = os.environ["PARASITE_VERSION"]
 
-# Either species or ncbi_assembly_acc must be provided by the user
-class SpeciesAssemblyAction(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):
-        if not (namespace.species or namespace.ncbi_assembly_acc):
-            parser.error("Either --species or --ncbi_assembly_acc must be provided.")
-        setattr(namespace, self.dest, values)
-
 # Format the help message
 class CustomFormatter(argparse.HelpFormatter):
     def _format_usage(self, usage, actions, groups, prefix):
@@ -74,10 +67,13 @@ def main():
     parser.add_argument('--notes', help='Notes (Optional)')
     parser.add_argument('--name', help='Name (Optional)')
     parser.add_argument('--email', help='Email (Optional)')
-    parser.add_argument('--helpdesk', help='Helpdesk (Optional)', action=SpeciesAssemblyAction)
+    parser.add_argument('--helpdesk', help='Helpdesk (Optional)')
 
 
     args = parser.parse_args()
+
+    if not (args.species or args.ncbi_assembly_acc):
+            parser.error("Either --species or --ncbi_assembly_acc must be provided.")
     
     # Process the command-line arguments here and perform the desired actions
     # For example, you can access the options using args.species, args.bioproject, etc.
@@ -157,9 +153,9 @@ def main():
     subtask = jira.create_issue(
         project = jira_project_key,
         summary = f"WBPS{parasite_version} - {genome}",
-        description = f"|{species}|{bioproject}|{insdc_assembly_name}|{ncbi_assembly_acc}|{strain_biosample}|" + \
-                                            (f"{args.publication}|" if args.publication else "") + \
-                                            f"{args.type}|{args.status}|{notes}|",
+        description = f"|{species} |{bioproject} |{insdc_assembly_name} |{ncbi_assembly_acc} |{strain_biosample} |" + \
+                                            (f"{args.publication}|" if args.publication else " |") + \
+                                            f"{args.type} |{args.status} |{notes} |",
         issuetype={'name': 'Sub-task'},
         parent={'key': jira_parent_key}
     )
@@ -168,9 +164,9 @@ def main():
     subtask_browse_link = f"[{subtask.key}|{subtask_browse_url}]"
 
     # modify subtask description to include link to subtask itself
-    subtask.update(description=f"|{species}|{subtask_browse_link}|{bioproject}|{insdc_assembly_name}|{ncbi_assembly_acc}|{strain_biosample}|" + \
-                                            (f"{args.publication}|" if args.publication else "") + \
-                                            f"{args.type}|{args.status}|{notes}|")
+    subtask.update(description=f"|{species} |{subtask_browse_link} |{bioproject} |{insdc_assembly_name} |{ncbi_assembly_acc} |{strain_biosample} |" + \
+                                            (f"{args.publication}|" if args.publication else " |") + \
+                                            f"{args.type} |{args.status} |{notes} |")
 
 
     # add the link to the parent issue
