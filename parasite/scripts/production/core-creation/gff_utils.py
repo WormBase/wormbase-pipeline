@@ -97,13 +97,31 @@ def rename_scaffolds(gff_df, synonyms_file):
     colnames = ["toplevel", "CommunityID", "INSDCID", "INSDC"]
     scaffold_df = pd.read_csv (synonyms_file, sep = '\t', names = colnames, usecols = ["CommunityID", "INSDCID"])
     scaffold_df.set_index("INSDCID", inplace = True)
-    gff_df.loc[:, "scaffold"] = gff_df["scaffold"].map(scaffold_df["CommunityID"])
+    ren_gff_df = gff_df.copy()
+    ren_gff_df.loc[:, "scaffold"] = ren_gff_df["scaffold"].map(scaffold_df["CommunityID"])
+
+    # If all gff_gf["scaffold"] values are "NaN", then it's already using community IDs
+    # and we don't want to overwrite them.
+    if ren_gff_df["scaffold"].isna().all():
+        print_warning("All scaffold names are already community IDs. No need to rename.")
+        return(gff_df)
+    elif ren_gff_df["scaffold"].isna().any():
+        problematic_scaffolds = ren_gff_df.loc[ren_gff_df["scaffold"].isna(), "scaffold"].unique()
+        # Exit with error stating the problematic scaffolds
+        exit_with_error("Some scaffold names could not rename: " + str(problematic_scaffolds))
+    
     return gff_df
 
+# Create an empty Name column if doesnt exist
+def create_name_column(gff_df):
+    if "Name" not in gff_df.columns:
+        gff_df["Name"] = None
+    return gff_df
 
 
 # Copies features ID attributes into Name attributes
 def infer_and_overwrite_name_attribute_from_id(gff_df):
+    gff_df = create_name_column(gff_df)
     gff_df["Name"] = gff_df["ID"]
     return gff_df
 
@@ -111,6 +129,9 @@ def infer_and_overwrite_name_attribute_from_id(gff_df):
 # As infer_and_overwrite_name_attribute_from_id, but should leave non-empty
 # Name fields unchanged (keeps original Name found in .gff3.)
 def infer_name_attribute_from_id(gff_df):
+
+    gff_df = create_name_column(gff_df)
+        
     no_name_mask = gff_df.loc[:, "Name"].isna()
 
     gff_df.loc[no_name_mask, "Name"] = gff_df.loc[no_name_mask, "ID"]
@@ -498,6 +519,7 @@ class DATACHECK:
     def perform_datachecks(self):
         if self.args.dc_fasta_gff_scaffold or self.args.dc_cds_but_no_exons or self.args.dc_cds_within_exons:
             print_info("Performing DCs: " + ("for " + self.outprefix if self.outprefix!="" else ""))
+        self.genes_have_names()
         if self.args.dc_fasta_gff_scaffold:
             self.gff_and_fasta_scaffold_names_match()
         if self.args.dc_cds_but_no_exons or self.args.dc_cds_within_exons:
@@ -509,13 +531,21 @@ class DATACHECK:
                                                            dc_coding_transcripts_with_cds_fix=self.args.dc_coding_transcripts_with_cds_fix,
                                                            prefix=self.outprefix)
 
+    def genes_have_names(self):
+        # Filtering the DataFrame
+        gene_df = get_all_gene_features(self.gff_df)
+        # If gene_df doesn't have a "Name" column, exit with error:
+        if not "Name" in gene_df.columns or gene_df["Name"].isna().any():
+            exit_with_error("Some/All genes do not have a Name column. Please add a Name column to your GFF file or use the --infer_gene_name/-n option.")
+
+    
     def gff_and_fasta_scaffold_names_match(self):
         """Checks if the GFF's and FASTA file's scaffold names match"""
         gff_scaffolds = list(self.gff_df["scaffold"].unique())
         fasta_scaffolds = self.fasta.scaffold_names()
 
-        gff_to_fasta_discrepancies = [x for x in gff_scaffolds if x not in fasta_scaffolds]
-        fasta_to_gff_discrepancies = [x for x in fasta_scaffolds if x not in gff_scaffolds]
+        gff_to_fasta_discrepancies = [str(x) for x in gff_scaffolds if x not in fasta_scaffolds]
+        fasta_to_gff_discrepancies = [str(x) for x in fasta_scaffolds if x not in gff_scaffolds]
 
         if len(gff_to_fasta_discrepancies) > 0:
             with open(self.outprefix+'in_GFF_not_in_FASTA_scaffolds.txt', mode='wt') as myfile:
@@ -540,7 +570,7 @@ class DATACHECK:
         exons_cds_df = get_all_exon_and_cds_features(self.gff_df, transcripts=coding_transcripts)
         counts_per_transcript_df = exons_cds_df.groupby('Parent').apply(_count_cds_exons_per_transcript)
 
-        # Datacheck 1
+        # Datacheck
         if dc_cds_but_no_exons:
             dc1_offending_transcripts=counts_per_transcript_df[(counts_per_transcript_df['no_of_exons']==0) & (counts_per_transcript_df['no_of_cds']>0)].index.values.tolist()
             if dc1_offending_transcripts:
@@ -556,7 +586,7 @@ class DATACHECK:
                     self.gff_df.drop(self.gff_df.loc[(self.gff_df['type'] == 'CDS') &
                                                      (self.gff_df['Parent'].isin(dc1_offending_transcripts))].index, inplace=True)
 
-        # Datacheck 2
+        # Datacheck
         if dc_cds_within_exons:
             dc2_offending_transcripts=counts_per_transcript_df[(counts_per_transcript_df['exons_max_coord'] < counts_per_transcript_df['cds_max_coord']) |
                                                  (counts_per_transcript_df['exons_min_coord'] > counts_per_transcript_df['cds_min_coord'])].index.values.tolist()
@@ -573,7 +603,7 @@ class DATACHECK:
                     self.gff_df.drop(self.gff_df.loc[(self.gff_df['type'] == 'CDS') &
                                                      (self.gff_df['Parent'].isin(dc2_offending_transcripts))].index, inplace=True)
 
-        # Datacheck 3
+        # Datacheck
         if dc_coding_transcripts_with_cds:
             dc3_offending_transcripts=counts_per_transcript_df[counts_per_transcript_df['no_of_cds']==0].index.values.tolist()
             if dc3_offending_transcripts:

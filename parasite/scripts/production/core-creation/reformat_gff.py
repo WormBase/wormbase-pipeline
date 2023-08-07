@@ -146,7 +146,6 @@ def main():
 
     gff_df = parse_gff(input_gff)
 
-    # TODO: Find a way to not hardcode WormBase_imported
     if args.source_to_WB is True:
         print_info("Switching gff source to : " + wormbase_source)
         gff_df = rename_sources(gff_df, new_source = wormbase_source)
@@ -173,6 +172,7 @@ def main():
         print_info("Renaming GFF scaffolds.")
         gff_df = rename_scaffolds(gff_df, synonyms_file)
 
+
     if args.prefixes is not None:
         print_info("Removing prefixes ("+", ".join(args.prefixes)+") from all the fields of the gff file")
         gff_df = remove_prefixes_from_column_values(gff_df, args.prefixes)
@@ -182,7 +182,7 @@ def main():
         gff_df = remove_prefixes_from_name_column(gff_df, args.name_prefixes)
 
     if args.extrapolate_transcripts_for_scaffold is not None:
-        print_info("Extrapolating transcripts from genes for scaffold: "+rgs.extrapolate_transcripts_for_scaffold)
+        print_info("Extrapolating transcripts from genes for scaffold: "+args.extrapolate_transcripts_for_scaffold)
         gff_df = extrapolate_scaffold_transcripts_from_genes(gff_df, args.extrapolate_transcripts_for_scaffold)
     elif args.extrapolate_genes_for_scaffold is not None:
         print_info("Extrapolating genes from transcripts for scaffold: " + args.extrapolate_genes_for_scaffold)
@@ -197,6 +197,7 @@ def main():
 
     print_info("Getting Parent Gene for all features ")
     gff_df = get_parent_gene_for_all(gff_df)
+
 
     if args.split_gff_when_gene_attribute:
         print_info("Splitting GFF based on the gene attribute field(s): " + " & ".join(args.split_gff_when_gene_attribute.split(";")))
