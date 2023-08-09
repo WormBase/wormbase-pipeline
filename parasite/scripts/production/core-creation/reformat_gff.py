@@ -35,9 +35,11 @@ def get_args():
         help = "A string to append to each gene and ID name, in case original names are lacking. No changes made by default.")
 
     parser.add_argument("-p", "--prefixes", required = False, default = None, nargs = '+',
-        help = "List of prefixes to remove from .gff fields (e.g. parts of gene IDs that are constant across all genes).")
+        help = "List of prefixes to remove from .gff fields (e.g. parts of gene IDs that are constant across all genes). \
+            Specify multiple prefixes as a space-separated list.")
     parser.add_argument("--name_prefixes", required=False, default=None, nargs='+',
-                        help="List of prefixes to remove from .gff fields (e.g. parts of gene Name that are constant across all genes).")
+                        help="List of prefixes to remove from .gff fields (e.g. parts of gene Name that are constant across all genes). \
+                             Specify multiple prefixes as a space-separated list.")
 
     # Set of arguments to extrapolate missing features for a given scaffold.
 
@@ -171,7 +173,6 @@ def main():
         print_info("SYNONYMS file: " + synonyms_file)
         print_info("Renaming GFF scaffolds.")
         gff_df = rename_scaffolds(gff_df, synonyms_file)
-
 
     if args.prefixes is not None:
         print_info("Removing prefixes ("+", ".join(args.prefixes)+") from all the fields of the gff file")

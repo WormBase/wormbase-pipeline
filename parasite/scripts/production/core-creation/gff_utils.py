@@ -568,7 +568,14 @@ class DATACHECK:
         # Get a DF with all exons and CDS, group it by transcript and calculate useful metrics
         coding_transcripts = list(self.gff_df[self.gff_df["type"].isin(coding_transcript_types)]["ID"].unique())
         exons_cds_df = get_all_exon_and_cds_features(self.gff_df, transcripts=coding_transcripts)
+
+        # Check if exons_cds_df is empty
+        if exons_cds_df.empty:
+            exit_with_error("No exons and CDS features were found. Please check your GFF file, \
+                            maybe exons/CDSs do not have the right ID field connecting them to their parent transcripts.")
+        
         counts_per_transcript_df = exons_cds_df.groupby('Parent').apply(_count_cds_exons_per_transcript)
+
 
         # Datacheck
         if dc_cds_but_no_exons:
