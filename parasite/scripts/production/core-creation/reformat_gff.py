@@ -26,8 +26,8 @@ def get_args():
     parser.add_argument("--keep_source", action = "store_false", dest = "source_to_WB",
         help = "Leave the source column unchanged. By default, it is changed to WormBase_imported")
     # scaffold_rename is set to True by default.
-    parser.add_argument("--keep_scaffold_names", action = "store_false", dest = "scaffold_rename",
-        help = "Leave scaffold names unchanged. By default, they are mapped to an alternative name in the synonyms file and renamed.")
+    parser.add_argument("--keep_scaffold_names", action = "store_true", dest = "keep_scaffolds",
+        help = "Leave scaffold names unchanged. By default, they are only renamed if the do not match the fasta file's scaffolds.")
     # has_parentage is set to True by default.
     parser.add_argument("--no_parentage", action = "store_false", dest = "has_parentage",
         help = "Indicate input .gff file has no parentage information to link features. By default, assumes parentage information is included.")
@@ -144,6 +144,15 @@ def main():
         fasta_path = args.fasta
     print_info("FASTA file: "+fasta_path)
 
+    # If no synonyms.tsv file has been provided, infer one from directory.
+    if args.synonyms_file is None:
+        synonyms_file = infer_synonyms_file()
+    else:
+        synonyms_file = args.synonyms_file
+    print_info("SYNONYMS file: " + synonyms_file)
+
+    synonyms_df = parse_synonyms(synonyms_file)
+
     fasta = FASTA(fasta_path)
 
     gff_df = parse_gff(input_gff)
@@ -164,15 +173,13 @@ def main():
         gff_df = add_prefix_to_id(gff_df, prefix = args.gene_prefix)
         gff_df = add_prefix_to_name(gff_df, prefix = args.gene_prefix)
 
-    if args.scaffold_rename:
-        # If no synonyms.tsv file has been provided, infer one from directory.
-        if args.synonyms_file is None:
-            synonyms_file = infer_synonyms_file()
-        else:
-            synonyms_file = args.synonyms_file
-        print_info("SYNONYMS file: " + synonyms_file)
+    if scaffolds_needs_renaming(gff_df, fasta) and not args.keep_scaffolds:
         print_info("Renaming GFF scaffolds.")
-        gff_df = rename_scaffolds(gff_df, synonyms_file)
+        gff_df = rename_scaffolds(gff_df, synonyms_df)
+
+        # if scaffolds still need renaming something went wrong
+        if scaffolds_needs_renaming(gff_df, fasta):
+            exit_with_error("Some scaffold names could not be renamed.")
 
     if args.prefixes is not None:
         print_info("Removing prefixes ("+", ".join(args.prefixes)+") from all the fields of the gff file")

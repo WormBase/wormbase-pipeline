@@ -87,30 +87,57 @@ def parse_gff(input_gff):
 
     return gff_df
 
+def parse_synonyms(synonyms_file):
+    colnames = ["toplevel", "CommunityID", "INSDCID", "INSDC"]
+    scaffold_df = pd.read_csv (synonyms_file, sep = '\t', names = colnames, usecols = ["CommunityID", "INSDCID"])
+    # scaffold_df.set_index("INSDCID", inplace = True)
+    return scaffold_df
+
+def scaffolds_needs_renaming(gff_df, fasta):
+    # If gff_df and fasta have the same scaffold names then no renaming is needed
+    if gff_df["scaffold"].unique().tolist() == list(fasta.scaffold_names()):
+        return False
+    else:
+        return True
+
+def rename_scaffolds_to(gff_df, synonyms_df):
+    # if gff_df scaffolds match scaffold_df["CommunityID"] then rename them to scaffold_df["INSDC"] if
+    # they match scaffold_df["INSDC"] then rename them to scaffold_df["CommunityID"]
+    if gff_df["scaffold"].unique().tolist() == synonyms_df["CommunityID"].unique().tolist():
+        return "INSDCID"
+    elif gff_df["scaffold"].unique().tolist() == synonyms_df["INSDCID"].unique().tolist():
+        return("CommunityID")
+    else:
+        exit_with_error("GFF scaffolds do not match CommunityID or INSDCID columns in synonyms file. \
+                        Cannot rename scaffolds.")
+
+
+
 # Replaces INSDCID scaffold names with community scaffold names using
 # synonyms mapping provided in a synonyms.tsv file.
 # TODO: Spits out NaNs as scaffold names if the .gff is already using
 # community scaffold names. Implement a check for this? Or rely on 
 # correct calls on the user's part? 
-def rename_scaffolds(gff_df, synonyms_file):
-    # TODO: Infer synonyms headers from file rather than hardcoding as below.
-    colnames = ["toplevel", "CommunityID", "INSDCID", "INSDC"]
-    scaffold_df = pd.read_csv (synonyms_file, sep = '\t', names = colnames, usecols = ["CommunityID", "INSDCID"])
-    scaffold_df.set_index("INSDCID", inplace = True)
-    ren_gff_df = gff_df.copy()
-    ren_gff_df.loc[:, "scaffold"] = ren_gff_df["scaffold"].map(scaffold_df["CommunityID"])
+def rename_scaffolds(gff_df, synonyms_df):
+    rename_to = rename_scaffolds_to(gff_df, synonyms_df)
+    rename_from = [x for x in synonyms_df.columns.to_list() if x !=rename_to][0]
+    print_info(f"Renaming GFF scaffolds from {rename_from} to {rename_to}")
 
-    # If all gff_gf["scaffold"] values are "NaN", then it's already using community IDs
-    # and we don't want to overwrite them.
-    if ren_gff_df["scaffold"].isna().all():
-        print_warning("All scaffold names are already community IDs. No need to rename.")
-        return(gff_df)
-    elif ren_gff_df["scaffold"].isna().any():
-        problematic_scaffolds = ren_gff_df.loc[ren_gff_df["scaffold"].isna(), "scaffold"].unique()
+    # Merge the DataFrames to replace "scaffold" values
+    merged_df = gff_df.merge(synonyms_df, left_on="scaffold", right_on=rename_from, how="left")
+    merged_df["scaffold"] = merged_df[rename_to].fillna(merged_df["scaffold"])
+
+    # Drop the unnecessary columns
+    merged_df.drop(columns=[rename_from, rename_to], inplace=True)
+
+    if merged_df["scaffold"].isna().any():
+        problematic_scaffolds = merged_df.loc[merged_df["scaffold"].isna(), "scaffold"].unique()
         # Exit with error stating the problematic scaffolds
         exit_with_error("Some scaffold names could not rename: " + str(problematic_scaffolds))
-    
-    return gff_df
+    if len(gff_df)!=len(merged_df):
+        # Print mismatching rows between gff_df and merged_df
+        exit_with_error(f"Mismatching rows between gff_df and merged_df when renaming scaffolds from {rename_from} to {rename_to}")
+    return merged_df
 
 # Create an empty Name column if doesnt exist
 def create_name_column(gff_df):
