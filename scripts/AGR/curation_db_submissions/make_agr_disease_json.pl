@@ -135,10 +135,11 @@ while( my $obj = $it->next) {
 	my @mod_transgene = map { 'WB:' . $_->name } $obj->Modifier_transgene;
 	my @mod_var       = map { 'WB:' . $_->name } $obj->Modifier_variation;
 	my @mod_gene      = map { 'WB:' . $_->name } $obj->Modifier_gene;
+	my @mod_genotype  = map { 'WB:' . $_->name } $obj->Modifier_genotype;
 	my @mod_molecule  = map { $_->name } $obj->Modifier_molecule;
 	my @mod_other     = map { $_->name } $obj->Other_modifier;
 	
-	@genetic  = (@mod_strain, @mod_transgene, @mod_var, @mod_gene);
+	@genetic  = (@mod_strain, @mod_transgene, @mod_var, @mod_gene, @mod_genotype);
 	@exp_cond = (@mod_molecule, @mod_other);
 
 	if (not @genetic and not @exp_cond) {
