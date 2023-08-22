@@ -95,10 +95,19 @@ def parse_synonyms(synonyms_file):
 
 def scaffolds_needs_renaming(gff_df, fasta):
     # If gff_df and fasta have the same scaffold names then no renaming is needed
-    if gff_df["scaffold"].unique().tolist() == list(fasta.scaffold_names()):
+    # Extract the unique scaffold values from the gff_df DataFrame
+    unique_scaffolds_in_df = gff_df["scaffold"].unique()
+    # Get the scaffold names from the fasta object
+    scaffold_names_in_fasta = fasta.scaffold_names()
+    # Check if all values from gff_df["scaffold"] exist in scaffold_names_in_fasta
+    if all(scaffold in scaffold_names_in_fasta for scaffold in unique_scaffolds_in_df):
         return False
-    else:
+    elif all(scaffold not in scaffold_names_in_fasta for scaffold in unique_scaffolds_in_df):
         return True
+    else:
+        return "Some"
+
+    
 
 def rename_scaffolds_to(gff_df, synonyms_df):
     # if gff_df scaffolds match scaffold_df["CommunityID"] then rename them to scaffold_df["INSDC"] if
@@ -189,7 +198,6 @@ def _update_scaffold_cds_parent_attribute(gff_df, scaffold):
     gff_df = pd.concat([gff_df, scaffold_cds])
 
     return gff_df
-
 
 # Creates transcript features for given scaffold based on extant genes.
 # Updates extant CDSs to point to transcripts as parents, returns df.
@@ -339,7 +347,6 @@ def get_all_gene_features(gff_df):
 
 # Returns dataframe consisting only of transcript features.
 def get_all_transcript_features(gff_df):
-    # TODO: Could refer to a global list of features for maintainability
     transcript_mask = gff_df.loc[:, "type"].isin(transcript_types)
     transcript_df = gff_df.loc[transcript_mask]
     return transcript_df

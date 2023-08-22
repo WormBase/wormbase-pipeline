@@ -8,6 +8,10 @@ import sys
 import glob
 from argparse import ArgumentParser
 
+input_gff="/nfs/production/flicek/wormbase/parasite/data/releases/release19/rhynchonema_jsb14_prjna953805/rhynchonema_sp.QYR18.annotations.gff3"
+fasta_path="/nfs/production/flicek/wormbase/parasite/data/releases/release19/rhynchonema_jsb14_prjna953805/rhynchonema_jsb14_prjna953805.fa"
+srf="/nfs/production/flicek/wormbase/parasite/data/releases/release19/rhynchonema_jsb14_prjna953805/rhynchonema_jsb14_prjna953805.seq_region_synonyms.tsv"
+
 pd.options.mode.chained_assignment = None  # default='warn'
 
 
@@ -40,8 +44,6 @@ def get_args():
     parser.add_argument("--name_prefixes", required=False, default=None, nargs='+',
                         help="List of prefixes to remove from .gff fields (e.g. parts of gene Name that are constant across all genes). \
                              Specify multiple prefixes as a space-separated list.")
-
-    # Set of arguments to extrapolate missing features for a given scaffold.
 
     # Extrapolate transcripts from genes, or vice versa.
     gene_transcript_extrapolation = parser.add_mutually_exclusive_group()
@@ -173,14 +175,14 @@ def main():
         gff_df = add_prefix_to_id(gff_df, prefix = args.gene_prefix)
         gff_df = add_prefix_to_name(gff_df, prefix = args.gene_prefix)
 
-    if scaffolds_needs_renaming(gff_df, fasta) and not args.keep_scaffolds:
+    if scaffolds_needs_renaming(gff_df, fasta)==True and not args.keep_scaffolds:
         print_info("Renaming GFF scaffolds.")
         gff_df = rename_scaffolds(gff_df, synonyms_df)
 
         # if scaffolds still need renaming something went wrong
-        if scaffolds_needs_renaming(gff_df, fasta):
+        if scaffolds_needs_renaming(gff_df, fasta) in [True, "Some"]:
             exit_with_error("Some scaffold names could not be renamed.")
-
+    
     if args.prefixes is not None:
         print_info("Removing prefixes ("+", ".join(args.prefixes)+") from all the fields of the gff file")
         gff_df = remove_prefixes_from_column_values(gff_df, args.prefixes)
