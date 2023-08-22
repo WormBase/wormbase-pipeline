@@ -320,6 +320,7 @@ exit(0);
 
 
 sub process_human {
+=Ignore code as IPI no longer accessible and not being maintained
     use File::Listing qw(parse_dir);
     use POSIX qw(strftime);
 
@@ -368,6 +369,8 @@ sub process_human {
     } else {
 	$log->write_to("\tIPI_human is up to date $remote_date\n");
     }
+=cut
+    $log->write_to("\tIPI_human is no longer maintained and won't be updated\n");
 }
 
 sub process_uniprot {
