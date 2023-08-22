@@ -43,7 +43,7 @@ if ( $store ) {
 my $log = Log_files->make_build_log($wormbase);
 
 # define the names of the methods to be dumped
-@methods = qw(hmmpanther pfscan pirsf prints scanprosite smart tigrfam ncoils seg signalp tmhmm pfam superfamily mobidblite hamap) unless @methods;
+@methods = qw(hmmpanther pfscan pirsf prints scanprosite smart ncbifam ncoils seg signalp tmhmm pfam superfamily mobidblite hamap) unless @methods;
 
 $log->write_to("Dumping methods".@methods."\n");
 
@@ -138,7 +138,7 @@ foreach my $meth (@methods) {
 	$hid = $1;
        }
        $line = "Motif_homol \"PFAM:$hid\" \"pfam\" $score $start $end $hstart $hend";
-    }elsif($meth=~/hmmpanther|pfscan|pirsf|prints|scanprosite|smart|tigrfam|superfamily/){
+    }elsif($meth=~/hmmpanther|pfscan|pirsf|prints|scanprosite|smart|ncbifam|superfamily/){
        my $prefix = uc($meth);
        my $motif = "$prefix:$hid"; # shorthand for the acedb id
        $line = "Motif_homol \"$motif\" \"$meth\" $score $start $end $hstart $hend";

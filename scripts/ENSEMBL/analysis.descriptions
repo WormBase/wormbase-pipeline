@@ -49,7 +49,7 @@ snlRNA	small nucleolar like RNA genes
 snoRNA	small nucleolar RNA genes
 snRNA	small nuclear RNA genes
 Superfamily	PIR superfamilies as part of interpro_scan
-Tigrfam	TIGRfam HMM analysis as part of interpro_scan
+Ncbifam	NCBIfam HMM analysis as part of interpro_scan
 Tmhmm	Transmembrane domains as identified by TmHMM
 TRF	Tandem repeats identified by Tandem Repeats Finder (G. Benson, Nuc. Acids Res. 1999 27:573-580)
 tRNA	transfer RNA genes
