@@ -1755,12 +1755,12 @@ sub curl {
 
   # if having a missing entry is acceptable and the entry is missing, then don't do the error trapping, just return 'undef' as a flag that the entry was not found
   if (defined $not_found && $not_found) {
-    if (index($stderr, '< HTTP/1.1 404 Not Found') != -1) {
+    if (index($stderr, '< HTTP/2 404 Not Found') != -1) {
       return undef;
     }
   }
 
-  if ((index($stderr, '< HTTP/1.1 2') == -1) || 
+  if ((index($stderr, '< HTTP/2 2') == -1) || 
       exists $content->{'errors'} || 
       exists $content->{'problems'} || 
       exists $content->{'data'}{'problems'} || 
