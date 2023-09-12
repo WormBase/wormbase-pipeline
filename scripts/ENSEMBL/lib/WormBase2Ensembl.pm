@@ -452,9 +452,15 @@ sub parse_genes_gff3_fh {
         $tr->version(undef);
 
         $transcript->translation($tr);
-        $transcript->biotype('protein_coding');
-        $transcript->analysis($coding_ana);
-        $gene_biotypes{protein_coding}++;
+        if ($gff_type =~ /pseudo/) {
+          $transcript->biotype('pseudogene_with_CDS');
+          $transcript->analysis($pseudo_ana);
+          $gene_biotypes{pseudogene}++;
+        } else {
+          $transcript->biotype('protein_coding');
+          $transcript->analysis($coding_ana);
+          $gene_biotypes{protein_coding}++;
+        }
       } else {
         if ($gff_type eq 'nc_primary_transcript') {
           # non-coding transcript in a coding gene
@@ -501,7 +507,6 @@ sub parse_genes_gff3_fh {
           $gene_biotypes{$bt}++;
         }
       }
-
       $gene->add_Transcript($transcript);
     }
 

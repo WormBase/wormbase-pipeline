@@ -8,10 +8,6 @@ import sys
 import glob
 from argparse import ArgumentParser
 
-input_gff="/nfs/production/flicek/wormbase/parasite/data/releases/release19/rhynchonema_jsb14_prjna953805/rhynchonema_sp.QYR18.annotations.gff3"
-fasta_path="/nfs/production/flicek/wormbase/parasite/data/releases/release19/rhynchonema_jsb14_prjna953805/rhynchonema_jsb14_prjna953805.fa"
-srf="/nfs/production/flicek/wormbase/parasite/data/releases/release19/rhynchonema_jsb14_prjna953805/rhynchonema_jsb14_prjna953805.seq_region_synonyms.tsv"
-
 pd.options.mode.chained_assignment = None  # default='warn'
 
 
@@ -32,6 +28,8 @@ def get_args():
     # scaffold_rename is set to True by default.
     parser.add_argument("--keep_scaffold_names", action = "store_true", dest = "keep_scaffolds",
         help = "Leave scaffold names unchanged. By default, they are only renamed if the do not match the fasta file's scaffolds.")
+    parser.add_argument("--keep_pseudogenic_CDSs", action = "store_true", dest = "keep_pseudogenic_CDSs",
+        help = "If your GFF file contains pseudogenes with CDSs, this option will keep them. By default, they are removed.")
     # has_parentage is set to True by default.
     parser.add_argument("--no_parentage", action = "store_false", dest = "has_parentage",
         help = "Indicate input .gff file has no parentage information to link features. By default, assumes parentage information is included.")
@@ -208,6 +206,16 @@ def main():
     print_info("Getting Parent Gene for all features ")
     gff_df = get_parent_gene_for_all(gff_df)
 
+    if gff_df["type"].isin(pseudogene_types).any():
+        if pseudogenes_with_CDS(gff_df) and  not args.keep_pseudogenic_CDSs:
+            print_info("Found pseudogenes with CDSs. Removing pseudogenes with CDSs. If you would like to keep them " + 
+                       "use the keep_pseudogenic_CDSs flag")
+            gff_df = remove_pseudogenic_CDS(gff_df)
+        print_info("Switching the type of transcripts of pseudogenes to pseudogenic_transcripts")
+        gff_df = make_pseudogenic_transcripts(gff_df)
+        print_info("Switching the type of \"pseudogene\" genes to \"gene\"")
+        gff_df = pseudogenes_to_genes(gff_df)
+        
 
     if args.split_gff_when_gene_attribute:
         print_info("Splitting GFF based on the gene attribute field(s): " + " & ".join(args.split_gff_when_gene_attribute.split(";")))

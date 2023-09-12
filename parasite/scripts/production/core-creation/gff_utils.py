@@ -515,7 +515,57 @@ def _drop_useless_columns(gff_df):
     gff_df = gff_df.drop(columns=[column for column in gff_df if column not in useful_columns])
     return gff_df
 
-# Outputs a finalised .gff dataframe that contains only gene, transcript,
+# Checks if pseudogenes have CDSs and returns a list with the pseudogenes that have CDSs
+def pseudogenes_with_CDS(gff_df):
+    pseudogenes = list(set(gff_df[gff_df["type"].isin(pseudogene_types)]["ID"].to_list()))
+
+    pseudogenic_transcripts = list(set(gff_df[gff_df["type"].isin(transcript_types) & gff_df["Parent"].isin(pseudogenes)]["ID"].to_list()))
+
+    pseudogenic_CDS_mask = gff_df["type"].isin(cds_types) & gff_df["Parent"].isin(pseudogenic_transcripts)
+
+    # check if there are any pseudogenic_CDS_mask in the gff_df
+    if pseudogenic_CDS_mask.any():
+        return True
+    else:
+        return False
+
+# Removes CDSs of pseudogenes from the gff_df.
+def remove_pseudogenic_CDS(gff_df):
+    pseudogenes = list(set(gff_df[gff_df["type"].isin(pseudogene_types)]["ID"].to_list()))
+
+    pseudogenic_transcripts = list(set(gff_df[gff_df["type"].isin(transcript_types) & gff_df["Parent"].isin(pseudogenes)]["ID"].to_list()))
+
+    pseudogenic_CDS_mask = gff_df["type"].isin(cds_types) & gff_df["Parent"].isin(pseudogenic_transcripts)
+
+    # Remove the gff_df rows from pseudogenic_CDS_mask
+    gff_df = gff_df[~pseudogenic_CDS_mask]
+
+    return(gff_df) 
+
+# Switches the type of transcripts of pseudogenes to "pseudogenic_transcript"
+def make_pseudogenic_transcripts(gff_df):
+    pseudogenes = list(set(gff_df[gff_df["type"].isin(pseudogene_types)]["ID"].to_list()))
+
+    pseudogenic_transcript_mask = gff_df["type"].isin(transcript_types) & gff_df["Parent"].isin(pseudogenes)
+
+    # Rename all the gff_df["type"] values to "pseudogenic_transcript" in for pseudogenic_transcript_mask 
+    gff_df.loc[pseudogenic_transcript_mask, "type"] = "pseudogenic_transcript"
+
+    return(gff_df)
+
+# Switches the type of pseudogenes to "genes":
+def pseudogenes_to_genes(gff_df):
+    pseudogenes = list(set(gff_df[gff_df["type"].isin(pseudogene_types)]["ID"].to_list()))
+
+    pseudogenes_mask = gff_df["type"].isin(gene_types) & gff_df["ID"].isin(pseudogenes)
+
+    # Rename all the gff_df["type"] values to "gene" in for pseudogenes 
+    gff_df.loc[pseudogenes_mask, "type"] = "gene"
+
+    return(gff_df)
+
+
+# Outputs a finalised .gff dataframe that contains only gene, transcrsipt,
 # exon and CDS features. Orders the dataframe so that features exist in a
 # hierarchy: gene, gene's transcripts, transcript's exons/CDSs
 def reorder_gff_features(gff_df):
