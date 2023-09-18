@@ -249,21 +249,21 @@ if( $force or not -s $conf_path or $ENV{REDO_FASTA} ) {
       # genes and pseudogenes: verify uniqueness
       my %genes = ();
 # using type 'gene' instead of pseudogene
-#       my %pseudogenes = ();
+      my %pseudogenes = ();
       foreach my $feature (@features){
-         if( 'gene' eq $feature->{type} ) {
+         if( 'gene' eq $feature->{type}) {
             my $hash = { ID=>$feature->{attribute}->{ID}, RNA=>[] };
             die qq~gene ID $feature->{attribute}->{ID} is not unique at $this_assembly->{gff3} line $.\n~ if exists $genes{ $feature->{attribute}->{ID} };
             push( @{$gff{gene}}, $hash);
             $genes{ $feature->{attribute}->{ID} } = $hash;
          } 
 # using type 'gene' instead of pseudogene
-#          elsif( 'pseudogene' eq $feature->{type} ) {
-#             my $hash = { ID=>$feature->{attribute}->{ID}, pseudogenic_transcript=>[] };
-#             die qq~pseudogene ID is not unique at $this_assembly->{gff3} line $.\n~ if exists $pseudogenes{ $feature->{attribute}->{ID} };
-#             push( @{$gff{pseudogene}}, $hash);
-#             $pseudogenes{ $feature->{attribute}->{ID} } = $hash;
-#          }
+         elsif( 'pseudogene' eq $feature->{type} ) {
+            my $hash = { ID=>$feature->{attribute}->{ID}, pseudogenic_transcript=>[] };
+            die qq~pseudogene ID is not unique at $this_assembly->{gff3} line $.\n~ if exists $pseudogenes{ $feature->{attribute}->{ID} };
+            push( @{$gff{pseudogene}}, $hash);
+            $pseudogenes{ $feature->{attribute}->{ID} } = $hash;
+         }
       }
       # RNAs: verify uniqueness and gene parentage, link to parent
       # pseudogenic_transcripts: verify uniqueness and gene parentage, link to parent
@@ -271,7 +271,7 @@ if( $force or not -s $conf_path or $ENV{REDO_FASTA} ) {
       my %pseudogenic_transcripts = ();
       foreach my $feature (@features){
          my $hash = {ID=>$feature->{attribute}->{ID}, type=>$feature->{type}, Parent=>$feature->{attribute}->{Parent}, CDS=>[], exon=>[] };
-         if( 'mRNA' eq $feature->{type} || 'transcript' eq $feature->{type} || $feature->{type} =~ m/^..?RNA$/ || 'nontranslating_transcript' eq $feature->{type}) {
+         if( 'mRNA' eq $feature->{type} || 'transcript' eq $feature->{type} || $feature->{type} =~ m/^..?RNA$/ || 'nontranslating_transcript' eq $feature->{type} || 'pseudogenic_transcript' eq $feature->{type}) {
             die "$feature->{type} ID $feature->{attribute}->{ID} is not unique at $this_assembly->{gff3} line $.\n"
                if exists $RNAs{ $feature->{attribute}->{ID} };
             # parent must exists *and* must be a gene
@@ -321,7 +321,7 @@ if( $force or not -s $conf_path or $ENV{REDO_FASTA} ) {
          die "gene $gene_ID has no RNA/pseudogenic transcript in $this_assembly->{gff3}" unless $genes{$gene_ID}->{RNA}->[0] || $genes{$gene_ID}->{pseudogenic_transcript}->[0];
          foreach my $this_RNA (@{$genes{$gene_ID}->{RNA}}) {
             my $RNA_ID = $this_RNA->{ID};
-            die "RNA $RNA_ID has no CDS or exon in $this_assembly->{gff3}" unless $RNAs{$RNA_ID}->{CDS}->[0] || $RNAs{$RNA_ID}->{exon}->[0];
+            die "RNA $RNA_ID has no CDS or exon in $this_assembly->{gff3}" unless $RNAs{$RNA_ID}->{CDS}->[0] || $RNAs{$RNA_ID}->{exon}->[0] || "nontranslating_transcript" eq $RNAs{$RNA_ID}->{type};
          }
       }
 # using type 'gene' instead of pseudogene
