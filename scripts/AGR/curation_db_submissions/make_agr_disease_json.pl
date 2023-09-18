@@ -206,6 +206,10 @@ while( my $obj = $it->next) {
     my ($gene) = $obj->Disease_relevant_gene;
     my ($genotype) = $obj->Genotype;
     my (@asserted_genes) = map { 'WB:'.$_->name } $obj->Asserted_gene;
+    if ($obj->Asserted_human_gene) {
+	my @asserted_human_genes = map { 'WB:'.$_->name } $obj->Human_asserted_gene;
+	push @asserted_genes, @asserted_human_genes;
+    }
     if (@asserted_genes) {
 	$annot->{asserted_gene_curies} = \@asserted_genes;
     }
