@@ -85,24 +85,27 @@ sub process_constructs {
 	    obsolete => JSON::false
 	}; 
 
-	my $is_obsolete = ($obj->Status && $obj->Status->name eq 'Dead') ? JSON::true : JSON::false;
 	    
 	my $json_obj = {
 	    mod_entity_id              => "WB:" . $obj->name,
 	    name                       => $obj->Public_name ? "${\$obj->Public_name}" : "$obj",
 	    internal                   => JSON::false,
-	    obsolete                   => $is_obsolete,
+	    obsolete                   => JSON::false,
 	    created_by_curie           => 'WB:curator',
 	    updated_by_curie           => 'WB:curator',
 	    data_provider_dto          => $data_provider_dto_json
 	};
 
+	if ($obj->Reference) {
+	    $json_obj->{reference_curies} = get_papers($obj);
+	}
+
 	if ($obj->Gene || $obj->Driven_by_gene) {
-	    $json_obj->{construct_components}=[];
-	    my $driven_by_gene_components = get_components($obj->Driven_by_gene);
-	    my $gene_components = get_components($obj->Gene);
-	    push @{$json_obj->{construct_components}}, @$gene_components;
-	    push @{$json_obj->{construct_components}}, @$driven_by_gene_components;
+	    $json_obj->{construct_component_dtos}=[];
+	    my $driven_by_gene_components = get_components($obj->Driven_by_gene) if $obj->Driven_by_gene;
+	    my $gene_components = get_components($obj->Gene) if $obj->Gene;
+	    push @{$json_obj->{construct_component_dtos}}, @$gene_components if $gene_components;
+	    push @{$json_obj->{construct_component_dtos}}, @$driven_by_gene_components if $driven_by_gene_components;
 	}
 	
 	if ($curation_test) {
@@ -190,11 +193,11 @@ sub get_components {
     my @components;
     for my $g($obj) {
 	my $component_json = {
-	    componentSymbol => $g->Public_name->name;
+	    component_symbol => $g->Public_name->name
 	};
 
 	my @component_paper_evidence;
-	for my $evi ($g->right->col) {
+	for my $evi ($g->col) {
 	    next unless $evi->name eq 'Paper_evidence';
 	    for my $paper ($evi->col) {
 		my $paper_id = get_paper($paper);
@@ -211,9 +214,10 @@ sub get_components {
 	    obsolete => JSON::false
 	};
 	push @note_dtos, $cmp_note_json;
-	$component_json->{related_notes} = \@note_dtos if $curation_test;
+	$component_json->{related_note_dtos} = \@note_dtos if $curation_test;
 	$component_json->{taxon_curie} = "NCBITaxon:6239" if $curation_test;
 	$component_json->{taxon_text} = "Caenorhabditis elegans" if $curation_test;
+	$component_json->{evidence_curies} = ["WB:WBPaper00042571"] if $curation_test;
 
 	push @components, $component_json;
     }
