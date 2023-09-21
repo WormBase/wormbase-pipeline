@@ -214,7 +214,7 @@ sub get_components {
 	    obsolete => JSON::false
 	};
 	push @note_dtos, $cmp_note_json;
-	$component_json->{related_note_dtos} = \@note_dtos if $curation_test;
+	$component_json->{note_dtos} = \@note_dtos if $curation_test;
 	$component_json->{taxon_curie} = "NCBITaxon:6239" if $curation_test;
 	$component_json->{taxon_text} = "Caenorhabditis elegans" if $curation_test;
 	$component_json->{evidence_curies} = ["WB:WBPaper00042571"] if $curation_test;
