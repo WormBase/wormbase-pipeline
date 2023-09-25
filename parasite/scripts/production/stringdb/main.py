@@ -2,17 +2,15 @@
 import parsers
 import os
 import utils
-import pandas as pd
 
-# load environments
+# load intermediate environment
 PARASITE_SCRATCH = os.environ["PARASITE_SCRATCH"]
 
 # create path to input and output .txt files in scratch directory
-
 # set variable for intermediate directory 
 int_folder = 'stringdb'
 # create paths
-genetxt = os.path.join(PARASITE_SCRATCH, int_folder, 'random_1000_mart.txt')
+genetxt = os.path.join(PARASITE_SCRATCH, int_folder, 'random_100k_mart.txt')
 stringtxt = os.path.join(PARASITE_SCRATCH, int_folder, 'filtered_protein.txt')
 output_path = os.path.join(PARASITE_SCRATCH, int_folder, 'outputGenes.txt')
 

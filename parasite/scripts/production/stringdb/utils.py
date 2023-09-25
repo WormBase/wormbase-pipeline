@@ -81,4 +81,3 @@ def find_matches(list_a, list_b):
             matches.append(element_a)
 
     return matches
-
