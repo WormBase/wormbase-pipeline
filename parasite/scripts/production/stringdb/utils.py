@@ -47,8 +47,6 @@ def fetch_string_organisms():
         print(f"Error fetching data from STRING: {e}")
         return []
 
-
-
 # find common organisms between WBPS and STRING
 def find_common_organisms(wbps_species_data, string_organisms):
     common_organisms = []
@@ -61,9 +59,6 @@ def find_common_organisms(wbps_species_data, string_organisms):
             common_organisms.append({"name": name, "taxon_id": taxon_id})
 
     return common_organisms
-
-
-# fix this function on monday!
 
 def find_matches(list_a, list_b):
     # Initialize a list to store the matches
