@@ -411,8 +411,30 @@ def rename_remote_file(source_address, destination_address):
     finally:
         ssh.close()
 
+def api_request(url, params=None, headers=None):
+    """
+    Send an API request and capture the output.
 
+    Parameters:
+        url (str): The API endpoint URL.
+        params (dict, optional): Dictionary of query parameters (default=None).
+        headers (dict, optional): Dictionary of request headers (default=None).
 
+    Returns:
+        str: The API response content as a string, or None if the request was not successful.
+    """
+    try:
+        response = requests.get(url, params=params, headers=headers)
+
+        if response.status_code == 200:  # Success: 200 OK
+            return response.content.decode('utf-8')
+        else:
+            print(f"API request failed with status code {response.status_code}: {response.text}")
+            return None
+
+    except requests.RequestException as e:
+        print(f"Error occurred during API request: {e}")
+        return None
 
 
 
