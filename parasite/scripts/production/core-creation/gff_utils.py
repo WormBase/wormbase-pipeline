@@ -72,20 +72,35 @@ def _make_ids_unique(gff_df):
     return gff_df
 
 
-# Reads in a .gff file as a Pandas dataframe. Rows and values are not
+# Reads in a .gff file as a Pandas dataframe.
+def _load_gff(input_gff, gff_column_names):
+    col_names = gff_column_names
+    gff_df = pd.read_csv(input_gff, sep = '\t', comment = '#', names = col_names, index_col = False)
+    return gff_df
+
+
+# Parsing the loaded GFF pandas dataframe. Rows and values are not
 # modified but the attributes column is parsed into separate columns,
 # one for each identified attribute (e.g. ID, Name, Parent).
 # Attributes not present in the original .gff file are NOT added.
-def parse_gff(input_gff):
-    col_names = ["scaffold", "source", "type", "start", "end", "score", "strand", "phase", "attributes"]
-
-    gff_df = pd.read_csv(input_gff, sep = '\t', comment = '#', names = col_names, index_col = False)
-
+def parse_gff(input_gff, gff_column_names): #, intron_types, exon_types, args):
+    gff_df = _load_gff(input_gff, gff_column_names)
     gff_df = _parse_attributes_field(gff_df)
-
     gff_df = _make_ids_unique(gff_df)
-
     return gff_df
+    # print_info("Checking for redundant GFF types")
+    # redundant_types = dc_redundant_gff_types(gff_df)
+    # if intron_types in redundant_types and exon_types not in list(set(gff_df["type"])):
+    #     print_warning("Only introns and not exons exists in your GFF file. \
+    #             To switch introns to exons, please use the --introns_to_exons flag.")
+    #     if args.introns_to_exons:
+    #         print_info("Switching introns to exons")
+    #         gff_df = switch_introns_to_exons(gff_df)
+    #         redundant_types = dc_redundant_gff_types(gff_df)         
+    # if redundant_types:
+    #     print_info("Removing redundant GFF types: "+", ".join(redundant_types))
+    #     gff_df = remove_redundant_gff_types(gff_df, redundant_types)
+
 
 def parse_synonyms(synonyms_file):
     colnames = ["toplevel", "CommunityID", "INSDCID", "INSDC"]
@@ -199,7 +214,6 @@ def infer_name_attribute_from_id(gff_df):
 
     gff_df.loc[no_name_mask, "Name"] = gff_df.loc[no_name_mask, "ID"]
 
-    gff_df["Name"] = gff_df["ID"]
     return gff_df
 
 # Updates CDS features on a scaffold to point to a transcript as parent
@@ -344,7 +358,12 @@ def has_name_attribute(gff_df):
 
 # Adds specified string prefix to the ID attribute of all features.
 def add_prefix_to_id(gff_df, prefix):
-    gff_df["ID"] = prefix + gff_df["ID"]
+    parents_not_ids = list(gff_df[(~gff_df["Parent"].isin(gff_df["ID"].unique())) & (~gff_df["Parent"].isnull())]["Parent"].unique())
+    if len(parents_not_ids) > 0:
+        print_warning("These Parents in your GFF file are not IDs: " + ",".join(parents_not_ids))
+    else:
+        gff_df["ID"] = prefix + gff_df["ID"]
+        gff_df["Parent"] = prefix + gff_df["Parent"]
     return gff_df
 
 
@@ -367,35 +386,41 @@ def rename_sources(gff_df, new_source):
 # Returns dataframe consisting only of gene features.
 def get_all_gene_features(gff_df):
     gene_mask = gff_df.loc[:, "type"].isin(gene_types)
-    gene_df = gff_df.loc[gene_mask]
+    gene_df = gff_df.loc[gene_mask].copy(deep=True)
     return gene_df
 
 
 # Returns dataframe consisting only of transcript features.
 def get_all_transcript_features(gff_df):
     transcript_mask = gff_df.loc[:, "type"].isin(transcript_types)
-    transcript_df = gff_df.loc[transcript_mask]
+    transcript_df = gff_df.loc[transcript_mask].copy(deep=True)
     return transcript_df
 
 
 # Returns dataframe consisting only of exon features.
 def get_all_exon_features(gff_df):
     exon_mask = gff_df.loc[:, "type"].isin(exon_types)
-    exon_df = gff_df.loc[exon_mask]
+    exon_df = gff_df.loc[exon_mask].copy(deep=True)
     return exon_df
+
+# Returns dataframe consisting only of exon features.
+def get_all_intron_features(gff_df):
+    intron_mask = gff_df.loc[:, "type"].isin(intron_types)
+    intron_df = gff_df.loc[intron_mask].copy(deep=True)
+    return intron_df
 
 # Returns dataframe consisting only of CDS features.
 def get_all_cds_features(gff_df):
     cds_mask = gff_df.loc[:, "type"].isin(cds_types)
-    cds_df = gff_df.loc[cds_mask]
+    cds_df = gff_df.loc[cds_mask].copy(deep=True)
     return cds_df
 
 # Returns a dataframe containing only exon and CDS features.
 def get_all_exon_and_cds_features(gff_df, transcripts=None):
     if transcripts is None:
-        exon_cds_df = gff_df[(gff_df["type"] == "CDS") | (gff_df["type"] == "exon")]
+        exon_cds_df = gff_df[(gff_df["type"] == "CDS") | (gff_df["type"] == "exon")].copy(deep=True)
     else:
-        exon_cds_df = gff_df[((gff_df["type"] == "CDS") | (gff_df["type"] == "exon")) & (gff_df["Parent"].isin(transcripts))]
+        exon_cds_df = gff_df[((gff_df["type"] == "CDS") | (gff_df["type"] == "exon")) & (gff_df["Parent"].isin(transcripts))].copy(deep=True)
     return exon_cds_df
 
 # This function takes a dataframe grouped by the "Parent" column and
@@ -413,6 +438,7 @@ def _count_cds_exons_per_transcript(gff_df):
         'cds_min_coord': min([cds_df["start"].min(),cds_df["end"].min()]),
     }
     return pd.Series(exons_cds_stats)
+
 
 
 def get_parent_gene_for_all(gff_df):
@@ -448,6 +474,7 @@ def get_parent_gene_for_all(gff_df):
 
     # Check if there are any 'Parent_Gene' IDs that do not belong to the all_genes. Exit if there are
     if not gff_df[(~gff_df["Parent_Gene"].isnull())]["Parent_Gene"].isin(all_genes).all()==True:
+        # print failing rows
         exit_with_error("Couldn't sucessfully assign Parent_Gene column. Please check the GFF file, correct it and re-run.")
     
     # Check if there are any features without a Parent_Gene. Exit if there are.
@@ -461,6 +488,21 @@ def get_parent_gene_for_all(gff_df):
 
     return(gff_df)
 
+def all_exon_starts_less_than_ends(gff_df):
+    exon_df = get_all_exon_features(gff_df)
+    # Check if there are any rows where the start is greater than the end. Exit if there are
+    if exon_df[(exon_df["start"] > exon_df["end"])]["start"].any():
+        return(False)
+    else:
+        return(True)
+
+def merge_adjacent_exons(gff_df):
+    exon_df = get_all_exon_features(gff_df)
+    df = exon_df
+    newexon_df = df.sort_values(["Parent","start"]).groupby([df.Parent,((df.end.shift()+1)-df.start).lt(0).cumsum()]).agg(
+        {k: "first" if k not in ["start","end"] else "min" if k == "start" else "max" for k in df.columns}).reset_index(drop=True)
+    new_gff_df = pd.concat([gff_df[~gff_df["type"].isin(exon_types)],newexon_df])
+    return(new_gff_df)
 
 # Gets a condition (or a semicolon-separated list of them) in the format of <attribute_field>=<something> like
 # gene_status=other and outputs the input gff without the features having the condition specified in their attributes
@@ -516,7 +558,11 @@ def finalise_attributes_column(gff_df):
 
     # Synthesise the final attributes column
     gff_df["attributes"] = gff_df['outID'] + gff_df['outName'] + gff_df['outParent']
-
+    
+    # Remove any single/double quotation from the final attributes column
+    gff_df["attributes"] = gff_df["attributes"].str.replace("'", "")
+    gff_df["attributes"] = gff_df["attributes"].str.replace('"', '')
+    
     return gff_df
 
 
@@ -564,7 +610,7 @@ def remove_pseudogenic_CDS(gff_df):
     return(gff_df) 
 
 # Switches the type of transcripts of pseudogenes to "pseudogenic_transcript"
-def make_pseudogenic_transcripts(gff_df):
+def switch_transcripts_to_pseudogenic_transcripts(gff_df):
     pseudogenes = list(set(gff_df[gff_df["type"].isin(pseudogene_types)]["ID"].to_list()))
 
     pseudogenic_transcript_mask = gff_df["type"].isin(transcript_types) & gff_df["Parent"].isin(pseudogenes)
@@ -573,6 +619,16 @@ def make_pseudogenic_transcripts(gff_df):
     gff_df.loc[pseudogenic_transcript_mask, "type"] = "pseudogenic_transcript"
 
     return(gff_df)
+
+# Creates new transcript features for pseudogenes
+def create_pseudogenic_transcripts(gff_df, gene_ids):
+    pseudogenes_df = gff_df.loc[gff_df["type"].isin(pseudogene_types) & gff_df["ID"].isin(gene_ids)].copy(deep=True)
+    pseudogenes_df["type"] = "pseudogenic_transcript"
+    pseudogenes_df["Parent"] = pseudogenes_df["ID"]
+    pseudogenes_df["ID"] = pseudogenes_df["ID"] + "_transcript"
+    gff_df = pd.concat([gff_df, pseudogenes_df])
+    return(gff_df)
+
 
 # Switches the type of pseudogenes to "genes":
 def pseudogenes_to_genes(gff_df):
@@ -584,7 +640,6 @@ def pseudogenes_to_genes(gff_df):
     gff_df.loc[pseudogenes_mask, "type"] = "gene"
 
     return(gff_df)
-
 
 # Outputs a finalised .gff dataframe that contains only gene, transcrsipt,
 # exon and CDS features. Orders the dataframe so that features exist in a
@@ -645,7 +700,8 @@ def deprecated_counts_per_transcript(gff_df):
 def counts_per_transcript(gff_df):
     """Calculates the number of exons and CDS, and their min/max coordinates per transcript and returns it as a dataframe"""
     exons_cds_df = get_all_exon_and_cds_features(gff_df)
-    count_df=exons_cds_df.groupby(['Parent','type']).aggregate({"type":"count","start":["min","max"], "end":["min","max"]}).unstack(fill_value=0).stack().reset_index()
+    count_df=exons_cds_df.groupby(['Parent','type']).aggregate(
+        {"type":"count","start":["min","max"], "end":["min","max"]}).unstack(fill_value=0).stack().reset_index()
     count_df=count_df[count_df["Parent"].isin(get_all_transcript_features(gff_df)["ID"])]
     count_df.columns = [y.strip("_") for y in ["_".join(x) for x in list(count_df.columns)]]
     pivot_counts_df = count_df.pivot_table(index="Parent",columns="type")
@@ -737,9 +793,11 @@ def dc_exons_but_no_cds(gff_df, outprefix):
 def dc_coding_transcripts_with_exons_cds(gff_df, outprefix):
     """Checks if there are CDSs and exons for coding transcripts in your gff_df. It returns a list with the offending transcripts"""
     counts_per_transcript_df = counts_per_transcript(gff_df)
+    non_coding_transcripts=set(list(gff_df.loc[~gff_df["type"].isin(pseudogene_types),"ID"]))
     transcripts_df=get_all_transcript_features(gff_df)
     dc1_offending_transcripts=list(set(counts_per_transcript_df[(counts_per_transcript_df['type_count_exon']==0) & (counts_per_transcript_df['type_count_CDS']==0)].index.values.tolist()))
     dc1_offending_transcripts+=list(set(transcripts_df[~transcripts_df["ID"].isin(counts_per_transcript_df.index)]["ID"]))
+    dc1_offending_transcripts = [x for x in dc1_offending_transcripts if x not in non_coding_transcripts]
     if dc1_offending_transcripts:
         print_warning("There are transcripts with CDS but without exons. These transcripts "
                             "will be written in cds_not_exons_transcripts.txt")
@@ -937,8 +995,8 @@ def perform_datachecks(gff_df, args, outprefix):
             gff_df = gff_df[~(gff_df["Parent_Gene"].isin(genes_without_transcripts))]
         elif args.dc_turn_genes_without_transcripts_into_pseudogenes:
             print_info("Turning genes without transcripts into pseudo-genes.")
-            gff_df[(gff_df["type"].isin(gene_types) & gff_df["ID"].isin(genes_without_transcripts))]["type"] = "pseudogene"
-            gff_df = make_pseudogenic_transcripts(gff_df)
+            gff_df.loc[(gff_df["type"].isin(gene_types) & gff_df["ID"].isin(genes_without_transcripts)),"type"] = "pseudogene"
+            gff_df = create_pseudogenic_transcripts(gff_df, genes_without_transcripts)
             gff_df = pseudogenes_to_genes(gff_df)
         else:
             if args.dc_genes_without_transcripts_fix:

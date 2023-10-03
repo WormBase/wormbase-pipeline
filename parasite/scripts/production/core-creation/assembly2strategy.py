@@ -62,7 +62,7 @@ def main():
     parser.add_argument('--ncbi_assembly_acc', help='NCBI Assembly accession (Optional)')
     parser.add_argument('--strain_biosample', help='Strain or BioSample (Optional)')
     parser.add_argument('--publication', help='Publication (Optional)')
-    parser.add_argument('--type', required=True, help='Type (Required)')
+    parser.add_argument('--type', help='Type (Required)')
     parser.add_argument('--status', default='READY', help='Status (Optional, Default=READY)')
     parser.add_argument('--notes', help='Notes (Optional)')
     parser.add_argument('--name', help='Name (Optional)')
@@ -79,34 +79,39 @@ def main():
     # For example, you can access the options using args.species, args.bioproject, etc.
     # Print or use the values as per your requirement
     
-    print_info("Arguments:")
-    if args.species: print_info("Species: " + args.species)
-    if args.bioproject: print_info("BioProject: " + args.bioproject)
-    if args.insdc_assembly_name: print_info("INSDC Assembly Name: " + args.insdc_assembly_name)
-    if args.ncbi_assembly_acc: print_info("NCBI Assembly Acc: " + args.ncbi_assembly_acc)
-    if args.strain_biosample:print_info("Strain/BioSample: " + args.strain_biosample)
-    if args.publication: print_info("Publication: " + args.publication)
-    if args.type: print_info("Type: " + args.type)
-    if args.status: print_info("Status: " + args.status)
-    if args.notes: print_info("Notes: " + args.notes)
-    if args.name: print_info("Name: " + args.name)
-    if args.email: print_info("Email: " + args.email)
-    if args.helpdesk: print_info("Helpdesk: " + args.helpdesk)
+    # print_info("Arguments:")
+    # if args.species: print_info("Species: " + args.species)
+    # if args.bioproject: print_info("BioProject: " + args.bioproject)
+    # if args.insdc_assembly_name: print_info("INSDC Assembly Name: " + args.insdc_assembly_name)
+    # if args.ncbi_assembly_acc: print_info("NCBI Assembly Acc: " + args.ncbi_assembly_acc)
+    # if args.strain_biosample:print_info("Strain/BioSample: " + args.strain_biosample)
+    # if args.publication: print_info("Publication: " + args.publication)
+    # if args.type: print_info("Type: " + args.type)
+    # if args.status: print_info("Status: " + args.status)
+    # if args.notes: print_info("Notes: " + args.notes)
+    # if args.name: print_info("Name: " + args.name)
+    # if args.email: print_info("Email: " + args.email)
+    # if args.helpdesk: print_info("Helpdesk: " + args.helpdesk)
 
-    assembly_summary = False
     if args.ncbi_assembly_acc:
         if re.match(ncbi_accession_pattern, args.ncbi_assembly_acc) is None:
             exit_with_error(f"Invalid NCBI Assembly Accession: {args.ncbi_assembly_acc}")
         ncbi_assembly_acc = args.ncbi_assembly_acc
         assembly_summary_response = json.loads(api_request(ncbi_api_url.format(ncbi_assembly_acc)))
-        if assembly_summary_response['total_count']>1 or assembly_summary_response['total_count']<1:
-            print(assembly_summary_response)
-            print(f"NCBI API Request for {args.ncbi_assembly_acc} returned multiple or no reports.")
+    if assembly_summary_response['total_count']>1 or assembly_summary_response['total_count']<1:
+        print(assembly_summary_response)
+        print(f"NCBI API Request for {args.ncbi_assembly_acc} returned multiple or no reports.")
 
-        assembly_summary = assembly_summary_response["reports"][0]
+    assembly_summary = assembly_summary_response["reports"][0]
+    # print(assembly_summary)
+
+    assembly_stats = assembly_summary['assembly_stats']
+    if "contig_n50" in assembly_stats.keys():
+        n50 = assembly_stats["contig_n50"]
     else:
-        assembly_summary = False
-        ncbi_assembly_acc = ' '
+        n50 = assembly_stats["scaffold_n50"]
+    
+    assembly_level = assembly_summary["assembly_info"]["assembly_level"]
 
     if args.species:
         species = args.species
@@ -124,32 +129,34 @@ def main():
         
     if args.insdc_assembly_name:
         insdc_assembly_name = args.insdc_assembly_name
-    else:
-        if assembly_summary:    
-            insdc_assembly_name = assembly_summary['assembly_info']['assembly_name']
-        else:
-            insdc_assembly_name = ' '
+    else:    
+        insdc_assembly_name = assembly_summary['assembly_info']['assembly_name']
     
     if args.strain_biosample:
         biosample = args.strain_biosample
     else:
-        if assembly_summary:
-            biosample = assembly_summary['assembly_info']['biosample']['accession']
-        else:
-            biosample = ' '
+        biosample = assembly_summary['assembly_info']['biosample']['accession']
     
     if args.strain_biosample:
         strain_biosample = args.strain_biosample
     else:
-        if assembly_summary:
-            strain_biosample = f"{get_strain(assembly_summary)}/{biosample}"
-        else:
-            strain_biosample = ' '
+        strain_biosample = f"{get_strain(assembly_summary)}/{biosample}"
 
+    if 'sequencing_tech' in assembly_summary['assembly_info'].keys():
+        seq_tech = assembly_summary['assembly_info']['sequencing_tech']
+    else:
+        seq_tech = ""
+
+    if 'annotation_info' in assembly_summary.keys():
+        annot=True
+    else:
+        annot=False
+    
+       
     genome = species.lower().replace(" ","_") + "_" + bioproject.lower()
     helpdesk_url = helpdesk_url_for_id.format(args.helpdesk)
 
-    notes = ("Submitted by: " + assembly_summary['assembly_info']['submitter'] + "," if assembly_summary else "")
+    notes = "Submitted by: " + assembly_summary['assembly_info']['submitter'] + ","
     notes += ("Submitted by: " + f"[{args.name}|mailto:{args.email}], " if args.email and args.name else "")
     notes += ("Submitted by: " + f"{args.name}, " if args.name and not args.email else "")
     notes += ("Submitted by: " + f"{args.email}, " if args.email and not args.name else "")
@@ -157,37 +164,47 @@ def main():
     notes += (f"\nHelpdesk ticket: [{args.helpdesk}|{helpdesk_url}]." if args.helpdesk else "")
     notes += (args.notes if args.notes else "")
 
-    username = getpass.getuser()
-    password = getpass.getpass(f"Enter your Jira password for {username}: ")
-    jira = JIRA(server=jira_server,basic_auth=(username, password))
+    output_text = " ".join(species.split("_")) + \
+        f" ({args.ncbi_assembly_acc}) " + \
+        (f" ({args.publication}) " if args.publication else " (no paper) ") + \
+        f" {seq_tech} " + \
+        f" ({assembly_level} level, N50={n50}) " + \
+        (" WITH GENES " if annot else " WAIT FOR GENES.")
+    
+    print(output_text)       
+    
 
-    #create subtask for parent_issue
-    # create the subtask
-    subtask = jira.create_issue(
-        project = jira_project_key,
-        summary = f"WBPS{parasite_version} - {genome}",
-        description = f"|{species} |{bioproject} |{insdc_assembly_name} |{ncbi_assembly_acc} |{strain_biosample} |" + \
-                                            (f"{args.publication}|" if args.publication else " |") + \
-                                            f"{args.type} |{args.status} |{notes} |",
-        issuetype={'name': 'Sub-task'},
-        parent={'key': jira_parent_key}
-    )
+    # username = getpass.getuser()
+    # password = getpass.getpass(f"Enter your Jira password for {username}: ")
+    # jira = JIRA(server=jira_server,basic_auth=(username, password))
 
-    subtask_browse_url = jira_server + f"browse/{subtask.key}"
-    subtask_browse_link = f"[{subtask.key}|{subtask_browse_url}]"
+    # #create subtask for parent_issue
+    # # create the subtask
+    # subtask = jira.create_issue(
+    #     project = jira_project_key,
+    #     summary = f"WBPS{parasite_version} - {genome}",
+    #     description = f"|{species} |{bioproject} |{insdc_assembly_name} |{ncbi_assembly_acc} |{strain_biosample} |" + \
+    #                                         (f"{args.publication}|" if args.publication else " |") + \
+    #                                         f"{args.type} |{args.status} |{notes} |",
+    #     issuetype={'name': 'Sub-task'},
+    #     parent={'key': jira_parent_key}
+    # )
 
-    # modify subtask description to include link to subtask itself
-    subtask.update(description=f"|{species} |{subtask_browse_link} |{bioproject} |{insdc_assembly_name} |{ncbi_assembly_acc} |{strain_biosample} |" + \
-                                            (f"{args.publication}|" if args.publication else " |") + \
-                                            f"{args.type} |{args.status} |{notes} |")
+    # subtask_browse_url = jira_server + f"browse/{subtask.key}"
+    # subtask_browse_link = f"[{subtask.key}|{subtask_browse_url}]"
+
+    # # modify subtask description to include link to subtask itself
+    # subtask.update(description=f"|{species} |{subtask_browse_link} |{bioproject} |{insdc_assembly_name} |{ncbi_assembly_acc} |{strain_biosample} |" + \
+    #                                         (f"{args.publication}|" if args.publication else " |") + \
+    #                                         f"{args.type} |{args.status} |{notes} |")
 
 
-    # add the link to the parent issue
-    jira.add_comment(jira_parent_key, f"Subtask created: {subtask_browse_link}")
+    # # add the link to the parent issue
+    # jira.add_comment(jira_parent_key, f"Subtask created: {subtask_browse_link}")
 
-    print_info(f"Subtask created: {subtask}")
-    print_info(f"URL: {jira_server}/browse/{subtask.key}")
-    print_info(f"\n\nDone")
+    # print_info(f"Subtask created: {subtask}")
+    # print_info(f"URL: {jira_server}/browse/{subtask.key}")
+    # print_info(f"\n\nDone")
 
 
     

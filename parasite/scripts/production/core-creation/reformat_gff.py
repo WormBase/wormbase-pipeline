@@ -10,13 +10,6 @@ from argparse import ArgumentParser
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
-input_gff="/nfs/production/flicek/wormbase/parasite/data/releases/release19/meloidogyne_enterolobii_prjeb36431/GCA_903994135.1_Meloidogyne_enterolobii_genome_assembly_genomic.gff3"
-fasta_path="/nfs/production/flicek/wormbase/parasite/data/releases/release19/meloidogyne_enterolobii_prjeb36431/meloidogyne_enterolobii_prjeb36431.fa"
-synonyms_file="/nfs/production/flicek/wormbase/parasite/data/releases/release19/meloidogyne_enterolobii_prjeb36431/meloidogyne_enterolobii_prjeb36431.seq_region_synonyms.tsv"
-synonyms_df = parse_synonyms(synonyms_file)
-fasta = FASTA(fasta_path)
-gff_df = parse_gff(input_gff)
-outprefix = os.path.dirname(input_gff)
 # Grabs and return command line arguments. Only input.gff and output
 # destination are required arguments. -f and -s options allow for 
 # specifying a  scaffolds .fasta file and a .tsv mapping NCBI accessions 
@@ -45,31 +38,19 @@ def get_args():
         help = "Indicate input .gff file has no parentage information to link features. By default, assumes parentage information is included.")
     parser.add_argument("-g", "--gene_prefix", default = False,
         help = "A string to append to each gene and ID name, in case original names are lacking. No changes made by default.")
-
     parser.add_argument("-p", "--prefixes", required = False, default = None, nargs = '+',
         help = "List of prefixes to remove from .gff fields (e.g. parts of gene IDs that are constant across all genes). \
             Specify multiple prefixes as a space-separated list.")
     parser.add_argument("--name_prefixes", required=False, default=None, nargs='+',
                         help="List of prefixes to remove from .gff fields (e.g. parts of gene Name that are constant across all genes). \
                              Specify multiple prefixes as a space-separated list.")
-
-    # # Extrapolate transcripts from genes, or vice versa.
-    # gene_transcript_extrapolation = parser.add_mutually_exclusive_group()
-    # gene_transcript_extrapolation.add_argument("-T", "--extrapolate_transcripts_for_scaffold", required = False, default = None,
-    #     help = "Use gene information to create missing transcript features for a specified scaffold (provide community scaffold name).")
-    # gene_transcript_extrapolation.add_argument("-G", "--extrapolate_genes_for_scaffold", required = False, default = None,
-    #     help = "Use transcript information to create missing gene features for a specified scaffold (provide community scaffold name).")
-
-    # # Extrapolate exons from CDSs, or vice versa
-    # exon_cds_extrapolation = parser.add_mutually_exclusive_group()
-    # exon_cds_extrapolation.add_argument("-E", "--extrapolate_exons_for_scaffold", required = False, default = None,
-    #     help = "Use CDS information to create missing exon features for a specified scaffold (provide community scaffold name).")
-    # exon_cds_extrapolation.add_argument("-C", "--extrapolate_CDSs_for_scaffold", required = False, default = None,
-    #     help = "Use exon information to create missing CDS features for a specified scaffold (provide community scaffold name).")
-
+    parser.add_argument("--merge_adjacent_exons", dest="merge_adjacent_exons", required=False, action="store_true", 
+                       help="Merge adjacent exon features that have the same transcript as a parent")
     name_inference_group = parser.add_mutually_exclusive_group()
-    name_inference_group.add_argument("-n", "--infer_gene_names", default = False, action = "store_true",
-        help = "Use feature ID attribute to create Name attribues for features that lack a name (directy copy)")
+    name_inference_group.add_argument("-n", "--infer_gene_names", default = False, 
+                                      action = "store_true",
+                                      help = "Use feature ID attribute to create Name attribues for \
+                                      features that lack a name (directy copy)")
     name_inference_group.add_argument("-N", "--overwrite_gene_names", default = False, action = "store_true",
         help = "Use feature ID attribute to create Name attribues for all features (directy copy). Overwrites original names.")
     parser.add_argument("-f", "--fasta", required = False, default = None, type = str,
@@ -195,7 +176,7 @@ def main():
 
     fasta = FASTA(fasta_path)
 
-    gff_df = parse_gff(input_gff)
+    gff_df = parse_gff(input_gff, gff_column_names)
 
     outprefix = os.path.dirname(input_gff)
 
@@ -205,12 +186,6 @@ def main():
         print_info("Switching gff source to : " + wormbase_source)
         gff_df = rename_sources(gff_df, new_source = wormbase_source)
     
-    print_info("Checking for redundant GFF types")
-    redundant_types = dc_redundant_gff_types(gff_df)
-    if redundant_types:
-        print_info("Removing redundant GFF types: "+", ".join(redundant_types))
-        gff_df = remove_redundant_gff_types(gff_df, redundant_types)
-
     if args.overwrite_gene_names is True:
         print_info("Inferring and overwriting gene names (Name=) from the ID field (ID=).")
         gff_df = infer_and_overwrite_name_attribute_from_id(gff_df)
@@ -280,6 +255,13 @@ def main():
         extracted_output_gff = "extracted.gff3"
         write_output_gff(extracted_gff_df, extracted_output_gff)
 
+    if args.merge_adjacent_exons:
+        if all_exon_starts_less_than_ends(gff_df):
+            print_info("Merging adjacent exons")
+            gff_df = merge_adjacent_exons(gff_df)
+        else:
+            print_warning("Could not merge adjacent exons as there are exons with start > end. " + 
+                          "Please check the GFF file and try again.")
     print_info("Running Datachecks")
     gff_df = perform_datachecks(gff_df, args, outprefix)
 

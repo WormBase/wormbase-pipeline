@@ -321,7 +321,7 @@ if( $force or not -s $conf_path or $ENV{REDO_FASTA} ) {
          die "gene $gene_ID has no RNA/pseudogenic transcript in $this_assembly->{gff3}" unless $genes{$gene_ID}->{RNA}->[0] || $genes{$gene_ID}->{pseudogenic_transcript}->[0];
          foreach my $this_RNA (@{$genes{$gene_ID}->{RNA}}) {
             my $RNA_ID = $this_RNA->{ID};
-            die "RNA $RNA_ID has no CDS or exon in $this_assembly->{gff3}" unless $RNAs{$RNA_ID}->{CDS}->[0] || $RNAs{$RNA_ID}->{exon}->[0] || "nontranslating_transcript" eq $RNAs{$RNA_ID}->{type};
+            die "RNA $RNA_ID has no CDS or exon in $this_assembly->{gff3}" unless $RNAs{$RNA_ID}->{CDS}->[0] || $RNAs{$RNA_ID}->{exon}->[0] || "nontranslating_transcript" eq $RNAs{$RNA_ID}->{type} || "pseudogenic_transcript" eq $RNAs{$RNA_ID}->{type};
          }
       }
 # using type 'gene' instead of pseudogene
@@ -341,8 +341,8 @@ if( $force or not -s $conf_path or $ENV{REDO_FASTA} ) {
    $this_assembly->{toplevel} = "scaffold";
    my $fasta = CoreCreation::Fasta->new($fasta_path) || croak "Failed to create CoreCreation::Fasta";
    if($split_fasta and $fasta->needs_contig_structure and not $ENV{SKIP_SPLIT_FASTA}){
-      (my $split_fasta_path   = $fasta_path) =~ s/.fa/.split.fa/;
-      (my $agp_path           = $fasta_path) =~ s/.fa/.toplevel.agp/;
+      (my $split_fasta_path   = $fasta_path) =~ s/.fa$/.split.fa/;
+      (my $agp_path           = $fasta_path) =~ s/.fa$/.toplevel.agp/;
       $fasta->split(fasta => $split_fasta_path, agp => $agp_path);
       $this_assembly->{fasta}    = $split_fasta_path;
       $this_assembly->{agp}      = $agp_path;
