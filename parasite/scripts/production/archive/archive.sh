@@ -10,7 +10,8 @@
 set -euo pipefail
 
 species=$1
-sourcedbname=$2
+previous_species=$2
+sourcedbname=$3
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
@@ -53,4 +54,4 @@ if [ ! -s $base_dir/previous_to_current_id.tsv ] ; then
    exit 1
 fi
 echo "Obtained mapping: $base_dir/previous_to_current_id.tsv"
-$DIR/upload_mapping_as_history.pl --species "$species" --mapping $base_dir/previous_to_current_id.tsv 
+$DIR/upload_mapping_as_history.pl --species "$species" --previous_species "$previous_species" --mapping $base_dir/previous_to_current_id.tsv 

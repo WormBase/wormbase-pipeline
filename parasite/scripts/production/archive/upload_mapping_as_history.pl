@@ -16,6 +16,7 @@ my $previous_db_command = "$ENV{PREVIOUS_PARASITE_STAGING_MYSQL}";
 my %args;
 GetOptions (
   'species=s'             => \$args{species}, # can be a pattern
+  'previous_species=s'    => \$args{previous_species}, # can be a pattern
   'db_command=s'          => \$db_command,
   'previous_db_command=s' => \$previous_db_command,
   'mapping=s'             => \$args{mapping},
@@ -26,7 +27,7 @@ die "Required --species <species_pattern>" unless $args{species};
 my $mysql = ProductionMysql->new($db_command);
 my $previous_mysql = ProductionMysql->new($previous_db_command);
 $args{core_db} = $mysql->core_db($args{species});
-$args{previous_core_db} = $previous_mysql->core_db( $args{species} );
+$args{previous_core_db} = $previous_mysql->core_db( $args{previous_species} );
 my @core_db_words = split "_", $args{core_db};
 $args{parasite_version} = $core_db_words[4];
 $args{assembly_name} = $mysql->meta_value($args{core_db}, "assembly.name");
@@ -35,7 +36,7 @@ my @previous_core_db_words = split "_", $args{previous_core_db};
 $args{previous_parasite_version} = $previous_core_db_words[4];
 $args{previous_assembly_name} = $previous_mysql->meta_value($args{previous_core_db}, "assembly.name");
 
-$args{proteins} //= SpeciesFtp->release($args{previous_parasite_version})->path_to($previous_mysql->species($args{species}), "protein.fa");
+$args{proteins} //= SpeciesFtp->release($args{previous_parasite_version})->path_to($previous_mysql->species($args{previous_species}), "protein.fa");
 die "Usage: --proteins ftp_path.fa.gz. Not a file: $args{proteins}" unless -s $args{proteins};
 
 my $dbc = $mysql->dbc($args{core_db});
@@ -44,7 +45,7 @@ my $transcript_adaptor = $mysql->adaptor($args{core_db}, 'Transcript');
 my $mysql_pair = MysqlPair->new($previous_mysql, $mysql);
 # Restore mappings. This is usually a clean wipe, unless processing an update of an update.
 for my $table (qw/mapping_session stable_id_event gene_archive peptide_archive/){
-  $mysql_pair->dump($args{species}, $table);
+  $mysql_pair->dump($args{previous_species}, $args{species}, $table);
 }
 
 my $mapping_session_id = &start_mapping_session($dbc, %args);
