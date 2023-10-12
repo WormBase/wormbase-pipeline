@@ -39,9 +39,13 @@ def _parse_attributes_field(gff_df):
     # Iterate over rows as tuples (~3x faster than iterrows)
     # Column 0 is index, column 9 is attributes
     for row in gff_df.itertuples():
-
+    
         # .gff attributes are delimited by ';'
-        attribute_fields = row[9].split(';')
+        try:
+            attribute_fields = row[9].split(';')
+        except AttributeError:
+            print(row)
+            exit_with_error("Couldn't split the 9th column of the row above.")
 
         for attribute_field in attribute_fields:
 
@@ -85,22 +89,19 @@ def _load_gff(input_gff, gff_column_names):
 # Attributes not present in the original .gff file are NOT added.
 def parse_gff(input_gff, gff_column_names): #, intron_types, exon_types, args):
     gff_df = _load_gff(input_gff, gff_column_names)
+
+    print_info("Checking for redundant GFF types")
+    redundant_types = dc_redundant_gff_types(gff_df)
+    if redundant_types:
+        if (intron_types in redundant_types) & (exon_types not in list(set(gff_df["type"]))):
+            print_warning("Only introns and not exons exists in your GFF file.")
+        print_info("Removing redundant GFF types: "+", ".join(redundant_types))
+        gff_df = remove_redundant_gff_types(gff_df, redundant_types)
+    
     gff_df = _parse_attributes_field(gff_df)
     gff_df = _make_ids_unique(gff_df)
-    return gff_df
-    # print_info("Checking for redundant GFF types")
-    # redundant_types = dc_redundant_gff_types(gff_df)
-    # if intron_types in redundant_types and exon_types not in list(set(gff_df["type"])):
-    #     print_warning("Only introns and not exons exists in your GFF file. \
-    #             To switch introns to exons, please use the --introns_to_exons flag.")
-    #     if args.introns_to_exons:
-    #         print_info("Switching introns to exons")
-    #         gff_df = switch_introns_to_exons(gff_df)
-    #         redundant_types = dc_redundant_gff_types(gff_df)         
-    # if redundant_types:
-    #     print_info("Removing redundant GFF types: "+", ".join(redundant_types))
-    #     gff_df = remove_redundant_gff_types(gff_df, redundant_types)
 
+    return gff_df
 
 def parse_synonyms(synonyms_file):
     colnames = ["toplevel", "CommunityID", "INSDCID", "INSDC"]
@@ -1011,6 +1012,17 @@ def perform_datachecks(gff_df, args, outprefix):
                 print_warning("Detected genes without transcripts but the --no_fix_genes_without_transcripts_dc flag is set."\
                     "The script will continue but the missing transcripts will not be extrapolated.")
     
+    if gff_df["type"].isin(pseudogene_types).any():
+        if pseudogenes_with_CDS(gff_df) and  not args.keep_pseudogenic_CDSs:
+            print_info("Found pseudogenes with CDSs. Removing pseudogenes with CDSs. If you would like to keep them " + 
+                       "use the keep_pseudogenic_CDSs flag")
+            gff_df = remove_pseudogenic_CDS(gff_df)
+        print_info("Switching the type of transcripts of pseudogenes to pseudogenic_transcripts")
+        gff_df = switch_transcripts_to_pseudogenic_transcripts(gff_df)
+        print_info("Switching the type of \"pseudogene\" genes to \"gene\"")
+        gff_df = pseudogenes_to_genes(gff_df)
+
+
     print_info("Datacheck: Checking for transcripts without any exons and CDSs.")
     transcripts_without_exons_and_CDSs = dc_coding_transcripts_with_exons_cds(gff_df, outprefix)
     if transcripts_without_exons_and_CDSs:

@@ -145,7 +145,7 @@ def infer_fasta_file():
 def infer_synonyms_file():
     synonyms_files = glob.glob("./*seq_region_synonyms.tsv")
     if len(synonyms_files) != 1:
-        exit_with_error("Expected 1 but got " + str(len(synonyms_files)) + " files ending with seq_regions_synonyms.tsv in the directory")
+        return False
     else:
         synonyms_file = synonyms_files[0]
     return synonyms_file
@@ -168,12 +168,15 @@ def main():
     # If no synonyms.tsv file has been provided, infer one from directory.
     if args.synonyms_file is None:
         synonyms_file = infer_synonyms_file()
-    else:
+    elif args.synonyms_file:
         synonyms_file = args.synonyms_file
-    print_info("SYNONYMS file: " + synonyms_file)
 
-    synonyms_df = parse_synonyms(synonyms_file)
-
+    if synonyms_file:
+        synonyms_df = parse_synonyms(synonyms_file)
+        print_info("SYNONYMS file: " + synonyms_file)
+    else:
+        print_warning("No synonyms.tsv file provided. Will continue without having the ability to rename scaffold.")
+    
     fasta = FASTA(fasta_path)
 
     gff_df = parse_gff(input_gff, gff_column_names)
@@ -199,6 +202,8 @@ def main():
         gff_df = add_prefix_to_name(gff_df, prefix = args.gene_prefix)
 
     if scaffolds_needs_renaming(gff_df, fasta)!=False and not args.keep_scaffolds:
+        if not synonyms_file:
+            exit_with_error("Your GFF scaffold names need renaming but no synonyms.tsv file has been provided. Exiting...")
         print_info("Renaming GFF scaffolds.")
         gff_df = rename_scaffolds(gff_df, synonyms_df, args.rename_gff_scaffolds_if_community)
 
@@ -235,18 +240,7 @@ def main():
     #     gff_df = extrapolate_scaffold_cds_from_exons(gff_df, args.extrapolate_CDSs_for_scaffold)
 
     print_info("Getting Parent Gene for all features ")
-    gff_df = get_parent_gene_for_all(gff_df)
-
-    if gff_df["type"].isin(pseudogene_types).any():
-        if pseudogenes_with_CDS(gff_df) and  not args.keep_pseudogenic_CDSs:
-            print_info("Found pseudogenes with CDSs. Removing pseudogenes with CDSs. If you would like to keep them " + 
-                       "use the keep_pseudogenic_CDSs flag")
-            gff_df = remove_pseudogenic_CDS(gff_df)
-        print_info("Switching the type of transcripts of pseudogenes to pseudogenic_transcripts")
-        gff_df = make_pseudogenic_transcripts(gff_df)
-        print_info("Switching the type of \"pseudogene\" genes to \"gene\"")
-        gff_df = pseudogenes_to_genes(gff_df)
-        
+    gff_df = get_parent_gene_for_all(gff_df)     
 
     if args.split_gff_when_gene_attribute:
         print_info("Splitting GFF based on the gene attribute field(s): " + " & ".join(args.split_gff_when_gene_attribute.split(";")))
