@@ -53,6 +53,53 @@ function gff_flagsq {
   perl -snle 'print for /(?:^|.+)$attrname=([^;]+)/;' -- -attrname=$1;
 }
 
+function fasta_sequence_from_header {
+  header=$1
+  fasta_file=$2
+  awk -v header="$header" '
+    BEGIN { found = 0; }
+    {
+        if ($0 ~ header) {
+            found = 1;
+            print $0;
+        } else if (found) {
+            if (substr($0, 1, 1) == ">") {
+                exit;
+            } else {
+                print $0;
+            }
+        }
+    }
+' $fasta_file
+}
+
+function fasta_sequence_length_from_header {
+  header=$1
+  fasta_file=$2
+  awk -v header="$header" '
+      BEGIN { found = 0; sequence = ""; }
+      {
+          if ($0 ~ header) {
+              found = 1;
+              sequence = "";
+              print $0;
+          } else if (found) {
+              if (substr($0, 1, 1) == ">") {
+                  exit;
+              } else {
+                  sequence = sequence $0;
+              }
+          }
+      }
+      END {
+          if (sequence != "") {
+              seq_length = length(sequence);
+              print "Sequence Length: " seq_length;
+          }
+      }
+  ' $fasta_file
+}
+
 function rename_fasta_headers_with_mapping {
   input_fasta = $1
   mapping_file = $2
