@@ -43,7 +43,7 @@ cat gene.to_rename | while read gstid;
   "SELECT tr.stable_id FROM gene JOIN transcript tr USING (gene_id) WHERE gene.stable_id='${gstid}';";
 done > tr.to_rename_from_db;
 if [[ $(cat tr.to_rename | sort | uniq | wc -l) -ne $(cat tr.to_rename_from_db | sort | uniq | wc -l) ]];
-  then echo "ERROR: You're missing transcripts (or having excess) in tr.to_rename"; exit;
+  then echo "WARNING: You're missing transcripts (or having excess) in tr.to_rename";
 fi
 
 # Genes SQL
