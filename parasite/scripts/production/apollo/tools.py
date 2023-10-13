@@ -43,4 +43,3 @@ def write_to_remote_apollo_trackList_json(json_data, species, remote_address, wr
 
     # Optionally, return the destination path
     return destination_path
-

@@ -26,7 +26,7 @@ perl -MProductionMysql -E '
     #continue
   fi
   echo "Dumping $DB to $NEWDB"
-  ${PREVIOUS_PARASITE_STAGING_MYSQL} mysqldump $DB | ${PARASITE_STAGING_MYSQL}-w $NEWDB
+  ${PREVIOUS_PARASITE_STAGING_MYSQL} mysqldump --max_allowed_packet=512M $DB | ${PARASITE_STAGING_MYSQL}-w $NEWDB
   echo "Using schema_patcher.pl to patch $NEWDB"
   perl $ENSEMBL_CVS_ROOT_DIR/ensembl/misc-scripts/schema_patcher.pl $(${PARASITE_STAGING_MYSQL}-w details script) \
      --release $ENSEMBL_VERSION --nointeractive \
