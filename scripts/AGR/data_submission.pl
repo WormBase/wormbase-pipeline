@@ -245,12 +245,12 @@ if ($htp_variations or $all) {
 if ($agm or $all) {
     my @cmds = (
 	"perl  ${cvs_dir}/AGR/make_agr_AGM.pl -alleles ${allele_file} -database ${build_home}/DATABASES/${ws_release} " .
-	"-wsversion ${ws_release} -outfile ${sub_dir}/WB_${agr_schema}_AGM.json -diseases ${disease_file}",
+	"-wsversion ${ws_release} -outfile ${sub_dir}/WB_${agr_schema}_AGM.json",
 	"${agr_schema_repo}/bin/agr_validate.py -s ${agr_schema_repo}/ingest/affectedGenomicModel/affectedGenomicModelMetaData.json " .
 	"-d ${sub_dir}/WB_${agr_schema}_AGM.json"
 	);
     $datatypes_processed{'AGM'} = process_datatype('AGM', \@cmds, $sub_dir, $log, $lsf_manager, $DEFAULT_MEM, $datatypes_processed{'BGI'},
-						   $datatypes_processed{'DISEASE'}, $datatypes_processed{'ALLELE'});
+						   $datatypes_processed{'ALLELE'});
 }
 
 if ($construct or $all) {

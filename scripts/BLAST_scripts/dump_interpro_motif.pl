@@ -72,7 +72,7 @@ my @method_database = (
 		       'blastprodom',
 		       'smart',
 		       'pfam',
-		       'tigrfam',
+		       'ncbifam',
 #		       'ncoils', # no interpro_id
 #		       'seg', # no interpro_id
 #		       'tmhmm', # no score or evalue

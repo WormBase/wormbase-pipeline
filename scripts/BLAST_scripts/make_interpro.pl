@@ -260,7 +260,7 @@ sub delete_results {
 
   
   # logical names in the Ensemble pipeline for the analyses used in interpro
-  my @methods = qw(scanprosite Prints pfscan blastprodom hmmpanther Smart Tigrfam Pfam PIRSF Superfamily gene3d hamap);
+  my @methods = qw(scanprosite Prints pfscan blastprodom hmmpanther Smart Ncbifam Pfam PIRSF Superfamily gene3d hamap);
 
   # get the mapping of method 2 analysis id
   my %method2analysis;
