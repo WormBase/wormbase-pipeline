@@ -424,6 +424,14 @@ def get_all_exon_and_cds_features(gff_df, transcripts=None):
         exon_cds_df = gff_df[((gff_df["type"] == "CDS") | (gff_df["type"] == "exon")) & (gff_df["Parent"].isin(transcripts))].copy(deep=True)
     return exon_cds_df
 
+# Returns a dataframe containing transcript, exon + CDS + transcript features.
+def get_all_exon_cds_and_transcript_features(gff_df, transcripts=None):
+    if transcripts is None:
+        nongenes_df = gff_df[(gff_df["type"].isin(cds_types) | (gff_df["type"].isin(exon_types)) | (gff_df["type"].isin(transcript_types)))].copy(deep=True)
+    else:
+        nongenes_df = gff_df[(gff_df["type"].isin(cds_types) | (gff_df["type"].isin(exon_types)) | (gff_df["type"].isin(transcript_types))) & (gff_df["Parent"].isin(transcripts))].copy(deep=True)
+    return nongenes_df
+
 # This function takes a dataframe grouped by the "Parent" column and
 # returns a pandas Series with the exon/cds metrics below.
 # This function is being used by the transcripts_have_exons_and_valid_cds datacheck.
@@ -712,6 +720,12 @@ def counts_per_transcript(gff_df):
     pivot_counts_df["exons_max_coord"] = pivot_counts_df[["end_max_exon","start_max_exon"]].max(axis=1)
     pivot_counts_df["exons_min_coord"] = pivot_counts_df[["end_min_exon","start_min_exon"]].min(axis=1)
     return(pivot_counts_df)
+
+def counts_per_gene(gff_df):
+    not_genes_df = get_all_exon_cds_and_transcript_features(gff_df)
+    count_df=not_genes_df.groupby(['Parent_Gene','Parent','type']).aggregate(
+        {"type":"count","start":["min","max"], "end":["min","max"]}).unstack(fill_value=0).stack().reset_index()
+
 
 def dc_transcripts_parentage(gff_df, outprefix):
     """Transcripts should have genes as Parents.

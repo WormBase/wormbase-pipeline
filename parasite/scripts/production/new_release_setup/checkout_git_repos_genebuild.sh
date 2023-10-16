@@ -27,18 +27,19 @@ checkout_ensembl_branch(){
 
 checkout_ensembl_branch ensembl release/${GENEBUILD_ENSEMBL_VERSION}
 checkout_ensembl_branch ensembl-analysis ${ENSEMBL_ANALYSIS_BRANCH}
-checkout_ensembl_branch ensembl-hive version/2.5
-checkout_ensembl_branch ensembl-production release/${GENEBUILD_ENSEMBL_VERSION}
-checkout_ensembl_branch ensembl-killlist main
-checkout_ensembl_branch ensembl-io release/${GENEBUILD_ENSEMBL_VERSION}
-checkout_ensembl_branch ensembl-variation release/${GENEBUILD_ENSEMBL_VERSION}
-checkout_ensembl_branch ensembl-funcgen release/${GENEBUILD_ENSEMBL_VERSION}
-checkout_ensembl_branch ensembl-taxonomy main
-checkout_ensembl_branch ensembl-metadata release/${GENEBUILD_ENSEMBL_VERSION}
-checkout_ensembl_branch ensembl-datacheck release/${GENEBUILD_ENSEMBL_VERSION}
-checkout_ensembl_branch ensembl-orm release/${GENEBUILD_ENSEMBL_VERSION}
+checkout_ensembl_branch ensembl-anno main
 checkout_ensembl_branch ensembl-compara release/${COMPARA_ENSEMBL_VERSION}
+checkout_ensembl_branch ensembl-datacheck release/${GENEBUILD_ENSEMBL_VERSION}
+checkout_ensembl_branch ensembl-funcgen release/${GENEBUILD_ENSEMBL_VERSION}
 checkout_ensembl_branch ensembl-genes main
-
+checkout_ensembl_branch ensembl-genes-metadata main
+checkout_ensembl_branch ensembl-hive version/2.6
+checkout_ensembl_branch ensembl-io release/${GENEBUILD_ENSEMBL_VERSION}
+checkout_ensembl_branch ensembl-killlist main
+checkout_ensembl_branch ensembl-metadata release/${GENEBUILD_ENSEMBL_VERSION}
+checkout_ensembl_branch ensembl-orm release/${GENEBUILD_ENSEMBL_VERSION}
+checkout_ensembl_branch ensembl-production release/${GENEBUILD_ENSEMBL_VERSION}
+checkout_ensembl_branch ensembl-variation release/${GENEBUILD_ENSEMBL_VERSION}
+checkout_ensembl_branch ensembl-taxonomy main
 
 
