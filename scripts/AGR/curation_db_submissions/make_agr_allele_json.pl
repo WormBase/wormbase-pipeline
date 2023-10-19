@@ -13,9 +13,24 @@ use Wormbase;
 use Modules::AGR;
 
 my ($debug, $test, $verbose, $store, $wormbase, $curation_test, $limit, $schema);
-my ($outfile, $acedbpath, $ws_version, $out_fh, $bgi_json,$disease_file);
+my ($outdir, $acedbpath, $ws_version, $bgi_json,$disease_file);
 
-const my $LINKML_SCHEMA => 'v1.7.3';
+const my $LINKML_SCHEMA => 'v1.10.0';
+# TODO: check SO term mappings with Stavros
+const my %TERM2SO => (
+    'Insertion'          => 'SO:0000667', # changed insertion_site to insertion
+    'Deletion'           => 'SO:0000159',
+    'Point_mutation'     => 'SO:1000008',
+    'Substitution'       => 'SO:1000002', # to hack our wrong SO-terms in => DELIN
+    'Delins'             => 'SO:1000032', # to hack our wrong SO-terms in => DELIN
+    'SNP'                => 'SO:0000694',
+    'Tandem_duplication' => 'SO:1000173',
+    'Natural_variant'    => 'SO:0001147',
+    'RFLP'               => 'SO:0000412',
+    'Engineered_allele'  => 'SO:0000783',
+    'Transposon_insertion' => 'SO:0001054',
+    'Allele'             => 'SO:0001023'
+);
 
 GetOptions (
     'debug=s'       => \$debug,
@@ -23,7 +38,7 @@ GetOptions (
     'verbose'       => \$verbose,
     'store:s'       => \$store,
     'database:s'    => \$acedbpath,
-    'outfile:s'     => \$outfile,
+    'outdir:s'     => \$outdir,
     'curationtest' => \$curation_test,  
     'wsversion=s'   => \$ws_version,
     'limit:i'       => \$limit
@@ -37,6 +52,7 @@ if ( $store ) {
       );
 }
 
+
 my $tace = $wormbase->tace;
 my $date = AGR::get_rfc_date();
 my $alt_date = join("/", $date =~ /^(\d{4})(\d{2})(\d{2})/);
@@ -44,29 +60,43 @@ my $full_name = $wormbase->full_name;
 
 $acedbpath  ||= $wormbase->autoace;
 $ws_version ||= $wormbase->get_wormbase_version_name;
-if (!$outfile) {
-    if ($curation_test) {
-	$outfile = "./wormbase.alleles.${ws_version}.test_data.json";
-    } else {
-	$outfile = "./wormbase.alleles.${ws_version}.${LINKML_SCHEMA}.json";
-    }
+if (!$outdir) {
+    $outdir = '.';
 }
+my $suffix = $curation_test ? '.test_data.json' : '.json';
+my $allele_outfile = $outdir . "/wormbase.alleles.${ws_version}.${LINKML_SCHEMA}" . $suffix;
+my $assoc_outfile = $outdir . "/wormbase.allele_associations.${ws_version}.${LINKML_SCHEMA}" . $suffix;
+my $gene_assoc_outfile = $outdir . "/wormbase.allele_associations.${ws_version}.${LINKML_SCHEMA}" . $suffix . '.tmp';
+my $variant_outfile = $outdir . "/wormbase.variants.${ws_version}.${LINKML_SCHEMA}" . $suffix . '_tmp';
 
 my $db = Ace->connect(-path => $acedbpath, -program => $tace) or die("Connection failure: ". Ace->error);
 
-my $out_fh  = file($outfile)->openw;
-$out_fh->print("{\n   \"linkml_version\" : \"" . $LINKML_SCHEMA . "\",\n   \"allele_ingest_set\" : [");
+my $allele_out_fh  = file($allele_outfile)->openw;
+my $assoc_out_fh = file($assoc_outfile)->openw;
+my $gene_assoc_out_fh = file($gene_assoc_outfile)->openw;
+my $variant_out_fh = file($variant_outfile)->openw;
+$allele_out_fh->print("{\n   \"linkml_version\" : \"" . $LINKML_SCHEMA . "\",\n    \"alliance_member_release_version\" : \"" . $ws_version . "\"\n    \"allele_ingest_set\" : [");
+$assoc_out_fh->print("{\n   \"linkml_version\" : \"" . $LINKML_SCHEMA . "\",\n    \"alliance_member_release_version\" : \"" . $ws_version . "\"\n");
+$gene_assoc_out_fh->print("    \"allele_gene_association_ingest_set\" : [");
+$variant_out_fh->print("{\n    \"linkml_version\" : \"" . $LINKML_SCHEMA . "\",\n    \"alliance_member_release_version\" : \"" . $ws_version . "\"\n    \"variant_ingest_set\" : [");
 
-my $alleles = process_variations($db, $out_fh);
+my $gene_assoc_count = 0;
+my $alleles = process_variations();
 
-$alleles = process_transgenes($db, $out_fh);
-$out_fh->print("\n   ]\n}");
+$alleles = process_transgenes();
+$allele_out_fh->print("\n   ]\n}");
+$variant_out_fh->print("\n   ]\n}");
+$gene_assoc_out_fh->print("\n    ]");
 
+my $gene_assoc_in_fh = file($gene_assoc_outfile)->openr;
+while (my $line = $gene_assoc_in_fh->getline()) {
+    chomp $line;
+    $assoc_out_fh->print($line . "\n");
+}
+$assoc_out_fh->print("\n}\n");
 $db->close;
 
 sub process_variations {
-    my ($db, $out_fh) = @_;
-
     my @alleles = $db->fetch(-query => "Find Variation WHERE Species = \"Caenorhabditis elegans\"");
     
     my $var_count = 0;
@@ -86,7 +116,7 @@ sub process_variations {
 	    internal => JSON::false,
 	    obsolete => JSON::false
 	};
-	
+
 	my $data_provider_dto_json = {
 	    source_organization_abbreviation => 'WB',
 	    cross_reference_dto => $dp_xref_dto_json,
@@ -94,9 +124,17 @@ sub process_variations {
 	    obsolete => JSON::false
 	}; 
 
+	if ($obj->Gene) {
+	    for my $gene($obj->Gene) {
+		$assoc_out_fh->print(",") if $gene_assoc_count > 0;
+		$assoc_out_fh->print("{\"allele_curie\": \"WB:" . $obj->name . "\", \"relation_name\": \"is_allele_of\", \"gene_curie\": \"WB:" . $gene->name . "\"}");
+		$gene_assoc_count++;
+	    }
+	}
+
 	my $is_obsolete = ($obj->Status && $obj->Status->name eq 'Dead') ? JSON::true : JSON::false;
 	    
-	my $json_obj = {
+	my $allele_obj = {
 	    curie                      => "WB:" . $obj->name,
 	    allele_symbol_dto          => get_symbol_dto($obj),
 	    taxon_curie                => "NCBITaxon:" . $obj->Species->NCBITaxonomyID->name,
@@ -106,6 +144,21 @@ sub process_variations {
 	    updated_by_curie           => 'WB:curator',
 	    data_provider_dto          => $data_provider_dto_json
 	};
+
+	my $var_obj = {
+	    curie                      => "WBVar:" . $obj->name,
+	    taxon_curie                => "NCBITaxon:" . $obj->Species->NCBITaxonomyID->name,
+	    internal                   => JSON::false,
+	    obsbolete                  => $is_obsolete,
+	    created_by_curie           => 'WB:curator',
+	    updated_by_curie           => 'WB:curator',
+	    data_provider_dto          => $data_provider_dto_json
+	};
+	my ($variant_type, $source_general_consequence) = get_variant_type($obj);
+	$var_obj->{variant_type_curie} = $variant_type if defined $variant_type;
+	$var_obj->{source_general_consequence} = $source_general_consequence if defined $source_general_consequence;
+	$var_obj->{variant_status_name} = 'public' unless $is_obsolete;
+	
 	if ($obj->Method) {
 	    my $collection = $obj->Method->name;
 	    unless ($collection eq 'Allele'
@@ -123,12 +176,12 @@ sub process_variations {
 		){
 		$collection =~ s/ /_/g;
 		$collection .= '_project' if $collection eq 'Million_mutation';
-		$json_obj->{in_collection_name} = $collection;
+		$allele_obj->{in_collection_name} = $collection;
 	    }
 	}
 
 	my $mutation_types = get_mutation_types($obj);
-	$json_obj->{allele_mutation_type_dtos} = $mutation_types if scalar @$mutation_types > 0;
+	$allele_obj->{allele_mutation_type_dtos} = $mutation_types if scalar @$mutation_types > 0;
 
 	my @synonym_dtos;
 	if ($obj->Other_name) {
@@ -144,7 +197,7 @@ sub process_variations {
 		push @synonym_dtos, $synonym_dto;
 	    }
 	}
-	$json_obj->{allele_synonym_dtos} = \@synonym_dtos if @synonym_dtos;
+	$allele_obj->{allele_synonym_dtos} = \@synonym_dtos if @synonym_dtos;
 	
 	my @secondary_ids;
 	if ($obj->Acquires_merge) {
@@ -157,11 +210,11 @@ sub process_variations {
 		push @secondary_ids, $sid_json;
 	    }
 	}
-	$json_obj->{secondary_id_dtos} = \@secondary_ids if @secondary_ids;
+	$allele_obj->{secondary_id_dtos} = \@secondary_ids if @secondary_ids;
     
 
 	if ($obj->Reference) {
-	    $json_obj->{reference_curies} = get_papers($obj);
+	    $allele_obj->{reference_curies} = get_papers($obj);
 	}
 
 	my @note_dtos;
@@ -283,21 +336,28 @@ sub process_variations {
 	    }
 	}
 
-	$json_obj->{note_dtos} = \@note_dtos if @note_dtos;
+	# TODO: work out which notes belong on variants and which on alleles
+	$allele_obj->{note_dtos} = \@note_dtos if @note_dtos;
+	$var_obj->{note_dto} = \@note_dtos if @note_dtos;
 
 	# Stick some random data in for curation DB test files
 	if ($curation_test) {
 	    my @inheritance_modes = qw(dominant recessive semi-dominant unknown);
-	    $json_obj->{is_extinct} = $var_count % 2 == 0 ? JSON::true : JSON::false;
-	    $json_obj->{date_updated} = get_random_datetime(10);
-	    $json_obj->{date_created} = get_random_datetime(1);
+	    $allele_obj->{is_extinct} = $var_count % 2 == 0 ? JSON::true : JSON::false;
+	    $allele_obj->{date_updated} = get_random_datetime(10);
+	    $allele_obj->{date_created} = get_random_datetime(1);
 	}
 
-	my $json = JSON->new;
-	my $string = $json->allow_nonref->convert_blessed->canonical->pretty->encode($json_obj);
-	$out_fh->print(',') unless $var_count == 1;
-	$out_fh->print("\n" . '      ' . $string);
+	my $allele_json = JSON->new;
+	my $allele_string = $allele_json->allow_nonref->convert_blessed->canonical->pretty->encode($allele_obj);
+	$allele_out_fh->print(',') unless $var_count == 1;
+	$allele_out_fh->print("\n" . '      ' . $allele_string);
 	
+	my $variant_json = JSON->new;
+	my $variant_string = $allele_json->allow_nonref->convert_blessed->canonical->pretty->encode($allele_obj);
+	$variant_out_fh->print(',') unless $var_count == 1;
+	$variant_out_fh->print("\n" . '      ' . $variant_string);
+
 	last if $limit && $limit <= ($var_count * 2);
     }
 
@@ -305,9 +365,6 @@ sub process_variations {
 }
 
 sub process_transgenes {
-    my ($db, $out_fh) = @_;
-
-
     my @transgenes = $db->fetch(-query => 'find Transgene WHERE Species = "Caenorhabditis elegans"');
 
     my $var_count = 0;
@@ -335,7 +392,7 @@ sub process_transgenes {
 	    obsolete => JSON::false
 	}; 
 	
-	my $json_obj = {
+	my $allele_obj = {
 	    curie         => "WB:" . $obj->name, 
 	    allele_symbol_dto => get_symbol_dto($obj),
 	    taxon_curie   => "NCBITaxon:" . $obj->Species->NCBITaxonomyID->name,
@@ -356,10 +413,10 @@ sub process_transgenes {
 		push @synonym_dtos, $synonym_dto;
 	    }
 	}
-	$json_obj->{allele_synonym_dtos} = \@synonym_dtos if @synonym_dtos;
+	$allele_obj->{allele_synonym_dtos} = \@synonym_dtos if @synonym_dtos;
 
 	if ($obj->Reference) {
-	    $json_obj->{reference_curies} = get_papers($obj);
+	    $allele_obj->{reference_curies} = get_papers($obj);
 	}
 	
 	my @note_dtos;
@@ -426,23 +483,68 @@ sub process_transgenes {
 	    }
 	}
       	
-	$json_obj->{note_dtos} = \@note_dtos if @note_dtos;
+	$allele_obj->{note_dtos} = \@note_dtos if @note_dtos;
 	
 	# Stick some random data in for curation DB test files
 	if ($curation_test) {
-	    $json_obj->{is_extinct} = $var_count % 2 == 0 ? JSON::true : JSON::false;
-	    $json_obj->{date_updated} = get_random_datetime(10);
-	    $json_obj->{date_created} = get_random_datetime(1);
+	    $allele_obj->{is_extinct} = $var_count % 2 == 0 ? JSON::true : JSON::false;
+	    $allele_obj->{date_updated} = get_random_datetime(10);
+	    $allele_obj->{date_created} = get_random_datetime(1);
 	}
 	
 	my $json = JSON->new;
-	my $string = $json->allow_nonref->canonical->pretty->encode($json_obj);
-	$out_fh->print(",\n" . '      ' . $string);
+	my $string = $json->allow_nonref->canonical->pretty->encode($allele_obj);
+	$allele_out_fh->print(",\n" . '      ' . $string);
 	
 	last if $limit && $limit <= ($var_count * 2);
     }
 
     return;
+}
+
+sub get_variant_type {
+    my $obj = shift;
+
+    my ($variant_type, $source_general_consequence);
+    if ($obj->Engineered_allele) {
+	$variant_type = $TERM2SO{'Engineered_allele'};
+    } elsif ($obj->Allele) {
+	$variant_type = $TERM2SO{'Allele'};
+    } elsif ($obj->SNP || $obj->Confirmed_SNP || $obj->Predicted_SNP) {
+	$variant_type = $TERM2SO{'SNP'};
+    } elsif ($obj->RFLP) {
+	$variant_type = $TERM2SO{'RFLP'};
+    } elsif ($obj->Transposon_insertion) {
+	$variant_type = $TERM2SO{'Transposon_insertion'};
+    } elsif ($obj->Natural_variant) {
+	$variant_type = $TERM2SO{'Natural_variant'};
+    }
+
+    if ($obj->Substitution) {
+	my @subs = $obj->Substitution->row;
+	if (scalar @subs >= 2 && length($subs[0]) == 1 && length($subs[1]) == 1) {
+	    if ($obj->Natural_variant) {
+		$source_general_consequence = $TERM2SO{'SNP'};
+	    } else {
+		$source_general_consequence = $TERM2SO{'Point_mutation'};
+	    }
+	} else {
+	    $source_general_consequence = $TERM2SO{'Delins'};
+	}
+    } elsif ($obj->Insertion) {
+	$source_general_consequence = $TERM2SO{'Insertion'};
+    } elsif ($obj->Deletion) {
+	$source_general_consequence = $TERM2SO{'Deletion'};
+    } elsif ($obj->Tandem_duplication) {
+	$source_general_consequence = $TERM2SO{'Tandem_duplication'};
+    }
+
+    if (!defined $variant_type) {
+	$variant_type = $source_general_consequence;
+	$source_general_consequence = undef();
+    }
+
+    return ($variant_type, $source_general_consequence);
 }
 
 
@@ -513,7 +615,7 @@ sub get_mutation_types {
     my @mutation_types;
     if ($obj->Substitution) {
 	my $substitution = {
-	   mutation_type_curies => ["SO:1000002"],
+	   mutation_type_curies => [$TERM2SO{'Substitution'}],
 	   internal => JSON::false
 	};
 	if ($obj->Substitution->right) {
@@ -532,12 +634,12 @@ sub get_mutation_types {
 
     if ($obj->Insertion) {
 	my $insertion = {
-	    mutation_type_curies => ["SO:0000667"],
+	    mutation_type_curies => [$TERM2SO{'Insertion'}],
 	    internal => JSON::false
 	};
 	if ($obj->Insertion->right) {
 	    my @insertion_paper_evidence;
-	    for my $evi ($obj->Insertion->right->col) {
+	    for my $evi ($obj->Insertion->col) {
 		next unless $evi->name eq 'Paper_evidence';
 		for my $paper ($evi->col) {
 		    my $paper_id = get_paper($paper);
@@ -551,12 +653,12 @@ sub get_mutation_types {
 
     if ($obj->Deletion) {
 	my $deletion = {
-	    mutation_type_curies => ["SO:0000159"],
+	    mutation_type_curies => [$TERM2SO{'Deletion'}],
 	    internal => JSON::false
 	};
 	if ($obj->Deletion->right) {
 	    my @deletion_paper_evidence;
-	    for my $evi ($obj->Deletion->right->col) {
+	    for my $evi ($obj->Deletion->col) {
 		next unless $evi->name eq 'Paper_evidence';
 		for my $paper ($evi->col) {
 		    my $paper_id = get_paper($paper);
@@ -570,12 +672,12 @@ sub get_mutation_types {
 
     if ($obj->Tandem_duplication) {
 	my $duplication = {
-	    mutation_type_curies => ["SO:1000173"],
+	    mutation_type_curies => [$TERM2SO{'Tandem_duplication'}],
 	    internal => JSON::false
 	};
 	if ($obj->Tandem_duplication->right) {
 	    my @duplication_paper_evidence;
-	    for my $evi ($obj->Tandem_duplication->right->col) {
+	    for my $evi ($obj->Tandem_duplication->col) {
 		next unless $evi->name eq 'Paper_evidence';
 		for my $paper ($evi->col) {
 		    my $paper_id = get_paper($paper);

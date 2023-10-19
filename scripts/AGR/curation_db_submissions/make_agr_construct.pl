@@ -13,9 +13,9 @@ use Wormbase;
 use Modules::AGR;
 
 my ($debug, $test, $verbose, $store, $wormbase, $curation_test, $limit, $schema);
-my ($outfile, $acedbpath, $ws_version, $out_fh, $bgi_json,$disease_file);
+my ($outdir, $acedbpath, $ws_version, $out_fh, $bgi_json,$disease_file);
 
-const my $LINKML_SCHEMA => 'v1.9.0';
+const my $LINKML_SCHEMA => 'v1.11.0';
 
 GetOptions (
     'debug=s'       => \$debug,
@@ -23,18 +23,18 @@ GetOptions (
     'verbose'       => \$verbose,
     'store:s'       => \$store,
     'database:s'    => \$acedbpath,
-    'outfile:s'     => \$outfile,
+    'outdir:s'     => \$outdir,
     'curationtest' => \$curation_test,  
     'wsversion=s'   => \$ws_version,
     'limit:i'       => \$limit
-)||die();
+    )||die();
 
 if ( $store ) {
-  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+    $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
-  $wormbase = Wormbase->new( -debug   => $debug,
-                             -test    => $test,
-      );
+    $wormbase = Wormbase->new( -debug   => $debug,
+			       -test    => $test,
+	);
 }
 
 my $tace = $wormbase->tace;
@@ -44,17 +44,22 @@ my $full_name = $wormbase->full_name;
 
 $acedbpath  ||= $wormbase->autoace;
 $ws_version ||= $wormbase->get_wormbase_version_name;
-if (!$outfile) {
-    if ($curation_test) {
-	$outfile = "./wormbase.constructs.${ws_version}.test_data.json";
-    } else {
-	$outfile = "./wormbase.constructs.${ws_version}.${LINKML_SCHEMA}.json";
-    }
+my ($outfile, $assoc_outfile);
+if (!$outdir) {
+    $outdir = '.';
+}
+if ($curation_test) {
+    $outfile = $outdir . "/wormbase.constructs.${ws_version}.${LINKML_SCHEMA}.test_data.json";
+    $assoc_outfile = $outdir . "/wormbase.construct_associations.${ws_version}.${LINKML_SCHEMA}.test_data.json";
+} else {
+    $outfile = $outdir . "/wormbase.constructs.${ws_version}.${LINKML_SCHEMA}.json";
+    $assoc_outfile = $outdir . "/wormbase.construct_associations.${ws_version}.${LINKML_SCHEMA}.json";
 }
 
 my $db = Ace->connect(-path => $acedbpath, -program => $tace) or die("Connection failure: ". Ace->error);
 
-my $out_fh  = file($outfile)->openw;
+my $out_fh = file($outfile)->openw;
+my $assoc_out_fh = file ($assoc_outfile)->openw;
 
 process_constructs($db, $out_fh);
 
@@ -62,12 +67,17 @@ $db->close;
 
 sub process_constructs {
     my ($db, $out_fh) = @_;
-
-    my @constructs = $db->fetch(-query => "find Construct WHERE (Public_name OR Summary OR Driven_by_gene OR Gene)");
-
-    my $all_annots = {linkml_version => $LINKML_SCHEMA};
+    
+    my @constructs = $db->fetch(-query => "find Construct");
+    
+    my $all_annots = {linkml_version => $LINKML_SCHEMA, alliance_member_release_version => $ws_version};
     $all_annots->{construct_ingest_set => []};
+    my $cnst_count = 0;
+    my $associations = {linkml_version => $LINKML_SCHEMA, alliance_member_release_version => $ws_version};
+    $associations->{construct_genomic_entity_association_ingest_set => []};
+    
     for my $obj (@constructs) {
+	$cnst_count++;
 	next unless $obj->isObject();
 	my $dp_xref_dto_json = {
 	    referenced_curie => 'WB:' . $obj->name,
@@ -84,11 +94,10 @@ sub process_constructs {
 	    internal => JSON::false,
 	    obsolete => JSON::false
 	}; 
-
-	    
+	
 	my $json_obj = {
 	    mod_entity_id              => "WB:" . $obj->name,
-	    name                       => $obj->Public_name ? "${\$obj->Public_name}" : "$obj",
+	    construct_symbol_dto       => get_symbol_dto($obj),
 	    internal                   => JSON::false,
 	    obsolete                   => JSON::false,
 	    created_by_curie           => 'WB:curator',
@@ -96,39 +105,155 @@ sub process_constructs {
 	    data_provider_dto          => $data_provider_dto_json
 	};
 
+	my $synonyms = get_synonym_dtos($obj);
+	if (@$synonyms) {
+	    $json_obj->{construct_synonym_dtos} = $synonyms;
+	}
+	
 	if ($obj->Reference) {
 	    $json_obj->{reference_curies} = get_papers($obj);
 	}
-
-	if ($obj->Gene || $obj->Driven_by_gene) {
+	
+	if ($obj->Gene || $obj->Driven_by_gene || $obj->Sequence_feature) {
 	    $json_obj->{construct_component_dtos}=[];
-	    my $driven_by_gene_components = get_components($obj->Driven_by_gene) if $obj->Driven_by_gene;
-	    my $gene_components = get_components($obj->Gene) if $obj->Gene;
-	    push @{$json_obj->{construct_component_dtos}}, @$gene_components if $gene_components;
-	    push @{$json_obj->{construct_component_dtos}}, @$driven_by_gene_components if $driven_by_gene_components;
+	    my $note = $obj->Summary ? $obj->Summary->name : $json_obj->{name} . ' test note';
+	    if ($obj->Driven_by_gene) {
+		for my $gene ($obj->Driven_by_gene) {
+		    push @{$associations->{construct_genomic_entity_association_ingest_set}}, get_gene_component('is_regulated_by (RO:0002334)', $gene, $note, $obj);
+		}
+	    }
+	    if ($obj->Gene) {
+		for my $gene ($obj->Gene) {
+		    push @{$associations->{construct_genomic_entity_association_ingest_set}}, get_gene_component('expresses (RO:0002292)', $gene, $note, $obj);
+		}
+	    }
+	    if ($obj->UTR_3) {
+		for my $gene ($obj->UTR_3) {
+		    push @{$associations->{construct_genomic_entity_association_ingest_set}}, get_gene_component('targets (RO:0002436)', $gene, $note, $obj); # what should this relationship actually be?
+		}
+	    }
+	    if ($obj->Sequence_feature) {
+		for my $feature ($obj->Sequence_feature) {
+		    push @{$json_obj->{construct_component_dtos}}, get_feature_component($feature, $note);
+		}
+	    }
 	}
 	
 	if ($curation_test) {
-	    $json_obj->{taxon_curie} = "NCBITaxon:6239";
+	    $json_obj->{construct_full_name_dto} = get_full_name_dto($obj);
 	    $json_obj->{date_updated} = get_random_datetime(10);
-	    $json_obj->{date_created} = get_random_datetime(1);  
+	    $json_obj->{date_created} = get_random_datetime(1);
+	    $json_obj->{secondary_identifiers} = [$obj->name . '_secondary_test_two', $obj->name . '_secondary_test_one'];
 	} 
 	push @{$all_annots->{construct_ingest_set}}, $json_obj;
     }	
-
-    my $json_obj = JSON->new;
-    my $string = $json_obj->allow_nonref->canonical->pretty->encode($all_annots);
+    
+    my $json = JSON->new;
+    $json->allow_blessed(1);
+    my $string = $json->allow_nonref->canonical->pretty->encode($all_annots);
     $out_fh->print($string);
     
+    my $assoc_json = JSON->new;
+    $assoc_json->allow_blessed(1);
+    my $assoc_string = $json->allow_nonref->canonical->pretty->encode($associations);
+    $assoc_out_fh->print($assoc_string);
     
     return;
 }
 
+sub get_symbol_dto {
+    my $obj = shift;
+
+    my $symbol_dto;
+    if ($obj->Public_name) {
+	$symbol_dto = {
+	    display_text       => $obj->Public_name->name,
+	    format_text        => $obj->Public_name->name,
+	    name_type_name     => 'nomenclature_symbol',
+	    internal      => JSON::false
+	};
+    } else {
+	$symbol_dto = {
+	    display_text       => $obj->name,
+	    format_text        => $obj->name,
+	    name_type_name     => 'systematic_name',
+	    internal      => JSON::false
+	};
+    }
+    if ($curation_test) {
+	if ($obj->Reference) {
+	    $symbol_dto->{evidence_curies} = get_papers($obj);
+	}
+	$symbol_dto->{synonym_url} = "http://symboltest.org/" . $obj->name;
+	$symbol_dto->{synonym_scope_name} = "exact";
+    }
+    
+
+    return $symbol_dto;
+}
+
+sub get_synonym_dtos {
+    my $obj = shift;
+    my @synonym_dtos;
+    if ($obj->Summary) {
+	my $synonym_dto = {
+	    display_text => $obj->Summary->name,
+	    format_text => $obj->Summary->name,
+	    name_type_name => 'unspecified',
+	    internal => JSON::false
+	};
+	my @evidence;
+	for my $evi ($obj->Summary->col) {
+	    next unless $evi->name eq 'Paper_evidence';
+	    for my $paper ($evi->col) {
+		my $paper_id = get_paper($paper);
+		push @evidence, $paper_id if defined $paper_id;
+	    }
+	}
+	if ($curation_test) {
+	    $synonym_dto->{synonym_url} = "http://synonymtest.org/" . $obj->name;
+	    $synonym_dto->{synonym_scope_name} = "broad";
+	}
+	$synonym_dto->{evidence_curies} if @evidence > 0;
+	push @synonym_dtos, $synonym_dto;
+    }
+    if ($obj->Other_name) {
+	for my $on ($obj->Other_name) {
+	    my $synonym_dto = {
+		display_text => $on->name,
+		format_text => $on->name,
+		name_type_name => 'unspecified'
+	    };
+	    push @synonym_dtos, $synonym_dto;
+	}
+    }
+		    
+    return \@synonym_dtos;
+}
+
+sub get_full_name_dto {
+    my $obj = shift;
+    my $name = $obj->Public_name ? $obj->Public_name : $obj->name;
+    my $fn_dto = {
+	display_text  => $name . ' full name test',
+	format_text  => $name . ' full name test',
+	name_type_name => 'full_name',
+	internal => JSON::true,
+	synonym_scope_name => 'broad',
+	synonym_url => 'http://fullnametest.org/' . $obj->name
+    };
+    
+    if ($obj->Reference) {
+	$fn_dto->{evidence_curies} = get_papers($obj);
+    }
+
+    return $fn_dto;
+}
 
 
 sub get_papers {
-    my $obj = shift;
-
+    my ($obj) = @_;
+    
     my @references;
     for my $ref ($obj->Reference) {
 	next unless defined $ref;
@@ -136,24 +261,24 @@ sub get_papers {
 	next unless defined $publication_id;
 	push @references, $publication_id;
     }
-
+    
     return \@references;
 }
 
 sub get_paper {
     my $ref = shift;
-
+    
     if (!$ref->Status) {
 	return;
     }
-
+    
     my $level = 1;
     while ($ref->Merged_into && $level < 6) {
 	$level++;
 	$ref = $ref->Merged_into;
     }
     return if $ref->Status->name eq 'Invalid';
-
+    
     my $pmid;
     for my $db ($ref->Database) {
 	if ($db->name eq 'MEDLINE') {
@@ -169,7 +294,7 @@ sub get_paper {
     if ($publication_id eq 'WB:WBPaper000042571') {
 	$publication_id = 'WB:WBPaper00042571';
     }
-
+    
     return $publication_id;
 }
 
@@ -179,7 +304,7 @@ sub get_random_datetime {
     my $year = int(rand(10)) + $add;
     my $month = int(rand(11)) + 1;
     my $day = int(rand(27)) + 1;
-
+    
     my $year_string = $year > 9 ? $year : '0' . $year;
     my $month_string = $month > 9 ? $month : '0' . $month;
     my $day_string = $day > 9 ? $day : '0' . $day;
@@ -187,41 +312,56 @@ sub get_random_datetime {
     return '20' . $year_string . '-' . $month_string . '-' . $day_string . 'T00:00:00+00:00';
 }
 
-sub get_components {
-    my $obj = shift;
+sub get_feature_component {
+    my ($feature, $note) = @_;
 
-    my @components;
-    for my $g($obj) {
-	my $component_json = {
-	    component_symbol => $g->Public_name->name
-	};
+    my $component_json = {
+	relation_name => 'expresses (RO:0002292)',
+	component_symbol => $feature->Public_name ? $feature->Public_name->name : $feature->name,
+	internal => JSON::false,
+	obsolete => JSON::false
+    };
 
-	my @component_paper_evidence;
-	for my $evi ($g->col) {
-	    next unless $evi->name eq 'Paper_evidence';
-	    for my $paper ($evi->col) {
-		my $paper_id = get_paper($paper);
-		push @component_paper_evidence, $paper_id if defined $paper_id;
-	    }
-	}
-	$component_json->{evidence_curies} = \@component_paper_evidence if @component_paper_evidence > 0;
-	
-	my @note_dtos;
-	my $cmp_note_json = {
-	    free_text => $g->Public_name->name . ' test note',
-	    note_type_name => 'construct_component_note',
-	    internal => JSON::false,
-	    obsolete => JSON::false
-	};
-	push @note_dtos, $cmp_note_json;
-	$component_json->{note_dtos} = \@note_dtos if $curation_test;
-	$component_json->{taxon_curie} = "NCBITaxon:6239" if $curation_test;
-	$component_json->{taxon_text} = "Caenorhabditis elegans" if $curation_test;
-	$component_json->{evidence_curies} = ["WB:WBPaper00042571"] if $curation_test;
-
-	push @components, $component_json;
-    }
-    return \@components;
+    return $component_json;
 }
 
+sub get_gene_component {
+    my ($relation, $gene, $note, $obj) = @_;
     
+    my $component_json = {
+	construct_identifier => 'WB:' . $obj->name,
+	genomic_entity_relation_name => $relation,
+	genomic_entity_curie => 'WB:' . $gene->name,
+	internal                   => JSON::false,
+	obsolete                   => JSON::false,
+	created_by_curie           => 'WB:curator',
+	updated_by_curie           => 'WB:curator',
+    };
+	
+    my @component_paper_evidence;
+    for my $evi ($gene->col) {
+	next unless $evi->name eq 'Paper_evidence';
+	for my $paper ($evi->col) {
+	    my $paper_id = get_paper($paper);
+	    push @component_paper_evidence, $paper_id if defined $paper_id;
+	}
+    }
+    $component_json->{evidence_curies} = @component_paper_evidence > 0 ? \@component_paper_evidence : ["WB:WBPaper00042571"];
+	
+    my @note_dtos;
+    my $cmp_note_dto = {
+	free_text => $note,
+	note_type_name => 'comment',
+	internal => JSON::false,
+	obsolete => JSON::false
+    };
+    if ($curation_test && $obj->Reference) {
+	$cmp_note_dto->{evidence_curies} = get_papers($obj);
+    }
+    push @note_dtos, $cmp_note_dto;
+    $component_json->{note_dtos} = \@note_dtos if $curation_test;
+   	
+    return $component_json;
+}
+
+
