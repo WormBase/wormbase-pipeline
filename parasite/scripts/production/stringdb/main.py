@@ -10,7 +10,7 @@ PARASITE_SCRATCH = os.environ["PARASITE_SCRATCH"]
 # set variable for intermediate directory 
 int_folder = 'stringdb'
 # create paths
-genetxt = os.path.join(PARASITE_SCRATCH, int_folder, 'random_100k_mart.txt')
+genetxt = os.path.join(PARASITE_SCRATCH, int_folder, 'mart_export.txt')
 stringtxt = os.path.join(PARASITE_SCRATCH, int_folder, 'filtered_protein.txt')
 output_path = os.path.join(PARASITE_SCRATCH, int_folder, 'outputGenes.txt')
 
