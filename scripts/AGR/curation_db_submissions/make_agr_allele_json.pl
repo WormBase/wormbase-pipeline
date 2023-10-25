@@ -67,7 +67,7 @@ my $suffix = $curation_test ? '.test_data.json' : '.json';
 my $allele_outfile = $outdir . "/wormbase.alleles.${ws_version}.${LINKML_SCHEMA}" . $suffix;
 my $assoc_outfile = $outdir . "/wormbase.allele_associations.${ws_version}.${LINKML_SCHEMA}" . $suffix;
 my $gene_assoc_outfile = $outdir . "/wormbase.allele_associations.${ws_version}.${LINKML_SCHEMA}" . $suffix . '.tmp';
-my $variant_outfile = $outdir . "/wormbase.variants.${ws_version}.${LINKML_SCHEMA}" . $suffix . '_tmp';
+my $variant_outfile = $outdir . "/wormbase.variants.${ws_version}.${LINKML_SCHEMA}" . $suffix;
 
 my $db = Ace->connect(-path => $acedbpath, -program => $tace) or die("Connection failure: ". Ace->error);
 
@@ -95,6 +95,7 @@ while (my $line = $gene_assoc_in_fh->getline()) {
 }
 $assoc_out_fh->print("\n}\n");
 $db->close;
+system("rm $gene_assoc_outfile");
 
 sub process_variations {
     my @alleles = $db->fetch(-query => "Find Variation WHERE Species = \"Caenorhabditis elegans\"");
@@ -354,7 +355,7 @@ sub process_variations {
 	$allele_out_fh->print("\n" . '      ' . $allele_string);
 	
 	my $variant_json = JSON->new;
-	my $variant_string = $allele_json->allow_nonref->convert_blessed->canonical->pretty->encode($allele_obj);
+	my $variant_string = $variant_json->allow_nonref->convert_blessed->canonical->pretty->encode($var_obj);
 	$variant_out_fh->print(',') unless $var_count == 1;
 	$variant_out_fh->print("\n" . '      ' . $variant_string);
 
