@@ -164,7 +164,7 @@ $uniprot_dbh = &get_uniprot_dbh($uniprot_cred);
 # dbid = 58 => ENA protein_id on CON records
 # dbid = 24 => Uniprot isoform id
 $uniprot_sql = 'SELECT e.UPI, e.AC, e.DBID '
-    . 'FROM uniparc.xref@uapro e '
+    . 'FROM uniparc.xref@uatst e '
     . "WHERE taxid = $org_id "
     . "AND  deleted = 'N' "
     . 'AND  dbid in (1,24, 58)';
