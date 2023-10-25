@@ -207,7 +207,7 @@ while( my $obj = $it->next) {
     my ($genotype) = $obj->Genotype;
     my (@asserted_genes) = map { 'WB:'.$_->name } $obj->Asserted_gene;
     if ($obj->Asserted_human_gene) {
-	my @asserted_human_genes = map { 'WB:'.$_->name } $obj->Human_asserted_gene;
+	my @asserted_human_genes = map { 'WB:'.$_->name } $obj->Asserted_human_gene;
 	push @asserted_genes, @asserted_human_genes;
     }
     if (@asserted_genes) {
@@ -253,7 +253,6 @@ while( my $obj = $it->next) {
     }
     
     my $assoc_type = $obj->Association_type->name;
-    $assoc_type = 'is_model_of' if $assoc_type !~ /model_of/ && ($obj_type eq 'strain' || $obj_type eq 'genotype');
     $assoc_type = 'is_implicated_in' if $obj_type eq 'allele';
     
     $annot->{disease_relation_name} = $assoc_type;
