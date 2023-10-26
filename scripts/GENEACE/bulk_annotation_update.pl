@@ -15,7 +15,7 @@ use Const::Fast;
 
 const my @ISOFORM_SUFFIXES => qw(a b c d e f g h); # need to expand if more than 8 isoforms
     
-my ($create_file, $change_file, $delete_file, $wb_gff_file, $gff_file, $out_file, $test, $log_file, $species, $debug, $verbose, $outdir, $database, $nameserver);
+my ($create_file, $change_file, $delete_file, $wb_gff_file, $gff_file, $out_file, $test, $log_file, $species, $debug, $database, $nameserver, $person);
 
 GetOptions(
     "create:s"   => \$create_file,
@@ -30,13 +30,11 @@ GetOptions(
     "log=s"      => \$log_file,
     "person=s"   => \$person,
     "debug:s"    => \$debug,
-    "out=s"      => \$outdir,
-    "nameserver" => \$nameserver,
-    "verbose"    => \$verbose
+    "nameserver" => \$nameserver
     ) or die ($@);
 
-$out_file = file($outdir . '/bulk_update.ace') unless defined $out_file;
-my $out_fh = file($out_file)->openr;
+$out_file = file('./bulk_update.ace') unless defined $out_file;
+my $out_fh = file($out_file)->openw;
 
 my $log = Log_files->make_log($log_file);
 my $wb = Wormbase->new(-species => $species, -debug => $debug, -test => $test);
@@ -52,12 +50,12 @@ if ($species eq 'elegans' || $species eq 'sratti' || $species eq 'tmuris') {
 my ($day, $mon, $yr)  = (localtime)[3,4,5];
 my $date = sprintf("%02d%02d%02d",$yr-100, $mon+1, $day);
 
-my $version = `grep "NAME WS" $rdatabase/wspec/database.wrm`;
+my $version = `grep "NAME WS" $database/wspec/database.wrm`;
 chomp($version);
 $version =~ s/.*WS//;
 $log->log_and_die("No version\n") unless $version =~ /^d+$/;
 
-my $wormpep_prefix = lc($wormbase->wormpep_prefix);
+my $wormpep_prefix = lc($wb->wormpep_prefix);
 
 my $new_gene_models = parse_gff($gff_file);
 my $wb_gene_models = parse_gff($wb_gff_file);
@@ -68,7 +66,14 @@ delete_genes() if defined $delete_file;
 
 my ($to_update, $to_merge, $to_split) = parse_mapping_file($change_file);
 
-split_genes() if scalar keys %to_split > 0;
+split_genes() if scalar keys %$to_split > 0;
+
+merge_genes() if scalar keys %$to_merge > 0;
+
+update_genes() if scalar keys %$to_update > 0;
+
+$log->mail;
+exit(0);
 
 sub create_genes {		      
     my $ids_to_create = parse_single_column_file($create_file);
@@ -97,7 +102,7 @@ sub create_gene {
     $out_fh->print("Version 1\n");
     $out_fh->print("Biotype \"$so_term\"\n");
     $out_fh->print("Sequence_name \"$seq_name\"\n");
-    $out_fh->print("Species \"${\$wormbase->full_name}\"\n");
+    $out_fh->print("Species \"${\$wb->full_name}\"\n");
     $out_fh->print("History Version_change 1 now $person Event $event\n");
     $out_fh->print("Split_from $split_from\n") if defined $split_from;
     $out_fh->print("Method Gene\n");
@@ -115,7 +120,7 @@ sub create_gene {
 	    $wb_cds_name = $seq_name . $ISOFORM_SUFFIXES[$ix];
 	}
 	create_transcript($non_wb_id, $external_transcript_id, $wb_transcript_name);
-	create_CDS($non_wb_id, $external_transcript_id, $wb_cds_name);
+	create_cds($non_wb_id, $external_transcript_id, $wb_cds_name);
     }
     return $wb_id;
 }
@@ -141,17 +146,17 @@ sub create_transcript {
     
     $out_fh->print("Transcript : \"$wb_transcript_name\"\n");
     $out_fh->print("Sequence $sequence\n");
-    $out_fh->print("Species \"${\$wormbase->full_name}\"\n");
+    $out_fh->print("Species \"${\$wb->full_name}\"\n");
     $out_fh->print("Method $method\n");
     $out_fh->print("Remark \"$remark\"\n");
     for my $ix(0 .. scalar @$exon_starts - 1) {
-	$out_fh->print("Source_exons $exon_starts[0] $exon_ends[0]\n");
+	$out_fh->print("Source_exons $exon_starts->[0] $exon_ends->[0]\n");
     }
     $out_fh->print("\nSequence : \"$sequence\"\n" );
     $out_fh->print("Transcript \"$wb_transcript_name\" $transcript_start $transcript_end\n\n");
 }
 
-sub create_CDS {
+sub create_cds {
     my ($external_gene_id, $external_transcript_id, $wb_cds_name) = @_;
 
     my ($cds_starts, $cds_ends) = get_relative_positions($external_gene_id, $external_transcript_id, 'CDS');
@@ -164,15 +169,15 @@ sub create_CDS {
     
     $out_fh->print("CDS : \"$wb_cds_name\"\n");
     $out_fh->print("Sequence $sequence\n");
-    $out_fh->print("Species \"${\$wormbase->full_name}\"\n");
+    $out_fh->print("Species \"${\$wb->full_name}\"\n");
     $out_fh->print("Method $method\n");
     $out_fh->print("Remark \"$remark\"\n");
-    for my $ix(0 .. scalar @$exon_starts - 1) {
-	$out_fh->print("Source_exons $cds_starts[0] $cds_ends[0]\n");
+    for my $ix(0 .. scalar @$cds_starts - 1) {
+	$out_fh->print("Source_exons $cds_starts->[0] $cds_ends->[0]\n");
     }
     $out_fh->print("\nSequence : \"$sequence\"\n" );
     for my $ix (0 .. scalar @starts_on_sequence - 1) {
-	my $reverse_ix = scalar(@starts) - ($ix + 1);
+	my $reverse_ix = scalar(@starts_on_sequence) - ($ix + 1);
 	my ($start_on_sequence, $end_on_sequence);
 	if ($new_gene_models->{$external_gene_id}{'gene'}{'strand'} eq '-') {
 	    $start_on_sequence = $ends_on_sequence[$reverse_ix];
@@ -207,7 +212,7 @@ sub delete_gene {
 	$log->write_to("NS->kill $wb_id\n");
 	$nh->kill_gene($wb_id) if $nameserver;
 	
-	my $event = defined $merged_into ? 'Merge_into ' . $merge_into : 'Killed';
+	my $event = defined $merged_into ? 'Merge_into ' . $merged_into : 'Killed';
 	
 	my $version = $gene->Version->name;
 	$version++;
@@ -226,7 +231,7 @@ sub delete_gene {
 	$out_fh->print("-D Ortholog\n\n");
 	$out_fh->print("-D Paralog\n\n");
     } else {
-	$log->error("Gene $wb_id not found in database - cannot delete\n");
+	$log->error("Gene $wb_name not found in database - cannot delete\n");
     }
     
 }
@@ -340,14 +345,13 @@ sub split_genes {
 	    $log->error("Attempting to split $wb_name into genes on different strands\n");
 	    next;
 	}
-	my ($upstream_gene, $downstream_gene) {
-	    if ($new_gene_models->{$new_ids[0]}{'gene'}{'start'} < $new_gene_models->{$new_ids[1]}{'gene'}{'start'} && $new_gene_models->{$new_ids[0]}{'gene'}{'strand'} eq '+') {
-		$upstream_gene = $new_ids[0];
-		$downstream_gene = $new_ids[1];
-	    } else {
-		$upstream_gene = $new_ids[1];
-		$downstream_gene= $new_ids[0];
-	    }
+	my ($upstream_gene, $downstream_gene);
+	if ($new_gene_models->{$new_ids[0]}{'gene'}{'start'} < $new_gene_models->{$new_ids[1]}{'gene'}{'start'} && $new_gene_models->{$new_ids[0]}{'gene'}{'strand'} eq '+') {
+	    $upstream_gene = $new_ids[0];
+	    $downstream_gene = $new_ids[1];
+	} else {
+	    $upstream_gene = $new_ids[1];
+	    $downstream_gene= $new_ids[0];
 	}
 	split_gene($wb_name, $upstream_gene, $downstream_gene);
     }
@@ -359,10 +363,16 @@ sub split_gene {
     my $wb_gene = $db->fetch(-query => "Gene WHERE Public_name = \"$wb_name\"");
     if ($wb_gene) {
 	$log->write_out("Updating $wb_name by splitting\n");
-	my $split_into = create_gene($downstream_id, $split_from);
+	my $split_into = create_gene($downstream_id, $wb_name);
 	update_gene($wb_name, $upstream_id, $split_into);
     } else {
 	$log->error("Cannot split $wb_name as gene doesn't exist in database\n");
+    }
+}
+
+sub update_genes {
+    for my $wb_name (keys %$to_update) {
+	update_gene($wb_name, $to_update->{$wb_name});
     }
 }
 
@@ -382,11 +392,12 @@ sub update_gene {
 	    $out_fh->print("History Version_change $version now $person Event Split_into $split_into");
 	}
 
+	# Now some convoluted logic to avoid deleting and recreating unchanged isoforms and to resuse / create transcripts and CDS names
 	my (%new_coords);
 	for my $nt (keys %{$new_gene_models->{$external_id}{'transcripts'}}) {
 	    my $exon_coord_summary = coord_summary($external_id, 'transcript', $nt, $new_gene_models);
 	    my $cds_coord_summary = coord_summary($external_id, 'CDS', $nt, $new_gene_models);
-	    $new_coords{$exon_coord_summary}{'transcript'} = $ct->name;
+	    $new_coords{$exon_coord_summary}{'transcript'} = $nt;
 	    $new_coords{$exon_coord_summary}{'CDS_coords'} = $cds_coord_summary;
 	}
 	
@@ -399,8 +410,6 @@ sub update_gene {
 	    $existing_coords{$exon_coord_summary}{'CDS_coords'} = $cds_coord_summary;
 	}
 
-	my %available_transcript_names = map {$_->name => 1} $wb_gene->Corresponding_transcript;
-	
 	
 	my @transcripts_to_create_with_new_cds; # list of new transcript IDs
 	my %transcripts_to_create_with_existing_cds; # map of new transcript IDs to existing CDS names
@@ -411,7 +420,7 @@ sub update_gene {
 		my $cds_exists = 0;
 		for my $existing_exon_cs (keys %existing_coords) {
 		    if ($existing_coords{$existing_exon_cs}{'CDS_coords'} eq $new_cds_cs) {
-			$trancripts_to_create_with_existing_cds{$new_coords{$new_exon_cs}{'transcript'}} = $existing_coords{$existing_exon_cs}{'CDS_name'};
+			$transcripts_to_create_with_existing_cds{$new_coords{$new_exon_cs}{'transcript'}} = $existing_coords{$existing_exon_cs}{'CDS_name'};
 			$cds_exists = 1;
 			last;
 		    }
@@ -420,21 +429,50 @@ sub update_gene {
 	    } else {
 		if ($existing_coords{$new_exon_cs}{'CDS_coords'} ne $new_coords{$new_exon_cs}{'CDS_coords'}) {
 		    $existing_transcripts_with_new_cds{$existing_coords{$new_exon_cs}{'transcript'}} = $new_coords{$new_exon_cs}{'transcript'};
-		} else {
-		    delete($available_transcript_names{$existing_coords{$new_exon_cs}{'transcript'}});
 		}
 	    }
 	}
 	my %existing_cdses_with_new_transcripts = map {$_ => 1} values %transcripts_to_create_with_existing_cds;
-	my (@history_transcripts_to_create, @history_cdses_to_create);
+
+	my %existing_transcript_names = map {$_->name => 1} $wb_gene->Corresponding_transcript;
 	for my $existing_exon_cs (keys %existing_coords) {
 	    if (!exists $new_coords{$existing_exon_cs}) {
-		push @history_transcripts_to_create, $existing_coords{$existing_exon_cs}{'transcript'};
-		push @history_cdses_to_create, $existing_coords{$existing_exon_cs}{'CDS_name'} unless exists $existing_cdses_with_new_transcripts{$existing_coords{$existing_exon_cs}{'CDS_name'}};
+		make_history($existing_coords{$existing_exon_cs}{'transcript'}, 'Transcript deprecated as part of bulk annotation update on ' . $date);
+		$existing_transcript_names{$existing_exon_cs}{'transcript'} = 0;
+		make_history($existing_coords{$existing_exon_cs}{'CDS_name'}, 'CDS deprecated as part of bulk annotation update on ' . $date) unless exists $existing_cdses_with_new_transcripts{$existing_coords{$existing_exon_cs}{'CDS_name'}};
 	    }
 	}
 
-	my $nr_remaining_transcripts
+	# Find transcript names made available by making history transcripts and that aren't going to be used for existing CDSes that need new transcripts
+	my @available_transcript_names;
+	for my $etn (keys %existing_transcript_names) {
+	    my ($cds_name) = $etn =~ /^(.+)\.\d/;
+	    push @available_transcript_names, $etn if $existing_transcript_names{$etn} == 0 && !exists($existing_cdses_with_new_transcripts{$etn});
+	}
+	my $next_transcript_suffix_ix = scalar keys %existing_transcript_names;
+	
+	for my $existing_transcript (keys %existing_transcripts_with_new_cds) {
+	    my ($cds_name) = $existing_transcript =~ /^(.+)\.\d$/;
+	    create_cds($external_id, $existing_transcripts_with_new_cds{$existing_transcript}, $cds_name);
+	}
+	for my $new_transcript (@transcripts_to_create_with_new_cds) {
+	    my $new_transcript_name;
+	    if (scalar @available_transcript_names > 0) {
+		$new_transcript_name = shift(@available_transcript_names);
+	    } elsif ($next_transcript_suffix_ix == 0 && scalar @transcripts_to_create_with_new_cds == 1 && scalar keys %transcripts_to_create_with_existing_cds == 0) {
+		$new_transcript_name = $wb_name . '.1';
+	    } else {
+		$new_transcript_name = $wb_name . $ISOFORM_SUFFIXES[$next_transcript_suffix_ix] . '.1';
+		$next_transcript_suffix_ix++;
+	    }
+	    my ($cds_name) = $new_transcript_name =~ /^(.+)\.1/;
+	    create_transcript($external_id, $new_transcript, $new_transcript_name);
+	    create_cds($external_id, $new_transcript, $cds_name);
+	}
+		    
+	for my $new_transcript (keys %transcripts_to_create_with_existing_cds) {
+	    create_transcript($external_id, $new_transcript, $transcripts_to_create_with_existing_cds{$new_transcript} . '.1');
+	}
 
     } else {
 	$log->error("Cannot update $wb_name as gene doesn't exist in database\n");
@@ -480,7 +518,17 @@ sub make_history {
 
     my $gene = $obj->Gene->name;
 
-    $out_fh->print("$biotype : $cds\nEvidence\nMethod $new_method\nGene_history $gene\nRemark \"$remark\" Curator_confirmed $person\n\n$biotype : $cds\n-D Gene\n\n-R $biotype $cds $cds:${wormpep_prefix}$version\n\n"
+    # Update existing CDS / Transcript / Pseudogene
+    $out_fh->print("$biotype : $cds\n");
+    $out_fh->print("Evidence\n");
+    $out_fh->print("Method $new_method\n");
+    $out_fh->print("Gene_history $gene\n");
+    $out_fh->print("Remark \"$remark\"\n");
+    # Remove Gene tag
+    $out_fh->print("\n$biotype : $cds\n");
+    $out_fh->print("-D Gene\n\n");
+    # Rename CDS
+    $out_fh->print("-R $biotype $cds $cds:${wormpep_prefix}$version\n\n");
     return;
 }
 
@@ -526,19 +574,19 @@ sub get_relative_positions {
     my @starts = sort {$a<=>$b} @{$new_gene_models->{$gene_id}{'transcripts'}{$transcript_id}{$feature_type}{'starts'}};
     my @ends = sort {$a<=>$b} @{$new_gene_models->{$gene_id}{'transcripts'}{$transcript_id}{$feature_type}{'ends'}};
 
-    my $transcript_start = $new_gene_models->{$gene_id}{'transcripts'}{$transcripts_id}{'start'};
-    my $transcript_end = $new_gene_models->{$gene_id}{'transcripts'}{$transcripts_id}{'end'};
+    my $transcript_start = $new_gene_models->{$gene_id}{'transcripts'}{$transcript_id}{'start'};
+    my $transcript_end = $new_gene_models->{$gene_id}{'transcripts'}{$transcript_id}{'end'};
 
     my (@relative_starts, @relative_ends);
     for my $ix (0 .. scalar @starts - 1) {
 	my ($relative_start, $relative_end);
-	if ($new_gene_modes->{$gene_id}{'gene'}{'strand'} eq '-') {
+	if ($new_gene_models->{$gene_id}{'gene'}{'strand'} eq '-') {
 	    my $reverse_ix = scalar(@starts) - ($ix + 1);
 	    $relative_start = ($transcript_end - $ends[$reverse_ix]) + 1;
 	    $relative_end = ($transcript_end - $starts[$reverse_ix]) + 1;
 	} else {
 	    $relative_start = ($starts[$ix] - $transcript_start) + 1;
-	    $relative_End = ($ends[$ix] - $transcripts_start) + 1;
+	    $relative_end = ($ends[$ix] - $transcript_start) + 1;
 	}
 	push @relative_starts, $relative_start;
 	push @relative_ends, $relative_end;
@@ -548,9 +596,8 @@ sub get_relative_positions {
 }
 
 sub coord_summary {
-   y ($gene_id, $feature_type, $transcript_id, $gene_models) = @_;
+    my ($gene_id, $feature_type, $transcript_id, $gene_models) = @_;
 
-    my (@starts, @ends);
     my $coord_type = $feature_type eq 'transcript' ? 'exon' : 'CDS';
     my @starts = sort {$a<=>$b} @{$gene_models->{$gene_id}{'transcripts'}{$transcript_id}{$coord_type}{'starts'}};
     my @ends = sort {$a<=>$b} @{$gene_models->{$gene_id}{'transcripts'}{$transcript_id}{$coord_type}{'ends'}};
@@ -566,6 +613,9 @@ sub coord_summary {
 sub parse_mapping_file {
     my $file = shift;
 
+    # Mapping file should contain two or three tab-delimited columns
+    # The first column should be the external gene identifier
+    # The second (and in some cases third column) should be the corresponding WB gene sequence names
     my (%update_map, %update_by_merge_map, %update_by_split_map);
     my $fh = file($file)->openr;
     while (my $line = $fh->getline()) {
