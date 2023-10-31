@@ -27,7 +27,7 @@ def get_args():
     parser.add_argument("--max_runs_per_batch", dest="BATCHSIZE", required=False, type=int,
                         help="Optional: How many runs should be included in a pipeline's batch?"
                              "Default: 0 meaning that the pipeline will run in one batch.")
-    parser.add_argument("--output_basename", dest="OUTBN", required=False, type=str, default="homes/digri/final_dataset",
+    parser.add_argument("--output_basename", dest="OUTBN", required=False, type=str, default=DEFAULT_OUTPUT,
                         help="Required: Basename of the output json file. Example: /example/path/example")
     # parser.add_argument("--only_skipped_runs", dest="OSR", required=False, default=False, action=argparse.BooleanOptionalAction,
     #                     help="Required: Basename of the output json file. Example: /example/path/example")
@@ -98,6 +98,7 @@ skipped_run_studies = {}
 all_studies = []
 all_genomes = []
 for genus_species in status_studies:
+    print(genus_species)
     for assembly in status_studies[genus_species]:
         production_name = status_studies[genus_species][assembly]["production_name"]
         if args.SPECIES and production_name not in SPECIES:
@@ -140,24 +141,9 @@ for chunk in slice_dict(run_studies, size=BATCHSIZE):
     if having_chunks:
         outbn = OUTBN + "_" + str(counter) + ".json"
     else:
-        outbn = OUTBN + ".json"
+        outbn = OUTBN + "_1.json"
     write_output_json(run_dict=chunk, outfile=outbn)
     counter += 1
 
-
-path = "/hps/nobackup/flicek/wormbase/parasite/brc4rnaseq/WBPS18/component"
-final_list = []
-for genome in os.listdir(path):
-    gpath = os.path.join(path,genome)
-    for study_run in os.listdir(path):
-        run = study_run.split("_")[1]
-        name = study_run
-        species = genome
-        production_name = genome
-        runs = [{"name": run, "accessions": [run]}]
-        final_list.append({"name": name,
-                           "species": species,
-                           "production_name": production_name,
-                           "runs": runs})
 
 
