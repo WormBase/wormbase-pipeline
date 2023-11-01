@@ -803,7 +803,10 @@ sub new_genes {
     if (exists $gene_data->{'biotype'}) {
       $biotype = $biotypes{lc $gene_data->{'biotype'}};
     } 
-    my @other_names = @{$gene_data->{'other-names'}};
+    my @other_names;
+    if (exists $gene_data->{'other-names'}) {
+	@other_names = @{$gene_data->{'other-names'}};
+    }
     
     $payload .= '{';
     $payload .= '"species": "'.$species.'",' if (defined $species); #was gene/species
@@ -827,7 +830,6 @@ sub new_genes {
   $payload .= '"why": "'.$why.'"' if ($why ne ''); #was provenance/why
   $payload .= '}}';
   if ($self->noise()) {print $payload,"\n"}
-  
   # returns 
   # {"id":"5dcd84f2-f17a-44c6-8a2c-e096983181f3","ids":[{"id":"WBGene00305168","cgc-name":"abc-1231"}]}
   return $self->batch('POST', 'gene', $payload);
