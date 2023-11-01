@@ -1,6 +1,5 @@
 import os
 import pandas as pd
-import utils
 from ProductionMysql import *
 from ProductionUtils import *
 
@@ -18,7 +17,7 @@ outputGenes = "/hps/nobackup/flicek/wormbase/parasite/stringdb/outputGenes.txt"
 data_dict = {}
 
 # read in output genes file
-with open('outputGenes.txt', 'r') as file:
+with open(outputGenes, 'r') as file:
     # iterate through each line in the file
     for line in file:
         # create variable columns, and assign column 1 and column 2 in the tsv to it
@@ -45,7 +44,12 @@ for key, value in data_dict.items():
 
 # make a list of dictionary keys
 keyList = list(data_dict.keys())
+print(len(keyList))
 keyList.remove('Genome project')
+
+
+# Need to find a way to print total number of genes
+# problem at the moment is that some of the species are wb (290) and others are wbps (1) -> different endings
 
 # take keys and reconstruct db names from them - call this variable databases so it can be fed through the for loop below 
 database_version = f"_core_{PARASITE_VERSION}_{ENSEMBL_VERSION}_1"
@@ -65,10 +69,10 @@ for item in keyList:
 
 # for loop to go through each db with shared genes, and return the total number of genes wbps holds for the genome
 # can then compare the number of string db genes to the overall number held in parasite.
-for database in keyDBs:
+#for database in keyDBs:
     # connect to db
-    core_db = Core(STAGING_HOST, database)
+#    core_db = Core(STAGING_HOST, database)
     # genes count query
-    GENES_COUNT_QUERY = "SELECT COUNT(DISTINCT stable_id) FROM gene;"
+#    GENES_COUNT_QUERY = "SELECT COUNT(DISTINCT stable_id) FROM gene;"
     # execute queries
-    genes_count_query_execution = core_db.connect().execute(GENES_QUERY)
+#    genes_count_query_execution = core_db.connect().execute(GENES_COUNT_QUERY)

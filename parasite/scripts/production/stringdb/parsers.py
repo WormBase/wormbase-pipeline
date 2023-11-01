@@ -8,7 +8,7 @@ def create_stringdf_from_txt(filename):
         lines = file.readlines()
     # Extract column headers from the first line
     #columns = lines[0].strip().split('\t')
-    columns = ['#string_protein_id', 'alias', 'source']
+    columns = ['#string_protein_id', 'Gene stable ID', 'source']
     print(columns)
     # Process the contents (excluding the first line) to create a list of tuples
     data = [line.strip().split('\t') for line in lines[0:]]
@@ -59,6 +59,6 @@ def create_df(df, match_column, match_list, output_path):
     print(result_df)
 
     # Save the results to an output .txt file
-    result_df.to_csv(output_path, sep='\t', index=False)
+    df.to_csv(output_path, sep='\t', index=False)
     print(f'DataFrame saved as {output_path}')
 
