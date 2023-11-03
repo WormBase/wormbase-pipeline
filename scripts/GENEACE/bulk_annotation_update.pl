@@ -101,10 +101,14 @@ sub check_for_merge_split_clashes {
 		$log->error("$wb_merge involved in both merge and split operations - this script cannot currently resolve this situation\n");
 		$conflicts++;
 	    }
+	    if (exists $to_update->{$wb_merge}) {
+		$log->error("$wb_merge involved in bother merge and update operations - this script cannot currently resolve this situation\n");
+		$conflicts++;
+	    }
 	}
     }
     if ($conflicts) {
-	$log->log_and_die("Cannot continue as $conflicts split/merge conflicts\n");
+	$log->log_and_die("Cannot continue as $conflicts split/merge/update conflicts\n");
     }
 }
 
@@ -143,7 +147,7 @@ sub create_gene {
     }
 
     if ($verbose) {
-	if ($replaced_cgc_genes) {
+	if (defined $replaced_cgc_genes) {
 	    $log->write_to("Creating new Gene $wb_id for $seq_name to replace $replaced_cgc_genes\n");
 	} else {
 	    $log->write_to("Creating new Gene $wb_id for $seq_name\n");
@@ -162,7 +166,7 @@ sub create_gene {
     $out_fh->print("History Version_change 1 now $person Event $event\n");
     $out_fh->print("Split_from $split_from\n") if defined $split_from;
     $out_fh->print("Method Gene\n");
-    $out_fh->print("Remark \"Updated model for deprecated gene(s) $replaced_cgc_genes as part of bulk annotation update on $date - new WBGene created due to existing genes having CGC names\"\n") if defined $replaced_cgc_genes;
+    $out_fh->print("Remark \"Updated model for deprecated gene(s) $replaced_cgc_genes as part of bulk annotation update on $date - new gene created due to existing genes having CGC names\"\n") if defined $replaced_cgc_genes;
     $out_fh->print("Public_name \"$seq_name\"\n\n");
     
     my $ix = 0;
@@ -177,7 +181,7 @@ sub create_gene {
 	    $wb_cds_name = $seq_name . $ISOFORM_SUFFIXES[$ix];
 	}
 	create_transcript($non_wb_id, $external_transcript_id, $wb_transcript_name, $wb_id);
-	create_cds($non_wb_id, $external_transcript_id, $wb_cds_name, $wb_transcript_name);
+	create_cds($non_wb_id, $external_transcript_id, $wb_cds_name, $wb_transcript_name, $wb_id);
     }
     $wb_ids_created{$non_wb_id} = $wb_id;
     return $wb_id;
@@ -216,7 +220,7 @@ sub create_transcript {
 }
 
 sub create_cds {
-    my ($external_gene_id, $external_transcript_id, $wb_cds_name, $wb_transcript_name) = @_;
+    my ($external_gene_id, $external_transcript_id, $wb_cds_name, $wb_transcript_name, $wb_gene_id) = @_;
     
     my ($cds_starts, $cds_ends) = get_relative_positions($external_gene_id, $external_transcript_id, 'CDS');
     
@@ -227,6 +231,7 @@ sub create_cds {
     my $method = 'curated'; # Going with this for now, what's an appropriate method?
     
     $out_fh->print("CDS : \"$wb_cds_name\"\n");
+    $out_fh->print("Gene : $wb_gene_id\n");
     $out_fh->print("Sequence $sequence\n");
     $out_fh->print("Species \"${\$wb->full_name}\"\n");
     $out_fh->print("Corresponding_transcript $wb_transcript_name\n");
@@ -293,16 +298,18 @@ sub delete_gene {
 	}
 	$nh->kill_gene($wb_id) if $nameserver;
 	
-	my $event = defined $merged_into ? 'Merge_into ' . $merged_into : 'Killed';
+	my $event = defined $merged_into ? 'Merged_into ' . $merged_into : 'Killed';
 	
 	my $version = $gene->Version->name;
 	$version++;
 	$out_fh->print("Gene : $wb_id\n");
 	$out_fh->print("Version $version\n");
 	$out_fh->print("History Version_change $version now $person Event $event\n");
-	$out_fh->print("Merged_into $merged_into") if defined $merged_into;
+	$out_fh->print("Merged_into $merged_into\n") if defined $merged_into;
 	$out_fh->print("Dead\n");
-	$out_fh->print("Remark \"$remark\" Curator_confirmed $person\n");
+	$out_fh->print("Remark \"$remark\" Curator_confirmed $person\n\n");
+
+	$out_fh->print("Gene : $wb_id\n");
 	$out_fh->print("-D Sequence_name\n");
 	$out_fh->print("-D Method\n");
 	$out_fh->print("-D Map_info\n");
@@ -510,33 +517,10 @@ sub update_gene {
     my @wb_genes = $db->fetch(-query => "Find Gene WHERE Sequence_name = \"$wb_name\"");
     my $wb_gene = $wb_genes[0];
     if ($wb_gene) {
-	$log->write_to("Updating $wb_name\n") if $verbose;
-	
 	my $wb_id = $wb_gene->name;
-	my $version = $wb_gene->Version->name;
-	$version++;
-        if ($split_into || $acquired_merges) {
-	    $out_fh->print("Gene : $wb_id\n");
-	    $out_fh->print("Version $version\n");
-	    if ($split_into) {
-		$out_fh->print("History Version_change $version now $person Event Split_into $split_into->[0]\n");
-		if (scalar @$split_into > 1) {
-		    for my $ix (1 .. scalar @$split_into - 1) {
-			$out_fh->print("Split_into $split_into->[$ix]\n");
-		    }
-		}
-	    } else {
-		$out_fh->print("History Version_change $version now $person Event Acquires_merge $acquired_merges->[0]\n");
-		if (scalar @$acquired_merges > 1) {
-		    for my $ix (1 .. scalar @$acquired_merges - 1) {
-			$out_fh->print("Acquires_merge $acquired_merges->[$ix]\n");
-		    }
-		}
-	    }
-	    $out_fh->print("\n");
-	}
+	$log->write_to("Updating $wb_name ($wb_id)\n") if $verbose;
 	
-	# Now some convoluted logic to avoid deleting and recreating unchanged isoforms and to resuse / create transcripts and CDS names
+	# Some convoluted logic to avoid deleting and recreating unchanged isoforms and to resuse / create transcripts and CDS names
 	my (%new_coords);
 	for my $nt (keys %{$new_gene_models->{$external_id}{'transcripts'}}) {
 	    my $exon_coord_summary = coord_summary($external_id, 'transcript', $nt, $new_gene_models);
@@ -582,22 +566,51 @@ sub update_gene {
 	for my $existing_exon_cs (keys %existing_coords) {
 	    if (!exists $new_coords{$existing_exon_cs}) {
 		make_history($existing_coords{$existing_exon_cs}{'transcript'}, 'Transcript deprecated as part of bulk annotation update on ' . $date);
-		$existing_transcript_names{$existing_exon_cs}{'transcript'} = 0;
+		$existing_transcript_names{$existing_coords{$existing_exon_cs}{'transcript'}} = 0;
 		make_history($existing_coords{$existing_exon_cs}{'CDS_name'}, 'CDS deprecated as part of bulk annotation update on ' . $date) unless exists $existing_cdses_with_new_transcripts{$existing_coords{$existing_exon_cs}{'CDS_name'}};
 	    }
 	}
 	
+	if (scalar keys %existing_transcripts_with_new_cds == 0 && scalar @transcripts_to_create_with_new_cds == 0 && scalar keys %transcripts_to_create_with_existing_cds == 0) {
+	    $log->write_to("Nothing to update for $wb_gene\n");
+	    return;
+	}
+
+	my $version = $wb_gene->Version->name;
+	$version++;
+        if ($split_into || $acquired_merges) {
+	    
+	    $out_fh->print("Gene : $wb_id\n");
+	    $out_fh->print("Version $version\n");
+	    if ($split_into) {
+		$out_fh->print("History Version_change $version now $person Event Split_into $split_into->[0]\n");
+		if (scalar @$split_into > 1) {
+		    for my $ix (1 .. scalar @$split_into - 1) {
+			$out_fh->print("Split_into $split_into->[$ix]\n");
+		    }
+		}
+	    } else {
+		$out_fh->print("History Version_change $version now $person Event Acquires_merge $acquired_merges->[0]\n");
+		if (scalar @$acquired_merges > 1) {
+		    for my $ix (1 .. scalar @$acquired_merges - 1) {
+			$out_fh->print("Acquires_merge $acquired_merges->[$ix]\n");
+		    }
+		}
+	    }
+	    $out_fh->print("\n");
+	}
+
 	# Find transcript names made available by making history transcripts and that aren't going to be used for existing CDSes that need new transcripts
 	my @available_transcript_names;
 	for my $etn (keys %existing_transcript_names) {
-	    my ($cds_name) = $etn =~ /^(.+)\.\d/;
+	    my ($cds_name) = $etn =~ /^(.+)\.\d$/;
 	    push @available_transcript_names, $etn if $existing_transcript_names{$etn} == 0 && !exists($existing_cdses_with_new_transcripts{$etn});
 	}
 	my $next_transcript_suffix_ix = scalar keys %existing_transcript_names;
 	
 	for my $existing_transcript (keys %existing_transcripts_with_new_cds) {
 	    my ($cds_name) = $existing_transcript =~ /^(.+)\.\d$/;
-	    create_cds($external_id, $existing_transcripts_with_new_cds{$existing_transcript}, $cds_name, $existing_transcript);
+	    create_cds($external_id, $existing_transcripts_with_new_cds{$existing_transcript}, $cds_name, $existing_transcript, $wb_id);
 	}
 	for my $new_transcript (@transcripts_to_create_with_new_cds) {
 	    my $new_transcript_name;
@@ -609,9 +622,9 @@ sub update_gene {
 		$new_transcript_name = $wb_name . $ISOFORM_SUFFIXES[$next_transcript_suffix_ix] . '.1';
 		$next_transcript_suffix_ix++;
 	    }
-	    my ($cds_name) = $new_transcript_name =~ /^(.+)\.1/;
+	    my ($cds_name) = $new_transcript_name =~ /^(.+)\.\d$/;
 	    create_transcript($external_id, $new_transcript, $new_transcript_name, $wb_id);
-	    create_cds($external_id, $new_transcript, $cds_name, $new_transcript_name);
+	    create_cds($external_id, $new_transcript, $cds_name, $new_transcript_name, $wb_id);
 	}
 	
 	for my $new_transcript (keys %transcripts_to_create_with_existing_cds) {
@@ -798,8 +811,8 @@ sub parse_mapping_file {
 		next;
 	    }
 	    if ($gene_to_update->CGC_name) {
-		$log->write_to("Cannot update $filtered_col[1] as it has CGC name - will kill it and create new gene for $filtered_col[0]\n");
-		$to_create{$filtered_col[0]}++;
+		$log->write_to("Cannot update $gene_to_update as it has CGC name - will kill it and create new gene for $filtered_col[0]\n");
+		$to_create{$filtered_col[0]} = $gene_to_update->name;
 		$cgc_to_delete{$filtered_col[1]} = $filtered_col[0];
 		next;
 	    }
@@ -815,21 +828,23 @@ sub parse_mapping_file {
 	} else {
 	    my $external_id = shift(@filtered_col);
 	    my $contains_cgc_gene = 0;
+	    my @wb_ids_to_merge;
 	    for my $wb_gene (@filtered_col) {
-		my @genes = $db->fetch(-query => "Find Gene WHERE Sequence_name = \"$filtered_col[1]\"");
+		my @genes = $db->fetch(-query => "Find Gene WHERE Sequence_name = \"$wb_gene\"");
 		my $gene_to_merge = $genes[0];
-		if ($gene_to_merge->CGC_name) {
-		    my $genes_to_merge = join("|", @filtered_col);
-		    $log->write_to("Cannot merge $genes_to_merge as one or more has CGC name - will kill it and create new gene for $external_id\n");
-		    for my $col (@filtered_col) {
-			$cgc_to_delete{$col} = $external_id;
-		    }
-		    $to_create{$external_id} = $genes_to_merge;
-		    $contains_cgc_gene = 1;
-		    last;
-		}
+		push @wb_ids_to_merge, $gene_to_merge->name;
+		$contains_cgc_gene = 1 if $gene_to_merge->CGC_name;
 	    }
-	    push @{$update_by_merge_map{$external_id}}, @filtered_col if $contains_cgc_gene;
+	    if ($contains_cgc_gene) {
+		my $genes_to_merge = join(", ", @wb_ids_to_merge);
+		$log->write_to("Cannot merge $genes_to_merge as one or more has CGC name - will kill them and create new gene for $external_id\n");
+		for my $col (@filtered_col) {
+		    $cgc_to_delete{$col} = $external_id;
+		}
+		$to_create{$external_id} = $genes_to_merge;
+	    } else {
+		push @{$update_by_merge_map{$external_id}}, @filtered_col;
+	    }
 	}
     }
     
