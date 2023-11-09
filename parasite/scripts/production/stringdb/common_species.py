@@ -17,8 +17,8 @@ def main():
     # print the taxon IDs of the common organisms 
     # this can be used to filter the string file containing the genes
     for organism in common_organisms:
-        #print(organism['name'])
-        print(organism['taxon_id'])
+        print(organism['name'])
+        #print(organism['taxon_id'])
 
 if __name__ == "__main__":
     main()
