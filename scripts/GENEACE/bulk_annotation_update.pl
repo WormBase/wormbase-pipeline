@@ -16,24 +16,30 @@ use Curate;
 
 const my @ISOFORM_SUFFIXES => qw(a b c d e f g h i j k l m n o p q r s t u v w x y z);
     
-my ($create_file, $change_file, $delete_file, $wb_gff_file, $gff_file, $out_file, $test, $log_file, $species, $debug, $database, $nameserver, $person, $verbose);
+my ($create_file, $change_file, $delete_file, $wb_gff_file, $gff_file, $out_file, $mapping_file, $test, $log_file, $species, $debug, $database, $nameserver, $person, $verbose);
+my @references;
+my (%other_name_added);
 
 GetOptions(
-    "create:s"   => \$create_file,
-    "delete:s"   => \$delete_file,
-    "change:s"   => \$change_file,
-    "gff=s"      => \$gff_file,
-    "wbgff=s"    => \$wb_gff_file,
-    "out=s"      => \$out_file,
-    "database=s" => \$database,
-    "species:s"  => \$species,
-    "test"       => \$test,
-    "verbose"    => \$verbose,
-    "log=s"      => \$log_file,
-    "person=s"   => \$person,
-    "debug:s"    => \$debug,
-    "nameserver" => \$nameserver
+    "create:s"     => \$create_file,
+    "delete:s"     => \$delete_file,
+    "change:s"     => \$change_file,
+    "gff=s"        => \$gff_file,
+    "wbgff=s"      => \$wb_gff_file,
+    "out=s"        => \$out_file,
+    "database=s"   => \$database,
+    "mapping=s"    => \$mapping_file,
+    "references=s" => \@references,
+    "species:s"    => \$species,
+    "test"         => \$test,
+    "verbose"      => \$verbose,
+    "log=s"        => \$log_file,
+    "person=s"     => \$person,
+    "debug:s"      => \$debug,
+    "nameserver"   => \$nameserver
     ) or die ($@);
+
+@references = split(/,/, join(',', @references));
 
 $out_file = file('./bulk_update.ace') unless defined $out_file;
 my $out_fh = file($out_file)->openw;
@@ -51,7 +57,7 @@ if ($species eq 'elegans' || $species eq 'sratti' || $species eq 'tmuris') {
 my $test_count = 0;
 
 my ($day, $mon, $yr)  = (localtime)[3,4,5];
-my $date = sprintf("%02d%02d%02d",$yr-100, $mon+1, $day);
+my $date = sprintf("%02d/%02d/%04d", $day, $mon + 1, $yr + 1900);
 
 my $wsversion = `grep "NAME WS" $database/wspec/database.wrm`;
 chomp($wsversion);
@@ -63,10 +69,11 @@ my $wormpep_prefix = lc($wb->wormpep_prefix);
 my $new_gene_models = parse_gff($gff_file);
 my $wb_gene_models = parse_gff($wb_gff_file);
 
-my ($to_update, $to_merge, $to_split, $to_create, $to_delete) = parse_mapping_file($change_file);
+my ($to_update, $to_merge, $to_split, $cgc_names) = parse_mapping_file($change_file);
 
 check_for_merge_split_clashes();
 
+remove_cgc_names();
 my %wb_ids_created;
 
 $log->write_to("Creating genes\n");
@@ -75,23 +82,45 @@ create_genes() if defined $create_file;
 $log->write_to("Deleting genes\n");
 delete_genes() if defined $delete_file;
 
-$log->write_to("Creating genes to replace existing genes with CGC names\n");
-create_cgc_replacement_genes() if scalar keys %$to_create > 0;
-
-$log->write_to("Deleting genes with CGC names\n");
-delete_cgc_genes() if scalar keys %$to_delete > 0;
-
 $log->write_to("Splitting genes\n");
 split_genes() if scalar keys %$to_split > 0;
 
-$log->write_to( "Merging genes\n");
+$log->write_to("Merging genes\n");
 merge_genes() if scalar keys %$to_merge > 0;
 
-print "Updating genes\n";
+$log->write_to("Updating genes\n");
 update_genes() if scalar keys %$to_update > 0;
+
+$log->write_to("Adding other names to non-updated genes\n");
+add_other_names();
+
 
 $log->mail;
 exit(0);
+
+sub add_other_names {
+    my $map_fh = file($mapping_file)->openr;
+    while (my $line = $map_fh->getline()) {
+	chomp $line;
+	my ($external_name, $wb_name) = split("\t", $line);
+	if ($wb_name =~ /^(\D+\d+)\D$/) {
+	    $wb_name = $1;
+	}
+	
+	my @genes = $db->fetch(-query => "Find Gene WHERE Sequence_name = \"$wb_name\"");
+	my $gene = $genes[0];
+	if (!defined $gene) {
+	    $log->error("Could not find Gene $gene to add Other_name $external_name - skipping\n");
+	    next;
+	}
+	my $wb_id = $gene->name;
+	next if exists $other_name_added{$wb_id};
+
+	$out_fh->print("Gene : $wb_id\n");
+	$out_fh->print("Other_name $external_name\n\n");
+    }
+}
+
 
 sub check_for_merge_split_clashes {
     my $conflicts = 0;
@@ -112,12 +141,6 @@ sub check_for_merge_split_clashes {
     }
 }
 
-sub create_cgc_replacement_genes {
-    for my $external_id (keys %$to_create) {
-	create_gene($external_id, undef, $to_create->{$external_id});
-    }
-}
-
 sub create_genes {		      
     my $ids_to_create = parse_single_column_file($create_file);
     for my $id (@$ids_to_create) {
@@ -128,36 +151,41 @@ sub create_genes {
 }
 
 sub create_gene {
-    my ($non_wb_id, $split_from, $replaced_cgc_genes) = @_;
+    my ($non_wb_id, $split_from) = @_;
     
     # If this code is ever to be used for elegans, sratti, or tmuris updates then we would need to supply a clone ID to Next_CDS_ID here
     my $seq_name = $curation->Next_CDS_ID();
     my $so_term = 'SO:0001217'; # Are we really only creating coding genes or could we be creating Pseudogenes?
+
     my $wb_id = $nh->idGetByTypedName('Sequence' => $seq_name);
     if ($wb_id) {
 	$log->write_to("$wb_id already exists in Names Service, creating using existing ID\n");
     } else {
-	my $new_gene = $nh->new_gene($seq_name, 'Sequence', $wb->full_name);
-	if (defined $new_gene) {
-	    $wb_id = $new_gene->{'id'};
+	if ($split_from) {
+	    $wb_id = $nh->idSplit($split_from, 'cds', $seq_name, 'cds');
+	    if (!defined $wb_id) {
+		$log->error("Could not split gene $split_from in Names Services\n");
+		return;
+	    }
 	} else {
-	    $log->error("Could not retrieve new gene ID from Names Service for $seq_name\n");
-	    return;
+	    my $new_gene = $nh->new_gene($seq_name, 'Sequence', $wb->full_name);
+	    if (defined $new_gene) {
+		$wb_id = $new_gene->{'id'};
+	    } else {
+		$log->error("Could not retrieve new gene ID from Names Service for $seq_name\n");
+		return;
+	    }
 	}
     }
 
-    if ($verbose) {
-	if (defined $replaced_cgc_genes) {
-	    $log->write_to("Creating new Gene $wb_id for $seq_name to replace $replaced_cgc_genes\n");
-	} else {
-	    $log->write_to("Creating new Gene $wb_id for $seq_name\n");
-	}
-    }
+    $log->write_to("Creating new Gene $wb_id for $seq_name\n") if $verbose;
     
     my $event = defined $split_from ? 'Split_from ' . $split_from : 'Created';
     
     # This code comes from GENEACE/newgene.pl - additional code required if this script is ever to be used for elegans
     $out_fh->print("Gene : $wb_id\n");
+    $out_fh->print("Other_name $non_wb_id\n");
+    $other_name_added{$wb_id}++;
     $out_fh->print("Live\n");
     $out_fh->print("Version 1\n");
     $out_fh->print("Biotype \"$so_term\"\n");
@@ -166,7 +194,6 @@ sub create_gene {
     $out_fh->print("History Version_change 1 now $person Event $event\n");
     $out_fh->print("Split_from $split_from\n") if defined $split_from;
     $out_fh->print("Method Gene\n");
-    $out_fh->print("Remark \"Updated model for deprecated gene(s) $replaced_cgc_genes as part of bulk annotation update on $date - new gene created due to existing genes having CGC names\"\n") if defined $replaced_cgc_genes;
     $out_fh->print("Public_name \"$seq_name\"\n\n");
     
     my $ix = 0;
@@ -211,7 +238,13 @@ sub create_transcript {
     $out_fh->print("Species \"${\$wb->full_name}\"\n");
     $out_fh->print("Gene $wb_gene_id\n");
     $out_fh->print("Method $method\n");
-    $out_fh->print("Remark \"$remark\"\n");
+    if (scalar @references > 0 ) {
+	for my $ref (@references) {
+	    $out_fh->print("Remark \"$remark\" Paper_evidence $ref\n");
+	}
+    } else {
+	$out_fh->print("Remark \"$remark\"\n");
+    }
     for my $ix(0 .. scalar @$exon_starts - 1) {
 	$out_fh->print("Source_exons $exon_starts->[$ix] $exon_ends->[$ix]\n");
     }
@@ -236,7 +269,13 @@ sub create_cds {
     $out_fh->print("Species \"${\$wb->full_name}\"\n");
     $out_fh->print("Corresponding_transcript $wb_transcript_name\n");
     $out_fh->print("Method $method\n");
-    $out_fh->print("Remark \"$remark\"\n");
+    if (scalar @references > 0) {
+	for my $ref (@references) {
+	    $out_fh->print("Remark \"$remark\" Paper_evidence $ref\n");
+	}
+    } else {
+	$out_fh->print("Remark \"$remark\"\n");
+    }
     for my $ix(0 .. scalar @$cds_starts - 1) {
 	$out_fh->print("Source_exons $cds_starts->[$ix] $cds_ends->[$ix]\n");
     }
@@ -257,14 +296,6 @@ sub create_cds {
     $out_fh->print("\n");
 }
 
-sub delete_cgc_genes {
-    for my $wb_name (keys %$to_delete) {
-	delete_gene($wb_name, undef, $to_delete->{$wb_name});
-    }
-
-    return;
-}
-
 sub delete_genes {
     my $wb_genes_to_delete = parse_single_column_file($delete_file);
     for my $wb_name (@{$wb_genes_to_delete}) {
@@ -275,28 +306,24 @@ sub delete_genes {
 }
 
 sub delete_gene {
-    my ($wb_name, $merged_into, $replaced_with) = @_;
+    my ($wb_name, $merged_into) = @_;
     
     my $remark = 'Removed as part of bulk annotation update on ' . $date;
-    my $replacement_wb_id;
-    if ($replaced_with) {
-	$replacement_wb_id = $wb_ids_created{$replaced_with};
-	$remark .= " - replaced with $replacement_wb_id (update not possible due to CGC name)";
-    }
     
     my @genes = $db->fetch(-query => "Find Gene WHERE Sequence_name = \"$wb_name\"");
     my $gene = $genes[0];
     if ($gene) {
 	my $wb_id = $gene->name;
-	if ($verbose) {
-	    if ($replacement_wb_id) {
-		$log->write_to("Deleting gene $wb_id (replaced with $replacement_wb_id)\n");
+	$log->write_to("Deleting gene $wb_id\n") if $verbose;
+	if ($nameserver) {
+	    if ($merged_into) {
+		$log->write_to("NS->idMerge $wb_id into $merged_into\n") if $verbose;
+		$nh->idMerge($wb_id, $merged_into);
 	    } else {
-		$log->write_to("Deleting gene $wb_id\n") if $verbose;
+		$log->write_to("NS->kill $wb_id\n") if $verbose;
+		$nh->kill_gene($wb_id);
 	    }
-	    $log->write_to("NS->kill $wb_id\n") if $nameserver;
 	}
-	$nh->kill_gene($wb_id) if $nameserver;
 	
 	my $event = defined $merged_into ? 'Merged_into ' . $merged_into : 'Killed';
 	
@@ -307,7 +334,14 @@ sub delete_gene {
 	$out_fh->print("History Version_change $version now $person Event $event\n");
 	$out_fh->print("Merged_into $merged_into\n") if defined $merged_into;
 	$out_fh->print("Dead\n");
-	$out_fh->print("Remark \"$remark\" Curator_confirmed $person\n\n");
+	if (scalar @references > 0) {
+	    for my $ref (@references) {
+		$out_fh->print("Remark \"$remark\" Paper_evidence $ref\n");
+	    }
+	    $out_fh->print("\n");
+	} else {
+	    $out_fh->print("Remark \"$remark\"\n\n");
+	}
 
 	$out_fh->print("Gene : $wb_id\n");
 	$out_fh->print("-D Sequence_name\n");
@@ -441,6 +475,30 @@ sub gene_merge {
 	push @acquired_merges, $downstream_gene->name;
     }
     update_gene($upstream_gene->Sequence_name->name, $external_id, undef, \@acquired_merges);
+}
+
+sub remove_cgc_names {
+
+    for my $wb_id (keys %$cgc_names) {
+	my $wb_gene = $db->fetch(Gene => $wb_id);
+	if (!defined $wb_gene) {
+	    $log->error("Could not retrieve gene $wb_id to remove CGC name\n");
+	    next;
+	}
+	$log->write_to("Removing CGC name $cgc_names->{$wb_id} for $wb_id\n") if $verbose;
+	my $version = $wb_gene->Version->name;
+	$version++;
+	$out_fh->print("Gene : $wb_id\n");
+	$out_fh->print('Public_name ' . $wb_gene->Sequence_name->name . "\n");
+	$out_fh->print("Version $version\n");
+	$out_fh->print("History Version_change $version now $person Name_change CGC_name \"Removed\"\n\n");
+	if ($nameserver) {
+	    $log->write_to("NS->delName $cgc_names->{$wb_id}\n") if $verbose;
+	    $nh->delName($cgc_names->{$wb_id});
+	}
+	$out_fh->print("Gene : $wb_id\n");
+	$out_fh->print("-D CGC_name\n\n");
+    }
 }
 
 
@@ -578,9 +636,12 @@ sub update_gene {
 
 	my $version = $wb_gene->Version->name;
 	$version++;
+	$version++ if exists $cgc_names->{$wb_id};
         if ($split_into || $acquired_merges) {
 	    
 	    $out_fh->print("Gene : $wb_id\n");
+	    $out_fh->print("Other_name $external_id\n");
+	    $other_name_added{$wb_id}++;
 	    $out_fh->print("Version $version\n");
 	    if ($split_into) {
 		$out_fh->print("History Version_change $version now $person Event Split_into $split_into->[0]\n");
@@ -679,7 +740,13 @@ sub make_history {
     $out_fh->print("Evidence\n");
     $out_fh->print("Method $new_method\n");
     $out_fh->print("Gene_history $gene\n");
-    $out_fh->print("Remark \"$remark\"\n");
+    if (scalar @references > 0) {
+	for my $ref (@references) {
+	    $out_fh->print("Remark \"$remark\" Paper_evidence $ref\n");
+	}
+    } else {
+	 $out_fh->print("Remark \"$remark\"\n");
+    }
     # Remove Gene tag
     $out_fh->print("\n$biotype : $cds\n");
     $out_fh->print("-D Gene\n\n");
@@ -782,7 +849,7 @@ sub parse_mapping_file {
     # Mapping file should contain two or three tab-delimited columns
     # The first column should be the external gene identifier
     # The second (and in some cases third column) should be the corresponding WB gene sequence names
-    my (%update_map, %update_by_merge_map, %update_by_split_map, %cgc_to_delete, %to_create);
+    my (%update_map, %update_by_merge_map, %update_by_split_map, %cgc_names_to_remove);
     my $fh = file($file)->openr;
     while (my $line = $fh->getline()) {
 	chomp $line;
@@ -810,12 +877,7 @@ sub parse_mapping_file {
 		$log->error("Could not find Gene $filtered_col[1] to update with model for $filtered_col[0] - skipping\n");
 		next;
 	    }
-	    if ($gene_to_update->CGC_name) {
-		$log->write_to("Cannot update $gene_to_update as it has CGC name - will kill it and create new gene for $filtered_col[0]\n");
-		$to_create{$filtered_col[0]} = $gene_to_update->name;
-		$cgc_to_delete{$filtered_col[1]} = $filtered_col[0];
-		next;
-	    }
+	    $cgc_names_to_remove{$gene_to_update->name} = $gene_to_update->CGC_name->name if $gene_to_update->CGC_name;
 	    if (exists $update_map{$filtered_col[1]} || exists $update_by_split_map{$filtered_col[1]}) {
 		push @{$update_by_split_map{$filtered_col[1]}}, $filtered_col[0];
 		if (exists $update_map{$filtered_col[1]}) {
@@ -827,28 +889,16 @@ sub parse_mapping_file {
 	    }
 	} else {
 	    my $external_id = shift(@filtered_col);
-	    my $contains_cgc_gene = 0;
-	    my @wb_ids_to_merge;
 	    for my $wb_gene (@filtered_col) {
 		my @genes = $db->fetch(-query => "Find Gene WHERE Sequence_name = \"$wb_gene\"");
 		my $gene_to_merge = $genes[0];
-		push @wb_ids_to_merge, $gene_to_merge->name;
-		$contains_cgc_gene = 1 if $gene_to_merge->CGC_name;
+		$cgc_names_to_remove{$gene_to_merge->name} = $gene_to_merge->CGC_name->name if $gene_to_merge->CGC_name;
 	    }
-	    if ($contains_cgc_gene) {
-		my $genes_to_merge = join(", ", @wb_ids_to_merge);
-		$log->write_to("Cannot merge $genes_to_merge as one or more has CGC name - will kill them and create new gene for $external_id\n");
-		for my $col (@filtered_col) {
-		    $cgc_to_delete{$col} = $external_id;
-		}
-		$to_create{$external_id} = $genes_to_merge;
-	    } else {
-		push @{$update_by_merge_map{$external_id}}, @filtered_col;
-	    }
+	    push @{$update_by_merge_map{$external_id}}, @filtered_col;
 	}
     }
     
-    return (\%update_map, \%update_by_merge_map, \%update_by_split_map, \%to_create, \%cgc_to_delete);
+    return (\%update_map, \%update_by_merge_map, \%update_by_split_map, \%cgc_names_to_remove);
 }
 
 sub parse_single_column_file {
