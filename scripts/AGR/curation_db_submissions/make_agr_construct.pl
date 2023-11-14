@@ -104,6 +104,8 @@ sub process_constructs {
 	    updated_by_curie           => 'WB:curator',
 	    data_provider_dto          => $data_provider_dto_json
 	};
+	
+	$json_obj->{construct_full_name_dto} = get_full_name_dto($obj) if $obj->Summary;
 
 	my $synonyms = get_synonym_dtos($obj);
 	if (@$synonyms) {
@@ -116,31 +118,60 @@ sub process_constructs {
 	
 	if ($obj->Gene || $obj->Driven_by_gene || $obj->Sequence_feature) {
 	    $json_obj->{construct_component_dtos}=[];
-	    my $note = $obj->Summary ? $obj->Summary->name : $json_obj->{name} . ' test note';
+	    my @notes;
+#	    if ($obj->Fusion_reporter) {
+#		push @notes, 'Fusion reporter: ' . $obj->Fusion_reporter->name;
+#	    }
+#	    if ($obj->Other_reporter) {
+#		push @notes, 'Reporter: ' . $obj->Other_reporter->name;
+#	    }
+#	    if ($obj->Purification_tag) {
+#		push @notes, 'Purification tag: ' . $obj->Purification_tag->name;
+#	    }
+#	    if ($obj->Recombination_site) {
+#		push @notes, 'Recombination site: ' . $obj->Recombination_site->name;
+#	    }
+#	    if ($obj->Type_of_construct) {
+#		push @notes, 'Construct type: ' . $obj->Type_of_construct->name;
+#	    }
+#	    if ($obj->Selection_marker) {
+#		push @notes, 'Selection marker: ' . $obj->Selection_marker->name;
+#	    }
+#	    if ($obj->Construction_summary) {
+#		push @notes, 'Construction sumary: ' . $obj->Construction_summary->name;
+#	    }
+#	    if ($obj->DNA_text) {
+#		push @notes, 'DNA: ' . $obj->DNA_text->name;
+#	    }
+	    
+	    if (scalar @notes == 0 && $curation_test) {
+		push @notes, $json_obj->{name} . ' test note';
+	    }
+	    
 	    if ($obj->Driven_by_gene) {
 		for my $gene ($obj->Driven_by_gene) {
-		    push @{$associations->{construct_genomic_entity_association_ingest_set}}, get_gene_component('is_regulated_by (RO:0002334)', $gene, $note, $obj);
+		    push @{$associations->{construct_genomic_entity_association_ingest_set}}, get_gene_component('is_regulated_by', $gene, \@notes, $obj) if $gene->Species and $gene->Species->name eq 'Caenorhabditis elegans';
 		}
 	    }
 	    if ($obj->Gene) {
 		for my $gene ($obj->Gene) {
-		    push @{$associations->{construct_genomic_entity_association_ingest_set}}, get_gene_component('expresses (RO:0002292)', $gene, $note, $obj);
+		    push @{$associations->{construct_genomic_entity_association_ingest_set}}, get_gene_component('expresses', $gene, \@notes, $obj) if $gene->Species and $gene->Species->name eq 'Caenorhabditis elegans';
 		}
 	    }
 	    if ($obj->UTR_3) {
 		for my $gene ($obj->UTR_3) {
-		    push @{$associations->{construct_genomic_entity_association_ingest_set}}, get_gene_component('targets (RO:0002436)', $gene, $note, $obj); # what should this relationship actually be?
+		    push @{$associations->{construct_genomic_entity_association_ingest_set}}, get_gene_component("expresses_3'_UTR_of", $gene, \@notes, $obj) if $gene->Species and $gene->Species->name eq 'Caenorhabditis elegans';
 		}
 	    }
-	    if ($obj->Sequence_feature) {
-		for my $feature ($obj->Sequence_feature) {
-		    push @{$json_obj->{construct_component_dtos}}, get_feature_component($feature, $note);
-		}
-	    }
+	    # Sequence features will go as own slot annotation in future
+	    #if ($obj->Sequence_feature) {
+	    #     for my $feature ($obj->Sequence_feature) {
+	    #         push @{$json_obj->{construct_component_dtos}}, get_feature_component($feature, \@notes, $obj);
+	    #     }
+	    #}
 	}
 	
 	if ($curation_test) {
-	    $json_obj->{construct_full_name_dto} = get_full_name_dto($obj);
 	    $json_obj->{date_updated} = get_random_datetime(10);
 	    $json_obj->{date_created} = get_random_datetime(1);
 	    $json_obj->{secondary_identifiers} = [$obj->name . '_secondary_test_two', $obj->name . '_secondary_test_one'];
@@ -195,28 +226,7 @@ sub get_symbol_dto {
 sub get_synonym_dtos {
     my $obj = shift;
     my @synonym_dtos;
-    if ($obj->Summary) {
-	my $synonym_dto = {
-	    display_text => $obj->Summary->name,
-	    format_text => $obj->Summary->name,
-	    name_type_name => 'unspecified',
-	    internal => JSON::false
-	};
-	my @evidence;
-	for my $evi ($obj->Summary->col) {
-	    next unless $evi->name eq 'Paper_evidence';
-	    for my $paper ($evi->col) {
-		my $paper_id = get_paper($paper);
-		push @evidence, $paper_id if defined $paper_id;
-	    }
-	}
-	if ($curation_test) {
-	    $synonym_dto->{synonym_url} = "http://synonymtest.org/" . $obj->name;
-	    $synonym_dto->{synonym_scope_name} = "broad";
-	}
-	$synonym_dto->{evidence_curies} if @evidence > 0;
-	push @synonym_dtos, $synonym_dto;
-    }
+    
     if ($obj->Other_name) {
 	for my $on ($obj->Other_name) {
 	    my $synonym_dto = {
@@ -233,18 +243,24 @@ sub get_synonym_dtos {
 
 sub get_full_name_dto {
     my $obj = shift;
-    my $name = $obj->Public_name ? $obj->Public_name : $obj->name;
-    my $fn_dto = {
-	display_text  => $name . ' full name test',
-	format_text  => $name . ' full name test',
-	name_type_name => 'full_name',
-	internal => JSON::true,
-	synonym_scope_name => 'broad',
-	synonym_url => 'http://fullnametest.org/' . $obj->name
-    };
-    
-    if ($obj->Reference) {
-	$fn_dto->{evidence_curies} = get_papers($obj);
+
+    my $fn_dto;
+    if ($obj->Summary) {
+	$fn_dto = {
+	    display_text => $obj->Summary->name,
+	    format_text => $obj->Summary->name,
+	    name_type_name => 'full_name',
+	    internal => JSON::false
+	};
+	my @evidence;
+	for my $evi ($obj->Summary->col) {
+	    next unless $evi->name eq 'Paper_evidence';
+	    for my $paper ($evi->col) {
+		my $paper_id = get_paper($paper);
+		push @evidence, $paper_id if defined $paper_id;
+	    }
+	}
+	$fn_dto->{evidence_curies} if @evidence > 0;
     }
 
     return $fn_dto;
@@ -313,20 +329,36 @@ sub get_random_datetime {
 }
 
 sub get_feature_component {
-    my ($feature, $note) = @_;
+    my ($feature, $notes, $obj) = @_;
 
     my $component_json = {
-	relation_name => 'expresses (RO:0002292)',
+	relation_name => 'expresses',
 	component_symbol => $feature->Public_name ? $feature->Public_name->name : $feature->name,
 	internal => JSON::false,
 	obsolete => JSON::false
     };
 
+    my @note_dtos;
+    for my $note (@$notes) {
+	my $cmp_note_dto = {
+	    free_text => $note,
+	    note_type_name => 'comment',
+	    internal => JSON::false,
+	    obsolete => JSON::false
+	};
+	if ($curation_test && $obj->Reference) {
+	    $cmp_note_dto->{evidence_curies} = get_papers($obj);
+	}
+	push @note_dtos, $cmp_note_dto;
+    }
+    $component_json->{note_dtos} = \@note_dtos if scalar @note_dtos > 0;
+   
+
     return $component_json;
 }
 
 sub get_gene_component {
-    my ($relation, $gene, $note, $obj) = @_;
+    my ($relation, $gene, $notes, $obj) = @_;
     
     my $component_json = {
 	construct_identifier => 'WB:' . $obj->name,
@@ -346,20 +378,25 @@ sub get_gene_component {
 	    push @component_paper_evidence, $paper_id if defined $paper_id;
 	}
     }
-    $component_json->{evidence_curies} = @component_paper_evidence > 0 ? \@component_paper_evidence : ["WB:WBPaper00042571"];
+    if ($curation_test && scalar @component_paper_evidence == 0) {
+	push @component_paper_evidence, "WB:WBPaper00042571";
+    }
+    $component_json->{evidence_curies} = \@component_paper_evidence if scalar @component_paper_evidence > 0;
 	
     my @note_dtos;
-    my $cmp_note_dto = {
-	free_text => $note,
-	note_type_name => 'comment',
-	internal => JSON::false,
-	obsolete => JSON::false
-    };
-    if ($curation_test && $obj->Reference) {
-	$cmp_note_dto->{evidence_curies} = get_papers($obj);
+    for my $note (@$notes) {
+	my $cmp_note_dto = {
+	    free_text => $note,
+	    note_type_name => 'comment',
+	    internal => JSON::false,
+	    obsolete => JSON::false
+	};
+	if ($curation_test && $obj->Reference) {
+	    $cmp_note_dto->{evidence_curies} = get_papers($obj);
+	}
+	push @note_dtos, $cmp_note_dto;
     }
-    push @note_dtos, $cmp_note_dto;
-    $component_json->{note_dtos} = \@note_dtos if $curation_test;
+    $component_json->{note_dtos} = \@note_dtos if scalar @note_dtos > 0;
    	
     return $component_json;
 }

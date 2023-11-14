@@ -15,21 +15,22 @@ use Modules::AGR;
 my ($debug, $test, $verbose, $store, $wormbase, $curation_test, $limit, $schema);
 my ($outdir, $acedbpath, $ws_version, $bgi_json,$disease_file);
 
-const my $LINKML_SCHEMA => 'v1.10.0';
+const my $LINKML_SCHEMA => 'v1.11.0';
 # TODO: check SO term mappings with Stavros
 const my %TERM2SO => (
-    'Insertion'          => 'SO:0000667', # changed insertion_site to insertion
-    'Deletion'           => 'SO:0000159',
-    'Point_mutation'     => 'SO:1000008',
-    'Substitution'       => 'SO:1000002', # to hack our wrong SO-terms in => DELIN
-    'Delins'             => 'SO:1000032', # to hack our wrong SO-terms in => DELIN
-    'SNP'                => 'SO:0000694',
-    'Tandem_duplication' => 'SO:1000173',
-    'Natural_variant'    => 'SO:0001147',
-    'RFLP'               => 'SO:0000412',
-    'Engineered_allele'  => 'SO:0000783',
+    'Insertion'            => 'SO:0000667', # changed insertion_site to insertion
+    'Deletion'             => 'SO:0000159',
+    'Point_mutation'       => 'SO:1000008',
+    'Substitution'         => 'SO:1000002',
+    'Delins'               => 'SO:1000032',
+    'SNP'                  => 'SO:0000694',
+    'Tandem_duplication'   => 'SO:1000173',
+    'Natural_variant'      => 'SO:0001147',
+    'RFLP'                 => 'SO:0000412',
+    'Engineered_allele'    => 'SO:0000783',
     'Transposon_insertion' => 'SO:0001054',
-    'Allele'             => 'SO:0001023'
+    'Allele'               => 'SO:0001023',
+    'sequence_variant'     => 'SO:0001060'
 );
 
 GetOptions (
@@ -75,10 +76,10 @@ my $allele_out_fh  = file($allele_outfile)->openw;
 my $assoc_out_fh = file($assoc_outfile)->openw;
 my $gene_assoc_out_fh = file($gene_assoc_outfile)->openw;
 my $variant_out_fh = file($variant_outfile)->openw;
-$allele_out_fh->print("{\n   \"linkml_version\" : \"" . $LINKML_SCHEMA . "\",\n    \"alliance_member_release_version\" : \"" . $ws_version . "\"\n    \"allele_ingest_set\" : [");
-$assoc_out_fh->print("{\n   \"linkml_version\" : \"" . $LINKML_SCHEMA . "\",\n    \"alliance_member_release_version\" : \"" . $ws_version . "\"\n");
+$allele_out_fh->print("{\n   \"linkml_version\" : \"" . $LINKML_SCHEMA . "\",\n    \"alliance_member_release_version\" : \"" . $ws_version . "\",\n    \"allele_ingest_set\" : [");
+$assoc_out_fh->print("{\n   \"linkml_version\" : \"" . $LINKML_SCHEMA . "\",\n    \"alliance_member_release_version\" : \"" . $ws_version . "\",\n");
 $gene_assoc_out_fh->print("    \"allele_gene_association_ingest_set\" : [");
-$variant_out_fh->print("{\n    \"linkml_version\" : \"" . $LINKML_SCHEMA . "\",\n    \"alliance_member_release_version\" : \"" . $ws_version . "\"\n    \"variant_ingest_set\" : [");
+$variant_out_fh->print("{\n    \"linkml_version\" : \"" . $LINKML_SCHEMA . "\",\n    \"alliance_member_release_version\" : \"" . $ws_version . "\",\n    \"variant_ingest_set\" : [");
 
 my $gene_assoc_count = 0;
 my $alleles = process_variations();
@@ -150,14 +151,13 @@ sub process_variations {
 	    curie                      => "WBVar:" . $obj->name,
 	    taxon_curie                => "NCBITaxon:" . $obj->Species->NCBITaxonomyID->name,
 	    internal                   => JSON::false,
-	    obsbolete                  => $is_obsolete,
+	    obsolete                  => $is_obsolete,
 	    created_by_curie           => 'WB:curator',
 	    updated_by_curie           => 'WB:curator',
 	    data_provider_dto          => $data_provider_dto_json
 	};
-	my ($variant_type, $source_general_consequence) = get_variant_type($obj);
+	my $variant_type = get_variant_type($obj);
 	$var_obj->{variant_type_curie} = $variant_type if defined $variant_type;
-	$var_obj->{source_general_consequence} = $source_general_consequence if defined $source_general_consequence;
 	$var_obj->{variant_status_name} = 'public' unless $is_obsolete;
 	
 	if ($obj->Method) {
@@ -337,9 +337,9 @@ sub process_variations {
 	    }
 	}
 
-	# TODO: work out which notes belong on variants and which on alleles
+	# TODO: work out which notes belong on variants and which on alleles, need to change note type for variants
 	$allele_obj->{note_dtos} = \@note_dtos if @note_dtos;
-	$var_obj->{note_dto} = \@note_dtos if @note_dtos;
+	#$var_obj->{note_dtos} = \@note_dtos if @note_dtos;
 
 	# Stick some random data in for curation DB test files
 	if ($curation_test) {
@@ -506,46 +506,47 @@ sub process_transgenes {
 sub get_variant_type {
     my $obj = shift;
 
-    my ($variant_type, $source_general_consequence);
-    if ($obj->Engineered_allele) {
-	$variant_type = $TERM2SO{'Engineered_allele'};
-    } elsif ($obj->Allele) {
-	$variant_type = $TERM2SO{'Allele'};
-    } elsif ($obj->SNP || $obj->Confirmed_SNP || $obj->Predicted_SNP) {
-	$variant_type = $TERM2SO{'SNP'};
-    } elsif ($obj->RFLP) {
-	$variant_type = $TERM2SO{'RFLP'};
-    } elsif ($obj->Transposon_insertion) {
-	$variant_type = $TERM2SO{'Transposon_insertion'};
-    } elsif ($obj->Natural_variant) {
-	$variant_type = $TERM2SO{'Natural_variant'};
-    }
+    my $variant_type;
 
+    my %var_types;
+    %var_types = map {$_->name => 1} $obj->Variation_type if $obj->Variation_type;
     if ($obj->Substitution) {
 	my @subs = $obj->Substitution->row;
 	if (scalar @subs >= 2 && length($subs[0]) == 1 && length($subs[1]) == 1) {
-	    if ($obj->Natural_variant) {
-		$source_general_consequence = $TERM2SO{'SNP'};
+	    if (exists $var_types{'Natural_variant'}) {
+		$variant_type = $TERM2SO{'SNP'};
 	    } else {
-		$source_general_consequence = $TERM2SO{'Point_mutation'};
+		$variant_type = $TERM2SO{'Point_mutation'};
 	    }
 	} else {
-	    $source_general_consequence = $TERM2SO{'Delins'};
+	    $variant_type = $TERM2SO{'Delins'};
 	}
     } elsif ($obj->Insertion) {
-	$source_general_consequence = $TERM2SO{'Insertion'};
+	if ($obj->Deletion) {
+	    $variant_type = $TERM2SO{'Delins'};
+	} else {
+	    $variant_type = $TERM2SO{'Insertion'};
+	}
     } elsif ($obj->Deletion) {
-	$source_general_consequence = $TERM2SO{'Deletion'};
+	$variant_type = $TERM2SO{'Deletion'};
     } elsif ($obj->Tandem_duplication) {
-	$source_general_consequence = $TERM2SO{'Tandem_duplication'};
+	$variant_type = $TERM2SO{'Tandem_duplication'};
+    } elsif (exists $var_types{'SNP'} || exists $var_types{'Confirmed_SNP'} || exists $var_types{'Predicted_SNP'}) {
+	if (exists $var_types{'Natural_variant'}) {
+	    $variant_type = $TERM2SO{'SNP'};
+	} else {
+	    $variant_type = $TERM2SO{'Point_mutation'};
+	}
+    } elsif (exists $var_types{'Transposon_insertion'}) {
+	$variant_type = $TERM2SO{'Transposon_insertion'};
+    } elsif (exists $var_types{'Allele'}) {
+	$variant_type = $TERM2SO{'Allele'};
+    } elsif (exists $var_types{'Natural_variant'}) {
+	$variant_type = $TERM2SO{'Natural_variant'};
+    } else {
+	$variant_type = $TERM2SO{'sequence_variant'};
     }
-
-    if (!defined $variant_type) {
-	$variant_type = $source_general_consequence;
-	$source_general_consequence = undef();
-    }
-
-    return ($variant_type, $source_general_consequence);
+    return $variant_type;
 }
 
 

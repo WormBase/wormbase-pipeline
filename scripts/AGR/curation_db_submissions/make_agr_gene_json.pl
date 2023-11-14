@@ -11,7 +11,7 @@ use Wormbase;
 my ($help, $debug, $test, $verbose, $store, $wormbase, $schema);
 my ($outfile, $acedbpath, $ws_version, $out_fh);
 
-const my $LINKML_SCHEMA => 'v1.7.3';
+const my $LINKML_SCHEMA => 'v1.11.0';
 
 GetOptions ("help"        => \$help,
             "debug=s"     => \$debug,
