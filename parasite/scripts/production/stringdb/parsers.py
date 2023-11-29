@@ -77,7 +77,7 @@ def create_df(df, match_column, match_list, output_path):
 # function to iterate through output matching proteins file and for each genome project, print the total number of matches 
 # input is a variable that has the full path to the output proteins file
 
-def count_matches(output_file, output_tsv):
+def count_matches(output_file, number_of_matches_file):
     data_dict = {}
 
     # read in output genes file
@@ -106,7 +106,7 @@ def count_matches(output_file, output_tsv):
         print(key, len([item for item in value if item]))
 
     # count how many gene matches there are for each genome project
-    with open(output_tsv, 'a') as out_file:
+    with open(number_of_matches_file, 'a') as out_file:
         for key, value in data_dict.items():
             # write key and number of associated values to the output TSV file
             out_file.write(f'{key}\t{len(value)}\n')
