@@ -16,16 +16,17 @@
 */
 
 // run Busco in genome mode 
-process BUSCO_GENOME_LINEAGE {
+process BUSCO_GENOME_RUN {
 
-  label 'busco'
+  label 'busco_run'
 
   input:
 
   file genome
   val outdir
   val db
-  val busco_dataset
+  val augustus_species
+  val odb
 
   output:
 
@@ -33,11 +34,11 @@ process BUSCO_GENOME_LINEAGE {
   val outdir, emit:species_outdir
 
   // ourdir is Salmo_trutta (production name)
-  publishDir "${params.outDir}/${outdir}/",  mode: 'copy'
+  publishDir "${params.output_dir}/${outdir}/",  mode: 'copy'
 
   script:
   """
-  busco -f -i ${genome} -o genome --mode genome -l ${busco_dataset} -c ${task.cpus} --offline --download_path ${params.download_path}
+  busco --lineage_dataset ${odb} --mode genome --augustus --augustus_species ${augustus_species} --cpu ${task.cpus} --offline --download_path ${params.download_path} -f -i ${genome} -o genome 
   """
 }
 

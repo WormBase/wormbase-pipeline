@@ -16,7 +16,7 @@
 */
 
 // Get Busco dataset using NCBI taxonomy in meta table 
-process BUSCO_DATASET {
+process BUSCO_ODB {
   scratch false
 
   label 'default'
@@ -27,7 +27,7 @@ process BUSCO_DATASET {
   val odb_version
 
   output:
-  tuple val(dbs), stdout
+    tuple val(dbs), stdout
 
   script:
   """
@@ -37,21 +37,33 @@ process BUSCO_DATASET {
   import os
   core = Core('${server.host}', '${dbs.database}')
 
-  #json_path = 'busco_datasets.${dbs.database}.json'
+  odb = core.busco_dataset('${odb_version}').strip()
+  print(f"{odb}", end="")
+  """
+}
 
-  #busco_dict = {
-  #  'odb': core.busco_dataset('${odb_version}'),
-  #  'augustus_species': core.busco_augustus_species()
-  #}
+process BUSCO_AUGUSTUS_SPECIES {
+  scratch false
 
-  #json_object = json.dumps(busco_dict, indent=4)
+  label 'default'
+   
+  input:
+  val dbs
+  val server
 
-  #with open(json_path, "w") as outfile:
-  #  outfile.write(json_object)
+  output:
+    tuple val(dbs), stdout
 
-  odb = core.busco_dataset('${odb_version}')
-  augustus_species = core.busco_augustus_species()
-  print(f"{odb};{augustus_species}")
+  script:
+  """
+  #!python
+  from ProductionMysql import *
+  import json
+  import os
+  core = Core('${server.host}', '${dbs.database}')
+
+  augustus_species = core.busco_augustus_species().strip()
+  print(f"{augustus_species}", end="")
   """
 
 }

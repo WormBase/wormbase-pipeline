@@ -21,21 +21,22 @@ process FETCH_GENOME {
   label 'fetch_file'
 
   input:
-  tuple val(species_dir),val(db), val(busco_dataset), val(mode)
+  val(dbs)
 
-  storeDir "${params.outDir}/${species_dir.trim()}/genome/"
+  storeDir "${params.output_dir}/${dbs.species}/genome/"
 
   output:
 
   path "genome_toplevel.fa", emit:fasta
-  val "${species_dir}", emit:output_dir
-  val db, emit:db_name
-  val busco_dataset, emit:busco_dataset
+  val "${dbs.species}", emit:output_dir
+  val dbs.database, emit:db_name
+  val dbs.augustus_species
+  val dbs.odb
 
   script:
   """
-  mkdir -p ${params.outDir}//${species_dir.trim()}/genome/
-  perl ${params.enscode}/ensembl-analysis/scripts/sequence_dump.pl -dbhost ${params.host} -dbport ${params.port} -dbname $db -dbuser ${params.user} -coord_system_name toplevel -toplevel -onefile -nonref -filename genome_toplevel.fa
+  mkdir -p ${params.output_dir}/${dbs.species}/genome/
+  perl ${params.enscode}/ensembl-analysis/scripts/sequence_dump.pl -dbhost ${params.host} -dbport ${params.port} -dbname ${dbs.database} -dbuser ${params.user} -coord_system_name toplevel -toplevel -onefile -nonref -filename genome_toplevel.fa
   """
 
 }

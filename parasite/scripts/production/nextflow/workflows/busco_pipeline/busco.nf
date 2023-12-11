@@ -92,11 +92,21 @@ else {
   busco_mode = params.mode
 }
 
+if (params.output_dir) {
+    outdir = params.output_dir
+}
+else {
+    exit 1, "Missing output directory"
+}
+
 // include { DUMP_SQL } from '../../subworkflows/dump_sql/main.nf'
 // include { DUMP_METADATA } from '../../subworkflows/dump_metadata/main.nf'
-include { BUSCO_DATASET } from '../../modules/busco/busco_dataset.nf'
+include { BUSCO_ODB } from '../../modules/busco/busco_dataset.nf'
+include { BUSCO_AUGUSTUS_SPECIES } from '../../modules/busco/busco_dataset.nf'
 include { DB_FACTORY } from '../../modules/database/db_factory.nf'
 include { read_json } from '../../modules/utils/utils.nf'
+include { FETCH_GENOME } from '../../modules/busco/fetch_genome.nf'
+include { BUSCO_GENOME_RUN } from '../../modules/busco/busco_genome_run.nf'
 
 // Run main workflow
 workflow {
@@ -107,7 +117,16 @@ workflow {
     
     buscoModes = Channel.fromList(busco_mode)
 
-    BUSCO_DATASET(dbs,server,params.odb_version) | view
+    dbs_w_odb = BUSCO_ODB(dbs, server, params.odb_version) 
+                | map { [database: it[0].database, species: it[0].species, division: it[0].division, odb: it[1]]}
+
+    busco_dbs = BUSCO_AUGUSTUS_SPECIES(dbs_w_odb, server) 
+                | map { [database: it[0].database, species: it[0].species, division: it[0].division, odb: it[0].odb, augustus_species: it[1]] }
+    
+    if (busco_mode.contains('genome')) {
+        genome_data = FETCH_GENOME(busco_dbs)
+        BUSCO_GENOME_RUN(genome_data)
+    }
 
     // DUMP_SQL(server, dbs, filter_map, params.output_dir)
     // DUMP_METADATA(server, dbs, filter_map, params.output_dir)
