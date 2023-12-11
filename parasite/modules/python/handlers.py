@@ -78,26 +78,30 @@ def core_db_to_align_notupdated_to_fasta_args(core_db, parasite_version, previou
 
 def create_fasta_processing_command(fasta_arg, fasta_dir, fasta_arg_delimiter, parasite_ftp_url_backbone, download_bash_script, file_suffix=""):
     genome, fasta_url = fasta_arg.split(fasta_arg_delimiter)
-    save_path = os.path.join(fasta_dir, genome + ("."+file_suffix if file_suffix!="." else "") + ".fa" + (".gz" if fasta_url.endswith(".gz") else ""))
+    save_path = os.path.join(fasta_dir, genome + ("."+file_suffix+"." if file_suffix!="." and file_suffix!="" else "") +
+    ("." if file_suffix=="" or file_suffix=="." else "") +
+    "fa" + (".gz" if fasta_url.endswith(".gz") else ""))
     fasta_name_in_checksums = re.sub(parasite_ftp_url_backbone+"/WBPS\d+/", "",fasta_url)
     checksums_url = re.match(parasite_ftp_url_backbone+"/WBPS\d+/", fasta_url).group(0) + "CHECKSUMS"
     # if not url_file_exists(fasta_url): exit_with_error("{0} is not a valid url.".format(fasta_url))
     if not url_file_exists(checksums_url): exit_with_error("{0} is not a valid url.".format(checksums_url))
-    return " ".join(["sh",download_bash_script,fasta_url,save_path,checksums_url,fasta_name_in_checksums])
+    return(" ".join(["sh",download_bash_script,fasta_url,save_path,checksums_url,fasta_name_in_checksums]),save_path)
 
 def create_core_dumping_command(core_db_arg, fasta_dir, file_suffix="",
                                 genome_dump=True, softmask_option=True,
                                 protein_dump=False, canonical_only=True):
     core_db, host = core_db_arg.split(":")
     genome = parasite_core2genome(core_db)
-    save_path = os.path.join(fasta_dir, genome + ("."+file_suffix if file_suffix!="." else "") + ".fa")
+    save_path = os.path.join(fasta_dir, genome + 
+    ("."+file_suffix+"." if file_suffix!="." and file_suffix!="" else "") +
+    ("." if file_suffix=="" or file_suffix=="." else "") + "fa")
     core = Core(host, core_db, writable=False)
     if genome_dump == True and protein_dump == True:
         exit_with_error("Error: Either genome_dump or protein_dump should be used.")
     elif genome_dump == True and protein_dump == False:
-        return core.dump_genome_command(save_path, softmask=softmask_option)
+        return(core.dump_genome_command(save_path, softmask=softmask_option), save_path)
     elif genome_dump == False and protein_dump == True:
-        return core.dump_protein_command(save_path, canonical_only=canonical_only)
+        return(core.dump_protein_command(save_path, canonical_only=canonical_only), save_path)
 
 def read_newick_tree_file(tree_path):
     tree = Phylo.read(tree_path, "newick")
@@ -106,13 +110,33 @@ def read_newick_tree_file(tree_path):
 def tree_clades(tree):
     return [clade.name for clade in tree.find_clades() if clade.name]
 
-def write_seqfile(tree, genomes, outfile, fasta_dir):
-    Phylo.write(tree, outfile, "newick")
+def write_seqfile_tree(tree, outfile, tree_format):
+    output_buffer = StringIO()
+    # Write the tree to the StringIO object
+    Phylo.write(tree, output_buffer, tree_format)
+    # Get the content as a string
+    output_string = output_buffer.getvalue()
+    # Close the StringIO object
+    output_buffer.close()
+    # For example, remove the undesired characters
+    output_string = output_string.replace("[&r]", "")
+    with open(outfile, "w") as file:
+        file.write(output_string)
+
+
+def write_seqfile(tree, genomes_dict, outfile, fasta_dir, tree_format="newick"):
+    write_seqfile_tree(tree, outfile, tree_format)
     with open(outfile, 'a') as fp:
-        for genome in genomes:
-            fasta_file = os.path.join(fasta_dir, genome + ".fa")
-            if not os.path.isfile(fasta_file):
-                exit_with_error("Fasta file does not exist: {0}".format(fasta_file))
+        for genome in genomes_dict:
+            fasta_file = genomes_dict[genome]
+            uncompressed_fasta_file = fasta_file.rstrip(".gz")
+            if os.path.isfile(fasta_file):
+                file_to_write = fasta_file
+            elif os.path.isfile(uncompressed_fasta_file):
+                file_to_write = uncompressed_fasta_file
+            else:
+                exit_with_error("Fasta file does not exist: {0} or {1}".format(fasta_file,uncompressed_fasta_file))
+            
             # write each item on a new line
-            fp.write("%s\t%s\n" % (genome, fasta_dir + genome + ".fa.gz"))
+            fp.write(f"{genome}\t{file_to_write}\n")
 

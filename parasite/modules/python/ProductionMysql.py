@@ -29,9 +29,7 @@ STAGING_HOST = os.environ['PARASITE_STAGING_MYSQL']
 PRODUCTION_HOST = 'mysql-ps-prod-1'
 PREVIOUS_STAGING_HOST = os.environ['PREVIOUS_PARASITE_STAGING_MYSQL']
 PARASITE_VERSION = os.environ['PARASITE_VERSION']
-PREVIOUS_PARASITE_VERSION = os.environ['PREVIOUS_PARASITE_VERSION']
 ENSEMBL_VERSION = os.environ['ENSEMBL_VERSION']
-PREVIOUS_ENSEMBL_VERSION = os.environ['PREVIOUS_ENSEMBL_VERSION']
 WORMBASE_VERSION = os.environ['WORMBASE_VERSION']
 WORMBASE_ENSEMBL_SCRIPTS = os.path.join(os.environ['WORM_CODE'], 'scripts', 'ENSEMBL', 'scripts')
 DUMP_GENOME_SCRIPT = os.path.join(WORMBASE_ENSEMBL_SCRIPTS, "dump_genome.pl")
@@ -51,7 +49,6 @@ class Staging:
         self.variation_databases = [x for x in self.db_list if "_variation_" in x]
         self.relsuffix = "_"+ps_release+"_"+e_release
         self.release_core_databases = [x for x in self.core_databases if "_"+ps_release+"_"+e_release in x]
-        self.release_variation_databases = [x for x in self.variation_databases if "_"+ps_release+"_"+e_release in x]
         self.genomes = ["_".join(x.split("_")[0:3]) for x in self.core_databases]
         self.release_genomes = ["_".join(x.split("_")[0:3]) for x in self.release_core_databases]
         self.species = list(set(["_".join(x.split("_")[0:2]) for x in self.core_databases]))
@@ -62,12 +59,6 @@ class Staging:
 
     def variation_dbs(self, pattern):
         return (regex_match_dbs(pattern, self.variation_databases))
-    
-    def release_core_dbs(self, pattern):
-        return (regex_match_dbs(pattern, self.release_core_databases))
-    
-    def release_variation_dbs(self, pattern):
-        return (regex_match_dbs(pattern, self.release_variation_databases))
 
     def species(self, pattern):
         fdbs = self.dbs(pattern)
@@ -274,9 +265,9 @@ class Variation(Staging):
         return (ftp_species + "." + ftp_id + "." + "WBPS" + PARASITE_VERSION)
 
 staging = Staging(STAGING_HOST)
-previous_staging = Staging(PREVIOUS_STAGING_HOST, ps_release=PREVIOUS_PARASITE_VERSION, e_release=PREVIOUS_ENSEMBL_VERSION)
+previous_staging = Staging(PREVIOUS_STAGING_HOST)
 stagingw = Staging(STAGING_HOST, writeable=True)
-previous_stagingw = Staging(PREVIOUS_STAGING_HOST, ps_release=PREVIOUS_PARASITE_VERSION, e_release=PREVIOUS_ENSEMBL_VERSION, writeable=True)
+previous_stagingw = Staging(STAGING_HOST, writeable=True)
 
 def is_parasite_genome(pattern, staging=staging):
     if len(staging.core_dbs(pattern)) >= 1:
