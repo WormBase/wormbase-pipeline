@@ -11,7 +11,7 @@ from LSF import *
 from Bio import Phylo
 import validators
 
-
+FASTA_ARG_DELIMITER=";"
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-r","--release_run",required = False, default = False, action=argparse.BooleanOptionalAction,
@@ -39,7 +39,6 @@ def get_args():
 
 args = get_args()
 
-FASTA_ARG_DELIMITER=";"
 PARASITE_FTP_URL_BACKBONE="https://ftp.ebi.ac.uk/pub/databases/wormbase/parasite/releases"
 PARASITE_FTP_URL_PREVIOUS_RELEASE_SPECIES=os.path.join(PARASITE_FTP_URL_BACKBONE,"WBPS{0}".format(os.environ.get("PREVIOUS_PARASITE_VERSION")),"species")
 FASTA_PATH_SUFFIX=".genomic_softmasked.fa.gz"
@@ -89,10 +88,24 @@ fasta_args = (release_fasta_args if args.release_run else []) + \
 
 # Create bash commands for either dumping or downloading fasta files and store them in dictionaries
 print_info("Generating bash commands")
-fasta_commands_dict = {x.split(FASTA_ARG_DELIMITER)[0]:create_fasta_processing_command(x, fasta_dir, FASTA_ARG_DELIMITER, PARASITE_FTP_URL_BACKBONE, download_psftp_fasta_bash_script) for x in fasta_args}
-core_dump_commands_dict = {parasite_core2genome(x.split(":")[0]):create_core_dumping_command(x, fasta_dir) for x in dumpable_core_dbs}
+fasta_commands_dict={}
+core_dump_commands_dict={}
+output_fastas_dict={}
+for fasta_arg in fasta_args:
+    processing_command, fasta_output = create_fasta_processing_command(fasta_arg, fasta_dir, FASTA_ARG_DELIMITER, PARASITE_FTP_URL_BACKBONE, download_psftp_fasta_bash_script)
+    fasta_commands_dict[fasta_arg.split(FASTA_ARG_DELIMITER)[0]]=processing_command
+    output_fastas_dict[fasta_arg.split(FASTA_ARG_DELIMITER)[0]]=fasta_output
 
-# Unique genomes QC
+for dumpable_core_db in dumpable_core_dbs:
+        processing_command, fasta_output = create_core_dumping_command(dumpable_core_db, fasta_dir)
+        core_dump_commands_dict[parasite_core2genome(dumpable_core_db.split(":")[0])]=processing_command
+        output_fastas_dict[parasite_core2genome(dumpable_core_db.split(":")[0])]=fasta_output
+
+
+# fasta_commands_dict = {x.split(FASTA_ARG_DELIMITER)[0]:create_fasta_processing_command(x, fasta_dir, FASTA_ARG_DELIMITER, PARASITE_FTP_URL_BACKBONE, download_psftp_fasta_bash_script) for x in fasta_args}
+# core_dump_commands_dict = {parasite_core2genome(x.split(":")[0]):create_core_dumping_command(x, fasta_dir) for x in dumpable_core_dbs}
+
+# # Unique genomes QC
 all_genomes = list(fasta_commands_dict.keys()) + list(core_dump_commands_dict.keys())
 if len(all_genomes) != len(set(all_genomes)):
     print_error("Duplicate genomes found:")
@@ -107,8 +120,9 @@ tree =  read_newick_tree_file(args.tree)
 clades = tree_clades(tree)
 
 # Tree genomes match FASTA genomes QC
-# if set(all_genomes) != set(clades):
-#     exit_with_error("The production names for the genomes you selected do not match with the ones in the tree file: "+args.tree+".")
+if args.release_run:
+    if set(all_genomes) != set(clades):
+        exit_with_error("The production names for the genomes you selected do not match with the ones in the tree file: "+args.tree+".")
 
 # Submitting jobs
 print_info("Submitting FASTA download/dump jobs to LSF")
@@ -119,7 +133,7 @@ for genome in fasta_commands_dict:
                         cpu=1, mem="1gb",
                         cwd=dump_genomes_log_dir,
                         queue="short",
-                        only_write=False)
+                        only_write=True)
     jobs_dict[genome]=job_id
 
 for genome in core_dump_commands_dict:
@@ -128,15 +142,15 @@ for genome in core_dump_commands_dict:
                         cpu=1, mem="8gb",
                         cwd=dump_genomes_log_dir,
                         queue="production",
-                        only_write=False)
+                        only_write=True)
     jobs_dict[genome] = job_id
 print_info("Jobs submitted.")
 
 # LSF scheduler monitoring
-batch_jobs_check_status_periodically(jobs_dict)
+# batch_jobs_check_status_periodically(jobs_dict)
 
 # Write final output
 print_info("Writing seqfile {0}".format(seqfile))
-write_seqfile(tree, all_genomes, seqfile, fasta_dir)
+write_seqfile(tree, output_fastas_dict, seqfile, fasta_dir)
 
 print_info("Done")
