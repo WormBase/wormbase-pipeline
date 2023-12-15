@@ -56,6 +56,9 @@ class Staging:
 
     def core_dbs(self, pattern):
         return (regex_match_dbs(pattern, self.core_databases))
+    
+    def release_core_dbs(self, pattern):
+        return (regex_match_dbs(pattern, self.release_core_databases))
 
     def variation_dbs(self, pattern):
         return (regex_match_dbs(pattern, self.variation_databases))
