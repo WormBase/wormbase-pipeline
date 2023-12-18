@@ -42,3 +42,30 @@ process BUSCO_GENOME_RUN {
   """
 }
 
+// run Busco in genome mode 
+process BUSCO3_GENOME_RUN {
+
+  label 'busco3_run'
+
+  input:
+
+  file genome
+  val outdir
+  val db
+  val augustus_species
+  val odb
+  val busco_lineages
+
+  output:
+
+  path "genome/*.txt", emit: summary_file
+  val outdir, emit:species_outdir
+
+  // ourdir is Salmo_trutta (production name)
+  publishDir "${params.output_dir}/${outdir}/",  mode: 'copy'
+
+  script:
+  """
+  run_BUSCO.py -sp ${augustus_species} -l ${busco_lineages}/${odb} -o genome -i ${genome} -m genome -c ${task.cpus} -f -r
+  """
+}

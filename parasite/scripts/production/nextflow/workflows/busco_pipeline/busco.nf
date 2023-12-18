@@ -99,6 +99,13 @@ else {
     exit 1, "Missing output directory"
 }
 
+if (params.busco_lineages) {
+    busco_lineages = params.busco_lineages
+}
+else {
+    exit 1, "Missing the busco lineages directory"
+}
+
 // include { DUMP_SQL } from '../../subworkflows/dump_sql/main.nf'
 // include { DUMP_METADATA } from '../../subworkflows/dump_metadata/main.nf'
 include { BUSCO_ODB } from '../../modules/busco/busco_dataset.nf'
@@ -107,6 +114,7 @@ include { DB_FACTORY } from '../../modules/database/db_factory.nf'
 include { read_json } from '../../modules/utils/utils.nf'
 include { FETCH_GENOME } from '../../modules/busco/fetch_genome.nf'
 include { BUSCO_GENOME_RUN } from '../../modules/busco/busco_genome_run.nf'
+include { BUSCO3_GENOME_RUN } from '../../modules/busco/busco_genome_run.nf'
 
 // Run main workflow
 workflow {
@@ -125,7 +133,7 @@ workflow {
     
     if (busco_mode.contains('genome')) {
         genome_data = FETCH_GENOME(busco_dbs)
-        BUSCO_GENOME_RUN(genome_data)
+        BUSCO3_GENOME_RUN(genome_data, busco_lineages)
     }
 
     // DUMP_SQL(server, dbs, filter_map, params.output_dir)
