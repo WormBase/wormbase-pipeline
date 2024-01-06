@@ -18,7 +18,6 @@ import string
 import json
 import csv
 import pandas as pd
-from Bio import Phylo
 
 PARASITE_FTP_URL="ftp://ftp.ebi.ac.uk/pub/databases/wormbase/parasite/releases"
 PARASITE_HTTP_FTP_URL="https://ftp.ebi.ac.uk/pub/databases/wormbase/parasite/releases"

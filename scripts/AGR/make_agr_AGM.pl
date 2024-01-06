@@ -10,11 +10,10 @@ use Ace;
 use lib $ENV{CVS_DIR};
 use Modules::AGR;
 
-my ($database,$alleles,$outfile,$ws_version,$diseases);
+my ($database,$alleles,$outfile,$ws_version);
 GetOptions (
 	'database:s' => \$database,
 	'alleles:s'  => \$alleles,
-	'diseases:s' => \$diseases,
 	'outfile:s'  => \$outfile,
 	'wsversion:s'=> \$ws_version,
 )||die @!;
@@ -22,7 +21,7 @@ GetOptions (
 my $db = Ace->connect(-path => $database) or die(Ace->error);
 
 my @ids = read_ids($alleles);
-my @disease_ids = read_disease_ids($diseases);
+my @disease_ids = @{fetch_disease_ids($db)};
 
 my %strains;
 while (my $id = shift @ids){
@@ -109,19 +108,34 @@ $db->close;
 
 ###########################
 
-sub read_disease_ids{
-	my ($file) = @_;
+sub fetch_disease_ids {
+    my $db = shift;
 
-	my %seen;
-	open IN, "<$file";
-	my @ids;
-	while (<IN>){
-	    if ((/(WBGenotype\d+)/ or /(WBStrain\d+)/) and !exists $seen{$1}) {
-		push @ids, "$1" ;
-		$seen{$1}++;
+    my %ids;
+    my $it = $db->fetch_many(-query => 'Find Disease_model_annotation');
+    while (my $obj = $it->next) {
+	if ($obj->Strain) {
+	    $ids{$obj->Strain->name}++;
+	}
+	if ($obj->Genotype) {
+	    $ids{$obj->Genotype->name}++;
+	}
+	if ($obj->Modifier_strain) {
+	    my @mod_strains = map {$_->name} $obj->Modifier_strain;
+	    for my $mod (@mod_strains) {
+		$ids{$mod}++;
 	    }
 	}
-	return @ids;
+	if ($obj->Modifier_genotype) {
+	    my @mod_genotypes = map {$_->name} $obj->Modifier_genotype;
+	    for my $mod (@mod_genotypes) {
+		$ids{$mod}++;
+	    }
+	}
+    }
+
+    my @unique_ids = keys %ids;
+    return \@unique_ids;
 }
 
 sub read_ids{

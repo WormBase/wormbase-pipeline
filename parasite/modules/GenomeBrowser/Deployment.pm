@@ -54,7 +54,10 @@ sub solve_ftp_file_format {
             $log->fatal("Failed: $tmpfile does not exist");
             return "ERROR";
         }
-    } else {
+    } elsif ($path =~ /^s3:\/\//) {
+      return $path
+    } 
+    else {
         $log->fatal("Failed: Could not resolve $path or $bzpath");
         return "ERROR";
     }
@@ -102,10 +105,10 @@ sub sync_ebi_to_embassy {
       (my $path = $source_url) =~ s/ftp:\/\/ftp\.ebi\.ac\.uk\/pub/\/nfs\/ftp\/public/;
       my $resolved_path = solve_ftp_file_format($path, $tmpdir);
       unless ($resolved_path eq "ERROR") {
-          $log->info("Trying $EMBASSY_COMMAND s3 scp $resolved_path $target_path");
+          $log->info("Trying $EMBASSY_COMMAND s3 cp $resolved_path $target_path");
           my $cp_cmd = "$EMBASSY_COMMAND s3 cp $resolved_path $target_path";
           my $output = `$cp_cmd`;
-          die $log->fatal("Failed: $cp_cmd, output: $output") if $?;
+          $log->info("Failed: $cp_cmd, output: $output") if $?;
       }
   }
   if (index($source_url, $EMBASSY_BASE_URL) != -1){

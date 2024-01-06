@@ -3,3 +3,6 @@ parasite/scripts/production/core-creation/ensembl
 parasite/scripts/production/ncbi/tmp
 *__pycache__/
 *.pyc
+parasite/scripts/production/nextflow/workflows/busco_pipeline/work
+parasite/scripts/production/nextflow/workflows/busco_pipeline/.nextflow
+parasite/scripts/production/nextflow/workflows/busco_pipeline/*.log*

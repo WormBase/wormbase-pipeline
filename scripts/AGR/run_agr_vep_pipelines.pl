@@ -848,12 +848,33 @@ sub remove_mirna_primary_transcripts {
     return;
 }
 
+sub remove_fasta_portion {
+    my $mod = shift;
+
+    my $in_file = "${mod}_GFF.gff";
+    my $out_file = "${mod}_GFF.gff.tmp";
+    open(IN, "<$in_file");
+    open(OUT, ">$out_file");
+    while(<IN>) {
+        my $line = $_;
+        last if $line =~ /^#+FASTA/;
+        print OUT $line;
+    }
+    close (IN);
+    close (OUT);
+
+    system("mv $out_file $in_file");
+
+    return;
+}
 
 sub munge_gff {
     my ($mod, $external_human_gff, $log) = @_;
     
     run_system_cmd("rm ${mod}_GFF.refseq.gff", "Deleting old munged GFF file", $log) if -e "${mod}_GFF.refseq.gff";
 
+    remove_fasta_portion($mod) if $mod eq 'SGD';
+    
     my $reverse_map = get_reverse_chromosome_map($mod);
 
     my $hgnc_id_map;

@@ -57,22 +57,10 @@ my $db = Ace->connect(-path => $acedbpath,  -program => $tace)
     or $log->log_and_die("Connection failure: ". Ace->error);
 $db->date_style('ace');
 
-my (%paper_links, %go_aspect);
-
-$log->write_to("Fetching Paper data...\n") if $debug;
-my @aql_results = $db->aql('select a, a->Name, a->Database[2], a->Database[3]  from a in class paper');
-foreach my $res (@aql_results) {
-  my ($wbpap, $nm, $db, $dbf) = @$res;
-  if ($nm and $nm =~ /doi(\S+)/) {
-    $paper_links{$wbpap}->{DOI} = $1;
-  }
-  if ($db and ($db eq 'PMID' or $db eq 'DOI')) {
-    $paper_links{$wbpap}->{$db} = $dbf;
-  }
-}
+my (%go_aspect);
 
 $log->write_to("Fetching GO type data...\n") if $debug;
-@aql_results = $db->aql('select a, a->Type[1] from a in class GO_term');
+my @aql_results = $db->aql('select a, a->Type[1] from a in class GO_term');
 foreach my $res (@aql_results) {
   next if not $res->[1];
   if (lc($res->[1]) eq 'molecular_function') {
@@ -245,20 +233,28 @@ foreach my $suf (0..9) {
     # Reference
     my @reference;
     if ($obj->Reference) {
-      my $wbpaper = $obj->Reference->name;
-      @reference = ("WB_REF:$wbpaper");
-      if (exists $paper_links{$wbpaper}) {
-        if (exists $paper_links{$wbpaper}->{PMID}) {
-          push @reference, "PMID:" . $paper_links{$wbpaper}->{PMID};
-        } elsif (exists $paper_links{$wbpaper}->{DOI}) {
-          push @reference, "DOI:" . $paper_links{$wbpaper}->{DOI};
-        }
-      }
+	my $wbpaper = $obj->Reference->name;
+	@reference = ("WB_REF:$wbpaper");
+	my ($pmid, $doi);
+	if ($obj->Reference->Database) {
+	    for my $database ($obj->Reference->Database) {
+		if ($database->right eq 'PMID') {
+		    $pmid = $database->right->right;
+		} elsif ($database->right eq 'DOI') {
+		    $doi = $database->right->right;
+		}
+	    }
+	}
+	if (defined $pmid) {
+	    push @reference, "PMID:" . $pmid;
+	} elsif (defined $doi) {
+	    push @reference, "DOI:" . $doi;
+	} 
     } elsif ($obj->GO_reference) {
-      my ($prefix) = $obj->GO_reference(2);
-      my ($suffix) = $obj->GO_reference(3);
-      
-      push @reference, "${prefix}:${suffix}";
+	my ($prefix) = $obj->GO_reference(2);
+	my ($suffix) = $obj->GO_reference(3);
+	
+	push @reference, "${prefix}:${suffix}";
     }
     $gaf_line->{reference} = join("|", @reference);
     
