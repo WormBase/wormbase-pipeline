@@ -7,9 +7,21 @@ use Getopt::Long;
 use Bio::EnsEMBL::Registry;
 use Bio::EnsEMBL::Compara::DBSQL::DBAdaptor;
 
-$ENV{COMPARA_HAL_DIR} = '/hps/nobackup/flicek/wormbase/parasite/cactus_alignments/WBPS18/Anc028';
+my $mlss_id;
+my $compara_hal_dir;
 
-my $mlss_id = 4822;
+GetOptions(
+	    "compara_hal_dir=s" => \$compara_hal_dir,
+	        "mlss_id=i"         => \$mlss_id
+	) or die("Error in command line arguments.\n");
+
+# Check if required options are provided
+unless (defined $compara_hal_dir && defined $mlss_id) {
+	die("Usage: $0 --compara_hal_dir=<HAL_DIR> --mlss_id=<MLSS_ID>\n");
+}
+
+$ENV{COMPARA_HAL_DIR} = $compara_hal_dir;
+
 my $PARASITE_STAGING_MYSQL = $ENV{PARASITE_STAGING_MYSQL};
 
 my ( $species, $chr, $start, $end ) = ('caenorhabditis_angaria_prjna51225', 'Cang_2012_03_13_00001', 231967, 232967);

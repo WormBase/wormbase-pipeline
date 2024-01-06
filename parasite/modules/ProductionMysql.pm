@@ -187,15 +187,15 @@ our $GOLDEN_SPECIES_REGEX_MATCH = join ("|",
   "^(sch)istosoma_([a-z]{3})[a-z]{2,9}_(td[1-2])prjeb44434_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$", # $6,7,8
   "^(s)chmidtea_(med)iterranea_s2f19(h[1-2]prjna885486)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$", # $9,10,11
   "^meloidogyne_chitwoodi_(r[a-z]{3}[1-2]?prjna666745)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$", # $12
-  "^(.{1,2}).*?_(.{1,2}).*?_(v[1-9].*?)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$", # $13,14,15
-  "^(.{1,2}).*?_(.{1,4}).*?_(.*?)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$", # $16,17,18
-  "^([a-z])[^_]+_([^_]+)_core_.*\$" # $19,20
+  "^(n)ecator_(ame)ricanus_(prjna1007425)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$", # $13,14,15
+  "^(.{1,2}).*?_(.{1,2}).*?_(v[1-9].*?)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$", # $16,17,18
+  "^(.{1,2}).*?_(.{1,4}).*?_(.*?)_core_$ENV{PARASITE_VERSION}_$ENV{ENSEMBL_VERSION}_[0-9]*\$", # $19,20,21
+  "^([a-z])[^_]+_([^_]+)_core_.*\$" # $22,23
 );
-
 
 # $GOLDEN_SPECIES_REGEX_REPLACEMENT should have as many $ as the capturing groups above! So if you
 # add any regexes make sure to add some $ here:
-our $GOLDEN_SPECIES_REGEX_REPLACEMENT = '$1$2$3$4$5$6$7$8$9$10$11$12$13$14$15$16$17$18$19$20';
+our $GOLDEN_SPECIES_REGEX_REPLACEMENT = '$1$2$3$4$5$6$7$8$9$10$11$12$13$14$15$16$17$18$19$20$21$22$23';
 
 sub core_db_to_biomart_name {
   my ($core_db) = @_;
