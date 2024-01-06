@@ -25,8 +25,10 @@ process BUSCO_DATASET {
   val dbs
   val server
   
+  storeDir "${params.output_dir}/${dbs.species}/"
+  
   output:
-  stdout, emit: busco_augustus_species
+  path "busco_augustus_species.json", emit: busco_augustus_species
 
   script:
   """
@@ -34,7 +36,15 @@ process BUSCO_DATASET {
   from ProductionMysql import *
   import json
   core = Core('${server.host}', '${dbs.database}')
-  print(core.busco_augustus_species())
-  """
+  result = core.busco_augustus_species()
 
+  # Prepare data to be written to JSON file
+  data = {
+      "busco_augustus_species_result": result
+  }
+
+  # Writing data to a JSON file
+  with open('busco_augustus_species.json', 'w') as json_file:
+      json.dump(data, json_file, indent=4)
+  """
 }

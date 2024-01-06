@@ -16,26 +16,30 @@
 */
 
 // run Busco in protein mode 
-process BUSCO_PROTEIN_LINEAGE {
+process BUSCO3_PROTEIN_RUN {
 
-  label 'busco'
+  label 'busco3_run'
 
   input:
-  file translations
+
+  file protein
   val outdir
   val db
-  val busco_dataset
+  val augustus_species
+  val odb
+  val busco_lineages
 
   output:
-  path "fasta/*.txt", emit: summary_file
+
+  path "run_busco_protein/short_summary*.txt", emit: summary_file
   val outdir, emit:species_outdir
+  val db
 
   // ourdir is Salmo_trutta (production name)
-  publishDir "${params.outDir}/${outdir}/",  mode: 'copy'
+  publishDir "${params.output_dir}/${outdir}/",  mode: 'copy'
 
   script:
   """
-  busco -f -i ${translations}  --mode proteins -l ${busco_dataset} -c ${task.cpus} -o fasta --offline --download_path ${params.download_path}
+  run_BUSCO.py -sp ${augustus_species} -l ${busco_lineages}/${odb} -o busco_protein -i ${protein} -m proteins -c ${task.cpus} -f
   """
 }
-

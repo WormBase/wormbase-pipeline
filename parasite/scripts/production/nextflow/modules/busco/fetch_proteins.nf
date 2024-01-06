@@ -21,18 +21,20 @@ process FETCH_PROTEINS {
   label 'fetch_file'
 
   input:
-  tuple val(species_dir),val(db), val(busco_dataset), val(mode)
-
-  storeDir "${params.outDir}/${species_dir}/fasta/"
+  val(dbs)
+  
+  storeDir "${params.output_dir}/${dbs.species}/protein/"
 
   output:
-  path "${db}_translations.fa", emit: fasta
-  val species_dir, emit: output_dir
-  val db, emit:db_name
-  val busco_dataset, emit:busco_dataset
+  path "translations.fa", emit: protein
+  val "${dbs.species}", emit:output_dir
+  val dbs.database, emit:db_name
+  val dbs.augustus_species
+  val dbs.odb
 
   script:
   """
-  perl ${params.enscode}/ensembl-analysis/scripts/protein/dump_translations.pl -host ${params.host} -port ${params.port} -dbname $db -user ${params.user} -dnadbhost ${params.host} -dnadbport ${params.port} -dnadbname $db -dnadbuser ${params.user} -file ${db}_translations.fa  ${params.dump_params}
+  mkdir -p ${params.output_dir}/${dbs.species}/protein/
+  perl ${params.enscode}/ensembl-analysis/scripts/protein/dump_translations.pl -host ${params.host} -port ${params.port} -dbname ${dbs.database} -user ${params.user} -dnadbhost ${params.host} -dnadbport ${params.port} -dnadbname ${dbs.database} -dnadbuser ${params.user} -file translations.fa  ${params.dump_params}
   """
 }

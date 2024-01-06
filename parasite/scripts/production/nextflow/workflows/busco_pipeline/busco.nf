@@ -92,6 +92,14 @@ else {
   busco_mode = params.mode
 }
 
+run_type = []
+if (params.type instanceof java.lang.String) {
+  run_type = [params.type]
+}
+else {
+  run_type = params.type
+}
+
 if (params.output_dir) {
     outdir = params.output_dir
 }
@@ -113,11 +121,17 @@ include { BUSCO_AUGUSTUS_SPECIES } from '../../modules/busco/busco_dataset.nf'
 include { DB_FACTORY } from '../../modules/database/db_factory.nf'
 include { read_json } from '../../modules/utils/utils.nf'
 include { FETCH_GENOME } from '../../modules/busco/fetch_genome.nf'
-include { BUSCO_GENOME_RUN } from '../../modules/busco/busco_genome_run.nf'
+include { FETCH_PROTEINS } from '../../modules/busco/fetch_proteins.nf'
 include { BUSCO3_GENOME_RUN } from '../../modules/busco/busco_genome_run.nf'
+include { BUSCO3_PROTEIN_RUN } from '../../modules/busco/busco_protein_run.nf'
+include { OMAMER_HOG } from '../../modules/omark/omamer_hog.nf'
+include { RUN_OMARK } from '../../modules/omark/run_omark.nf'
+include { BUSCOGENOME2DATABASE } from '../../modules/utils/parse_output.nf'
+include { BUSCOPROTEIN2DATABASE } from '../../modules/utils/parse_output.nf'
+include { OMARK2DATABASE } from '../../modules/utils/parse_output.nf'
 
 // Run main workflow
-workflow {
+workflow{
     
     dbs = DB_FACTORY(server, filter_map)
         .map(it -> read_json(it))
@@ -131,11 +145,21 @@ workflow {
     busco_dbs = BUSCO_AUGUSTUS_SPECIES(dbs_w_odb, server) 
                 | map { [database: it[0].database, species: it[0].species, division: it[0].division, odb: it[0].odb, augustus_species: it[1]] }
     
-    if (busco_mode.contains('genome')) {
-        genome_data = FETCH_GENOME(busco_dbs)
-        BUSCO3_GENOME_RUN(genome_data, busco_lineages)
+    if (run_type.contains('busco') && busco_mode.contains('genome')) {
+            genome_data = FETCH_GENOME(busco_dbs)
+            bgenome_run = BUSCO3_GENOME_RUN(genome_data, busco_lineages)
+            BUSCOGENOME2DATABASE(bgenome_run, server)
+        }
+    if (busco_mode.contains('protein') || run_type.contains('omark')) {
+            protein_data = FETCH_PROTEINS(busco_dbs)
+            if (run_type.contains('busco')) {
+                bprotein_run = BUSCO3_PROTEIN_RUN(protein_data, busco_lineages)
+                BUSCOPROTEIN2DATABASE(bprotein_run, server)
+            }
+            if (run_type.contains('omark')) {
+                omhog = OMAMER_HOG(protein_data)
+                omrun = RUN_OMARK(omhog)
+                OMARK2DATABASE(omrun, server)
+            }   
+        }
     }
-
-    // DUMP_SQL(server, dbs, filter_map, params.output_dir)
-    // DUMP_METADATA(server, dbs, filter_map, params.output_dir)
-}

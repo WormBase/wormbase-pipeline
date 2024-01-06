@@ -30,15 +30,17 @@ process BUSCO_GENOME_RUN {
 
   output:
 
-  path "genome/*.txt", emit: summary_file
+  path "run_busco_genome/short_summary*.txt", emit: summary_file
   val outdir, emit:species_outdir
+  val db
+  
 
   // ourdir is Salmo_trutta (production name)
   publishDir "${params.output_dir}/${outdir}/",  mode: 'copy'
 
   script:
   """
-  busco --lineage_dataset ${odb} --mode genome --augustus --augustus_species ${augustus_species} --cpu ${task.cpus} --offline --download_path ${params.download_path} -f -i ${genome} -o genome 
+  busco --lineage_dataset ${odb} --mode genome --augustus --augustus_species ${augustus_species} --cpu ${task.cpus} --offline --download_path ${params.download_path} -f -i ${genome} -o busco_genome 
   """
 }
 
@@ -58,14 +60,14 @@ process BUSCO3_GENOME_RUN {
 
   output:
 
-  path "genome/*.txt", emit: summary_file
+  path "run_busco_genome/short_summary*.txt", emit: summary_file
   val outdir, emit:species_outdir
+  val db
 
-  // ourdir is Salmo_trutta (production name)
   publishDir "${params.output_dir}/${outdir}/",  mode: 'copy'
 
   script:
   """
-  run_BUSCO.py -sp ${augustus_species} -l ${busco_lineages}/${odb} -o genome -i ${genome} -m genome -c ${task.cpus} -f -r
+  run_BUSCO.py -sp ${augustus_species} -l ${busco_lineages}/${odb} -o busco_genome -i ${genome} -m genome -c ${task.cpus} -f
   """
 }
