@@ -11,6 +11,9 @@ export HALXS_TEST=${HALXS_DIR}/HALXS.c
 export HAL_COMPARA_DB_URL=$($HAL_COMPARA_SERVER-w details url $HAL_COMPARA_DB)
 export HAL_MASTER_DB_URL=$($HAL_MASTER_SERVER-w details url $HAL_MASTER_DB)
 
+# perl script extracting genomes from hal
+PERL_SCRIPT=${WORM_CODE}/parasite/scripts/production/whole_genome_alignments/dump_hal_genome_ids.pl
+
 usage() {
     echo "Usage: $0 -e <HAL_suffix_file> -h <final_HAL_file>"
     echo "  -e  A line-delimited file containing the HAL suffixes given to the HAL names."
@@ -53,11 +56,6 @@ fi
 
 OUTPUT_BEEKEEPER_COMMANDS_TXT=${COMPARA_HAL_DIR}/beekeeper_commands.txt
 
-# Perl modules 
-plenv local 5.26.2
-PERL5LIB=$(echo "$PERL5LIB" | tr ':' '\n' | grep -v "$PARASITE_PERL_MODULES" | tr '\n' ':' | sed 's/:$//')
-export PERL5LIB
- 
 if [ -f "$HALXS_TEST" ]; then
     echo "$(date +"%Y-%m-%d %H:%M:%S") HALXS has been compiled."
 else
@@ -99,8 +97,6 @@ cat ${HAL_SUFFIX_FILE} | grep -v "#" |  while read HAL_SUFFIX; do
 
     export HAL_MLSS_URL="#base_dir#/multi$(awk -F '/multi' '{print $2}' <<<$HAL_FILE)"
 
-    # perl script extracting genomes from hal
-    PERL_SCRIPT=${WORM_CODE}/parasite/scripts/production/whole_genome_alignments/dump_hal_genome_ids.pl
 
     # hal genomes
     echo "$(date +"%Y-%m-%d %H:%M:%S") Exporting genome names from $HAL_FILE to ${PARASITE_CONF}/compara.${HAL_SUFFIX}.species_list_for_hal"
