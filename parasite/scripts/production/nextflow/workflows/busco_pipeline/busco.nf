@@ -34,7 +34,7 @@ def helpMessage() {
         Mandatory arguments:
         --host, --port, --user         Required: Connection parameters to the SQL servers we getting core db(s) from
 
-        Optional arguments:
+        Other arguments:
         --password                     Required: Password part of the connection parameters
         --dbname_re                    Required: Regexp to match core db name(s) against. For multiple use the | delimiter.
         --output_dir                   Name of Output directory to gather prepared outfiles. Default -> 'Output_GenomePrepare'.
