@@ -32,14 +32,18 @@ params.password = ''
 def helpMessage() {
   log.info '''
         Mandatory arguments:
-        --host, --port, --user         Connection parameters to the SQL servers we getting core db(s) from
+        --host, --port, --user         Required: Connection parameters to the SQL servers we getting core db(s) from
 
         Optional arguments:
-        --password                     Password part of the connection parameters
-        --prefix                       Core dabase(s) name prefixes
-        --dbname_re                    Regexp to match core db name(s) against
+        --password                     Required: Password part of the connection parameters
+        --dbname_re                    Required: Regexp to match core db name(s) against. For multiple use the | delimiter.
         --output_dir                   Name of Output directory to gather prepared outfiles. Default -> 'Output_GenomePrepare'.
-        --mode                         Busco mode: genome or protein, default is to run both.
+        --type                         Optional: Run mode (BUSCO/OMArk). It can be busco or omark or both, default is to run both. 
+        --mode                         Optional: Busco mode. It can be genome or protein or both, default is to run both for BUSCO. For OMArk is only protein.
+        --augustus_config_path         Required: Path to the Augustus/config directory (For ParaSite this is: ${PARASITE_SOFTWARE}/Augustus/config).
+        --enscode                      Required: Path to the Ensembl code directory (For ParaSite this is: ${ENSEMBL_CVS_ROOT_DIR}.
+        --wormpython                   Optional: Path to ParSite's pythonpath: This should be ${PYTHONPATH}.
+        --wormcode                     Optional: Path to ParSite's wormcode: This should be ${WORM_CODE}.
         --help                         This usage statement.
         '''
 }
