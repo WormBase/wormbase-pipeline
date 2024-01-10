@@ -1815,79 +1815,20 @@ sub print_authentication_instructions {
 
   print <<"END_MESSAGE"
 
-Each NameServer user needs to get a personal Google OAUTH2
-Authentication token.
+To access the Name Service API, each user must use a personal Authorization token.
 
-You must store this token in a file which is readable only by you.
+For instructions on how to obtain or use a personal Authorization token for API access,
+see https://github.com/WormBase/names/blob/master/docs/Google-Auth.md#api-authorization-token.
 
-You get the token by running a script with 
-'client ID' and 'Client secret' data.
-
-To get the required data client_id and client_secret data:
-Go to the site:
-https://developers.google.com/console
-(you should be logged in as your wormbase.org account)
-Click on the tab \"Credentials\" on the left side.
-Look for the application listed with the Type \"Other\"
-This should be on a line like: 
-\"WormBase Names Service (Programmatic Access)   date    Other   hex-string\"
-
-If you do not see this line, then check you are in the right project:
-    At the top of the page is a title \"Google APIs\" followed by a tab
-    with a drop-down triangle. Click on the triangle and select \"WormBase
-    Names Service\".
-
-    A window should pop up titled \"Select from\" followed by a tab.
-
-    Click on this tab and select the correct project: \"WORMBASE.ORG\".
-
-    You should now see a line like: 
-
-    \"WormBase Names Service (Programmatic Access)   date    Other   hex-string\"
-
-
-Click on the link: \"WormBase Names Service (Programmatic Access)\" to get
-
-Client ID	xxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com
-Client secret	xxxxxxxxxxxxxxxxxxxx
-
-
-Run the bash script:
-https://github.com/WormBase/names/blob/develop/scripts/obtaintoken.sh
-which takes the two command-line parameters you just found:
-  bash obtaintoken.sh  <Client ID>  <Client secret>
-
-This will prompt you with \"Paste Google one-time-code:\" and will
-fire up a sign-in page on your web browser.
-
-Select your wormbase.org account on the sign-in page and you will see
-an authentication code to be given to the obtaintoken.sh script.
-
-Copy and paste the code by clicking on the rectangle icon to the right
-of the code.
-
-Then in your terminal where you are running the script, paste it in by
-clicking on the 'Edit' menu at the top of your terminal window and
-selecting 'Paste'.  (Or cut and paste it any other way which works for
-you).
-
-Then press the RETURN key to continue running the obtaintoken.sh script.
-
-The obtaintoken.sh script will then show some output JSON data.
-In the output JSON data, the ID Token you require is on the line
-looking something like:
-
- \"id_token\": \"eyJhbGciOiJSUzI1NiIsImtpZCI6IjdjMzA5ZTNhMWMxOTk5Y2IwNDA0YWI3MTI1ZWU0MGI3Y2RiY2FmN2QiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJhY2NvdW50cy5nb29nbGUuY29tIiwiYXpwIjoiNTE0ODMwMTk2NzU3LXBkM2dlbDBmNzRwajMyNDNqb2ExdTYzbHZjZHQyZ25kLmFwcHMuZ29vZ2xldXNlcmNvbnRlbnQuY29tIiwiYXVkIjoiNTE0ODMwMTk2NzU3LXBkM2dlbDBmNzRwajMyNDNqb2ExdTYzbHZjZHQyZ25kLmFwcHMuZ26vZ2xldXNlcmNvbnRlbnQuY29tIiwic3ViIjoiMwE0MzEwMjU4MjAyNTU2MDEyMzM0IiwiaGQiOiJ3b3JtYmFyZS5vcmciLCJlbWFpbCI6Imdhcnkud2lsbGlhbXNAd29ybWJhc2Uub3JnIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImF0X2hhc2giOiJ1ZFR5UGQ0aGRzMzg0UzlSUGhhekpBIiwiZ29vZ2xlIjp7ImdpYyI6IkFMYXczYlNrRTZmSkt0cjl4clUyMW16bTJ5YU9HeGpyZW5OYmQ2SV9McDc0d2hzNTRBIn0sImlhdCI6MTK0OTk4NzM4NywiZXhwIjoxNTQ5OTkwOTg3fQ.CJaqXF1wkM_DnT2gEEy727bhcSqWoBRFft2k_OTeH9C-UBfCEgDFQgo02UFYBjm-FIPubUEWB9VUXoSBLoBZ-_SNNXBSMMpNJHXZaazhYqQAgP6S8ti7nXnjPkeNdhgZBw-dGEhQCF3jd_AWi6E0LH5IF_v8XnUoEli6_2YqHy-Y3ai1n4nWDyEmM0LsgbKCwFqOzS0dkAp20f6tEaPfkTL1-M0F4M5ZSEOPpGCryYLCcGjJmj-Y5tb5aSanPtiGmxBq9IVKWXH35NgSIChRvYpiNMY_ymWeA6K9j3HBZz_Bx5naVTAOPXRnLwX78uOQIwX9gqcA5FUGM-p_0k3Rhw\"
-
-Copy the data string after \"id_token\":  into a file named: 
+Copy the token string obtained through the above procedure into a file named:
 ~/.nameserver/token.s
-You should not copy the quote marks.
 
 Then make this file readable only by you:
 chmod 400 ~/.nameserver/token.s
 
-It should be necessary to only set this token up once. 
-However, it doesn't hurt to repeat this procedure, as required.
+This token should remain valid after storing it through the above procedure.
+Should the token be leaked or suspected to be misused, generate a new token
+as documented in the name service documentation referenced above.
 END_MESSAGE
 }
 
