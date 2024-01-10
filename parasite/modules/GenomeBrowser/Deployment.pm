@@ -99,17 +99,25 @@ sub sync_ebi_to_embassy {
   my $target_path = location ($EMBASSY_PATH, $species, $assembly, $run_id);
   my $target_url  = location ($EMBASSY_URL, $species, $assembly, $run_id);
   my $target_dir = dirname $target_path;
+  my $pv = $ENV{'PREVIOUS_PARASITE_VERSION'};
+  my $path_backup = $path; # Make a copy of the original path
+  $path_backup =~ s#(/WBPS)\d{2,3}/#${1}${pv}/#g;
   unless ($opts{deployment_skip} or LWP::UserAgent->new->head($target_url)->is_success or index($source_url, $EMBASSY_BASE_URL) != -1) {
       $log->info("deployment: $opts{deployment_skip}");
       $log->info("Initiating remote download: $source_url -> $target_path");
       (my $path = $source_url) =~ s/ftp:\/\/ftp\.ebi\.ac\.uk\/pub/\/nfs\/ftp\/public/;
       my $resolved_path = solve_ftp_file_format($path, $tmpdir);
+      my $backup_resolved_path = solve_ftp_file_format($path_backup, $tmpdir);
       unless ($resolved_path eq "ERROR") {
           $log->info("Trying $EMBASSY_COMMAND s3 cp $resolved_path $target_path");
-          my $cp_cmd = "$EMBASSY_COMMAND s3 cp $resolved_path $target_path";
-          my $output = `$cp_cmd`;
-          $log->info("Failed: $cp_cmd, output: $output") if $?;
-      }
+          my $cp_cmd1 = "$EMBASSY_COMMAND s3 cp $resolved_path $target_path";
+          my $output1 = `$cp_cmd1`;
+          if ($?) {
+             $log->info("Retrying with backup resolved path: $backup_resolved_path");
+             $cp_cmd2 = "$EMBASSY_COMMAND s3 cp $backup_path $target_path";
+             $output2 = `$cp_cmd2`;
+             $log->info("Failed: $cp_cmd2, output: $output2") if $?;
+          }
   }
   if (index($source_url, $EMBASSY_BASE_URL) != -1){
       return $source_url;

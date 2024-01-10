@@ -18,6 +18,7 @@ print(dtnow()+": Usage: python parse_wbdump_rnai.py")
 SPECIES = "caenorhabditis_elegans_prjna13758"
 WORMBASE_VERSION = os.getenv('WORMBASE_VERSION')
 PARASITE_VERSION = os.getenv('PARASITE_VERSION')
+PARASITE_SCRATCH = os.getenv('PARASITE_SCRATCH')
 PHENOTYPE_HOME = os.getenv('PHENOTYPE_HOME')
 WORKDIR = '{0}/WBPS{1}/WORMBASE_PHENOTYPE/{2}'.format(PHENOTYPE_HOME,PARASITE_VERSION,SPECIES)
 if os.path.exists(WORKDIR) is False:
@@ -44,6 +45,16 @@ WB_PAPER_API_URL = 'http://api.wormbase.org/rest/field/paper/{0}/{1}'
 WB_WORMMINE_URL = 'http://intermine.wormbase.org/tools/wormmine/service'
 WB_VAR_URL = '/species/c_elegans/variation/'
 WB_RNAi_URL = '/species/c_elegans/rnai/'
+LOG_DIRECTORY = os.path.join(PARASITE_SCRATCH, "log", "phenotypes")
+FW_LOG_FILE = os.path.join(LOG_DIRECTORY, f"WBPS{PARASITE_VERSION}.failed_wbps_ids.txt")
+
+if not os.path.exists(LOG_DIRECTORY):
+    # If it doesn't exist, create the directory
+    os.makedirs(LOG_DIRECTORY)
+
+if os.path.exists(FW_LOG_FILE):
+    # If it exists, delete the file
+    os.remove(FW_LOG_FILE)
 
 #OUTPUT
 PHENOTYPES_FILE = '{0}/wb_phenotypes.txt'.format(WORKDIR)
@@ -60,10 +71,13 @@ print('WB_PAPER_API_URL = '+WB_PAPER_API_URL)
 print('WB_WORMMINE_URL = '+WB_WORMMINE_URL)
 print('WB_VAR_URL = '+WB_VAR_URL)
 print('WB_RNAi_URL = '+WB_RNAi_URL)
+print('LOG DIRECTORY:'+LOG_DIRECTORY)
 print('\n')
 print('---------------------OUTPUT---------------------')
 print('OUTPUT FILE = '+PHENOTYPES_FILE)
 print(dtnow() + ': INFO - Parsing Input Files')
+
+
 
 
 #Read/Parse and process the WormBase phenotypes FTP file
@@ -74,7 +88,7 @@ wbpheno_df = wbphenoftp_parser(file=WB_FTP_PHENO_FILE,
 #Get PMIDs for the WBPapers or WBVar
 print(dtnow() + ': INFO - Create a dataframe with study information.')
 unique_paper_ids = list(wbpheno_df['source_id'].unique())
-study_file_df = sourceids2studyfiledf(unique_paper_ids, wbpaperapiurl=WB_PAPER_API_URL, ncbi_url=NCBI_PMID_URL)
+study_file_df = sourceids2studyfiled(unique_paper_ids, wbpaperapiurl=WB_PAPER_API_URL, ncbi_url=NCBI_PMID_URL, failed_wbpid_log_file=FW_LOG_FILE)
 
 #Print WBPaper IDs without a PMID:
 if study_file_df['pmid'].isnull().sum()==0:
@@ -132,6 +146,8 @@ merged_df_phenos_to_write['final_source_url'] = merged_df_phenos_to_write.apply(
                                                                                                        VAR_URL=WB_VAR_URL,
                                                                                                          RNAI_URL=WB_RNAi_URL), axis=1)
 merged_df_phenos_to_write = merged_df_phenos_to_write.drop_duplicates()
+
+print(dtnow() + f"#Any WBPaper IDs that we haven't managed to parse have been stored here: {failed_wbpid_log_file}. You can manually curate these and add them in the dependencies.py script.")
 
 print(dtnow() + ': INFO - Write output to {0}.'.format(PHENOTYPES_FILE))
 

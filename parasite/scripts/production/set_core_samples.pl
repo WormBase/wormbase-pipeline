@@ -55,8 +55,8 @@ my $core_db = Bio::EnsEMBL::DBSQL::DBAdaptor->new( -dbname => $dbname,
                                                    -port => $port,
                                                    -user => $user, 
                                                    -pass => $pass );
-my $gdb_adaptor = $compara_db->get_GenomeDBAdaptor();
-my $genome_db = $gdb_adaptor->fetch_by_core_DBAdaptor($core_db);
+my $gdb_adaptor = $compara_db->get_GenomeDBAdaptor() unless ( ! defined $compara_dbname);
+my $genome_db = $gdb_adaptor->fetch_by_core_DBAdaptor($core_db) unless ( ! defined $compara_dbname);
 my $gene = $gene_id ? lookup_gene($core_db, $gene_id) : choose_best_gene(get_candidate_genes($core_db, $compara_db));
 
 store_gene_sample( $core_db, $gene);

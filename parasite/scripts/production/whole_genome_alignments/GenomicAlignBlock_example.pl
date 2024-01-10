@@ -24,11 +24,23 @@ $ENV{COMPARA_HAL_DIR} = $compara_hal_dir;
 
 my $PARASITE_STAGING_MYSQL = $ENV{PARASITE_STAGING_MYSQL};
 
-my ( $species, $chr, $start, $end ) = ('caenorhabditis_angaria_prjna51225', 'Cang_2012_03_13_00001', 231967, 232967);
+# my ( $species, $chr, $start, $end ) = ('caenorhabditis_angaria_prjna51225', 'Cang_2012_03_13_00001', 231967, 232967);
+my ( $species, $chr, $start, $end ) = ('caenorhabditis_remanei_prjna53967', 'Crem_Contig0', 2412208, 2413208);
+# my ( $species, $chr, $start, $end ) = ('schmidtea_mediterranea_s2f19h1prjna885486', '1_h1', 2428871, 2440280); #1
+# my ( $species, $chr, $start, $end ) = ('trichinella_zimbabwensis_prjna257433', 'scaffold1s', 46637, 62176); #2
+# my ( $species, $chr, $start, $end ) = ('ptycholaimellus_gst110_prjna953805','QYR16.scaffold0007',89018, 137765); #3
+# my ( $species, $chr, $start, $end ) = ('syphacia_muris_prjeb524','SMUV_scaffold0000001',250977,256553); #4
+# my ( $species, $chr, $start, $end ) = ('Rhabditophanes_kr3021_prjeb1297','RSKR_scaffold0000001',4104838,4106098); #6
+# my ( $species, $chr, $start, $end ) = ('enoplolaimus_lenunculus_prjna953805','QYR23.scaffold0007',776043,791852); #5
+# my ( $species, $chr, $start, $end ) = ('Micoletzkya_japonica_prjeb27334','scaffold48',717227,722613); #9
+# my ( $species, $chr, $start, $end ) = ('Mesorhabditis_belari_prjeb61636','Mbe_Ptig_118',5091943,5103000); #7
+# my ( $species, $chr, $start, $end ) = ('heterorhabditis_bacteriophora_prjna13977','Scaffold1250',29645,32693); #8
 
-Bio::EnsEMBL::Registry->load_registry_from_url("mysql://ensro\@mysql-ps-staging-2.ebi.ac.uk:4467/108");
 
-my $compara_url = "mysql://ensro\@mysql-ps-staging-2.ebi.ac.uk:4467/ensembl_compara_parasite_18_108";
+
+Bio::EnsEMBL::Registry->load_registry_from_url('mysql://ensro@mysql-ps-staging-1.ebi.ac.uk:4451/111');
+
+my $compara_url = 'mysql://ensro@mysql-ps-staging-1.ebi.ac.uk:4451/ensembl_compara_parasite_19_111';
 my $compara_dba = Bio::EnsEMBL::Compara::DBSQL::DBAdaptor->go_figure_compara_dba($compara_url);
 my $cactus_mlss = $compara_dba->get_MethodLinkSpeciesSetAdaptor->fetch_by_dbID($mlss_id);
 print "cactus_mlss = " . $cactus_mlss->dbID . "\n";

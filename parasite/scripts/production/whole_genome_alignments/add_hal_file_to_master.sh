@@ -75,8 +75,8 @@ cat ${HAL_SUFFIX_FILE} | grep -v "#" |  while read HAL_SUFFIX; do
     export INITIAL_HAL_FILE=${PARASITE_SCRATCH}/cactus_alignments/WBPS${PARASITE_VERSION}/WBPS${PARASITE_VERSION}_${HAL_SUFFIX}.hal
     export HAL_FILE=${PARASITE_SCRATCH}/cactus_alignments/WBPS${PARASITE_VERSION}/multi/hal_files/WBPS${PARASITE_VERSION}_${HAL_SUFFIX}.hal
 
-    #echo "$(date +"%Y-%m-%d %H:%M:%S") Extracting $HAL_SUFFIX from $FINAL_HAL_FILE"
-    #halExtract --root $HAL_SUFFIX $FINAL_HAL_FILE ${INITIAL_HAL_FILE}; done | tee ${COMPARA_HAL_DIR}/split_hal_log_${HAL_SUFFIX}.txt
+    echo "$(date +"%Y-%m-%d %H:%M:%S") Extracting $HAL_SUFFIX from $FINAL_HAL_FILE"
+    halExtract --root $HAL_SUFFIX $FINAL_HAL_FILE ${INITIAL_HAL_FILE}; done | tee ${COMPARA_HAL_DIR}/split_hal_log_${HAL_SUFFIX}.txt
 
     if [ -f "$INITIAL_HAL_FILE" ]; then
         cp -i "$INITIAL_HAL_FILE" "$HAL_FILE"
@@ -161,7 +161,7 @@ cat ${HAL_SUFFIX_FILE} | grep -v "#" |  while read HAL_SUFFIX; do
     perl ${ENSEMBL_ROOT_DIR}/ensembl-compara/scripts/pipeline/create_mlss.pl \
     --compara $HAL_MASTER_DB_URL --reg_conf $PARASITE_CONF/compara.registry.pm \
     --source wormbase --species_set_name collection-$HAL_COLLECTION_NAME \
-    --method_link_type CACTUS_HAL --genome_db_id ${HAL_GENOME_DB_ID} --url "'$HAL_MLSS_URL'" --release --force
+    --method_link_type CACTUS_HAL --pw --genome_db_id ${HAL_GENOME_DB_ID} --url "'$HAL_MLSS_URL'" --release --force
 
     MLSS_HAL_ID=$($HAL_MASTER_SERVER $HAL_MASTER_DB -e "SELECT mlss.method_link_species_set_id AS '' FROM method_link_species_set AS mlss JOIN species_set_header AS ssh USING(species_set_id) WHERE ssh.name = 'collection-$HAL_COLLECTION_NAME'" | tail -1)
     re='^[0-9]+$'

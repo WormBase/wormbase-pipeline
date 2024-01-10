@@ -63,7 +63,6 @@ def write_output_json(run_dict, outfile):
         with open(outfile, "w") as final:
             json.dump(list(dict_of_final_runs.values()), final, indent=2)
 
-runs_we_want = ["SRR7026110","SRR7026121","SRR7026129","SRR7026107","SRR7026120","SRR7026132","SRR7026108","SRR7026119","SRR7026131","SRR7026115","SRR7026118","SRR7026128","SRR7026116","SRR7026117","SRR7026127","SRR7026110","SRR7026121","SRR7026129","SRR7026107","SRR7026120","SRR7026132","SRR7026108","SRR7026119","SRR7026131","SRR7026115","SRR7026118","SRR7026128","SRR7026116","SRR7026117","SRR7026127","SRR6364125","SRR7704565","SRR2486928"]
 print_info("PRE-RUN STATUS FILE SELECTED:\n"+args.SFILE)
 if args.SPECIES:
     SPECIES=args.SPECIES.split(",")
@@ -109,8 +108,6 @@ for genus_species in status_studies:
                 continue
             all_studies.append(study)
             for run in status_studies[genus_species][assembly]['studies'][study]['run_accessions']:
-                if run not in runs_we_want:
-                    continue
                 run_index = production_name + "_" + study + "_" + run
                 run_name = study + "_" + run
                 all_runs.append(run_index)
@@ -123,8 +120,6 @@ for genus_species in status_studies:
                                     "assembly":        assembly}
             for run in status_studies[genus_species][assembly]['studies'][study]['skipped_run_accessions']:
                 if run not in status_studies[genus_species][assembly]['studies'][study]['run_accessions']:
-                    if run not in runs_we_want:
-                        continue
                     run_index = production_name + "_" + study + "_" + run
                     run_name = study + "_" + run
                     all_skipped_runs.append(run_index)

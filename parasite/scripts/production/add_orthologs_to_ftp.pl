@@ -98,15 +98,15 @@ for my $species (sort keys %species_with_paralogs_biomart_names){
     );
   }
 }
-for my $species (sort keys %species_with_orthologs_biomart_names){
-  next if $species_pattern and $species !~ /$species_pattern/;
-  my $species_biomart_name = $species_with_orthologs_biomart_names{$species};
-  my $path = SpeciesFtp->current_staging->path_to($species, "orthologs.tsv", 0);
-  print STDERR localtime ." $species\t$path.gz\n";
-  if (!-e "$path.gz") {
-    dump_sql_to_path(
-      sql($GET_ORTHOLOGS_TEMPLATE, $species_biomart_name),
-      $path,
-    );
-  }
-}
+# for my $species (sort keys %species_with_orthologs_biomart_names){
+#   next if $species_pattern and $species !~ /$species_pattern/;
+#   my $species_biomart_name = $species_with_orthologs_biomart_names{$species};
+#   my $path = SpeciesFtp->current_staging->path_to($species, "orthologs.tsv", 0);
+#   print STDERR localtime ." $species\t$path.gz\n";
+#   if (!-e "$path.gz") {
+#     dump_sql_to_path(
+#       sql($GET_ORTHOLOGS_TEMPLATE, $species_biomart_name),
+#       $path,
+#     );
+#   }
+# }

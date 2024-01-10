@@ -125,7 +125,7 @@ while (my ($dbname) = $sth_h->fetchrow_array) {
   print "Found phenotype features: ", $count, "\n";
   next unless $count > 0;
 
-  my $dumpFile = sprintf($output_dir."/".$ftpfilename."."."phenotypes.wb", $s_name, $e_version);
+  my $dumpFile = sprintf($output_dir."/".$ftpfilename."."."phenotypes.gaf", $s_name, $e_version);
 
   die ("Phenotype file $dumpFile already exists. Specify a different output folder or use --force to override the existing one\n") if -e $dumpFile & !$force ;
 

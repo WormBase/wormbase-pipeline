@@ -8,6 +8,7 @@ import re
 import requests
 import traceback
 import datetime
+from dependencies import manually_curated_pmids_dict
 
 
 
@@ -188,7 +189,7 @@ def wormmine_pheno_parser(url):
     return(wm_pheno_df)
 
 
-def paperid2varstudydict(wbpid, wbpaperapiurl, ncbi_url, wbpmethods=None):
+def paperid2varstudydict(wbpid, wbpaperapiurl, ncbi_url, failed_wbpid_log_file, wbpmethods=None):
     """
     This function returns the results of methods title,authors,years and pmid from the WormBase Paper API
     (https://wormbase.org/about/userguide/for_developers/API-REST/Paper#0--10) for a given WormBase Paper ID
@@ -206,17 +207,37 @@ def paperid2varstudydict(wbpid, wbpaperapiurl, ncbi_url, wbpmethods=None):
     """
     wb_study_dict = {}
     wb_json_dict = wbpaperurl2json(wbpid, wbpaperapiurl)
-    try:
-        wb_study_dict['title'] = wb_json_dict['title']['data']
-        wb_study_dict['name'] = "{0} et al., {1}".format(wb_json_dict['authors']['data'][0]['label'], wb_json_dict['year']['data'])
-        wb_study_dict['pmid'] = wb_json_dict['pmid']['data']
-        if wb_study_dict['pmid'] == None:
-            wb_study_dict['pmid'] = papertitle2pmidncbi(wb_study_dict['title'], ncbi_url)
-        print(dtnow() + ": PROGRESS - Got PMID:{0} for Paper_ID:{1}".format(wb_study_dict['pmid'], wbpid))
-    except KeyError:
-        print(dtnow() + ": ERROR - Some key is not in the API object for {0}\n".format(wb_json_dict))
-        raise KeyError
-    return(wb_study_dict)
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            wb_study_dict['title'] = wb_json_dict['title']['data']
+            wb_study_dict['name'] = "{0} et al., {1}".format(wb_json_dict['authors']['data'][0]['label'], wb_json_dict['year']['data'])
+            wb_study_dict['pmid'] = wb_json_dict['pmid']['data']
+            if wb_study_dict['pmid'] == None:
+                wb_study_dict['pmid'] = papertitle2pmidncbi(wb_study_dict['title'], ncbi_url)
+            print(dtnow() + ": PROGRESS - Got PMID:{0} for Paper_ID:{1}".format(wb_study_dict['pmid'], wbpid))
+            return(wb_study_dict)
+        except:
+            if wbpid in manually_curated_pmids_dict.keys():
+                wb_study_dict['title'] = manually_curated_pmids_dict[wbpid]['title']
+                wb_study_dict['name'] = manually_curated_pmids_dict[wbpid]['pmid']
+                wb_study_dict['pmid'] = manually_curated_pmids_dict[wbpid]['pmid']
+                print(dtnow() + ": PROGRESS - Got PMID:{0} for Paper_ID:{1}".format(wb_study_dict['pmid'], wbpid))
+                return(wb_study_dict)
+            else:
+                if attempt < max_retries - 1:
+                    print(dtnow() + f": WARNING - Something did not work when trying to fetch {wbpid}. Retrying.")
+                else:
+                    print(dtnow() + f": WARNING - Tried {max_retries} to fetch {wbpid} but could not. The failed wbpid have be logged to {failed_wbpid_log_file}  and the script will continue.")
+                    print("The failed directory is:")
+                    print(wb_json_dict)
+                    with open(failed_wbpid_log_file, 'a') as file:
+                        file.write(wbpid + "\n")
+                    wb_study_dict['title'] = None
+                    wb_study_dict['name'] = None
+                    wb_study_dict['pmid'] = None
+                    return({})
+    
 
 def varid2varstudydict(wbvid, wbvmethods=None):
     """This Function takes a WormBase Variant ID as its input and returns a dictionary
@@ -228,9 +249,9 @@ def varid2varstudydict(wbvid, wbvmethods=None):
     print(dtnow() + ": PROGRESS - Got PMID:{0} for VarID:{0}".format(wbvid))
     return(wb_study_dict)
 
-def sourceid2varstudydict(source_id, wbpaperapiurl, ncbi_url):
+def sourceid2varstudydict(source_id, wbpaperapiurl, ncbi_url, failed_wbpid_log_file):
     if source_id.startswith('WBPaper'):
-        return(paperid2varstudydict(source_id, wbpaperapiurl, ncbi_url))
+        return(paperid2varstudydict(source_id, wbpaperapiurl, ncbi_url, failed_wbpid_log_file))
     elif source_id.startswith('WBVar'):
         return(varid2varstudydict(source_id))
     else:
@@ -239,7 +260,7 @@ def sourceid2varstudydict(source_id, wbpaperapiurl, ncbi_url):
         print("Please Try again.\n")
         raise ValueError
 
-def sourceids2studyfiledf(unique_paper_ids, wbpaperapiurl, ncbi_url):
+def sourceids2studyfiled(unique_paper_ids, wbpaperapiurl, ncbi_url, failed_wbpid_log_file):
     """
     Function that takes a list of source IDs in the form WBPaperXXXXXXXX/WBVarXXXXXXXX as its input
     and returns a pandas df with the necessary
@@ -247,7 +268,11 @@ def sourceids2studyfiledf(unique_paper_ids, wbpaperapiurl, ncbi_url):
     :param unique_paper_ids: List. List of unique WB Paper IDs in the form of WBPaperXXXXXXXX.
     :return: pandas df to create the phenotype_studies.txt file.
     """
-    study_file_dict = {x: sourceid2varstudydict(x, wbpaperapiurl, ncbi_url) for x in unique_paper_ids}
+    study_file_dict = {}
+    for x in unique_paper_ids:
+        varstudydict = sourceid2varstudydict(x, wbpaperapiurl, ncbi_url, failed_wbpid_log_file)
+        if varstudydict != {}:
+            study_file_dict[x] = varstudydict
     study_file_df = pd.DataFrame.from_dict(study_file_dict, orient='index')
     study_file_df['wbp'] = study_file_df.index
     study_file_df = study_file_df[['wbp','pmid','name','title']]
@@ -283,7 +308,7 @@ def wbphenourl2json(wbpid, wbphenoapiurl, wbpmethods=None):
         wbp_json_dict[method] = wbp_json[method]
     return(wbp_json_dict)
 
-def paperid2varstudydict(wbpid, wbpaperapiurl, ncbi_url, wbpmethods=None):
+def paperid2varstudydict(wbpid, wbpaperapiurl, ncbi_url, failed_wbpid_log_file, wbpmethods=None):
     """
     This function returns the results of methods title,authors,years and pmid from the WormBase Paper API
     (https://wormbase.org/about/userguide/for_developers/API-REST/Paper#0--10) for a given WormBase Paper ID
@@ -301,17 +326,27 @@ def paperid2varstudydict(wbpid, wbpaperapiurl, ncbi_url, wbpmethods=None):
     """
     wb_study_dict = {}
     wb_json_dict = wbpaperurl2json(wbpid, wbpaperapiurl)
-    try:
-        wb_study_dict['title'] = wb_json_dict['title']['data']
-        wb_study_dict['name'] = "{0} et al., {1}".format(wb_json_dict['authors']['data'][0]['label'], wb_json_dict['year']['data'])
-        wb_study_dict['pmid'] = wb_json_dict['pmid']['data']
-        if wb_study_dict['pmid'] == None:
-            wb_study_dict['pmid'] = papertitle2pmidncbi(wb_study_dict['title'], ncbi_url)
-        print(dtnow() + ": PROGRESS - Got PMID:{0} for Paper_ID:{1}".format(wb_study_dict['pmid'], wbpid))
-    except KeyError:
-        print(dtnow() + ": ERROR - Some key is not in the API object for {0}\n".format(wb_json_dict))
-        raise KeyError
-    return(wb_study_dict)
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            wb_study_dict['title'] = wb_json_dict['title']['data']
+            wb_study_dict['name'] = "{0} et al., {1}".format(wb_json_dict['authors']['data'][0]['label'], wb_json_dict['year']['data'])
+            wb_study_dict['pmid'] = wb_json_dict['pmid']['data']
+            if wb_study_dict['pmid'] == None:
+                wb_study_dict['pmid'] = papertitle2pmidncbi(wb_study_dict['title'], ncbi_url)
+            print(dtnow() + ": PROGRESS - Got PMID:{0} for Paper_ID:{1}".format(wb_study_dict['pmid'], wbpid))
+            return(wb_study_dict)
+        except:
+            if attempt < max_retries - 1:
+                print(dtnow() + f": WARNING - Something did not work when trying to fetch {wbpid}. Retrying.")
+            else:
+                print(dtnow() + f": WARNING - Tried {max_retries} to fetch {wbpid} but could not. The failed wbpid will be logged and the script will continue.")
+                print("The failed directory is:")
+                print(wb_json_dict)
+                with open(failed_wbpid_log_file, 'a') as file:
+                    file.write(wbpid + "\n")
+                return({})
+    
 
 def papertitle2pmidncbi(paper_title, ncbi_url):
     """
