@@ -1791,10 +1791,26 @@ sub curl {
 sub get_token {
   my ($self) = @_;
 
-  my $tokenfile = glob("~/.nameserver/token.s");
+  if (-e glob('~/.nameserver/token.s')) {carp "Please clean up and delete the now deprecated token file ~/.nameserver/token.s\n";}
+
+  if (defined $ENV{'NS_API_TOKEN'}) {
+    print "INFO: Reading authentication token from ENV variable NS_API_TOKEN.\n";
+    return $ENV{'NS_API_TOKEN'};
+  }
+
+  my $tokenfilename;
+  if ($self->test()) {
+    $tokenfilename = '~/.nameserver/test-token.s';
+  }
+  else{
+    $tokenfilename = '~/.nameserver/prod-token.s';
+  }
+
+  my $tokenfile = glob($tokenfilename);
+
   if (!-e $tokenfile) {
     $self->print_authentication_instructions;
-    die "\n";
+    die "\nToken file '$tokenfilename' not found.\n";
   }
   my $mode = (stat($tokenfile))[2] & 07777;
   if ($mode != 0400) {die "Permissions on $tokenfile are not user-readonly\n"}
@@ -1820,13 +1836,24 @@ To access the Name Service API, each user must use a personal Authorization toke
 For instructions on how to obtain or use a personal Authorization token for API access,
 see https://github.com/WormBase/names/blob/master/docs/Google-Auth.md#api-authorization-token.
 
-Copy the token string obtained through the above procedure into a file named:
-~/.nameserver/token.s
+Copy the token string obtained through the above procedure into the appropriate file:
+ * For token retrieved from the test environment: ~/.nameserver/test-token.s
+ * For token retrieved from the production environment: ~/.nameserver/prod-token.s
 
 Then make this file readable only by you:
-chmod 400 ~/.nameserver/token.s
+ chmod 400 <file-path>
 
-This token should remain valid after storing it through the above procedure.
+Alternatively, define and export the NS_API_TOKEN environment variable
+to hold the token value without storing it in a permanent file on hard drive.
+When defined, the value of this env variable will be used over any tokens
+store in files.
+  export NS_API_TOKEN='...'
+
+Tokens retrieved from one environment will only grant access to that environment.
+In other words, a token retrieved from production environment will not provide any
+access to the test environment and vice versa.
+
+Tokens remain valid indefinitely after storing it through the above procedure.
 Should the token be leaked or suspected to be misused, generate a new token
 as documented in the name service documentation referenced above.
 END_MESSAGE
