@@ -51,7 +51,7 @@ if ( $store ) {
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
-my $db = NameDB_handler->new($wormbase);
+my $db = NameDB_handler->new($wormbase,$test);
 
 # there should be *only* one public_name per line in the input_file
 # like:
