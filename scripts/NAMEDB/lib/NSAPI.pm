@@ -1740,10 +1740,10 @@ sub curl {
 
   system("rm -f $out $err");
 
-  if (index($stderr, 'HTTP/1.1 401 Unauthorized') != -1) {
+  if (index($stderr, 'HTTP/2 401') != -1) {
     print "\n\n";
     $self->print_authentication_instructions;
-    die "\n";
+    die "\nERROR: User not authorized to access name service (or provided token not valid).\n";
   }
 
   if (!defined $res || $res eq '') {
