@@ -68,8 +68,11 @@ if (not defined $config) {
 my $tace = $wormbase->tace;
 my $path = $wormbase->acefiles.($merge ? '/MERGE':'/primaries');
 make_path $path unless -e $path;
+$path='/nfs/production/panda/ensemblgenomes/wormbase/DATABASES/camace';
 
-#print "PATHS $config $path $tace\n";
+print "PATHS $config $path $tace\n";
+
+#__END__
 
 # If there is no config file, report ERROR and abort
 unless (-e $config) {
@@ -123,7 +126,10 @@ unless (-e $config) {
       ##############
       make_path("$path/".$makefile{'db'}) unless -e "$path/".$makefile{'db'};
       my $file = $path."/".$makefile{'db'}."/".$makefile{'file'};
+      print "WRITING $file\n";
 
+    }}}
+__END__
   
       open(ACE,">$file") or $log->log_and_die("cant open file $file : $!\n");
       

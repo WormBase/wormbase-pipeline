@@ -73,6 +73,7 @@ push (@species, $organism);
 #foreach my $organism(keys %species) {
 foreach my $organism(@species) {
   $log->write_to("============================================\nDUMPING: $organism\n============================================\n");
+
 # output dirs
   my   $ACEoutput_dir = $wormbase->basedir."_DATA/cDNAace/$organism";
   $wormbase->run_command ("rm -r $ACEoutput_dir", $log) if (-e $ACEoutput_dir);
@@ -86,13 +87,16 @@ foreach my $organism(@species) {
   $log->write_to("Creating $BLAToutput_dir\n") if (!-e $BLAToutput_dir);
 
   my $sourceDB = $wormbase->seq_db;
-  
+  if ($organism=~/smelegans/) {
+  	$sourceDB="/nfs/panda/ensemblgenomes/wormbase/DATABASES/smelegans";
+  }
+
   # Fetch sequence data from primary database.
   $log->write_to("\n\nUsing: $sourceDB: for data retrieval\n");
   
 
 # not needed any more - Dump the data back to BUILD_DATA/cDNA/organism/
-$log->write_to("Dumping $organism Transcript .ace data.........\n") unless $noacedump;
+$log->write_to("Dumping $organism Transcript.ace data......... $sourceDB $organism \%species $ACEoutput_dir\n") unless $noacedump;
 &dump_BLAT_ace_data ($sourceDB, $organism, \%species, $ACEoutput_dir) unless $noacedump;
 $log->write_to("Dumping $organism BLAT dna sequences...........\n") unless $noseqdump;
 &dump_BLAT_data ($sourceDB, $organism, \%species, $BLAToutput_dir) unless $noseqdump; 
@@ -170,7 +174,7 @@ END
   $wormbase->run_command("touch $EST_dir/IsoSeq.ace", $log)  unless -e "$EST_dir/IsoSeq.ace";
   $wormbase->run_command("touch $EST_dir/Trinity.ace", $log) unless -e "$EST_dir/Trinity.ace";
 
-  $log->write_to("$subspecies Transcripts dumped\n\n");
+  $log->write_to("$subspecies Transcripts dumped to $EST_dir/*.ace\n\n");
 }
 
 ##########################
@@ -232,7 +236,7 @@ END
     $wormbase->run_command("touch $EST_dir/Trinity", $log);
   }
   
-  $log->write_to("$subspecies .ace data dumped.\n\n");
+  $log->write_to("$subspecies.ace data dumped to $EST_dir\n\n");
 }
 
 
