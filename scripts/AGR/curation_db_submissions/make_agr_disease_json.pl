@@ -15,7 +15,7 @@ use Path::Class;
 use Const::Fast;
 use XML::LibXML;
 
-const my $LINKML_SCHEMA => 'v1.7.3';
+const my $LINKML_SCHEMA => 'v1.11.0';
 const my $CHEBI_PURL => 'http://purl.obolibrary.org/obo/chebi.owl';
 
 my ($debug, $test, $verbose, $store, $wormbase, $acedbpath, $ws_version, $outfile, $schema, $dates_file);
@@ -276,7 +276,10 @@ while( my $obj = $it->next) {
 
 $db->close;
 
-my $all_annots = {linkml_version => $LINKML_SCHEMA};
+my $all_annots = {
+    linkml_version => $LINKML_SCHEMA,
+    alliance_member_release_version => $ws_version
+};
 $all_annots->{disease_allele_ingest_set} = \@allele_annots;
 $all_annots->{disease_gene_ingest_set} = \@gene_annots;
 $all_annots->{disease_agm_ingest_set} = \@agm_annots;

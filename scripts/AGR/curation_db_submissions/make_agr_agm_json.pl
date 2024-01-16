@@ -9,7 +9,7 @@ use Const::Fast;
 my ($help, $debug, $test, $verbose, $store, $wormbase);
 my ($outfile, $acedbpath, $ws_version, $out_fh);
 
-const my $LINKML_SCHEMA => 'v1.7.3';
+const my $LINKML_SCHEMA => 'v1.11.0';
 
 GetOptions ("help"        => \$help,
             "debug=s"     => \$debug,
@@ -115,6 +115,7 @@ while (my $obj = $it2->next) {
 }
 my $data = {
     linkml_version => $LINKML_SCHEMA,
+    alliance_member_release_version => $ws_version,
     agm_ingest_set => \@agms,
 };
 

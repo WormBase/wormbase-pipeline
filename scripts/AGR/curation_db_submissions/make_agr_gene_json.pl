@@ -109,6 +109,7 @@ while (my $obj = $it->next) {
 }
 
 my $data = {
+    alliance_member_release_version => $ws_version,
     linkml_version => $LINKML_SCHEMA,
     gene_ingest_set => \@genes,
 };
