@@ -16,7 +16,7 @@ use Curate;
 
 const my @ISOFORM_SUFFIXES => qw(a b c d e f g h i j k l m n o p q r s t u v w x y z);
     
-my ($create_file, $change_file, $delete_file, $wb_gff_file, $gff_file, $out_file, $mapping_file, $test, $log_file, $species, $debug, $database, $nameserver, $person, $verbose);
+my ($create_file, $change_file, $delete_file, $wb_gff_file, $gff_file, $out_file, $mapping_file, $test, $log_file, $species, $debug, $database, $nameserver, $person, $verbose, $start_codons_file, $suspicious_out_file);
 my @references;
 my (%other_name_added);
 
@@ -36,13 +36,16 @@ GetOptions(
     "log=s"        => \$log_file,
     "person=s"     => \$person,
     "debug:s"      => \$debug,
-    "nameserver"   => \$nameserver
+    "nameserver"   => \$nameserver,
+    "starts=s"     => \$start_codons_file,
+    "suspicious=s" => \$suspicious_out_file
     ) or die ($@);
 
 @references = split(/,/, join(',', @references));
 
 $out_file = file('./bulk_update.ace') unless defined $out_file;
 my $out_fh = file($out_file)->openw;
+my $suspicious_fh = file($suspicious_out_file)->openw;
 
 my $log = Log_files->make_log($log_file, $debug);
 my $wb = Wormbase->new(-organism => $species, -debug => $debug, -test => $test);
@@ -65,7 +68,7 @@ $wsversion =~ s/.*WS//;
 $log->log_and_die("No version\n") unless $wsversion =~ /^\d+$/;
 
 my $wormpep_prefix = lc($wb->wormpep_prefix);
-
+my $new_start_codons = parse_start_codons_file();
 my $new_gene_models = parse_gff($gff_file);
 my $wb_gene_models = parse_gff($wb_gff_file);
 
@@ -97,6 +100,18 @@ add_other_names();
 
 $log->mail;
 exit(0);
+
+sub parse_start_codons_file {
+    my %start_codons;
+    my $scfh = file($start_codons_file)->openr;
+    while (my $line = $scfh->getline()) {
+	chomp $line;
+	my ($id, $start_codon) = split("\t", $line);
+	$start_codons{$id} = $start_codon;
+    }
+
+    return \%start_codons;
+}
 
 sub add_other_names {
     my $map_fh = file($mapping_file)->openr;
@@ -261,7 +276,7 @@ sub create_cds {
     my @ends_on_sequence = @{$new_gene_models->{$external_gene_id}{'transcripts'}{$external_transcript_id}{'CDS'}{'ends'}};
     my $remark = 'Created as part of bulk annotation update on ' . $date;
     my $sequence = $new_gene_models->{$external_gene_id}{'gene'}{'chromosome'};
-    my $method = 'curated'; # Going with this for now, what's an appropriate method?
+    my $method = 'Gene'; # Going with this for now, what's an appropriate method?
     
     $out_fh->print("CDS : \"$wb_cds_name\"\n");
     $out_fh->print("Gene : $wb_gene_id\n");
@@ -577,6 +592,36 @@ sub update_gene {
     if ($wb_gene) {
 	my $wb_id = $wb_gene->name;
 	$log->write_to("Updating $wb_name ($wb_id)\n") if $verbose;
+	my %methods;
+	for my $ccds ($wb_gene->Corresponding_CDS){
+	    for my $method ($ccds->Method) {
+		$methods{$method->name}++;
+	    }
+	}
+	if (exists $methods{'curated'}) {
+	    $suspicious_fh->print("Updating curated gene $wb_id");
+	    if ($split_into) {
+		$suspicious_fh->print(" (by splitting)");
+	    }
+	    if ($acquired_merges) {
+		$suspicious_fh->print(" (by merging)");
+	    }
+	    if ($new_start_codons->{$external_id} ne 'ATG') {
+		$suspicious_fh->print(" with non-canonical start site");
+	    }
+	    $suspicious_fh->print("\n");
+	} else {
+	    my $message = "Updating non-curated gene $wb_id";
+	    if ($split_into) {
+		$message .= " (by splitting)";
+	    }
+	    if ($acquired_merges) {
+		$message .= " (by merging)";
+	    }
+	    if ($new_start_codons->{$external_id} ne 'ATG') {
+		$suspicious_fh->print("$message with non-canonical start site\n");
+	    }
+	}
 	
 	# Some convoluted logic to avoid deleting and recreating unchanged isoforms and to resuse / create transcripts and CDS names
 	my (%new_coords);
