@@ -115,15 +115,15 @@ $uniprot_dbh->dbc->disconnect_if_idle;
 
 $uniprot_dbh = &get_uniprot_dbh($uniprot_cred);
 
-$uniprot_sql =  "SELECT e.accession, et.descr, p.protein_id "
-    . "FROM sptr.dbentry e, sptr.embl_protein_id p, sptr.cv_entry_type et "
+$uniprot_sql = "select e.accession, et.descr, p.source_id as protein_id " 
+    . "FROM sptr.dbentry e, sptr.import_map p, sptr.cv_entry_type et "
     . "WHERE p.dbentry_id = e.dbentry_id "
     . "AND e.deleted='N' "
     . "AND e.merge_status <> 'R' "
-    . "AND e.entry_type = et.entry_type_id " 
-    . "AND et.descr in ('Swiss-Prot', 'TrEMBL') " 
+    . "AND p.database_id = 'E' "
+    . "AND e.entry_type = et.entry_type_id "
+    . "AND et.descr in ('Swiss-Prot', 'TrEMBL') "
     . "AND e.tax_id = $org_id";
-
 
 $uniprot_sth = $uniprot_dbh->dbc->prepare($uniprot_sql);
 print STDERR "Reading Uniprot database to get accessions and ids...\n" if $verbose;
