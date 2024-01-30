@@ -717,9 +717,9 @@ sub run_vep_on_htp_variations{
     $ENV{EHIVE_URL} = $ehive_url;
  
     run_system_cmd("beekeeper.pl -url $ehive_url -loop", "Running $mod HTP variations VEP eHive pipeline", $log);
+    run_system_cmd("mv " . $ENV{'HTP_VEP_WORKING_DIR'} . "/${mod}_vep/${mod}.vep.vcf.gz .", "Moving $mod combined HTP variations VEP output", $log);
     if ($mod eq 'RGD') {
-	run_system_cmd("mv " . $ENV{'HTP_VEP_WORKING_DIR'} . "/${mod}_vep/${mod}.vep.all.vcf.gz .", "Moving $mod combined HTP variations VEP output", $log);
-	submit_data($mod, 'HTPOSTVEPVCF', "${mod}.vep.all.vcf.gz", $log) unless $test;
+	submit_data($mod, 'HTPOSTVEPVCF', "${mod}.vep.vcf.gz", $log) unless $test;
     }
     run_system_cmd("mkdir HTPVEP", "Creating folder for $mod HTP VEP output", $log);
     run_system_cmd("mv " . $ENV{'HTP_VEP_WORKING_DIR'} . "/${mod}_vep/${mod}.* HTPVEP/",
