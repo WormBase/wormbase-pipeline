@@ -51,7 +51,7 @@ e.g. perl recent_changes.pl -outfile results_file.ace -load
 ######################################
 
 my ($test, $help, $debug, $verbose, $store, $wormbase, $geneace, $genotype);
-my ($outfile, $load, $from, $until);
+my ($outfile, $load, $from, $until, $agent);
 
 GetOptions (
 	    "test"       => \$test,
@@ -63,7 +63,8 @@ GetOptions (
 	    "load"       => \$load,
 	    "from:s"     => \$from,
             'genotype'   => \$genotype,
-	    "until:s"    => \$until,
+            "until:s"    => \$until,
+            "agent:s"    => \$agent
 	    );
 
 
@@ -78,10 +79,16 @@ if ( $store ) {
 
 # Display help if required
 &usage("Help") if ($help);
+unless (defined $agent) {
+    $agent = "all";
+}
 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
+if ($agent ne "all" && $agent ne "console" && $agent ne "web") {
+    $log->log_and_die("--agent must be console/web/all");
+}
 # this stores the current versions of events in 
 my %versions;
 
@@ -107,14 +114,26 @@ print OUT "\n\n// Nameserver Recent changes\n// From: $from\n// Until: $until\n\
 
 my $db = NameDB_handler->new($wormbase, $test);
 
-# we wish to pull out recent activity on the *web* interface in order to read it into geneace in the correct order of events.
-my $gene_data = $db->recent_gene($from, $until, 'web');
-my $variation_data = $db->recent_variation($from, $until, 'web');
-my $strain_data = $db->recent_strain($from, $until, 'web');
+my ($web_gene_data, $web_variation_data, $web_strain_data, $console_gene_data, $console_variation_data, $console_strain_data);
+if ($agent eq 'web' || $agent eq 'all') {
+    # we wish to pull out recent activity on the *web* interface in order to read it into geneace in the correct order of events.
+    $web_gene_data = $db->recent_gene($from, $until, 'web');
+    $web_variation_data = $db->recent_variation($from, $until, 'web');
+    $web_strain_data = $db->recent_strain($from, $until, 'web');
+}
+if ($agent eq 'console' || $agent eq 'all') {
+    $console_gene_data = $db->recent_gene($from, $until, 'console');
+    $console_variation_data = $db->recent_variation($from, $until, 'console');
+    $console_strain_data = $db->recent_strain($from, $until, 'console');
+}
+process_gene_data($web_gene_data) if $agent eq 'web' || $agent eq 'all';
+process_gene_data($console_gene_data) if $agent eq 'console' || $agent eq 'all';
+process_variation_data($web_variation_data) if $agent eq 'web' || $agent eq 'all';
+process_variation_data($console_variation_data) if $agent eq 'console' || $agent eq 'all';
+process_strain_data($web_strain_data) if $agent eq 'web' || $agent eq 'all';
+process_strain_data($console_strain_data) if $agent eq 'console' || $agent eq 'all';
 
-process_gene_data($gene_data);
-process_variation_data($variation_data);
-process_strain_data($strain_data);
+
 
 close(OUT);
 $db->close;
