@@ -207,7 +207,7 @@ while( my $obj = $it->next) {
     my ($genotype) = $obj->Genotype;
     my (@asserted_genes) = map { 'WB:'.$_->name } $obj->Asserted_gene;
     if ($obj->Asserted_human_gene) {
-	my @asserted_human_genes = map { 'WB:'.$_->name } $obj->Asserted_human_gene;
+	my @asserted_human_genes = map { $_->name } $obj->Asserted_human_gene;
 	push @asserted_genes, @asserted_human_genes;
     }
     if (@asserted_genes) {
