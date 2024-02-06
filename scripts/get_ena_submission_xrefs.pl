@@ -143,18 +143,24 @@ if ($protein_xrefs) {
   #Add AlphaFold database lookup
   # http://ftp.ebi.ac.uk/pub/databases/alphafold/accession_ids.txt
   # get to disc in the build acefiles dir AlphaFold_accession_ids.txt
-  my $alphafold = $wb->acefiles . "/AlphaFold_accession_ids.txt";
+  my $alphafold = $wb->acefiles . "/AlphaFold_accession_ids.csv";
+  my $afurl = 'ftp://ftp.ebi.ac.uk/pub/databases/alphafold/accession_ids.csv';
   $log->write_to("Attempting to FTP the AlphaFold data from ebi FTP\n");
-  `wget -O $alphafold ftp://ftp.ebi.ac.uk/pub/databases/alphafold/accession_ids.txt`;
+  `wget -O $alphafold $afurl`;
 
   # Process to an array for lookup.
   # Use @alphafoldlu later in the script when printing out the UniProt accession and extra AlphaFold lines.                                                                                              
   my @alphafoldlu;
   open (my $alpha_fh, "<$alphafold") or $log->log_and_die("Could not open $alphafold for reading\n");
+  $log->write_to("Parsing UniProt accessions from $alphafold\n");
   while (<$alpha_fh>) {
       chomp;
       my @data = split(",",$_);
       push (@alphafoldlu,@data[0]);
+  }
+
+  if (scalar @alphafoldlu == 0) {
+      $log->log_and_die("Failed to retrieve UniProt IDs from alphafold FTP ($afurl)\n");
   }
   
   open(my $table_fh, $pid_table_file)
@@ -163,6 +169,7 @@ if ($protein_xrefs) {
   open(my $acefh, ">$pidacefile")
       or $log->log_and_die("Could not open $pidacefile for writing\n");
 
+  $log->write_to("Parsing data from $pid_table_file\n");
   while(<$table_fh>) {
     chomp;
     my @data = split("\t",$_);
@@ -206,7 +213,8 @@ if ($protein_xrefs) {
     }
   }
   close($table_fh) or $log->log_and_die("Could not close the protein_id command/file\n");
-  
+
+  $log->write_to("Writing xrefs to $pidacefile\n");
   foreach my $k (keys %cds_xrefs) {
     print $acefh "CDS : \"$k\"\n";
     
@@ -218,13 +226,15 @@ if ($protein_xrefs) {
     
     if (exists $cds_xrefs{$k}->{dblinks}) {
       my $h = $cds_xrefs{$k}->{dblinks};
+      my $alphafold_printed = 0;
       foreach my $db (sort keys %$h) {
         foreach my $attr_k (sort keys %{$h->{$db}}) {
           foreach my $attr_v (sort keys %{$h->{$db}->{$attr_k}}) {
 	      print $acefh "Database $db $attr_k $attr_v\n";
-	      #Add the AlphaFold xref if the Uniprot accession is in the AlphaFold accessions tablke available on their FTP.
-	      if ($db =~ /UniProt/) {
+	      #Add the AlphaFold xref if the Uniprot accession is in the AlphaFold accessions table available on their FTP.
+	      if ($db =~ /UniProt/ and $alphafold_printed == 0) {
 		  print $acefh "Database AlphaFold entry $attr_v\n" if (exists ($alphafoldlu[$attr_v]));
+		  $alphafold_printed = 1;
 	      }
           }
         }
