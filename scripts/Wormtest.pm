@@ -20,6 +20,7 @@ use Wormbase;
 
 use Const::Fast;
 use Path::Class;
+use List::MoreUtils qw(uniq);
 
 const my $MAX_DAYS_SINCE_CITACE_DUMP => 21;
 const my $MAX_DAYS_SINCE_GENEACE_COPY => 7;
@@ -1152,6 +1153,7 @@ sub _blast_count_comparison {
 
     my @all_species = keys %{$counts->{'old'}};
     push @all_species, keys %{$counts->{'new'}};
+    @all_species = uniq @all_species;
     for my $species (@all_species) {
 	if (!exists $counts->{'new'}{$species}) {
 	    $self->{'log'}->write_to("POSSIBLE ERROR: no ${blast_type} entries for ${species} in ${ace_file}\n");
@@ -1176,7 +1178,7 @@ sub _blast_count_comparison {
 	      (scalar keys %{$counts->{'new'}{$species}} > (1.1 * scalar keys %{$counts->{'old'}{$species}})))) {
 	    $self->{'log'}->write_to("POSSIBLE ERROR: >10% difference between counts of $blast_type" .
 				     " entries for ${species}:\n    " . scalar (keys %{$counts->{'old'}{$species}}) .
-				     ' ' . $self-{'wormbase'}->get_wormbase_version_name . "\n    " .
+				     ' ' . $self->{'previous_wormbase'}->get_wormbase_version_name . "\n    " .
 				     scalar (keys %{$counts->{'new'}{$species}}) .
 				     " ${ace_file}\n");
 	    $errors++;
