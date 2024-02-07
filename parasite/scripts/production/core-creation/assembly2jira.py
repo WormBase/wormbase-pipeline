@@ -198,7 +198,8 @@ def main():
         sys.exit()
 
     username = getpass.getuser()
-    password = getpass.getpass(f"Enter your Jira password for {username}: ")
+#    password = getpass.getpass(f"Enter your Jira password for {username}: ")  
+    password = "Diosebiz23"
     jira = JIRA(server=jira_server,basic_auth=(username, password))
 
     #create subtask for parent_issue

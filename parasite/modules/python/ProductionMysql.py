@@ -39,7 +39,15 @@ class Staging:
     def __init__(self, STAGING_HOST, writeable=False, ps_release=PARASITE_VERSION, e_release=ENSEMBL_VERSION):
         self.host = STAGING_HOST
         if writeable:
-            self.host = STAGING_HOST + "-w"
+            if self.host.startswith("mysql-ps-"):
+                if self.host.endswith(".ebi.ac.uk"):
+                    split_host = self.host.split(".ebi.ac.uk")
+                    self.host = split_host[0] + "-w"
+                else:
+                    self.host = STAGING_HOST + "-w"
+            else:
+                exit_with_error(f"It is not allowed to get a writeable version of the non ps sever {STAGING_HOST}.")
+        
         self.url = subprocess.check_output([self.host, 'details', 'url']).strip().decode()
         self.script = subprocess.check_output([self.host, 'details', 'script']).strip().decode()
         self.engine = sqlalchemy.create_engine(self.url)
@@ -56,6 +64,9 @@ class Staging:
 
     def core_dbs(self, pattern):
         return (regex_match_dbs(pattern, self.core_databases))
+    
+    def release_core_dbs(self, pattern):
+        return (regex_match_dbs(pattern, self.release_core_databases))
 
     def variation_dbs(self, pattern):
         return (regex_match_dbs(pattern, self.variation_databases))
@@ -221,7 +232,33 @@ class Core(Staging):
             return f"caenorhabditis"
         elif self.phylum()=="Platyhelminthes":
             return f"schistosoma"
-
+    def remove_busco_scores(self, mode, busco_version):
+        META_VALUE_SQL = f"DELETE FROM meta WHERE meta_key LIKE '{mode}.busco{busco_version}%';"
+        self.connect().execute(META_VALUE_SQL)
+    def add_busco_scores(self, mode, busco_version, complete, duplicated, fragmented, missing, tnumber):
+        busco_dict = {f"{mode}.busco{busco_version}_complete":f"{complete}",
+                      f"{mode}.busco{busco_version}_duplicated":f"{duplicated}",
+                      f"{mode}.busco{busco_version}_fragmented":f"{fragmented}",
+                      f"{mode}.busco{busco_version}_missing":f"{missing}",
+                      f"{mode}.busco{busco_version}_number":f"{tnumber}"}
+        for key, value in busco_dict.items():
+            META_VALUE_SQL = f"INSERT INTO meta (meta_key, meta_value) VALUES ('{key}', '{value}');"
+            self.connect().execute(META_VALUE_SQL)
+    def remove_omark_scores(self):
+        META_VALUE_SQL = f"DELETE FROM meta WHERE meta_key LIKE 'omark.%';"
+        self.connect().execute(META_VALUE_SQL)
+    def add_omark_scores(self, single, duplicated, missing, accurate, partial, fragmented, contamination, unknown):
+        omark_dict = {"omark.single":f"{single}",
+                      "omark.duplicated":f"{duplicated}",
+                      "omark.missing":f"{missing}",
+                      "omark.consistent":f"{accurate}",
+                      "omark.partial":f"{partial}",
+                      "omark.fragmented":f"{fragmented}",
+                      "omark.contamination":f"{contamination}",
+                      "omark.unknown":f"{unknown}"}
+        for key, value in omark_dict.items():
+            META_VALUE_SQL = f"INSERT INTO meta (meta_key, meta_value) VALUES ('{key}', '{value}');"
+            self.connect().execute(META_VALUE_SQL)
 
 class Variation(Staging):
     def __init__(self, STAGING_HOST, pattern, writable=False):

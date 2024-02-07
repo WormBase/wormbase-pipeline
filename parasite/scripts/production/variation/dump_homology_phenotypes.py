@@ -1,4 +1,3 @@
-#!/hps/software/users/wormbase/parasite/shared/.pyenv/versions/production-tools/bin/python -u
 import os
 from optparse import OptionParser
 import pandas as pd
@@ -27,6 +26,8 @@ if OUTPUT_DIR is None:
 else:
     OUTPUT_DIR = OUTPUT_DIR.rstrip('/')
 
+print(options.SPECIES)
+
 if options.SPECIES is not None:
     SPECIES = [x.strip() for x in options.SPECIES.split(",") if x.strip() in staging.core_databases]
     for pre_spe in options.SPECIES.split(','):
@@ -46,7 +47,10 @@ for cdb in SPECIES:
     output_file = OUTPUT_DIR + "/" + Core(staging.host, cdb).ftp_filename_n_filename() + ".orthology-inferred_phenotypes.gaf"
 
     if os.path.isfile(output_file):
-        continue
+        if options.force is False:
+            print_info(output_file + " already exists and the --force option has not been enabled. Skipping.")
+            continue
+
 
     taxon_id = Core(staging.host, cdb).meta_value("species.taxonomy_id").strip()
     if taxon_id == "":

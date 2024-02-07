@@ -63,7 +63,6 @@ def write_output_json(run_dict, outfile):
         with open(outfile, "w") as final:
             json.dump(list(dict_of_final_runs.values()), final, indent=2)
 
-
 print_info("PRE-RUN STATUS FILE SELECTED:\n"+args.SFILE)
 if args.SPECIES:
     SPECIES=args.SPECIES.split(",")

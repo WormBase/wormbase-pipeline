@@ -55,7 +55,8 @@ my $core_db = Bio::EnsEMBL::DBSQL::DBAdaptor->new( -dbname => $dbname,
                                                    -port => $port,
                                                    -user => $user, 
                                                    -pass => $pass );
-
+my $gdb_adaptor = $compara_db->get_GenomeDBAdaptor() unless ( ! defined $compara_dbname);
+my $genome_db = $gdb_adaptor->fetch_by_core_DBAdaptor($core_db) unless ( ! defined $compara_dbname);
 my $gene = $gene_id ? lookup_gene($core_db, $gene_id) : choose_best_gene(get_candidate_genes($core_db, $compara_db));
 
 store_gene_sample( $core_db, $gene);
@@ -86,7 +87,7 @@ sub get_candidate_genes {
       }
       @domains= uniq(@domains);
       $stats->{domains} = \@domains;
-      my $gm = $compara_db->get_GeneMemberAdaptor->fetch_by_stable_id($g->stable_id);
+      my $gm = $compara_db->get_GeneMemberAdaptor->fetch_by_stable_id_GenomeDB($g->stable_id, $genome_db);
       for my $target_species ('homo_sapiens',
                                   'mus_musculus',
                                   'danio_rerio',

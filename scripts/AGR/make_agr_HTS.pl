@@ -94,7 +94,8 @@ while (my $analysis = $it->next) {
 	$dataset_json{title} = $analysis->Title ? $analysis->Title->name : "$analysis"; #required
 	$dataset_json{summary} = $analysis->Description->name if $analysis->Description;
 	if ($analysis->Category) {
-	    $dataset_json{categoryTags} = [$analysis->Category->name];
+	    my @tags = map {$_->name} $analysis->Category;
+	    $dataset_json{categoryTags} = \@tags;
 	}
 	else {
 	    $dataset_json{categoryTags} = ['unclassified'];
