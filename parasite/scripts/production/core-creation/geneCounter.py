@@ -2,8 +2,6 @@
 from ProductionMysql import *
 from ProductionUtils import *
 import os
-import gzip
-import csv
 
 # setting up environmental variables
 PARASITE_STAGING = os.environ['PARASITE_STAGING_MYSQL']
