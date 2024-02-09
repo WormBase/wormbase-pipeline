@@ -29,6 +29,7 @@ for database in databases:
     # create sql query to count the number of distinct genes in the genes table 
     GENES_QUERY = "SELECT COUNT(DISTINCT stable_id) FROM gene"
     DESCRIPTIONS_QUERY = "SELECT COUNT(DISTINCT stable_id) FROM gene WHERE description is NOT NULL"
+    DESCRIPTIONS2_QUERY = "SELECT COUNT (DISTINCT stable_id) FROM gene WHERE description LIKE ‘%characterised%’ OR description LIKE ‘%Characterised%’ or description LIKE ‘%characterized%’ or description LIKE ‘%Characterized%’"
 
     # execute the query
     genes_query_execution = core_db.connect().execute(GENES_QUERY)
