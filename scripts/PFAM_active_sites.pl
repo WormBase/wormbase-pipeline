@@ -170,6 +170,7 @@ sub update_database {
       if ($ftp->get("${table}.txt.gz","$tmpDir/${table}.txt.gz")){
         $log->write_to("Parsing nematode proteins out of pfamseq...\n");
         $wormbase->run_command("zgrep Nematoda $tmpDir/${table}.txt.gz > $tmpDir/${table}.txt",$log);
+	print "ZGREP COMPLETE\n";
       }else{$log->log_and_die("could not download ${table}.txt.gz\n")}
     } else {
       if ($ftp->get("${table}.txt.gz","$tmpDir/${table}.txt.gz")){
@@ -181,18 +182,24 @@ sub update_database {
         $log->log_and_die("Couldn't find $table file to download :(\n");
       }
     }
-    
+    print "QUITTING FTP\n";
     $ftp->quit;
-    
+    print "QUIT FTP\n";
     # flush the table
     $log->write_to("\tclearing table $table\n");
+    print "CLEARING\n";
     $DB->do("TRUNCATE TABLE $table") or $log->log_and_die($DB->errstr."\n");
     # load in the new data.
+    print "LOADING\n";
     $log->write_to("\tloading data in to $table\n");
-    $DB->do("SET FOREIGN_KEY_CHECKS=0");		
-    $DB->do("LOAD DATA LOCAL INFILE \"$tmpDir/$table.txt\" INTO TABLE $table".' FIELDS ENCLOSED BY \'\\\'\'') or $log->log_and_die($DB->errstr."\n");
+    $DB->do("SET FOREIGN_KEY_CHECKS=0");
+    if ($table eq 'pfamseq') {
+	$DB->do("LOAD DATA LOCAL INFILE \"$tmpDir/$table.txt\" INTO TABLE $table") or $log->log_and_die($DB->errstr."\n");
+    } else {
+	$DB->do("LOAD DATA LOCAL INFILE \"$tmpDir/$table.txt\" INTO TABLE $table".' FIELDS ENCLOSED BY \'\\\'\'') or $log->log_and_die($DB->errstr."\n");
+    }
     $DB->do("SET FOREIGN_KEY_CHECKS=1");
-    
+    print "LOADED\n";
     # this will fall to pieces as soon as Rob changes the name of the column again
     if ($table eq 'pfamseq') {
       $log->write_to("\tcleaning quotation marks from $table\n");
