@@ -205,8 +205,8 @@ sub extract_vcf_data {
 		    -seq => $right_flank_seq,
 		    -alphabet => 'dna')->revcom->seq if defined $right_flank_seq;
 	    }
-	    if ($start != 1) {
-		$start--;
+	    if ($start != 1 or (defined $insertion and !defined $deletion)) {
+		$start-- unless defined $insertion and !defined $deletion; # Mapping starts and ends for insertions include flanking bases unless sequence is also deleted
 		my $left_pad_base = defined $left_flank_seq ? substr($left_flank_seq, -1) :
 		    $self->fetch_region($chr, $start, $start);
 		$ref = $left_pad_base . $deleted_sequence;
