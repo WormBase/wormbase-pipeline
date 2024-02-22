@@ -1267,7 +1267,7 @@ sub make_md5sums {
 ##################################################################################
 sub make_blast_meta{
     
-    my $meta_file = $ENV{'AGR_UPLOADS'} ."/blast_meta/blast_meta.${WS_version_name}.json";
+    my $meta_file = $ENV{'AGR_BLAST_CONF_REPO'} ."/conf/WB/databases.WB.${WS_version_name}.json";
     my $blast_meta;
     my $runtime = $wormbase->runtime;
     $log->write_to("$runtime: creating AGR BLAST metadata file\n");
@@ -1279,7 +1279,9 @@ sub make_blast_meta{
 	'dateProduced' => AGR::get_rfc_date(),
 	'dataProvider' => 'WB',
 	'contact' => 'help@wormbase.org',
-	'release' => $WS_version_name
+        'release' => $WS_version_name,
+        'homepage_url' => 'https://wormbase.org',
+        'logo_url' => 'https://wormbase.org/img/logo/logo_wormbase_gradient.svg';
     };
     $blast_meta->{'metaData'} = $meta_data;
     my $data = [];
@@ -1313,10 +1315,25 @@ sub make_blast_meta{
 	}
 	
 	if (-e $genome_path) {
+	    my @jbrowse_tracks;
+	    push @jbrowse_tracks, $wb->gspecies_name . '_' . $wb->ncbi_bioproject . '_curated_genes';
+	    push @jbrowse_tracks, $wb->gspecies_name . '_' . $wb->ncbi_bioproject . '_protein_motifs';
+	    push @jbrowse_tracks, $wb->gspecies_name . '_' . $wb->ncbi_bioproject . '_classical_alleles';
+	    
+	    my $genome_browser_details = {
+		'type' => 'jbrowse2',
+		'assembly' => $wb->gspecies_name . '_' . $wb->ncbi_bioproject,
+		'url' => 'https://wormbase.org/tools/genome/jbrowse2/index.html',
+		'tracks' => \@jbrowse_tracks,
+		'gene_track' => 'Curated_Genes',
+		'mod_gene_url' => 'https://wormbase.org/species/' . $wb->gspecies_name . '/gene/',
+		'data_url' => 'https://s3.amazonaws.com/agrjbrowse/MOD-jbrowses/WormBase/' . $WS_version_name . '/' . $wb->gspecies_name . '_' . $wb->ncbi_bioproject . '/'    
+	    };
+	    
 	    next if is_empty_gzip_file($genome_path);
 	    my $genome_md5 = substr(`md5sum ${genome_path}`, 0, 32);
 	    my $genome_entry = {
-		'URI' => $genome_url,
+		'uri' => $genome_url,
 		'description' => $wb->long_name . $strain_suffix . ' genome assembly',
 		'md5sum' => $genome_md5,
 		'version' => $WS_version_name,
