@@ -11,7 +11,7 @@ use Wormbase;
 my ($help, $debug, $test, $verbose, $store, $wormbase, $schema);
 my ($outfile, $acedbpath, $ws_version, $out_fh);
 
-const my $LINKML_SCHEMA => 'v1.11.0';
+const my $LINKML_SCHEMA => 'v2.2.0';
 
 GetOptions ("help"        => \$help,
             "debug=s"     => \$debug,
@@ -89,7 +89,7 @@ while (my $obj = $it->next) {
 
     my $is_obsolete = $obj->Status && $obj->Status->name eq 'Dead' ? JSON::true : JSON::false;
     my $gene = {
-	curie    => 'WB:' . $obj->name,
+	mod_entity_id    => 'WB:' . $obj->name,
 	gene_symbol_dto   => $symbol,
 	taxon_curie    => 'NCBITaxon:' . $obj->Species->NCBITaxonomyID,
 	obsolete => $is_obsolete,

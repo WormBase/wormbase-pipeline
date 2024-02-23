@@ -15,7 +15,7 @@ use Modules::AGR;
 my ($debug, $test, $verbose, $store, $wormbase, $curation_test, $limit, $schema);
 my ($outdir, $acedbpath, $ws_version, $bgi_json,$disease_file);
 
-const my $LINKML_SCHEMA => 'v1.11.0';
+const my $LINKML_SCHEMA => 'v2.2.0';
 # TODO: check SO term mappings with Stavros
 const my %TERM2SO => (
     'Insertion'            => 'SO:0000667', # changed insertion_site to insertion
@@ -129,7 +129,7 @@ sub process_variations {
 	if ($obj->Gene) {
 	    for my $gene($obj->Gene) {
 		$assoc_out_fh->print(",") if $gene_assoc_count > 0;
-		$assoc_out_fh->print("{\"allele_curie\": \"WB:" . $obj->name . "\", \"relation_name\": \"is_allele_of\", \"gene_curie\": \"WB:" . $gene->name . "\"}");
+		$assoc_out_fh->print("{\"allele_identifier\": \"WB:" . $obj->name . "\", \"relation_name\": \"is_allele_of\", \"gene_identifier\": \"WB:" . $gene->name . "\"}");
 		$gene_assoc_count++;
 	    }
 	}
@@ -137,7 +137,7 @@ sub process_variations {
 	my $is_obsolete = ($obj->Status && $obj->Status->name eq 'Dead') ? JSON::true : JSON::false;
 	    
 	my $allele_obj = {
-	    curie                      => "WB:" . $obj->name,
+	    mod_entity_id              => "WB:" . $obj->name,
 	    allele_symbol_dto          => get_symbol_dto($obj),
 	    taxon_curie                => "NCBITaxon:" . $obj->Species->NCBITaxonomyID->name,
 	    internal                   => JSON::false,
@@ -148,10 +148,10 @@ sub process_variations {
 	};
 
 	my $var_obj = {
-	    curie                      => "WBVar:" . $obj->name,
+	    mod_entity_id              => "WBVar:" . $obj->name,
 	    taxon_curie                => "NCBITaxon:" . $obj->Species->NCBITaxonomyID->name,
 	    internal                   => JSON::false,
-	    obsolete                  => $is_obsolete,
+	    obsolete                   => $is_obsolete,
 	    created_by_curie           => 'WB:curator',
 	    updated_by_curie           => 'WB:curator',
 	    data_provider_dto          => $data_provider_dto_json
@@ -394,7 +394,7 @@ sub process_transgenes {
 	}; 
 	
 	my $allele_obj = {
-	    curie         => "WB:" . $obj->name, 
+	    mod_entity_id => "WB:" . $obj->name, 
 	    allele_symbol_dto => get_symbol_dto($obj),
 	    taxon_curie   => "NCBITaxon:" . $obj->Species->NCBITaxonomyID->name,
 	    internal      => JSON::false,

@@ -15,7 +15,7 @@ use Path::Class;
 use Const::Fast;
 use XML::LibXML;
 
-const my $LINKML_SCHEMA => 'v1.11.0';
+const my $LINKML_SCHEMA => 'v2.2.0';
 const my $CHEBI_PURL => 'http://purl.obolibrary.org/obo/chebi.owl';
 
 my ($debug, $test, $verbose, $store, $wormbase, $acedbpath, $ws_version, $outfile, $schema, $dates_file);
@@ -189,7 +189,7 @@ while( my $obj = $it->next) {
 			   }] if $obj->Disease_model_description;
     
     if (@genetic) {
-	$annot->{disease_genetic_modifier_curies} = \@genetic;
+	$annot->{disease_genetic_modifier_identifiers} = \@genetic;
 	$annot->{disease_genetic_modifier_relation_name} = $modifier_type; # ameliorated_by / not_ameliorated_by / exacerbated_by / not_exacerbated_by
     }
 
@@ -211,18 +211,18 @@ while( my $obj = $it->next) {
 	push @asserted_genes, @asserted_human_genes;
     }
     if (@asserted_genes) {
-	$annot->{asserted_gene_curies} = \@asserted_genes;
+	$annot->{asserted_gene_identifiers} = \@asserted_genes;
     }
     my ($obj_id, $obj_name, $obj_type);
 
     my $subject_field;
     if (defined $strain) {
-	$subject_field = 'agm_curie';
+	$subject_field = 'agm_identifier';
 	$obj_type = 'strain';
 	$obj_name = $strain->Public_name ? $strain->Public_name->name : $strain->name;
 	$obj_id = 'WB:' . $strain->name;
     } elsif (defined $allele) {
-	$subject_field = 'allele_curie';
+	$subject_field = 'allele_identifier';
 	if ($allele->Public_name){
 	    $obj_type = "allele";
 	    $obj_name = $allele->Public_name->name;
@@ -232,18 +232,18 @@ while( my $obj = $it->next) {
 	    next;
 	}
     } elsif (defined $transgene) {
-	$subject_field = 'allele_curie';
+	$subject_field = 'allele_identifier';
 	$obj_type = 'allele';# as quick fix for 3.0
 	$obj_name = $transgene->Public_name->name;
 	$obj_id = 'WB:' . $transgene->name;
     } elsif (defined $gene) {
-	$subject_field = 'gene_curie';
+	$subject_field = 'gene_identifier';
 	$obj_type = 'gene';
 	$obj_name = $gene->Public_name->name;
 	$obj_id = 'WB:' . $gene->name;
 	@asserted_genes = ();
     } elsif (defined $genotype){
-	$subject_field = 'agm_curie';
+	$subject_field = 'agm_identifier';
 	$obj_type = 'genotype';
 	$obj_name = "${\$genotype->Genotype_name}";
 	$obj_id = 'WB:' . $genotype->name;

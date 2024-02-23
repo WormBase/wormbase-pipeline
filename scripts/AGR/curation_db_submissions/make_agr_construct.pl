@@ -15,7 +15,7 @@ use Modules::AGR;
 my ($debug, $test, $verbose, $store, $wormbase, $curation_test, $limit, $schema);
 my ($outdir, $acedbpath, $ws_version, $out_fh, $bgi_json,$disease_file);
 
-const my $LINKML_SCHEMA => 'v1.11.0';
+const my $LINKML_SCHEMA => 'v2.2.0';
 
 GetOptions (
     'debug=s'       => \$debug,
@@ -363,7 +363,7 @@ sub get_gene_component {
     my $component_json = {
 	construct_identifier => 'WB:' . $obj->name,
 	genomic_entity_relation_name => $relation,
-	genomic_entity_curie => 'WB:' . $gene->name,
+	genomic_entity_identifier  => 'WB:' . $gene->name,
 	internal                   => JSON::false,
 	obsolete                   => JSON::false,
 	created_by_curie           => 'WB:curator',

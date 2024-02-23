@@ -9,7 +9,7 @@ use Const::Fast;
 my ($help, $debug, $test, $verbose, $store, $wormbase);
 my ($outfile, $acedbpath, $ws_version, $out_fh);
 
-const my $LINKML_SCHEMA => 'v1.11.0';
+const my $LINKML_SCHEMA => 'v2.2.0';
 
 GetOptions ("help"        => \$help,
             "debug=s"     => \$debug,
@@ -64,7 +64,7 @@ while (my $obj = $it->next) {
     };
 	    
     my $strain = {
-	curie             => "WB:$obj",
+	mod_entity_id     => "WB:$obj",
 	name              => ($obj->Public_name ? "${\$obj->Public_name}" : "$obj"),
 	subtype_name      => 'strain',
 	taxon_curie       => 'NCBITaxon:' . $obj->Species->NCBITaxonomyID,
@@ -103,7 +103,7 @@ while (my $obj = $it2->next) {
 
     
     my $genotype = {
-	curie             => "WB:$obj",
+	mod_entity_id     => "WB:$obj",
 	name              => ($obj->Genotype_name ? "${\$obj->Genotype_name}" : "$obj"),
 	subtype_name      => 'genotype',
 	taxon_curie       => 'NCBITaxon:' . $obj->Species->NCBITaxonomyID,
