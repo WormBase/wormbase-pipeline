@@ -1337,6 +1337,7 @@ sub make_blast_meta{
 		'description' => $wb->long_name . $strain_suffix . ' genome assembly',
 		'md5sum' => $genome_md5,
 		'version' => $WS_version_name,
+		'genome_browser' => $genome_browser_details,
 	        'blast_title' => $wb->short_name . $strain_suffix . ' Genome Assembly',
 	        'seqtype' => 'nucl',
 		'bioproject' => $wb->ncbi_bioproject,
