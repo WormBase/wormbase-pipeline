@@ -1281,7 +1281,7 @@ sub make_blast_meta{
 	'contact' => 'help@wormbase.org',
         'release' => $WS_version_name,
         'homepage_url' => 'https://wormbase.org',
-        'logo_url' => 'https://wormbase.org/img/logo/logo_wormbase_gradient.svg';
+        'logo_url' => 'https://wormbase.org/img/logo/logo_wormbase_gradient.svg'
     };
     $blast_meta->{'metaData'} = $meta_data;
     my $data = [];
