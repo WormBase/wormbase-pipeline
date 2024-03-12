@@ -1281,7 +1281,7 @@ sub make_blast_meta{
 	'contact' => 'help@wormbase.org',
         'release' => $WS_version_name,
         'homepage_url' => 'https://wormbase.org',
-        'logo_url' => 'https://wormbase.org/img/logo/logo_wormbase_gradient.svg';
+        'logo_url' => 'https://wormbase.org/img/logo/logo_wormbase_gradient.svg'
     };
     $blast_meta->{'metaData'} = $meta_data;
     my $data = [];
@@ -1337,6 +1337,7 @@ sub make_blast_meta{
 		'description' => $wb->long_name . $strain_suffix . ' genome assembly',
 		'md5sum' => $genome_md5,
 		'version' => $WS_version_name,
+		'genome_browser' => $genome_browser_details,
 	        'blast_title' => $wb->short_name . $strain_suffix . ' Genome Assembly',
 	        'seqtype' => 'nucl',
 		'bioproject' => $wb->ncbi_bioproject,
