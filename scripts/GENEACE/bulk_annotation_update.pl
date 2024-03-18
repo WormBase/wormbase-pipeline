@@ -232,6 +232,11 @@ sub create_gene {
 sub create_transcript {
     my ($external_gene_id, $external_transcript_id, $wb_transcript_name, $wb_gene_id) = @_;
     
+    
+    if ($new_start_codons->{$external_id} ne 'ATG') {
+	$suspicious_fh->print("Creating $external_transcript_id with non-canonical start site");
+    }
+
     my ($exon_starts, $exon_ends) = get_relative_positions($external_gene_id, $external_transcript_id, 'exon');
     
     my $remark = 'Created as part of bulk annotation update on ' . $date;
