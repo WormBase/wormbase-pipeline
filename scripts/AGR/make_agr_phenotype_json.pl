@@ -116,6 +116,10 @@ sub process_genes_phenotype{
 	
 	foreach my $pt (@phenotypes){
 	    my $phen_id   = 'WB:'.$pt->name;
+	    unless ($pt->Primary_name) {
+		print STDERR "Primary name undefined for $pt->name\n";
+		next;
+	    }
 	    my $phen_desc = $pt->Primary_name->name;
 	    my %papers;
 	    
@@ -167,6 +171,10 @@ sub process {
 	
         foreach my $pt (@phenotypes){
 	    my $phen_id   = 'WB:'.$pt->name;
+	    unless ($pt->Primary_name) {
+		print STDERR "Primary name undefined for $pt->name\n";
+		next;
+	    }
 	    my $phen_desc = $pt->Primary_name->name;
 	    my %papers;
 	    my @caused_by_genes;

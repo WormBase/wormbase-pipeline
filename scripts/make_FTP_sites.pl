@@ -1351,7 +1351,7 @@ sub make_blast_meta{
 	    next if is_empty_gzip_file($protein_path);
 	    my $protein_md5 = substr(`md5sum ${protein_path}`, 0, 32);
 	    my $protein_entry = {
-		'URI' => $protein_url,
+		'uri' => $protein_url,
 		'description' => $wb->long_name . $strain_suffix . ' protein sequences',
 	        'md5sum' => $protein_md5,
 	        'version' => $WS_version_name,
