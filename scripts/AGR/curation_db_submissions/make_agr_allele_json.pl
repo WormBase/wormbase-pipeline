@@ -67,7 +67,7 @@ if (!$outdir) {
 my $suffix = $curation_test ? '.test_data.json' : '.json';
 my $allele_outfile = $outdir . "/wormbase.alleles.${ws_version}.${LINKML_SCHEMA}" . $suffix;
 my $assoc_outfile = $outdir . "/wormbase.allele_associations.${ws_version}.${LINKML_SCHEMA}" . $suffix;
-my $gene_assoc_outfile = $outdir . "/wormbase.allele_associations.${ws_version}.${LINKML_SCHEMA}" . $suffix . '.tmp';
+my $gene_assoc_outfile = $outdir . "/wormbase.allele_gene_associations.${ws_version}.${LINKML_SCHEMA}" . $suffix . '.tmp';
 my $variant_outfile = $outdir . "/wormbase.variants.${ws_version}.${LINKML_SCHEMA}" . $suffix;
 
 my $db = Ace->connect(-path => $acedbpath, -program => $tace) or die("Connection failure: ". Ace->error);
@@ -128,8 +128,8 @@ sub process_variations {
 
 	if ($obj->Gene) {
 	    for my $gene($obj->Gene) {
-		$assoc_out_fh->print(",") if $gene_assoc_count > 0;
-		$assoc_out_fh->print("{\"allele_identifier\": \"WB:" . $obj->name . "\", \"relation_name\": \"is_allele_of\", \"gene_identifier\": \"WB:" . $gene->name . "\"}");
+		$gene_assoc_out_fh->print(",") if $gene_assoc_count > 0;
+		$gene_assoc_out_fh->print("{\"allele_identifier\": \"WB:" . $obj->name . "\", \"relation_name\": \"is_allele_of\", \"gene_identifier\": \"WB:" . $gene->name . "\"}\n");
 		$gene_assoc_count++;
 	    }
 	}
