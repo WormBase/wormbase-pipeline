@@ -580,7 +580,7 @@ sub check_if_actually_compressed {
     open (FILE, "file $filename |") or $log->log_and_die($!);
     while (<FILE>) {
 	chomp;
-	$is_gzipped = 1 if $_ =~ /gzip compressed data/;
+	$is_gzipped = 1 if $_ =~ /gzip compressed data/ || $_ =~ /Zip archive data/;
     }
     close (FILE);
     
