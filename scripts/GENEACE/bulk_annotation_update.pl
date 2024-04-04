@@ -233,8 +233,8 @@ sub create_transcript {
     my ($external_gene_id, $external_transcript_id, $wb_transcript_name, $wb_gene_id) = @_;
     
     
-    if ($new_start_codons->{$external_id} ne 'ATG') {
-	$suspicious_fh->print("Creating $external_transcript_id with non-canonical start site");
+    if ($new_start_codons->{$external_gene_id} ne 'ATG') {
+	$suspicious_fh->print("Creating $external_gene_id with non-canonical start site\n");
     }
 
     my ($exon_starts, $exon_ends) = get_relative_positions($external_gene_id, $external_transcript_id, 'exon');
@@ -604,7 +604,7 @@ sub update_gene {
 	    }
 	}
 	if (exists $methods{'curated'}) {
-	    $suspicious_fh->print("Updating curated gene $wb_id");
+	    $suspicious_fh->print("Updating curated gene $wb_id with $external_id");
 	    if ($split_into) {
 		$suspicious_fh->print(" (by splitting)");
 	    }
@@ -616,7 +616,7 @@ sub update_gene {
 	    }
 	    $suspicious_fh->print("\n");
 	} else {
-	    my $message = "Updating non-curated gene $wb_id";
+	    my $message = "Updating non-curated gene $wb_id with $external_id";
 	    if ($split_into) {
 		$message .= " (by splitting)";
 	    }
@@ -624,8 +624,9 @@ sub update_gene {
 		$message .= " (by merging)";
 	    }
 	    if ($new_start_codons->{$external_id} ne 'ATG') {
-		$suspicious_fh->print("$message with non-canonical start site\n");
+		$suspicious_fh->print("$message with non-canonical start site");
 	    }
+	    $suspicious_fh->print("\n");
 	}
 	
 	# Some convoluted logic to avoid deleting and recreating unchanged isoforms and to resuse / create transcripts and CDS names
