@@ -76,7 +76,7 @@ sub get_agm{
 	$xrefs{$gene_id}{'DO'}{$obj->{DOid}} = 1 if $obj->{DOid};
 	for my $prov(@{$obj->{dataProvider}}) {
 	    for my $x ($prov->{crossReference}) {
-		if ($x->{id} =~ /^OMIM:(\w+)$/) {
+		if ($x->{id} =~ /^O?MIM:(\w+)$/) {
 		    $xrefs{$gene_id}{'OMIM'} = $1;
 		    last;
 		}

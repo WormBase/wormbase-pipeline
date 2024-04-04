@@ -132,7 +132,7 @@ foreach my $gene (sort keys %gene2do) {
 	    my @methods = sort keys %{$gene2do{$gene}{$do_id}{$orth}};
 	    if (exists $do2omim->{$do_id}) {
 		for my $omim_id (keys %{$do2omim->{$do_id}}) {
-		    printf $outflat "%s\t%s\t%s\t%s\t%s\n", $gene, $do_id, "OMIM:$omim_id", $orth, join("|", @methods);
+		    printf $outflat "%s\t%s\t%s\t%s\t%s\n", $gene, $do_id, "MIM:$omim_id", $orth, join("|", @methods);
 		}
 	    }
 	    else {
@@ -186,7 +186,7 @@ sub map_DO_to_OMIM {
 	  $doid = $1;
       }
       #xref: OMIM:203100
-      if (/^xref:\s+OMIM:(\d+)/) {
+      if (/^xref:\s+O?MIM:(\d+)/) {
 	  $do2omim{$doid}{$1} = 1;
       }
   }

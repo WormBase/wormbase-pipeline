@@ -76,7 +76,7 @@ while (my $obj=$it->next) {
         my ($with_from_list) = $text =~ /\((\S+)\)/;
         
         my @ens = map { "ENSEMBL:$_" } grep { $_ =~ /ENSG\d+/ } split(/,/, $with_from_list);
-        my @omim = grep { $_ =~ /OMIM:/ } split(/,/, $with_from_list);
+        my @omim = grep { $_ =~ /O?MIM:/ } split(/,/, $with_from_list);
         
         my $obj =  {
           object_type => "gene",
