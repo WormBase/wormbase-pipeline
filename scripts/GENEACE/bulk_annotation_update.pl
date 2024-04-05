@@ -172,6 +172,11 @@ sub create_gene {
     my $seq_name = $curation->Next_CDS_ID();
     my $so_term = 'SO:0001217'; # Are we really only creating coding genes or could we be creating Pseudogenes?
 
+    if ($new_start_codons->{$non_wb_id} ne 'ATG') {
+	my $type = defined $split_from ? 'split' : 'new';
+	$suspicious_fh->print("Creating $non_wb_id with non-canonical start site ($type)\n");
+    }
+    
     my $wb_id = $nh->idGetByTypedName('Sequence' => $seq_name);
     if ($wb_id) {
 	$log->write_to("$wb_id already exists in Names Service, creating using existing ID\n");
@@ -233,10 +238,6 @@ sub create_transcript {
     my ($external_gene_id, $external_transcript_id, $wb_transcript_name, $wb_gene_id) = @_;
     
     
-    if ($new_start_codons->{$external_gene_id} ne 'ATG') {
-	$suspicious_fh->print("Creating $external_gene_id with non-canonical start site\n");
-    }
-
     my ($exon_starts, $exon_ends) = get_relative_positions($external_gene_id, $external_transcript_id, 'exon');
     
     my $remark = 'Created as part of bulk annotation update on ' . $date;
