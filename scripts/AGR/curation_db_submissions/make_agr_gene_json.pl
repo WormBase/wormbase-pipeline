@@ -11,7 +11,27 @@ use Wormbase;
 my ($help, $debug, $test, $verbose, $store, $wormbase, $schema);
 my ($outfile, $acedbpath, $ws_version, $out_fh);
 
-const my $LINKML_SCHEMA => 'v2.2.0';
+const my $LINKML_SCHEMA => 'v2.2.3';
+
+const my %XREF_MAP => (
+    "NCBI"       => {
+	gene => "NCBI_Gene",
+    },
+    "SwissProt"  => {
+	UniProtAcc => "UniProtKB",
+    },
+    "TrEMBL"     => {
+	UniProtAcc => "UniProtKB",
+    },
+    "RNAcentral" => {
+	URSid => "RNAcentral",
+    },
+    "Panther" => {
+	family => "PANTHER",
+    }
+);
+
+
 
 GetOptions ("help"        => \$help,
             "debug=s"     => \$debug,
@@ -87,6 +107,53 @@ while (my $obj = $it->next) {
 	obsolete => JSON::false
     };
 
+    # Cross references
+    foreach my $dblink ($obj->Database) {
+	if (exists $XREF_MAP{$dblink}) {
+	    foreach my $field ($dblink->col) {
+		if (exists $XREF_MAP{$dblink}->{$field}) {
+		    my $prefix = $XREF_MAP{$dblink}->{$field};
+		    my @ids = $field->col;
+		    foreach my $id(@ids){
+			my $suffix = $id->name; 
+			push @xrefs, {
+			    id => "$prefix:$suffix",
+			    page_area => "default",
+			    display_name => "$prefix:$suffix",
+			    prefix => $prefix
+			};
+		    }
+		}
+	    }
+	}
+    }
+
+    # Back-to-mod xrefs
+    my @baseXrefs = qw(gene gene/expression gene/references);
+    push @baseXrefs, 'gene/phenotypes' if ($obj->Allele and $obj->Allele->Phenotype) || ($obj->RNAi_result and $obj->RNAi_result->Phenotype);
+    push @baseXrefs, 'gene/expression_images' if ($obj->Expr_pattern && grep {$_->Picture} $obj->Expr_pattern);
+    
+    for my $baseXref (@baseXrefs) {
+	push @xrefs, {
+	    id => $primary_id,
+	    page_area => \@baseXref,
+	    display_name => $primary_id,
+	    prefix => "WB"
+	};
+    }
+    # for SPELL, we should technically only include the ref if this gene exists in SPELL, 
+    # which (as defined by Wen Chen) is: 
+    if ($obj->RNASeq_FPKM or $obj->Microarray_results) {
+	push @xrefs, {
+	    id => "WB:$symbol",
+	    pages => ["gene/spell"],
+	    display_name => "WB:$symbol",
+	    prefix => "WB"
+	};
+    }
+
+
+
     my $is_obsolete = $obj->Status && $obj->Status->name eq 'Dead' ? JSON::true : JSON::false;
     my $gene = {
 	mod_entity_id    => 'WB:' . $obj->name,
@@ -104,6 +171,7 @@ while (my $obj = $it->next) {
     $gene->{gene_systematic_name_dto} = $systematic_name if $systematic_name;
     $gene->{gene_synonym_dtos} = $synonyms if @$synonyms;
     $gene->{gene_secondary_id_dtos} = \@secondary_ids if @secondary_ids;
+    $gene->{cross_reference_dtos} = \@xrefs if @xrefs;
     
     push @genes, $gene;
 }
