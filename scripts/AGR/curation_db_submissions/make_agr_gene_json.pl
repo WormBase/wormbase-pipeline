@@ -107,6 +107,7 @@ while (my $obj = $it->next) {
 	obsolete => JSON::false
     };
 
+    my @xrefs;
     # Cross references
     foreach my $dblink ($obj->Database) {
 	if (exists $XREF_MAP{$dblink}) {
@@ -117,7 +118,7 @@ while (my $obj = $it->next) {
 		    foreach my $id(@ids){
 			my $suffix = $id->name; 
 			push @xrefs, {
-			    id => "$prefix:$suffix",
+			    referenced_curie => "$prefix:$suffix",
 			    page_area => "default",
 			    display_name => "$prefix:$suffix",
 			    prefix => $prefix
@@ -135,9 +136,9 @@ while (my $obj = $it->next) {
     
     for my $baseXref (@baseXrefs) {
 	push @xrefs, {
-	    id => $primary_id,
-	    page_area => \@baseXref,
-	    display_name => $primary_id,
+	    referenced_curie => 'WB:' . $obj->name,
+	    page_area => $baseXref,
+	    display_name => 'WB:' . $obj->name,
 	    prefix => "WB"
 	};
     }
@@ -145,9 +146,9 @@ while (my $obj = $it->next) {
     # which (as defined by Wen Chen) is: 
     if ($obj->RNASeq_FPKM or $obj->Microarray_results) {
 	push @xrefs, {
-	    id => "WB:$symbol",
-	    pages => ["gene/spell"],
-	    display_name => "WB:$symbol",
+	    referenced_curie => "WB:" . $symbol->{display_text},
+	    page_area => "gene/spell",
+	    display_name => $symbol->{display_text},
 	    prefix => "WB"
 	};
     }
