@@ -59,11 +59,13 @@ sub default_options {
 
         # configuration for the various resource options used in the pipeline
         
-	lsf_queue             => $ENV{'LSF_DEFAULT_QUEUE'},
-        default_lsf_options   => '-q' . $self->o('lsf_queue') . ' -R"select[mem>2000] rusage[mem=2000]" -M2000',    
-        highmem_lsf_options   => '-q' . $self->o('lsf_queue') . ' -R"select[mem>5000] rusage[mem=5000]" -M5000',     
-	highermem_lsf_options => '-q' . $self->o('lsf_queue') . ' -R"select[mem>8000] rusage[mem=8000]" -M8000',     
-        supermem_lsf_options  => '-q' . $self->o('lsf_queue') . ' -R"select[mem>16000] rusage[mem=16000]" -M16000',  
+	default_1min_slurm_options    => ' --partition=production --time=0:01:00 --mem=2000m',
+	default_5min_slurm_options    => ' --partition=production --time=0:05:00 --mem=2000m',
+	highmem_5min_slurm_options    => ' --partition=production --time=0:05:00 --mem=5000m',
+	highmem_90min_slurm_options   => ' --partition=production --time=1:30:00 --mem=5000m',
+	highermem_90min_slurm_options => ' --partition=production --time=1:30:00 --mem=8000m',
+	supermem_5min_slurm_options   => ' --partition=production --time=0:05:00 --mem=16000m',
+	supermem_90min_slurm_options  => ' --partition=production --time=1:30:00 --mem=16000m',
 
 	# batch size
 	batch_size              => 10000,
@@ -78,10 +80,14 @@ sub default_options {
 sub resource_classes {
     my ($self) = @_;
     return {
-	'default'   => { 'LSF' => $self->o('default_lsf_options')  },
-	'highmem'   => { 'LSF' => $self->o('highmem_lsf_options')  },
-	'highermem' => { 'LSF' => $self->o('highermem_lsf_options')  },
-	'supermem'  => { 'LSF' => $self->o('supermem_lsf_options')  },
+	'default_1min'    => { 'SLURM' => $self->o('default_1min_slurm_options')  },
+	'default_5min'    => { 'SLURM' => $self->o('default_5min_slurm_options')  },
+	'highmem_5min'    => { 'SLURM' => $self->o('highmem_5min_slurm_options')  },
+	'highmem_90min'   => { 'SLURM' => $self->o('highmem_90min_slurm_options')  },
+	'highermem_5min'  => { 'SLURM' => $self->o('highermem_5min_slurm_options')  },
+	'highermem_90min' => { 'SLURM' => $self->o('highermem_90min_slurm_options')  },
+	'supermem_5min'   => { 'SLURM' => $self->o('supermem_5min_slurm_options')  },
+	'supermem_90min'  => { 'SLURM' => $self->o('supermem_90min_slurm_options')  },
     };
 }
 
@@ -107,7 +113,7 @@ sub pipeline_analyses {
 		gff_dir    => $self->o('gff_dir'),
             },
 	    -input_ids => [{}],
-            -rc_name    => 'highermem',
+            -rc_name    => 'highermem_5min',
             -max_retry_count => 0,
             -flow_into  => {
                 '2->A' => [ 'map_variation' ],
@@ -128,7 +134,7 @@ sub pipeline_analyses {
             -max_retry_count => 0,
             -analysis_capacity  => $self->o('standard_max_workers'),
 	    -hive_capacity      => $self->o('hive_max_workers'),
-	    -rc_name        => 'highmem',
+	    -rc_name        => 'highmem_90min',
             -flow_into      => {
 		3 => ['map_variation_highmem'],
 		2 => ['run_vep'],
@@ -146,7 +152,7 @@ sub pipeline_analyses {
             },
 	    -analysis_capacity  => $self->o('highmem_max_workers'),
 	    -hive_capacity      => $self->o('hive_max_workers'),
-	    -rc_name        => 'supermem',
+	    -rc_name        => 'supermem_90min',
 	    -flow_into      => {
 		2 => ['run_vep'],
 	    },
@@ -164,7 +170,7 @@ sub pipeline_analyses {
             -max_retry_count => 1,
             -analysis_capacity  => $self->o('standard_max_workers'),
 	    -hive_capacity      => $self->o('hive_max_workers'),
-	    -rc_name        => 'default',
+	    -rc_name        => 'default_5min',
             -flow_into      => {
 		2 => ['create_ace'],
 		4 => ['run_partial_vep'],
@@ -183,7 +189,7 @@ sub pipeline_analyses {
 	    -max_retry_count => 0,
 	    -analysis_capacity => $self->o('highmem_max_workers'),
 	    -hive_capacity      => $self->o('hive_max_workers'),
-	    -rc_name => 'highmem',
+	    -rc_name => 'highmem_5min',
 	    -flow_into => {
 		2 => ['create_ace'],
 		4 => ['run_partial_vep_supermem'],
@@ -202,7 +208,7 @@ sub pipeline_analyses {
 	    -max_retry_count => 3,
 	    -analysis_capacity => $self->o('highmem_max_workers'),
 	    -hive_capacity     => $self->o('hive_max_workers'),
-	    -rc_name => 'supermem',
+	    -rc_name => 'supermem_5min',
 	    -flow_into => {
 		2 => ['create_ace'],
 	    }
@@ -219,7 +225,7 @@ sub pipeline_analyses {
 	    -max_retry_count => 1,
 	    -analysis_capacity => $self->o('standard_max_workers'),
 	    -hive_capacity     => $self->o('hive_max_workers'),
-	    -rc_name => 'highmem',
+	    -rc_name => 'highmem_5min',
 	},
 
 	{   -logic_name    => 'collate_data',
@@ -237,7 +243,7 @@ sub pipeline_analyses {
 	    },
 	    -failed_job_tolerance => 0,
 	    -max_retry_count => 1,
-	    -rc_name => 'default',
+	    -rc_name => 'default_1min',
 	},
 
 		

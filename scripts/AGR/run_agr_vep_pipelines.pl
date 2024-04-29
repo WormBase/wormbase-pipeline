@@ -447,6 +447,7 @@ sub download_from_agr {
     my $download_urls = defined $url ? get_urls_from_snapshot($url) : get_latest_urls();
     
     my $input_files_file = "${BASE_DIR}/VEP_input_files.txt";
+    
     open (FILES, '>>', $input_files_file) or $log->lod_and_die("Couldn't open $input_files_file to append data\n");
     for my $mod (@$mods) {
 	my $time = localtime();
@@ -481,11 +482,11 @@ sub download_from_agr {
 	else {
 	    run_system_cmd('cp ' . $RESOURCES_DIR . '/dummy.bam ' . $mod . '_BAM.bam', "Copying dummy BAM file", $log);
 	}
-	run_system_cmd("samtools index ${mod}_BAM.bam", "Indexing $mod BAM file", $log);
+	run_slurm_job("samtools index ${mod}_BAM.bam", "Indexing $mod BAM file", $log, '00:30:00', '4g', '/dev/null', '/dev/null');
 	
 	unlink "${mod}_FASTA.fa.fai" if -e "${mod}_FASTA.fa.fai";
-	run_system_cmd('python3 ' . $ENV{'CVS_DIR'} . "/AGR/agr_variations_json2vcf.py -j ${mod}_VARIATION.json -m $mod -g ${mod}_GFF.gff " .
-		       "-f ${mod}_FASTA.fa -o ${mod}_VCF.vcf", "Converting $mod phenotypic variants JSON to VCF", $log) if -e "${mod}_VARIATION.json";
+	run_slurm_job('python3 ' . $ENV{'CVS_DIR'} . "/AGR/agr_variations_json2vcf.py -j ${mod}_VARIATION.json -m $mod -g ${mod}_GFF.gff " .
+		      "-f ${mod}_FASTA.fa -o ${mod}_VCF.vcf", "Converting $mod phenotypic variants JSON to VCF", $log, '00:30:00', '4g', '/dev/null', '/dev/null') if -e "${mod}_VARIATION.json";
 	if ($mod eq 'HUMAN') {
 	    # Copy across files not on FMS from local directory
 	    my @files_to_copy = ('HUMAN_HTVCF.vcf');
@@ -606,10 +607,11 @@ sub process_input_files {
     convert_vcf_chromosomes($mod, 'VCF', $log);
   
     munge_gff($mod, $external_human_gff, $log);
-    run_system_cmd("bgzip -c ${mod}_FASTA.refseq.fa > ${mod}_FASTA.refseq.fa.gz", "Compressing $mod FASTA", $log);
-    run_system_cmd("sort -k1,1 -k4,4n -k5,5n -t\$'\\t' ${mod}_GFF.refseq.gff | bgzip -c > ${mod}_GFF.refseq.gff.gz",
-    	             "Sorting and compressing $mod GFF", $log);
-    run_system_cmd("tabix -p gff ${mod}_GFF.refseq.gff.gz", "Indexing $mod GFF", $log);
+    run_slurm_job("bgzip -c ${mod}_FASTA.refseq.fa", "Compressing $mod FASTA", $log, '00:10:00', '4g', "${mod}_FASTA.refseq.fa.gz", '/dev/null');
+    run_slurm_job("sort -k1,1 -k4,4n -k5,5n -t\$'\\t' ${mod}_GFF.refseq.gff", "Sorting $mod GFF", $log, '00:10:00', '4g', "${mod}_GFF.refseq.sorted.gff", '/dev/null');
+    run_system_cmd("mv ${mod}_GFF.refseq.sorted.gff ${mod}_GFF.refseq.gff", "Renaming sorted GFF", $log);
+    run_slurm_job("bgzip -c ${mod}_GFF.refseq.gff", "Compressing sorted GFF", $log, '00:10:00', '4g', "${mod}_GFF.refseq.gff.gz", '/dev/null');
+    run_slurm_job("tabix -p gff ${mod}_GFF.refseq.gff.gz", "Indexing $mod GFF", $log, '00:05:00', '4g', '/dev/null', '/dev/null');
     
     return;
 }
@@ -620,13 +622,11 @@ sub calculate_pathogenicity_predictions {
     
     backup_pathogenicity_prediction_db($mod, $password, $log);
     
-    my $lsf_queue = $ENV{'LSF_DEFAULT_QUEUE'};
-
     my $init_cmd = "init_pipeline.pl VepProteinFunction::VepProteinFunction_conf -mod $mod" .
 	" -agr_fasta ${mod}_FASTA.refseq.fa -agr_gff ${mod}_GFF.refseq.gff -agr_bam ${mod}_BAM.bam" . 
 	' -hive_root_dir ' . $ENV{'HIVE_ROOT_DIR'} . ' -pipeline_base_dir ' . $ENV{'PATH_PRED_WORKING_DIR'} .
 	' -pipeline_host ' . $ENV{'WORM_DBHOST'} . ' -pipeline_user ' . $ENV{'WORM_DBUSER'} .
-	' -pipeline_port ' . $ENV{'WORM_DBPORT'} . ' -lsf_queue ' . $lsf_queue .
+	' -pipeline_port ' . $ENV{'WORM_DBPORT'} .
 	' -sift_dir ' . $ENV{'SIFT_DIR'} . ' -pph_dir ' . $ENV{'PPH_DIR'} . ' -pph_conf_dir ' . $ENV{'PPH_CONF_DIR'} . '/' . $mod .
 	' -ncbi_dir ' . $ENV{'NCBI_DIR'} . ' -blastdb ' . $ENV{'BLAST_DB'} . ' -pph_blast_db ' . $ENV{'PPH_BLAST_DB'} .
 	' -uniprot_dbs ' . $ENV{'UNIPROT_DBS'} . ' -password ' . $password;
@@ -653,8 +653,8 @@ sub run_vep_on_phenotypic_variations {
     my $gl_vep_cmd = $base_vep_cmd . " --per_gene --output_file ${mod}_VEPGENE.txt";
     my $tl_vep_cmd = $base_vep_cmd . " --output_file ${mod}_VEPTRANSCRIPT.txt";
     
-    run_system_cmd($gl_vep_cmd, "Running VEP for $mod phenotypic variants at gene level", $log);
-    run_system_cmd($tl_vep_cmd, "Running VEP for $mod phenotypic variants at transcript level", $log);
+    run_slurm_job($gl_vep_cmd, "Running VEP for $mod phenotypic variants at gene level", $log, '00:30:00', '4g', '/dev/null', '/dev/null');
+    run_slurm_job($tl_vep_cmd, "Running VEP for $mod phenotypic variants at transcript level", $log, '00:30:00', '4g', '/dev/null', '/dev/null');
     
     my $reverse_map = get_reverse_chromosome_map($mod);
 
@@ -692,7 +692,8 @@ sub run_vep_on_phenotypic_variations {
 	run_system_cmd("mv ${mod}_VEP${level}.txt.tmp ${mod}_VEP${level}.txt",
 		       "Replacing $mod VEP${level} file with original chromosome ID version", $log);
 
-	run_system_cmd("gzip -f -9 ${mod}_VEP${level}.txt", 'Compressing ' . lc($level) . '-level VEP results', $log);
+	my $lclevel = lc($level);
+	run_slurm_job("gzip -f -9 ${mod}_VEP${level}.txt", 'Compressing ${lclevel}-level VEP results', $log, '00:05:00', '1000m', '/dev/null', '/dev/null');
 	submit_data($mod, 'VEP' . $level, $mod . '_VEP' . $level . '.txt.gz', $log) unless $test;
     }
     
@@ -702,13 +703,11 @@ sub run_vep_on_phenotypic_variations {
 
 sub run_vep_on_htp_variations{
     my ($mod, $password, $test, $log) = @_;
-    
-    my $lsf_queue = $ENV{'LSF_DEFAULT_QUEUE'};
 
     my $init_cmd = "init_pipeline.pl ModVep::ModVep_conf -mod $mod -vcf ${mod}_HTVCF.vcf -gff ${mod}_GFF.refseq.gff.gz" .
 	" -fasta ${mod}_FASTA.refseq.fa.gz -bam ${mod}_BAM.bam -hive_root_dir " . $ENV{'HIVE_ROOT_DIR'} . ' -pipeline_base_dir ' .
 	$ENV{'HTP_VEP_WORKING_DIR'} . ' -pipeline_host ' . $ENV{'WORM_DBHOST'} . ' -pipeline_user ' . $ENV{'WORM_DBUSER'} .
-	' -pipeline_port ' . $ENV{'WORM_DBPORT'} . ' -lsf_queue ' . $lsf_queue . ' -vep_dir ' . $ENV{'VEP_DIR'} . 
+	' -pipeline_port ' . $ENV{'WORM_DBPORT'} . ' -vep_dir ' . $ENV{'VEP_DIR'} . 
 	" -debug_mode 0 -password $password";
     
     run_system_cmd($init_cmd, "Initialising $mod HTP variants VEP eHive pipeline: $init_cmd", $log);
@@ -717,13 +716,13 @@ sub run_vep_on_htp_variations{
     $ENV{EHIVE_URL} = $ehive_url;
  
     run_system_cmd("beekeeper.pl -url $ehive_url -loop", "Running $mod HTP variations VEP eHive pipeline", $log);
-    run_system_cmd("mv " . $ENV{'HTP_VEP_WORKING_DIR'} . "/${mod}_vep/${mod}.vep.vcf.gz .", "Moving $mod combined HTP variations VEP output", $log);
+    run_slurm_job("mv " . $ENV{'HTP_VEP_WORKING_DIR'} . "/${mod}_vep/${mod}.vep.vcf.gz .", "Moving $mod combined HTP variations VEP output", $log, '00:15:00', '1g', '/dev/null', '/dev/null');
     if ($mod eq 'RGD') {
 	submit_data($mod, 'HTPOSTVEPVCF', "${mod}.vep.vcf.gz", $log) unless $test;
     }
     run_system_cmd("mkdir HTPVEP", "Creating folder for $mod HTP VEP output", $log);
-    run_system_cmd("mv " . $ENV{'HTP_VEP_WORKING_DIR'} . "/${mod}_vep/${mod}.* HTPVEP/",
-		   "Moving $mod HTP variations VEP output", $log);
+    run_slurm_job("mv " . $ENV{'HTP_VEP_WORKING_DIR'} . "/${mod}_vep/${mod}.* HTPVEP/",
+		   "Moving $mod HTP variations VEP output", $log,'00:15:00', '1g', '/dev/null', '/dev/null');
     
     return;
 }
@@ -754,8 +753,8 @@ sub merge_bam_files {
     
     if (-e "${mod}_MOD-GFF-BAM-KNOWN.bam") {
 	if (-e "${mod}_MOD-GFF-BAM-MODEL.bam") {
-	    run_system_cmd("samtools merge -f ${mod}_BAM.bam ${mod}_MOD-GFF-BAM-KNOWN.bam ${mod}_MOD-GFF-BAM-MODEL.bam",
-			   "Merging $mod BAM files", $log);
+	    run_slurm_job("samtools merge -f ${mod}_BAM.bam ${mod}_MOD-GFF-BAM-KNOWN.bam ${mod}_MOD-GFF-BAM-MODEL.bam",
+			   "Merging $mod BAM files", $log, '00:30:00', '4g', '/dev/null', '/dev/null');
 	    run_system_cmd("rm ${mod}_MOD-GFF-BAM-KNOWN.bam", "Deleting $mod unmerged known transcripts BAM file", $log);
 	    run_system_cmd("rm ${mod}_MOD-GFF-BAM-MODEL.bam", "Deleting $mod unmerged model transcripts BAM file", $log);
 	}
@@ -768,7 +767,7 @@ sub merge_bam_files {
 	run_system_cmd("mv ${mod}_MOD-GFF-BAM-MODEL.bam ${mod}_BAM.bam", "Renaming $mod MOD-GFF-BAM-MODEL file", $log); 
     }
     
-    run_system_cmd("samtools sort -o ${mod}_BAM.sorted.bam -T tmp ${mod}_BAM.bam", "Sorting $mod BAM file", $log);
+    run_slurm_job("samtools sort -o ${mod}_BAM.sorted.bam -T tmp ${mod}_BAM.bam", "Sorting $mod BAM file", $log, '00:30:00', '4g', '/dev/null', '/dev/null');
     run_system_cmd("mv ${mod}_BAM.sorted.bam ${mod}_BAM.bam", "Replacing $mod BAM file with sorted version", $log);
     
     return;
@@ -780,8 +779,7 @@ sub sort_vcf_files {
     
     for my $datatype ('VCF', 'HTVCF') { # not required for phenotypic variants VCF as JSON conversion script sorts output
 	next unless -e "${mod}_${datatype}.vcf";
-	run_system_cmd("vcf-sort ${mod}_${datatype}.vcf > ${mod}_${datatype}.sorted.vcf",
-		       "Sorting $mod $datatype file", $log);
+	run_slurm_job("vcf-sort ${mod}_${datatype}.vcf", "Sorting $mod $datatype file", $log, '00:10:00', '4g', "${mod}_${datatype}.sorted.vcf", '/dev/null');
 	run_system_cmd("mv ${mod}_${datatype}.sorted.vcf ${mod}_${datatype}.vcf",
 		       "Replacing unsorted $mod $datatype file with sorted version", $log);
     }
@@ -964,9 +962,9 @@ sub backup_pathogenicity_prediction_db {
     my $dump_cmd = 'mysqldump -h ' . $ENV{'WORM_DBHOST'} . ' -u ' . $ENV{'WORM_DBUSER'} .
 	' -P ' . $ENV{'WORM_DBPORT'} . ' -p' . $password . ' ' .$ENV{'PATH_PRED_DB_PREFIX'} . 
 	$mod . ' > ' . $dump_dir . '/' . $dump_file;
-    run_system_cmd($dump_cmd, "Dumping $mod pathogenicity predictions database to $dump_dir", $log);
-    run_system_cmd("gzip -f -9 $dump_dir/$dump_file",
-		   "Compressing $mod pathogenicity predictions database dump", $log);
+    run_slurm_job($dump_cmd, "Dumping $mod pathogenicity predictions database to $dump_dir", $log, '00:30:00', '4g', '/dev/null', '/dev/null');
+    run_slurm_job("gzip -f -9 $dump_dir/$dump_file",
+		   "Compressing $mod pathogenicity predictions database dump", $log, '00:30:00', '4g', '/dev/null', '/dev/null');
     
     return;
 }
@@ -1088,6 +1086,26 @@ sub run_system_cmd {
 	$log->log_and_die("$description failed: $cmd (Exit code: $error)\n");
     }
     
+    return;
+}
+
+sub run_slurm_job {
+    my ($cmd, $description, $log, $time, $mem, $stdout, $stderr) = @_;
+
+    $log->write_to("$description\n\n");
+    my $sbatch = "sbatch --parsable --container=production --mem=${mem} --time=${time} -e ${stderr} -o ${stdout} --wrap=\"${cmd}\"";
+    print "Running ${sbatch}";
+    my $job_id = `$sbatch`;
+    chomp $job_id;
+    print " with job id $job_id\n";
+    my $running = 1;
+    while($running) {
+	system("sleep 10");
+	my $status = `squeue --job $job_id --noheader | wc -l`;
+	chomp $status;
+	$running = $status;
+    }
+
     return;
 }
 
