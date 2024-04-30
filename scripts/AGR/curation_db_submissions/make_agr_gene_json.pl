@@ -9,9 +9,29 @@ use Const::Fast;
 use Wormbase;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase, $schema);
-my ($outfile, $acedbpath, $ws_version, $out_fh);
+my ($outfile, $acedbpath, $ws_version, $out_fh, $gtf_file);
 
-const my $LINKML_SCHEMA => 'v2.2.0';
+const my $LINKML_SCHEMA => 'v2.2.3';
+
+const my %XREF_MAP => (
+    "NCBI"       => {
+	gene => "NCBI_Gene",
+    },
+    "SwissProt"  => {
+	UniProtAcc => "UniProtKB",
+    },
+    "TrEMBL"     => {
+	UniProtAcc => "UniProtKB",
+    },
+    "RNAcentral" => {
+	URSid => "RNAcentral",
+    },
+    "Panther" => {
+	family => "PANTHER",
+    }
+);
+
+
 
 GetOptions ("help"        => \$help,
             "debug=s"     => \$debug,
@@ -20,7 +40,8 @@ GetOptions ("help"        => \$help,
 	    "store:s"     => \$store,
 	    "database:s"  => \$acedbpath,
 	    "outfile:s"   => \$outfile,
-            "wsversion=s" => \$ws_version
+            "wsversion=s" => \$ws_version,
+	    "gtf=s"       => \$gtf_file
 	    );
 
 if ( $store ) {
@@ -40,6 +61,8 @@ my $query = 'FIND Gene WHERE Species = "Caenorhabditis elegans"';
 $outfile = "./wormbase.genes.${ws_version}.${LINKML_SCHEMA}.json" unless defined $outfile;
 
 my @genes;
+
+my $locs = get_location_data($db, $gtf_file);
 
 my $it = $db->fetch_many(-query => $query);
 
@@ -87,6 +110,64 @@ while (my $obj = $it->next) {
 	obsolete => JSON::false
     };
 
+    my @xrefs;
+    # Cross references
+    foreach my $dblink ($obj->Database) {
+	if (exists $XREF_MAP{$dblink}) {
+	    foreach my $field ($dblink->col) {
+		if (exists $XREF_MAP{$dblink}->{$field}) {
+		    my $prefix = $XREF_MAP{$dblink}->{$field};
+		    my @ids = $field->col;
+		    foreach my $id(@ids){
+			my $suffix = $id->name; 
+			push @xrefs, {
+			    referenced_curie => "$prefix:$suffix",
+			    page_area => "default",
+			    display_name => "$prefix:$suffix",
+			    prefix => $prefix
+			};
+		    }
+		}
+	    }
+	}
+    }
+
+    # Back-to-mod xrefs
+    my @baseXrefs = qw(gene gene/expression gene/references);
+    push @baseXrefs, 'gene/phenotypes' if ($obj->Allele and $obj->Allele->Phenotype) || ($obj->RNAi_result and $obj->RNAi_result->Phenotype);
+    push @baseXrefs, 'gene/expression_images' if ($obj->Expr_pattern && grep {$_->Picture} $obj->Expr_pattern);
+
+    for my $baseXref (@baseXrefs) {
+	push @xrefs, {
+	    referenced_curie => 'WB:' . $obj->name,
+	    page_area => $baseXref,
+	    display_name => 'WB:' . $obj->name,
+	    prefix => "WB"
+	};
+    }
+    # for SPELL, we should technically only include the ref if this gene exists in SPELL, 
+    # which (as defined by Wen Chen) is: 
+    if ($obj->RNASeq_FPKM or $obj->Microarray_results) {
+	push @xrefs, {
+	    referenced_curie => "WB:" . $symbol->{display_text},
+	    page_area => "gene/spell",
+	    display_name => $symbol->{display_text},
+	    prefix => "WB"
+	};
+    }
+
+    # Ensembl xrefs, only for genomically placed genes
+    if (defined $locs and exists $locs->{$obj->name}) {
+	push @xrefs, {
+	    referenced_curie => 'ENSEMBL:' . $obj->name,
+	    page_area => 'default',
+	    display_name => 'ENSEMBL:' . $obj->name,
+	    prefix => 'ENSEMBL'
+	};
+    }
+    
+
+
     my $is_obsolete = $obj->Status && $obj->Status->name eq 'Dead' ? JSON::true : JSON::false;
     my $gene = {
 	mod_entity_id    => 'WB:' . $obj->name,
@@ -104,6 +185,7 @@ while (my $obj = $it->next) {
     $gene->{gene_systematic_name_dto} = $systematic_name if $systematic_name;
     $gene->{gene_synonym_dtos} = $synonyms if @$synonyms;
     $gene->{gene_secondary_id_dtos} = \@secondary_ids if @secondary_ids;
+    $gene->{cross_reference_dtos} = \@xrefs if @xrefs;
     
     push @genes, $gene;
 }
@@ -270,6 +352,69 @@ sub get_paper {
     }
 
     return $publication_id;
+}
+
+
+
+sub get_location_data {
+  my ($acedb, $gtf) = @_;
+
+  # get the assembly name for the canonical bioproject
+  my ($assembly_name, $fh, %locs);
+  
+  my $species_obj = $acedb->fetch(-class => 'Species', -name => $wormbase->full_name);
+  my @seq_col = $species_obj->at('Assembly');
+        
+  foreach my $seq_col_name (@seq_col) {
+    my ($bioproj);
+
+    my $seq_col = $seq_col_name->fetch;
+    my $this_assembly_name = $seq_col->Name;
+
+    my @db = $seq_col->at('Origin.DB_info.Database');
+    foreach my $db (@db) {
+      if ($db->name eq 'NCBI_BioProject') {
+        $bioproj = $db->right->right->name;
+      }
+    }
+    
+    if (defined $bioproj and $wormbase->ncbi_bioproject eq $bioproj) {
+      $assembly_name = $this_assembly_name->name;
+      last;
+    }
+  }
+    
+  if (not defined $assembly_name) {
+    die "Could not find name of current assembly for " . $wormbase->species() . "\n";
+  }
+
+  # parse the GTF
+  if ($gtf =~ /\.gz$/) {
+    open( $fh, "gunzip -c $gtf |") 
+        or die "Could not open gunzip stream GTF file $gtf\n";
+  } else {
+    open( $fh, $gtf) 
+        or die "Could not open GTF file $gtf\n";
+  }
+
+  while(<$fh>) {
+    /^\#/ and next;
+    
+    my @l = split(/\t/, $_);
+    next if $l[2] ne "gene";
+
+    my ($wbgid) = $l[8] =~ /gene_id\s+\"(\S+)\"/; 
+
+    $locs{$wbgid} = {
+      assembly       => $assembly_name,
+      chromosome     => $l[0],
+      startPosition  => $l[3] + 0, 
+      endPosition    => $l[4] + 0,
+      strand         => $l[6],
+    };
+  }
+      
+  return \%locs;
 }
 
 1;
