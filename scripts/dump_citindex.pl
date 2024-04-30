@@ -71,14 +71,19 @@ sub print_gene{
 
   my @c = split(/\s+/,"${\$g->History->right(2)}");
   my $creation_date = $c[2];
- 
+
+  my $title = $g->CGC_name;
+  if ($g->Gene_class && $g->Gene_class->Description) {
+      $title .= " (${\$g->Gene_class->Description})";
+  }
+  
   print STDERR "processing $g\n" if $debug;
   my $data =
   "  <date_provided>$year</date_provided>\n".
   "  <date_created>$creation_date</date_created>\n".
   "  <repository>WormBase</repository>\n".
   "  <owner>WormBase</owner>\n".
-  "  <title>".$g->CGC_name." (${\$g->Gene_class->Description})</title>\n";
+  "  <title>" . $title . "</title>\n";
 
   ### people block ######################
   # search through the CGC_name, the Concise_description and the Provisional_description
