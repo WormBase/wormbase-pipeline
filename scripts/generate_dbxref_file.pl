@@ -306,13 +306,15 @@ sub upload_to_ebi {
   my $uni_symlink = join(".", "wormbase_xrefs", "latest", $wormbase->ncbi_tax_id, "txt", "gz");
 
   my $dest_dir = $ENV{'XREF_FTP_DROPBOX'};
-  my $exit_code = system("bsub -q datamover -Is cp $outfile $dest_dir/$uni_file");
+  my $job_id = WormSlurm::submit_job_and_wait("cp $outfile $dest_dir/$uni_file", 'datamover', '200m', '00:15:00', '/dev/null', '/dev/null'); 
+  my $exit_code = WormSlurm::get_exit_code($job_id);
   if ($exit_code) {
       $log->error("Copying xref file to $dest_dir failed\n");
   } else {
       $log->write("Copied xref file to $dest_dir\n");
   }
-  $exit_code = system("bsub -q datamover -Is cd $dest_dir && ln -sf $uni_file $uni_symlink");
+  $job_id = WormSlurm::submit_job_and_wait("cd $dest_dir && ln -sf $uni_file $uni_symlink");
+  $exit_code = WormSlurm::get_exit_code($job_id);
   if ($exit_code) {
       $log->error("Creating symlink to xref file in $dest_dir failed\n");
   } else {

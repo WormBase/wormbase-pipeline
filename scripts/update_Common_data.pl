@@ -18,8 +18,7 @@ use Data::Dumper;
 use Getopt::Long;
 use Storable;
 use Log_files;
-use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
-use LSF::JobManager;
+use Modules::WormSlurm;
 
 ##############################
 # command-line options       #
@@ -149,7 +148,7 @@ $log->write_to("Updating COMMON_DATA in $data_dir\n");
 
 our $tace= $wormbase->tace;
 
-# run '-all' Common_data dumps under LSF
+# run '-all' Common_data dumps under Slurm
 if ($all) { 
 
   my @all_args = qw( clone2acc clone2size cds2wormpep cds2pid
@@ -157,53 +156,36 @@ if ($all) {
 	    worm_gene2cgc worm_gene2geneID worm_gene2class est
 	    est2feature gene_id clone2type cds2cgc rna2cgc pseudo2cgc clone2dbid rna2briefID);
 
-  # Deal with clone2seq up front, because that routine submits its own LSF jobs
+  # Deal with clone2seq up front, because that routine submits its own Slurm jobs
   &write_clones2seq();
 
-  $wormbase->checkLSF;
-  my $lsf = LSF::JobManager->new();
+  $wormbase->check_slurm;
   my $store_file = $wormbase->build_store; # make the store file to use in all commands
   my $scratch_dir = $wormbase->logs;
   my $job_name = "worm_".$wormbase->species."_commondata";
 
+  my %slurm_jobs;
   foreach my $arg (@all_args) {
-    my $err = "$scratch_dir/update_Common_data.pl.lsf.${arg}.err";
-    my $out = "$scratch_dir/update_Common_data.pl.lsf.${arg}.out";
-    my @bsub_options = (-e => "$err", -o => "$out");
-    if (
-      $arg eq 'est2feature' or
-      $arg eq 'gene_id' or 
-      $arg eq 'worm_gene2cgc' or
-      $arg eq 'worm_gene2geneID' or
-      $arg eq 'est' or
-      $arg eq 'cds2wormpep') {
-      push @bsub_options, (
-        -M => "6000", 
-        -R => "\"select[mem>6000] rusage[mem=6000]\"",
-        -J => $job_name);
-    } else {
-      push @bsub_options, (
-        -M => "6000", 
-        -R => "\"select[mem>6000] rusage[mem=6000]\"",
-        -J => $job_name);
-    }
+    my $err = "$scratch_dir/update_Common_data.pl.slurm.${arg}.err";
+    my $out = "$scratch_dir/update_Common_data.pl.slurm.${arg}.out";
+    
     my $cmd = "update_Common_data.pl -${arg}";
     $cmd .= " -database $database" if defined $database;
     $cmd = $wormbase->build_cmd_line($cmd, $store_file);
-    $log->write_to("Submitting LSF job: $cmd\n");
-    $lsf->submit(@bsub_options, $cmd);
+    $log->write_to("Submitting Slurm job: $cmd\n");
+    my $job_id = WormSlurm::submit_job_with_name($cmd, 'production', '6g', '3:00:00', $err, $out, $job_name);
+    $slurm_jobs{$job_id} = $cmd;
   }
-    
-  $lsf->wait_all_children( history => 1 );
+
+  WormSlurm::wait_for_jobs(keys %slurm_jobs);
   $log->write_to("All Common_data jobs have completed!\n");
   my @problem_cmds;
-  for my $job ( $lsf->jobs ) {
-    if ($job->history->exit_status != 0) {
-      $log->error("Job $job (" . $job->history->command . ") exited non zero\n");
-      push @problem_cmds, $job->history->command;
+  for my $job_id (keys %slurm_jobs) {
+    if (WormSlurm::get_exit_code($job_id) != 0) {
+      $log->error("Job $job_id (" . $slurm_jobs{$job_id} . ") exited non zero\n");
+      push @problem_cmds, $slurm_jobs{$job_id};
     }
   }
-  $lsf->clear;
 } else {
   # run the various options depending on command line arguments
   &write_cds2protein_id   if ($cds2protein_id);
@@ -743,7 +725,7 @@ sub write_EST  {
 ####################################################################################
 # The -clone2seq parameter holds the name of the species to dump
 # sequences for or it takes the value 'all' to dump out genomic
-# sequences from all species. If the value is 'all' then LSF jobs are
+# sequences from all species. If the value is 'all' then Slurm jobs are
 # fired off, each doing a different species. If the value is the short
 # name of a species, then that species is dumped to a file.
 
@@ -766,36 +748,31 @@ sub write_clones2seq  {
   }
 
   if ($clone2seq eq 'all' or not $clone2seq) { 
-  # set up LSF jobs each doing a different species, otherwise TACE
+  # set up Slurm jobs each doing a different species, otherwise TACE
   # can crash or it takes a VERY long time
-    $wormbase->checkLSF;
-    my $lsf = LSF::JobManager->new();
+    $wormbase->check_slurm;
     my $store_file = $wormbase->build_store; # make the store file to use in all commands
     my $scratch_dir = $wormbase->logs;
     my $job_name = "worm_".$wormbase->species."_commondata";
 
+    my %slurm_jobs;
     foreach my $this_species (keys %full_names) {
-      my $err = "$scratch_dir/update_Common_data.pl.lsf.clone2seq.$clone2seq.err";
-      my $out = "$scratch_dir/update_Common_data.pl.lsf.clone2seq.$clone2seq.out";
-      my @bsub_options = (-e => "$err", 
-			  -o => "$out", 
-			  -M => "3500", 
-			  -R => "\"select[mem>3500] rusage[mem=3500]\"",
-			  -J => $job_name);
+      my $err = "$scratch_dir/update_Common_data.pl.slurm.clone2seq.$clone2seq.err";
+      my $out = "$scratch_dir/update_Common_data.pl.slurm.clone2seq.$clone2seq.out";
       my $cmd = "update_Common_data.pl -clone2seq $this_species";
       $cmd = $wormbase->build_cmd_line($cmd, $store_file);
-      $log->write_to("Submitting LSF job: $cmd\n");
-      $lsf->submit(@bsub_options, $cmd);
+      $log->write_to("Submitting Slurm job: $cmd\n");
+      my $job_id = WormSlurm::submit_job_with_name($cmd, 'production', '3500m', '00:30:00', $err, $out, $job_name);
+      $slurm_jobs{$job_id} = $cmd;
     }
 
-    $lsf->wait_all_children( history => 1 );
+    WormSlurm::wait_for_jobs(keys %slurm_jobs);
     $log->write_to("All Common_data jobs have completed!\n");
-    for my $job ( $lsf->jobs ) {
-      if ($job->history->exit_status != 0) {
-	$log->write_to("Job $job (" . $job->history->command . ") exited non zero\n");
+    for my $job_id (keys %slurm_jobs) {
+      if (WormSlurm::get_exit_code($job_id) != 0) {
+	$log->write_to("Job $job_id (" . $slurm_jobs{$job_id} . ") exited non zero\n");
       }
     }
-    $lsf->clear;
     
 
   } else {			# dump files for a single species

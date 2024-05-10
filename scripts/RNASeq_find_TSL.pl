@@ -30,8 +30,6 @@ use strict;
 use lib $ENV{'CVS_DIR'};
 use Carp;
 use Modules::RNASeq;
-use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
-use LSF::JobManager;
 use Wormbase;
 use Getopt::Long;
 use Log_files;

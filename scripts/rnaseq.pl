@@ -1,7 +1,7 @@
 #!/software/bin/perl -w
 
 # script to test making a feature_data track for RNASeq data
-# this script submits one copy of itself for each chromosome/contig run under LSF
+# this script submits one copy of itself for each chromosome/contig run under Slurm
 
 # Gary Williams
 # 28 Feb 2012
@@ -22,10 +22,7 @@ use Storable;
 use Modules::RNASeq;
 
 use List::Util qw(max);
-
-use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
-use LSF::JobManager;
-
+use Modules::WormSlurm;
 # for NameDB_handler
 #use lib '/nfs/WWWdev/SANGER_docs/lib/Projects/C_elegans/';
 #use NameDB;
@@ -102,9 +99,9 @@ my $coords = Coords_converter->invoke($database, 0, $wormbase);
 
 
 if ($chunk_id) { # getting the alignments for a set of chromosomes
-  ###########################
-  # run the sub-job under LSF
-  ###########################
+  #############################
+  # run the sub-job under Slurm
+  #############################
 
   &do_chromosome($chunk_id, $chunk_total, $outfname);
   
@@ -121,34 +118,29 @@ if ($chunk_id) { # getting the alignments for a set of chromosomes
 
   my $script = "rnaseq.pl";
 
-  my $lsf;
   my $scratch_dir = $wormbase->logs;
   my $job_name;
-  my @bsub_options;
   my $store_file = $wormbase->build_store; # get the store file to use in all commands
 
-  ##########################################################
-  # now run the sub-job for each chromosome/contig under LSF
-  ##########################################################
+  ############################################################
+  # now run the sub-job for each chromosome/contig under Slurm
+  ############################################################
   
   system("rm -rf $outdir");
   if (!-e $outdir) {
     mkdir $outdir, 0777;
   }
 
-  # create the LSF Group "/RNASeq/$species" which is now limited to running 15 jobs at a time
-#  my $status = system("bgadd -L 15 /RNASeq/$species"); 
-
   my @chromosomes = $wormbase->get_chromosome_names(-mito => 1, -prefix => 1);
 
   my $chunk_total = 200; # maximum number of chunked jobs to run
 
-  my $memory = 6000;
-  if ($species eq 'elegans') {$memory = 10000}
+  my $memory = '6g';
+  if ($species eq 'elegans') {$memory = '10g'}
 
   $chunk_total = scalar(@chromosomes) if $chunk_total > scalar(@chromosomes);
-  $log->write_to("bsub commands . . . . \n\n");
-  $lsf = LSF::JobManager->new();
+  $log->write_to("sbatch commands . . . . \n\n");
+  my %slurm_jobs;
   foreach my $chunk_id (1..$chunk_total) {
     my $batchname = "batch_${chunk_id}";
     my $outfname = "rnaseq_${batchname}.ace";
@@ -165,26 +157,20 @@ if ($chunk_id) { # getting the alignments for a set of chromosomes
     $log->write_to("$cmd\n");
     $log->write_to("logs files:\n $err\n $out\n");
     print "cmd to be executed: $cmd\n";
-    @bsub_options = ();
-    push @bsub_options, (-M => "$memory", # in EBI both -M and -R are in Gb
-			 -R => "select[mem>$memory] rusage[mem=$memory]", 
-			 -J => 'rnaseq_alignments',
-			 -e => $err,
-			 -o => $out,
-#			 -g => "/RNASeq/$species", # add this job to the LSF group '/RNASeq/$species'
-		      );
-    $lsf->submit(@bsub_options, $cmd);
+
+    my $job_id = WormSlurm::submit_job($cmd, 'production', $memory, '1-00:00:00', $out, $err);
+    $slurm_jobs{$job_id} = $cmd;
   }  
 
 
-  print "Waiting for LSF jobs to finish.\n";
-  $lsf->wait_all_children( history => 1 );
-  for my $job ( $lsf->jobs ) {
-    if ($job->history->exit_status != 0) {
-      $log->write_to("Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . "\n");
+  print "Waiting for Slurm jobs to finish.\n";
+  WormSlurm::wait_for_jobs(keys %slurm_jobs);
+  for my $job_id (keys %slurm_jobs) {
+      my $exit_code = WormSlurm::get_exit_code($job_id);
+      if ($exit_code != 0) {
+      $log->write_to("Job $job_id (" . $slurm_jobs{$job_id} . ") exited non zero: " . $exit_code . "\n");
     }
   }
-  $lsf->clear;
 
 
 
@@ -210,7 +196,7 @@ exit(0);
 # SUBROUTINES
 ##############################################################
 
-# routine to be executed in sub-job of this script in a LSF queue
+# routine to be executed in sub-job of this script in a Slurm queue
 sub do_chromosome {
 
   my ($chunk_id, $chunk_total, $outfname) = @_;

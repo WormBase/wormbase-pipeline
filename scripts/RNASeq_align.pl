@@ -5,15 +5,14 @@
 # by Gary Williams                        
 #
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2015-04-27 13:37:33 $      
+# Last updated by: $Author: mqt $     
+# Last updated on: $Date: 2024-05-09 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Carp;
 use Modules::RNASeq;
-use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
-use LSF::JobManager;
+use Modules::WormSlurm;
 use Wormbase;
 use Getopt::Long;
 use Log_files;
@@ -37,7 +36,7 @@ GetOptions ("help"       => \$help,
 	    "check"      => \$check, # test to see if any cufflinks etc. results are missing
 	    "runlocally" => \$runlocally, # use the current machine to run the jobs instead of LSF (for getting the last few memory-hungry jobs done)
 	    "notbuild"   => \$notbuild, # don't try to make GTF or run cufflinks (for when it is run before doing the Build) 
-	    "analyse"    => \$analyse,  # firstly, run the alignments, finding Introns and cufflinks for each Experiment under LSF
+	    "analyse"    => \$analyse,  # firstly, run the alignments, finding Introns and cufflinks for each Experiment under Slurm
 	    "results"    => \$results,  # secondly, compile the results from all of the Experiments and write out the resulting files
 	    "restart"    => \$restart,  # If you are doing -analyse, adding -restart will restart once with the -check flag
 	   );
@@ -113,13 +112,13 @@ sub analyse {
   # create the LSF Group "/RNASeq/$species" which is now limited to running 30 jobs at a time
   $status = system("bgadd -L 300 /RNASeq/$species"); 
   
-  my $lsf = LSF::JobManager->new();
   
   my $total = keys %{$data};
   my $count_done = 0;
   my @jobs_to_be_run;
   my $uncompleted_jobs=0;
 
+  my %slurm_jobs;
   foreach my $experiment_accession (keys %{$data}) {
     
     $count_done++;
@@ -133,24 +132,20 @@ sub analyse {
     
     # for elegans and briggsae, request 8 Gb memory as 'samtools sort' can take at least 4.5Gb and probably more sometimes
     # for the others, ask for 6 Gb of memory
-    my $memory = "6000";
+    my $memory = "8g";
     if ($species ne 'elegans' && $species ne 'briggsae') {
-      $memory = "8000";
+      $memory = "6g";
     }
+
+    my $time = '12:00:00';
+    $time = '2-00:00:00' if $check;
     
     my $job_name = "worm_".$wormbase->species."_RNASeq";
     my $scratch_dir = $wormbase->logs;
     my $err = "$scratch_dir/RNASeq_align.pl.lsf.${experiment_accession}.err";
     my $out = "$scratch_dir/RNASeq_align.pl.lsf.${experiment_accession}.out";
-    my @bsub_options = (-e => "$err", -o => "$out");
-    push @bsub_options, (
-			 -q => 'production',
-			 -M => $memory, # in EBI both -M and -R are in Mb
-			 -R => "select[mem>$memory] rusage[mem=$memory]",
-			 -J => $job_name,
-			 -g => "/RNASeq/$species", # add this job to the LSF group '/RNASeq/$species'
-			);
     my $cmd = "RNASeq_align_job.pl -expt $experiment_accession";
+    
     if ($check) {$cmd .= " -check";}
     if ($new_genome) {$cmd .= " -new_genome";}
     if ($notbuild) {$cmd .= " -notbuild";}
@@ -161,27 +156,29 @@ sub analyse {
     $log->write_to("$cmd\n");
     print "($count_done of $total) Running: $cmd\n";
     if ($runlocally) {
-      $cmd .= " -threads 4";
-      $wormbase->run_script($cmd, $log);
+	$cmd .= " -threads 4";
+	$wormbase->run_script($cmd, $log);
     } else {
-      $cmd = $wormbase->build_cmd($cmd);
-      $lsf->submit(@bsub_options, $cmd);
+	$cmd = $wormbase->build_cmd($cmd);
+	my $job_id = WormSlurm::submit_job_with_name($cmd, 'production', $memory, $time, $out, $err, $job_name);
+	$slurm_jobs{$job_id} = $cmd;
     }
   }
   
   if (!$runlocally) {
-    sleep(30); # wait for a while to let the bhist command have a chance of finding all the jobss
-    $lsf->wait_all_children( history => 1 );
-    $log->write_to("This set of jobs have completed!\n");
-    for my $job ( $lsf->jobs ) {
-      if ($job->history->exit_status != 0) {
-	$log->write_to("Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . "\n");
-	$uncompleted_jobs++;
+      sleep(60);
+      WormSlurm::wait_for_jobs(keys %slurm_jobs);
+      $log->write_to("This set of jobs have completed!\n");
+      for my $job_id (keys %slurm_jobs) {
+	  my $exit_code = WormSlurm::get_exit_code($job_id);
+	  if ($exit_code != 0) {
+	      $log->write_to("Slurm job $job_id (" . $slurm_jobs{$job_id} . ") exited non zero: " . $exit_code . "\n");
+	      $uncompleted_jobs++;
+	  }
       }
-    }
   }
-  $lsf->clear;
-  if ($uncompleted_jobs>0 ) {
+  
+  if ($uncompleted_jobs > 0) {
   	$log->write_to("In total $uncompleted_jobs out of $count_done exited non zero: exited non zero: please run again with the -check parameter\n");
   }
   else {

@@ -1635,6 +1635,20 @@ sub checkLSF {
   }
 }
 
+
+####################################
+sub check_slurm {
+  my ($self, $log) = @_;
+  
+  if (system("salloc -V")) {
+    if ($log) {
+      $log->log_and_die("You need to be on a Slurm enabled system to run this");
+    } else {
+      die "You need to be on a Slurm enabled system to run this";
+    }
+  }
+}
+
 ####################################
 sub table_maker_query {
   my($self, $database, $def) = @_;

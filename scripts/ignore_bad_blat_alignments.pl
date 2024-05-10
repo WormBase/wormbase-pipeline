@@ -25,13 +25,7 @@ use Carp;
 use Log_files;
 use Storable;
 use Modules::Overlap;
-use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
-use LSF::JobManager;
-
-#use Ace;
-#use Sequence_extract;
-#use Coords_converter;
-#use Feature_mapper;
+use Modules::WormSlurm;
 
 ######################################
 # variables and command-line options # 
@@ -39,7 +33,7 @@ use LSF::JobManager;
 
 my $script = "ignore_bad_blat_alignments.pl";
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $database, $species, @chromosomes, $load, $mem, $chunk_total, $chunk_id, $output, $ovlp);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $database, $species, @chromosomes, $load, $mem, $chunk_total, $chunk_id, $output, $ovlp, $time);
 
 
 GetOptions ("help"       => \$help,
@@ -52,6 +46,7 @@ GetOptions ("help"       => \$help,
 	    "chromosome:s" => \@chromosomes, # specify a single chromosome with prefix ('CHROMOSOME_II') for debugging purposes
 	    "load"       => \$load, # specify that the resulting ace file should be loaded into the database
 	    "mem:s"      => \$mem,
+	    "time:t"     => \$time,
 	    "chunktotal:s" => \$chunk_total,
 	    "chunkid:s"  => \$chunk_id,
 	    "output:s"   => \$output, # output ace file	    
@@ -66,6 +61,21 @@ if ( $store ) {
 			   );
 }
 
+unless (defined $mem) {
+    $mem = '3500m';
+}
+if ($mem =~ /^\d+$/) {
+      $mem .= 'm';
+} else {
+      $log->log_and_die('Expecting memory expression to match regex /^\d+[m|g|M|G]$/' . "\n") unless $mem =~ /^\d+[m|g|M|G]$/;
+}
+
+unless (defined $time) {
+      $time = '1:00:00';
+}
+unless ($time =~ /^(\d+\-[0-2]\d:[0-5]\d:[0-5]\d|[0-2]?\d:[0-5]\d:[0-5]\d)$/) {
+      $log->log_and_die("Expecting time parameter in format D-HH:MM:SS\n");
+}
 
 # Display help if required
 &usage("Help") if ($help);
@@ -253,11 +263,9 @@ if (@chromosomes || defined $chunk_id) {
 } else {
   # batch submission of a set of this script, each running a subset of chromosomes
 
-  unless (defined $mem) {
-    $mem = 3500;
-  }
+  
 
-  $wormbase->checkLSF($log);
+  $wormbase->check_slurm($log);
 
   my $scratch_dir = "/tmp";
   
@@ -288,37 +296,32 @@ if (@chromosomes || defined $chunk_id) {
     
     my $job_name = "worm_".$wormbase->species."_ignore_bad_blat";
     
-    # create and submit LSF jobs
-    $log->write_to("bsub commands . . . .\n\n");
-    my $lsf = LSF::JobManager->new();
+    # create and submit Slurm jobs
+    $log->write_to("slurm commands . . . .\n\n");
+    my %slurm_jobs;
     foreach my $chunk_id (1..$chunk_total) {
-      my $batchname = "batch_${chunk_id}";
-      my $output = $wormbase->misc_dynamic . "/". $species . "_ignore_bad_blat_alignments_${batchname}.ace"; # ace file
-      unlink $output if -e $output;
-      my $err = "$scratch_dir/ignore_bad_blat_alignment.$batchname.err.$$";
-      my $cmd = "$script -database $database -chunkid $chunk_id -chunktotal $chunk_total -output $output";
-      $log->write_to("$cmd\n");
-      print "$cmd\n";
-      $cmd = $wormbase->build_cmd($cmd);
-      my @bsub_options = (
-			  -e => "$err",
-			  -o => '/dev/null',
-			  -M => "$mem",
-			  -R => "\"select[mem>$mem] rusage[mem=$mem]\"",
-			  -J => $job_name,
-			 );
-      $lsf->submit(@bsub_options, $cmd);
+	my $batchname = "batch_${chunk_id}";
+	my $output = $wormbase->misc_dynamic . "/". $species . "_ignore_bad_blat_alignments_${batchname}.ace"; # ace file
+	unlink $output if -e $output;
+	my $err = "$scratch_dir/ignore_bad_blat_alignment.$batchname.err.$$";
+	my $cmd = "$script -database $database -chunkid $chunk_id -chunktotal $chunk_total -output $output";
+	$log->write_to("$cmd\n");
+	print "$cmd\n";
+	$cmd = $wormbase->build_cmd($cmd);
+
+	my $job_id = WormSlurm::submit_job_with_name($cmd, 'production', $mem, $time, '/dev/null', $err, $job_name);
+	$slurm_jobs{$job_id} = $cmd;
     }
     
-    $lsf->wait_all_children(history => 1);
+    WormSlurm::wait_for_jobs(keys %slurm_jobs);
     $log->write_to("All ignore_bad_blat_alignment jobs have completed.\n");
     my $critical_error = 0;
-    for my $job ($lsf->jobs) {
-      $log->error("Job $job (".$job->history->command.") exited non zero\n") if $job->history->exit_status != 0;
-      $critical_error++ if $job->history->exit_status != 0;
+    for my $job_id (keys %slurm_jobs) {
+	my $exit_code = WormSlurm::get_exit_code($job_id);
+	$log->error("Slurm job $job_id (" . $slurm_jobs{$job_id} . ") exited non zero (" . $exit_code . ")\n") if $exit_code != 0;
+	$critical_error++ if $exit_code != 0;
     }
-    $lsf->clear;
-    $log->log_and_die("There were $critical_error critical errors in the ignore_bad_blat_alignments jobs, please check and re-run with -mem 6000 if you suspect memory issues\n") if $critical_error;
+    $log->log_and_die("There were $critical_error critical errors in the ignore_bad_blat_alignments jobs, please check and re-run with -mem 10g if you suspect memory issues\n") if $critical_error;
     
     $log->write_to("All batch jobs done.\n", $log);
     

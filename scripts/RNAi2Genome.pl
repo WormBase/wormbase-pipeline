@@ -12,9 +12,7 @@ use lib $ENV{CVS_DIR};
 
 use Wormbase;
 use Log_files;
-
-use LSF RaiseError => 0, PrintError => 1, PrintOutput => 1;
-use LSF::JobManager;
+use Modules::WormSlurm;
 use Ace;
 use Coords_converter;
 use Sequence_extract;
@@ -136,41 +134,33 @@ if (not $query) {
     push @query, $file;
   }
 
-  my $lsf = LSF::JobManager->new();
-  
+  my %slurm_jobs;
   for(my $i=0; $i < @query; $i++) {
-    my $query = $query[$i];
-    my $jname = "worm_rna2genome.$i.$$";
-    my $out_file = "$workdir/rnai_out.$i.ace";
-    my $psl = "$workdir/rnai_out.$i.psl";
-    my $lsf_out = "$workdir/rnai_out.$i.lsf_out";
+      my $query = $query[$i];
+      my $jname = "worm_rna2genome.$i.$$";
+      my $out_file = "$workdir/rnai_out.$i.ace";
+      my $psl = "$workdir/rnai_out.$i.psl";
+      my $slurm_out = "$workdir/rnai_out.$i.slurm_out";
+      my $slurm_err = "$workdir/rnai_out.$i.slurm_err";
+      
+      my $command = ($store) 
+	  ? $wormbase->build_cmd_line("RNAi2Genome.pl -query $query -keepbest $keep_best -acefile $out_file -pslfile $psl", $store)
+	  : $wormbase->build_cmd("RNAi2Genome.pl -query $query -keepbest $keep_best -acefile $out_file -pslfile $psl");
 
-    my $command = ($store) 
-        ? $wormbase->build_cmd_line("RNAi2Genome.pl -query $query -keepbest $keep_best -acefile $out_file -pslfile $psl", $store)
-        : $wormbase->build_cmd("RNAi2Genome.pl -query $query -keepbest $keep_best -acefile $out_file -pslfile $psl");
-    
-    my @bsub_options = (-J => $jname, 
-                        -o => $lsf_out,
-                        -E => 'test -w ' . $workdir,
-                        -M => 2600,
-                        -R => 'select[mem>=2600] rusage[mem=2600]'
-                        );
-    $lsf->submit(@bsub_options, $command);
+      my $job_id = WormSlurm::submit_job_with_name($cmd, 'production', '2600m', '06:00:00', $slurm_out, $slurm_err, $jname);
+      $slurm_jobs{$job_id} = $cmd;
 
-    push @out_ace_files, $out_file;
-    push @out_psl_files, $psl;
-    push @out_lsf_files, $lsf_out;
+      push @out_ace_files, $out_file;
+      push @out_psl_files, $psl;
+      push @out_lsf_files, $lsf_out;
   }     
     
-  $lsf->wait_all_children( history => (scalar(@query) == 1) ? 0 : 1 );
-  # wait a few seconds here; the LSF job manager sometimes lags a little in
-  # registering the job history
-  sleep(5);
+  WormSlurm::wait_for_jobs(%slurm_jobs);
+  
   $log->write_to("All RNAi2Genome batch jobs have completed!\n");
-  for my $job ( $lsf->jobs ) {    
-    $log->error("$job exited non zero\n") if $job->history->exit_status != 0;
+  for my $job_id (keys %slurm_jobs) {
+      $log->error("Slurm job $job (" . $slurm_jobs{$job_id} . ") exited non zero\n") if WormSlurm::get_exit_code($job_id) != 0;
   }
-  $lsf->clear;
   
   my (%parent_seqs);
   open(my $out_fh, ">$acefile") or $log->log_and_die("Could not open $acefile for writing\n");

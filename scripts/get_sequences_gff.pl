@@ -10,7 +10,7 @@
 # It gets details of the exons structure and sequence of transcripts
 # by using the GFF files and autoace
 #
-# It is run to process each chromosome individually under LSF by the
+# It is run to process each chromosome individually by the
 # script map_tags.pl
 
 #

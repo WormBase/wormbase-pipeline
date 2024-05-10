@@ -54,7 +54,7 @@ my $methods = join(',',@methods);
 
 $log->write_to("Dumping methods $methods from ".$wormbase->autoace."\n");
 
-$cmd = "dump_gff_batch.pl -database ".$wormbase->autoace." -methods $methods -dump_dir $dump_dir";
+$cmd = "dump_gff_batch.pl -database ".$wormbase->autoace." -methods $methods -dump_dir $dump_dir -time 00:10:00";
 $cmd .= " -chromosomes ". join(",",@chromosomes) if @chromosomes;
 $cmd .= " -giface $giface" if defined $giface;
 $cmd .= " -gifaceserver $giface_server" if defined $giface_server;

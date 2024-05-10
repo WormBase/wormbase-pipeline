@@ -5,10 +5,7 @@ use Wormbase;
 use Getopt::Long;
 use DBI;
 use strict;
-
-use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
-use LSF::JobManager;
-
+use Modules::WormSlurm;
 use File::Which qw(which);
 
 my ($debug,
@@ -85,97 +82,93 @@ if ($run_clustal) {
   
   my $dbconn = DBI->connect("DBI:mysql:dbname=${rdb_name};host=${rdb_host};port=${rdb_port}" ,$rdb_user,$rdb_pass) or $log->log_and_die($DBI::errstr);
   
-  my $lsf = LSF::JobManager->new();
-  
   my $scratch_dir = $wb->build_lsfout;
   my %job_info;
-  
+
+  my %slurm_jobs;
   foreach my $species (sort keys %accessors) {
-    # if no runspecies were supplied at command line, we use the 
-    # database versions to work out which species to run
+      # if no runspecies were supplied at command line, we use the 
+      # database versions to work out which species to run
 
-    $log->write_to("Considering running $species...\n");
-    if (not @run_species) {
-      if ($accessors{$species}->version != $wb->version) {
-        $log->write_to(" Looks like $species was not (re)built. Will not re-run alignments\n");
-        next;
-      }
-    } else {
-      if (not grep { $species eq $_ } @run_species) {
-        $log->write_to(" Skipping $species because explicit list defined, and not part of that list\n");
-        next;
-      } 
-    }
-
-    $log->write_to(" Running $species...\n");
-
-    my $infile = sprintf("%s/%spep%s", 
-                         $accessors{$species}->wormpep,
-                         $accessors{$species}->pepdir_prefix,
-                         $accessors{$species}->version);
-
-    $log->log_and_die("Could not find $infile\n") if not -e $infile;
-    $log->write_to("Will repopulate for $species using $infile\n");
-
-    my $prefix = $accessors{$species}->pep_prefix;        
-    $dbconn->do("DELETE FROM clustal WHERE peptide_id LIKE \'$prefix\%\'") unless $dontclean;
-    
-    my $cmd_prefix = "$scratch_dir/clustal.$species.$$.";
-    
-    my $batch_total = 20;
-    for(my $batch_idx = 1; $batch_idx <= $batch_total; $batch_idx++) {
-      my $cmd_file = "${cmd_prefix}.${batch_idx}.cmd.csh";
-      my $cmd_out  = "${cmd_prefix}.${batch_idx}.lsfout";
-      my $job_name = "worm_clustal";
-      
-      my @bsub_options = (-o => "$cmd_out",
-                          -J => $job_name, 
-                          -M => 5900,
-                          -R => "select[mem>=5900] rusage[mem=5900]");
-      
-      my $cmd = "clustal_runner.pl" 
-          . " -batchid $batch_idx"
-          . " -batchtotal $batch_total"
-          . " -user $rdb_user"
-          . " -pass $rdb_pass"
-          . " -host $rdb_host"
-          . " -port $rdb_port"
-          . " -dbname $rdb_name"
-          . " -pepfile $infile"
-          . " -database $ace_database"
-          . " -alignerdir $aligner_dir";
-      $cmd = $accessors{$species}->build_cmd($cmd);
-
-# it is useful to still make the command files so that if any batch jobs fail, the command files are available to be run by hand
-      open(my $cmd_fh, ">$cmd_file") or $log->log_and_die("Could not open $cmd_file for writing\n");
-      print $cmd_fh "#!/bin/csh\n";
-      print $cmd_fh "$cmd\n";
-      close($cmd_fh);
-      chmod 0777, $cmd_file;
-      
-      my $job_obj = $lsf->submit(@bsub_options, $cmd);
-      if (defined $job_obj) {
-        $job_info{$job_obj->id} = {
-          output_file => $cmd_out,
-          command_file => $cmd,
-        }
+      $log->write_to("Considering running $species...\n");
+      if (not @run_species) {
+	  if ($accessors{$species}->version != $wb->version) {
+	      $log->write_to(" Looks like $species was not (re)built. Will not re-run alignments\n");
+	      next;
+	  }
       } else {
-        $log->log_and_die("Could not submit job $cmd\n");
+	  if (not grep { $species eq $_ } @run_species) {
+	      $log->write_to(" Skipping $species because explicit list defined, and not part of that list\n");
+	      next;
+	  } 
       }
-    }
+      
+      $log->write_to(" Running $species...\n");
+      
+      my $infile = sprintf("%s/%spep%s", 
+			   $accessors{$species}->wormpep,
+			   $accessors{$species}->pepdir_prefix,
+			   $accessors{$species}->version);
+      
+      $log->log_and_die("Could not find $infile\n") if not -e $infile;
+      $log->write_to("Will repopulate for $species using $infile\n");
+      
+      my $prefix = $accessors{$species}->pep_prefix;        
+      $dbconn->do("DELETE FROM clustal WHERE peptide_id LIKE \'$prefix\%\'") unless $dontclean;
+      
+      my $cmd_prefix = "$scratch_dir/clustal.$species.$$.";
+      
+      my $batch_total = 20;
+      for(my $batch_idx = 1; $batch_idx <= $batch_total; $batch_idx++) {
+	  my $cmd_file = "${cmd_prefix}.${batch_idx}.cmd.csh";
+	  my $cmd_out  = "${cmd_prefix}.${batch_idx}.slurmout";
+	  my $cmd_err  = "${cmd_prefix}.${batch_idx}.slurmerr";
+	  my $job_name = "worm_clustal";
+	  
+	  my $cmd = "clustal_runner.pl" 
+	      . " -batchid $batch_idx"
+	      . " -batchtotal $batch_total"
+	      . " -user $rdb_user"
+	      . " -pass $rdb_pass"
+	      . " -host $rdb_host"
+	      . " -port $rdb_port"
+	      . " -dbname $rdb_name"
+	      . " -pepfile $infile"
+	      . " -database $ace_database"
+	      . " -alignerdir $aligner_dir";
+	  $cmd = $accessors{$species}->build_cmd($cmd);
+	  
+	  # it is useful to still make the command files so that if any batch jobs fail, the command files are available to be run by hand
+	  open(my $cmd_fh, ">$cmd_file") or $log->log_and_die("Could not open $cmd_file for writing\n");
+	  print $cmd_fh "#!/bin/csh\n";
+	  print $cmd_fh "$cmd\n";
+	  close($cmd_fh);
+	  chmod 0777, $cmd_file;
+	  
+	  my $job_id = WormSlurm::submit_job_with_name($cmd, 'production', '6g', '2:00:00', $cmd_out, $cmd_err, $job_name);
+	  $slurm_jobs{$job_id} = $cmd;
+	  if (defined $job_id) {
+	      $job_info{$job_id} = {
+		  output_file => $cmd_out,
+		  command_file => $cmd,
+	      }
+	  } else {
+	      $log->log_and_die("Could not submit job $cmd\n");
+	  }
+      }
   }
-  $lsf->wait_all_children( history => 1 );
+  WormSlurm::wait_for_jobs(keys %slurm_jobs);
   
   $log->write_to("All clustal jobs have completed!\n");
-  for my $job ( $lsf->jobs ) {    # much quicker if history is pre-cached
-    my $job_cmd =  $job_info{$job->id}->{command_file};
-    my $job_out =  $job_info{$job->id}->{output_file};
+  for my $job_id (keys %slurm_jobs) {    # much quicker if history is pre-cached
+    my $job_cmd =  $job_info{$job_id}->{command_file};
+    my $job_out =  $job_info{$job_id}->{output_file};
     
-    if ($job->history->exit_status == 0) {
-      unlink $job_out;   
+    if (WormSlurm::get_exit_code($job_id) == 0) {
+	unlink $job_out;   
     } else {    
-      $log->error("$job exited non zero: check $job_out and re-run '$job_cmd' before dumping\n");
-      $run_jobs_failed++;
+	$log->error("$job exited non zero: check $job_out and re-run '$job_cmd' before dumping\n");
+	$run_jobs_failed++;
     }
   }
 }
