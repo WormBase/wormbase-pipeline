@@ -36,18 +36,34 @@ package WormSlurm;
 sub submit_job {
     my ($cmd, $queue, $memory, $time, $outfile, $errfile) = @_;
 
-    my $sbatch = "sbatch --parsable --container=${queue} --mem=${memory} --time=${time} -e ${errfile} -o ${outfile} --wrap=\"${cmd}\"";
-    my $job_id = `$sbatch`;
-    chomp $job_id;
-    return $job_id;
+    return submit_job_with_name($cmd, $queue, $memory, $time, $outfile, $errfile, undef);
 }
 
 sub submit_job_with_name {
     my ($cmd, $queue, $memory, $time, $outfile, $errfile, $name) = @_;
+    return submit_job_with_name_and_dependencies($cmd, $queue, $memory, $time, $outfile, $errfile, $name, undef);
+}
 
-    my $sbatch = "sbatch --parsable --container=${queue} --mem=${memory} --time=${time} -e ${errfile} -o ${outfile} -J ${name} --wrap=\"${cmd}\"";
+sub submit_job_with_name_and_dependencies {
+    my ($cmd, $queue, $memory, $time, $outfile, $errfile, $name, $dependencies) = @_;
+
+    my $parameters = "--parsable --container=${queue} --mem=${memory} --time=${time} -e ${errfile} -o ${outfile}";
+    if (defined $name) {
+	$parameters .= " -J ${name}";
+    }
+    if (defined $dependencies) {
+	my @dependency_strings;
+	for my $dependency(@$dependencies) {
+	    push @dependency_strings, 'afterany:' . $dependency;
+	}
+	$parameters .= ' -d ' . join(',', @dependency_strings);
+    }
+
+    my $sbatch = "sbatch $parameters --wrap=\"${cmd}\"";
+    print STDERR $sbatch . "\n";
     my $job_id = `$sbatch`;
     chomp $job_id;
+    print STDERR "Unexpected job ID $job_id\n" unless defined $job_id and $job_id != 0;
     return $job_id;
 }
 
@@ -82,7 +98,6 @@ sub wait_for_jobs {
     my @job_ids = @_;
 
     my $running = 1;
-    my $sleep = 5;
     system("sleep 1");
     while ($running) {
 	my @still_running;
@@ -91,8 +106,7 @@ sub wait_for_jobs {
 	}
 	$running = scalar @still_running;
 	@job_ids = @still_running;
-	system("sleep $sleep");
-	$sleep = $sleep * 2 if $sleep < 300;
+	system("sleep 15");
     }
 
     return;
@@ -101,16 +115,17 @@ sub wait_for_jobs {
 sub submit_jobs_and_wait_for_all {
     my ($cmds, $queue, $memory, $time, $outfile_prefix, $errfile_prefix) = @_;
 
-    my @job_ids;
+    my %slurm_jobs;
     for (my $ix = 0; $ix++; $ix < @$cmds) {
 	my $outfile = $outfile_prefix eq '/dev/null' ? $outfile_prefix : $outfile_prefix . '.' . $ix . '.out';
 	my $errfile = $outfile_prefix eq '/dev/null' ? $errfile_prefix : $errfile_prefix . '.' . $ix . '.err';
-	push @job_ids, submit_job($cmds->[$ix], $queue, $memory, $outfile, $errfile);
+	my $job_id = submit_job($cmds->[$ix], $queue, $memory, $outfile, $errfile);
+	$slurm_jobs{$job_id} = $cmds->[$ix];
     }
 
-    wait_for_jobs(@job_ids);
+    wait_for_jobs(keys $slurm_jobs);
 
-    return;
+    return \%slurm_jobs;
 }
 
 sub get_exit_code {

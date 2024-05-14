@@ -23,13 +23,11 @@ use strict;
 use Getopt::Long;
 
 use lib $ENV{CVS_DIR};
-use LSF;
-use LSF::JobManager;
 use Wormbase;
 use Coords_converter;
+use Modules::WormSlurm;
 
-
-my ($database,$store,$debug,$species,$test,$dumpdir, $bsub_mem, $rerun);
+my ($database,$store,$debug,$species,$test,$dumpdir, $slurm_mem, $rerun);
 GetOptions(
 	   'database=s' => \$database,
 	   'store=s'    => \$store,
@@ -37,7 +35,7 @@ GetOptions(
 	   'species=s'  => \$species,
 	   'test'       => \$test,
 	   'dumpdir=s'  => \$dumpdir,
-	   'bsubmem=s'  => \$bsub_mem,
+	   'slurmmem=s' => \$slurm_mem,
 	   'rerun=s'    => \$rerun, 
 	  ) || die($usage);
 
@@ -76,15 +74,7 @@ my %logic2type = (
 		  slimswissprotx => '1',
 		 );
 
-$bsub_mem = "4000" if not defined $bsub_mem;
-
-my $lsf = LSF::JobManager->new(
-			       -q => $ENV{LSB_DEFAULTQUEUE},
-			       -o => '/dev/null',
-			       -e => '/dev/null',
-			       -R => "select[mem>=$bsub_mem] rusage[mem=$bsub_mem]",
-			       -M => $bsub_mem,
-			       -F => 400000);
+$slurm_mem = "4g" if not defined $slurm_mem;
 
 $dumpdir ||= "$ENV{PIPELINE}/dumps";
 $database ||= "worm_ensembl_${species}";
@@ -115,15 +105,12 @@ foreach my $db (keys %logic2type){
   }
 }
 
-foreach my $cmd (@cmds) {
-  $lsf->submit($cmd);
-}
-$lsf->wait_all_children( history => 1 );
+my $slurm_jobs = WormSlurm::submit_jobs_and_wait_for_all(\@cmds, $ENV{LSB_DEFAULTQUEUE}, $slurm_mem, '4:00:00', '/dev/null', '/dev/null');
 $log->write_to("All children have completed!\n");
-for my $job ( $lsf->jobs ) {
-  $log->error("Job $job (" . $job->history->command . ") exited non zero\n") if $job->history->exit_status != 0;
+for my $job_id (keys %$slurm_jobs) {
+    my $exit_code = WormSlurm::get_exit_code($job_id);
+    $log->error("Slurm job $job_id (" . $slurm_jobs->{$job_id} . ") exited non zero ($exit_code)\n") if $exit_code != 0;
 }
-$lsf->clear;
 
 # check that all files end with a blank line,
 # otherwise the job that created them was probably terminated prematurely by LSF

@@ -4,9 +4,7 @@ use strict;
 use Getopt::Long;
 use Carp;
 use DBI;
-use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
-use LSF::JobManager;
-
+use Modules::WormSlurm;
 $| = 1;
 
 my $db = "worm_ensembl_elegans";
@@ -48,32 +46,25 @@ my $nseg = int(($nrow/$segsize))+1;
 
 my $job_name = "worm_${db}_dump";
 
-my $lsf=LSF::JobManager->new(-q => $ENV{'LSB_DEFAULTQUEUE'},
-#                             -P => 'wormbase', 
-			     -R => "select[mem>4000] rusage[mem=4000]", 
-			     -M => 4000, 
-#			     -F => 2000000, 
-			     -J => $job_name);
-
+my %slurm_jobs;
 for (my $i=0; $i<$nseg; $i++) {
   my $start = $i*$segsize;
-
-  my @bsub_options = (-o => "junk$i.log", -e => "junk$i.err");
 
   my $cmd = "perl $dump_one_script -host $host -user $user -port $port -db $db -start $start -count $segsize -out $dump_loc/$out_file_prefix.$i.srt";
   print "$cmd\n";
 
-  $lsf->submit(@bsub_options, $cmd);
+  my $job_id = WormSlurm::submit_job_with_name($cmd, 'production', '4g', '4:00:00', "junk$i.log", "junk$i.err");
+  $slurm_jobs{$job_id} = $cmd;
 
   last if $test;
 }
 
-$lsf->wait_all_children( history => 1 );
+WormSlurm::wait_for_jobs(keys %slurm_jobs);
 print "All children have completed!\n";
 
-for my $job ($lsf->jobs){ # much quicker if history is pre-cached
-  print "Job $job (" . $job->history->command . ") exited ". $job->history->exit_status ."\n" if ($job->history->exit_status != 0);
+for my $job_id (keys %slurm_jobs){
+    my $exit_code = WormSlurm::get_exit_code($job_id);
+  print "Slurm job $job_id (" . $slurm_jobs{$job_id} ") exited ". $exit_code ."\n" if ($exit_code != 0);
 }
-$lsf->clear; # clear out the job manager to reuse.
 
 exit(0);
