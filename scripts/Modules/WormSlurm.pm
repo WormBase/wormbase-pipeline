@@ -74,12 +74,10 @@ sub submit_job_and_wait {
     my $job_id = submit_job($cmd, $queue, $memory, $time, $outfile, $errfile);
 
     my $running = 1;
-    my $sleep = 5;
     system("sleep 1");
     while ($running) {
 	$running = job_is_running($job_id);
-	system("sleep $sleep");
-	$sleep = $sleep * 2 if $sleep < 300;
+	system("sleep 15");
     }
 
     return $job_id;
