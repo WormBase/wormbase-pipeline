@@ -5,7 +5,7 @@ use Getopt::Long qw(:config pass_through);
 use Modules::WormSlurm;
 use Path::Class;
 
-my $scratch = $ENV{WORM_SCRATCH};
+my $scratch = $ENV{BUILD_TMP};
 my $mem = 2; # default memory allocation of 2Gb
 my $time = '01:00:00'; # default time allocation of 1 hour
 my $queue = 'production'; # use production queue as default
