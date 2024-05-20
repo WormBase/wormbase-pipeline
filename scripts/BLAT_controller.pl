@@ -214,7 +214,7 @@ if ( $run ) {
 	    $cmd .= $wormbase->blat."/${species}_${moltype}_${chunk_num}.psl";
 
 
-	    my $job_id = WormSlurm:::submit_job_with_name($cmd, 'production', '1g', '1:00:00', "$lsfdir/BLAT_run_${species}_${moltype}_${chunk_num}.slurmout", "$lsfdir/BLAT_run_${species}_${moltype}_${chunk_num}.lsferr", "BLAT_run_${species}_${species}_${moltype}_${chunk_num}");
+	    my $job_id = WormSlurm::submit_job_with_name($cmd, 'production', '1g', '1:00:00', "$lsfdir/BLAT_run_${species}_${moltype}_${chunk_num}.slurmout", "$lsfdir/BLAT_run_${species}_${moltype}_${chunk_num}.lsferr", "BLAT_run_${species}_${species}_${moltype}_${chunk_num}");
 	    $slurm_blat_jobs{$job_id} = $cmd;
 	}
     }
@@ -222,8 +222,8 @@ if ( $run ) {
     WormSlurm::wait_for_jobs(keys %slurm_blat_jobs);
 
     $log->write_to("All BLAT runs have completed!\n");
-    for my $job_id ( keys %slurm_blast_jobs ) {    # much quicker if history is pre-cached
-	$log->error("Slurm job $job_id (" . $slurm_blast_jobs{$job_id} . ") exited non zero\n") if WormSlurm::get_exit_code($job_id) != 0;
+    for my $job_id ( keys %slurm_blat_jobs ) {    # much quicker if history is pre-cached
+	$log->error("Slurm job $job_id (" . $slurm_blat_jobs{$job_id} . ") exited non zero\n") if WormSlurm::get_exit_code($job_id) != 0;
     }
 
     if ($log->report_errors) {
@@ -271,7 +271,7 @@ if ( $process ) {
 
 	    my $job_name = "BLAT_blat2ace_${species}_${qspecies}_${type}";
 	    my $mem = '8g';
-	    if ($type eq 'Nanopore') && ($qspecies ne $species) {
+	    if ($type eq 'Nanopore' && $qspecies ne $species) {
 		$mem = '24g';
 		$cmd .= ' -mincoverage 90' unless $min_coverage;
 	    }
