@@ -121,6 +121,7 @@ if( $mask ) {
 	$cmd .= " -debug $debug" if $debug;
 	
 	my $job_id = WormSlurm::submit_job_with_name($cmd, 'production', '1500m', '01:00:00', "$lsfdir/BLAT_mask_${species}_${moltype}.slurmout", "$lsfdir/BLAT_mask_${species}_${moltype}.slurmerr", "BLAT_mask_${species}_${moltype}");
+	$slurm_jobs{$job_id} = $cmd;
     }
     WormSlurm::wait_for_jobs(keys %slurm_jobs);
 
