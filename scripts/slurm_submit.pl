@@ -52,14 +52,17 @@ if (-e $outfile) {
     remove_hps_file($outfile) unless $keep_out;
 }
 
-
-my $exit_code = WormSlurm::get_exit_code($job_id);
-if (not defined $exit_code) {
-    print STDERR "ERROR: Unable to determine exit code for submitted job (${job_id}) - investigate\n";
-} elsif ($exit_code) {
-    print STDERR "ERROR: Job terminated abnormally with exit code ${exit_code}\n";
+unless (defined $job_id && $job_id != 0) {
+    print STDERR "ERROR: Job submission failed\n";
 } else {
-    print STDERR "JOB SUCCESSFULLY COMPLETED\n";
+    my $exit_code = WormSlurm::get_exit_code($job_id);
+    if (not defined $exit_code) {
+	print STDERR "ERROR: Unable to determine exit code for submitted job (${job_id}) - investigate\n";
+    } elsif ($exit_code) {
+	print STDERR "ERROR: Job terminated abnormally with exit code ${exit_code}\n";
+    } else {
+	print STDERR "JOB SUCCESSFULLY COMPLETED\n";
+    }
 }
 
 exit(0);

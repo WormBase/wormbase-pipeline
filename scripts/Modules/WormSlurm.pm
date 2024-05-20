@@ -47,7 +47,7 @@ sub submit_job_with_name {
 sub submit_job_with_name_and_dependencies {
     my ($cmd, $queue, $memory, $time, $outfile, $errfile, $name, $dependencies) = @_;
 
-    my $parameters = "--parsable --container=${queue} --mem=${memory} --time=${time} -e ${errfile} -o ${outfile}";
+    my $parameters = "--parsable --partition=${queue} --mem=${memory} --time=${time} -e ${errfile} -o ${outfile}";
     if (defined $name) {
 	$parameters .= " -J ${name}";
     }
@@ -73,6 +73,8 @@ sub submit_job_and_wait {
 
     my $job_id = submit_job($cmd, $queue, $memory, $time, $outfile, $errfile);
 
+    retrun $job_id unless defined $job_id and $job_id != 0;
+    
     my $running = 1;
     system("sleep 1");
     while ($running) {
