@@ -13,14 +13,18 @@ my $outfile;
 my $errfile;
 my $keep_out = 1;
 my $keep_err = 1;
+my $cmd;
 
 GetOptions(
-    "mem|m=s"   => \$mem,
-    "time|t=s"  => \$time,
+    "mem|m=i" => \$mem,
+    "time|t=s" => \$time,
     "queue|q=s" => \$queue,
-    "outfile|o=s" => \$outfile,
-    "errfile|e=s" => \$errfile,
+    "out|o=s" => \$outfile,
+    "err|e=s" => \$errfile,
     );
+
+
+$cmd = join(' ', @ARGV);
 
 if (!defined $outfile) {
     $outfile = $scratch . '/' . $$ . '.out';
@@ -32,7 +36,6 @@ if (!defined $errfile) {
 }
 
 
-my $cmd = join(' ', @ARGV);
 my $mem_mb = $mem * 1000;
 
 my $job_id = WormSlurm::submit_job_and_wait($cmd, $queue, $mem_mb . 'm', $time, $outfile, $errfile);
