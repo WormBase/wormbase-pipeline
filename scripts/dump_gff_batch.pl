@@ -6,15 +6,13 @@ use Getopt::Long;
 use strict;
 use Log_files;
 use Storable;
+use Modules::WormSlurm;
 
 my ($debug, $test, $database,$species, $verbose, $store );
 my ($giface, $giface_server, $giface_client, $port);
 my ($gff3, $gff, $dump_dir, $rerun_if_failed, $methods, $chrom_choice, $mem, $time);
 
 my $dumpGFFscript = "GFF_method_dump.pl";
-
-use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
-use LSF::JobManager;
 
 GetOptions (
     "debug:s"        => \$debug,
@@ -159,8 +157,8 @@ foreach my $chrom (@individual_chrs) {
     my $this_cmd_num = ++$cmd_number;
 
     my $gff_out = sprintf("%s/%s.gff%s", $dump_dir, $chrom, ($gff3) ? "3" : "");
-    my $slurm_out = "$scratch_dir/wormpubGFFdump.$chrom.$this_cmd_num.lsfout";
-    my $slurm_err = "$scratch_dir/wormpubGFFdump.$chrom.$this_cmd_num.lsferr";
+    my $slurm_out = "$scratch_dir/wormpubGFFdump.$chrom.$this_cmd_num.slurmout";
+    my $slurm_err = "$scratch_dir/wormpubGFFdump.$chrom.$this_cmd_num.slurmerr";
     my $job_name = "worm_".$wormbase->species."_gffbatch.$this_cmd_num";
 
     my $cmd = "$cmd_base $common_additional_params";
@@ -310,7 +308,6 @@ if (@problem_cmds and scalar(@problem_cmds) < 120 and $rerun_if_failed) {
     $log->write_to("\n\nNumber of jobs that failed after the second attempt: $failed\n");
   }
   @problem_cmds = @new_problem_cmds;
-  $lsf->clear;
 }
 
 if (@problem_cmds) {
