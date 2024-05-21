@@ -21,6 +21,7 @@ use Wormbase;
 use Const::Fast;
 use Path::Class;
 use List::MoreUtils qw(uniq);
+use Ace;
 
 const my $MAX_DAYS_SINCE_CITACE_DUMP => 21;
 const my $MAX_DAYS_SINCE_GENEACE_COPY => 7;
