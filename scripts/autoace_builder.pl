@@ -144,9 +144,13 @@ $wormbase->run_script( 'make_autoace.pl',                   $log ) if $build and
 
 if ($build_check and $errors == 0) {
   # Check for missing curation by checking for Live genes that have a Sequence name but aren't connected to a current gene model.
-  if ($wormbase->species eq 'elegans')  {
-    $wormbase->run_script("check_class.pl -camace -genace -caltech -misc_static -briggsae -stage init", $log);
-    $wormbase->run_script("check_class.pl -incomplete -stage incomplete", $log);
+    if ($wormbase->species eq 'elegans')  {
+	$wormbase->run_script("check_class.pl -camace -genace -stage init", $log);
+	$wormbase->run_script("check_class.pl -caltech -stage init", $log);
+	$wormbase->run_script("check_class.pl -misc_static -stage init", $log);
+	$wormbase->run_script("check_class.pl -briggsae -stage init", $log);
+	$wormbase->run_script("check_class.pl -incomplete -stage incomplete", $log);
+	$wormbase->run_script("check_class.pl -csh -stage init", $log);
   }
 }
 
