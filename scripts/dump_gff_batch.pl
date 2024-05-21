@@ -256,8 +256,8 @@ WormSlurm::wait_for_jobs(keys %submitted_jobs);
 $log->write_to("All GFF dump jobs have completed!\n");
 my @problem_cmds;
 for my $job_id (keys %submitted_jobs) {
-    my $exit_code = WormSlurm::get_exit_code($job);
-    if ($exit_codes == 0) {
+    my $exit_code = WormSlurm::get_exit_code($job_id);
+    if ($exit_code == 0) {
 	unlink $submitted_jobs{$job_id};
   } else {
     $log->write_to("Job $job_id (" . $submitted_jobs{$job_id} . ") exited non zero\n");
@@ -285,13 +285,13 @@ if (@problem_cmds and scalar(@problem_cmds) < 120 and $rerun_if_failed) {
   my @new_problem_cmds;
   my %resubmitted_jobs;
   foreach my $cmd_file (@problem_cmds) {
-    $log->write_to("*** Attempting to re-run job: $cmd_file\n");
-    my $slurm_out = sprintf("%s/wormpubGFFdump.rerun.slurmout", $scratch_dir, ++$rerun_count);
-    my $slurm_err = sprintf("%s/wormpubGFFdump.rerun.slurmerr", $scratch_dir, ++$rerun_count);
-    my $job_name = sprintf("worm_gff.%s.rerun_", $species, $rerun_count);
-    
-    my $job_id = WormSlurm::submit_job_with_name($cmd_file, 'production', $this_mem, $time, $slurm_out, $slurm_err, $job_name);
-    $resubmitted_jobs{$job_id} = $cmd_file;
+      $log->write_to("*** Attempting to re-run job: $cmd_file\n");
+      my $slurm_out = sprintf("%s/wormpubGFFdump.rerun.slurmout", $scratch_dir, ++$rerun_count);
+      my $slurm_err = sprintf("%s/wormpubGFFdump.rerun.slurmerr", $scratch_dir, ++$rerun_count);
+      my $job_name = sprintf("worm_gff.%s.rerun_", $species, $rerun_count);
+      
+      my $job_id = WormSlurm::submit_job_with_name($cmd_file, 'production', $this_mem, $time, $slurm_out, $slurm_err, $job_name);
+      $resubmitted_jobs{$job_id} = $cmd_file;
   }
   WormSlurm::wait_for_jobs(keys %resubmitted_jobs);
   
@@ -299,13 +299,13 @@ if (@problem_cmds and scalar(@problem_cmds) < 120 and $rerun_if_failed) {
   for my $job_id ( keys %resubmitted_jobs ) {
       my $exit_code = WormSlurm::get_exit_code($job_id);
       if ($exit_code == 0) {
-	  unlink $job->history->command;
+	  unlink $submitted_jobs{$job_id};
       } else {
 	  $failed++;
-	  $log->error("\n\nERROR: Job $job_id (" . $resubmitted_jobs{$job_id} . ") exited non zero at the second attempt. See $slurm_out\n");
-      push @new_problem_cmds, $resubmitted_jobs{$job_id};
-    }
-    $log->write_to("\n\nNumber of jobs that failed after the second attempt: $failed\n");
+	  $log->error("\n\nERROR: Job $job_id (" . $resubmitted_jobs{$job_id} . ") exited non zero at the second attempt\n");
+	  push @new_problem_cmds, $resubmitted_jobs{$job_id};
+      }
+      $log->write_to("\n\nNumber of jobs that failed after the second attempt: $failed\n");
   }
   @problem_cmds = @new_problem_cmds;
 }
