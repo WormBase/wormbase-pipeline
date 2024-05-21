@@ -19,8 +19,8 @@ GetOptions(
     "mem|m=i" => \$mem,
     "time|t=s" => \$time,
     "queue|q=s" => \$queue,
-    "out|o=s" => \$outfile,
-    "err|e=s" => \$errfile,
+    "slurmout|o=s" => \$outfile,
+    "slurmerr|e=s" => \$errfile,
     );
 
 
