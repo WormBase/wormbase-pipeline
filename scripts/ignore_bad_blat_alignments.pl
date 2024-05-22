@@ -61,6 +61,9 @@ if ( $store ) {
 			   );
 }
 
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
+
 unless (defined $mem) {
     $mem = '3500m';
 }
@@ -85,9 +88,6 @@ if ($test) {
   print "In test mode\n" if ($verbose);
   
 }
-
-# establish log file.
-my $log = Log_files->make_build_log($wormbase);
 
 if (! defined $database) {$database = $wormbase->autoace}
 
