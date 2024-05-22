@@ -97,7 +97,7 @@ my $coords = Sequence_extract->invoke($db, 0, $wormbase);
 
 if (not $query) {
   ###### Fetch the queries (if not supplied)
-  my (@rnai, @query, @rnai_chunks, @out_ace_files, @out_lsf_files, @out_psl_files, %best_hit_only, %seen);
+  my (@rnai, @query, @rnai_chunks, @out_ace_files, @out_slurm_files, @out_psl_files, %best_hit_only, %seen);
 
   @rnai = &get_rnai_sequences();
 
@@ -143,7 +143,7 @@ if (not $query) {
       my $slurm_out = "$workdir/rnai_out.$i.slurm_out";
       my $slurm_err = "$workdir/rnai_out.$i.slurm_err";
       
-      my $command = ($store) 
+      my $cmd = ($store) 
 	  ? $wormbase->build_cmd_line("RNAi2Genome.pl -query $query -keepbest $keep_best -acefile $out_file -pslfile $psl", $store)
 	  : $wormbase->build_cmd("RNAi2Genome.pl -query $query -keepbest $keep_best -acefile $out_file -pslfile $psl");
 
@@ -152,14 +152,14 @@ if (not $query) {
 
       push @out_ace_files, $out_file;
       push @out_psl_files, $psl;
-      push @out_lsf_files, $lsf_out;
+      push @out_slurm_files, $slurm_out;
   }     
     
   WormSlurm::wait_for_jobs(%slurm_jobs);
   
   $log->write_to("All RNAi2Genome batch jobs have completed!\n");
   for my $job_id (keys %slurm_jobs) {
-      $log->error("Slurm job $job (" . $slurm_jobs{$job_id} . ") exited non zero\n") if WormSlurm::get_exit_code($job_id) != 0;
+      $log->error("Slurm job $job_id (" . $slurm_jobs{$job_id} . ") exited non zero\n") if WormSlurm::get_exit_code($job_id) != 0;
   }
   
   my (%parent_seqs);
@@ -181,7 +181,7 @@ if (not $query) {
   close($out_fh);
      
   if (not $log->report_errors and not $test) {
-    unlink @out_ace_files, @out_psl_files, @out_lsf_files, @query;
+    unlink @out_ace_files, @out_psl_files, @out_slurm_files, @query;
   }
 
   if (not $no_load) {
