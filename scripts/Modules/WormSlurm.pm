@@ -118,14 +118,16 @@ sub submit_jobs_and_wait_for_all {
     return unless @$cmds;
     
     my %slurm_jobs;
-    for (my $ix = 0; $ix++; $ix < @$cmds) {
+    my $ix = 0;
+    for my $cmd (@$cmds) {
 	my $outfile = $outfile_prefix eq '/dev/null' ? $outfile_prefix : $outfile_prefix . '.' . $ix . '.out';
 	my $errfile = $outfile_prefix eq '/dev/null' ? $errfile_prefix : $errfile_prefix . '.' . $ix . '.err';
-	my $job_id = submit_job($cmds->[$ix], $queue, $memory, $outfile, $errfile);
-	$slurm_jobs{$job_id} = $cmds->[$ix];
+	my $job_id = submit_job($cmd, $queue, $memory, $outfile, $errfile);
+	$slurm_jobs{$job_id} = $cmd;
+	$ix++;
     }
 
-    wait_for_jobs(keys $slurm_jobs);
+    wait_for_jobs(keys %slurm_jobs);
 
     return \%slurm_jobs;
 }

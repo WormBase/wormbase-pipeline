@@ -223,7 +223,7 @@ if ( $run ) {
     WormSlurm::wait_for_jobs(keys %slurm_blat_jobs);
 
     $log->write_to("All BLAT runs have completed!\n");
-    for my $job_id ( keys %slurm_blat_jobs ) {    # much quicker if history is pre-cached
+    for my $job_id ( keys %slurm_blat_jobs ) {
 	$log->error("Slurm job $job_id (" . $slurm_blat_jobs{$job_id} . ") exited non zero\n") if WormSlurm::get_exit_code($job_id) != 0;
     }
 
@@ -355,6 +355,9 @@ if( $load and not $log->report_errors) {
     }
 }
 
+$log->mail;
+exit(0);
+
 
 #confirm introns
 sub confirm_introns {
@@ -483,10 +486,6 @@ sub confirm_introns {
     
     return \%virtuals;
 }
-
-
-$log->mail;
-exit(0);
 
 
 ###############################################################################################################
