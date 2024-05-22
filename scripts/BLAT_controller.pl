@@ -277,7 +277,7 @@ if ( $process ) {
 		$cmd .= ' -mincoverage 90' unless $min_coverage;
 	    }
 	    
-	    my $job_id = WormSlurm::submit_jobs_with_name($cmd, 'production', $mem, '1:00:00', "$lsfdir/$job_name.slurmout", "$lsfdir/$job_name.slurmerr", $job_name);
+	    my $job_id = WormSlurm::submit_job_with_name($cmd, 'production', $mem, '1:00:00', "$lsfdir/$job_name.slurmout", "$lsfdir/$job_name.slurmerr", $job_name);
 	    $slurm_process_jobs{$job_id} = $cmd;
 	}
     }
