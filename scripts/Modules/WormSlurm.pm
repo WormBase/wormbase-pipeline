@@ -115,6 +115,8 @@ sub wait_for_jobs {
 sub submit_jobs_and_wait_for_all {
     my ($cmds, $queue, $memory, $time, $outfile_prefix, $errfile_prefix) = @_;
 
+    return unless @$cmds;
+    
     my %slurm_jobs;
     for (my $ix = 0; $ix++; $ix < @$cmds) {
 	my $outfile = $outfile_prefix eq '/dev/null' ? $outfile_prefix : $outfile_prefix . '.' . $ix . '.out';
