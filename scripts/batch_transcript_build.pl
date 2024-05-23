@@ -54,7 +54,7 @@ unless (defined $mem){
   $mem = '3500m';
 }
 unless ($mem =~ /^\d+[m|g|M|G]$/) {
-    $log->log_and_die('Expecting memory parameter in format /^\d+[m|g|M|G]$/' . "\n");
+    $log->log_and_die('Expecting memory parameter in format /^\d+[m|g|M|G]$/ but got ' . "$mem\n");
 }
 
 unless (defined $time) {

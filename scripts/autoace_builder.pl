@@ -216,7 +216,7 @@ if ($finish_blat and $errors == 0) {
 
 if ($transcripts and $errors == 0) {
     $errors += $wormtest->create_est_dat_files_if_required unless exists $tests_to_skip{'est_dat'};
-    $wormbase->run_script( 'batch_transcript_build.pl -mem 12000', $log);
+    $wormbase->run_script( 'batch_transcript_build.pl -mem 12000m', $log);
     $wormbase->run_script("check_class.pl -stage transcripts -classes Transcript", $log);
 }    
 #requires GFF dump of transcripts (done within script if all goes well)
