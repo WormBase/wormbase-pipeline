@@ -48,11 +48,13 @@ if ( $store ) {
 			     );
 }
 
+my $log = Log_files->make_build_log($wormbase);
+
 unless (defined $mem){
   $mem = '3500m';
 }
 unless ($mem =~ /^\d+[m|g|M|G]$/) {
-    $log->log_and_die("Expecting memory parameter in format /^\d+[m|g|M|G]$/\n");
+    $log->log_and_die('Expecting memory parameter in format /^\d+[m|g|M|G]$/' . "\n");
 }
 
 unless (defined $time) {
@@ -62,7 +64,6 @@ unless ($time =~ /^(\d+\-[0-2]\d:[0-5]\d:[0-5]\d|[0-2]?\d:[0-5]\d:[0-5]\d)$/) {
     $log->log_and_die("Expecting time parameter in format D-HH:MM:SS\n");
 }
 
-my $log = Log_files->make_build_log($wormbase);
 $wormbase->check_slurm($log);
 
 $database = $wormbase->autoace unless $database;
