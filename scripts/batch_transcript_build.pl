@@ -134,7 +134,7 @@ $log->write_to("All transcript builder jobs have completed!\n");
 my $critical_error = 0;
 for my $job ( keys %jobs ) {
     my $exit_code = WormSlurm::get_exit_code($job);
-  $log->error("Job $job (" . $jobs{$job} . ") exited non zero\n") if $exit_code($job) != 0;
+  $log->error("Job $job (" . $jobs{$job} . ") exited non zero\n") if $exit_code != 0;
   $critical_error++ if $exit_code != 0;
 }
 
