@@ -25,6 +25,7 @@ use Net::FTP;
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
+use Modules::WormSlurm;
 
 my ($test,
     $debug,
