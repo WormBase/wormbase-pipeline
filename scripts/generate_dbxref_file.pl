@@ -314,7 +314,7 @@ sub upload_to_ebi {
   } else {
       $log->write_to("Copied xref file to $dest_dir\n");
   }
-  $job_id = WormSlurm::submit_job_and_wait("cd $dest_dir && ln -sf $uni_file $uni_symlink");
+  $job_id = WormSlurm::submit_job_and_wait("cd $dest_dir && ln -sf $uni_file $uni_symlink", 'datamover', '200m', '00:01:00', '/dev/null', '/dev/null');
   $exit_code = WormSlurm::get_exit_code($job_id);
   if ($exit_code) {
       $log->error("Creating symlink to xref file in $dest_dir failed\n");
