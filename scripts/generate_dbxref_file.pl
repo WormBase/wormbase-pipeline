@@ -312,14 +312,14 @@ sub upload_to_ebi {
   if ($exit_code) {
       $log->error("Copying xref file to $dest_dir failed\n");
   } else {
-      $log->write("Copied xref file to $dest_dir\n");
+      $log->write_to("Copied xref file to $dest_dir\n");
   }
   $job_id = WormSlurm::submit_job_and_wait("cd $dest_dir && ln -sf $uni_file $uni_symlink");
   $exit_code = WormSlurm::get_exit_code($job_id);
   if ($exit_code) {
       $log->error("Creating symlink to xref file in $dest_dir failed\n");
   } else {
-      $log->write("Created symlink to  xref file in $dest_dir\n");
+      $log->write_to("Created symlink to  xref file in $dest_dir\n");
   }
 }
 
