@@ -122,7 +122,7 @@ sub submit_jobs_and_wait_for_all {
     for my $cmd (@$cmds) {
 	my $outfile = $outfile_prefix eq '/dev/null' ? $outfile_prefix : $outfile_prefix . '.' . $ix . '.out';
 	my $errfile = $outfile_prefix eq '/dev/null' ? $errfile_prefix : $errfile_prefix . '.' . $ix . '.err';
-	my $job_id = submit_job($cmd, $queue, $memory, $outfile, $errfile);
+	my $job_id = submit_job($cmd, $queue, $memory, $time, $outfile, $errfile);
 	$slurm_jobs{$job_id} = $cmd;
 	$ix++;
     }
