@@ -163,7 +163,7 @@ sub analyse {
 	      sleep(15);
 	      my $completed_job_ids = WormSlurm::get_completed_job_ids(keys %active_slurm_jobs);
 	      for my $completed_job_id (@$completed_job_ids) {
-		  my $exit_code = WormSlurm::get_exit_code($job_id);
+		  my $exit_code = WormSlurm::get_exit_code($completed_job_id);
 		  if ($exit_code != 0) {
 		      $log->write_to("Slurm job $completed_job_id (" . $active_slurm_jobs{$completed_job_id} . ") exited non zero: " . $exit_code . "\n");
 		      $uncompleted_jobs++;
