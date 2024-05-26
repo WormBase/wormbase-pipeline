@@ -114,7 +114,7 @@ sub pipeline_analyses {
 		gff_dir    => $self->o('gff_dir'),
             },
 	    -input_ids => [{}],
-            -rc_name    => 'highermem_5min',
+            -rc_name    => 'highermem_90min',
             -max_retry_count => 0,
             -flow_into  => {
                 '2->A' => [ 'map_variation' ],
