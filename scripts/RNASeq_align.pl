@@ -165,10 +165,10 @@ sub analyse {
 	      for my $completed_job_id (@$completed_job_ids) {
 		  my $exit_code = WormSlurm::get_exit_code($job_id);
 		  if ($exit_code != 0) {
-		      $log->write_to("Slurm job $job_id (" . $active_slurm_jobs{$job_id} . ") exited non zero: " . $exit_code . "\n");
+		      $log->write_to("Slurm job $completed_job_id (" . $active_slurm_jobs{$completed_job_id} . ") exited non zero: " . $exit_code . "\n");
 		      $uncompleted_jobs++;
 		  } else {
-		      $log->write_to("Slurm job $job_id (" . $active_slurm_jobs{$job_id} . ") completed successfully\n");
+		      $log->write_to("Slurm job $completed_job_id (" . $active_slurm_jobs{$completed_job_id} . ") completed successfully\n");
 		  }
 		  delete $active_slurm_jobs{$completed_job_id};
 	      }
@@ -209,15 +209,6 @@ sub analyse {
   # now check that all of the jobs ran successfully - we have had instances of jobs disappearing from the queue!
   sanity_check(@jobs_to_be_run);
 
-}
-
-sub wait_and_check {
-    my $slurm_jobs = @_;
-
-    	
-    }
-
-    return;
 }
 
 ####################################################################################
