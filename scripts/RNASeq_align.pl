@@ -116,60 +116,80 @@ sub analyse {
   my $uncompleted_jobs=0;
 
   my %slurm_jobs;
+  my %active_slurm_jobs;
   foreach my $experiment_accession (keys %{$data}) {
     
-    $count_done++;
+      $count_done++;
     
-    # only fire off a job when needed
-    if ($check && $RNASeq->check_all_done($experiment_accession, $notbuild)) {
-      print "($count_done of $total) Already finished $experiment_accession - not repeating this.\n";
-      next;    
-    }
-    push @jobs_to_be_run, $experiment_accession;
-    
-    # for elegans and briggsae, request 8 Gb memory as 'samtools sort' can take at least 4.5Gb and probably more sometimes
-    # for the others, ask for 6 Gb of memory
-    my $memory = "8g";
-    if ($species ne 'elegans' && $species ne 'briggsae') {
-      $memory = "6g";
-    }
-
-    my $time = '12:00:00';
-    $time = '2-00:00:00' if $check;
-    
-    my $job_name = "worm_".$wormbase->species."_RNASeq";
-    my $scratch_dir = $wormbase->logs;
-    my $err = "$scratch_dir/RNASeq_align.pl.lsf.${experiment_accession}.err";
-    my $out = "$scratch_dir/RNASeq_align.pl.lsf.${experiment_accession}.out";
-    my $cmd = "RNASeq_align_job.pl -expt $experiment_accession";
-    
-    if ($check) {$cmd .= " -check";}
-    if ($new_genome) {$cmd .= " -new_genome";}
-    if ($notbuild) {$cmd .= " -notbuild";}
-    if ($database) {$cmd .= " -database $database";}
-    if ($species) {$cmd .= " -species $species";}
-    if ($test) {$cmd .= " -test";}
-    if ($test_set) {$cmd .= " -test_set";}
-    $log->write_to("$cmd\n");
-    print "($count_done of $total) Running: $cmd\n";
-    if ($runlocally) {
-	$cmd .= " -threads 4";
-	$wormbase->run_script($cmd, $log);
-    } else {
-	$cmd = $wormbase->build_cmd($cmd);
-	my $job_id = WormSlurm::submit_job_with_name($cmd, 'production', $memory, $time, $out, $err, $job_name);
-	$slurm_jobs{$job_id} = $cmd;
-    }
-  
-  
-    if (!$runlocally && scalar keys %slurm_jobs == 30) {
-	sleep(60);
-	wait_and_check(\%slurm_jobs);
-	%slurm_jobs = ();
-    }
+      # only fire off a job when needed
+      if ($check && $RNASeq->check_all_done($experiment_accession, $notbuild)) {
+	  print "($count_done of $total) Already finished $experiment_accession - not repeating this.\n";
+	  next;    
+      }
+      push @jobs_to_be_run, $experiment_accession;
+      
+      # for elegans and briggsae, request 8 Gb memory as 'samtools sort' can take at least 4.5Gb and probably more sometimes
+      # for the others, ask for 6 Gb of memory
+      my $memory = "8g";
+      if ($species ne 'elegans' && $species ne 'briggsae') {
+	  $memory = "6g";
+      }
+      
+      my $time = '12:00:00';
+      $time = '2-00:00:00' if $check;
+      
+      my $job_name = "worm_".$wormbase->species."_RNASeq";
+      my $scratch_dir = $wormbase->logs;
+      my $err = "$scratch_dir/RNASeq_align.pl.lsf.${experiment_accession}.err";
+      my $out = "$scratch_dir/RNASeq_align.pl.lsf.${experiment_accession}.out";
+      my $cmd = "RNASeq_align_job.pl -expt $experiment_accession";
+      
+      if ($check) {$cmd .= " -check";}
+      if ($new_genome) {$cmd .= " -new_genome";}
+      if ($notbuild) {$cmd .= " -notbuild";}
+      if ($database) {$cmd .= " -database $database";}
+      if ($species) {$cmd .= " -species $species";}
+      if ($test) {$cmd .= " -test";}
+      if ($test_set) {$cmd .= " -test_set";}
+      $log->write_to("$cmd\n");
+      print "($count_done of $total) Running: $cmd\n";
+      if ($runlocally) {
+	  $cmd .= " -threads 4";
+	  $wormbase->run_script($cmd, $log);
+      } else {
+	  $cmd = $wormbase->build_cmd($cmd);
+	  
+	  while (scalar keys %active_slurm_jobs > 29) {
+	      sleep(15);
+	      my $completed_job_ids = WormSlurm::get_completed_job_ids(keys %active_slurm_jobs);
+	      for my $completed_job_id (@$completed_job_ids) {
+		  my $exit_code = WormSlurm::get_exit_code($job_id);
+		  if ($exit_code != 0) {
+		      $log->write_to("Slurm job $job_id (" . $active_slurm_jobs{$job_id} . ") exited non zero: " . $exit_code . "\n");
+		      $uncompleted_jobs++;
+		  } else {
+		      $log->write_to("Slurm job $job_id (" . $active_slurm_jobs{$job_id} . ") completed successfully\n");
+		  }
+		  delete $active_slurm_jobs{$completed_job_id};
+	      }
+	  }
+	  
+	  my $job_id = WormSlurm::submit_job_with_name($cmd, 'production', $memory, $time, $out, $err, $job_name);
+	  $active_slurm_jobs{$job_id} = $cmd;
+      }
   }
- 
-  wait_and_check(\%slurm_jobs) if scalar keys %slurm_jobs > 0;
+  if (!$runlocally && scalar keys %active_slurm_jobs > 0) {
+      WormSlurm::wait_for_jobs(keys %active_slurm_jobs);
+      for my $job_id (keys %active_slurm_jobs) {
+	  my $exit_code = WormSlurm::get_exit_code($job_id);
+	  if ($exit_code != 0) {
+	      $log->write_to("Slurm job $job_id (" . $active_slurm_jobs{$job_id} . ") exited non zero: " . $exit_code . "\n");
+	      $uncompleted_jobs++;
+	  } else {
+	      $log->write_to("Slurm job $job_id (" . $active_slurm_jobs{$job_id} . ") completed successfully\n");
+	  }
+      }
+  }
   
   if ($uncompleted_jobs > 0) {
   	$log->write_to("In total $uncompleted_jobs out of $count_done exited non zero: exited non zero: please run again with the -check parameter\n");
@@ -194,14 +214,7 @@ sub analyse {
 sub wait_and_check {
     my $slurm_jobs = @_;
 
-    WormSlurm::wait_for_jobs(keys %$slurm_jobs);
-    $log->write_to("This set of jobs have completed!\n");
-    for my $job_id (keys %$slurm_jobs) {
-	my $exit_code = WormSlurm::get_exit_code($job_id);
-	if ($exit_code != 0) {
-	    $log->write_to("Slurm job $job_id (" . $slurm_jobs->{$job_id} . ") exited non zero: " . $exit_code . "\n");
-	    $uncompleted_jobs++;
-	}
+    	
     }
 
     return;

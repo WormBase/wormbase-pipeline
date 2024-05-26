@@ -155,4 +155,15 @@ sub get_exit_code {
     return $exit_code;
 }
 
+sub get_completed_job_ids {
+    my @ids_to_check = @_;
+
+    my @completed_job_ids;
+    for my $job_id (@ids_to_check) {
+	push @completed_job_ids, @job_id unless job_is_running($job_id);
+    }
+
+    return \@completed_job_ids;
+}
+
 1;
