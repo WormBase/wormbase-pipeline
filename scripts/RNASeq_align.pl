@@ -109,9 +109,6 @@ sub analyse {
     $RNASeq->run_make_gtf_transcript($database);
   }
   
-  # create the LSF Group "/RNASeq/$species" which is now limited to running 30 jobs at a time
-  $status = system("bgadd -L 300 /RNASeq/$species"); 
-  
   
   my $total = keys %{$data};
   my $count_done = 0;
@@ -163,20 +160,16 @@ sub analyse {
 	my $job_id = WormSlurm::submit_job_with_name($cmd, 'production', $memory, $time, $out, $err, $job_name);
 	$slurm_jobs{$job_id} = $cmd;
     }
-  }
   
-  if (!$runlocally) {
-      sleep(60);
-      WormSlurm::wait_for_jobs(keys %slurm_jobs);
-      $log->write_to("This set of jobs have completed!\n");
-      for my $job_id (keys %slurm_jobs) {
-	  my $exit_code = WormSlurm::get_exit_code($job_id);
-	  if ($exit_code != 0) {
-	      $log->write_to("Slurm job $job_id (" . $slurm_jobs{$job_id} . ") exited non zero: " . $exit_code . "\n");
-	      $uncompleted_jobs++;
-	  }
-      }
+  
+    if (!$runlocally && scalar keys %slurm_jobs == 30) {
+	sleep(60);
+	wait_and_check(\%slurm_jobs);
+	%slurm_jobs = ();
+    }
   }
+ 
+  wait_and_check(\%slurm_jobs) if scalar keys %slurm_jobs > 0;
   
   if ($uncompleted_jobs > 0) {
   	$log->write_to("In total $uncompleted_jobs out of $count_done exited non zero: exited non zero: please run again with the -check parameter\n");
@@ -196,6 +189,22 @@ sub analyse {
   # now check that all of the jobs ran successfully - we have had instances of jobs disappearing from the queue!
   sanity_check(@jobs_to_be_run);
 
+}
+
+sub wait_and_check {
+    my $slurm_jobs = @_;
+
+    WormSlurm::wait_for_jobs(keys %$slurm_jobs);
+    $log->write_to("This set of jobs have completed!\n");
+    for my $job_id (keys %$slurm_jobs) {
+	my $exit_code = WormSlurm::get_exit_code($job_id);
+	if ($exit_code != 0) {
+	    $log->write_to("Slurm job $job_id (" . $slurm_jobs->{$job_id} . ") exited non zero: " . $exit_code . "\n");
+	    $uncompleted_jobs++;
+	}
+    }
+
+    return;
 }
 
 ####################################################################################
