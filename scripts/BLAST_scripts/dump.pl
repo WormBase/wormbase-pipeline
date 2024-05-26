@@ -64,7 +64,7 @@ print "All children have completed!\n";
 
 for my $job_id (keys %slurm_jobs){
     my $exit_code = WormSlurm::get_exit_code($job_id);
-  print "Slurm job $job_id (" . $slurm_jobs{$job_id} ") exited ". $exit_code ."\n" if ($exit_code != 0);
+    print "Slurm job $job_id (" . $slurm_jobs{$job_id} . ") exited " . $exit_code ."\n" if ($exit_code != 0);
 }
 
 exit(0);
