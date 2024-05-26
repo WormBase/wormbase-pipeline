@@ -160,7 +160,7 @@ sub get_completed_job_ids {
 
     my @completed_job_ids;
     for my $job_id (@ids_to_check) {
-	push @completed_job_ids, @job_id unless job_is_running($job_id);
+	push @completed_job_ids, $job_id unless job_is_running($job_id);
     }
 
     return \@completed_job_ids;
