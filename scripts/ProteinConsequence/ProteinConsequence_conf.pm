@@ -60,12 +60,12 @@ sub default_options {
         # configuration for the various resource options used in the pipeline
         
 	default_1min_slurm_options    => ' --partition=production --time=0:01:00 --mem=2000m',
-	default_5min_slurm_options    => ' --partition=production --time=0:05:00 --mem=2000m',
-	highmem_5min_slurm_options    => ' --partition=production --time=0:05:00 --mem=5000m',
+	default_15min_slurm_options    => ' --partition=production --time=0:15:00 --mem=2000m',
+	highmem_15min_slurm_options    => ' --partition=production --time=0:15:00 --mem=5000m',
 	highmem_90min_slurm_options   => ' --partition=production --time=1:30:00 --mem=5000m',
-	highermem_5min_slurm_options  => ' --partition=production --time=0:05:00 --mem=8000m',
+	highermem_15min_slurm_options  => ' --partition=production --time=0:15:00 --mem=8000m',
 	highermem_90min_slurm_options => ' --partition=production --time=1:30:00 --mem=8000m',
-	supermem_5min_slurm_options   => ' --partition=production --time=0:05:00 --mem=16000m',
+	supermem_15min_slurm_options   => ' --partition=production --time=0:15:00 --mem=16000m',
 	supermem_90min_slurm_options  => ' --partition=production --time=1:30:00 --mem=16000m',
 
 	# batch size
@@ -82,12 +82,12 @@ sub resource_classes {
     my ($self) = @_;
     return {
 	'default_1min'    => { 'SLURM' => $self->o('default_1min_slurm_options')  },
-	'default_5min'    => { 'SLURM' => $self->o('default_5min_slurm_options')  },
-	'highmem_5min'    => { 'SLURM' => $self->o('highmem_5min_slurm_options')  },
+	'default_15min'    => { 'SLURM' => $self->o('default_15min_slurm_options')  },
+	'highmem_15min'    => { 'SLURM' => $self->o('highmem_15min_slurm_options')  },
 	'highmem_90min'   => { 'SLURM' => $self->o('highmem_90min_slurm_options')  },
-	'highermem_5min'  => { 'SLURM' => $self->o('highermem_5min_slurm_options')  },
+	'highermem_15min'  => { 'SLURM' => $self->o('highermem_15min_slurm_options')  },
 	'highermem_90min' => { 'SLURM' => $self->o('highermem_90min_slurm_options')  },
-	'supermem_5min'   => { 'SLURM' => $self->o('supermem_5min_slurm_options')  },
+	'supermem_15min'   => { 'SLURM' => $self->o('supermem_15min_slurm_options')  },
 	'supermem_90min'  => { 'SLURM' => $self->o('supermem_90min_slurm_options')  },
     };
 }
@@ -171,7 +171,7 @@ sub pipeline_analyses {
             -max_retry_count => 1,
             -analysis_capacity  => $self->o('standard_max_workers'),
 	    -hive_capacity      => $self->o('hive_max_workers'),
-	    -rc_name        => 'default_5min',
+	    -rc_name        => 'default_15min',
             -flow_into      => {
 		2 => ['create_ace'],
 		4 => ['run_partial_vep'],
@@ -190,7 +190,7 @@ sub pipeline_analyses {
 	    -max_retry_count => 0,
 	    -analysis_capacity => $self->o('highmem_max_workers'),
 	    -hive_capacity      => $self->o('hive_max_workers'),
-	    -rc_name => 'highmem_5min',
+	    -rc_name => 'highmem_15min',
 	    -flow_into => {
 		2 => ['create_ace'],
 		4 => ['run_partial_vep_supermem'],
@@ -209,7 +209,7 @@ sub pipeline_analyses {
 	    -max_retry_count => 3,
 	    -analysis_capacity => $self->o('highmem_max_workers'),
 	    -hive_capacity     => $self->o('hive_max_workers'),
-	    -rc_name => 'supermem_5min',
+	    -rc_name => 'supermem_15min',
 	    -flow_into => {
 		2 => ['create_ace'],
 	    }
@@ -226,7 +226,7 @@ sub pipeline_analyses {
 	    -max_retry_count => 1,
 	    -analysis_capacity => $self->o('standard_max_workers'),
 	    -hive_capacity     => $self->o('hive_max_workers'),
-	    -rc_name => 'highmem_5min',
+	    -rc_name => 'highmem_15min',
 	},
 
 	{   -logic_name    => 'collate_data',
