@@ -63,6 +63,7 @@ sub default_options {
 	default_5min_slurm_options    => ' --partition=production --time=0:05:00 --mem=2000m',
 	highmem_5min_slurm_options    => ' --partition=production --time=0:05:00 --mem=5000m',
 	highmem_90min_slurm_options   => ' --partition=production --time=1:30:00 --mem=5000m',
+	highermem_5min_slurm_options  => ' --partition=production --time=0:05:00 --mem=8000m',
 	highermem_90min_slurm_options => ' --partition=production --time=1:30:00 --mem=8000m',
 	supermem_5min_slurm_options   => ' --partition=production --time=0:05:00 --mem=16000m',
 	supermem_90min_slurm_options  => ' --partition=production --time=1:30:00 --mem=16000m',
