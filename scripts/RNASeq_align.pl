@@ -123,7 +123,7 @@ sub analyse {
     
       # only fire off a job when needed
       if ($check && $RNASeq->check_all_done($experiment_accession, $notbuild)) {
-	  print "($count_done of $total) Already finished $experiment_accession - not repeating this.\n";
+	  print Wormbase::rundate() . ' ' . Wormbase::runtime() . " ($count_done of $total) Already finished $experiment_accession - not repeating this.\n";
 	  next;    
       }
       push @jobs_to_be_run, $experiment_accession;
@@ -152,7 +152,7 @@ sub analyse {
       if ($test) {$cmd .= " -test";}
       if ($test_set) {$cmd .= " -test_set";}
       $log->write_to("$cmd\n");
-      print "($count_done of $total) Running: $cmd\n";
+      print Wormbase::rundate() . ' ' . Wormbase::runtime() . " ($count_done of $total) Running: $cmd\n";
       if ($runlocally) {
 	  $cmd .= " -threads 4";
 	  $wormbase->run_script($cmd, $log);
