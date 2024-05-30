@@ -277,7 +277,7 @@ if($wormpep){
 $ace->close if(defined $ace);
 
 $log->mail;
-exit;
+exit(0);
 
 
 

@@ -156,7 +156,7 @@ $wormbase->load_to_database( "$database", "$acefile", "WBGene_span", $log )
     unless $no_load;
 
 unless ($no_dump) {
-  $wormbase->run_script("dump_gff_batch.pl -time 00:30:00 -database ". $wormbase->autoace
+  $wormbase->run_script("dump_gff_batch.pl -jobtime 00:30:00 -database ". $wormbase->autoace
 			. " -methods gene -dump_dir ". $wormbase->gff_splits,$log
 		       ) unless $no_dump;
 }

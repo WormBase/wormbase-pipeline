@@ -10,7 +10,7 @@ use Modules::WormSlurm;
 
 my ($debug, $test, $database,$species, $verbose, $store );
 my ($giface, $giface_server, $giface_client, $port);
-my ($gff3, $gff, $dump_dir, $rerun_if_failed, $methods, $chrom_choice, $mem, $time);
+my ($gff3, $gff, $dump_dir, $rerun_if_failed, $methods, $chrom_choice, $job_mem, $job_time);
 
 my $dumpGFFscript = "GFF_method_dump.pl";
 
@@ -31,8 +31,8 @@ GetOptions (
     "rerunfail"      => \$rerun_if_failed,
     "species:s"      => \$species,
     "port:s"         => \$port,
-    "mem:s"          => \$mem,
-    "time:s"         => \$time,
+    "jobmem:s"       => \$job_mem,
+    "jobtime:s"      => \$job_time,
     );
 my $wormbase;
 if( $store ) {
@@ -105,21 +105,21 @@ my $cmd_file_root = "${cmd_dir}/dump_gff_batch_$$";
 my $cmd_base = "$dumpGFFscript -database $database -species $species -dump_dir $dump_dir";
 my $cmd_number = 0;
 my $this_mem;
-if (defined $mem){
-    unless ($mem =~ /^\d+[m|g|M|G]$/) {
-	$log->log_and_die("Expecting memory parameter in format /^\d+[m|g|M|G]$/\n");
+if (defined $job_mem){
+    unless ($job_mem =~ /^\d+[m|g|M|G]$/) {
+	$log->log_and_die("Expecting job memory parameter in format /^\d+[m|g|M|G]$/\n");
     }
-    $this_mem = $mem;
+    $this_mem = $job_mem;
 } else {
     $this_mem = '4500m';
 }
 
 
-unless (defined $time) {
-    $time = '1:00:00';
+unless (defined $job_time) {
+    $job_time = '1:00:00';
 }
-unless ($time =~ /^(\d+\-[0-2]\d:[0-5]\d:[0-5]\d|[0-2]?\d:[0-5]\d:[0-5]\d)$/) {
-    $log->log_and_die("Expecting time parameter in format D-HH:MM:SS\n");
+unless ($job_time =~ /^(\d+\-[0-2]\d:[0-5]\d:[0-5]\d|[0-2]?\d:[0-5]\d:[0-5]\d)$/) {
+    $log->log_and_die("Expecting job time parameter in format D-HH:MM:SS\n");
 }
 
 my %submitted_jobs;
@@ -150,7 +150,7 @@ foreach my $chrom (@individual_chrs) {
       close ($cmd_fh);
       chmod 0777, $cmd_file;
 
-      my $job_id = WormSlurm::submit_job_with_name($cmd_file, 'production', $this_mem, $time, $slurm_out, $slurm_err, $job_name);
+      my $job_id = WormSlurm::submit_job_with_name($cmd_file, 'production', $this_mem, $job_time, $slurm_out, $slurm_err, $job_name);
       $submitted_jobs{$job_id} = $cmd_file;
     }
   } else {
@@ -176,7 +176,7 @@ foreach my $chrom (@individual_chrs) {
     close ($cmd_fh);
     chmod 0777, $cmd_file;
 
-    my $job_id = WormSlurm::submit_job_with_name($cmd_file, 'production', $this_mem, $time, $slurm_out, $slurm_err, $job_name);
+    my $job_id = WormSlurm::submit_job_with_name($cmd_file, 'production', $this_mem, $job_time, $slurm_out, $slurm_err, $job_name);
     $submitted_jobs{$job_id} = $cmd_file;
   }
 }
@@ -190,7 +190,7 @@ if (@batch_chrs) {
   }
   close($batch_fh);
   my $this_mem;
-  if (defined $mem){$this_mem = $mem} else {$this_mem = '100m'}
+  if (defined $job_mem){$this_mem = $job_mem} else {$this_mem = '100m'}
 
   my $common_additional_params = "-host $host -port $port -gifaceclient $giface_client -list $seq_list_file";
   
@@ -219,7 +219,7 @@ if (@batch_chrs) {
       close($cmd_fh);
       chmod 0777, $cmd_file;
 
-      my $job_id = WormSlurm::submit_job_with_name($cmd_file, 'production', $this_mem, $time, $slurm_out, $slurm_err, $job_name);
+      my $job_id = WormSlurm::submit_job_with_name($cmd_file, 'production', $this_mem, $job_time, $slurm_out, $slurm_err, $job_name);
       $submitted_jobs{$job_id} = $cmd_file;
     }
   }
@@ -247,7 +247,7 @@ if (@batch_chrs) {
     close ($cmd);
     chmod 0777, $cmd_file;
 
-    my $job_id = WormSlurm::submit_job_with_name($cmd_file, 'production', $this_mem, $time, $slurm_out, $slurm_err, $job_name);
+    my $job_id = WormSlurm::submit_job_with_name($cmd_file, 'production', $this_mem, $job_time, $slurm_out, $slurm_err, $job_name);
     $submitted_jobs{$job_id} = $cmd_file;
   }
 }
@@ -279,7 +279,7 @@ if (@problem_cmds and scalar(@problem_cmds) < 120 and $rerun_if_failed) {
   my $job_name = "worm_".$wormbase->species."_gffbatch";
 
   my $this_mem;
-  if (defined $mem){$this_mem = $mem} else {$this_mem = '4500m'}
+  if (defined $job_mem){$this_mem = $job_mem} else {$this_mem = '4500m'}
   
   my $rerun_count = 0;
   my @new_problem_cmds;
@@ -290,7 +290,7 @@ if (@problem_cmds and scalar(@problem_cmds) < 120 and $rerun_if_failed) {
       my $slurm_err = sprintf("%s/wormpubGFFdump.rerun.slurmerr", $scratch_dir, ++$rerun_count);
       my $job_name = sprintf("worm_gff.%s.rerun_", $species, $rerun_count);
       
-      my $job_id = WormSlurm::submit_job_with_name($cmd_file, 'production', $this_mem, $time, $slurm_out, $slurm_err, $job_name);
+      my $job_id = WormSlurm::submit_job_with_name($cmd_file, 'production', $this_mem, $job_time, $slurm_out, $slurm_err, $job_name);
       $resubmitted_jobs{$job_id} = $cmd_file;
   }
   WormSlurm::wait_for_jobs(keys %resubmitted_jobs);
