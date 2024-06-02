@@ -33,7 +33,7 @@ use Modules::WormSlurm;
 
 my $script = "ignore_bad_blat_alignments.pl";
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $database, $species, @chromosomes, $load, $mem, $chunk_total, $chunk_id, $output, $ovlp, $time);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $database, $species, @chromosomes, $load, $job_mem, $chunk_total, $chunk_id, $output, $ovlp, $job_time);
 
 
 GetOptions ("help"       => \$help,
@@ -45,8 +45,8 @@ GetOptions ("help"       => \$help,
             "species:s"  => \$species,
 	    "chromosome:s" => \@chromosomes, # specify a single chromosome with prefix ('CHROMOSOME_II') for debugging purposes
 	    "load"       => \$load, # specify that the resulting ace file should be loaded into the database
-	    "mem:s"      => \$mem,
-	    "time:s"     => \$time,
+	    "jobmem:s"      => \$job_mem,
+	    "jobtime:s"     => \$job_time,
 	    "chunktotal:s" => \$chunk_total,
 	    "chunkid:s"  => \$chunk_id,
 	    "output:s"   => \$output, # output ace file	    
@@ -64,19 +64,19 @@ if ( $store ) {
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
-unless (defined $mem) {
-    $mem = '3500m';
+unless (defined $job_mem) {
+    $job_mem = '3500m';
 }
-if ($mem =~ /^\d+$/) {
-      $mem .= 'm';
+if ($job_mem =~ /^\d+$/) {
+      $job_mem .= 'm';
 } else {
-      $log->log_and_die('Expecting memory expression to match regex /^\d+[m|g|M|G]$/' . "\n") unless $mem =~ /^\d+[m|g|M|G]$/;
+      $log->log_and_die('Expecting memory expression to match regex /^\d+[m|g|M|G]$/' . "\n") unless $job_mem =~ /^\d+[m|g|M|G]$/;
 }
 
-unless (defined $time) {
-      $time = '1:00:00';
+unless (defined $job_time) {
+      $job_time = '1:00:00';
 }
-unless ($time =~ /^(\d+\-[0-2]\d:[0-5]\d:[0-5]\d|[0-2]?\d:[0-5]\d:[0-5]\d)$/) {
+unless ($job_time =~ /^(\d+\-[0-2]\d:[0-5]\d:[0-5]\d|[0-2]?\d:[0-5]\d:[0-5]\d)$/) {
       $log->log_and_die("Expecting time parameter in format D-HH:MM:SS\n");
 }
 
@@ -309,7 +309,7 @@ if (@chromosomes || defined $chunk_id) {
 	print "$cmd\n";
 	$cmd = $wormbase->build_cmd($cmd);
 
-	my $job_id = WormSlurm::submit_job_with_name($cmd, 'production', $mem, $time, '/dev/null', $err, $job_name);
+	my $job_id = WormSlurm::submit_job_with_name($cmd, 'production', $job_mem, $job_time, '/dev/null', $err, $job_name);
 	$slurm_jobs{$job_id} = $cmd;
     }
     
