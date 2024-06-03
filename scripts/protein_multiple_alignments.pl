@@ -167,7 +167,7 @@ if ($run_clustal) {
     if (WormSlurm::get_exit_code($job_id) == 0) {
 	unlink $job_out;   
     } else {    
-	$log->error("$job exited non zero: check $job_out and re-run '$job_cmd' before dumping\n");
+	$log->error("Slurm job $job_id exited non zero: check $job_out and re-run '$job_cmd' before dumping\n");
 	$run_jobs_failed++;
     }
   }
