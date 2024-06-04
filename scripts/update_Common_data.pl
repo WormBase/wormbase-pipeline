@@ -762,7 +762,7 @@ sub write_clones2seq  {
       my $cmd = "update_Common_data.pl -clone2seq $this_species";
       $cmd = $wormbase->build_cmd_line($cmd, $store_file);
       $log->write_to("Submitting Slurm job: $cmd\n");
-      my $job_id = WormSlurm::submit_job_with_name($cmd, 'production', '3500m', '00:30:00', $err, $out, $job_name);
+      my $job_id = WormSlurm::submit_job_with_name($cmd, 'production', '3500m', '00:40:00', $err, $out, $job_name);
       $slurm_jobs{$job_id} = $cmd;
     }
 
