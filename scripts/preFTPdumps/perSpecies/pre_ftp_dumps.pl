@@ -89,7 +89,7 @@ foreach my $wb ($wormbase, values %core_species ) {
     my $outfile = "$report_dir/${spe}.${output}";
     &clean_previous_output($outfile);
 
-    my $cmd = $wb->build_cmd("preFTPdump/perSpecies/$script -outfile $outfile $options");
+    my $cmd = $wb->build_cmd("preFTPdumps/perSpecies/$script -outfile $outfile $options");
     my $job_id = WormSlurm::submit_job_with_name($cmd, 'production', $mem, '4:00:00', "${slurm_out}/${script}.${spe}.slurmout", "${slurm_out}/${script}.${spe}.slurmerr", "perSpeciesDumps_${spe}");
     $slurm_jobs{$job_id} = $cmd;
     push @{$files_to_check{$script}}, $outfile;
