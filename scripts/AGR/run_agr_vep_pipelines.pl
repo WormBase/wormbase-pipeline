@@ -780,7 +780,7 @@ sub sort_vcf_files {
     
     for my $datatype ('VCF', 'HTVCF') { # not required for phenotypic variants VCF as JSON conversion script sorts output
 	next unless -e "${mod}_${datatype}.vcf";
-	run_slurm_job("vcf-sort ${mod}_${datatype}.vcf", "Sorting $mod $datatype file", $log, '00:10:00', 4, "${mod}_${datatype}.sorted.vcf", '/dev/null');
+	run_slurm_job("vcf-sort ${mod}_${datatype}.vcf", "Sorting $mod $datatype file", $log, '01:00:00', 4, "${mod}_${datatype}.sorted.vcf", '/dev/null');
 	run_system_cmd("mv ${mod}_${datatype}.sorted.vcf ${mod}_${datatype}.vcf",
 		       "Replacing unsorted $mod $datatype file with sorted version", $log);
     }
