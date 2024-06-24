@@ -352,7 +352,7 @@ sub process_gene_class{
     print LOG "ERROR: The highest gene id ($last_gene_id) is not equal to total number of Gene objects (", $gene_count, ")";
   }
 
-  print "Completed hecking Gene class for errors\n";
+  print "Completed checking Gene class for errors\n";
   
 }
 
