@@ -141,7 +141,6 @@ foreach $class (@classes){
   else {print LOG "\nNo valid class has been specified CLASS:$class\n";}
 }
 
-
 #######################################
 # Tidy up and mail relevant log files #
 #######################################
@@ -150,14 +149,13 @@ $db->close;
 print LOG "\nEnded at ",`date`,"\n";
 close(LOG)
 or warn $! ? "Error closing log: $!"
-                   : "Exit status $? log close";
+    : "Exit status $? log close";
 print "Exit status $? log close\n\n" if ($debug);
 
 
 close(ACE) if ($ace);
 # email everyone specified by $maintainers
 $wb->mail_maintainer('geneace_check:',$maintainers,$log);
-
 exit(0);
 #--------------------------------------------------------------------------------------------------------------------
 
@@ -327,45 +325,66 @@ sub process_gene_class{
     print LOG "ERROR: $gene has Split_from tag but no Live tag\n" unless ($gene eq "WBGene00195119");
   }
 
-
-
-  # get all genes
-  my @gene_ids = $db->fetch(-class => 'Gene',
-	                    -name  => 'WBGene*');
-
+  my $it = $db->fetch_many(Gene => 'WBGene*');
+  my $gene_count = 0;
+  my $last_gene_id;
   # now loop through looking for specific errors that might be in any Gene object
-  foreach my $gene_id (@gene_ids){
-    # useful to see where you are in the script if running on command line
-
-    my $species = $gene_id->Species;
-    if ($verbose) {
-      print "$gene_id:";
-      if($species eq 'Caenorhabditis elegans' and exists $Gene_info{$gene_id}{'Public_name'}) {
-        print $Gene_info{$gene_id}{'Public_name'};
+  while (my $gene_id = $it->next) {
+      # useful to see where you are in the script if running on command line
+      $gene_count++;
+      $last_gene_id = $gene_id->name;
+      my $species = $gene_id->Species;
+      if ($verbose) {
+	  print "$gene_id:";
+	  if($species eq 'Caenorhabditis elegans' and exists $Gene_info{$gene_id}{'Public_name'}) {
+	      print $Gene_info{$gene_id}{'Public_name'};
+	  }
+	  print "\n";
       }
-      print "\n";
-    }
-    &test_locus_for_errors($gene_id);
+      
   }
-
   
   # check highest gene id number = gene obj. number
-  my $last_gene_id = $gene_ids[-1];
   $last_gene_id =~ s/WBGene(0)+//;
-  
-  if ( scalar @gene_ids != $last_gene_id ){
-    print LOG "ERROR: The highest gene id ($last_gene_id) is not equal to total number of Gene objects (", scalar @gene_ids, ")";
+
+  # print scalar @gene_ids . " GENES\n";
+  if ( $gene_count != $last_gene_id ){
+    print LOG "ERROR: The highest gene id ($last_gene_id) is not equal to total number of Gene objects (", $gene_count, ")";
   }
 
+  print "Completed hecking Gene class for errors\n";
+  
 }
 
 
 sub test_locus_for_errors{
   my $gene_id = shift;
+
   if ($debug) {print "$gene_id\n";}
   my $warnings;
 
-
+  #Look for Genes with Live tag and no Positive_clone info but which can be derived from its sequence info
+  if ($gene_id->Sequence_name && !$gene_id->Positive_clone) {
+      # don't need to do this for C. briggsae genes
+      my $species = $gene_id->Species;
+      if ($species eq 'Caenorhabditis elegans'){
+	  my $seq = $gene_id->Sequence_name;
+	  
+	  # don't need to do this for Dead genes.
+	  my $identity = $gene_id->Status;
+	  if ($identity eq 'Live'){
+	      my $seq = $gene_id->Sequence_name;
+	      
+	      # need to chop off the ending to just get clone part
+	      $seq =~ s/\..*//;
+	      $warnings .= "ERROR(a): $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no Positive_clone but info is available from Sequence_name $seq\n";
+	      
+	      # must use Inferred_automatically from Evidence hash for this type of info
+	      print ACE "\n\nGene : \"$gene_id\"\nPositive_clone \"$seq\" Inferred_automatically \"From sequence, transcript, pseudogene data\"\n" if ($ace);
+	  }
+      }
+  }
+  
   # check the number of version and Version_change of a Gene is identical
   if ( defined $gene_id->Version && defined $gene_id->Version_change ){
     my @ver_changes = $gene_id->Version_change;
@@ -375,8 +394,6 @@ sub test_locus_for_errors{
       $warnings .= "ERROR: $gene_id ($dname) has Version problem: current ($ver) => history ($ver_changes[-1])\n";
     }
   }
-
-
 
   # test for Public_name is different from CGC_name
   if ( defined $gene_id->CGC_name && defined $gene_id->Public_name ){				
@@ -412,7 +429,7 @@ sub test_locus_for_errors{
   }
 
   if( !defined $gene_id->Public_name && !defined $gene_id->CGC_name && !defined $gene_id->Sequence_name && !defined $gene_id->Other_name ){
-      $warnings .= "WARNING: $gene_id has no name information please check it was merged into a cgc_named gene (266 known issues)\n" unless  (($gene_id->Remark =~ /[MERGED INTO UNCLONED GENE]/) || ($gene_id->Merged_into));
+      $warnings .= "WARNING: $gene_id has no name information please check it was merged into a cgc_named gene (266 known issues)\n" unless  (($gene_id->Remark && $gene_id->Remark =~ /[MERGED INTO UNCLONED GENE]/) || ($gene_id->Merged_into));
   }
 
   # test for discrepancy betw. CGC_name and Gene_class name, ie, for aap-1, the gene_class should be aap
@@ -444,42 +461,17 @@ sub test_locus_for_errors{
     }
   }
 
-  # Look for Genes with Live tag and no Positive_clone info but which can be derived from its sequence info
-  if( !defined $gene_id->Positive_clone(1) && defined $gene_id->Sequence_name){
-    # don't need to do this for C. briggsae genes
-    my $species = $gene_id->Species;
-    if ($species eq 'Caenorhabditis elegans'){
-      my $seq = $gene_id->Sequence_name;
-      
-      # don't need to do this for Dead genes.
-      my $identity = $gene_id->Status;
-      if ($identity eq 'Live'){
-	my $seq = $gene_id->Sequence_name;
-	
-	# need to chop off the ending to just get clone part
-	$seq =~ s/\..*//;
-	$warnings .= "ERROR(a): $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no Positive_clone but info is available from Sequence_name $seq\n";
-	
-	# must use Inferred_automatically from Evidence hash for this type of info
-	print ACE "\n\nGene : \"$gene_id\"\nPositive_clone \"$seq\" Inferred_automatically \"From sequence, transcript, pseudogene data\"\n" if ($ace);
-      }
-    }
-  }
-
-
-
   # Look for genes with Live tag but also with Merged_into or Killed tags
   if ( defined $gene_id->at('Identity.Live')){
-
-    my @merge =  $gene_id->Merged_into;
-    if (@merge){
-      $warnings .= "ERROR(a): $gene_id ($Gene_info{$gene_id}{'Public_name'}) has 'Live' tag but also has been merged into $merge[-1] ($Gene_info{$merge[-1]}{'Public_name'}) => Lose Live\n";
-      if ($ace){
-	print ACE "\nGene : \"$gene_id\"\n";
-	print ACE "-D Live\n";
+      my @merge =  $gene_id->Merged_into;
+      if (@merge){
+	  $warnings .= "ERROR(a): $gene_id ($Gene_info{$gene_id}{'Public_name'}) has 'Live' tag but also has been merged into $merge[-1] ($Gene_info{$merge[-1]}{'Public_name'}) => Lose Live\n";
+	  if ($ace){
+	      print ACE "\nGene : \"$gene_id\"\n";
+	      print ACE "-D Live\n";
+	  }
       }
-    }
-  }
+   }
     
   if ( $gene_id->Version_change ){
     my $tag = &get_event($gene_id);
@@ -497,7 +489,7 @@ sub test_locus_for_errors{
     }
   }
   
-
+  
   # checks that a Gene has identical CGC_name and Other_name
   if ( defined $gene_id->CGC_name && defined $gene_id->Other_name ){
     my @other_names =  $gene_id->Other_name;
@@ -509,6 +501,7 @@ sub test_locus_for_errors{
   }
 
   print LOG "$warnings" if(defined($warnings));
+  
 }
 
 
@@ -920,7 +913,7 @@ sub process_allele_class{
       print if ($debug);
       chomp;
       if ($_ =~ /^\"(.+)\"\s+\"(.+)\"/) {
-	  %allele2lab->{$2}=$1;	# $2 is allele_designation $1 is lab designation	
+	  $allele2lab{$2}=$1;	# $2 is allele_designation $1 is lab designation	
       }
   }
 
