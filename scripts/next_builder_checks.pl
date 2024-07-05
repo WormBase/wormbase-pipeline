@@ -222,7 +222,42 @@ if ($seq) {
     }
 
     #check composition is same as start of build
-    $wormbase->run_command("ls ".$wormbase->orgdb."/CHROMOSOMES/*.dna | grep -v masked | xargs composition > /tmp/comp", $log);
+    my @chroms = $wormbase->get_chromosome_names(-prefix => 1, -mito => 1);
+
+    my $total;
+    my $ns;
+    my $gaps;
+    my $as;
+    my $cs;
+    my $gs;
+    my $ts;
+
+    foreach my $chr (@chroms) {
+
+	my $chr_file = $wormbase->orgdb . "/CHROMOSOMES/${chr}.dna";
+
+	my $seq = &read_chromosome($file);
+
+	my ($a, $c, $g, $t, $gap, $n, $length_dna) = &get_composition($seq);
+	$as += $a;
+	$cs += $c;
+	$gs += $g;
+	$ts += $t;
+	$total += $length_dna;
+	$ns += $n;
+	$gaps += $gap;
+    }
+
+    open(TMP, ">/tmp/comp") or $log->log_and_die("Couldn't open /tmp/comp\n");
+    print TMP " $total total\n";
+    print TMP " a $as\n";
+    print TMP " c $cs\n";
+    print TMP " g $gs\n";
+    print TMP " t $ts\n";
+    print TMP " - $gaps\n";
+    print TMP " n $ns\n";
+    close(TMP);
+
     if(compare($file,"/tmp/comp") == 0) { 
 	$log->write_to("composition same as start of build\n\n");
     }else {
@@ -540,6 +575,43 @@ sub get_tace {
 
 ##################################################################
 
+
+sub read_chromosome {
+  my ($chr_file) = @_;
+
+  my $seq = "";
+  open (my $fh, $chr_file) 
+      or $log->log_and_die("Can't open the dna file $chr_file : $!\n");
+  while(<$fh>) {
+    /^\>/ and next;
+    /^(\S+)$/ and $seq .= $1;
+  }
+
+  return $seq
+}
+
+sub get_composition {
+  my ($dna) = @_;
+
+  my ($a, $c, $g, $t, $gap, $n, $length_dna);
+
+  $a = $dna =~ tr/[aA]/A/;
+  $c = $dna =~ tr/[cC]/C/;
+  $g = $dna =~ tr/[gG]/G/;
+  $t = $dna =~ tr/[tT]/T/;
+  $gap = $dna =~ tr/\-/-/;
+
+  # the Ns are whatever is not ACGT-
+  $length_dna = $n = length $dna;
+  $n -= $a;
+  $n -= $c;
+  $n -= $g;
+  $n -= $t;
+  $n -= $gap;
+
+  return ($a, $c, $g, $t, $gap, $n, $length_dna);
+
+}
 
 __END__
 
