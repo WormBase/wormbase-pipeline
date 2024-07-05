@@ -155,7 +155,7 @@ $release_letter = "$reports_dir/letter.WS$ver" if not defined $release_letter;
 
 open (my $rlfh ,">$release_letter");
 printf $rlfh "New release of WormBase WS$ver\n\n";
-printf $rlfh "WS$ver was built by [INSERT NAME HERE]\n\n";
+printf $rlfh "WS$ver was built by the WormBase Team located in EBI (UK), Caltech (US), OICR (Canada) and International Worm Research Community.\n\n";
 printf $rlfh "-==============================================================================-\n";
 printf $rlfh "-========= FTP site structure =================================================-\n";
 printf $rlfh "-==============================================================================-\n";
@@ -313,17 +313,17 @@ print  $rlfh "http://wiki.wormbase.org/index.php/WS${ver}_Models.wrm\n\n";
 printf $rlfh "For more information mail help\@wormbase.org\n\n";
 
 # Installation guide
-printf $rlfh "-==============================================================================-\n";
-printf $rlfh "-=========== Installation guide ===============================================-\n";
-printf $rlfh "-==============================================================================-\n";
-printf $rlfh "\n\n";
-printf $rlfh "Quick installation guide for UNIX/Linux systems\n";
-printf $rlfh "-----------------------------------------------\n\n";
-printf $rlfh "1. Create a new directory to contain your copy of WormBase,\n\te.g. /users/yourname/wormbase\n\n";
-printf $rlfh "2. Unpack and untar all of the database.*.tar.gz files into\n\tthis directory. You will need approximately 50-60 Gb of disk space.\n\n";
-printf $rlfh "3. Obtain and install a suitable acedb binary for your system\n\n\n";
-printf $rlfh "4. Use the acedb 'xace' program to open your database, e.g.\n\ttype 'xace /users/yourname/wormbase' at the command prompt.\n\n";
-printf $rlfh "5. See the acedb website for more information about acedb and\n\tusing xace.\n\n";
+#printf $rlfh "-==============================================================================-\n";
+#printf $rlfh "-=========== Installation guide ===============================================-\n";
+#printf $rlfh "-==============================================================================-\n";
+#printf $rlfh "\n\n";
+#printf $rlfh "Quick installation guide for UNIX/Linux systems\n";
+#printf $rlfh "-----------------------------------------------\n\n";
+#printf $rlfh "1. Create a new directory to contain your copy of WormBase,\n\te.g. /users/yourname/wormbase\n\n";
+#printf $rlfh "2. Unpack and untar all of the database.*.tar.gz files into\n\tthis directory. You will need approximately 50-60 Gb of disk space.\n\n";
+#printf $rlfh "3. Obtain and install a suitable acedb binary for your system\n\n\n";
+#printf $rlfh "4. Use the acedb 'xace' program to open your database, e.g.\n\ttype 'xace /users/yourname/wormbase' at the command prompt.\n\n";
+#printf $rlfh "5. See the acedb website for more information about acedb and\n\tusing xace.\n\n";
 
 printf $rlfh "____________  END _____________\n";
 close($rlfh);
