@@ -155,7 +155,8 @@ sub write_to {
     return if $self->{'end'};
     my $string = shift;
     my $fh     = $self->{"FH"};
-    print $fh "$string";
+    chomp $string;
+    print $fh Wormbase::rundate() . ' ' . Wormbase::runtime() . " ${string}\n";
     print STDERR "$string" if $self->{'DEBUG'};    # write log to terminal if debug mode
 }
 

@@ -20,8 +20,6 @@ use Coords_converter;
 use Modules::Remap_Sequence_Change;
 use Log_files;
 use Storable;
-use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
-use LSF::JobManager;
 use Wormtest;
 
 my ( $debug, $test, $database, $species);
@@ -31,7 +29,7 @@ my ( $prep_blat, $run_blat,     $finish_blat );
 my ( $gff_dump,     $processGFF, $gff_split );
 my $gene_span;
 my ( $load, $big_load, $tsuser );
-my ($map_features, $remap_misc_dynamic, $map, $map_alleles, $transcripts, $cdna_files, $misc_data_sets, $homol_data_sets, $nem_contigs);
+my ($map_features, $remap_misc_dynamic, $map, $transcripts, $cdna_files, $misc_data_sets, $homol_data_sets, $nem_contigs);
 my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $treefam, $ncbi_xrefs, $load_interpro, $RRID, $omim);
 my ( $utr, $agp, $gff_munge, $gff3_munge, $extras , $ontologies, $interpolate, $check, $enaseqxrefs, $enagenexrefs, $enaprotxrefs, $xrefs);
 my ( $data_check, $buildrelease, $public,$finish_build, $gffdb, $autoace, $user, $kegg, $prepare_gff_munge, $post_merge, $gtf, $noupload);
@@ -68,7 +66,6 @@ GetOptions(
 	   'map'            => \$map,
 	   'remap_misc_dynamic' => \$remap_misc_dynamic,
 	   'map_features'   => \$map_features,
-           'map_alleles'    => \$map_alleles,
 	   'transcripts'    => \$transcripts,
 	   'cdnafiles'      => \$cdna_files,
 	   'nem_contig'     => \$nem_contigs,
@@ -147,9 +144,13 @@ $wormbase->run_script( 'make_autoace.pl',                   $log ) if $build and
 
 if ($build_check and $errors == 0) {
   # Check for missing curation by checking for Live genes that have a Sequence name but aren't connected to a current gene model.
-  if ($wormbase->species eq 'elegans')  {
-    $wormbase->run_script("check_class.pl -camace -genace -caltech -misc_static -briggsae -stage init", $log);
-    $wormbase->run_script("check_class.pl -incomplete -stage incomplete", $log);
+    if ($wormbase->species eq 'elegans')  {
+	$wormbase->run_script("check_class.pl -camace -genace -stage init", $log);
+	$wormbase->run_script("check_class.pl -caltech -stage init", $log);
+	$wormbase->run_script("check_class.pl -misc_static -stage init", $log);
+	$wormbase->run_script("check_class.pl -briggsae -stage init", $log);
+	$wormbase->run_script("check_class.pl -incomplete -stage incomplete", $log);
+	$wormbase->run_script("check_class.pl -csh -stage init", $log);
   }
 }
 
@@ -215,7 +216,7 @@ if ($finish_blat and $errors == 0) {
 
 if ($transcripts and $errors == 0) {
     $errors += $wormtest->create_est_dat_files_if_required unless exists $tests_to_skip{'est_dat'};
-    $wormbase->run_script( 'batch_transcript_build.pl -mem 12000', $log);
+    $wormbase->run_script( 'batch_transcript_build.pl -mem 12000m', $log);
     $wormbase->run_script("check_class.pl -stage transcripts -classes Transcript", $log);
 }    
 #requires GFF dump of transcripts (done within script if all goes well)
@@ -239,8 +240,6 @@ if ($cdna_files and $errors == 0) {
 
 ####### mapping part ##########
 &map_features                                                                           if $map and $errors == 0;
-
-&map_alleles                                                                            if $map_alleles and $errors == 0;
 
 &remap_misc_dynamic                                                                     if $remap_misc_dynamic and $errors == 0;
 
@@ -531,16 +530,6 @@ sub map_features {
   
 }
 
-
-sub map_alleles {
-
-  ## elegans or briggsae
-  if (($wormbase->species eq 'elegans') or ($wormbase->species eq 'briggsae')){
-    # alleles
-    $wormbase->run_script( 'split_alleles.pl', $log );
-  }
-  
-}
 
 #__ end map_features __#
 

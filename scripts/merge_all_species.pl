@@ -13,8 +13,7 @@ use Wormbase;
 use Getopt::Long;
 use Log_files;
 use Storable;
-use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
-use LSF::JobManager;
+use Modules::WormSlurm;
 
 ##############################
 # command-line options       #
@@ -75,28 +74,25 @@ if (not $no_dump) {
   }
   
   # dump out the files in parallel.
-  my $lsf =  LSF::JobManager->new();
+
   $log->write_to("\nDumping acefile from . . .\n");
+  my %slurm_jobs;
   foreach my $spDB (values %accessors) {
     $log->write_to("\t".$spDB->full_name('-short' => 1)."\n");
-    my @bsub_options = (
-      -o => '/dev/null',
-      -M => 2000,
-      -R => sprintf("select[mem>%d] rusage[mem=%d]", 2000, 2000),
-      -J => $spDB->species . "_make_acefiles_merge");
     my $cmd = $spDB->build_cmd("make_acefiles.pl -merge");
     
-    $lsf->submit(@bsub_options, $cmd);
+    my $job_id = WormSlurm::submit_job_with_name($cmd, 'production', '2g', '1-00:00:00', '/dev/null', '/dev/null', $spDB->species . '_make_acefiles_merge');
+    $slurm_jobs{$job_id} = $cmd;
   }
-  
-  $lsf->wait_all_children( history => 1 );
-  foreach my $job ($lsf->jobs) {
-    if ($job->history->exit_status != 0) {
-      $log->error(sprintf("make_acefiles job failed: %s\n", $job->history->command));
-    }
+
+  WormSlurm::wait_for_jobs(keys %slurm_jobs);
+  foreach my $job_id (keys %slurm_jobs) {
+      if (WormSlurm::get_exit_code($job_id) != 0) {
+	  $log->error(sprintf("make_acefiles job failed: %s\n", $slurm_jobs{$job_id}));
+      }
   }
   if ($log->report_errors) {
-    $log->log_and_die("At least one make_acefiles job died - exiting\n");
+      $log->log_and_die("At least one make_acefiles job died - exiting\n");
   }
 
   $log->write_to("\nFinished writing acefiles\n");

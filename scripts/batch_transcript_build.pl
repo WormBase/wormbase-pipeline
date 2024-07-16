@@ -15,27 +15,27 @@ use Getopt::Long;
 use strict;
 use Coords_converter;
 use Storable;
-use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
-use LSF::JobManager;
+use Modules::WormSlurm;
 
 my $dump_dir;
 my $database;
 my $builder_script = "transcript_builder.pl";
 my $scratch_dir = "/tmp";
 my $gff_dir;
-my ($store, $debug, $test, $use_previous_run, $no_load, $species, @outfile_names, $mem);
+my ($store, $debug, $test, $use_previous_run, $no_load, $species, @outfile_names, $job_mem, $job_time);
 
 GetOptions (
-  "database:s"       => \$database,
-  "dump_dir:s"       => \$dump_dir,
-  "gff_dir:s"        => \$gff_dir,
-  "store:s"          => \$store,
-  "debug:s"          => \$debug,
-  "test"             => \$test,
-  "usepreviousrun"   => \$use_previous_run,
-  "noload"           => \$no_load,
-  "species:s"	     => \$species,
-  "mem:s"            => \$mem,
+    "database:s"       => \$database,
+    "dump_dir:s"       => \$dump_dir,
+    "gff_dir:s"        => \$gff_dir,
+    "store:s"          => \$store,
+    "debug:s"          => \$debug,
+    "test"             => \$test,
+    "usepreviousrun"   => \$use_previous_run,
+    "noload"           => \$no_load,
+    "species:s"	       => \$species,
+    "jobmem:s"         => \$job_mem,
+    "jobtime:s"        => \$job_time
     );
 
 my $wormbase;
@@ -48,12 +48,23 @@ if ( $store ) {
 			     );
 }
 
-unless (defined $mem){
-  $mem = 3500;
+my $log = Log_files->make_build_log($wormbase);
+
+unless (defined $job_mem){
+  $job_mem = '3500m';
+}
+unless ($job_mem =~ /^\d+[m|g|M|G]$/) {
+    $log->log_and_die('Expecting memory parameter in format /^\d+[m|g|M|G]$/ but got ' . "$job_mem\n");
 }
 
-my $log = Log_files->make_build_log($wormbase);
-$wormbase->checkLSF($log);
+unless (defined $job_time) {
+    $job_time = '3:00:00';
+}
+unless ($job_time =~ /^(\d+\-[0-2]\d:[0-5]\d:[0-5]\d|[0-2]?\d:[0-5]\d:[0-5]\d)$/) {
+    $log->log_and_die("Expecting time parameter in format D-HH:MM:SS\n");
+}
+
+$wormbase->check_slurm($log);
 
 $database = $wormbase->autoace unless $database;
 
@@ -89,9 +100,9 @@ if (not -e $pairs) {
   
 my $job_name = "worm_".$wormbase->species."_transcript";
 
-# create and submit LSF jobs.
-$log->write_to("bsub commands . . . . \n\n");
-my $lsf = LSF::JobManager->new();
+# create and submit Slurm jobs.
+$log->write_to("Slurm commands . . . . \n\n");
+my %jobs;
 foreach my $chunk_id (1..$chunk_total) {
   my $batchname = "batch_${chunk_id}";
   my $outfname = "transcripts_${batchname}.ace";
@@ -110,24 +121,23 @@ foreach my $chunk_id (1..$chunk_total) {
     $log->write_to("$cmd\n");
     print "$cmd\n";
     $cmd = $wormbase->build_cmd($cmd);
-    my @bsub_options = (-e => "$err",
-                        -o => '/dev/null',
-                        -M => "$mem", 
-                        -R => "\"select[mem>$mem] rusage[mem=$mem]\"",
-                        -J => $job_name);
-    $lsf->submit(@bsub_options, $cmd);
+
+    my $job_id = WormSlurm::submit_job_with_name($cmd, 'production', $job_mem, $job_time, '/dev/null', $err, $job_name);
+    $jobs{$job_id} = $cmd;
   } else {
     $log->write_to("For batch $chunk_id, using pre-generated acefile $foutname\n");
   }
 }  
-$lsf->wait_all_children( history => 1 );
+WormSlurm::wait_for_jobs(keys %jobs);
+
 $log->write_to("All transcript builder jobs have completed!\n");
 my $critical_error = 0;
-for my $job ( $lsf->jobs ) {
-  $log->error("Job $job (" . $job->history->command . ") exited non zero\n") if $job->history->exit_status != 0;
-  $critical_error++ if ($job->history->exit_status != 0);
+for my $job ( keys %jobs ) {
+    my $exit_code = WormSlurm::get_exit_code($job);
+  $log->error("Job $job (" . $jobs{$job} . ") exited non zero\n") if $exit_code != 0;
+  $critical_error++ if $exit_code != 0;
 }
-$lsf->clear;   
+
 $log->log_and_die("There were $critical_error critical errors in the transcript_builder jobs, please check and re-run with -mem 6000 if you suspect memory issues.\n") if $critical_error;
 
 
@@ -147,7 +157,7 @@ if (not $no_load) {
   $wormbase->load_to_database($wormbase->autoace,$allfile,'transcript_builder', $log);
   
   $log->write_to("batch_dumping GFF files\n");
-  $wormbase->run_script("dump_gff_batch.pl -method Coding_transcript", $log);
+  $wormbase->run_script("dump_gff_batch.pl -method Coding_transcript -jobtime $job_time", $log);
     
   $log->write_to("Updating common data\n");
   $wormbase->run_script("update_Common_data.pl -worm_gene2geneID", $log);

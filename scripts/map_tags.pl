@@ -24,8 +24,6 @@ use Ace;
 use Sequence_extract;
 use Coords_converter;
 use Getopt::Long;
-#use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
-#use LSF::JobManager;
 
 
 my ( $help, $debug, $test, $store );
@@ -68,8 +66,6 @@ my $log = Log_files->make_build_log($wormbase);
 # run the get_sequences.pl script to create the files of transcript details
 #
 ###########################################################################
-
-#my $m = LSF::JobManager->new();
 
 my @chroms = $wormbase->get_chromosome_names(-mito => 1, -prefix => 1);
 

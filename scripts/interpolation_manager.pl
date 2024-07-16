@@ -8,8 +8,7 @@ use warnings;
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
-use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
-use LSF::JobManager;
+use Modules::WormSlurm;
 
 ##############################
 # Script variables (run)     #
@@ -47,10 +46,6 @@ else {
 my $log = Log_files->make_build_log($wb);
 
 ####################################
-my @bsub_opts = (-M => 4000,
-                 -R => 'select[mem>=4000] rusage[mem=4000]',
-                 -o => '/dev/null');
-my $lsf = LSF::JobManager->new();
 
 my $acedir = $wb->acefiles;
 my $fix_acefile    = "$acedir/genetic_map_fixes.ace";
@@ -59,21 +54,19 @@ my $pseudo_acefile = "$acedir/pseudo_map_positions.ace";
 my $prep_flags = ($fix) ? "$flags -preparefix -fixacefile $fix_acefile" : "$flags -preparenofix";
 my $cmd = $wb->build_cmd_line("interpolate_gff.pl $prep_flags",$store);
 
-my $mother = $lsf->submit(@bsub_opts, $cmd);
-my $myid   = $mother->id;
+WormSlurm::submit_job_and_wait($cmd, 'production', '4000m', '1-00:00:00', '/dev/null', '/dev/null');
 
-push @bsub_opts, (-w => "ended($myid)");
+my %slurm_jobs;
 foreach my $i ($wb->get_chromosome_names(-prefix => 1)) {
-  my $cmd2 = $wb->build_cmd_line("interpolate_gff.pl -chrom $i -all $flags",$store);
-  $lsf->submit( @bsub_opts, $cmd2);
+    my $cmd2 = $wb->build_cmd_line("interpolate_gff.pl -chrom $i -all $flags",$store);
+    my $job_id = WormSlurm::submit_job($cmd2, 'production', '4000m', '1-00:00:00', '/dev/null', '/dev/null');
+    $slurm_jobs{$job_id} = $cmd2;
 }
+WormSlurm::wait_for_jobs(keys %slurm_jobs);
 
-$lsf->wait_all_children( history => 1 );
-
-for my $job ( $lsf->jobs ) {
-  $log->write_to("$job exited non zero\n") if $job->history->exit_status != 0;
+for my $job_id (keys %slurm_jobs) {
+  $log->write_to("Slurm job $job_id (" . $slurm_jobs{$job_id} . ") exited non zero\n") if WormSlurm::get_exit_code($job_id) != 0;
 }
-$lsf->clear;                    # clear out the job manager to reuse.
 
 if ($pseudo) {
   $wb->run_script("make_pseudo_map_positions.pl -acefile $pseudo_acefile -noload", $log);

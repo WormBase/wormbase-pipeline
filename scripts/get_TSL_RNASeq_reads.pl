@@ -8,8 +8,6 @@
 # for aligning to the genome.
 #
 #
-# Run as:
-# bsub -I -M 4000000 -R "select[mem>4000] rusage[mem=4000]" perl $CVS_DIR/get_TSL_RNASeq_reads.pl -infile SRR/xyz.fq -outfile TSL/xyz.fq -species brugia
 #
 #
 # by Gary Williams

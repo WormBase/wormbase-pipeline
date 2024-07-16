@@ -1,4 +1,4 @@
-#!/software/bin/perl
+#!/usr/bin/env perl
 #
 # wormBLAST.pl
 #

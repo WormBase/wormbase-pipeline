@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use XML::LibXML;
 use XML::LibXML::Reader;
-use Net::FTP;
+use Net::FTPSSL;
 use LWP::Simple;
 use Getopt::Long;
 
@@ -171,15 +171,15 @@ if ($upload) {
  print "FTP details $ftp_host $ftp_user $ftp_pass $ftp_dir\n"; 
   $log->write_to("Connecting to FTP site...\n");
 
-  my $ftp = Net::FTP->new($ftp_host, Debug => 0) 
+  my $ftp = Net::FTPSSL->new($ftp_host, ReuseSession => 1, Debug => 0) 
       or $log->log_and_die("Cannot connect to $ftp_host: $@");
-  $ftp->login($ftp_user,"$ftp_pass\@")
+  $ftp->login($ftp_user,"$ftp_pass")
       or $log->log_and_die ("Cannot login to $ftp_host using WormBase credentials\n". $ftp->message);
   $ftp->cwd($ftp_dir) 
       or $log->log_and_die ("Cannot change into to_ena dir for upload of files\n". $ftp->message);
   $ftp->binary();
 
-  print "STarting FTP\n";
+  print "Starting FTP\n";
   foreach my $file ("$provider_xml_z", "$links_xml_z") {
     $log->write_to("Depositing $file on FTP site...\n");
     $ftp->put($file) or $log->log_and_die ("FTP-put failed for $file: ".$ftp->message."\n");

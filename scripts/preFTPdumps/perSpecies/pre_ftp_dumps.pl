@@ -14,8 +14,7 @@ use lib "$ENV{CVS_DIR}/Modules/Third_party";
 
 use Wormbase;
 use Log_files;
-use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
-use LSF::JobManager;
+use Modules::WormSlurm;
 
 use Getopt::Long;
 
@@ -40,35 +39,35 @@ if ($store) {
 }
 
 my @script_conf = (
-  { script => 'dump_species_functional_descriptions.pl', output => 'functional_descriptions.txt', all => 1,  mem => 12000 },
-  { script => 'dump_protein_domains.pl',                 output => 'protein_domains.csv', all => 1 ,  mem => 12000 },
-  { script => 'dump_species_orthologs.pl',               output => 'orthologs.txt', all => 1,  mem => 12000        },
-  { script => 'dump_confirmed_genes.pl',                 output => 'confirmed_genes.fa', all => 1 ,  mem => 12000  },
-  { script => 'dump_gpi.pl',                             output => 'gene_product_info.gpi',  all => 1, mem => 12000 },
-  { script => 'dump_gpiv2.pl',                           output => 'gene_product_info.gpi2', all => 1, mem => 12000 },
-  { script => 'dump_species_gene_interactions.pl',       output => 'interactions.txt',  mem => 12000               },
-  { script => 'dump_interpolated.pl',                    output => 'interpolated_clones.txt',  mem => 12000        },
-  { script => 'dump_swissprot.pl',                       output => 'swissprot.txt',  mem => 12000                  },
-  { script => 'dump_ko.pl',                              output => 'knockout_consortium_alleles.xml',  mem => 12000},
-  { script => 'dump_alaska_ids.pl',                      output => 'alaska_ids.tsv', all => 1,  mem => 12000       },
-  { script => 'dump_cdna2orf.pl',                        output => 'cdna2orf.txt',  mem => 12000                   },
-  { script => 'dump_pcr_list.pl',                        output => 'pcr_product2gene.txt',  mem => 12000           },
-  { script => 'dump_geneid_list.pl',                     output => 'geneIDs.txt', all => 1,  mem => 12000          },
-  { script => 'dump_molecules.pl',                       output => 'molecules.ace',  mem => 12000                  },
-  { script => 'dump_geneid_list.pl',                     output => 'geneOtherIDs.txt', options => '-other', all=>1,  mem => 12000 },
-  { script => 'uniprotxrefs.pl',                         output => 'uniprot_papers.txt', all=>1,  mem => 20000     },
+  { script => 'dump_species_functional_descriptions.pl', output => 'functional_descriptions.txt', all => 1,  mem => '12g' },
+  { script => 'dump_protein_domains.pl',                 output => 'protein_domains.csv', all => 1 ,  mem => '12g' },
+  { script => 'dump_species_orthologs.pl',               output => 'orthologs.txt', all => 1,  mem => '12g'        },
+  { script => 'dump_confirmed_genes.pl',                 output => 'confirmed_genes.fa', all => 1 ,  mem => '12g'  },
+  { script => 'dump_gpi.pl',                             output => 'gene_product_info.gpi',  all => 1, mem => '12g' },
+  { script => 'dump_gpiv2.pl',                           output => 'gene_product_info.gpi2', all => 1, mem => '12g' },
+  { script => 'dump_species_gene_interactions.pl',       output => 'interactions.txt',  mem => '12g'               },
+  { script => 'dump_interpolated.pl',                    output => 'interpolated_clones.txt',  mem => '12g'        },
+  { script => 'dump_swissprot.pl',                       output => 'swissprot.txt',  mem => '12g'                  },
+  { script => 'dump_ko.pl',                              output => 'knockout_consortium_alleles.xml',  mem => '12g'},
+  { script => 'dump_alaska_ids.pl',                      output => 'alaska_ids.tsv', all => 1,  mem => '12g'       },
+  { script => 'dump_cdna2orf.pl',                        output => 'cdna2orf.txt',  mem => '12g'                   },
+  { script => 'dump_pcr_list.pl',                        output => 'pcr_product2gene.txt',  mem => '12g'           },
+  { script => 'dump_geneid_list.pl',                     output => 'geneIDs.txt', all => 1,  mem => '12g'          },
+  { script => 'dump_molecules.pl',                       output => 'molecules.ace',  mem => '12g'                  },
+  { script => 'dump_geneid_list.pl',                     output => 'geneOtherIDs.txt', options => '-other', all=>1,  mem => '12g' },
+  { script => 'uniprotxrefs.pl',                         output => 'uniprot_papers.txt', all=>1,  mem => '12g'     },
 );
 
 
 # global aspects
 my $log = Log_files->make_build_log($wormbase);
-my $defaultMem = 4000;
-my $lsf_out = $wormbase->build_lsfout;
-my $lsf = LSF::JobManager->new();
+my $defaultMem = '4g';
+my $slurm_out = $wormbase->build_lsfout;
 
 my %files_to_check;
 my %core_species = $wormbase->species_accessors;
 
+my %slurm_jobs;
 foreach my $wb ($wormbase, values %core_species ) {
   my $spe = $wb->species;
 
@@ -89,19 +88,22 @@ foreach my $wb ($wormbase, values %core_species ) {
 
     my $outfile = "$report_dir/${spe}.${output}";
     &clean_previous_output($outfile);
-    &queue_script($wb, $script, $spe, $outfile, $mem, $options);
+
+    my $cmd = $wb->build_cmd("preFTPdumps/perSpecies/$script -outfile $outfile $options");
+    my $job_id = WormSlurm::submit_job_with_name($cmd, 'production', $mem, '4:00:00', "${slurm_out}/${script}.${spe}.slurmout", "${slurm_out}/${script}.${spe}.slurmerr", "perSpeciesDumps_${spe}");
+    $slurm_jobs{$job_id} = $cmd;
     push @{$files_to_check{$script}}, $outfile;
   }  
 }
 
-$log->write_to("Waiting for LSF jobs to finish.\n");
-$lsf->wait_all_children( history => 1 );
-for my $job ( $lsf->jobs ) {
-  if ($job->history->exit_status != 0) {
-    $log->error("ERROR: Job $job (" . $job->history->command . ") exited non zero: " . $job->history->exit_status . "\n");
-  }
+$log->write_to("Waiting for Slurm jobs to finish.\n");
+WormSlurm::wait_for_jobs(keys %slurm_jobs);
+for my $job_id (keys %slurm_jobs) {
+    my $exit_code = WormSlurm::get_exit_code($job_id);
+    if ($exit_code != 0) {
+	$log->error("ERROR: Slurm job $job_id (" . $slurm_jobs{$job_id} . ") exited non zero: " . $exit_code . "\n");
+    }
 }
-$lsf->clear;
 
 
 foreach my $script (keys %files_to_check) {
@@ -120,25 +122,6 @@ foreach my $script (keys %files_to_check) {
 }
 
 $log->mail;
-
-# LSF submit $script
-sub queue_script {
-  my ( $wb, $script, $sp, $outf, $mem,  $opts) = @_;
-  
-  my $cmd = "preFTPdumps/perSpecies/$script";
-  $cmd .= " -outfile $outf";
-  if (defined $opts) {
-    $cmd .= " $opts";
-  }
-  $cmd = $wb->build_cmd($cmd);
-
-  my @lsf_opts = (-M => $mem, 
-                  -R => "select[mem>=$mem] rusage[mem=$mem]",
-                  -J => 'perSpeciesDumps', 
-                  -o => "${lsf_out}/${script}.${sp}.lsfout");
-
-  $lsf->submit(@lsf_opts, $cmd);
-}
 
 # basically try to delete $file
 sub clean_previous_output{

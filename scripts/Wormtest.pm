@@ -21,6 +21,7 @@ use Wormbase;
 use Const::Fast;
 use Path::Class;
 use List::MoreUtils qw(uniq);
+use Ace;
 
 const my $MAX_DAYS_SINCE_CITACE_DUMP => 21;
 const my $MAX_DAYS_SINCE_GENEACE_COPY => 7;
@@ -772,6 +773,8 @@ sub homology_data_loaded {
 	    $seq_with_homol_data++ if scalar @homol;
 	}
     }
+
+    $db->close;
     
     my $percent_with_homol = ($seq_with_homol_data / $seq_count) * 100;
     my $min_percent_with_homol = $self->{'wormbase'}->species eq 'elegans' ? 100 :

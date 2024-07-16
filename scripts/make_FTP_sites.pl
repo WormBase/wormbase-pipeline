@@ -79,6 +79,7 @@ use File::Path;
 use Bio::SeqIO;
 use JSON;
 use Modules::AGR;
+use Modules::WormSlurm;
 use Const::Fast;
 use DateTime;
 use Fcntl qw(:seek);
@@ -1373,7 +1374,8 @@ sub make_blast_meta{
     my $json_string = $json_obj->allow_nonref->canonical->pretty->encode($blast_meta);
     print OUT $json_string;
     close(OUT);
-    my $exit_code = system("bsub -q datamover -Is cp $meta_file $FTP_BLAST_META_PATH");
+    my $job_id = WormSlurm::submit_job_and_wait("cp $meta_file $FTP_BLAST_META_PATH", 'datamover', '200m', '00:00:30', '/dev/null', '/dev/null');
+    my $exit_code = WormSlurm::get_exit_code($job_id);
     if ($exit_code) {
 	$log->error("Copying BLAST metadata file to $FTP_BLAST_META_PATH failed\n");
     } else {

@@ -1557,15 +1557,6 @@ sub run_script {
   return $self->run_command( "$command", $log );
 }
 
-sub run_script_on_farm {
-  my $self   = shift;
-  my $script = shift;
-  my $log = shift;
-  
-  my $cmd = 'ssh -t farm-login "'.$self->build_cmd($script).'"';
-  return $self->run_command( "$cmd", $log );
-}
-
 ####################################
 # abstracted out of run_script so that scripts using LSF::Manager can 
 # still use the Storable etc properly
@@ -1607,36 +1598,6 @@ sub build_cmd_line {
 }
 
 ####################################
-sub bsub_script  {
-	my $self   = shift;
-  	my $script = shift;
-  	my $script_sp = shift; #species that called script is to operate on.
-  	my $log    = shift;
-  	my $species = ref $self;
-  	my $store;
-  	my $wbobj;
-  	if(lc $species eq lc $script_sp) {  	
-		$store = $self->autoace . "/$species.store";
-		$wbobj = $self;
-	}
-	else {
-		#create a WormBase Species object to retain test / debug status
-		my $wb = Wormbase->new ('-test' => $self->test,
-								'-debug' => $self->debug,
-								'-organism' => lc($script_sp)
-								);
-		$store = $wb->autoace . "/". (ref $wb) .".store";
-		$wbobj=$wb;
-	}
-  	
-	store($wbobj,$store) unless -e $store;
-  	my $command = "bsub $ENV{'CVS_DIR'}/$script -store $store";
-  	print "$command\n" if $self->test;
-  	return $self->run_command( "$command", $log );
-}
-
-
-####################################
 sub run_command {
   my $self    = shift;
   my $command = shift;
@@ -1662,38 +1623,6 @@ sub run_command {
 }
 
 ####################################
-# THIS IS DEPRECATED.
-# Use LSF::JobManager instead
-sub wait_for_LSF {
-  my $self = shift;
-  sleep 10;
-  my $jobs = &jobs_left;
-  while ( $jobs != 0 ) {
-    my $time = 100 * $jobs;
-    if ($time > 1800) {$time = 1800;}
-    sleep $time;
-    $jobs = &jobs_left;
-  }
-
-  print "all jobs finished\n";
-  return;
-
-  sub jobs_left {
-    my $self  = shift;
-    my $count = 0;
-    open( JOBS, "bjobs |" );
-    while (<JOBS>) {
-      print $_;
-      next if /JOBID/;		#title line
-      $count++;
-    }
-    close JOBS;
-    print "$count jobs left , , \n";
-    return $count;
-  }
-}
-
-####################################
 sub checkLSF {
   my ($self, $log) = @_;
   
@@ -1702,6 +1631,20 @@ sub checkLSF {
       $log->log_and_die("You need to be on an LSF enabled system to run this");
     } else {
       die "You need to be on an LSF enabled system to run this";
+    }
+  }
+}
+
+
+####################################
+sub check_slurm {
+  my ($self, $log) = @_;
+  
+  if (system("salloc -V")) {
+    if ($log) {
+      $log->log_and_die("You need to be on a Slurm enabled system to run this");
+    } else {
+      die "You need to be on a Slurm enabled system to run this";
     }
   }
 }

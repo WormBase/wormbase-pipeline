@@ -105,6 +105,10 @@ exit(0);
 sub get_previous_build_database {
     my ($wormbase, $previous_release) = @_;
 
+    if ($wormbase->species eq 'elegans') {
+	return $wormbase->wormpub . '/BUILD/elegans';
+    }
+    
     if ($previous_release) {
 	$previous_release = 'WS' . $previous_release if $previous_release =~ /^\d+$/;
 	$previous_release = $wormbase->wormpub . '/DATABASES/' . $previous_release
@@ -371,7 +375,7 @@ sub read_GFF_queries {
     $i++;
     $queries[$i]{'DESC'}   = "Mass Spectrometry peptides";
     $queries[$i]{'GFF'}    = "mass_spec_genome";
-    $queries[$i]{'EXPECT'} = 136433;
+    $queries[$i]{'EXPECT'} = 153788;
     
     $i++;
     $queries[$i]{'DESC'}   = "Expr_pattern mapped Expression Patterns";
