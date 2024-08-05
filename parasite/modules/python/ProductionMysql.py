@@ -247,13 +247,15 @@ class Core(Staging):
     def remove_omark_scores(self):
         META_VALUE_SQL = f"DELETE FROM meta WHERE meta_key LIKE 'omark.%';"
         self.connect().execute(META_VALUE_SQL)
-    def add_omark_scores(self, single, duplicated, missing, accurate, partial, fragmented, contamination, unknown):
+    def add_omark_scores(self, single, duplicated, missing, accurate, consistent_complete, partial, fragmented, inconsistent, contamination, unknown):
         omark_dict = {"omark.single":f"{single}",
                       "omark.duplicated":f"{duplicated}",
                       "omark.missing":f"{missing}",
                       "omark.consistent":f"{accurate}",
+                      "omark.consistent_complete":f"{consistent_complete}",
                       "omark.partial":f"{partial}",
                       "omark.fragmented":f"{fragmented}",
+                      "omark.inconsistent":f"{inconsistent}",
                       "omark.contamination":f"{contamination}",
                       "omark.unknown":f"{unknown}"}
         for key, value in omark_dict.items():
