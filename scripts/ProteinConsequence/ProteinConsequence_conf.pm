@@ -60,7 +60,7 @@ sub default_options {
         # configuration for the various resource options used in the pipeline
         
 	default_1min_slurm_options    => ' --partition=production --time=0:01:00 --mem=2000m',
-	default_15min_slurm_options    => ' --partition=production --time=0:15:00 --mem=2000m',
+	default_30min_slurm_options    => ' --partition=production --time=0:30:00 --mem=2000m',
 	highmem_15min_slurm_options    => ' --partition=production --time=0:15:00 --mem=5000m',
 	highmem_90min_slurm_options   => ' --partition=production --time=1:30:00 --mem=5000m',
 	highermem_15min_slurm_options  => ' --partition=production --time=0:15:00 --mem=8000m',
@@ -82,7 +82,7 @@ sub resource_classes {
     my ($self) = @_;
     return {
 	'default_1min'    => { 'SLURM' => $self->o('default_1min_slurm_options')  },
-	'default_15min'    => { 'SLURM' => $self->o('default_15min_slurm_options')  },
+	'default_30min'    => { 'SLURM' => $self->o('default_30min_slurm_options')  },
 	'highmem_15min'    => { 'SLURM' => $self->o('highmem_15min_slurm_options')  },
 	'highmem_90min'   => { 'SLURM' => $self->o('highmem_90min_slurm_options')  },
 	'highermem_15min'  => { 'SLURM' => $self->o('highermem_15min_slurm_options')  },
@@ -171,7 +171,7 @@ sub pipeline_analyses {
             -max_retry_count => 1,
             -analysis_capacity  => $self->o('standard_max_workers'),
 	    -hive_capacity      => $self->o('hive_max_workers'),
-	    -rc_name        => 'default_15min',
+	    -rc_name        => 'default_30min',
             -flow_into      => {
 		2 => ['create_ace'],
 		4 => ['run_partial_vep'],
