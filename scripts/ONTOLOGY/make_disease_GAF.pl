@@ -72,7 +72,7 @@ while (my $obj=$it->next) {
       my ($with_from_list) = $text =~ /\((\S+)\)/;
       
       my @ens = map { "ENSEMBL:$_" } grep { $_ =~ /ENSG\d+/ } split(/,/, $with_from_list);
-      my @omim = grep { $_ =~ /OMIM:/ } split(/,/, $with_from_list);
+      my @omim = grep { $_ =~ /O?MIM:/ } split(/,/, $with_from_list);
 
       &print_wormbase_GAF_line($out,  
                                $g, 
@@ -100,7 +100,7 @@ while (my $obj=$it->next) {
         foreach my $db ($evi->col) {
           if ($db->name eq 'OMIM') {
             foreach my $acc ($db->col) {
-              push @omims, "OMIM:$acc";
+              push @omims, "MIM:$acc";
             }
           }
         }
