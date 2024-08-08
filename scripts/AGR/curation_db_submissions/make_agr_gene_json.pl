@@ -169,8 +169,10 @@ while (my $obj = $it->next) {
 
 
     my $is_obsolete = $obj->Status && $obj->Status->name eq 'Dead' ? JSON::true : JSON::false;
+    my $gene_type = $obj->Biotype ? $obj->Biotype->name : 'SO:0000704';
     my $gene = {
 	mod_entity_id    => 'WB:' . $obj->name,
+	gene_type_curie  => $gene_type,
 	gene_symbol_dto   => $symbol,
 	taxon_curie    => 'NCBITaxon:' . $obj->Species->NCBITaxonomyID,
 	obsolete => $is_obsolete,

@@ -39,7 +39,7 @@ sub uniprot {
     if (++$count == 1) {next;} # skip the title line
     
     my @f = split /\t/;
-
+    next unless @f;
     $acc2ids{$f[0]}{'id'} = $f[1];
     $acc2ids{$f[0]}{'des'} = $f[2];
     my @gene_names = split /\s/, $f[3];

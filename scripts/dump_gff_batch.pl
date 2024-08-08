@@ -6,35 +6,34 @@ use Getopt::Long;
 use strict;
 use Log_files;
 use Storable;
+use Modules::WormSlurm;
 
 my ($debug, $test, $database,$species, $verbose, $store );
 my ($giface, $giface_server, $giface_client, $port);
-my ($gff3, $gff, $dump_dir, $rerun_if_failed, $methods, $chrom_choice, $mem);
+my ($gff3, $gff, $dump_dir, $rerun_if_failed, $methods, $chrom_choice, $job_mem, $job_time);
 
 my $dumpGFFscript = "GFF_method_dump.pl";
 
-use LSF RaiseError => 0, PrintError => 1, PrintOutput => 0;
-use LSF::JobManager;
-
 GetOptions (
-	    "debug:s"        => \$debug,
-	    "test"           => \$test,
-	    "verbose"        => \$verbose,
-	    "database:s"     => \$database,
-	    "dump_dir:s"     => \$dump_dir,
-	    "methods:s"      => \$methods,
-	    "chromosomes:s"  => \$chrom_choice,
-	    "store:s"        => \$store,
-	    "giface:s"       => \$giface,
-	    "gifaceserver:s" => \$giface_server, 
-	    "gifaceclient:s" => \$giface_client, 
-	    "gff3"           => \$gff3,
-	    "gff"            => \$gff,
-	    "rerunfail"      => \$rerun_if_failed,
-	    "species:s"      => \$species,
-	    "port:s"         => \$port,
-	    "mem:s"          => \$mem,
-	   );
+    "debug:s"        => \$debug,
+    "test"           => \$test,
+    "verbose"        => \$verbose,
+    "database:s"     => \$database,
+    "dump_dir:s"     => \$dump_dir,
+    "methods:s"      => \$methods,
+    "chromosomes:s"  => \$chrom_choice,
+    "store:s"        => \$store,
+    "giface:s"       => \$giface,
+    "gifaceserver:s" => \$giface_server, 
+    "gifaceclient:s" => \$giface_client, 
+    "gff3"           => \$gff3,
+    "gff"            => \$gff,
+    "rerunfail"      => \$rerun_if_failed,
+    "species:s"      => \$species,
+    "port:s"         => \$port,
+    "jobmem:s"       => \$job_mem,
+    "jobtime:s"      => \$job_time,
+    );
 my $wormbase;
 if( $store ) {
   $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
@@ -55,7 +54,7 @@ $port = 23100 if not $port;
 
 my @chroms = $wormbase->get_chromosome_names(-prefix => 1,-mito => 1);
 my $chrom_lengths = $wormbase->get_chromosome_lengths(-prefix => 1,-mito => 1);
-$wormbase->checkLSF;
+$wormbase->check_slurm;
 
 if ($gff) {
     print "-gff is not a necessary command line option as the script defaulty to gff2 but this catches those who like editing the command lines instead of taking them from the build guide.\n";
@@ -79,8 +78,7 @@ $log->write_to("Dumping from DATABASE : $database\n\tto $dump_dir\n\n");
 $log->write_to("\t chromosomes ".@chromosomes."\n");
 $log->write_to("\tmethods ".@methods."\n\n") if @methods;
 $log->write_to("\tno method specified\n\n") if not @methods;
-$log->write_to("bsub commands . . . . \n\n");
-my $lsf = LSF::JobManager->new();
+$log->write_to("Slurm commands . . . . \n\n");
 
 my (@individual_chrs, @batch_chrs);
 if ($species eq 'elegans') {
@@ -107,21 +105,34 @@ my $cmd_file_root = "${cmd_dir}/dump_gff_batch_$$";
 my $cmd_base = "$dumpGFFscript -database $database -species $species -dump_dir $dump_dir";
 my $cmd_number = 0;
 my $this_mem;
-if (defined $mem){$this_mem = $mem} else {$this_mem = 4500}
+if (defined $job_mem){
+    unless ($job_mem =~ /^\d+[m|g|M|G]$/) {
+	$log->log_and_die("Expecting job memory parameter in format /^\d+[m|g|M|G]$/\n");
+    }
+    $this_mem = $job_mem;
+} else {
+    $this_mem = '4500m';
+}
 
+
+unless (defined $job_time) {
+    $job_time = '1:00:00';
+}
+unless ($job_time =~ /^(\d+\-[0-2]\d:[0-5]\d:[0-5]\d|[0-2]?\d:[0-5]\d:[0-5]\d)$/) {
+    $log->log_and_die("Expecting job time parameter in format D-HH:MM:SS\n");
+}
+
+my %submitted_jobs;
 foreach my $chrom (@individual_chrs) {
   my $common_additional_params = "-chromosome $chrom -giface $giface";
-  my @common_bsub_opts = (-M => "$this_mem", 
-                          -R => "\"select[mem>$this_mem] rusage[mem=$this_mem]\"");
   if ( @methods ) {
     foreach my $method ( @methods ) {
       my $this_cmd_num = ++$cmd_number;
 
       my $gff_out = sprintf("%s/%s.%s.gff%s", $dump_dir, $chrom, $method, ($gff3) ? "3" : "");
-      my $lsf_out = "$scratch_dir/wormpubGFFdump.$chrom.$method.$this_cmd_num.lsfout";
+      my $slurm_out = "$scratch_dir/wormpubGFFdump.$chrom.$method.$this_cmd_num.slurmout";
+      my $slurm_err = "$scratch_dir/wormpubGFFdump.$chrom.$method.$this_cmd_num.slurmerr";
       my $job_name = "worm_".$wormbase->species."_gffbatch.$this_cmd_num";
-
-      my @bsub_options = (@common_bsub_opts, -o => $lsf_out, -J => $job_name);
 
       my $cmd = "$cmd_base $common_additional_params";
       $cmd .= " -method $method";
@@ -139,16 +150,16 @@ foreach my $chrom (@individual_chrs) {
       close ($cmd_fh);
       chmod 0777, $cmd_file;
 
-      $lsf->submit(@bsub_options, $cmd_file);
+      my $job_id = WormSlurm::submit_job_with_name($cmd_file, 'production', $this_mem, $job_time, $slurm_out, $slurm_err, $job_name);
+      $submitted_jobs{$job_id} = $cmd_file;
     }
   } else {
     my $this_cmd_num = ++$cmd_number;
 
     my $gff_out = sprintf("%s/%s.gff%s", $dump_dir, $chrom, ($gff3) ? "3" : "");
-    my $lsf_out = "$scratch_dir/wormpubGFFdump.$chrom.$this_cmd_num.lsfout";
+    my $slurm_out = "$scratch_dir/wormpubGFFdump.$chrom.$this_cmd_num.slurmout";
+    my $slurm_err = "$scratch_dir/wormpubGFFdump.$chrom.$this_cmd_num.slurmerr";
     my $job_name = "worm_".$wormbase->species."_gffbatch.$this_cmd_num";
-
-    my @bsub_options = (@common_bsub_opts, -o => $lsf_out, -J => $job_name);
 
     my $cmd = "$cmd_base $common_additional_params";
     $cmd .= " -debug $debug" if $debug;
@@ -165,7 +176,8 @@ foreach my $chrom (@individual_chrs) {
     close ($cmd_fh);
     chmod 0777, $cmd_file;
 
-    $lsf->submit(@bsub_options, $cmd_file);
+    my $job_id = WormSlurm::submit_job_with_name($cmd_file, 'production', $this_mem, $job_time, $slurm_out, $slurm_err, $job_name);
+    $submitted_jobs{$job_id} = $cmd_file;
   }
 }
 
@@ -178,21 +190,18 @@ if (@batch_chrs) {
   }
   close($batch_fh);
   my $this_mem;
-  if (defined $mem){$this_mem = $mem} else {$this_mem = 100}
+  if (defined $job_mem){$this_mem = $job_mem} else {$this_mem = '100m'}
 
   my $common_additional_params = "-host $host -port $port -gifaceclient $giface_client -list $seq_list_file";
-  my @common_bsub_opts =  (-M => "$this_mem", 
-                           -R => "\"select[mem>$this_mem] rusage[mem=$this_mem]\"");
-
+  
   if ( @methods ) {
     foreach my $method ( @methods ) {
       my $this_cmd_num = ++$cmd_number;
 
       my $gff_out = sprintf("%s/%s.gff%s", $dump_dir, $method, ($gff3) ? "3" : "");
-      my $lsf_out = "$scratch_dir/wormpubGFFdump.$method.$this_cmd_num.lsfout";
+      my $slurm_out = "$scratch_dir/wormpubGFFdump.$method.$this_cmd_num.slurmout";
+      my $slurm_err = "$scratch_dir/wormpubGFFdump.$method.$this_cmd_num.slurmerr";
       my $job_name = "worm_".$wormbase->species."_gffbatch.$this_cmd_num";
-
-      my @bsub_options = (@common_bsub_opts, -o => $lsf_out, -J => $job_name);
 
       my $cmd = "$cmd_base $common_additional_params";
       $cmd .= " -method $method";
@@ -210,17 +219,17 @@ if (@batch_chrs) {
       close($cmd_fh);
       chmod 0777, $cmd_file;
 
-      $lsf->submit(@bsub_options, $cmd_file);
+      my $job_id = WormSlurm::submit_job_with_name($cmd_file, 'production', $this_mem, $job_time, $slurm_out, $slurm_err, $job_name);
+      $submitted_jobs{$job_id} = $cmd_file;
     }
   }
   else {
     my $this_cmd_num = ++$cmd_number;
 
     my $gff_out = sprintf("%s/%s.gff%s", $dump_dir, $species, ($gff3) ? "3" : "");
-    my $lsf_out = "$scratch_dir/wormpubGFFdump.$this_cmd_num.lsfout";
+    my $slurm_out = "$scratch_dir/wormpubGFFdump.$this_cmd_num.slurmout";
+    my $slurm_err = "$scratch_dir/wormpubGFFdump.$this_cmd_num.slurmerr";
     my $job_name = "worm_".$wormbase->species."_gffbatch.$this_cmd_num";
-
-    my @bsub_options = (@common_bsub_opts,  -o => $lsf_out, -J => $job_name);
 
     my $cmd = "$cmd_base $common_additional_params";
     $cmd .= " -debug $debug" if $debug;
@@ -238,23 +247,24 @@ if (@batch_chrs) {
     close ($cmd);
     chmod 0777, $cmd_file;
 
-    $lsf->submit(@bsub_options, $cmd_file);
+    my $job_id = WormSlurm::submit_job_with_name($cmd_file, 'production', $this_mem, $job_time, $slurm_out, $slurm_err, $job_name);
+    $submitted_jobs{$job_id} = $cmd_file;
   }
 }
 
-
-$lsf->wait_all_children( history => 1 );
+WormSlurm::wait_for_jobs(keys %submitted_jobs);
 $log->write_to("All GFF dump jobs have completed!\n");
 my @problem_cmds;
-for my $job ( $lsf->jobs ) {
-  if ($job->history->exit_status == 0) {
-    unlink $job->history->command;
+for my $job_id (keys %submitted_jobs) {
+    my $exit_code = WormSlurm::get_exit_code($job_id);
+    if ($exit_code == 0) {
+	unlink $submitted_jobs{$job_id};
   } else {
-    $log->write_to("Job $job (" . $job->history->command . ") exited non zero\n");
-    push @problem_cmds, $job->history->command;
+    $log->write_to("Job $job_id (" . $submitted_jobs{$job_id} . ") exited non zero\n");
+    push @problem_cmds, $submitted_jobs{$job_id};
   }
 }
-$lsf->clear;
+
 
 if (@problem_cmds and scalar(@problem_cmds) < 120 and $rerun_if_failed) { 
   ##################################################################
@@ -264,46 +274,44 @@ if (@problem_cmds and scalar(@problem_cmds) < 120 and $rerun_if_failed) {
     &start_giface_server();
   }
   
-  $lsf = LSF::JobManager->new();
-  
-  my $out = "$scratch_dir/wormpubGFFdump.rerun.lsfout";
+
+  my $out = "$scratch_dir/wormpubGFFdump.rerun.slurmout";
   my $job_name = "worm_".$wormbase->species."_gffbatch";
 
   my $this_mem;
-  if (defined $mem){$this_mem = $mem} else {$this_mem = 4500}
-
-  my @common_bsub_opts = (-M => "$this_mem", 
-                          -R => "\"select[mem>$this_mem] rusage[mem=$this_mem]\"");
+  if (defined $job_mem){$this_mem = $job_mem} else {$this_mem = '4500m'}
   
   my $rerun_count = 0;
   my @new_problem_cmds;
-  
+  my %resubmitted_jobs;
   foreach my $cmd_file (@problem_cmds) {
-    $log->write_to("*** Attempting to re-run job: $cmd_file\n");
-    my $out = sprintf("%s/wormpubGFFdump.rerun.lsfout", $scratch_dir, ++$rerun_count);
-    my $job_name = sprintf("worm_gff.%s.rerun_", $species, $rerun_count);
-    my @bsub_opts = (@common_bsub_opts, -o => $out, -J => $job_name);
-    
-    $lsf->submit(@bsub_opts, $cmd_file);
+      $log->write_to("*** Attempting to re-run job: $cmd_file\n");
+      my $slurm_out = sprintf("%s/wormpubGFFdump.rerun.slurmout", $scratch_dir, ++$rerun_count);
+      my $slurm_err = sprintf("%s/wormpubGFFdump.rerun.slurmerr", $scratch_dir, ++$rerun_count);
+      my $job_name = sprintf("worm_gff.%s.rerun_", $species, $rerun_count);
+      
+      my $job_id = WormSlurm::submit_job_with_name($cmd_file, 'production', $this_mem, $job_time, $slurm_out, $slurm_err, $job_name);
+      $resubmitted_jobs{$job_id} = $cmd_file;
   }
-  $lsf->wait_all_children( history => 1 );
+  WormSlurm::wait_for_jobs(keys %resubmitted_jobs);
+  
   my $failed = 0;
-  for my $job ( $lsf->jobs ) {
-    if ($job->history->exit_status == 0) {
-      unlink $job->history->command;
-    } else {
-      $failed++;
-      $log->error("\n\nERROR: Job $job (" . $job->history->command . ") exited non zero at the second attempt. See $out\n");
-      push @new_problem_cmds, $job->history->command;
-    }
-    $log->write_to("\n\nNumber of jobs that failed after the second attempt: $failed\n");
+  for my $job_id ( keys %resubmitted_jobs ) {
+      my $exit_code = WormSlurm::get_exit_code($job_id);
+      if ($exit_code == 0) {
+	  unlink $submitted_jobs{$job_id};
+      } else {
+	  $failed++;
+	  $log->error("\n\nERROR: Job $job_id (" . $resubmitted_jobs{$job_id} . ") exited non zero at the second attempt\n");
+	  push @new_problem_cmds, $resubmitted_jobs{$job_id};
+      }
+      $log->write_to("\n\nNumber of jobs that failed after the second attempt: $failed\n");
   }
   @problem_cmds = @new_problem_cmds;
-  $lsf->clear;
 }
 
 if (@problem_cmds) {
-  $log->error("ERROR: There are ". scalar @problem_cmds ." GFF_method_dump.pl LSF jobs that have failed. See LSF output files ($scratch_dir)\n");      
+  $log->error("ERROR: There are ". scalar @problem_cmds ." GFF_method_dump.pl Slurm jobs that have failed. See Slurm output files ($scratch_dir)\n");      
 }
 
 

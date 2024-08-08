@@ -8,10 +8,7 @@ use lib $ENV{CVS_DIR};
 
 use Bio::SeqIO;
 use Modules::Map_Helper;
-
-use LSF RaiseError => 0, PrintError => 1, PrintOutput => 1;
-use LSF::JobManager;
-
+use Modules::WormSlurm;
 
 ################################
 # command-line options         #
@@ -121,14 +118,15 @@ sub map_rnai_segs_to_genome {
       push @query, $file;
     }
     
-    my $lsf = LSF::JobManager->new();
-    
+    my %slurm_jobs;
     my @outfiles;
+    my @unwritable;
     for(my $i=0; $i < @query; $i++) {
       my $query = $query[$i];
       my $jname    = "worm_rna2genome.$type.$i.$$";
       my $out_file = "$workdir/rnai_out.$type.$i.gff";
-      my $lsf_out  = "$workdir/rnai_out.$type.$i.lsf_out";
+      my $slurm_out  = "$workdir/rnai_out.$type.$i.slurm_out";
+      my $slurm_err  = "$workdir/rnai_out.$type.$i.slurm_err";
       
       my $cmd = "perl $mapping_script -query $query -target $in_genome -outfile $out_file";
       
@@ -139,21 +137,27 @@ sub map_rnai_segs_to_genome {
                           -R => 'select[mem>=2600] rusage[mem=2600]'
           );
       if (not -e $out_file) {
-        $lsf->submit(@bsub_options, $cmd);
+	  my $pre_job_id = WormSlurm::submit_and_wait("test -w $workdir");
+	  my $pre_job_exit_code = WormSlurm::get_exit_code($pre_job_id);
+	  if ($pre_job_exit_code != 0) {
+	      push @unwritable, $cmd;
+	  } else {
+	      my $job_id = WormSlurm::submit_job_with_name($cmd, 'production', '2600m', '12:00:00', $slurm_out, $slurm_err, $jname);
+	      $slurm_jobs{$job_id} = $cmd;
+	  }
       }
       push @outfiles, $out_file;
     }   
-    
-    $lsf->wait_all_children( history => (scalar(@query) == 1) ? 0 : 1 );
-    # wait a few seconds here; the LSF job manager sometimes lags a little in
-    # registering the job history
+    WormSlurm::wait_for_jobs(keys %slurm_jobs);
     sleep(5);
     
-    for my $job ( $lsf->jobs ) {    
-      print STDERR ("$job exited non zero\n") if $job->history->exit_status != 0;
+    for my $job_id (keys %slurm_jobs) {    
+      print STDERR ("$job exited non zero\n") if WormSlurm::get_exit_code($job_id) != 0;
     }
-    $lsf->clear;
-
+    for my $cmd_not_run (@unwritable) {
+	print STDERR ("$cmd_not_run not executed as work directory is unwritable\n");
+    }
+    
     foreach my $outfile (@outfiles) {
       open(my $rnaifh, $outfile) or die "Could not open $outfile for writing\n";
       while(<$rnaifh>) {
