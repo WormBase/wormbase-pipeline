@@ -157,7 +157,7 @@ sub write_to {
     my $fh     = $self->{"FH"};
     chomp $string;
     print $fh Wormbase::rundate() . ' ' . Wormbase::runtime() . " ${string}\n";
-    print STDERR "$string" if $self->{'DEBUG'};    # write log to terminal if debug mode
+    print STDERR "$string\n" if $self->{'DEBUG'};    # write log to terminal if debug mode
 }
 
 sub mail {

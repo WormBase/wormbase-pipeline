@@ -756,13 +756,14 @@ sub write_clones2seq  {
     my $job_name = "worm_".$wormbase->species."_commondata";
 
     my %slurm_jobs;
+    my $c2sname = $clone2seq ? $clone2seq : 'all';
     foreach my $this_species (keys %full_names) {
-      my $err = "$scratch_dir/update_Common_data.pl.slurm.clone2seq.$clone2seq.err";
-      my $out = "$scratch_dir/update_Common_data.pl.slurm.clone2seq.$clone2seq.out";
+      my $err = "$scratch_dir/update_Common_data.pl.slurm.clone2seq.$c2sname.err";
+      my $out = "$scratch_dir/update_Common_data.pl.slurm.clone2seq.$c2sname.out";
       my $cmd = "update_Common_data.pl -clone2seq $this_species";
       $cmd = $wormbase->build_cmd_line($cmd, $store_file);
       $log->write_to("Submitting Slurm job: $cmd\n");
-      my $job_id = WormSlurm::submit_job_with_name($cmd, 'production', '3500m', '00:40:00', $err, $out, $job_name);
+      my $job_id = WormSlurm::submit_job_with_name($cmd, 'production', '8000m', '02:00:00', $err, $out, $job_name);
       $slurm_jobs{$job_id} = $cmd;
     }
 
