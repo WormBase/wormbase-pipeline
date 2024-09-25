@@ -489,12 +489,14 @@ sub download_from_agr {
 	run_slurm_job('python3 ' . $ENV{'CVS_DIR'} . "/AGR/agr_variations_json2vcf.py -j ${mod}_VARIATION.json -m $mod -g ${mod}_GFF.gff " .
 		      "-f ${mod}_FASTA.fa -o ${mod}_VCF.vcf", "Converting $mod phenotypic variants JSON to VCF", $log, '00:30:00', 4, '/dev/null', '/dev/null') if -e "${mod}_VARIATION.json";
 	if ($mod eq 'HUMAN') {
+	    # May need to reimplement below once we move back to full set of human variants and not just RGD-submitted ClinVar variants
+	    
 	    # Copy across files not on FMS from local directory
-	    my @files_to_copy = ('HUMAN_HTVCF.vcf');
-	    push @files_to_copy, 'HUMAN_GFF.gff' if $external_human_gff;
-	    for my $file (@files_to_copy) {
-		run_system_cmd("cp ${HUMAN_FILES_DIR}/${file} $file", "Copying local $file file to working directory", $log);
-	    }   
+	    #my @files_to_copy = ('HUMAN_HTVCF.vcf');
+	    #push @files_to_copy, 'HUMAN_GFF.gff' if $external_human_gff;
+	    #for my $file (@files_to_copy) {
+		#run_system_cmd("cp ${HUMAN_FILES_DIR}/${file} $file", "Copying local $file file to working directory", $log);
+	    #}   
 	}
 	elsif ($mod eq 'MGI') {
 
@@ -600,7 +602,7 @@ sub process_input_files {
     
     cleanup_intermediate_files($mod, $log);
     
-    sort_vcf_files($mod, $log) unless $mod eq 'HUMAN'; # No need for human as using local (sorted) file
+    sort_vcf_files($mod, $log); # unless $mod eq 'HUMAN'; # No need for human as using local (sorted) file Update 25092024: (not any more - may revert in future)
 
     my $chr_map;
     check_chromosome_map($mod, $log);
