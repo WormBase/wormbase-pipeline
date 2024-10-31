@@ -66,11 +66,11 @@ while(<$in_fh>) {
 	}
     next;
     }
-    
+
+    chomp;
     my @l = split(/\t/, $_);
     if ($l[1] eq 'WormBase') {
 	if ($l[2] eq 'gene') {
-	    chomp;
 	    my %attr;
 	    foreach my $kv (split(/;/, $l[8])) {
 		my ($k, $v) = split(/\=/, $kv);
@@ -98,7 +98,7 @@ while(<$in_fh>) {
 	} elsif($l[2] eq 'CDS'){
 	    change_cds($_,$out_fh)
 	} else {
-	    print $out_fh $_;
+	    print $out_fh $_ . "\n";
 	}
     }
 }
@@ -113,7 +113,7 @@ sub change_cds {
     $line =~ s/;protein_id=/;ena_id=/;
     $line =~ s/;wormpep=/;protein_id=WB:/;
 
-    print $out_fh $line;
+    print $out_fh $line . "\n";
 }
 
 sub change_transcript{
@@ -122,7 +122,7 @@ sub change_transcript{
     my $transcriptID="$1" if $line =~ /Name=([^;\n]+)/;
     my $geneID="$1" if $line =~/(WBGene\d+)/;
     $line=~s/;Parent/;transcript_id=WB:$transcriptID;curie=WB:$transcriptID;Ontology_term=$soID;Parent/;
-    print $outf $line;
+    print $outf $line . "\n";
 }
 
 sub open_gff_file {
