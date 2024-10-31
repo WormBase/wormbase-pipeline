@@ -10,7 +10,27 @@ use URI::Escape;
 
 use lib $ENV{CVS_DIR};
 use Modules::AGR;
+use Const::Fast;
 
+const my %SO_TERM_MAP => (
+    'mRNA' => 'SO:0000234',
+    'ncRNA' => 'SO:0000655',
+    'piRNA' => 'SO:0001035',
+    'lincRNA' => 'SO:0001463',
+    'miRNA' => 'SO:0000276',
+    'pre_miRNA' => 'SO:0001244',
+    'snoRNA' => 'SO:0000275',
+    'lncRNA' => 'SO:0001877',
+    'tRNA' => 'SO:0000253',
+    'snRNA' => 'SO:0000274',
+    'rRNA' => 'SO:0000252',
+    'antisense_RNA' => 'SO:0000644',
+    'C_gene_segment' => 'SO:0000478',
+    'V_gene_segment' => 'SO:0000466',
+    'pseudogenic_transcript' => 'SO:0000516',
+    'nc_primary_transcript' => 'SO:0000483',
+    'circular_ncRNA' => 'SO:0002291',
+    );
 my ($bgi_json, $gff_in, $gff_out, $ws_version);
 
 GetOptions (
@@ -47,41 +67,39 @@ while(<$in_fh>) {
     next;
     }
     
-    if (/^\S+\s+WormBase\s+gene\s+/) {
-	chomp;
-	my @l = split(/\t/, $_);
-	my %attr;
-	foreach my $kv (split(/;/, $l[8])) {
-	    my ($k, $v) = split(/\=/, $kv);
-	    $attr{$k} = $v;
-	}
-	my $gid = $attr{curie};
-
-	$attr{gene_id} = $attr{curie}; # Duplication seems strange but requested in AGR doc
+    my @l = split(/\t/, $_);
+    if ($l[1] eq 'WormBase') {
+	if ($l[2] eq 'gene') {
+	    chomp;
+	    my %attr;
+	    foreach my $kv (split(/;/, $l[8])) {
+		my ($k, $v) = split(/\=/, $kv);
+		$attr{$k} = $v;
+	    }
+	    my $gid = $attr{curie};
+	    
+	    $attr{gene_id} = $attr{curie};
 	
-	# use symbol as Name
-	$attr{Name} = $bgi_genes{$gid}->{symbol};
-	if (exists $bgi_genes{$gid}->{name}) {
-	    $attr{long_name} = $bgi_genes{$gid}->{name};
+	    # use symbol as Name
+	    $attr{Name} = $bgi_genes{$gid}->{symbol};
+	    if (exists $bgi_genes{$gid}->{name}) {
+		$attr{long_name} = $bgi_genes{$gid}->{name};
+	    }
+	    if (exists $bgi_genes{$gid}->{geneSynopsis}) {
+		$attr{description} = uri_escape($bgi_genes{$gid}->{geneSynopsis},"\t=%;,&");
+	    }
+	    $attr{Ontology_term}='SO:0000704';
+	    
+	    $l[8] = join(";", map { $_ . "=" . $attr{$_} } keys %attr);
+	    print $out_fh join("\t", @l), "\n";
+	    
+	} elsif(exists $SO_TERM_MAP{$l[2]}) {
+	    change_transcript($_, $out_fh, $SO_TERM_MAP{$l[2]});
+	} elsif($l[2] eq 'CDS'){
+	    change_cds($_,$out_fh)
+	} else {
+	    print $out_fh $_;
 	}
-	if (exists $bgi_genes{$gid}->{geneSynopsis}) {
-	    $attr{description} = uri_escape($bgi_genes{$gid}->{geneSynopsis},"\t=%;,&");
-	}
-	$attr{Ontology_term}='SO:0000704';
-	
-	$l[8] = join(";", map { $_ . "=" . $attr{$_} } keys %attr);
-	print $out_fh join("\t", @l), "\n";
-	
-    } elsif(/^\S+\s+WormBase\s+mRNA/){
-	change_transcript($_,$out_fh,'SO:0000234')
-    } elsif(/^\S+\s+WormBase\s+pseudogenic_transcript/){
-	change_transcript($_,$out_fh,'SO:0000516')
-    } elsif(/^\S+\s+WormBase\s+ncRNA/){
-	change_transcript($_,$out_fh,'SO:0000655')
-    } elsif(/^\S+\s+WormBase\s+CDS\s/){
-	change_cds($_,$out_fh)
-    } elsif (/^\S+\s+WormBase\s+/){
-	print $out_fh $_;
     }
 }
 close($out_fh) or die "Could not close $gff_out after writing (probably file system full)\n";
@@ -103,7 +121,6 @@ sub change_transcript{
     my @l = split(/\t/, $line);
     my $transcriptID="$1" if $line =~ /Name=([^;\n]+)/;
     my $geneID="$1" if $line =~/(WBGene\d+)/;
-    # $line=~s/;Parent/;curie=WB:$transcriptID;curie=WB:$geneID;Ontology_term=$soID;Parent/;
     $line=~s/;Parent/;transcript_id=WB:$transcriptID;curie=WB:$transcriptID;Ontology_term=$soID;Parent/;
     print $outf $line;
 }
