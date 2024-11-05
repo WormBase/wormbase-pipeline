@@ -435,6 +435,7 @@ for v in (parsed["data"]):
     vcf_data["chromosome"] = chr
     vcf_data["pos"] = pos
 
+    origVarSeq = varSeq
     if len(varSeq) == 1:
         if nt_regex.match(varSeq) is None:
             if varSeq in expand_iupac:
@@ -453,7 +454,7 @@ for v in (parsed["data"]):
     else:
         added_entries.add(entry)
                 
-    hgvsg = construct_hgvsg_id(v, chrom2ncbi[args.mod][chr], refSeq, varSeq)
+    hgvsg = construct_hgvsg_id(v, chrom2ncbi[args.mod][chr], refSeq, origVarSeq)
 
     if args.strains:
         gtString = genotype_string(v, strains)
