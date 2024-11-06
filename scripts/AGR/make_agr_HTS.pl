@@ -224,7 +224,7 @@ sub sampleAge{
 
 	return unless $ls && $ls->Public_name;
 
-	$jsonRef->{sampleAge}={stage => { stageTermId => 'WB:'.$ls->name,
+	$jsonRef->{sampleAge}={stage => { stageTermId => $ls->name,
 		                          stageName => $ls->Public_name->name ,
 					  stageUberonSlimTerm => {uberonTerm => ((keys %{$uberon{$ls->name}})[0]||'post embryonic, pre-adult')},
 				        }
@@ -235,7 +235,7 @@ sub sampleLocation{
 	my ($jsonRef,$sample)=@_;
 	$jsonRef->{sampleLocations}=[];
 	map {push @{$jsonRef->{sampleLocations}},
-				{anatomicalStructureTermId => "WB:$_",
+				{anatomicalStructureTermId => "$_",
 				 anatomicalStructureUberonSlimTermIds => [{uberonTerm =>((keys %{$uberon{$_->name}})[0] || 'Other')}],
 				 whereExpressedStatement => ($_->Term->name || 'C.elegans Cell and Anatomy'),
 			        }
