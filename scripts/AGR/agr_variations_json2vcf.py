@@ -416,7 +416,7 @@ for v in (parsed["data"]):
     refSeq = ''.join(refSeq.split())
         
     # Add padded base and adjust pos if required
-    if v["type"] == 'SO:0000159' or v["type"] == 'SO:0000667' or v["type"] == 'SO:1000032':
+    if v["type"] == 'SO:0000159' or v["type"] == 'SO:0000667' or v["type"] == 'SO:1000032' or v["type"] == 'SO:0002007':
         if v["type"] != 'SO:0000667' and pos != 1:
             pos = pos - 1
             
