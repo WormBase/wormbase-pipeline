@@ -11,7 +11,7 @@ use Wormbase;
 my ($help, $debug, $test, $verbose, $store, $wormbase, $schema);
 my ($outfile, $acedbpath, $ws_version, $out_fh, $gtf_file);
 
-const my $LINKML_SCHEMA => 'v2.2.3';
+const my $LINKML_SCHEMA => 'v2.8.1';
 
 const my %XREF_MAP => (
     "NCBI"       => {

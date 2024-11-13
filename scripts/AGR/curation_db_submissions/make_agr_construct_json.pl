@@ -15,7 +15,7 @@ use Modules::AGR;
 my ($debug, $test, $verbose, $store, $wormbase, $curation_test, $limit, $schema);
 my ($outdir, $acedbpath, $ws_version, $out_fh, $bgi_json,$disease_file);
 
-const my $LINKML_SCHEMA => 'v2.2.0';
+const my $LINKML_SCHEMA => 'v2.8.1';
 
 GetOptions (
     'debug=s'       => \$debug,
