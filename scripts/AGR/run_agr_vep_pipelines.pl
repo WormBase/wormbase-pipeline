@@ -719,7 +719,7 @@ sub run_vep_on_htp_variations{
     $ENV{EHIVE_URL} = $ehive_url;
  
     run_system_cmd("beekeeper.pl -url $ehive_url -loop", "Running $mod HTP variations VEP eHive pipeline", $log);
-    run_slurm_job("mv " . $ENV{'HTP_VEP_WORKING_DIR'} . "/${mod}_vep/${mod}.vep.vcf.gz .", "Moving $mod combined HTP variations VEP output", $log, '01:00:00', 1, '/dev/null', '/dev/null');
+    run_slurm_job("cp " . $ENV{'HTP_VEP_WORKING_DIR'} . "/${mod}_vep/${mod}.vep.vcf.gz .", "Copying $mod combined HTP variations VEP output", $log, '01:00:00', 1, '/dev/null', '/dev/null');
     if ($mod eq 'RGD') {
 	submit_data($mod, 'HTPOSTVEPVCF', "${mod}.vep.vcf.gz", $log) unless $test;
     }
