@@ -1173,11 +1173,11 @@
                                      Variation ?Variation
                                      Phenotype ?Phenotype
                                      Database ?Database ?Database_field ?Text
-                Annotation_extension Life_stage_relation ?Text UNIQUE ?Life_stage
-                                     Gene_relation ?Text UNIQUE ?Gene
-                                     Molecule_relation ?Text UNIQUE ?Molecule
-                                     Anatomy_relation ?Text UNIQUE ?Anatomy_term
-                                     GO_term_relation ?Text UNIQUE ?GO_term
+                Annotation_extension Life_stage_relation ?RO_term UNIQUE ?Life_stage
+                                     Gene_relation ?RO_term UNIQUE ?Gene
+                                     Molecule_relation ?RO_term UNIQUE ?Molecule
+                                     Anatomy_relation ?RO_term UNIQUE ?Anatomy_term
+                                     GO_term_relation ?RO_term UNIQUE ?GO_term
                 Annotation_isoform ?Text ?Protein
                 Interacting_species ?Species ?Strain
                 Reference UNIQUE ?Paper OUTXREF GO_annotation
@@ -3983,4 +3983,4 @@
 // Add a line for the WS release the models file is going to be GIT tagged for
 // This give you a final shot at creating a nicely formatted GIT commit message
 //
-// WS295
+// WS296
