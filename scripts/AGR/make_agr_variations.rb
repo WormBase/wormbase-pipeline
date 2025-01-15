@@ -97,21 +97,23 @@ class TableMaker
 	def parse_output(outfile)
 		results=Hash.new
 		File.open(outfile).each{|line|
-			line.chomp!
-			line.gsub!('"','')
-			c = line.split("\t")
-                        if !results[c[0]]
-			        results[c[0]]=Hash.new # WBVarXXX
-			        results[c[0]]["name"] = c[0] # WBVarXXX
-                        end
-			if !c[1].empty?
-				results[c[0]]["paper"]||=Hash.new # WBPaperXXX
-				results[c[0]]["paper"][c[1]] = (c[2].nil? or c[2].empty?) ? 'n/a' : c[2] # PubmedID
-			end
-			if c[3]
-				results[c[0]][:strains]||=[] # WBStrains
-				results[c[0]][:strains].push(c[3]) # adds WBStrainId
-			end
+		  line.chomp!
+		  line.gsub!('"','')
+                  if !line["Europe_PMC"]
+		    c = line.split("\t")
+                    if !results[c[0]]
+		      results[c[0]]=Hash.new # WBVarXXX
+		      results[c[0]]["name"] = c[0] # WBVarXXX
+                    end
+		    if !c[1].empty?
+		      results[c[0]]["paper"]||=Hash.new # WBPaperXXX
+		      results[c[0]]["paper"][c[1]] = (c[4].nil? or c[4].empty?) ? 'n/a' : c[4] # PubmedID
+		    end
+		    if c[5]
+		      results[c[0]][:strains]||=[] # WBStrains
+		      results[c[0]][:strains].push(c[5]) # adds WBStrainId
+		    end
+                  end
 		}
 #		File.unlink(outfile)
 		return results

@@ -27,27 +27,26 @@ From 1
 Tag Reference   
  
 Colonne 3 
-Width 12 
-Optional 
-Hidden 
+Width 12
+Optional
+Hidden
 Show_Tag 
 From 2 
-Tag Database   
-Condition MEDLINE
+Tag Database
  
 Colonne 4 
 Width 12 
 Optional 
-Hidden 
+Visible
 Class 
 Class Text 
 Right_of 3 
-Tag HERE    
+Tag HERE
  
 Colonne 5 
 Width 12 
 Optional 
-Hidden 
+Visible
 Class 
 Class Text 
 Right_of 4 
