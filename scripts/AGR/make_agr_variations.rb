@@ -99,17 +99,21 @@ class TableMaker
 		File.open(outfile).each{|line|
 		  line.chomp!
 		  line.gsub!('"','')
+                  isInAgr = false
+                  if line["AGRKB"]
+                    isInAgr = true
+                  end
                   if !line["Europe_PMC"]
 		    c = line.split("\t")
                     if !results[c[0]]
 		      results[c[0]]=Hash.new # WBVarXXX
 		      results[c[0]]["name"] = c[0] # WBVarXXX
                     end
-		    if !c[1].empty?
+                    if !c[1].empty? && isInAgr
 		      results[c[0]]["paper"]||=Hash.new # WBPaperXXX
-		      results[c[0]]["paper"][c[1]] = (c[4].nil? or c[4].empty?) ? 'n/a' : c[4] # PubmedID
+		      results[c[0]]["paper"][c[1]] = (!c[4].nil? && !c[4].empty?) ? c[4] : 'n/a' # PubmedID
 		    end
-		    if c[5]
+                    if c[5]
 		      results[c[0]][:strains]||=[] # WBStrains
 		      results[c[0]][:strains].push(c[5]) # adds WBStrainId
 		    end

@@ -70,6 +70,14 @@ Class Strain
 From 1 
 Tag Strain 
  
- 
+Colonne 8
+Width 40
+Optional
+Visible
+Class
+Class Text
+From 2
+Tag Name
+
 
 // End of these definitions
