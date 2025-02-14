@@ -146,7 +146,7 @@ sub update_database {
     $ftp->login("anonymous",'-anonymous@')
         ||$log->log_and_die("Cannot login ${\$ftp->message}\n");
     
-    my $ftp_folder = "/pub/databases/Pfam/$pfam_release/database_files";
+    my $ftp_folder = "/pub/databases/Pfam/releases/$pfam_release/database_files";
 
     $ftp->cwd($ftp_folder)
         ||$log->log_and_die("Cannot change working directory ${\$ftp->message}\n");
