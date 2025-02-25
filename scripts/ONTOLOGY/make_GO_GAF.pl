@@ -323,7 +323,7 @@ foreach my $suf (0..9) {
     #
     my @annot_ext;
     foreach my $line ($obj->Annotation_extension) {
-      my $relation = $line->right->name;
+      my $relation = $line->right->Name->name;
       my $subject = $line->right->right;
       my $prefix = "";
       if ($line->name eq 'Gene_relation') {
