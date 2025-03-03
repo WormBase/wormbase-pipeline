@@ -9,7 +9,7 @@ use Path::Class;
 my ($help, $debug, $test, $verbose, $store, $wormbase);
 my ($outfile, $acedbpath, $ws_version, $out_fh, $association_outfile);
 
-const my $LINKML_SCHEMA => 'v2.8.1';
+const my $LINKML_SCHEMA => 'v2.9.1';
 
 GetOptions ("help"        => \$help,
             "debug=s"     => \$debug,

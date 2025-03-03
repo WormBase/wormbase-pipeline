@@ -15,7 +15,7 @@ use Modules::AGR;
 my ($debug, $test, $verbose, $store, $wormbase, $curation_test, $limit, $schema);
 my ($outdir, $acedbpath, $ws_version, $bgi_json,$disease_file);
 
-const my $LINKML_SCHEMA => 'v2.8.1';
+const my $LINKML_SCHEMA => 'v2.9.1';
 # TODO: check SO term mappings with Stavros
 const my %TERM2SO => (
     'Insertion'            => 'SO:0000667', # changed insertion_site to insertion
@@ -137,7 +137,7 @@ sub process_variations {
 	my $is_obsolete = ($obj->Status && $obj->Status->name eq 'Dead') ? JSON::true : JSON::false;
 	    
 	my $allele_obj = {
-	    mod_entity_id              => "WB:" . $obj->name,
+	    primary_external_id        => "WB:" . $obj->name,
 	    allele_symbol_dto          => get_symbol_dto($obj),
 	    taxon_curie                => "NCBITaxon:" . $obj->Species->NCBITaxonomyID->name,
 	    internal                   => JSON::false,
@@ -148,7 +148,7 @@ sub process_variations {
 	};
 
 	my $var_obj = {
-	    mod_entity_id              => "WBVar:" . $obj->name,
+	    primary_external_id        => "WBVar:" . $obj->name,
 	    taxon_curie                => "NCBITaxon:" . $obj->Species->NCBITaxonomyID->name,
 	    internal                   => JSON::false,
 	    obsolete                   => $is_obsolete,
@@ -394,7 +394,7 @@ sub process_transgenes {
 	}; 
 	
 	my $allele_obj = {
-	    mod_entity_id => "WB:" . $obj->name, 
+	    primary_external_id => "WB:" . $obj->name, 
 	    allele_symbol_dto => get_symbol_dto($obj),
 	    taxon_curie   => "NCBITaxon:" . $obj->Species->NCBITaxonomyID->name,
 	    internal      => JSON::false,

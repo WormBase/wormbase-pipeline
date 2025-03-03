@@ -11,7 +11,7 @@ use Wormbase;
 my ($help, $debug, $test, $verbose, $store, $wormbase, $schema);
 my ($outfile, $acedbpath, $ws_version, $out_fh, $gtf_file);
 
-const my $LINKML_SCHEMA => 'v2.8.1';
+const my $LINKML_SCHEMA => 'v2.9.1';
 
 const my %XREF_MAP => (
     "NCBI"       => {
@@ -171,7 +171,7 @@ while (my $obj = $it->next) {
     my $is_obsolete = $obj->Status && $obj->Status->name eq 'Dead' ? JSON::true : JSON::false;
     my $gene_type = $obj->Biotype ? $obj->Biotype->name : 'SO:0000704';
     my $gene = {
-	mod_entity_id    => 'WB:' . $obj->name,
+	primary_external_id => 'WB:' . $obj->name,
 	gene_type_curie  => $gene_type,
 	gene_symbol_dto   => $symbol,
 	taxon_curie    => 'NCBITaxon:' . $obj->Species->NCBITaxonomyID,

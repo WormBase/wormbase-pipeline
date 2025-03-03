@@ -9,7 +9,7 @@ use Const::Fast;
 my ($help, $debug, $test, $verbose, $store, $wormbase);
 my ($outfile, $acedbpath, $ws_version, $out_fh);
 
-const my $LINKML_SCHEMA => 'v2.8.1';
+const my $LINKML_SCHEMA => 'v2.9.1';
 
 GetOptions ("help"        => \$help,
             "debug=s"     => \$debug,
@@ -103,13 +103,13 @@ while (my $obj = $it2->next) {
 
     
     my $genotype = {
-	mod_entity_id     => "WB:$obj",
-	name              => ($obj->Genotype_name ? "${\$obj->Genotype_name}" : "$obj"),
-	subtype_name      => 'genotype',
-	taxon_curie       => 'NCBITaxon:' . $obj->Species->NCBITaxonomyID,
-	internal          => JSON::false,
-	obsolete          => JSON::false,
-	data_provider_dto => $data_provider_dto_json
+	primary_external_id => "WB:$obj",
+	name                => ($obj->Genotype_name ? "${\$obj->Genotype_name}" : "$obj"),
+	subtype_name        => 'genotype',
+	taxon_curie         => 'NCBITaxon:' . $obj->Species->NCBITaxonomyID,
+	internal            => JSON::false,
+	obsolete            => JSON::false,
+	data_provider_dto   => $data_provider_dto_json
     };
     push @agms, $genotype;
 }

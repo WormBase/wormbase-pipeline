@@ -15,7 +15,7 @@ use Modules::AGR;
 my ($debug, $test, $verbose, $store, $wormbase, $curation_test, $limit, $schema);
 my ($outdir, $acedbpath, $ws_version, $out_fh, $bgi_json,$disease_file);
 
-const my $LINKML_SCHEMA => 'v2.8.1';
+const my $LINKML_SCHEMA => 'v2.9.1';
 
 GetOptions (
     'debug=s'       => \$debug,
@@ -96,7 +96,7 @@ sub process_constructs {
 	}; 
 	
 	my $json_obj = {
-	    mod_entity_id              => "WB:" . $obj->name,
+	    primary_external_id              => "WB:" . $obj->name,
 	    construct_symbol_dto       => get_symbol_dto($obj),
 	    internal                   => JSON::false,
 	    obsolete                   => JSON::false,
