@@ -64,7 +64,7 @@ while (my $obj = $it->next) {
     };
 	    
     my $strain = {
-	mod_entity_id     => "WB:$obj",
+	primary_external_id     => "WB:$obj",
 	name              => ($obj->Public_name ? "${\$obj->Public_name}" : "$obj"),
 	subtype_name      => 'strain',
 	taxon_curie       => 'NCBITaxon:' . $obj->Species->NCBITaxonomyID,

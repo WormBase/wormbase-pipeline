@@ -167,7 +167,7 @@ while( my $obj = $it->next) {
     };
 	
     my $annot = {
-	mod_entity_id        => $obj->name,
+	primary_external_id        => $obj->name,
 	internal             => JSON::false,
 	do_term_curie        => $obj->Disease_term->name,
 	data_provider_dto    => $data_provider_dto_json,
