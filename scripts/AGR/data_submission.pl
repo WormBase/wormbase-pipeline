@@ -161,7 +161,7 @@ if ($bgi or $all) {
 
 if ($disease or $phenotype or $all) {
     my @cmds = ("perl ${cvs_dir}/AGR/get_chebi_name_map.pl -o $chebi_map_file") unless -e $chebi_map_file;
-    $datatypes_processed{'CHEBI'} = process_datatype('chebi_map', \@cmds, $sub_dir, $log, $DEFAULT_MEM, '1:00:00');
+    $datatypes_processed{'CHEBI'} = process_datatype('chebi_map', \@cmds, $sub_dir, $log, $HIGH_MEM, '1:00:00');
 }
     
 
