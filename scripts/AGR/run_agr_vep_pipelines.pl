@@ -487,7 +487,7 @@ sub download_from_agr {
 	
 	unlink "${mod}_FASTA.fa.fai" if -e "${mod}_FASTA.fa.fai";
 	run_slurm_job('python3 ' . $ENV{'CVS_DIR'} . "/AGR/agr_variations_json2vcf.py -j ${mod}_VARIATION.json -m $mod -g ${mod}_GFF.gff " .
-		      "-f ${mod}_FASTA.fa -o ${mod}_VCF.vcf", "Converting $mod phenotypic variants JSON to VCF", $log, '00:30:00', 4, '/dev/null', '/dev/null') if -e "${mod}_VARIATION.json";
+		      "-f ${mod}_FASTA.fa -o ${mod}_VCF.vcf", "Converting $mod phenotypic variants JSON to VCF", $log, '01:30:00', 8, '/dev/null', '/dev/null') if -e "${mod}_VARIATION.json";
 	if ($mod eq 'HUMAN') {
 	    # May need to reimplement below once we move back to full set of human variants and not just RGD-submitted ClinVar variants
 	    
