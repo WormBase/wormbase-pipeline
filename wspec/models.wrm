@@ -911,6 +911,8 @@
 ?Species Evidence #Evidence
          Short_name UNIQUE Text   // e.g. 'C. elegans'
          Other_name Text      // sp. 7 etc.
+         WB_Prefix UNIQUE Text // WB approved (Tim Schedl) short species prefix e.g. 'Cel'
+         Other_prefix ?Text #Evidence
          G_species UNIQUE Text    // e.g. 'c_elegans' - used internally for file generation
          Reference ?Paper XREF Species
          Remark ?Text #Evidence
@@ -3963,4 +3965,4 @@
 // Add a line for the WS release the models file is going to be CVS tagged for
 // This give you a final shot at creating a nicely formatted CVS commit message
 //
-// WS296
+// WS297
