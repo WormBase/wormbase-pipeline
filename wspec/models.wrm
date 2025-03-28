@@ -911,7 +911,7 @@
 ?Species Evidence #Evidence
          Short_name UNIQUE Text   // e.g. 'C. elegans'
          Other_name Text      // sp. 7 etc.
-         WB_Prefix UNIQUE Text // WB approved (Tim Schedl) short species prefix e.g. 'Cel'
+         WB_prefix UNIQUE Text // WB approved (Tim Schedl) short species prefix e.g. 'Cel'
          Other_prefix ?Text #Evidence
          G_species UNIQUE Text    // e.g. 'c_elegans' - used internally for file generation
          Reference ?Paper XREF Species
