@@ -3309,7 +3309,7 @@
              Middle_name Text          // middle name(s)
              Last_name UNIQUE ?Person_name XREF Last_name_of    // prefered last name
              Standard_name UNIQUE ?Person_name XREF Standard_name_of   // name to be used for displays
-                                       // default is "First_name Last_name"
+                                       // Person's preferred name
              Full_name UNIQUE ?Person_name XREF Full_name_of // field for storing long name [030321 krb]
              Also_known_as ?Person_name XREF Other_name_of // new XREF added [030310 krb]
         Principal_investigator // Tag used to identify a person who has a lab (used when CGC lab or not.)
