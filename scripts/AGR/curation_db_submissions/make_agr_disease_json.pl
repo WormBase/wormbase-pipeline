@@ -15,7 +15,7 @@ use Path::Class;
 use Const::Fast;
 use XML::LibXML;
 
-const my $LINKML_SCHEMA => 'v2.9.1';
+const my $LINKML_SCHEMA => 'v2.10.0';
 const my $CHEBI_PURL => 'http://purl.obolibrary.org/obo/chebi.owl';
 
 my ($debug, $test, $verbose, $store, $wormbase, $acedbpath, $ws_version, $outfile, $schema, $dates_file);
@@ -174,7 +174,7 @@ while( my $obj = $it->next) {
 	date_updated         => $evi_date,
 	annotation_type_name => 'manually_curated',
 	evidence_code_curies => \@evi_codes,
-	reference_curie      => $paper,
+	evidence_curie      => $paper,
 	internal             => JSON::false,
 	obsolete             => JSON::false
     };
@@ -351,12 +351,12 @@ sub get_chemical_ontology_id {
 sub get_condition_relations {
     my ($obj, $chebi_name_map) = @_;
 
-    my $condition_relation_type;
     my (@modifiers, @inducers);
     my $conditions = [];
+    my $modifier_conditions = [];
     my $condition_relations = [];
     if ($obj->Experimental_condition){
-        $condition_relation_type = 'induced_by';
+        my $condition_relation_type = 'induced_by';
         my @inducing_chemicals = map {{
             condition_chemical_curie => get_chemical_ontology_id($_),
             condition_class_curie => $zeco{'chemical treatment'},
@@ -369,9 +369,16 @@ sub get_condition_relations {
             }} $obj->Inducing_agent;
         @inducers = (@inducing_chemicals, @inducing_agents);
         push @$conditions, @inducers;
+
+	my $cr_json = {
+	    condition_relation_type_name => $condition_relation_type,
+	    condition_dtos => $conditions,
+	    internal => JSON::false
+	};
+        push @$condition_relations, $cr_json;
     }
     if ($obj->Modifier_info and ($obj->Modifier_molecule or $obj->Other_modifier)) {
-	$condition_relation_type = 'has_condition';
+	my $condition_relation_type = 'has_condition';
 	if ($obj->Modifier_association_type) {
 	    if ($obj->Modifier_association_type->name eq 'condition_ameliorated_by') {
 		$condition_relation_type = 'ameliorated_by';
@@ -391,20 +398,20 @@ sub get_condition_relations {
 	    internal => JSON::false
 	    }} $obj->Other_modifier;
         @modifiers = (@modifying_molecules, @other_modifiers);
-        push @$conditions, @modifiers;
-    }
+        push @$modifier_conditions, @modifiers;
     
-    unless ($condition_relation_type eq 'has_condition'){
-	$condition_relation_type = 'not_' . $condition_relation_type if $obj->at('Modifier_qualifier_not');
-    }
+	unless ($condition_relation_type eq 'has_condition'){
+	    $condition_relation_type = 'not_' . $condition_relation_type if $obj->at('Modifier_qualifier_not');
+	}
 
-    if ($condition_relation_type) {
-	my $cr_json = {
-	    condition_relation_type_name => $condition_relation_type,
-	    condition_dtos => $conditions,
-	    internal => JSON::false
-	};
-        push @$condition_relations, $cr_json;
+	if ($condition_relation_type) {
+	    my $cr_json = {
+		condition_relation_type_name => $condition_relation_type,
+		condition_dtos => $modifier_conditions,
+		internal => JSON::false
+	    };
+	    push @$condition_relations, $cr_json;
+	}
     }
 
     return ($condition_relations);
