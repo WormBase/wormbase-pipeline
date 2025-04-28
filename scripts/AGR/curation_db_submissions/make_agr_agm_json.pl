@@ -176,8 +176,8 @@ sub get_genotype_name_slot_annotations {
     my $full_name;
     if ($obj->Genotype_name) {
 	$full_name = {
-	    display_text => $obj->Public_name->name,
-	    format_text => $obj->Public_name->name,
+	    display_text => $obj->Genotype_name->name,
+	    format_text => $obj->Genotype_name->name,
 	    name_type_name => 'full_name',
 	    internal => JSON::false,
 	    obsolete => JSON::false
