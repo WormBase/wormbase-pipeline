@@ -66,7 +66,6 @@ while (my $obj = $it->next) {
 	    
     my $strain = {
 	primary_external_id     => "WB:$obj",
-	name              => ($obj->Public_name ? "${\$obj->Public_name}" : "$obj"),
 	subtype_name      => 'strain',
 	taxon_curie       => 'NCBITaxon:' . $obj->Species->NCBITaxonomyID,
 	internal          => JSON::false,
@@ -109,13 +108,17 @@ while (my $obj = $it2->next) {
     
     my $genotype = {
 	primary_external_id => "WB:$obj",
-	name                => ($obj->Genotype_name ? "${\$obj->Genotype_name}" : "$obj"),
 	subtype_name        => 'genotype',
 	taxon_curie         => 'NCBITaxon:' . $obj->Species->NCBITaxonomyID,
 	internal            => JSON::false,
 	obsolete            => JSON::false,
 	data_provider_dto   => $data_provider_dto_json
     };
+
+    my ($full_name, $synonyms) = get_genotype_name_slot_annotations($obj);
+    $genotype->{agm_full_name_dto} = $full_name if $full_name;
+    $genotype->{agm_synonym_dtos} = $synonyms if @$synonyms;
+
     push @agms, $genotype;
 }
 my $data = {
@@ -156,7 +159,8 @@ sub get_name_slot_annotations {
 		format_text => $synonym_obj->name,
 		display_text => $synonym_obj->name,
 		name_type_name => "unspecified",
-		internal => JSON::false
+		internal => JSON::false,
+		obsolete => JSON::false
 	    };
 	    $synonym->{evidence_curies} = $symbol_evidence if @$symbol_evidence;
 	    push @synonyms, $synonym;
@@ -165,6 +169,40 @@ sub get_name_slot_annotations {
 	
     return ($full_name, \@synonyms);
 }
+
+sub get_genotype_name_slot_annotations {
+    my $obj = shift;
+
+    my $full_name;
+    if ($obj->Genotype_name) {
+	$full_name = {
+	    display_text => $obj->Public_name->name,
+	    format_text => $obj->Public_name->name,
+	    name_type_name => 'full_name',
+	    internal => JSON::false,
+	    obsolete => JSON::false
+	};
+    }
+    
+    my @synonym_objs = $obj->Genotype_synonym;
+
+    my @synonyms;
+    if (@synonym_objs) {
+	for my $synonym_obj (@synonym_objs) {
+	    my $synonym = {
+		format_text => $synonym_obj->name,
+		display_text => $synonym_obj->name,
+		name_type_name => "unspecified",
+		internal => JSON::false,
+		obsolete => JSON::false
+	    };
+	    push @synonyms, $synonym;
+	}
+    }
+	
+    return ($full_name, \@synonyms);
+}
+
 
 sub get_evidence_curies {
     my $name_obj = shift;
