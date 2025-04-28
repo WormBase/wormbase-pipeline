@@ -9,7 +9,7 @@ use Const::Fast;
 my ($help, $debug, $test, $verbose, $store, $wormbase);
 my ($outfile, $acedbpath, $ws_version, $out_fh);
 
-const my $LINKML_SCHEMA => 'v2.9.1';
+const my $LINKML_SCHEMA => 'v2.12.0';
 
 GetOptions ("help"        => \$help,
             "debug=s"     => \$debug,
@@ -24,7 +24,7 @@ GetOptions ("help"        => \$help,
 if ( $store ) {
     $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
-    $wormbase = Wormbase->new(-debug => $debug,-test => $test);
+    $wormbase = Wormbase->new(-debug => $debug);
 }
 
 my $tace = $wormbase->tace;
@@ -36,10 +36,11 @@ my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or die("Connectio
 my $query = 'FIND Strain WHERE Species = "Caenorhabditis elegans"';
 my $it = $db->fetch_many(-query => $query);
 
-$outfile = "./wormbase.agms.${ws_version}.${LINKML_SCHEMA}.json" unless defined $outfile;
+my $suffix = $test ? '.test.json' : '.json';
+
+$outfile = "./wormbase.agms.${ws_version}.${LINKML_SCHEMA}" . $suffix unless defined $outfile;
 
 my @agms;
-
 
 while (my $obj = $it->next) {
     unless ($obj->Species) {
@@ -52,7 +53,7 @@ while (my $obj = $it->next) {
 	page_area => 'strain',
 	display_name => $obj->name,
 	prefix => 'WB',
-	internal => JSON::false,
+	inteternal => JSON::false,
 	obsolete => JSON::false
     };
 	
@@ -72,6 +73,10 @@ while (my $obj = $it->next) {
 	obsolete          => JSON::false,
 	data_provider_dto => $data_provider_dto_json
     };
+
+    my ($full_name, $synonyms) = get_name_slot_annotations($obj);
+    $strain->{agm_full_name_dto} = $full_name if $full_name;
+    $strain->{agm_synonym_dtos} = $synonyms if @$synonyms;
     push @agms, $strain;
 }
 
@@ -127,3 +132,51 @@ open $out_fh, ">$outfile" or die "Could not open $outfile for writing\n";
 print $out_fh $string;
 $db->close;
 
+sub get_name_slot_annotations {
+    my $obj = shift;
+
+    my $full_name;
+    if ($obj->Public_name) {
+	$full_name = {
+	    display_text => $obj->Public_name->name,
+	    format_text => $obj->Public_name->name,
+	    name_type_name => 'full_name',
+	    internal => JSON::false,
+	    obsolete => JSON::false
+	};
+    }
+    
+    my @synonym_objs = $obj->Other_name;
+
+    my @synonyms;
+    if (@synonym_objs) {
+	for my $synonym_obj (@synonym_objs) {
+	    my $symbol_evidence = get_evidence_curies($synonym_obj);
+	    my $synonym = {
+		format_text => $synonym_obj->name,
+		display_text => $synonym_obj->name,
+		name_type_name => "unspecified",
+		internal => JSON::false
+	    };
+	    $synonym->{evidence_curies} = $symbol_evidence if @$symbol_evidence;
+	    push @synonyms, $synonym;
+	}
+    }
+	
+    return ($full_name, \@synonyms);
+}
+
+sub get_evidence_curies {
+    my $name_obj = shift;
+
+    my @paper_evidence;
+    for my $evi ($name_obj->col) {
+	next unless $evi->name eq 'Paper_evidence';
+	for my $paper ($evi->col) {
+	    my $paper_id = get_paper($paper);
+	    push @paper_evidence, $paper_id if defined $paper_id;
+	}
+    }
+
+    return \@paper_evidence;
+}
