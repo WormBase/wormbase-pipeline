@@ -218,3 +218,35 @@ sub get_evidence_curies {
 
     return \@paper_evidence;
 }
+
+sub get_paper {
+    my $ref = shift;
+
+    if (!$ref->Status) {
+	return;
+    }
+
+    my $level = 1;
+    while ($ref->Merged_into && $level < 6) {
+	$level++;
+	$ref = $ref->Merged_into;
+    }
+    return if $ref->Status->name eq 'Invalid';
+
+    my $pmid;
+    for my $db ($ref->Database) {
+	if ($db->name eq 'MEDLINE') {
+	    $pmid = $db->right->right->name;
+	    last;
+	}
+    }
+    my $publication_id = $pmid ? "PMID:$pmid" : 'WB:' . $ref->name;
+    if ($publication_id eq 'WB:WBPaper000045183') {
+	$publication_id = 'WB:WBPaper00045183';
+    }
+    if ($publication_id eq 'WB:WBPaper000042571') {
+	$publication_id = 'WB:WBPaper00042571';
+    }
+
+    return $publication_id;
+}
