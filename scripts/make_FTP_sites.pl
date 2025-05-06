@@ -1284,7 +1284,7 @@ sub make_blast_meta{
         'homepage_url' => 'https://wormbase.org',
         'logo_url' => 'https://wormbase.org/img/logo/logo_wormbase_gradient.svg'
     };
-    $blast_meta->{'metaData'} = $meta_data;
+    $blast_meta->{'metadata'} = $meta_data;
     my $data = [];
 
     for my $species (keys %accessors) {
