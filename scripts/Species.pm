@@ -638,21 +638,6 @@ sub bioproject_description { 'Caenorhabditis elegans strain VC2010 genome sequen
 sub assembly_type {'chromosomes'};
 sub is_canonical { 0 };
 
-#######################################################
-
-package Elegans_CGC1
-use Carp;
-our @ISA = qw(Species);
-
-# sub repeatmasker_library{my($self)=@_;$self->misc_static.'/REPEATMASKER/ELE/elegans.lib'}
-sub short_name {'C. elegans'}
-sub gspecies_name{'c_elegans'}
-sub long_name{'Caenorhabditis elegans'}
-sub ncbi_tax_id {'6239'};
-sub ncbi_bioproject {'PRJDB19205'};
-sub bioproject_description { 'Caenorhabditis elegans strain CGC1 genome sequencing project' }
-sub assembly_type {'chromosomes'};
-sub is_canonical { 0 };
 
 #######################################################
 package Remanei_px506;
