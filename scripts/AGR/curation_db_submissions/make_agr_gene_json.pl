@@ -28,6 +28,9 @@ const my %XREF_MAP => (
     },
     "Panther" => {
 	family => "PANTHER",
+    },
+    "RefSeq" => {
+	protein => "RefSeq",
     }
 );
 
@@ -64,6 +67,8 @@ my @genes;
 
 my $locs = get_location_data($db, $gtf_file);
 
+
+my %unmapped_xrefs;
 my $it = $db->fetch_many(-query => $query);
 
 while (my $obj = $it->next) {
@@ -128,6 +133,10 @@ while (my $obj = $it->next) {
 			};
 		    }
 		}
+	    }
+	} else {
+	    foreach my $field ($dblink->col) {
+		$unmapped_xrefs{$dblink}{$field}++;
 	    }
 	}
     }
@@ -206,6 +215,12 @@ print $out_fh $string;
 
 $db->close;
 
+open XREF, ">unmapped_gene_xrefs.txt" or die "Could not open unmapped_xrefs.txt for writing\n";
+for my $xref_db (keys %unmapped_xrefs) {
+    for my $xref_type (keys %{$unmapped_xrefs{$xref_db}}) {
+	print XREF $xref_db . ' - ' . $xref_type . ' (' . $unmapped_xrefs{$xref_db}{$xref_type} . ')' . "\n";
+    }
+}
 exit(0);
 
 sub get_name_slot_annotations {

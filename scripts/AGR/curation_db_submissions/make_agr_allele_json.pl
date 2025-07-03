@@ -88,15 +88,16 @@ $alleles = process_transgenes();
 $allele_out_fh->print("\n   ]\n}");
 $variant_out_fh->print("\n   ]\n}");
 $gene_assoc_out_fh->print("\n    ]");
-
+$gene_assoc_out_fh->close;
 my $gene_assoc_in_fh = file($gene_assoc_outfile)->openr;
 while (my $line = $gene_assoc_in_fh->getline()) {
     chomp $line;
     $assoc_out_fh->print($line . "\n");
 }
 $assoc_out_fh->print("\n}\n");
+$assoc_out_fh->close;
 $db->close;
-system("rm $gene_assoc_outfile");
+#system("rm $gene_assoc_outfile");
 
 sub process_variations {
     my @alleles = $db->fetch(-query => "Find Variation WHERE Species = \"Caenorhabditis elegans\"");
@@ -127,9 +128,28 @@ sub process_variations {
 	}; 
 
 	if ($obj->Gene) {
+	    my @genes = $obj->Gene;
+	    my $relation;
+	    if (scalar @genes == 1) {
+		$relation = 'is_allele_of';
+	    } else {
+		my @types = $obj->at('Sequence_details.Type_of_mutation');
+		if (grep { $_ eq 'Tandem_duplication' } @types) {
+		    $relation = 'duplication';
+		} elsif (scalar @types == 1) {
+		    if ($types[0] eq 'Deletion') {
+			$relation = 'deletion';
+		    } else {
+			$relation = 'mutation_involves';
+		    }
+		} else {
+		    $relation = 'mutation_involves';
+		}
+	    }
 	    for my $gene($obj->Gene) {
+		next unless $gene->name;
 		$gene_assoc_out_fh->print(",") if $gene_assoc_count > 0;
-		$gene_assoc_out_fh->print("{\"allele_identifier\": \"WB:" . $obj->name . "\", \"relation_name\": \"is_allele_of\", \"gene_identifier\": \"WB:" . $gene->name . "\"}\n");
+		$gene_assoc_out_fh->print("{\"allele_identifier\": \"WB:" . $obj->name . "\", \"relation_name\": \"" . $relation . "\", \"gene_identifier\": \"WB:" . $gene->name . "\"}\n");
 		$gene_assoc_count++;
 	    }
 	}
