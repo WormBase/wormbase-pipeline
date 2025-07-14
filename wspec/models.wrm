@@ -2357,7 +2357,6 @@
                    Tiling_array ?Analysis
                    Western Text
                    Ribosome_Profiling ?Text
-
               Expression_cluster ?Expression_cluster XREF Expr_pattern //added for localizome
               Microarray_results ?Microarray_results XREF Expr_Pattern
               Pattern ?Text
