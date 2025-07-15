@@ -640,7 +640,7 @@ sub is_canonical { 0 };
 
 #######################################################
 
-package Elegans_CGC1
+package Elegans_CGC1;
 use Carp;
 our @ISA = qw(Species);
 
