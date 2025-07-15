@@ -2381,6 +2381,7 @@
                    RT_PCR Text  FILL_DEFAULT
                    Tiling_array ?Analysis
                    Western Text  FILL_DEFAULT
+                   Ribosome_Profiling ?Text FILL_DEFAULT
               Expression_cluster ?Expression_cluster INXREF Expr_pattern //added for localizome
               Microarray_results ?Microarray_results INXREF Expr_Pattern
               Pattern ?Text //Multi_value ordering issue in Datomic possibly
@@ -3985,4 +3986,4 @@
 // Add a line for the WS release the models file is going to be GIT tagged for
 // This give you a final shot at creating a nicely formatted GIT commit message
 //
-// WS297
+// WS298

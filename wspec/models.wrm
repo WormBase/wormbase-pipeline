@@ -2356,6 +2356,7 @@
                    RT_PCR Text
                    Tiling_array ?Analysis
                    Western Text
+                   Ribosome_Profiling ?Text
               Expression_cluster ?Expression_cluster XREF Expr_pattern //added for localizome
               Microarray_results ?Microarray_results XREF Expr_Pattern
               Pattern ?Text
@@ -3965,4 +3966,4 @@
 // Add a line for the WS release the models file is going to be CVS tagged for
 // This give you a final shot at creating a nicely formatted CVS commit message
 //
-// WS297
+// WS298
