@@ -4,8 +4,8 @@
 # 
 # A script to make multiple copies of core species database for curation, and merge them back again
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2015-07-02 10:23:29 $
+# Last edited by: $Author: mqt $
+# Last edited on: $Date: 2025-07-22 11:16:29 $
 #====================
 #perl ~/wormbase/scripts/merge_split_camaces.pl -update -skd -pad -species elegans -test -version $MVERSION > /nfs/wormpub/CURATION_DATABASES/camace_orig/WSXXX -WSXXY/load_data.txt
 
@@ -140,6 +140,7 @@ our $root;
 if ($test) {
   push(@databases,"testorig");
   push(@databases,"testpad") if ($pad || $all);
+  push(@databases,"testskd") if ($skd || $all);
 }
 else {
   push(@databases,"orig");
@@ -232,21 +233,16 @@ if ($merge) {
 #	$wormbase->run_command("csh -c \"/hps/software/users/wormbase/shared/bin/acedb/CENTOS8/4.9.62/acediff $path_ref $path_new >! $directory/${class}_diff_${database}.ace\"", $log) && die "acediff Failed for ${path_new}\n";
 	$wormbase->run_script("acediff.pl -reference $path_ref -new $path_new -output $directory/${class}_diff_${database}.ace", $log) && die "acediff Failed for ${path_new}\n";
 	print "running.... reformat_acediff -file $directory/${class}_diff_${database}.ace -fileout $directory/update_${class}_${database}.ace\n";
-	if ($debug) {
-	  $wormbase->run_script("reformat_acediff -debug $debug -test -file $directory/${class}_diff_${database}.ace -fileout $directory/update_${class}_${database}.ace -debug pad", $log) && die "reformat Failed for ${class}_diff_${database}.ace\n";
-	}
-	else {
-	  $wormbase->run_script("reformat_acediff -file $directory/${class}_diff_${database}.ace -fileout $directory/update_${class}_${database}.ace -debug pad", $log) && die "reformat Failed for ${class}_diff_${database}.ace\n";
-	}
+	my $old_diff_cmd = "reformat_acediff -file $directory/${class}_diff_${database}.ace -fileout $directory/update_${class}_${database}.ace";
+	$old_diff_cmd .= " -test" if $test;
+	$old_diff_cmd .= " -debug $debug" if $debug;
+	$wormbase->run_script($old_diff_cmd, $log) && die "reformat Failed for ${class}_diff_${database}.ace\n";
       }
       else {
-	if ($debug) {
-	  print "running.... new code base!!\n\n";	
-	  $wormbase->run_script("acediff.pl -debug $debug -test -reference $path_ref -new $path_new -output $directory/update_${class}_${database}.ace -debug pad", $log) && die "acediff.pl Failed for ${path_new}\n";
-	}
-	else {
-	  $wormbase->run_script("acediff.pl -reference $path_ref -new $path_new -output $directory/update_${class}_${database}.ace -debug pad", $log) && die "acediff.pl Failed for ${path_new}\n";
-	}
+	  my $new_diff_cmd = "acediff.pl -reference $path_ref -new $path_new -output $directory/update_${class}_${database}.ace";
+	  $new_diff_cmd .= " -test" if $test;
+	  $new_diff_cmd .= " -debug $debug" if $debug;
+	  $wormbase->run_script($new_diff_cmd, $log) && die "acediff.pl Failed for ${path_new}\n";
       }
 	print "Finished Processing $class\n";
     }
@@ -444,8 +440,10 @@ sub update_canonical {
   # The order of exons can become messy when gene models are updated in a curation cycle, not bad for acedb, but can cause complications for AcePerl and other tools.
 
     $log->write_to ("Checking and updating exon order in $canonical\n");
-    print "Checking and updating exon order in $canonical";
-    $wormbase->run_script("reorder_exons.pl -database $canonical -species $species -out ${canonical}/${WS_version}_reordered_exons.ace -debug pad", $log) && die "Failed to run reorder_exons.pl\n";
+  print "Checking and updating exon order in $canonical";
+  my $reorder_exons_cmd = "reorder_exons.pl -database $canonical -species $species -out ${canonical}/${WS_version}_reordered_exons.ace";
+  $reorder_exons_cmd .= " -debug $debug" if $debug;
+  $wormbase->run_script($reorder_exons_cmd, $log) && die "Failed to run reorder_exons.pl\n";
 
   ## Check Canonical Database for errors one last time. ##
   $log->write_to ("\nChecking $canonical for inconsistencies\n-----------------------------------\n\n");
@@ -466,12 +464,10 @@ sub update_canonical {
     # Gene structures
     $log->write_to ("\nRunning check_predicted_genes.pl\n");
     print "\nRunning check_predicted_genes.pl\n" if ($debug);
-    if ($species eq 'elegans') {
-      $wormbase->run_script("check_predicted_genes.pl -basic -species $species -database $canonical -test -debug pad", $log) && die "Failed to run camcheck.pl\n";
-    }
-    else {
-      $wormbase->run_script("check_predicted_genes.pl -basic -incomplete -species $species -database $canonical -test -debug pad", $log) && die "Failed to run camcheck.pl\n";
-    }
+    my $cpd_cmd = "check_predicted_genes.pl -basic -species $species -database $canonical -test";
+    $cpd_cmd .= " -incomplete" if $species ne 'elegans';
+    $cpd_cmd .= " -debug $debug" if $debug;
+    $wormbase->run_script($cpd_cmd, $log) && die "Failed to run camcheck.pl\n";
     $log->write_to ("check_predicted_genes.pl Finished, check the build log email for errors.\n");
   }
 }
@@ -518,13 +514,13 @@ sub split_databases {
 
   # Transfer canonical -> database_orig
   $log->write_to ("Transfering $canonical to $orig\n");
-  if ($debug) {
-    print "Transfering $canonical to $orig\n" if ($debug);
-    $wormbase->run_script("TransferDB.pl -start $canonical -end $orig -split -database -debug $debug -test", $log) && die "Failed to run TransferDB.pl for $orig\n";
-  }
-  else {
-    $wormbase->run_script("TransferDB.pl -start $canonical -end $orig -split -database -debug pad", $log) && die "Failed to run TransferDB.pl for $orig\n";
-  }
+  my $transfer_orig_cmd = "TransferDB.pl -start $canonical -end $orig -split -database";
+  $transfer_orig_cmd .= " -test" if $test;
+  $transfer_orig_cmd .= " -debug $debug" if $debug;
+  
+  print "Transfering $canonical to $orig\n" if ($debug);
+  $wormbase->run_script($transfer_orig_cmd, $log) && die "Failed to run TransferDB.pl for $orig\n";
+
   # work on database_orig to get it populated with curation data
   $log->write_to ("Refreshing curation data in $orig\n-------------------------------------\nRemoving old curation data from $orig\n");
   print "Refreshing curation data in $orig\n-------------------------------------\nRemoving old curation data from $orig\n" if ($debug);
@@ -537,14 +533,13 @@ sub split_databases {
   shift @databases; #remove orig from database array
   $log->write_to ("@databases\n") if ($debug);
   foreach my $database (@databases) {
-    $log->write_to ("Transfering $orig to $wormpub/CURATION_DATABASES/${root}_${database}\n");
-    if ($debug) {
-      print "Transfering $orig to $wormpub/CURATION_DATABASES/${root}_${database}\n";
-      $wormbase->run_script("TransferDB.pl -debug $debug -test -start  $orig -end $wormpub/CURATION_DATABASES/${root}_${database} -split -database -wspec -debug pad", $log) && $log->write_to ("Failed to run TransferDB.pl for ${root}_${database}\n");
-    }
-    else {
-      $wormbase->run_script("TransferDB.pl -start  $orig -end $wormpub/CURATION_DATABASES/${root}_${database} -split -database -wspec -debug pad", $log) && $log->write_to ("Failed to run TransferDB.pl for ${root}_${database}\n");
-    }
+      $log->write_to ("Transfering $orig to $wormpub/CURATION_DATABASES/${root}_${database}\n");
+      my $transfer_db_cmd = "TransferDB.pl -start  $orig -end $wormpub/CURATION_DATABASES/${root}_${database} -split -database -wspec";
+      $transfer_db_cmd .= " -test" if $test;
+      $transfer_db_cmd .= " -debug $debug" if $debug;
+
+      print "Transfering $orig to $wormpub/CURATION_DATABASES/${root}_${database}\n" if $debug;
+      $wormbase->run_script($transfer_db_cmd, $log) && $log->write_to ("Failed to run TransferDB.pl for ${root}_${database}\n");
   }
   $log->write_to ("@databases SPLIT(S) UPDATED\n");
   print "@databases SPLIT(S) UPDATED\n" if ($debug);
