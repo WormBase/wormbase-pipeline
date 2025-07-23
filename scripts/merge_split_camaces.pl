@@ -207,7 +207,10 @@ if ($merge) {
     foreach my $class (@classes) {
 	print "Dumping $class ...........\n";
       my $path_new = $directory . "/${class}_${database}.ace";
-      my $path_ref = $directory . "/${class}_orig.ace";
+	my $path_ref = $directory . "/${class}_orig.ace";
+	if ($test) {
+	    $path_ref = $directory . "/${class}_testorig.ace";
+	}
       # Sequence class has hit acediff file line limit so stripping out RNASeq CDS_child lines from 
       # all Sequence files.
       if ($class eq "Sequence") {
