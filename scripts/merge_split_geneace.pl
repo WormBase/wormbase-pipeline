@@ -120,7 +120,7 @@ else {
 
 
 if ($test){
-    $orig = $wormpub."/geneace_testorig";
+    $orig = $wormpub."/CURATION_DATABASES/geneace_testorig";
     $canonical = $wormpub."/DATABASES/TEST_DATABASES/geneace";
 }
 else  {
