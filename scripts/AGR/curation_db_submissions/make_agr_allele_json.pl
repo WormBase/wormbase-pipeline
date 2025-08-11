@@ -68,6 +68,7 @@ my $suffix = $curation_test ? '.test_data.json' : '.json';
 my $allele_outfile = $outdir . "/wormbase.alleles.${ws_version}.${LINKML_SCHEMA}" . $suffix;
 my $assoc_outfile = $outdir . "/wormbase.allele_associations.${ws_version}.${LINKML_SCHEMA}" . $suffix;
 my $gene_assoc_outfile = $outdir . "/wormbase.allele_gene_associations.${ws_version}.${LINKML_SCHEMA}" . $suffix . '.tmp';
+my $construct_assoc_outfile = $outdir . "/wormbase.allele_construct_associations.${ws_version}.${LINKML_SCHEMA}" . $suffix . '.tmp';
 my $variant_outfile = $outdir . "/wormbase.variants.${ws_version}.${LINKML_SCHEMA}" . $suffix;
 
 my $db = Ace->connect(-path => $acedbpath, -program => $tace) or die("Connection failure: ". Ace->error);
@@ -75,28 +76,40 @@ my $db = Ace->connect(-path => $acedbpath, -program => $tace) or die("Connection
 my $allele_out_fh  = file($allele_outfile)->openw;
 my $assoc_out_fh = file($assoc_outfile)->openw;
 my $gene_assoc_out_fh = file($gene_assoc_outfile)->openw;
+my $construct_assoc_out_fh = file($construct_assoc_outfile)->openw;
 my $variant_out_fh = file($variant_outfile)->openw;
 $allele_out_fh->print("{\n   \"linkml_version\" : \"" . $LINKML_SCHEMA . "\",\n    \"alliance_member_release_version\" : \"" . $ws_version . "\",\n    \"allele_ingest_set\" : [");
 $assoc_out_fh->print("{\n   \"linkml_version\" : \"" . $LINKML_SCHEMA . "\",\n    \"alliance_member_release_version\" : \"" . $ws_version . "\",\n");
 $gene_assoc_out_fh->print("    \"allele_gene_association_ingest_set\" : [");
+$construct_assoc_out_fh->print("    \"allele_construct_association_ingest_set\" : [");
 $variant_out_fh->print("{\n    \"linkml_version\" : \"" . $LINKML_SCHEMA . "\",\n    \"alliance_member_release_version\" : \"" . $ws_version . "\",\n    \"variant_ingest_set\" : [");
 
 my $gene_assoc_count = 0;
+my $construct_assoc_count = 0;
 my $alleles = process_variations();
 
 $alleles = process_transgenes();
 $allele_out_fh->print("\n   ]\n}");
 $variant_out_fh->print("\n   ]\n}");
-$gene_assoc_out_fh->print("\n    ]");
-
+$gene_assoc_out_fh->print("\n    ],");
+$construct_assoc_out_fh->print("\n    ]");
+$gene_assoc_out_fh->close;
+$construct_assoc_out_fh->close;
 my $gene_assoc_in_fh = file($gene_assoc_outfile)->openr;
 while (my $line = $gene_assoc_in_fh->getline()) {
     chomp $line;
     $assoc_out_fh->print($line . "\n");
 }
+my $construct_assoc_in_fh = file($construct_assoc_outfile)->openr;
+while (my $line = $construct_assoc_in_fh->getline()) {
+    chomp $line;
+    $assoc_out_fh->print($line . "\n");
+}
 $assoc_out_fh->print("\n}\n");
+$assoc_out_fh->close;
 $db->close;
-system("rm $gene_assoc_outfile");
+#system("rm $gene_assoc_outfile");
+#system("rm $construct_assoc_outfile");
 
 sub process_variations {
     my @alleles = $db->fetch(-query => "Find Variation WHERE Species = \"Caenorhabditis elegans\"");
@@ -127,9 +140,28 @@ sub process_variations {
 	}; 
 
 	if ($obj->Gene) {
+	    my @genes = $obj->Gene;
+	    my $relation;
+	    if (scalar @genes == 1) {
+		$relation = 'is_allele_of';
+	    } else {
+		my @types = $obj->at('Sequence_details.Type_of_mutation');
+		if (grep { $_ eq 'Tandem_duplication' } @types) {
+		    $relation = 'duplication';
+		} elsif (scalar @types == 1) {
+		    if ($types[0] eq 'Deletion') {
+			$relation = 'deletion';
+		    } else {
+			$relation = 'mutation_involves';
+		    }
+		} else {
+		    $relation = 'mutation_involves';
+		}
+	    }
 	    for my $gene($obj->Gene) {
+		next unless $gene->name;
 		$gene_assoc_out_fh->print(",") if $gene_assoc_count > 0;
-		$gene_assoc_out_fh->print("{\"allele_identifier\": \"WB:" . $obj->name . "\", \"relation_name\": \"is_allele_of\", \"gene_identifier\": \"WB:" . $gene->name . "\"}\n");
+		$gene_assoc_out_fh->print("{\"allele_identifier\": \"WB:" . $obj->name . "\", \"relation_name\": \"" . $relation . "\", \"gene_identifier\": \"WB:" . $gene->name . "\"}\n");
 		$gene_assoc_count++;
 	    }
 	}
@@ -496,6 +528,13 @@ sub process_transgenes {
 	my $json = JSON->new;
 	my $string = $json->allow_nonref->canonical->pretty->encode($allele_obj);
 	$allele_out_fh->print(",\n" . '      ' . $string);
+
+	for my $construct($obj->Construct) {
+	    next unless $construct->name;
+	    $construct_assoc_out_fh->print(",") if $construct_assoc_count > 0;
+	    $construct_assoc_out_fh->print("{\"allele_identifier\": \"WB:" . $obj->name . "\", \"relation_name\": \"contains\", \"construct_identifier\": \"WB:" . $construct->name . "\"}\n");
+	    $construct_assoc_count++;
+	}
 	
 	last if $limit && $limit <= ($var_count * 2);
     }

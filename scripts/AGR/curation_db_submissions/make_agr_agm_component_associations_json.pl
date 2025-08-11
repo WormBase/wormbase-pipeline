@@ -53,8 +53,11 @@ while (my $obj = $it->next) {
 	    if ($allele_assoc_count > 0) {
 		print ASSOC_OUT ',';
 	    }
+	    my $strain_evidence = get_evidence_curies($obj->Strain);
 	    $allele_assoc_count++;
-	    print ASSOC_OUT '{"agm_subject_identifier": "WB:' . $strain . '", "zygosity_curie": "GENO:0000137", "allele_identifier": "WB:' . $obj . '", "relation_name": "contains"}' . "\n";
+	    print ASSOC_OUT '{"agm_subject_identifier": "WB:' . $strain . '", "zygosity_curie": "GENO:0000137", "allele_identifier": "WB:' . $obj . '", "relation_name": "contains"';
+	    print ASSOC_OUT ', "evidence_curies": [' . join(',', @$strain_evidence) .']' if @$strain_evidence; 
+	    print ASSOC_OUT '}' . "\n";
 	}
     }
 	    
@@ -102,3 +105,50 @@ print "DONE\n";
 
 close(ASSOC_OUT);
 $db->close;
+
+sub get_evidence_curies {
+    my $name_obj = shift;
+
+    my @paper_evidence;
+    for my $evi ($name_obj->col) {
+	next unless $evi->name eq 'Paper_evidence';
+	for my $paper ($evi->col) {
+	    my $paper_id = get_paper($paper);
+	    push @paper_evidence, $paper_id if defined $paper_id;
+	}
+    }
+
+    return \@paper_evidence;
+}
+
+sub get_paper {
+    my $ref = shift;
+
+    if (!$ref->Status) {
+	return;
+    }
+
+    my $level = 1;
+    while ($ref->Merged_into && $level < 6) {
+	$level++;
+	$ref = $ref->Merged_into;
+    }
+    return if $ref->Status->name eq 'Invalid';
+
+    my $pmid;
+    for my $db ($ref->Database) {
+	if ($db->name eq 'MEDLINE') {
+	    $pmid = $db->right->right->name;
+	    last;
+	}
+    }
+    my $publication_id = $pmid ? "PMID:$pmid" : 'WB:' . $ref->name;
+    if ($publication_id eq 'WB:WBPaper000045183') {
+	$publication_id = 'WB:WBPaper00045183';
+    }
+    if ($publication_id eq 'WB:WBPaper000042571') {
+	$publication_id = 'WB:WBPaper00042571';
+    }
+
+    return $publication_id;
+}

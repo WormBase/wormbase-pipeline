@@ -28,7 +28,13 @@ const my %XREF_MAP => (
     },
     "Panther" => {
 	family => "PANTHER",
-    }
+    },
+    "RefSeq" => {
+	protein => "RefSeq",
+    },
+    "UniProt_GCRP" => {
+	UniProtAcc => "UniProtKB",
+    },
 );
 
 
@@ -37,23 +43,19 @@ GetOptions ("help"        => \$help,
             "debug=s"     => \$debug,
 	    "test"        => \$test,
 	    "verbose"     => \$verbose,
-	    "store:s"     => \$store,
 	    "database:s"  => \$acedbpath,
 	    "outfile:s"   => \$outfile,
             "wsversion=s" => \$ws_version,
 	    "gtf=s"       => \$gtf_file
 	    );
 
-if ( $store ) {
-    $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
-} else {
-    $wormbase = Wormbase->new(-debug => $debug,-test => $test);
-}
+$wormbase = Wormbase->new(-debug => $debug,-test => $test);
 
 my $tace = $wormbase->tace;
 
 $acedbpath = $wormbase->autoace unless $acedbpath;
 
+print "Connecting to AceDB\n" if $verbose;
 my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or die("Connection failure: ". Ace->error);
 
 my $query = 'FIND Gene WHERE Species = "Caenorhabditis elegans"';
@@ -62,10 +64,13 @@ $outfile = "./wormbase.genes.${ws_version}.${LINKML_SCHEMA}.json" unless defined
 
 my @genes;
 
+print "Getting location data\n" if $verbose;
 my $locs = get_location_data($db, $gtf_file);
 
-my $it = $db->fetch_many(-query => $query);
 
+my %unmapped_xrefs;
+print "Querying AceDB\n" if $verbose;
+my $it = $db->fetch_many(-query => $query);
 while (my $obj = $it->next) {
     next unless $obj->isObject();
     next unless $obj->name =~ /^WBGene/;
@@ -73,7 +78,7 @@ while (my $obj = $it->next) {
 	print "No species for $obj - skipping\n";
 	next;
     }
-
+    print "Processing $obj\n" if $verbose;
     my ($symbol, $full_name, $systematic_name, $synonyms) = get_name_slot_annotations($obj);
    
     if (!defined $symbol && $obj->Status && $obj->Status->name eq 'Live') {
@@ -111,25 +116,49 @@ while (my $obj = $it->next) {
     };
 
     my @xrefs;
+    my $gcrp_xref;
     # Cross references
     foreach my $dblink ($obj->Database) {
 	if (exists $XREF_MAP{$dblink}) {
 	    foreach my $field ($dblink->col) {
 		if (exists $XREF_MAP{$dblink}->{$field}) {
 		    my $prefix = $XREF_MAP{$dblink}->{$field};
-		    my @ids = $field->col;
-		    foreach my $id(@ids){
-			my $suffix = $id->name; 
-			push @xrefs, {
+		    if ($dblink eq 'UniProt_GCRP') {
+			my $suffix = $field->right->name;
+			$gcrp_xref = {
 			    referenced_curie => "$prefix:$suffix",
 			    page_area => "default",
 			    display_name => "$prefix:$suffix",
 			    prefix => $prefix
 			};
+		    } else {
+			my @ids = $field->col;
+			foreach my $id(@ids){
+			    my $suffix = $id->name; 
+			    push @xrefs, {
+				referenced_curie => "$prefix:$suffix",
+				page_area => "default",
+				display_name => "$prefix:$suffix",
+				prefix => $prefix
+			    };
+			}
 		    }
 		}
 	    }
+	} else {
+	    foreach my $field ($dblink->col) {
+		$unmapped_xrefs{$dblink}{$field}++;
+	    }
 	}
+    }
+    if (defined $gcrp_xref && @xrefs) {
+	my @filtered_xrefs;
+	for my $xref (@xrefs) {
+	    if ($xref->{referenced_curie} ne $gcrp_xref->{referenced_curie}) {
+		push @filtered_xrefs, $xref;
+	    }
+	}
+	@xrefs = @filtered_xrefs;
     }
 
     # Back-to-mod xrefs
@@ -188,6 +217,7 @@ while (my $obj = $it->next) {
     $gene->{gene_synonym_dtos} = $synonyms if @$synonyms;
     $gene->{gene_secondary_id_dtos} = \@secondary_ids if @secondary_ids;
     $gene->{cross_reference_dtos} = \@xrefs if @xrefs;
+    $gene->{gcrp_cross_reference_dto} = $gcrp_xref if $gcrp_xref;
     
     push @genes, $gene;
 }
@@ -206,6 +236,12 @@ print $out_fh $string;
 
 $db->close;
 
+open XREF, ">unmapped_gene_xrefs.txt" or die "Could not open unmapped_xrefs.txt for writing\n";
+for my $xref_db (keys %unmapped_xrefs) {
+    for my $xref_type (keys %{$unmapped_xrefs{$xref_db}}) {
+	print XREF $xref_db . ' - ' . $xref_type . ' (' . $unmapped_xrefs{$xref_db}{$xref_type} . ')' . "\n";
+    }
+}
 exit(0);
 
 sub get_name_slot_annotations {
