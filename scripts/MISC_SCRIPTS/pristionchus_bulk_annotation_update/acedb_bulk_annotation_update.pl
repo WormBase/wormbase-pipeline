@@ -229,20 +229,10 @@ sub create_cds {
     $curation_out_fh->print("Corresponding_CDS $wb_cds_name\n");
     
     $curation_out_fh->print("\nSequence : \"$sequence\"\n" );
-    for my $ix (0 .. scalar @starts_on_sequence - 1) {
-	my $reverse_ix = scalar(@starts_on_sequence) - ($ix + 1);
-	my ($start_on_sequence, $end_on_sequence);
-	if ($new_gene_models->{$external_gene_id}{'gene'}{'strand'} eq '-') {
-	    $start_on_sequence = $ends_on_sequence[$reverse_ix];
-	    $end_on_sequence = $starts_on_sequence[$reverse_ix];
-	} else {
-	    $start_on_sequence = $starts_on_sequence[$ix];
-	    $end_on_sequence = $ends_on_sequence[$ix];
-	}
-	
-	$curation_out_fh->print("CDS_child \"$wb_cds_name\" $start_on_sequence $end_on_sequence\n");
-    }
-    $curation_out_fh->print("\n");
+    my $start_on_sequence = $new_gene_models->{$external_gene_id}{'gene'}{'strand'} eq '+' ? $starts_on_sequence[0] : $ends_on_sequence[-1];
+    my $end_on_sequence = $new_gene_models->{$external_gene_id}{'gene'}{'strand'} eq '+' ? $ends_on_sequence[-1] : $starts_on_sequence[0];
+    $curation_out_fh->print("CDS_child \"$wb_cds_name\" $start_on_sequence $end_on_sequence\n\n");
+    
 }
 
 sub delete_genes {
@@ -675,7 +665,7 @@ sub make_history_cds {
     }
 
     $curation_out_fh->print("Sequence : $seq\n");
-    $curation_out_fh->print("CDS_child \"$history\" $start $end\n");
+    $curation_out_fh->print("CDS_child \"$history\" $start $end\n\n");
     
     # Update existing CDS
     $curation_out_fh->print("CDS : $cds\n");
