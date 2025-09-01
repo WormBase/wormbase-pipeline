@@ -535,9 +535,6 @@ sub update_genes {
 sub update_gene {
     my ($wb_id, $external_id, $split_into, $acquired_merges) = @_;
 
-    my $debugging_on = 0;
-    $debugging_on = 1 if $wb_id eq 'WBGene00305223' || $wb_id eq 'WBGene00105614';
-    
     my $geneace_gene = $gdb->fetch(Gene => $wb_id);
     my $camace_gene = $cdb->fetch(Gene => $wb_id);
 
@@ -553,9 +550,6 @@ sub update_gene {
 	my (%new_coords);
 	for my $nt (keys %{$new_gene_models->{$external_id}{'transcripts'}}) {
 	    my $cds_coord_summary = coord_summary($external_id, 'CDS', $nt, $new_gene_models);
-	    if ($debugging_on) {
-		$log->write_to("DEBUGGING: NT - $nt; COORD_SUMMARY - $cds_coord_summary\n");
-	    }
 	    $new_coords{$cds_coord_summary} = $nt;
 	}
 
@@ -564,9 +558,6 @@ sub update_gene {
 	for my $ccds ($camace_gene->Corresponding_CDS) {
 	    for my $transcript_id (keys %{$wb_cds_transcript_map{$ccds->name}}) {
 		my $cds_coord_summary = coord_summary($wb_id, 'CDS', $transcript_id, $wb_gene_models);
-		if ($debugging_on) {
-		    $log->write_to("DEBUGGING: Camace CDS - " . $ccds->name . "; COORD_SUMMARY - $cds_coord_summary\n");
-		}
 		$existing_coords{$cds_coord_summary} = $ccds->name;
 	    }
 	}
@@ -596,21 +587,6 @@ sub update_gene {
 		} else {
 		   push @cds_to_create, $new_coords{$new_cds};
 		}
-	    }
-	}
-
-	if ($debugging_on) {
-	    for my $to_keep (keys %cds_to_keep) {
-		$log->write_to("DEBUGGING: Keep - " . $to_keep . ":" . $cds_to_keep{$to_keep} . "\n");
-	    }
-	    for my $to_update (keys %cds_to_update) {
-		$log->write_to("DEBUGGING: Update - " . $to_update . ":" . $cds_to_update{$to_update} . "\n");
-	    }
-	    for my $to_delete (@cds_to_delete) {
-		$log->write_to("DEBUGGING: Delete - " . $to_delete . "\n");
-	    }
-	    for my $to_create (@cds_to_create) {
-		$log->write_to("DEBUGGING: Create - " . $to_create . "\n");
 	    }
 	}
 
@@ -666,9 +642,6 @@ sub update_gene {
 		    last;
 		}
 	    }
-	    if ($debugging_on) {
-		$log->write_to("DEBUGGING: creating $new_cds_id : $wb_cds_name : $wb_id\n");
-	    }
 	    create_cds($external_id, $new_cds_id, $wb_cds_name, $wb_id);
 	}
 
@@ -682,14 +655,8 @@ sub update_gene {
 		    $cds_ids_created{$wb_cds_name}++;
 		    last;
 		}
-		if ($debugging_on) {
-		    $log->write_to("DEBUGGING: creating $existing_cds : $wb_cds_name : $wb_id\n");
-		}
 		create_cds($external_id, $cds_to_update{$existing_cds}, $wb_cds_name, $wb_id);
 	    } else {
-		if ($debugging_on) {
-		    $log->write_to("DEBUGGING: creating $existing_cds : $existing_cds : $wb_id\n");
-		}
 		create_cds($external_id, $cds_to_update{$existing_cds}, $existing_cds, $wb_id);
 	    }
 	}
