@@ -107,6 +107,7 @@ merge_genes() if scalar keys %$to_merge > 0;
 $log->write_to("Updating genes\n");
 update_genes() if scalar keys %$to_update > 0;
 
+$log->end;
 $log->mail;
 exit(0);
 
@@ -372,6 +373,7 @@ sub gene_merge {
     my ($upstream_gene, $downstream_genes, $external_id) = @_;
     
     my @acquired_merges;
+
     for my $downstream_gene (@$downstream_genes) {
 	$log->write_to("Merging $downstream_gene into $upstream_gene\n") if $verbose;
 	delete_gene($downstream_gene->name, $upstream_gene->name);
@@ -532,6 +534,9 @@ sub update_genes {
 
 sub update_gene {
     my ($wb_id, $external_id, $split_into, $acquired_merges) = @_;
+
+    my $debugging_on = 0;
+    $debugging_on = 1 if $wb_id eq 'WBGene00305223' || $wb_id eq 'WBGene00105614';
     
     my $geneace_gene = $gdb->fetch(Gene => $wb_id);
     my $camace_gene = $cdb->fetch(Gene => $wb_id);
@@ -543,22 +548,35 @@ sub update_gene {
 	my $wb_name = $geneace_gene->Sequence_name->name;
 	
 	# Some convoluted logic to avoid deleting and recreating unchanged isoforms and to resuse / create transcripts and CDS names
+
+	# Create map of CDS coords to ID for new models
 	my (%new_coords);
 	for my $nt (keys %{$new_gene_models->{$external_id}{'transcripts'}}) {
 	    my $cds_coord_summary = coord_summary($external_id, 'CDS', $nt, $new_gene_models);
+	    if ($debugging_on) {
+		$log->write_to("DEBUGGING: NT - $nt; COORD_SUMMARY - $cds_coord_summary\n");
+	    }
 	    $new_coords{$cds_coord_summary} = $nt;
 	}
-	
+
+	# Create map of CDS coords to ID for existing models
 	my (%existing_coords);
 	for my $ccds ($camace_gene->Corresponding_CDS) {
 	    for my $transcript_id (keys %{$wb_cds_transcript_map{$ccds->name}}) {
 		my $cds_coord_summary = coord_summary($wb_id, 'CDS', $transcript_id, $wb_gene_models);
+		if ($debugging_on) {
+		    $log->write_to("DEBUGGING: Camace CDS - " . $ccds->name . "; COORD_SUMMARY - $cds_coord_summary\n");
+		}
 		$existing_coords{$cds_coord_summary} = $ccds->name;
 	    }
 	}
 
 	my (%cds_to_keep, %cds_to_update);
 	my (@cds_to_delete, @cds_to_create);
+
+	# Iterate through existing models
+	# If new model with matching CDS coords in new set then add ID to %cds_to_keep
+	# If no matching model then add ID to @cds_to_delete
 	for my $existing_cds (keys %existing_coords) {
 	    if (exists $new_coords{$existing_cds}) {
 		$cds_to_keep{$existing_coords{$existing_cds}} = 1;
@@ -567,6 +585,9 @@ sub update_gene {
 	    }
 	}
 
+	# Iterate through new models
+	# If no matching old model then attempt to take an ID from @cds_to_delete list and add to %cds_to_update
+	# If no entries in @cds_to_delete then add to @cds_to_create
 	for my $new_cds (keys %new_coords) {
 	    if (!exists $existing_coords{$new_cds}) {
 		if (scalar @cds_to_delete > 0) {
@@ -575,6 +596,21 @@ sub update_gene {
 		} else {
 		   push @cds_to_create, $new_coords{$new_cds};
 		}
+	    }
+	}
+
+	if ($debugging_on) {
+	    for my $to_keep (keys %cds_to_keep) {
+		$log->write_to("DEBUGGING: Keep - " . $to_keep . ":" . $cds_to_keep{$to_keep} . "\n");
+	    }
+	    for my $to_update (keys %cds_to_update) {
+		$log->write_to("DEBUGGING: Update - " . $to_update . ":" . $cds_to_update{$to_update} . "\n");
+	    }
+	    for my $to_delete (@cds_to_delete) {
+		$log->write_to("DEBUGGING: Delete - " . $to_delete . "\n");
+	    }
+	    for my $to_create (@cds_to_create) {
+		$log->write_to("DEBUGGING: Create - " . $to_create . "\n");
 	    }
 	}
 
@@ -616,17 +652,46 @@ sub update_gene {
 	    $geneace_out_fh->print("\n");
 	}
 
-	for my $existing_transcript_id (@cds_to_create) {
+	my $multiple_isoforms = scalar @cds_to_create + scalar keys %cds_to_update > 1 ? 1 : 0;
+	my %cds_ids_created;
+	
+	for my $new_cds_id (@cds_to_create) {
 	    my $wb_cds_name = $geneace_gene->Sequence_name->name;
-	    if (scalar keys %cds_to_update > 0) {
-		my $isoform_nr = scalar keys %cds_to_update;
-		$wb_cds_name .= $ISOFORM_SUFFIXES[$isoform_nr];
+	    if ($multiple_isoforms) {
+		for my $suffix (@ISOFORM_SUFFIXES) {
+		    next if exists $cds_to_update{$wb_cds_name . $suffix};
+		    next if exists $cds_ids_created{$wb_cds_name . $suffix};
+		    $wb_cds_name .= $suffix;
+		    $cds_ids_created{$wb_cds_name}++;
+		    last;
+		}
 	    }
-	    create_cds($external_id, $existing_transcript_id, $wb_cds_name, $wb_id);
+	    if ($debugging_on) {
+		$log->write_to("DEBUGGING: creating $new_cds_id : $wb_cds_name : $wb_id\n");
+	    }
+	    create_cds($external_id, $new_cds_id, $wb_cds_name, $wb_id);
 	}
 
 	for my $existing_cds (keys %cds_to_update) {
-	    create_cds($external_id, $cds_to_update{$existing_cds}, $existing_cds, $wb_id);
+	    if ($multiple_isoforms && $existing_cds =~ /\d$/) {
+		my $wb_cds_name = $existing_cds;
+		make_history_cds($existing_cds, 'CDS deprecated as part of bulk annotation update on ' . $date);
+		for my $suffix (@ISOFORM_SUFFIXES) {
+		    next if exists $cds_ids_created{$wb_cds_name . $suffix};
+		    $wb_cds_name .= $suffix;
+		    $cds_ids_created{$wb_cds_name}++;
+		    last;
+		}
+		if ($debugging_on) {
+		    $log->write_to("DEBUGGING: creating $existing_cds : $wb_cds_name : $wb_id\n");
+		}
+		create_cds($external_id, $cds_to_update{$existing_cds}, $wb_cds_name, $wb_id);
+	    } else {
+		if ($debugging_on) {
+		    $log->write_to("DEBUGGING: creating $existing_cds : $existing_cds : $wb_id\n");
+		}
+		create_cds($external_id, $cds_to_update{$existing_cds}, $existing_cds, $wb_id);
+	    }
 	}
     }
 }
