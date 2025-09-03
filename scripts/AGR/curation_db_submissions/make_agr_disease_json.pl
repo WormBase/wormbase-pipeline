@@ -15,7 +15,7 @@ use Path::Class;
 use Const::Fast;
 use XML::LibXML;
 
-const my $LINKML_SCHEMA => 'v2.10.0';
+const my $LINKML_SCHEMA => 'v2.13.0';
 const my $CHEBI_PURL => 'http://purl.obolibrary.org/obo/chebi.owl';
 
 my ($debug, $test, $verbose, $store, $wormbase, $acedbpath, $ws_version, $outfile, $schema, $dates_file);
