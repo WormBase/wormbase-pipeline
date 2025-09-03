@@ -130,7 +130,7 @@ sub process{
 	    my $construct = $transgene->Construct;
 	    next unless $construct;
 
-	    push @$json_obj{alleleObjectRelations} , {objectRelation => {associationType => 'contains',construct => "WB:$construct"}};
+	    push @{$json_obj{alleleObjectRelations}} , {objectRelation => {associationType => 'contains',construct => "WB:$construct"}};
     }
 
     push @alleles, $json_obj;
@@ -150,13 +150,13 @@ sub process_transgenes{
     next unless $disease or $phenotype or $interaction;
 
     my $symbol = $obj->Public_name ? $obj->Public_name->name : "$obj";
-    my %synonyms = map {$_->name => 1} $obj->Synonym;
-
+    my @synonyms = map {$_->name} $obj->Synonym;
+    
     my $json_obj = {
       primaryId     => "WB:$obj", 
       symbol        => $symbol,
       symbolText    => $symbol,
-      synonyms      => [keys \%synonyms],
+      synonyms      => \@synonyms,
       secondaryIds => [],
       taxonId       => "NCBITaxon:" . $taxid,
       crossReferences => [ { id => "WB:$obj", pages => ['transgene','transgene/references'] }],
