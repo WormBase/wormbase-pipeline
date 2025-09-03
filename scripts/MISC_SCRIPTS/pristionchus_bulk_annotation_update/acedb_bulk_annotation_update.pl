@@ -212,6 +212,7 @@ sub create_cds {
     
     $curation_out_fh->print("CDS : \"$wb_cds_name\"\n");
     $curation_out_fh->print("Gene $wb_gene_id\n");
+    $curation_out_fh->print("CDS\n");
     $curation_out_fh->print("Sequence $sequence\n");
     $curation_out_fh->print("Species \"${\$wb->full_name}\"\n");
     $curation_out_fh->print("Method $method\n");
@@ -537,7 +538,7 @@ sub update_gene {
 
     my $geneace_gene = $gdb->fetch(Gene => $wb_id);
     my $camace_gene = $cdb->fetch(Gene => $wb_id);
-
+    
     $log->error("Cannot update $wb_id as gene doesn't exist in geneace\n") if !$geneace_gene;
     $log->error("Cannot update $wb_id as gene doesn't exist in curation database\n") if !$camace_gene;
     if ($geneace_gene && $camace_gene) {
@@ -570,7 +571,7 @@ sub update_gene {
 	# If no matching model then add ID to @cds_to_delete
 	for my $existing_cds (keys %existing_coords) {
 	    if (exists $new_coords{$existing_cds}) {
-		$cds_to_keep{$existing_coords{$existing_cds}} = 1;
+		$cds_to_keep{$existing_coords{$existing_cds}} = $new_coords{$existing_cds};
 	    } else {
 		push @cds_to_delete, $existing_coords{$existing_cds};
 	    }
@@ -628,8 +629,24 @@ sub update_gene {
 	    $geneace_out_fh->print("\n");
 	}
 
-	my $multiple_isoforms = scalar @cds_to_create + scalar keys %cds_to_update > 1 ? 1 : 0;
+	my $multiple_isoforms = scalar @cds_to_create + scalar (keys %cds_to_update) + scalar (keys %cds_to_keep) > 1 ? 1 : 0;
 	my %cds_ids_created;
+
+	if ($multiple_isoforms) {
+	    for my $existing_cds (keys %cds_to_keep) {
+		if ($existing_cds =~ /\d$/) {
+		    my $wb_cds_name = $existing_cds;
+		    make_history_cds($existing_cds, 'CDS deprecated as part of bulk annotation update on ' . $date);
+		    for my $suffix (@ISOFORM_SUFFIXES) {
+			next if exists $cds_ids_created{$wb_cds_name . $suffix};
+			$wb_cds_name .= $suffix;
+			$cds_ids_created{$wb_cds_name}++;
+			last;
+		    }
+		    create_cds($external_id, $cds_to_keep{$existing_cds}, $wb_cds_name, $wb_id);
+		}
+	    }
+	}
 	
 	for my $new_cds_id (@cds_to_create) {
 	    my $wb_cds_name = $geneace_gene->Sequence_name->name;
@@ -648,7 +665,6 @@ sub update_gene {
 	for my $existing_cds (keys %cds_to_update) {
 	    if ($multiple_isoforms && $existing_cds =~ /\d$/) {
 		my $wb_cds_name = $existing_cds;
-		make_history_cds($existing_cds, 'CDS deprecated as part of bulk annotation update on ' . $date);
 		for my $suffix (@ISOFORM_SUFFIXES) {
 		    next if exists $cds_ids_created{$wb_cds_name . $suffix};
 		    $wb_cds_name .= $suffix;
@@ -775,7 +791,7 @@ sub parse_gff {
 
 sub get_relative_positions {
     my ($gene_id, $transcript_id, $feature_type) = @_;
-    
+
     my @starts = sort {$a<=>$b} @{$new_gene_models->{$gene_id}{'transcripts'}{$transcript_id}{$feature_type}{'starts'}};
     my @ends = sort {$a<=>$b} @{$new_gene_models->{$gene_id}{'transcripts'}{$transcript_id}{$feature_type}{'ends'}};
     
