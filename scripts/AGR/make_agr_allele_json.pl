@@ -123,15 +123,17 @@ sub process{
     else{
 	    $json_obj->{crossReferences} = [ { id => "WB:$obj", pages => ['allele']}];
     }
-    $$json_obj{alleleObjectRelations}=[{objectRelation => {associationType => 'allele_of', gene => "WB:$gene"}}];
+    my @allele_object_relations;
+    push @allele_object_relations, {objectRelation => {associationType => 'allele_of', gene => "WB:$gene"}};
 
     if ($obj->Corresponding_transgene){
 	    my $transgene = $obj->Corresponding_transgene;
 	    my $construct = $transgene->Construct;
 	    next unless $construct;
 
-	    push @{$json_obj{alleleObjectRelations}} , {objectRelation => {associationType => 'contains',construct => "WB:$construct"}};
+	    push @allele_object_relations , {objectRelation => {associationType => 'contains',construct => "WB:$construct"}};
     }
+    $json_obj->{alleleObjectRelations} = \@allele_object_relations;
 
     push @alleles, $json_obj;
   }
