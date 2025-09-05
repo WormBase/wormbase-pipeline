@@ -105,18 +105,22 @@ sub parse_gff {
 
         if ($type eq 'gene') {
             my $id = ($attr{ID} =~ s/^Gene://r);
-            $genes{$id} = 1;
+	    $genes{$id} = 1;
             $chr{$id} = $seqid;
             $strand{$id} = $strand_val;
         } elsif ($type eq 'mRNA') {
             my $mid = ($attr{ID} =~ s/^Transcript://r);
             my $pid = ($attr{Parent} =~ s/^Gene://r);
             $mRNAs{$mid} = $pid;
-        } elsif ($type eq 'CDS') {
-            my $mid = ($attr{Parent} =~ s/^Transcript://r);
-            my $pid = $mRNAs{$mid} // next;
-            push @{ $coords{$pid} }, [$start, $end];
-        }
+	} elsif ($type eq 'CDS') {
+            my $mid = $attr{Parent};
+	    $mid =~ s/Transcript://g;
+	    my @mids = split(/,/, $mid);
+	    for my $m(@mids) {
+		my $pid = $mRNAs{$m} // next;
+		push @{ $coords{$pid} }, [$start, $end];
+	    }
+	}
     }
     close $fh;
 
