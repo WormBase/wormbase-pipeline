@@ -48,13 +48,12 @@ sub lookup_from_ebi_production_dbs {
   my ($output_file, $type) = @_;
 
   my $ebi_prod_dir = $wb->wormpub . "/ebi_resources";
-  my $ena_perl     = "$ebi_prod_dir/ena_perl";
   my $ena_env      = "$ebi_prod_dir/ena_oracle_setup.sh";
   my $ena_cred     = "$ebi_prod_dir/ENAORACLE.s";
   my $uni_cred     = "$ebi_prod_dir/UNIPROTORACLE.s";
 
   my $cmd =  "source $ena_env &&"
-      . " $ena_perl  $ENV{CVS_DIR}/get_protein_ids_ebiprod.pl"
+      . " perl  $ENV{CVS_DIR}/get_protein_ids_ebiprod.pl"
       . "  -enacred $ena_cred" 
       . "  -uniprotcred $uni_cred"
       . "  -orgid $ncbi_tax_id"
