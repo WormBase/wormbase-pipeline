@@ -15,6 +15,21 @@ use Getopt::Long;
 use Storable;
 use Ace;
 use IO::File;
+use Const::Fast;
+
+const my $SO_TERM_MAP => {
+    'SO:0001263' => 'SO:0000655',
+    'SO:0001265' =>  'SO:0000276',
+    'SO:0001266' => 'SO:0000655',
+    'SO:0001267' => 'SO:0000275',
+    'SO:0001268' => 'SO:0000274',
+    'SO:0001272' => 'SO:0000253',
+    'SO:0001637' => 'SO:0000252',
+    'SO:0001638' => 'SO:0001035',
+    'SO:0001641' => 'SO:0001463',
+    'SO:0002182' => 'SO:0001904'
+    };
+
 
 my ($debug,$test,$species,$store,$output,$database);
 
@@ -59,14 +74,21 @@ while (my $g = $genesh->next){
     next unless $g->name =~ /^WBGene\d+$/;
   # Gene block
   my ($desc) = $g->Gene_class ? $g->Gene_class->Description : '';
-  
-  print STDERR "processing $g\n" if $debug;
+    
+    print STDERR "processing $g\n" if $debug;
+    my $biotype = 'SO:0000704';
+    if ($g->Corresponding_CDS) {
+	$biotype = 'PR:000000001';
+    }elsif ($g->Biotype) {
+	$biotype = exists $SO_TERM_MAP->{$g->Biotype->name} ? $SO_TERM_MAP->{$g->Biotype->name} : $g->Biotype->name;
+    }
+    
   push @{$genes{$g}}, [
     "WB:$g", # 1 id
     $g->Public_name, # 2 symbol
     $desc, # 3 Name
     join('|',$g->Other_name), # 4 synonyms
-    'gene', # 5 SO
+    $biotype, # 5 SO
     'NCBITaxon:' . $g->Species->NCBITaxonomyID, # 6 taxon
     '', # 7 gene
     '', # 8 parent _protein
@@ -75,55 +97,55 @@ while (my $g = $genesh->next){
     '', # 11 properties
     ]; 
   
-  foreach my $c($g->Corresponding_CDS){
+#  foreach my $c($g->Corresponding_CDS){
     # Transcript/CDS block
-    push @{$coding_trans{$c}}, [
-      "WB:$c",
-      $g->Public_name,
-      $desc,
-      join('|',$g->Other_name),
-      'transcript',
-      'NCBITaxon:' . $c->Species->NCBITaxonomyID, # 6
-      "WB:$g",
-      '',
-      '',
-      '',
-      ''];
+#    push @{$coding_trans{$c}}, [
+#      "WB:$c",
+#      $g->Public_name,
+#      $desc,
+#      join('|',$g->Other_name),
+#      'SO:0000120',
+#      'NCBITaxon:' . $c->Species->NCBITaxonomyID, # 6
+#      "WB:$g",
+#      '',
+#      '',
+#      '',
+#      ''];
     
-    foreach my $p ($c->Corresponding_protein) {
-      push @{$proteins{$p}}, [
-        "WB:$p",
-        uc($g->Public_name),
-        $desc,
-        join('|',map { uc($_) } $g->Other_name),
-        'protein',
-        'NCBITaxon:' .$p->Species->NCBITaxonomyID,
-        "WB:$g",
-	'',
-	'',
-        join('|', &get_xrefs($p, 'protein')),
-        '',
-        ];
-    }
-  }
+#    foreach my $p ($c->Corresponding_protein) {
+#      push @{$proteins{$p}}, [
+#        "WB:$p",
+#        uc($g->Public_name),
+#        $desc,
+#        join('|',map { uc($_) } $g->Other_name),
+#        'PR:000000001',
+#        'NCBITaxon:' .$p->Species->NCBITaxonomyID,
+#        "WB:$g",
+#	'',
+#	'',
+#        join('|', &get_xrefs($p, 'protein')),
+#        '',
+#        ];
+#    }
+#  }
   
-  foreach my $t($g->Corresponding_transcript){
-    next if "${\$t->Method}" eq 'Coding_transcript';
-    # ncRNA transcript block
-    push @{$nc_trans{$t}}, [
-      "WB:$t",
-      $g->Public_name,
-      $desc,
-      join('|',$g->Other_name),
-      $t->Method->GFF_SO->SO_name,
-      'NCBITaxon:' . $t->Species->NCBITaxonomyID,
-      "WB:$g",
-      '',
-      '',
-      join("|". &get_xrefs($t, 'transcript')), 
-      '',
-      ];
-  }
+#  foreach my $t($g->Corresponding_transcript){
+#    next if "${\$t->Method}" eq 'Coding_transcript';
+#    # ncRNA transcript block
+#    push @{$nc_trans{$t}}, [
+#      "WB:$t",
+#      $g->Public_name,
+#      $desc,
+#      join('|',$g->Other_name),
+#      $t->Method->GFF_SO,
+#      'NCBITaxon:' . $t->Species->NCBITaxonomyID,
+#      "WB:$g",
+#      '',
+#      '',
+#      join("|". &get_xrefs($t, 'transcript')), 
+#      '',
+#      ];
+#  }
 }
 
 foreach my $g (sort keys %genes) {
@@ -134,35 +156,35 @@ foreach my $g (sort keys %genes) {
   print $outfile join("\t", @{$g[0]}), "\n";
 }
 
-foreach my $ct (sort keys %coding_trans) {
-  my @ct = @{$coding_trans{$ct}};
-  $log->log_and_die("ERROR: multiple gene entries with id $ct\n") if scalar(@ct) != 1;
+#foreach my $ct (sort keys %coding_trans) {
+#  my @ct = @{$coding_trans{$ct}};
+#  $log->log_and_die("ERROR: multiple gene entries with id $ct\n") if scalar(@ct) != 1;
 
-  check_for_missing_data($log, $ct[0]);
-  print $outfile join("\t", @{$ct[0]}), "\n";
-}
+#  check_for_missing_data($log, $ct[0]);
+#  print $outfile join("\t", @{$ct[0]}), "\n";
+#}
 
-foreach my $nct (sort keys %nc_trans) {
-  my @nct = @{$nc_trans{$nct}};
-  $log->log_and_die("ERROR: multiple gene entries with id $nct\n") if scalar(@nct) != 1;
+#foreach my $nct (sort keys %nc_trans) {
+#  my @nct = @{$nc_trans{$nct}};
+#  $log->log_and_die("ERROR: multiple gene entries with id $nct\n") if scalar(@nct) != 1;
 
-  check_for_missing_data($log, $nct[0]);
-  print $outfile join("\t", @{$nct[0]}), "\n";
-}
+#  check_for_missing_data($log, $nct[0]);
+#  print $outfile join("\t", @{$nct[0]}), "\n";
+#}
 
-foreach my $p (sort keys %proteins) {
-  my @p = @{$proteins{$p}};
+#foreach my $p (sort keys %proteins) {
+#  my @p = @{$proteins{$p}};
 
-  if (scalar(@p) > 1) {
-    my @all_t;
-    foreach my $op (@p) {
-      push @all_t, $op->[7];
-    }
-    $p[0]->[7] = join("|", @all_t);
-  }
-  check_for_missing_data($log, $p[0]);
-  print $outfile join("\t", @{$p[0]}), "\n";
-}
+#  if (scalar(@p) > 1) {
+#    my @all_t;
+#    foreach my $op (@p) {
+#      push @all_t, $op->[7];
+#    }
+#    $p[0]->[7] = join("|", @all_t);
+#  }
+#  check_for_missing_data($log, $p[0]);
+#  print $outfile join("\t", @{$p[0]}), "\n";
+#}
 
 $log->mail;
 
