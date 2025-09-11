@@ -23,14 +23,14 @@ GetOptions (
     'database:s'   => \$acedbpath,
     'outfile:s'    => \$outfile,
     'wsversion=s'  => \$ws_version
-)||die("unknown command line option: $@\n");
+    )||die("unknown command line option: $@\n");
 
 if ( $store ) {
-  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+    $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
-  $wormbase = Wormbase->new( -debug   => $debug,
-                             -test    => $test
-      );
+    $wormbase = Wormbase->new( -debug   => $debug,
+			       -test    => $test
+	);
 }
 
 my $tace = $wormbase->tace;
@@ -51,9 +51,9 @@ my %zeco = (
 my $db = Ace->connect(-path => $acedbpath, -program => $tace) or die('Connection failure: '. Ace->error);
 
 my $data_provider_dto_json = {
-	source_organization_abbreviation => 'WB',
-	internal => JSON::false,
-	obsolete => JSON::false
+    source_organization_abbreviation => 'WB',
+    internal => JSON::false,
+    obsolete => JSON::false
 };
 
 my @annotations;
@@ -61,82 +61,8 @@ my @annotations;
 my $it = $db->fetch_many(-query => 'find Variation WHERE Live AND COUNT(Gene) < 2 AND Phenotype AND NOT Natural_variant');
 process_variants_and_transgenes($it);
 
-$it = $db->fetch_many(-query => 'find Transgene WHERE Phenotype')
+$it = $db->fetch_many(-query => 'find Transgene WHERE Phenotype');
 process_variants_and_transgenes($it);
-
-$db->close;
-
-my $all_annots = {
-    linkml_version => $LINKML_SCHEMA,
-    alliance_member_release_version => $ws_version
-};
-$all_annots->{disease_allele_ingest_set} = \@allele_annots;
-$all_annots->{disease_gene_ingest_set} = \@gene_annots;
-$all_annots->{disease_agm_ingest_set} = \@agm_annots;
-
-print_json($outfile, $all_annots);
-    
-exit(0);
-
-sub process_variants_and_transgenes {
-
-while( my $obj = $it->next) {
-    next unless $obj->Phenotype;
-
-    for my $phenotype ($obj->Phenotype) {
-        unless ($phenotype->Primary_name) {
-            print STDERR "No primary name for $pt - skipping\n";
-            next;
-        }
-
-        my %papers;
-        my @inferred_genes;
-        foreach my $evi ($phenotype->col()) {
-            if ($evi->name eq 'Paper_evidence') {
-                my $ref_count = 0;
-                foreach my $wb_paper ($evi->col ) {
-                    $papers{$wb_paper} = get_paper_id($wb_paper);
-                }
-            } elsif($obj->name =~ /WBTransgene/ && $evi->name eq 'Caused_by_gene'){
-                foreach my $g ($evi->col){
-                    push @inferred_genes, "$g";
-                }
-            }
-	    }
-
-        if ($obj->name =~ /WBVar/ && $obj->Gene) {
-            for my $gene ($obj->Gene) {
-                push @inferred_genes, $gene->name;
-            }
-        }
-
-        if (scalar @inferred_genes > 1) {
-            print STDERR "Multiple inferred genes for $obj - using first\n";
-        }
-
-        for my $paper (keys %papers) {
-            my $annot = {
-                mod_internal_id            => "WB:$obj|WB:" . $obj->Phenotype->name . "|" . $papers{$paper},
-                allele_identifier          => "WB:$obj",
-                data_provider_dto          => $data_provider_dto_json,
-                phenotype_statement        => $phenotype->Primary_name->name,
-                phenotype_term_curies      => [$phenotype->name],
-                evidence_curie             => $papers{$paper},
-                internal                   => JSON::false,
-                obsolete                   => JSON::false
-            };
-
-            if (@caused_by_genes) {
-                $annot->{inferred_gene_identifier} = $inferred_genes[0];
-            }
-
-            my @condition_relations = @{get_condition_relations($phenotype, $paper)};
-            $annot->{condition_relation_dtos} = \@condition_relations if @condition_relations;
-
-            push @annotations, $annot;
-        }
-    }
-}
 
 $db->close;
 
@@ -149,6 +75,68 @@ $all_annots->{phenotype_allele_ingest_set} = \@annotations;
 print_json($outfile, $all_annots);
     
 exit(0);
+
+
+sub process_variants_and_transgenes {
+    
+    while( my $obj = $it->next) {
+	next unless $obj->Phenotype;
+	
+	for my $phenotype ($obj->Phenotype) {
+	    unless ($phenotype->Primary_name) {
+		print STDERR "No primary name for $phenotype - skipping\n";
+		next;
+	    }
+	    
+	    my %papers;
+	    my @inferred_genes;
+	    foreach my $evi ($phenotype->col()) {
+		if ($evi->name eq 'Paper_evidence') {
+		    my $ref_count = 0;
+		    foreach my $wb_paper ($evi->col ) {
+			$papers{$wb_paper} = get_paper_id($wb_paper);
+		    }
+		} elsif($obj->name =~ /WBTransgene/ && $evi->name eq 'Caused_by_gene'){
+		    foreach my $g ($evi->col){
+			push @inferred_genes, "WB:$g";
+		    }
+		}
+	    }
+	    
+	    if ($obj->name =~ /WBVar/ && $obj->Gene) {
+		for my $gene ($obj->Gene) {
+		    push @inferred_genes, "WB:" . $gene->name;
+		}
+        }
+	    
+	    if (scalar @inferred_genes > 1) {
+		print STDERR "Multiple inferred genes for $obj - using first\n";
+	    }
+	    
+	    for my $paper (keys %papers) {
+		my $annot = {
+		    mod_internal_id            => "WB:$obj|WB:" . $phenotype->name . "|" . $papers{$paper},
+		    allele_identifier          => "WB:$obj",
+		    data_provider_dto          => $data_provider_dto_json,
+		    phenotype_statement        => $phenotype->Primary_name->name,
+		    phenotype_term_curies      => [$phenotype->name],
+		    evidence_curie             => $papers{$paper},
+		    internal                   => JSON::false,
+		    obsolete                   => JSON::false
+		};
+		
+		if (@inferred_genes) {
+		    $annot->{inferred_gene_identifier} = $inferred_genes[0];
+		}
+		
+		my @condition_relations = @{get_condition_relations($phenotype, $paper)};
+		$annot->{condition_relation_dtos} = \@condition_relations if @condition_relations;
+		
+		push @annotations, $annot;
+	    }
+	}
+    }
+}    
 
 ##############################################
 
@@ -197,14 +185,13 @@ sub get_condition_relations {
     my $condition_relation_type = 'has_condition';
     
     
-    my @conditions;
+    my (@conditions, @assays_and_molecules);
     my $pa = $obj->at('Phenotype_assay');
     if (defined $pa){
-        my @assays_and_molecules;
         for my $temp ($pa->at('Temperature')) {
             my $paper = $temp->at('Paper_evidence')->at() if $temp->at('Paper_evidence');
             next unless defined $paper;
-            push @assays, {
+            push @assays_and_molecules, {
                 condition_free_text => $temp->name,
                 condition_class_curie => $zeco{'temperature exposure'},
             } if $paper->name eq $paper_id;
@@ -212,7 +199,7 @@ sub get_condition_relations {
         for my $treatment ($pa->at('Treatment')) {
             my $paper = $treatment->at('Paper_evidence')->at() if $treatment->at('Paper_evidence');
             next unless defined $paper;
-            push @assays, {
+            push @assays_and_molecules, {
                 condition_free_text => $treatment->name,
                 condition_class_curie => $zeco{'experimental conditions'},
             } if $paper->name eq $paper_id;
@@ -221,19 +208,19 @@ sub get_condition_relations {
 
     my $ab = $obj->at('Affected_by');
     if (defined $ab) {
-	    for my $mol ($ab->at('Molecule')) {
-	        my $paper = $mol->at('Paper_evidence')->at() if $mol->at('Paper_evidence');
-	        next unless defined $paper;
-	        push @assays_and_molecules, {
-		        condition_chemical_curie => get_chemical_ontology_id($mol),
-		        condition_class_curie => $zeco{'chemical treatment'},
-	        } if $paper eq $paper_id;
-	    }
+	for my $mol ($ab->at('Molecule')) {
+	    my $paper = $mol->at('Paper_evidence')->at() if $mol->at('Paper_evidence');
+	    next unless defined $paper;
+	    push @assays_and_molecules, {
+		condition_chemical_curie => get_chemical_ontology_id($mol),
+		condition_class_curie => $zeco{'chemical treatment'},
+	    } if $paper eq $paper_id;
+	}
     }
    
     push @conditions, {
         condition_relation_type_name => $condition_relation_type,
-        conditions                   => \@assays_and molecules
+        conditions                   => \@assays_and_molecules
     } if @assays_and_molecules;
    
     return \@conditions;
