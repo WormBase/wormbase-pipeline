@@ -43,7 +43,7 @@ my @script_conf = (
   { script => 'dump_protein_domains.pl',                 output => 'protein_domains.csv', all => 1 ,  mem => '12g' },
   { script => 'dump_species_orthologs.pl',               output => 'orthologs.txt', all => 1,  mem => '12g'        },
   { script => 'dump_confirmed_genes.pl',                 output => 'confirmed_genes.fa', all => 1 ,  mem => '12g'  },
-  { script => 'dump_gpi.pl',                             output => 'gene_product_info.gpi',  all => 1, mem => '12g' },
+  #{ script => 'dump_gpi.pl',                             output => 'gene_product_info.gpi',  all => 1, mem => '12g' },
   { script => 'dump_gpiv2.pl',                           output => 'gene_product_info.gpi2', all => 1, mem => '12g' },
   { script => 'dump_species_gene_interactions.pl',       output => 'interactions.txt',  mem => '12g'               },
   { script => 'dump_interpolated.pl',                    output => 'interpolated_clones.txt',  mem => '12g'        },
