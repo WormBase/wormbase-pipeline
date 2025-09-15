@@ -56,13 +56,56 @@ my $data_provider_dto_json = {
     obsolete => JSON::false
 };
 
-my @annotations;
+my (@allele_annotations, @agm_annotations);
 
-my $it = $db->fetch_many(-query => 'find Variation WHERE Live AND COUNT(Gene) < 2 AND Phenotype AND NOT Natural_variant');
-process_variants_and_transgenes($it);
+my $it = $db->fetch_many(-query => 'find Variation WHERE Live AND COUNT(Gene) < 2 AND (Phenotype OR Phenotype_not_observed)  AND NOT Natural_variant');
+my $negated;
+while(my $obj = $it->next) {
+    $negated = 0;
+    if ($obj->Phenotype) {
+	for my $phenotype ($obj->Phenotype) {
+	    process_phenotypes($obj, $phenotype, $negated);
+	}
+    }
+    $negated = 1;
+    if ($obj->Phenotype_not_observed) {
+	for my $phenotype_not_observed ($obj->Phenotype_not_observed) {
+	    process_phenotypes($obj, $phenotype_not_observed, $negated);
+	}
+    }
+}
 
-$it = $db->fetch_many(-query => 'find Transgene WHERE Phenotype');
-process_variants_and_transgenes($it);
+$it = $db->fetch_many(-query => 'find Transgene WHERE Phenotype OR Phenotype_not_observed');
+while(my $obj = $it->next) {
+    $negated = 0;
+    if ($obj->Phenotype) {
+	for my $phenotype ($obj->Phenotype) {
+	    process_phenotypes($obj, $phenotype, $negated);
+	}
+    }
+    $negated = 1;
+    if ($obj->Phenotype_not_observed) {
+	for my $phenotype_not_observed ($obj->Phenotype_not_observed) {
+	    process_phenotypes($obj, $phenotype_not_observed, $negated);
+	}
+    }
+}
+
+$it = $db->fetch_many(-query => 'find Strain WHERE Phenotype OR Phenotype_not_observed');
+while(my $obj = $it->next) {
+    $negated = 0;
+    if ($obj->Phenotype) {
+	for my $phenotype ($obj->Phenotype) {
+	    process_phenotypes($obj, $phenotype, $negated);
+	}
+    }
+    $negated = 1;
+    if ($obj->Phenotype_not_observed) {
+	for my $phenotype_not_observed ($obj->Phenotype_not_observed) {
+	    process_phenotypes($obj, $phenotype_not_observed, $negated);
+	}
+    }
+}
 
 $db->close;
 
@@ -70,70 +113,89 @@ my $all_annots = {
     linkml_version => $LINKML_SCHEMA,
     alliance_member_release_version => $ws_version
 };
-$all_annots->{phenotype_allele_ingest_set} = \@annotations;
+$all_annots->{phenotype_allele_ingest_set} = \@allele_annotations;
+$all_annots->{phenotype_agm_ingest_set} = \@agm_annotations;
 
 print_json($outfile, $all_annots);
     
 exit(0);
 
 
-sub process_variants_and_transgenes {
+sub process_phenotypes {
+
+    my ($obj, $phenotype, $negated) = @_;
     
-    while( my $obj = $it->next) {
-	next unless $obj->Phenotype;
+    unless ($phenotype->Primary_name) {
+	print STDERR "No primary name for $phenotype - skipping\n";
+	next;
+    }
+	    
+    my %papers;
+    my @inferred_genes;
+    foreach my $evi ($phenotype->col()) {
+	if ($evi->name eq 'Paper_evidence') {
+	    my $ref_count = 0;
+	    foreach my $wb_paper ($evi->col ) {
+		$papers{$wb_paper} = get_paper_id($wb_paper);
+	    }
+	} elsif($obj->name =~ /WBTransgene/ && $evi->name eq 'Caused_by_gene'){
+	    foreach my $g ($evi->col){
+		push @inferred_genes, "WB:$g";
+	    }
+	}
+    }
+    
+    if ($obj->name =~ /WBVar/ && $obj->Gene) {
+	for my $gene ($obj->Gene) {
+	    push @inferred_genes, "WB:" . $gene->name;
+	}
+    }
+    
+    if (scalar @inferred_genes > 1) {
+	print STDERR "Multiple inferred genes for $obj - using first\n";
+    }
+    
+    for my $paper (keys %papers) {
+	my $annot = {
+	    mod_internal_id            => "WB:$obj|WB:" . $phenotype->name . "|" . $papers{$paper},
+	    data_provider_dto          => $data_provider_dto_json,
+	    phenotype_statement        => $phenotype->Primary_name->name,
+	    phenotype_term_curies      => [$phenotype->name],
+	    evidence_curie             => $papers{$paper},
+	    negated                    => $negated ? JSON::true : JSON::false,
+	    internal                   => JSON::false,
+	    obsolete                   => JSON::false
+	};
+
+	if ($obj->name =~ /WBStrain/) {
+	    $annot->{agm_identifier} = "WB:$obj";
+	} else {
+	    $annot->{allele_identifier} => "WB:$obj";
+	}
 	
-	for my $phenotype ($obj->Phenotype) {
-	    unless ($phenotype->Primary_name) {
-		print STDERR "No primary name for $phenotype - skipping\n";
-		next;
-	    }
-	    
-	    my %papers;
-	    my @inferred_genes;
-	    foreach my $evi ($phenotype->col()) {
-		if ($evi->name eq 'Paper_evidence') {
-		    my $ref_count = 0;
-		    foreach my $wb_paper ($evi->col ) {
-			$papers{$wb_paper} = get_paper_id($wb_paper);
-		    }
-		} elsif($obj->name =~ /WBTransgene/ && $evi->name eq 'Caused_by_gene'){
-		    foreach my $g ($evi->col){
-			push @inferred_genes, "WB:$g";
-		    }
-		}
-	    }
-	    
-	    if ($obj->name =~ /WBVar/ && $obj->Gene) {
-		for my $gene ($obj->Gene) {
-		    push @inferred_genes, "WB:" . $gene->name;
-		}
-        }
-	    
-	    if (scalar @inferred_genes > 1) {
-		print STDERR "Multiple inferred genes for $obj - using first\n";
-	    }
-	    
-	    for my $paper (keys %papers) {
-		my $annot = {
-		    mod_internal_id            => "WB:$obj|WB:" . $phenotype->name . "|" . $papers{$paper},
-		    allele_identifier          => "WB:$obj",
-		    data_provider_dto          => $data_provider_dto_json,
-		    phenotype_statement        => $phenotype->Primary_name->name,
-		    phenotype_term_curies      => [$phenotype->name],
-		    evidence_curie             => $papers{$paper},
-		    internal                   => JSON::false,
-		    obsolete                   => JSON::false
+	if (@inferred_genes) {
+	    $annot->{inferred_gene_identifier} = $inferred_genes[0];
+	}
+	
+	my @condition_relations = @{get_condition_relations($phenotype, $paper)};
+	$annot->{condition_relation_dtos} = \@condition_relations if @condition_relations;
+
+	if ($obj->name =~ /WBVar/ && $obj->Phenotype_remark) {
+	    my @notes;
+	    for my $remark ($obj->Phenotype_remark) {
+		push @notes, {
+		    note_type_name => 'remark',
+		    internal       => JSON::false,
+		    free_text      => $obj->Phenotype_remark->name
 		};
-		
-		if (@inferred_genes) {
-		    $annot->{inferred_gene_identifier} = $inferred_genes[0];
-		}
-		
-		my @condition_relations = @{get_condition_relations($phenotype, $paper)};
-		$annot->{condition_relation_dtos} = \@condition_relations if @condition_relations;
-		
-		push @annotations, $annot;
 	    }
+	    $annot->{note_dtos} = \@notes;
+	}
+    
+	if ($obj->name =~ /WBStrain/) {
+	    push @agm_annotations, $annot;
+	} else {
+	    push @allele_annotations, $annot;
 	}
     }
 }    
