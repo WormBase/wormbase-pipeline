@@ -218,6 +218,30 @@ while (my $obj = $it->next) {
     $gene->{gene_secondary_id_dtos} = \@secondary_ids if @secondary_ids;
     $gene->{cross_reference_dtos} = \@xrefs if @xrefs;
     $gene->{gcrp_cross_reference_dto} = $gcrp_xref if $gcrp_xref;
+
+    my %note_types;
+    if ($obj->Concise_description) {
+	$note_types{'MOD_provided_gene_description'} = $obj->Concise_description->name;
+    }
+    if ($obj->Automated_description) {
+	$note_types{'automated_gene_description'} = $obj->Automated_description->name;
+    }
+    if ($obj->Disease_relevance) {
+	$note_types{'gene_disease_summary'} = $obj->Disease_relevance->name;
+    }
+
+    if (scalar keys %note_types > 0) {
+	my @notes;
+	for my $note_type (keys %note_types) {
+	    push @notes, {
+		note_type_name => $note_type,
+		free_text      => $note_types{$note_type},
+		internal       => JSON::false,
+		obsolete       => JSON::false
+	    };
+	}
+	$gene->{note_dtos} = \@notes;
+    }
     
     push @genes, $gene;
 }

@@ -861,7 +861,6 @@ sub copy_annotations_files{
     my $out_prefix = "$targetdir/species/$gspecies/$bioproj/annotation/$gspecies.${bioproj}.${WS_version_name}.";
 
     foreach my $io_pair ([ "dbxrefs.txt", "xrefs.txt.gz" ],
-                         [ "gene_product_info.gpi", "gene_product_info.gpi.gz" ],
 			 [ "gene_product_info.gpi2", "gene_product_info.gpi2.gz" ]
 ) {
       my ($in_suffix, $out_suffix) = @$io_pair;
@@ -1570,7 +1569,6 @@ GSPECIES.BIOPROJ.WSREL.protein_domains.csv.gz
 GSPECIES.BIOPROJ.WSREL.repeats.fa.gz
 GSPECIES.BIOPROJ.WSREL.geneIDs.txt.gz
 GSPECIES.BIOPROJ.WSREL.geneOtherIDs.txt.gz
-GSPECIES.BIOPROJ.WSREL.gene_product_info.gpi.gz
 GSPECIES.BIOPROJ.WSREL.gene_product_info.gpi2.gz
 GSPECIES.BIOPROJ.WSREL.anatomy_association.wb.gz
 GSPECIES.BIOPROJ.WSREL.gene_association.wb.gz

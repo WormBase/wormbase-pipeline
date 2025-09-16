@@ -65,8 +65,12 @@ my $db = Ace->connect(-path => ($database||$wormbase->autoace));
 my $genesh = $db->fetch_many(-query => 'Find Gene;Species="'.$wormbase->long_name.'";Live')
             or $log->log_and_die(Ace->error);
 
+my $date = `date +%Y-%m-%d`;
+chomp $date;
 print $outfile "!gpi-version: 2.0\n";
-print $outfile "!namespace: WB\n";
+print $outfile "!generated-by: WB\n";
+print $outfile "!date-generated: $date\n";
+print $outfile "!project-release: " . $wormbase->get_wormbase_version_name . "\n";
 
 my (%genes, %coding_trans, %nc_trans, %proteins);
 

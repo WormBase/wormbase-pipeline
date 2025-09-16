@@ -206,15 +206,17 @@ sub create_cds {
     
     my @starts_on_sequence = @{$new_gene_models->{$external_gene_id}{'transcripts'}{$external_transcript_id}{'CDS'}{'starts'}};
     my @ends_on_sequence = @{$new_gene_models->{$external_gene_id}{'transcripts'}{$external_transcript_id}{'CDS'}{'ends'}};
-    my $remark = 'Created as part of bulk annotation update on ' . $date;
+    my $remark = 'Created as part of bulk annotation update on ' . $date . ". This update combines the model changes described in papers " . $references[0] . " and " . $references[1] . " with additional curation carried out by the paper authors and WormBase curators.";
     my $sequence = $new_gene_models->{$external_gene_id}{'gene'}{'chromosome'};
     my $method = 'curated';
     
     $curation_out_fh->print("CDS : \"$wb_cds_name\"\n");
     $curation_out_fh->print("Gene $wb_gene_id\n");
     $curation_out_fh->print("CDS\n");
+    $curation_out_fh->print("Isoform\n") if $wb_cds_name !~ /\d$/; 
     $curation_out_fh->print("Sequence $sequence\n");
     $curation_out_fh->print("Species \"${\$wb->full_name}\"\n");
+    $curation_out_fh->print("From_laboratory RS\n");
     $curation_out_fh->print("Method $method\n");
     if (scalar @references > 0) {
 	for my $ref (@references) {
@@ -319,6 +321,7 @@ sub delete_gene {
 sub merge_genes {
     for my $external_id (keys %$to_merge) {
 	my @wb_ids = @{$to_merge->{$external_id}};
+	$log->write_to("Merging $external_id " . join("|", @wb_ids) . "\n");
 	my @genes_to_merge;
 	
 	for my $gene_to_merge(@wb_ids) {
