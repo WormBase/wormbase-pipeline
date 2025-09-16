@@ -142,7 +142,8 @@ if ($fly) {
     eval {
        	#get the file 
 	$log->write_to("\tdownloading flybase file\n");
-	die "Could not fetch file" if $wormbase->run_command("wget -O $fly_download ftp://ftp.flybase.net/genomes/Drosophila_melanogaster/current/fasta/dmel-all-translation-r*.fasta.gz", $log);
+	$log->write_to("Using hard-coded path to FlyBase FTP site for WS298 - this needs to be checked/updated if FlyBase or WormBase have future builds using this code\n");
+	die "Could not fetch file" if $wormbase->run_command("wget -O $fly_download https://s3ftp.flybase.org/genomes/Drosophila_melanogaster/dmel_r6.64_FB2025_03/fasta/dmel-all-translation-r6.64.fasta.gz", $log);
 	die "Could not unzip file" if $wormbase->run_command("gunzip -f $fly_download", $log);
 	$fly_download = '/tmp/flybase';
     
