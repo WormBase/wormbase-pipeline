@@ -21,7 +21,7 @@ use Species;
 
 our @core_organisms=qw(Elegans Briggsae Remanei Brenneri Japonica Pristionchus Brugia Ovolvulus Sratti Tmuris);
 
-our @tier3_organisms=qw(Elegans_hawaii Elegans_vc2010 Remanei_px506 Otipulae Panagrellus Cangaria Ctropicalis Csinica Cnigoni Clatens Cinopinata Cbecei Cbovis Cpanamensis Cparvicauda Cquiockensis Csulstoni Ctribulationis Cuteleia Cwaitukubuli Czanzibari);
+our @tier3_organisms=qw(Elegans_hawaii Elegans_vc2010 Elegans_CGC1 Remanei_px506 Otipulae Panagrellus Cangaria Ctropicalis Csinica Cnigoni Clatens Cinopinata Cbecei Cbovis Cpanamensis Cparvicauda Cquiockensis Csulstoni Ctribulationis Cuteleia Cwaitukubuli Czanzibari);
 
 our @provisional_organisms = qw();
 
