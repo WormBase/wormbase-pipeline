@@ -83,9 +83,10 @@ my $processed_genes = parse_single_column_file($processed_file);
 my %ns_processed = map {$_ => 1} @$processed_genes;
 my $nsp_out_fh = file($processed_file)->opena;
 
-my $to_update = parse_mapping_file($update_file, 0);
-my $to_merge = parse_mapping_file($merge_file, 1);
-my $to_split = parse_mapping_file($split_file, 1);
+my ($to_update, $to_merge, $to_split);
+$to_update = parse_mapping_file($update_file, 0) if defined $update_file;
+$to_merge = parse_mapping_file($merge_file, 1) if defined $merge_file;
+$to_split = parse_mapping_file($split_file, 1) if defined $split_file;
 
 check_for_merge_split_clashes();
 
