@@ -35,6 +35,19 @@ const my %XREF_MAP => (
     "UniProt_GCRP" => {
 	UniProtAcc => "UniProtKB",
     },
+    "OMIM" => {
+	gene => "MIM",
+	disease => "MIM",
+    },
+    "MirGeneDB" => {
+	cel => "MirGeneDB",
+    },
+    "miRBase" => {
+	acc => "miRBase",
+    },
+    "TREEFAM" => {
+	TREEFAM_ID => "TreeFam",
+    },
 );
 
 
@@ -134,10 +147,26 @@ while (my $obj = $it->next) {
 		    } else {
 			my @ids = $field->col;
 			foreach my $id(@ids){
-			    my $suffix = $id->name; 
+			    my $suffix = $id->name;
+			    my $page_area = 'default';
+			    if ($db_link eq 'OMIM' || $db_link eq 'MirGeneDB') {
+				$page_area = $field;
+				if ($db_link eq 'MirGeneDB') {
+				    if ($suffix =~ /^Cel\-(.+)$/) {
+					$suffix = $1;
+				    }
+				}
+			    }
+			    if ($db_link eq 'miRBase') {
+				if ($suffix =~ /^MIMAT/) {
+				    $page_area = 'mature';
+				} else {
+				    $page_area = 'hairpin';
+				}
+			    }
 			    push @xrefs, {
 				referenced_curie => "$prefix:$suffix",
-				page_area => "default",
+				page_area => $page_area,
 				display_name => "$prefix:$suffix",
 				prefix => $prefix
 			    };
@@ -147,7 +176,10 @@ while (my $obj = $it->next) {
 	    }
 	} else {
 	    foreach my $field ($dblink->col) {
-		$unmapped_xrefs{$dblink}{$field}++;
+		my @ids = $field->col;
+		for my $id (@ids) {
+		    push @{$unmapped_xrefs{$dblink}{$field}}, $obj->name . ' - ' . $id->name;
+		}
 	    }
 	}
     }
@@ -263,7 +295,7 @@ $db->close;
 open XREF, ">unmapped_gene_xrefs.txt" or die "Could not open unmapped_xrefs.txt for writing\n";
 for my $xref_db (keys %unmapped_xrefs) {
     for my $xref_type (keys %{$unmapped_xrefs{$xref_db}}) {
-	print XREF $xref_db . ' - ' . $xref_type . ' (' . $unmapped_xrefs{$xref_db}{$xref_type} . ')' . "\n";
+	print XREF $xref_db . ' - ' . $xref_type . ' (' . join("|", $unmapped_xrefs{$xref_db}{$xref_type}) . ')' . "\n";
     }
 }
 exit(0);
