@@ -149,15 +149,15 @@ while (my $obj = $it->next) {
 			foreach my $id(@ids){
 			    my $suffix = $id->name;
 			    my $page_area = 'default';
-			    if ($db_link eq 'OMIM' || $db_link eq 'MirGeneDB') {
+			    if ($dblink eq 'OMIM' || $dblink eq 'MirGeneDB') {
 				$page_area = $field;
-				if ($db_link eq 'MirGeneDB') {
+				if ($dblink eq 'MirGeneDB') {
 				    if ($suffix =~ /^Cel\-(.+)$/) {
 					$suffix = $1;
 				    }
 				}
 			    }
-			    if ($db_link eq 'miRBase') {
+			    if ($dblink eq 'miRBase') {
 				if ($suffix =~ /^MIMAT/) {
 				    $page_area = 'mature';
 				} else {
