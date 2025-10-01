@@ -8,7 +8,7 @@ use JSON;
 use Const::Fast;
 use Wormbase;
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $schema);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $schema, $all);
 my ($outfile, $acedbpath, $ws_version, $out_fh, $gtf_file);
 
 const my $LINKML_SCHEMA => 'v2.9.1';
@@ -55,6 +55,7 @@ const my %XREF_MAP => (
 GetOptions ("help"        => \$help,
             "debug=s"     => \$debug,
 	    "test"        => \$test,
+	    "all"         => \$all,
 	    "verbose"     => \$verbose,
 	    "database:s"  => \$acedbpath,
 	    "outfile:s"   => \$outfile,
@@ -71,7 +72,8 @@ $acedbpath = $wormbase->autoace unless $acedbpath;
 print "Connecting to AceDB\n" if $verbose;
 my $db = Ace->connect(-path => $acedbpath,  -program => $tace) or die("Connection failure: ". Ace->error);
 
-my $query = 'FIND Gene WHERE Species = "Caenorhabditis elegans"';
+my $query = 'FIND Gene';
+$query .= ' WHERE Species = "Caenorhabditis elegans"' unless $all;
 
 $outfile = "./wormbase.genes.${ws_version}.${LINKML_SCHEMA}.json" unless defined $outfile;
 
@@ -150,7 +152,7 @@ while (my $obj = $it->next) {
 			    my $suffix = $id->name;
 			    my $page_area = 'default';
 			    if ($dblink eq 'OMIM' || $dblink eq 'MirGeneDB') {
-				$page_area = $field;
+				$page_area = $field->name;
 				if ($dblink eq 'MirGeneDB') {
 				    if ($suffix =~ /^Cel\-(.+)$/) {
 					$suffix = $1;
@@ -230,6 +232,7 @@ while (my $obj = $it->next) {
 
 
     my $is_obsolete = $obj->Status && $obj->Status->name eq 'Dead' ? JSON::true : JSON::false;
+    my $is_internal = $obj->Status && $obj->Status->name eq 'Suppressed' ? JSON::true : JSON::false;
     my $gene_type = $obj->Biotype ? $obj->Biotype->name : 'SO:0000704';
     my $gene = {
 	primary_external_id => 'WB:' . $obj->name,
@@ -237,7 +240,7 @@ while (my $obj = $it->next) {
 	gene_symbol_dto   => $symbol,
 	taxon_curie    => 'NCBITaxon:' . $obj->Species->NCBITaxonomyID,
 	obsolete => $is_obsolete,
-	internal => JSON::false,
+	internal => $is_internal,
 	created_by_curie => 'WB:curator',
 	updated_by_curie => 'WB:curator',
 	data_provider_dto => $data_provider_dto_json
@@ -295,7 +298,7 @@ $db->close;
 open XREF, ">unmapped_gene_xrefs.txt" or die "Could not open unmapped_xrefs.txt for writing\n";
 for my $xref_db (keys %unmapped_xrefs) {
     for my $xref_type (keys %{$unmapped_xrefs{$xref_db}}) {
-	print XREF $xref_db . ' - ' . $xref_type . ' (' . join("|", $unmapped_xrefs{$xref_db}{$xref_type}) . ')' . "\n";
+	print XREF $xref_db . ' - ' . $xref_type . ' (' . join("|", @{$unmapped_xrefs{$xref_db}{$xref_type}}) . ')' . "\n";
     }
 }
 exit(0);
