@@ -282,7 +282,7 @@ sub lookup_from_ebi_production_dbs {
 
   if ($type eq 'proteinxrefs') {  
     my $cmd =  "source $ena_env &&"
-        . " $ena_perl  $ENV{CVS_DIR}/get_protein_ids_ebiprod.pl"
+        . " perl  $ENV{CVS_DIR}/get_protein_ids_ebiprod.pl"
         . "  -enacred $ena_cred" 
         . "  -uniprotcred $uni_cred"
         . "  -orgid $ncbi_tax_id"
@@ -294,7 +294,7 @@ sub lookup_from_ebi_production_dbs {
   } elsif ($type eq 'seqversions') {
 
     my $cmd =  "source $ena_env &&"
-        . " $ena_perl  $ENV{CVS_DIR}/get_sequence_versions_ebiprod.pl"
+        . " perl  $ENV{CVS_DIR}/get_sequence_versions_ebiprod.pl"
         . "  -enacred $ena_cred"
         . "  -bioprojectid $bioproject_id";
     print "$cmd\n" if ($debug);
@@ -303,7 +303,7 @@ sub lookup_from_ebi_production_dbs {
   } elsif ($type eq 'genexrefs') {
 
     my $cmd =  "source $ena_env &&"
-        . " $ena_perl  $ENV{CVS_DIR}/get_gene_ids_ebiprod.pl"
+        . " perl  $ENV{CVS_DIR}/get_gene_ids_ebiprod.pl"
         . "  -enacred $ena_cred"
         . "  -bioprojectid $bioproject_id";
     print "$cmd\n" if ($debug);
