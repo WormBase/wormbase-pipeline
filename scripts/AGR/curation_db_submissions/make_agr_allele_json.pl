@@ -86,6 +86,7 @@ $variant_out_fh->print("{\n    \"linkml_version\" : \"" . $LINKML_SCHEMA . "\",\
 
 my $gene_assoc_count = 0;
 my $construct_assoc_count = 0;
+my $is_problem_var = 0;
 my $alleles = process_variations();
 
 $alleles = process_transgenes();
@@ -118,6 +119,8 @@ sub process_variations {
     for my $obj (@alleles) {
 	$var_count++;
 	next unless $obj->isObject();
+	print "$obj\n";
+	$is_problem_var = $obj->name eq 'WBVar00094968' ? 1 : 0;
 	unless ($obj->Species) {
 	    print "No species for $obj - skipping\n";
 	    next;
@@ -408,6 +411,7 @@ sub process_transgenes {
 	    print "No species for $obj - skipping\n";
 	    next;
 	}
+	print "$obj\n";
 	
 	my $dp_xref_dto_json = {
 	    referenced_curie => 'WB:' . $obj->name,
@@ -606,7 +610,10 @@ sub get_papers {
 sub get_paper {
     my $ref = shift;
 
-    if (!$ref->Status) {
+    return if $is_problem_var;
+
+    my $status = $ref->Status;
+    if (!defined $status) {
 	return;
     }
 

@@ -189,7 +189,15 @@ while( my $obj = $it->next) {
 			   }] if $obj->Disease_model_description;
     
     if (@genetic) {
-	$annot->{disease_genetic_modifier_identifiers} = \@genetic;
+	my @fixed_genetic;
+	for my $g (@genetic) {
+	    if ($g =~ /^WB:(HGNC:\d+)$/) {
+		push @fixed_genetic, $1;
+	    } else {
+		push @fixed_genetic, $g;
+	    }
+	}
+	$annot->{disease_genetic_modifier_identifiers} = \@fixed_genetic;
 	$annot->{disease_genetic_modifier_relation_name} = $modifier_type; # ameliorated_by / not_ameliorated_by / exacerbated_by / not_exacerbated_by
     }
 

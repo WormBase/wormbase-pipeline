@@ -169,6 +169,21 @@ sub process_constructs {
 	    #         push @{$json_obj->{construct_component_dtos}}, get_feature_component($feature, \@notes, $obj);
 	    #     }
 	    #}
+	    if ($obj->Fusion_reporter) {
+		for my $reporter ($obj->Fusion_reporter) {
+		    push @{$json_obj->{construct_component_dtos}}, get_free_text_construct_component($reporter);
+		}
+	    }
+	    if ($obj->Other_reporter) {
+		for my $reporter ($obj->Other_reporter) {
+		    push @{$json_obj->{construct_component_dtos}}, get_free_text_construct_component($reporter);
+		}
+	    }
+	    if ($obj->Purification_tag) {
+		for my $tag ($obj->Purification_tag) {
+		    push @{$json_obj->{construct_component_dtos}}, get_free_text_construct_component($tag);
+		}
+	    }
 	}
 	
 	if ($curation_test) {
@@ -326,6 +341,19 @@ sub get_random_datetime {
     my $day_string = $day > 9 ? $day : '0' . $day;
     
     return '20' . $year_string . '-' . $month_string . '-' . $day_string . 'T00:00:00+00:00';
+}
+
+sub get_free_text_construct_component {
+    my ($text_obj) = @_;
+
+    my $component_json = {
+	relation_name => 'expresses',
+	component_symbol => $text_obj->name,
+	internal => JSON::false,
+	obsolete => JSON::false
+    };
+
+    return $component_json;
 }
 
 sub get_feature_component {

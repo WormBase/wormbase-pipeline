@@ -7,7 +7,7 @@ use Ace;
 use JSON;
 use Const::Fast;
 use Wormbase;
-
+use Try::Tiny;
 my ($help, $debug, $test, $verbose, $store, $wormbase, $schema, $all);
 my ($outfile, $acedbpath, $ws_version, $out_fh, $gtf_file);
 
@@ -309,6 +309,7 @@ exit(0);
 
 sub get_name_slot_annotations {
     my $obj = shift;
+    print "$obj\n";
 
     my ($symbol_obj, $systematic_name_obj);
     my $symbol_type = "nomenclature_symbol";
@@ -426,9 +427,14 @@ sub get_evidence_curies {
 sub get_paper {
     my $ref = shift;
 
-    if (!$ref->Status) {
-	return;
-    }
+    my $status;
+    try {
+	$status = $ref->Status->name;
+    } catch {
+	# do nothing
+    };
+
+    return unless defined $status;
 
     my $level = 1;
     while ($ref->Merged_into && $level < 6) {
